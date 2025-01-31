@@ -8,6 +8,8 @@
 
 ### A Flutter based MyAnimeList/Jikan/Anilist/Kitsu/Simkl client with a clean and simple UI.
 
+</div>
+
 ## Features
 
 Explore a vast database of anime, manga and TV series online, discover your favorites and engage with the community through forums, detailed reviews and recommendations. This project is inspired by the DailyAL app, with the addition of several APIs for a more complete experience.
