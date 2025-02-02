@@ -1,7 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:mywatchlist/screens/open_screen.dart';
+import 'package:flutter_phoenix/flutter_phoenix.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(
+    Phoenix(
+      child: MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -10,31 +16,14 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       title: 'Flutter Demo',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
-      ),
-      home: const MyHomePage(),
+      home: OpenScreen(),
     );
   }
 }
 
-class MyHomePage extends StatelessWidget {
-  const MyHomePage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Hello World App'),
-      ),
-      body: Center(
-        child: const Text(
-          'Hello World',
-          style: TextStyle(fontSize: 24),
-        ),
-      ),
-    );
-  }
+// Fonction pour redémarrer l'application
+void restartApp(BuildContext context) {
+  Phoenix.rebirth(context);
 }
