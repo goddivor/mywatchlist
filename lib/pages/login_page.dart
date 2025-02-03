@@ -48,16 +48,6 @@ class LoginPage extends StatelessWidget {
                       fontSize: 20, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 50),
-                // ListView.builder(
-                //   itemCount: trackers.length,
-                //   itemBuilder: (context, index) {
-                //     final tracker = trackers[index];
-                //     return TrackerItem(
-                //       tracker: tracker,
-                //       onTap: () => {},
-                //     );
-                //   },
-                // ),
 
                 // Liste dynamique des services avec ListView.builder
                 SizedBox(
@@ -83,31 +73,4 @@ class LoginPage extends StatelessWidget {
       ),
     );
   }
-
-  // Fonction pour créer un ListTile pour chaque compte
-  // Widget _buildAccountTile(BuildContext context, AccountType type, String title) {
-  //   return ListTile(
-  //     title: Text(title, style: const TextStyle(fontSize: 18)),
-  //     trailing: const Icon(Icons.chevron_right), // Icon ">"
-  //     onTap: () {
-  //       // Ici, tu peux ajouter la logique pour changer de compte ou naviguer
-  //       print("Naviguer vers la connexion de $title " );
-  //       print(trackers.length);
-  //     },
-  //   );
-  // }
 }
-
-// class LoginPage extends StatelessWidget {
-//   const LoginPage({super.key});
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       appBar: AppBar(title: Text("Login")),
-//       body: Center(
-//         child: Text("Login Page", style: TextStyle(fontSize: 24)),
-//       ),
-//     );
-//   }
-// }
