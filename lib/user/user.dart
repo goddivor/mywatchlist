@@ -53,7 +53,7 @@ class UserMal with ChangeNotifier {
 
   Future<void> _saveAuthResponse() async {
     await secureStorage.write(
-        key: 'auth_response', value: json.encode(authResponse?.toJson()));
+        key: 'mal_auth_response', value: json.encode(authResponse?.toJson()));
   }
 
   Future<void> _saveUserInfo() async {

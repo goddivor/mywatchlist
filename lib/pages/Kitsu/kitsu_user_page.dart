@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 
-class HomePage extends StatelessWidget {
-  const HomePage({super.key});
+class KitsuUserPage extends StatelessWidget {
+  const KitsuUserPage({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Center(
-        child: Text("Home Page", style: TextStyle(fontSize: 24)),
+        child: Text("Kitsu User Page", style: TextStyle(fontSize: 24)),
       ),
     );
   }

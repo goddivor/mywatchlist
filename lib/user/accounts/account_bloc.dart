@@ -166,7 +166,7 @@ class AccountBloc extends Bloc<AccountEvent, AccountState> {
   List<Account> _getAvailableAccounts() {
     List<Account> accounts = [
       Account(
-        name: 'No Account Selected',
+        name: 'Disconnect',
         typeAcc: AccountType.none,
         imageUrl: 'https://cdn-icons-png.flaticon.com/512/4140/4140037.png',
       ),

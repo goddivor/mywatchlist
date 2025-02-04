@@ -3,14 +3,29 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mywatchlist/constants/constants.dart';
-import 'package:mywatchlist/pages/explore_page.dart';
-import 'package:mywatchlist/pages/forum_page.dart';
-import 'package:mywatchlist/pages/home_page.dart';
+import 'package:mywatchlist/pages/Anilist/anilist_explore_page.dart';
+import 'package:mywatchlist/pages/Anilist/anilist_forum_page.dart';
+import 'package:mywatchlist/pages/Anilist/anilist_home_page.dart';
+import 'package:mywatchlist/pages/Anilist/anilist_user_page.dart';
+import 'package:mywatchlist/pages/Anilist/anilist_user_profile_page.dart';
+import 'package:mywatchlist/pages/Kitsu/kitsu_explore_page.dart';
+import 'package:mywatchlist/pages/Kitsu/kitsu_forum_page.dart';
+import 'package:mywatchlist/pages/Kitsu/kitsu_home_page.dart';
+import 'package:mywatchlist/pages/Kitsu/kitsu_user_page.dart';
+import 'package:mywatchlist/pages/Kitsu/kitsu_user_profile_page.dart';
+import 'package:mywatchlist/pages/MAL/mal_explore_page.dart';
+import 'package:mywatchlist/pages/MAL/mal_forum_page.dart';
+import 'package:mywatchlist/pages/MAL/mal_home_page.dart';
+import 'package:mywatchlist/pages/Simkl/simkl_explore_page.dart';
+import 'package:mywatchlist/pages/Simkl/simkl_forum_page.dart';
+import 'package:mywatchlist/pages/Simkl/simkl_home_page.dart';
+import 'package:mywatchlist/pages/Simkl/simkl_user_page.dart';
+import 'package:mywatchlist/pages/Simkl/simkl_user_profile_page.dart';
 import 'package:mywatchlist/pages/side_bar.dart';
-import 'package:mywatchlist/pages/user_page.dart';
-import 'package:mywatchlist/pages/user_profile_page.dart';
+import 'package:mywatchlist/pages/MAL/mal_user_page.dart';
+import 'package:mywatchlist/pages/MAL/mal_user_profile_page.dart';
 import 'package:mywatchlist/user/accounts/account_bloc.dart';
-import 'package:mywatchlist/widgets/background.dart';
+// import 'package:mywatchlist/widgets/background.dart';
 import 'package:mywatchlist/widgets/bottomnavbar.dart';
 
 class OpacityAnima extends AnimatedWidget {
@@ -84,6 +99,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           AccountType currentAccountType = state.selectedAccountType;
 
           // Si aucun compte n'est connecté, rediriger vers la page de connexion
+          // context.read<AccountBloc>().add(ChangeAccountEvent(AccountType.none));
           if (currentAccountType == AccountType.none) {
             WidgetsBinding.instance.addPostFrameCallback((_) {
               Navigator.pushReplacementNamed(context, '/login');
@@ -109,17 +125,17 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               onWillPop: () async => true,
               child: Stack(
                 children: [
-                  if (backImagePages.contains(pageIndex))
-                    AnimatedOpacity(
-                      opacity: 1.0,
-                      duration: const Duration(milliseconds: 300),
-                      child: Background(
-                        context: context,
-                        height: MediaQuery.of(context).size.height / 2,
-                        showLocalFile: false,
-                        url: "assets/images/fall.jpg",
-                      ),
-                    ),
+                  // if (backImagePages.contains(pageIndex))
+                  //   AnimatedOpacity(
+                  //     opacity: 1.0,
+                  //     duration: const Duration(milliseconds: 300),
+                  //     child: Background(
+                  //       context: context,
+                  //       height: MediaQuery.of(context).size.height / 2,
+                  //       showLocalFile: false,
+                  //       url: "assets/images/fall.jpg",
+                  //     ),
+                  //   ),
                   IndexedStack(
                     index: pageIndex,
                     children: homeWidgets.values.toList(),
@@ -138,50 +154,50 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   Map<int, Widget> _getHomeWidgets(AccountType accountType) {
     if (accountType == AccountType.myanimelist) {
       return {
-        0: OpacityAnima(animation: animation, child: HomePage()),
-        1: OpacityAnima(animation: animation, child: ForumPage()),
-        2: OpacityAnima(animation: animation, child: UserPage()),
+        0: OpacityAnima(animation: animation, child: MalHomePage()),
+        1: OpacityAnima(animation: animation, child: MalForumPage()),
+        2: OpacityAnima(animation: animation, child: MalUserPage()),
         3: OpacityAnima(
-            animation: animation, child: UserProfilePage(isSelf: true)),
-        4: OpacityAnima(animation: animation, child: ExplorePage()),
+            animation: animation, child: MalUserProfilePage(isSelf: true)),
+        4: OpacityAnima(animation: animation, child: MalExplorePage()),
       };
     } else if (accountType == AccountType.anilist) {
       return {
-        0: OpacityAnima(animation: animation, child: HomePage()),
-        1: OpacityAnima(animation: animation, child: ForumPage()),
-        2: OpacityAnima(animation: animation, child: UserPage()),
+        0: OpacityAnima(animation: animation, child: AnilistHomePage()),
+        1: OpacityAnima(animation: animation, child: AnilistForumPage()),
+        2: OpacityAnima(animation: animation, child: AnilistUserPage()),
         3: OpacityAnima(
-            animation: animation, child: UserProfilePage(isSelf: true)),
-        4: OpacityAnima(animation: animation, child: ExplorePage()),
+            animation: animation, child: AnilistUserProfilePage(isSelf: true)),
+        4: OpacityAnima(animation: animation, child: AnilistExplorePage()),
       };
     } else if (accountType == AccountType.kitsu) {
       return {
-        0: OpacityAnima(animation: animation, child: HomePage()),
-        1: OpacityAnima(animation: animation, child: ForumPage()),
-        2: OpacityAnima(animation: animation, child: UserPage()),
+        0: OpacityAnima(animation: animation, child: KitsuHomePage()),
+        1: OpacityAnima(animation: animation, child: KitsuForumPage()),
+        2: OpacityAnima(animation: animation, child: KitsuUserPage()),
         3: OpacityAnima(
-            animation: animation, child: UserProfilePage(isSelf: true)),
-        4: OpacityAnima(animation: animation, child: ExplorePage()),
+            animation: animation, child: KitsuUserProfilePage(isSelf: true)),
+        4: OpacityAnima(animation: animation, child: KitsuExplorePage()),
       };
     } else if (accountType == AccountType.simkl) {
       return {
-        0: OpacityAnima(animation: animation, child: HomePage()),
-        1: OpacityAnima(animation: animation, child: ForumPage()),
-        2: OpacityAnima(animation: animation, child: UserPage()),
+        0: OpacityAnima(animation: animation, child: SimklHomePage()),
+        1: OpacityAnima(animation: animation, child: SimklForumPage()),
+        2: OpacityAnima(animation: animation, child: SimklUserPage()),
         3: OpacityAnima(
-            animation: animation, child: UserProfilePage(isSelf: true)),
-        4: OpacityAnima(animation: animation, child: ExplorePage()),
+            animation: animation, child: SimklUserProfilePage(isSelf: true)),
+        4: OpacityAnima(animation: animation, child: SimklExplorePage()),
       };
     }
 
-    // Par défaut, affiche toutes les pages
+    // Par défaut, renvoie sur MAl pages
     return {
-      0: OpacityAnima(animation: animation, child: HomePage()),
-      1: OpacityAnima(animation: animation, child: ForumPage()),
-      2: OpacityAnima(animation: animation, child: UserPage()),
+      0: OpacityAnima(animation: animation, child: MalHomePage()),
+      1: OpacityAnima(animation: animation, child: MalForumPage()),
+      2: OpacityAnima(animation: animation, child: MalUserPage()),
       3: OpacityAnima(
-          animation: animation, child: UserProfilePage(isSelf: true)),
-      4: OpacityAnima(animation: animation, child: ExplorePage()),
+          animation: animation, child: MalUserProfilePage(isSelf: true)),
+      4: OpacityAnima(animation: animation, child: MalExplorePage()),
     };
   }
 
