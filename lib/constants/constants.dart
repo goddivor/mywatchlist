@@ -1,5 +1,9 @@
+// ignore_for_file: deprecated_member_use
+
 import 'package:flutter/material.dart';
 import 'dart:ui' as ui;
+
+import 'package:mywatchlist/widgets/shimmercolor.dart';
 
 enum AccountType {
   none,
@@ -71,4 +75,78 @@ Future<T?> gotoPage<T>(
           Directionality(textDirection: ui.TextDirection.ltr, child: newPage),
     ),
   );
+}
+
+Widget title(
+  String? title, {
+  double fontSize = 13,
+  double opacity = 1,
+  int? colorVal,
+  TextOverflow? textOverflow,
+  TextStyle? textStyle,
+  FontStyle? fontStyle = FontStyle.normal,
+  TextAlign? align = TextAlign.left,
+  FontWeight? fontWeight = FontWeight.normal,
+  bool selectable = false,
+  double? scaleFactor,
+}) {
+  title = title ?? '';
+  textStyle ??= TextStyle();
+  if (selectable) {
+    return SelectableText(
+      title,
+      textAlign: align,
+      style: TextStyle(
+        fontSize: fontSize,
+        fontWeight: fontWeight,
+        fontStyle: fontStyle,
+        color: colorVal == null ? null : Color(colorVal).withOpacity(opacity),
+      ),
+    );
+  } else {
+    return Text(
+      title,
+      // overflow: TextOverflow.ellipsis,
+      overflow: textOverflow,
+      textAlign: align,
+      textScaleFactor: scaleFactor,
+      style: TextStyle(
+        fontSize: fontSize,
+        fontWeight: fontWeight,
+        fontStyle: fontStyle,
+        color: colorVal == null ? null : Color(colorVal).withOpacity(opacity),
+      ),
+    );
+  }
+}
+
+Widget text(String? title, {double? fontSize}) {
+  return Text(
+    title ?? "",
+    style: TextStyle(fontSize: fontSize ?? 16),
+  );
+}
+
+Widget heading(String text,
+    {double fontSize = 32, AlignmentGeometry alignment = Alignment.topLeft}) {
+  return Container(
+    alignment: alignment,
+    padding: EdgeInsets.only(left: 20),
+    child: title(text, opacity: 1, fontSize: fontSize),
+  );
+}
+
+Widget cardLoading({
+  double radius = 1.0,
+  BorderRadius? borderRadius,
+  double height = 150,
+  double width = 100,
+}) {
+  return ShimmerColor(SizedBox(
+    height: height,
+    width: width,
+    child: Material(
+      borderRadius: borderRadius ?? BorderRadius.circular(radius),
+    ),
+  ));
 }

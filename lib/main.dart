@@ -98,6 +98,7 @@ class _MyWatchListAppState extends State<MyWatchListApp> {
         home: OpenScreen(),
         routes: {
           '/login': (context) => const LoginPage(),
+          // '/home': (context) => const HomeScreen(),
         });
   }
 }

@@ -1,10 +1,12 @@
+import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:flutter/material.dart';
 
 class LogoutDialog extends StatelessWidget {
   final String trackerName;
   final VoidCallback onConfirm;
 
-  const LogoutDialog({super.key, required this.trackerName, required this.onConfirm});
+  const LogoutDialog(
+      {super.key, required this.trackerName, required this.onConfirm});
 
   @override
   Widget build(BuildContext context) {
@@ -12,7 +14,8 @@ class LogoutDialog extends StatelessWidget {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20.0),
       ),
-      backgroundColor: Colors.brown, // Vous pouvez changer la couleur selon vos besoins
+      backgroundColor:
+          Colors.brown, // Vous pouvez changer la couleur selon vos besoins
       child: Padding(
         padding: const EdgeInsets.all(20.0),
         child: Column(
@@ -36,7 +39,8 @@ class LogoutDialog extends StatelessWidget {
                   },
                   style: TextButton.styleFrom(
                     backgroundColor: Colors.red,
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 24, vertical: 12),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(20.0),
                     ),
@@ -53,7 +57,8 @@ class LogoutDialog extends StatelessWidget {
                   },
                   style: TextButton.styleFrom(
                     backgroundColor: Colors.red,
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 24, vertical: 12),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(20.0),
                     ),
@@ -70,4 +75,18 @@ class LogoutDialog extends StatelessWidget {
       ),
     );
   }
+}
+
+Future<void> awesomeLogoutDialog(BuildContext context,
+    final String trackerName, final VoidCallback onConfirm) {
+  return AwesomeDialog(
+    context: context,
+    dialogType: DialogType.warning,
+    animType: AnimType.topSlide,
+    // showCloseIcon: true,
+    title: "Warning",
+    desc: "Are you sure you want to log out from $trackerName",
+    btnCancelOnPress: () => {},
+    btnOkOnPress: onConfirm,
+  ).show();
 }

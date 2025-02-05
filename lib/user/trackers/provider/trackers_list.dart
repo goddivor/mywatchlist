@@ -32,23 +32,32 @@ Future<void> handleMalAuth(
   if (trackers[index].isActive ||
       UserMal.instance.getStatus() == AuthStatus.AUTHENTICATED) {
     // Déconnecter l'utilisateur
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return LogoutDialog(
-          trackerName: trackers[index].name,
-          onConfirm: () async {
-            await _malAuth.signOut();
-            trackers[index].isActive = false;
+    awesomeLogoutDialog(context, trackers[index].name, () async {
+      await _malAuth.signOut();
+      trackers[index].isActive = false;
 
-            context
-                .read<AccountBloc>()
-                .add(RemoveAccountEvent(AccountType.myanimelist));
-            updateUI();
-          },
-        );
-      },
-    );
+      context
+          .read<AccountBloc>()
+          .add(RemoveAccountEvent(AccountType.myanimelist));
+      updateUI();
+    });
+    // showDialog(
+    //   context: context,
+    //   builder: (BuildContext context) {
+    //     return LogoutDialog(
+    //       trackerName: trackers[index].name,
+    //       onConfirm: () async {
+    //         await _malAuth.signOut();
+    //         trackers[index].isActive = false;
+
+    //         context
+    //             .read<AccountBloc>()
+    //             .add(RemoveAccountEvent(AccountType.myanimelist));
+    //         updateUI();
+    //       },
+    //     );
+    //   },
+    // );
   } else {
     // Authentifier l'utilisateur
     await _malAuth.signInWithMAL(context, onComplete: () {
@@ -68,22 +77,28 @@ Future<void> handleSimklAuth(
   if (trackers[index].isActive ||
       UserSimkl.instance.getStatus() == AuthStatus.AUTHENTICATED) {
     // Déconnecter l'utilisateur
-    showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return LogoutDialog(
-            trackerName: trackers[index].name,
-            onConfirm: () async {
-              await _simklAuth.signOut();
-              trackers[index].isActive = false;
+    awesomeLogoutDialog(context, trackers[index].name, () async {
+      await _simklAuth.signOut();
+      trackers[index].isActive = false;
 
-              context
-                  .read<AccountBloc>()
-                  .add(RemoveAccountEvent(AccountType.simkl));
-              updateUI();
-            },
-          );
-        });
+      context.read<AccountBloc>().add(RemoveAccountEvent(AccountType.simkl));
+      updateUI();
+    });
+    // showDialog(
+    //     context: context,
+    //     builder: (BuildContext context) {
+    //       return LogoutDialog(
+    //         trackerName: trackers[index].name,
+    //         onConfirm: () async {
+    //           await _simklAuth.signOut();
+    //           trackers[index].isActive = false;
+    //           context
+    //               .read<AccountBloc>()
+    //               .add(RemoveAccountEvent(AccountType.simkl));
+    //           updateUI();
+    //         },
+    //       );
+    //     });
   } else {
     // Authentifier l'utilisateur
     // Code d'authentification pour Simkl
@@ -104,22 +119,28 @@ Future<void> handleAnilistAuth(
   if (trackers[index].isActive ||
       UserAnilist.instance.getStatus() == AuthStatus.AUTHENTICATED) {
     // Déconnecter l'utilisateur
-    showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return LogoutDialog(
-            trackerName: trackers[index].name,
-            onConfirm: () async {
-              await _anilistAuth.signOut();
-              trackers[index].isActive = false;
+    awesomeLogoutDialog(context, trackers[index].name, () async {
+      await _anilistAuth.signOut();
+      trackers[index].isActive = false;
 
-              context
-                  .read<AccountBloc>()
-                  .add(RemoveAccountEvent(AccountType.anilist));
-              updateUI();
-            },
-          );
-        });
+      context.read<AccountBloc>().add(RemoveAccountEvent(AccountType.anilist));
+      updateUI();
+    });
+    // showDialog(
+    //     context: context,
+    //     builder: (BuildContext context) {
+    //       return LogoutDialog(
+    //         trackerName: trackers[index].name,
+    //         onConfirm: () async {
+    //           await _anilistAuth.signOut();
+    //           trackers[index].isActive = false;
+    //           context
+    //               .read<AccountBloc>()
+    //               .add(RemoveAccountEvent(AccountType.anilist));
+    //           updateUI();
+    //         },
+    //       );
+    //     });
   } else {
     // Authentifier l'utilisateur
     await _anilistAuth.signInWithAnilist(context, onComplete: () {
@@ -139,22 +160,28 @@ Future<void> handleKitsuAuth(
   if (trackers[index].isActive ||
       UserKitsu.instance.getStatus() == AuthStatus.AUTHENTICATED) {
     // Déconnecter l'utilisateur
-    showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return LogoutDialog(
-            trackerName: trackers[index].name,
-            onConfirm: () async {
-              await _kitsuAuth.signout();
-              trackers[index].isActive = false;
+    awesomeLogoutDialog(context, trackers[index].name, () async {
+      await _kitsuAuth.signout();
+      trackers[index].isActive = false;
 
-              context
-                  .read<AccountBloc>()
-                  .add(RemoveAccountEvent(AccountType.kitsu));
-              updateUI();
-            },
-          );
-        });
+      context.read<AccountBloc>().add(RemoveAccountEvent(AccountType.kitsu));
+      updateUI();
+    });
+    // showDialog(
+    //     context: context,
+    //     builder: (BuildContext context) {
+    //       return LogoutDialog(
+    //         trackerName: trackers[index].name,
+    //         onConfirm: () async {
+    //           await _kitsuAuth.signout();
+    //           trackers[index].isActive = false;
+    //           context
+    //               .read<AccountBloc>()
+    //               .add(RemoveAccountEvent(AccountType.kitsu));
+    //           updateUI();
+    //         },
+    //       );
+    //     });
   } else {
     // Authentifier l'utilisateur
     showDialog(
