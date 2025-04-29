@@ -20,6 +20,265 @@ import 'package:mywatchlist/user/trackers/provider/trackers_list.dart';
 import 'package:mywatchlist/user/trackers/widgets/tracker_item.dart';
 import 'package:mywatchlist/user/user.dart';
 
+// class LoginPage extends StatefulWidget {
+//   const LoginPage({super.key});
+
+//   @override
+//   _LoginPageState createState() => _LoginPageState();
+// }
+
+// class _LoginPageState extends State<LoginPage> {
+//   int? selectedIndex; // Stocke l'index sélectionné
+
+//   @override
+//   void initState() {
+//     super.initState();
+//     _checkAuthStatus();
+//   }
+
+//   void _checkAuthStatus() async {
+//     //verification pour Mal
+//     if (UserMal.instance.getStatus() == AuthStatus.AUTHENTICATED) {
+//       setState(() {
+//         trackers[0].isActive = true; // MyAnimeList tracker
+//       });
+//       _checkAndFetchMalUserProfile();
+//     }
+//     //verification pour Anilist
+//     if (UserAnilist.instance.getStatus() == AuthStatus.AUTHENTICATED) {
+//       setState(() {
+//         trackers[1].isActive = true; // Anilist tracker
+//       });
+//       _checkAndFetchAnilistUserProfile();
+//     }
+//     //verification pour kitsu
+//     if (UserKitsu.instance.getStatus() == AuthStatus.AUTHENTICATED) {
+//       setState(() {
+//         trackers[2].isActive = true; // Kitsu tracker
+//       });
+//       _checkAndFetchKitsuUserProfile();
+//     }
+//     //verification pour Simkl
+//     if (UserSimkl.instance.getStatus() == AuthStatus.AUTHENTICATED) {
+//       setState(() {
+//         trackers[3].isActive = true; // Simkl tracker
+//       });
+//       _checkAndFetchSimklUserProfile();
+//     }
+//     // Ajouter des vérifications similaires pour d'autres trackers si nécessaire
+//   }
+
+//   void handleTrackerTap(BuildContext context, int index) async {
+//     await trackerFunctions[trackers[index].name]!(context, index, () async {
+//       setState(() {});
+//       //logic pour Mal
+//       if (trackers[index].isActive && trackers[index].name == 'MyAnimeList') {
+//         _checkAndFetchMalUserProfile();
+//         // print("Youpi MAL done");
+//       }
+
+//       //logic pour Anilist
+//       if (trackers[index].isActive && trackers[index].name == 'Anilist') {
+//         _checkAndFetchAnilistUserProfile();
+//         // print("Youpi Anilist done");
+//       }
+
+//       //logic pour Kitsu
+//       if (trackers[index].isActive && trackers[index].name == 'Kitsu') {
+//         _checkAndFetchKitsuUserProfile();
+//         // print("Youpi Kitsu done");
+//       }
+
+//       //logic pour Simkl
+//       if (trackers[index].isActive && trackers[index].name == 'Simkl') {
+//         _checkAndFetchSimklUserProfile();
+//         // print("Youpi Simkl done");
+//       }
+//       // Ajouter des logix similaires pour d'autres trackers si nécessaire
+//     });
+//   }
+
+//   void handleTrackerSelected(
+//       BuildContext context, int index, Tracker tracker) async {
+//     setState(() {
+//       selectedIndex = index;
+//     });
+
+//     if (tracker.isActive) {
+//       if (tracker.name == "MyAnimeList") {
+//         context
+//             .read<AccountBloc>()
+//             .add(ChangeAccountEvent(AccountType.myanimelist));
+//       }
+//       if (tracker.name == "Anilist") {
+//         context
+//             .read<AccountBloc>()
+//             .add(ChangeAccountEvent(AccountType.anilist));
+//       }
+//       if (tracker.name == "Kitsu") {
+//         context.read<AccountBloc>().add(ChangeAccountEvent(AccountType.kitsu));
+//       }
+//       if (tracker.name == "Simkl") {
+//         context.read<AccountBloc>().add(ChangeAccountEvent(AccountType.simkl));
+//       }
+//     } else {
+//       // context.read<AccountBloc>().add(ChangeAccountEvent(
+//       //AccountType.none)); // this should be deleted in the future
+//     }
+
+//     // print(tracker.name);
+//     // print(tracker.isActive);
+//   }
+
+//   void _checkAndFetchSimklUserProfile() async {
+//     // Simkl fecthing profile
+//     if (UserSimkl.instance.username == null ||
+//         UserSimkl.instance.profileImage == null) {
+//       // List<String> fields = ['name', 'picture'];
+//       UserProfSimkl userProfile = await SimklUser().getUserInfo();
+//       UserSimkl.instance.setUserInfo(userProfile.name, userProfile.avatar);
+//       setState(() {});
+//       // Force la mise à jour des comptes disponibles dans le bloc
+//       context.read<AccountBloc>().add(ForceUpdateAccountsEvent());
+//     }
+//   }
+
+//   void _checkAndFetchKitsuUserProfile() async {
+//     // Kitsu fetching profile
+//     if (UserKitsu.instance.username == null ||
+//         UserKitsu.instance.profileImage == null) {
+//       // List<String> fields = ['name', 'avatar'];
+//       KitsuUserProf userProfile = await KitsuUser().getUserInfo();
+//       UserKitsu.instance.setUserInfo(userProfile.name, userProfile.avatar);
+//       setState(() {});
+//       // Force la mise à jour des comptes disponibles dans le bloc
+//       context.read<AccountBloc>().add(ForceUpdateAccountsEvent());
+//     }
+//   }
+
+//   void _checkAndFetchAnilistUserProfile() async {
+//     // Anilist fetching profile
+//     if (UserAnilist.instance.username == null ||
+//         UserAnilist.instance.profileImage == null) {
+//       // List<String> fields = ['name', 'picture'];
+//       AnilistUserProf userProfile = await AnilistUser().getUserInfo();
+//       UserAnilist.instance.setUserInfo(userProfile.name, userProfile.avatarUrl);
+//       setState(() {});
+//       // Force la mise à jour des comptes disponibles dans le bloc
+//       context.read<AccountBloc>().add(ForceUpdateAccountsEvent());
+//     }
+//   }
+
+//   void _checkAndFetchMalUserProfile() async {
+//     // MyanimeList fecthing profile
+//     if (UserMal.instance.username == null ||
+//         UserMal.instance.profileImage == null) {
+//       List<String> fields = ['name', 'picture'];
+//       MalUserProf userProfile = await MalUser().getUserInfo(fields: fields);
+//       UserMal.instance.setUserInfo(userProfile.name, userProfile.picture);
+//       setState(() {});
+//       // Force la mise à jour des comptes disponibles dans le bloc
+//       context.read<AccountBloc>().add(ForceUpdateAccountsEvent());
+//     }
+//   }
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return Scaffold(
+//       // appBar: AppBar(title: const Text("Login")),
+//       body: BlocBuilder<AccountBloc, AccountState>(
+//         builder: (context, state) {
+//           String? profileImageUrl;
+//           AccountType currentAccountType = AccountType.none;
+//           List<Account> accounts = [];
+
+//           if (state is AccountLoaded) {
+//             currentAccountType = state.selectedAccountType;
+//             profileImageUrl = state.profileImageUrl;
+//             accounts = state.availableAccounts;
+//           }
+
+//           // Récupérer le compte actuellement sélectionné
+//           Account? selectedAccount = accounts.firstWhere(
+//             (account) => account.typeAcc == currentAccountType,
+//           );
+
+//           return Center(
+//             child: Column(
+//               mainAxisSize: MainAxisSize.min,
+//               mainAxisAlignment: MainAxisAlignment.center,
+//               children: [
+//                 CircleAvatar(
+//                   backgroundImage:
+//                       NetworkImage(profileImageUrl ?? selectedAccount.imageUrl),
+//                   radius: 48.0,
+//                 ),
+//                 const SizedBox(height: 10),
+//                 Text(
+//                   selectedAccount.name,
+//                   style: const TextStyle(
+//                       fontSize: 20, fontWeight: FontWeight.bold),
+//                 ),
+//                 const SizedBox(height: 50),
+
+//                 // Liste dynamique des services avec ListView.builder
+//                 SizedBox(
+//                   height: 400, // Ajuste cette valeur en fonction du design
+//                   child: ListView.builder(
+//                     shrinkWrap: true,
+//                     itemCount: trackers.length,
+//                     itemBuilder: (context, index) {
+//                       final tracker = trackers[index];
+//                       return TrackerItem(
+//                         tracker: tracker,
+//                         isSelected: selectedIndex == index,
+//                         onTap: () =>
+//                             handleTrackerSelected(context, index, tracker),
+//                         onDoubleTap: () => handleTrackerTap(context, index),
+//                       );
+//                     },
+//                   ),
+//                 ),
+
+//                 const SizedBox(height: 20),
+
+//                 // Bouton pour valider la sélection et aller vers HomeScreen
+//                 ElevatedButton(
+//                   onPressed: currentAccountType == AccountType.none
+//                       ? null // Désactivé si aucun compte sélectionné
+//                       : () {
+//                           Navigator.pushReplacement(
+//                             context,
+//                             MaterialPageRoute(
+//                                 builder: (context) => const HomeScreen()),
+//                           );
+//                         },
+//                   style: ElevatedButton.styleFrom(
+//                     backgroundColor: currentAccountType == AccountType.none
+//                         ? Colors.grey // Bouton grisé si désactivé
+//                         : Colors.blue, // Bouton actif en bleu
+//                     padding: const EdgeInsets.symmetric(
+//                         horizontal: 40, vertical: 15),
+//                     shape: RoundedRectangleBorder(
+//                       borderRadius: BorderRadius.circular(10),
+//                     ),
+//                   ),
+//                   child: const Text(
+//                     "Switch",
+//                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+//                   ),
+//                 ),
+//               ],
+//             ),
+//           );
+//         },
+//       ),
+//     );
+//   }
+// }
+
+import 'package:mywatchlist/widgets/background.dart';
+
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
 
@@ -27,74 +286,106 @@ class LoginPage extends StatefulWidget {
   _LoginPageState createState() => _LoginPageState();
 }
 
-class _LoginPageState extends State<LoginPage> {
-  int? selectedIndex; // Stocke l'index sélectionné
+class _LoginPageState extends State<LoginPage>
+    with SingleTickerProviderStateMixin {
+  int? selectedIndex;
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
 
   @override
   void initState() {
     super.initState();
     _checkAuthStatus();
+
+    // Setup animations
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
+
+    _fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _animationController,
+      curve: const Interval(0.2, 1.0, curve: Curves.easeOut),
+    ));
+
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.1),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _animationController,
+      curve: const Interval(0.2, 1.0, curve: Curves.easeOutCubic),
+    ));
+
+    _animationController.forward();
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
   }
 
   void _checkAuthStatus() async {
-    //verification pour Mal
+    // Check MyAnimeList
     if (UserMal.instance.getStatus() == AuthStatus.AUTHENTICATED) {
       setState(() {
-        trackers[0].isActive = true; // MyAnimeList tracker
+        trackers[0].isActive = true;
       });
       _checkAndFetchMalUserProfile();
     }
-    //verification pour Anilist
+
+    // Check Anilist
     if (UserAnilist.instance.getStatus() == AuthStatus.AUTHENTICATED) {
       setState(() {
-        trackers[1].isActive = true; // Anilist tracker
+        trackers[1].isActive = true;
       });
       _checkAndFetchAnilistUserProfile();
     }
-    //verification pour kitsu
+
+    // Check Kitsu
     if (UserKitsu.instance.getStatus() == AuthStatus.AUTHENTICATED) {
       setState(() {
-        trackers[2].isActive = true; // Kitsu tracker
+        trackers[2].isActive = true;
       });
       _checkAndFetchKitsuUserProfile();
     }
-    //verification pour Simkl
+
+    // Check Simkl
     if (UserSimkl.instance.getStatus() == AuthStatus.AUTHENTICATED) {
       setState(() {
-        trackers[3].isActive = true; // Simkl tracker
+        trackers[3].isActive = true;
       });
       _checkAndFetchSimklUserProfile();
     }
-    // Ajouter des vérifications similaires pour d'autres trackers si nécessaire
   }
 
   void handleTrackerTap(BuildContext context, int index) async {
     await trackerFunctions[trackers[index].name]!(context, index, () async {
       setState(() {});
-      //logic pour Mal
+
+      // Handle MyAnimeList
       if (trackers[index].isActive && trackers[index].name == 'MyAnimeList') {
         _checkAndFetchMalUserProfile();
-        // print("Youpi MAL done");
       }
 
-      //logic pour Anilist
+      // Handle Anilist
       if (trackers[index].isActive && trackers[index].name == 'Anilist') {
         _checkAndFetchAnilistUserProfile();
-        // print("Youpi Anilist done");
       }
 
-      //logic pour Kitsu
+      // Handle Kitsu
       if (trackers[index].isActive && trackers[index].name == 'Kitsu') {
         _checkAndFetchKitsuUserProfile();
-        // print("Youpi Kitsu done");
       }
 
-      //logic pour Simkl
+      // Handle Simkl
       if (trackers[index].isActive && trackers[index].name == 'Simkl') {
         _checkAndFetchSimklUserProfile();
-        // print("Youpi Simkl done");
       }
-      // Ajouter des logix similaires pour d'autres trackers si nécessaire
     });
   }
 
@@ -109,169 +400,373 @@ class _LoginPageState extends State<LoginPage> {
         context
             .read<AccountBloc>()
             .add(ChangeAccountEvent(AccountType.myanimelist));
-      }
-      if (tracker.name == "Anilist") {
+      } else if (tracker.name == "Anilist") {
         context
             .read<AccountBloc>()
             .add(ChangeAccountEvent(AccountType.anilist));
-      }
-      if (tracker.name == "Kitsu") {
+      } else if (tracker.name == "Kitsu") {
         context.read<AccountBloc>().add(ChangeAccountEvent(AccountType.kitsu));
-      }
-      if (tracker.name == "Simkl") {
+      } else if (tracker.name == "Simkl") {
         context.read<AccountBloc>().add(ChangeAccountEvent(AccountType.simkl));
       }
-    } else {
-      // context.read<AccountBloc>().add(ChangeAccountEvent(
-      //AccountType.none)); // this should be deleted in the future
     }
-
-    // print(tracker.name);
-    // print(tracker.isActive);
   }
 
   void _checkAndFetchSimklUserProfile() async {
-    // Simkl fecthing profile
     if (UserSimkl.instance.username == null ||
         UserSimkl.instance.profileImage == null) {
-      // List<String> fields = ['name', 'picture'];
       UserProfSimkl userProfile = await SimklUser().getUserInfo();
       UserSimkl.instance.setUserInfo(userProfile.name, userProfile.avatar);
       setState(() {});
-      // Force la mise à jour des comptes disponibles dans le bloc
       context.read<AccountBloc>().add(ForceUpdateAccountsEvent());
     }
   }
 
   void _checkAndFetchKitsuUserProfile() async {
-    // Kitsu fetching profile
     if (UserKitsu.instance.username == null ||
         UserKitsu.instance.profileImage == null) {
-      // List<String> fields = ['name', 'avatar'];
       KitsuUserProf userProfile = await KitsuUser().getUserInfo();
       UserKitsu.instance.setUserInfo(userProfile.name, userProfile.avatar);
       setState(() {});
-      // Force la mise à jour des comptes disponibles dans le bloc
       context.read<AccountBloc>().add(ForceUpdateAccountsEvent());
     }
   }
 
   void _checkAndFetchAnilistUserProfile() async {
-    // Anilist fetching profile
     if (UserAnilist.instance.username == null ||
         UserAnilist.instance.profileImage == null) {
-      // List<String> fields = ['name', 'picture'];
       AnilistUserProf userProfile = await AnilistUser().getUserInfo();
       UserAnilist.instance.setUserInfo(userProfile.name, userProfile.avatarUrl);
       setState(() {});
-      // Force la mise à jour des comptes disponibles dans le bloc
       context.read<AccountBloc>().add(ForceUpdateAccountsEvent());
     }
   }
 
   void _checkAndFetchMalUserProfile() async {
-    // MyanimeList fecthing profile
     if (UserMal.instance.username == null ||
         UserMal.instance.profileImage == null) {
       List<String> fields = ['name', 'picture'];
       MalUserProf userProfile = await MalUser().getUserInfo(fields: fields);
       UserMal.instance.setUserInfo(userProfile.name, userProfile.picture);
       setState(() {});
-      // Force la mise à jour des comptes disponibles dans le bloc
       context.read<AccountBloc>().add(ForceUpdateAccountsEvent());
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final size = MediaQuery.of(context).size;
+
     return Scaffold(
-      // appBar: AppBar(title: const Text("Login")),
-      body: BlocBuilder<AccountBloc, AccountState>(
-        builder: (context, state) {
-          String? profileImageUrl;
-          AccountType currentAccountType = AccountType.none;
-          List<Account> accounts = [];
+      body: Stack(
+        children: [
+          // Background with theme-aware image
+          Background(
+            context: context,
+            forceBg: true,
+            isNetworkImage: false,
+            height: size.height,
+            url:
+                "assets/images/${theme.brightness == Brightness.dark ? 'fall' : 'spring'}.jpg",
+          ),
 
-          if (state is AccountLoaded) {
-            currentAccountType = state.selectedAccountType;
-            profileImageUrl = state.profileImageUrl;
-            accounts = state.availableAccounts;
-          }
+          // Background overlay for better readability
+          Container(
+            width: double.infinity,
+            height: double.infinity,
+            color: theme.scaffoldBackgroundColor.withOpacity(0.8),
+          ),
 
-          // Récupérer le compte actuellement sélectionné
-          Account? selectedAccount = accounts.firstWhere(
-            (account) => account.typeAcc == currentAccountType,
-          );
+          // Main content
+          BlocBuilder<AccountBloc, AccountState>(
+            builder: (context, state) {
+              String? profileImageUrl;
+              AccountType currentAccountType = AccountType.none;
+              List<Account> accounts = [];
 
-          return Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                CircleAvatar(
-                  backgroundImage:
-                      NetworkImage(profileImageUrl ?? selectedAccount.imageUrl),
-                  radius: 48.0,
+              if (state is AccountLoaded) {
+                currentAccountType = state.selectedAccountType;
+                profileImageUrl = state.profileImageUrl;
+                accounts = state.availableAccounts;
+              }
+
+              // Get the currently selected account
+              Account selectedAccount = accounts.firstWhere(
+                (account) => account.typeAcc == currentAccountType,
+                orElse: () => Account(
+                  name: 'Select an account',
+                  typeAcc: AccountType.none,
+                  imageUrl:
+                      'https://cdn-icons-png.flaticon.com/512/4140/4140037.png',
                 ),
-                const SizedBox(height: 10),
-                Text(
-                  selectedAccount.name,
-                  style: const TextStyle(
-                      fontSize: 20, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 50),
+              );
 
-                // Liste dynamique des services avec ListView.builder
-                SizedBox(
-                  height: 400, // Ajuste cette valeur en fonction du design
-                  child: ListView.builder(
-                    shrinkWrap: true,
-                    itemCount: trackers.length,
-                    itemBuilder: (context, index) {
-                      final tracker = trackers[index];
-                      return TrackerItem(
-                        tracker: tracker,
-                        isSelected: selectedIndex == index,
-                        onTap: () =>
-                            handleTrackerSelected(context, index, tracker),
-                        onDoubleTap: () => handleTrackerTap(context, index),
-                      );
-                    },
-                  ),
-                ),
+              return FadeTransition(
+                opacity: _fadeAnimation,
+                child: SlideTransition(
+                  position: _slideAnimation,
+                  child: SafeArea(
+                    child: Column(
+                      children: [
+                        const SizedBox(height: 20),
 
-                const SizedBox(height: 20),
+                        // App logo and title
+                        const CircleAvatar(
+                          backgroundImage:
+                              AssetImage('assets/images/mwl-black-bg.png'),
+                          radius: 48.0,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'MyWatchList',
+                          style: TextStyle(
+                            fontSize: 28,
+                            fontWeight: FontWeight.bold,
+                            color: theme.colorScheme.onBackground,
+                          ),
+                        ),
+                        Text(
+                          'Multi-API Anime & Manga Tracker',
+                          style: TextStyle(
+                            fontSize: 16,
+                            color:
+                                theme.colorScheme.onBackground.withOpacity(0.8),
+                          ),
+                        ),
 
-                // Bouton pour valider la sélection et aller vers HomeScreen
-                ElevatedButton(
-                  onPressed: currentAccountType == AccountType.none
-                      ? null // Désactivé si aucun compte sélectionné
-                      : () {
-                          Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => const HomeScreen()),
-                          );
-                        },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: currentAccountType == AccountType.none
-                        ? Colors.grey // Bouton grisé si désactivé
-                        : Colors.blue, // Bouton actif en bleu
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 40, vertical: 15),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
+                        const SizedBox(height: 30),
+
+                        // Profile section
+                        AnimatedContainer(
+                          duration: const Duration(milliseconds: 300),
+                          margin: const EdgeInsets.symmetric(horizontal: 24),
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: theme.cardColor.withOpacity(0.9),
+                            borderRadius: BorderRadius.circular(20),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.1),
+                                blurRadius: 10,
+                                offset: const Offset(0, 5),
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            children: [
+                              // Profile image
+                              Hero(
+                                tag: 'profile_image',
+                                child: Container(
+                                  height: 70,
+                                  width: 70,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: theme.colorScheme.primary,
+                                      width: 2,
+                                    ),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: theme.colorScheme.primary
+                                            .withOpacity(0.3),
+                                        blurRadius: 12,
+                                        spreadRadius: 2,
+                                      ),
+                                    ],
+                                  ),
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(35),
+                                    child: profileImageUrl != null
+                                        ? Image.network(
+                                            profileImageUrl,
+                                            fit: BoxFit.cover,
+                                            errorBuilder:
+                                                (context, error, stackTrace) {
+                                              return Image.network(
+                                                selectedAccount.imageUrl,
+                                                fit: BoxFit.cover,
+                                              );
+                                            },
+                                          )
+                                        : Image.network(
+                                            selectedAccount.imageUrl,
+                                            fit: BoxFit.cover,
+                                          ),
+                                  ),
+                                ),
+                              ),
+
+                              const SizedBox(width: 16),
+
+                              // User info
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      selectedAccount.name,
+                                      style: TextStyle(
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.bold,
+                                        color: theme.colorScheme.onSurface,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      currentAccountType == AccountType.none
+                                          ? 'No account selected'
+                                          : 'Active account',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        color: theme.colorScheme.onSurface
+                                            .withOpacity(0.6),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+
+                              // Active indicator
+                              if (currentAccountType != AccountType.none)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 5,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: theme.colorScheme.primary
+                                        .withOpacity(0.2),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Text(
+                                    'Active',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                      color: theme.colorScheme.primary,
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+
+                        const SizedBox(height: 24),
+
+                        // Services title with animation
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 24),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.connecting_airports_rounded,
+                                color: theme.colorScheme.primary,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Available Services',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: theme.colorScheme.onBackground,
+                                ),
+                              ),
+                              const Spacer(),
+                              Text(
+                                'Tap to select',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: theme.colorScheme.onBackground
+                                      .withOpacity(0.6),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        const SizedBox(height: 8),
+
+                        // Service tracker list
+                        Expanded(
+                          child: ListView.builder(
+                            padding: const EdgeInsets.only(bottom: 24),
+                            physics: const BouncingScrollPhysics(),
+                            itemCount: trackers.length,
+                            itemBuilder: (context, index) {
+                              final tracker = trackers[index];
+                              return TrackerItem(
+                                tracker: tracker,
+                                isSelected: selectedIndex == index,
+                                onTap: () => handleTrackerSelected(
+                                    context, index, tracker),
+                                onDoubleTap: () =>
+                                    handleTrackerTap(context, index),
+                              );
+                            },
+                          ),
+                        ),
+
+                        // Bottom button
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+                          child: ElevatedButton(
+                            onPressed: currentAccountType == AccountType.none
+                                ? null
+                                : () {
+                                    Navigator.pushReplacement(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            const HomeScreen(),
+                                      ),
+                                    );
+                                  },
+                            style: ElevatedButton.styleFrom(
+                              minimumSize: const Size(double.infinity, 56),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              elevation: 4,
+                              backgroundColor: theme.colorScheme.primary,
+                              foregroundColor: theme.colorScheme.onPrimary,
+                              disabledBackgroundColor:
+                                  theme.colorScheme.onSurface.withOpacity(0.12),
+                              disabledForegroundColor:
+                                  theme.colorScheme.onSurface.withOpacity(0.38),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.login_rounded,
+                                  size: 22,
+                                  color: currentAccountType == AccountType.none
+                                      ? theme.colorScheme.onSurface
+                                          .withOpacity(0.38)
+                                      : theme.colorScheme.onPrimary,
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'Continue to App',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  child: const Text(
-                    "Switch",
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
                 ),
-              ],
-            ),
-          );
-        },
+              );
+            },
+          ),
+        ],
       ),
     );
   }
