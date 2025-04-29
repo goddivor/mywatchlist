@@ -25,7 +25,7 @@ class SigninWidget extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         const CircleAvatar(
-          backgroundImage: AssetImage('assets/images/dal-black-bg.png'), // Logo DailyAL
+          backgroundImage: AssetImage('assets/images/mwl-black-bg.png'), // Logo DailyAL
           radius: 40,
         ),
         const SizedBox(width: 20),

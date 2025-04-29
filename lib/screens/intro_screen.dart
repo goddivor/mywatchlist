@@ -1,10 +1,10 @@
 // ignore_for_file: library_private_types_in_public_api, deprecated_member_use
 
 import 'package:flutter/material.dart';
+import 'package:mywatchlist/screens/language_settings.dart';
 import 'package:mywatchlist/screens/theme_settings.dart';
 import 'package:mywatchlist/widgets/background.dart';
-import 'package:mywatchlist/widgets/signin_widget.dart'; // Assurez-vous que cette classe existe
-// import 'package:mywatchlist/screens/home_screen.dart';
+import 'package:mywatchlist/widgets/signin_widget.dart';
 
 class IntroScreen extends StatefulWidget {
   final int index;
@@ -29,7 +29,7 @@ class _IntroScreenState extends State<IntroScreen> {
 
   void changePage(int index) {
     pageController.animateToPage(index,
-        duration: const Duration(milliseconds: 500), curve: Curves.linear);
+        duration: const Duration(milliseconds: 500), curve: Curves.easeInOut);
     if (mounted) {
       setState(() {
         pageIndex = index;
@@ -63,10 +63,10 @@ class _IntroScreenState extends State<IntroScreen> {
               }
             },
             children: [
-              _page(),
+              _welcomePage(),
               _loginPage(),
               _langPage(),
-              ThemeSettings(isIntroPage: true)
+              const ThemeSettings(isIntroPage: true)
             ],
           ),
           if (_showPageNavigator) _pageNavigator(),
@@ -82,12 +82,10 @@ class _IntroScreenState extends State<IntroScreen> {
   }
 
   Widget _langPage() {
-    return const Center(
-      child: Text("Language Page", style: TextStyle(fontSize: 24)),
-    );
+    return const LanguageSettings(isIntroPage: true);
   }
 
-  Widget _page() {
+  Widget _welcomePage() {
     return Stack(
       children: [
         Background(isNetworkImage: false, context: context, forceBg: true),
@@ -97,7 +95,7 @@ class _IntroScreenState extends State<IntroScreen> {
           child: Column(
             children: [
               const CircleAvatar(
-                backgroundImage: AssetImage('assets/images/dal-black-bg.png'),
+                backgroundImage: AssetImage('assets/images/mwl-black-bg.png'),
                 radius: 48.0,
               ),
               const SizedBox(height: 30),
@@ -141,41 +139,49 @@ class _IntroScreenState extends State<IntroScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
       child: Material(
         borderRadius: BorderRadius.circular(32),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            _dots(),
-            if (pageIndex == 0)
-              Padding(
-                padding: const EdgeInsets.only(top: 5, bottom: 5, right: 15),
-                child: IconButton(
-                  onPressed: () {
-                    changePage(1);
-                  },
-                  icon: const Icon(Icons.arrow_forward_ios),
+        elevation: 4,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+          decoration: BoxDecoration(
+            color: Theme.of(context).cardColor,
+            borderRadius: BorderRadius.circular(32),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              _dots(),
+              if (pageIndex == 0)
+                Padding(
+                  padding: const EdgeInsets.only(top: 5, bottom: 5, right: 15),
+                  child: IconButton(
+                    onPressed: () {
+                      changePage(1);
+                    },
+                    icon: const Icon(Icons.arrow_forward_ios),
+                  ),
                 ),
-              ),
-            if (pageIndex != 0)
-              Expanded(
-                child: ButtonBar(
-                  buttonPadding: const EdgeInsets.fromLTRB(5, 0, 5, 5),
-                  children: [
-                    TextButton(
-                      onPressed: pageIndex == 0
-                          ? null
-                          : () => changePage(pageIndex - 1),
-                      child: const Text("Previous"),
-                    ),
-                    TextButton(
-                      onPressed:
-                          lastPage ? null : () => changePage(pageIndex + 1),
-                      child: Text(_nextButtonText),
-                    ),
-                  ],
+              if (pageIndex != 0)
+                Expanded(
+                  child: ButtonBar(
+                    buttonPadding: const EdgeInsets.fromLTRB(5, 0, 5, 5),
+                    children: [
+                      TextButton(
+                        onPressed: pageIndex == 0
+                            ? null
+                            : () => changePage(pageIndex - 1),
+                        child: const Text("Previous"),
+                      ),
+                      TextButton(
+                        onPressed:
+                            lastPage ? null : () => changePage(pageIndex + 1),
+                        child: Text(_nextButtonText),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-          ],
+            ],
+          ),
         ),
       ),
     );

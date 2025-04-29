@@ -11,21 +11,40 @@ import 'package:mywatchlist/services/auth/simkl_auth.dart';
 import 'package:app_links/app_links.dart';
 import 'package:mywatchlist/user/accounts/account_bloc.dart';
 import 'package:mywatchlist/user/accounts/provider/account_manager_singleton.dart';
+import 'package:mywatchlist/user/language/language_bloc.dart';
+import 'package:mywatchlist/user/language/language_event.dart';
+import 'package:mywatchlist/user/theme/theme_bloc.dart';
+import 'package:mywatchlist/user/theme/theme_event.dart';
+import 'package:mywatchlist/user/theme/theme_state.dart';
 import 'package:mywatchlist/user/user.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+/// Global UserData
+late UserMal usermal;
+final int homeIndex = 0;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Load shared preferences
+  final sharedPreferences = await SharedPreferences.getInstance();
+
+  // Initialize user data
   await UserMal.instance.loadFromPreferences();
   await UserAnilist.instance.loadFromPreferences();
   await UserKitsu.instance.loadFromPreferences();
   await UserSimkl.instance.loadFromPreferences();
 
-  // final jikanApi = JikanApi();
-  // final malApi = MalApi();
-  // final malScraper = MalScraper();
+  // Initialize blocs
   final accountBloc = AccountBloc();
+  final themeBloc = ThemeBloc(prefs: sharedPreferences);
+  final languageBloc = LanguageBloc(prefs: sharedPreferences);
+
+  // Load initial data for blocs
   accountBloc.add(LoadAccountEvent());
+  themeBloc.add(ThemeLoadStarted());
+  languageBloc.add(LanguageLoadStarted());
 
   // Mettre à jour le singleton lorsqu'il y a un changement d'état dans AccountBloc
   accountBloc.stream.listen((state) {
@@ -33,12 +52,6 @@ void main() async {
       AccountManagerSingleton().updateAccountType(state.selectedAccountType);
     }
   });
-
-  // runApp(
-  //   Phoenix(
-  //     child: MyWatchListApp(),
-  //   ),
-  // );
 
   runApp(
     Phoenix(
@@ -53,6 +66,8 @@ void main() async {
           providers: [
             BlocProvider(
                 create: (context) => AccountBloc()..add(LoadAccountEvent())),
+            BlocProvider(create: (context) => themeBloc),
+            BlocProvider(create: (context) => languageBloc),
             // I will add another BlocProvider for requests here
           ],
           child: MyWatchListApp(),
@@ -92,14 +107,29 @@ class _MyWatchListAppState extends State<MyWatchListApp> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-        debugShowCheckedModeBanner: false,
-        title: 'Flutter Demo',
-        home: OpenScreen(),
-        routes: {
-          '/login': (context) => const LoginPage(),
-          // '/home': (context) => const HomeScreen(),
-        });
+    // return MaterialApp(
+    //     debugShowCheckedModeBanner: false,
+    //     title: 'Flutter Demo',
+    //     home: OpenScreen(),
+    //     routes: {
+    //       '/login': (context) => const LoginPage(),
+    //       // '/home': (context) => const HomeScreen(),
+    //     });
+    // Use BlocBuilder to get the current theme from ThemeBloc
+    return BlocBuilder<ThemeBloc, ThemeState>(
+      builder: (context, themeState) {
+        return MaterialApp(
+          debugShowCheckedModeBanner: false,
+          title: 'MyWatchList',
+          // Apply the selected theme
+          theme: themeState.themeData,
+          home: const OpenScreen(),
+          routes: {
+            '/login': (context) => const LoginPage(),
+          },
+        );
+      },
+    );
   }
 }
 

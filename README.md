@@ -1,7 +1,7 @@
 <div align="center">
 
 <a href="https://myanimelist.net/profile/goddivor">
-    <img src="assets/images/dal-black-bg.png" alt="DailyAL" title="DailyAL" width="90"/>
+    <img src="assets/images/mwl-black-bg.png" alt="DailyAL" title="DailyAL" width="90"/>
 </a>
 
 # [MyWatchList](#) - DailyAL fork & Multi AnimeList Api client

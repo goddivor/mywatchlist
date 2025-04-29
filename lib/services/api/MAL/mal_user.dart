@@ -27,11 +27,11 @@ class MalUser {
     return MalUserProf.fromJson(profileData);
   }
 
-  Future<List<Anime>> getMyAnimeList({
+  static Future<List<Anime>> getMyContentList({
     int limit = 100,
     int offset = 0,
     String category = "anime",
-    String status = "all",
+    String? status = "all",
     String? sortType,
     List<String>? fields,
     String username = "@me",
