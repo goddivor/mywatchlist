@@ -111,7 +111,7 @@ void saveImage(String url) async {
 void shareImage(String url) async {
   var path = await downloadImage(url);
   XFile file = XFile(path);
-  Share.shareXFiles([file], text: 'Image from DailyAnimeList');
+  Share.shareXFiles([file], text: 'Image from MyWatchList');
 }
 
 Future<String> downloadImage(String url) async {
