@@ -93,6 +93,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
+    final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
     return BlocBuilder<AccountBloc, AccountState>(
       builder: (context, state) {
         if (state is AccountLoaded) {
@@ -110,7 +111,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           homeWidgets = _getHomeWidgets(currentAccountType);
 
           return Scaffold(
-            endDrawer: AppSideBar(),
+            endDrawer: AppSidebar(
+              onClose: () {
+                if (_scaffoldKey.currentState?.isEndDrawerOpen ?? false) {
+                  Navigator.pop(context);
+                }
+              },
+            ),
             bottomNavigationBar: BottomNavBar(
               startIndex: pageIndex,
               onChanged: (value) {

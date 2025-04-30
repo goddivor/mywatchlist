@@ -185,7 +185,7 @@ class AvatarWidget extends StatelessWidget {
             child: url != null && isNetworkImage
                 ? CachedNetworkImage(
                     imageUrl: url!,
-                    imageBuilder: (context, imageProvider) => Ink(
+                    imageBuilder: (context, imageProvider) => Container(
                       decoration: BoxDecoration(
                           borderRadius: radius ?? BorderRadius.circular(50),
                           image:
@@ -194,7 +194,7 @@ class AvatarWidget extends StatelessWidget {
                     placeholder: (context, url) =>
                         _buildShimmerLoader(context, radius),
                     errorWidget: (context, url, error) {
-                      return Ink(
+                      return Container(
                         decoration: BoxDecoration(
                           borderRadius: radius ?? BorderRadius.circular(28),
                           image: DecorationImage(

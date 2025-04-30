@@ -14,9 +14,9 @@ import 'package:mywatchlist/services/auth/kitsu_authresp.dart';
 import 'package:mywatchlist/services/auth/mal_authresp.dart';
 import 'package:mywatchlist/services/auth/simkl_authresp.dart';
 import 'package:mywatchlist/user/accounts/account_manager.dart';
-import 'package:mywatchlist/user/hompagepref.dart';
+// import 'package:mywatchlist/user/hompagepref.dart';
 import 'package:mywatchlist/user/userpref.dart';
-import 'package:mywatchlist/utils/homepageutils.dart';
+// import 'package:mywatchlist/utils/homepageutils.dart';
 
 enum AuthStatus { UNAUTHENTICATED, AUTHENTICATED, INPROGRESS }
 
@@ -75,8 +75,8 @@ class UserMal with ChangeNotifier {
           .contains(Intl.shortLocale(locale))) {
         languageCode = locale;
       }
-      newUser.pref.hpApiPrefList =
-          HomePageUtils().translateTitle(newUser.pref.hpApiPrefList);
+      // newUser.pref.hpApiPrefList =
+      //     HomePageUtils().translateTitle(newUser.pref.hpApiPrefList);
     } else {
       languageCode = newUser.pref.userLanguage;
     }
@@ -86,7 +86,7 @@ class UserMal with ChangeNotifier {
   static Future<void> updateFirstTimePref(UserMal newUser) async {
     final userPref = newUser.pref;
     if (userPref.hpApiPrefList.isEmpty) {
-      userPref.hpApiPrefList = defaultHPPrefList;
+      // userPref.hpApiPrefList = defaultHPPrefList;
     }
     if (!userPref.firstTime) {
       bool hasChanged = false;
@@ -96,7 +96,7 @@ class UserMal with ChangeNotifier {
         hasChanged = true;
       }
       if (userPref.firstTimePref.news) {
-        newUser.pref.hpApiPrefList.insert(0, defaultHPPrefList[0]);
+        // newUser.pref.hpApiPrefList.insert(0, defaultHPPrefList[0]);
         newUser.pref.firstTimePref.news = false;
         hasChanged = true;
       }
