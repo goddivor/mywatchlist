@@ -21,29 +21,14 @@ import 'package:mywatchlist/pages/Simkl/simkl_forum_page.dart';
 import 'package:mywatchlist/pages/Simkl/simkl_home_page.dart';
 import 'package:mywatchlist/pages/Simkl/simkl_user_page.dart';
 import 'package:mywatchlist/pages/Simkl/simkl_user_profile_page.dart';
-import 'package:mywatchlist/pages/side_bar.dart';
 import 'package:mywatchlist/pages/MAL/mal_user_page.dart';
 import 'package:mywatchlist/pages/MAL/mal_user_profile_page.dart';
+import 'package:mywatchlist/pages/side_bar.dart';
 import 'package:mywatchlist/user/accounts/account_bloc.dart';
-// import 'package:mywatchlist/widgets/background.dart';
+import 'package:mywatchlist/utils/page_transitions.dart';
+import 'package:mywatchlist/widgets/background.dart';
 import 'package:mywatchlist/widgets/bottomnavbar.dart';
 
-class OpacityAnima extends AnimatedWidget {
-  final Widget? child;
-
-  const OpacityAnima(
-      {super.key, required Animation<double> animation, this.child})
-      : super(listenable: animation);
-
-  @override
-  Widget build(BuildContext context) {
-    Animation<double> animation = listenable as Animation<double>;
-    return Opacity(
-      opacity: animation.value,
-      child: child,
-    );
-  }
-}
 
 class HomeScreen extends StatefulWidget {
   final int? pageIndex;
@@ -56,9 +41,11 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   int pageIndex = 0;
+  int previousPageIndex = 0;
   late AnimationController _animationController;
-  late Animation<double> animation;
+  late Animation<double> _fadeAnimation;
   final List<int> backImagePages = [0]; // HomePage a un background
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   Map<int, Widget> homeWidgets = {};
 
@@ -66,23 +53,19 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   void initState() {
     super.initState();
     pageIndex = widget.pageIndex ?? 0;
+    previousPageIndex = pageIndex;
 
     _animationController = AnimationController(
       vsync: this,
-      value: 1.0,
-      duration: const Duration(milliseconds: 250),
+      duration: const Duration(milliseconds: 300),
     );
-    animation =
-        Tween<double>(begin: 0.0, end: 1.0).animate(_animationController);
 
-    // homeWidgets = {
-    //   0: OpacityAnima(animation: animation, child: HomePage()),
-    //   1: OpacityAnima(animation: animation, child: ForumPage()),
-    //   2: OpacityAnima(animation: animation, child: UserPage()),
-    //   3: OpacityAnima(
-    //       animation: animation, child: UserProfilePage(isSelf: true)),
-    //   4: OpacityAnima(animation: animation, child: ExplorePage()),
-    // };
+    _fadeAnimation = CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeOut,
+    );
+
+    _animationController.forward();
   }
 
   @override
@@ -91,16 +74,28 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     super.dispose();
   }
 
+  // Détermine la direction de transition en fonction de l'index précédent et actuel
+  SlideDirection _getTransitionDirection(int previous, int current) {
+    if (current > previous) {
+      return SlideDirection
+          .left; // Glisser vers la gauche lors du passage à un index supérieur
+    } else {
+      return SlideDirection
+          .right; // Glisser vers la droite lors du passage à un index inférieur
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+    final theme = Theme.of(context);
+    final size = MediaQuery.of(context).size;
+
     return BlocBuilder<AccountBloc, AccountState>(
       builder: (context, state) {
         if (state is AccountLoaded) {
           AccountType currentAccountType = state.selectedAccountType;
 
           // Si aucun compte n'est connecté, rediriger vers la page de connexion
-          // context.read<AccountBloc>().add(ChangeAccountEvent(AccountType.none));
           if (currentAccountType == AccountType.none) {
             WidgetsBinding.instance.addPostFrameCallback((_) {
               Navigator.pushReplacementNamed(context, '/login');
@@ -111,6 +106,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           homeWidgets = _getHomeWidgets(currentAccountType);
 
           return Scaffold(
+            key: _scaffoldKey,
             endDrawer: AppSidebar(
               onClose: () {
                 if (_scaffoldKey.currentState?.isEndDrawerOpen ?? false) {
@@ -118,132 +114,174 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 }
               },
             ),
+            backgroundColor: theme.scaffoldBackgroundColor,
+            // BottomNavBar modernisée
             bottomNavigationBar: BottomNavBar(
               startIndex: pageIndex,
               onChanged: (value) {
-                _animationController.reset();
-                _animationController.forward();
                 setState(() {
+                  previousPageIndex = pageIndex;
                   pageIndex = value;
                 });
+
+                // Animer le changement de page
+                _animationController.reset();
+                _animationController.forward();
               },
             ),
             body: WillPopScope(
               onWillPop: () async => true,
               child: Stack(
                 children: [
-                  // if (backImagePages.contains(pageIndex))
-                  //   AnimatedOpacity(
-                  //     opacity: 1.0,
-                  //     duration: const Duration(milliseconds: 300),
-                  //     child: Background(
-                  //       context: context,
-                  //       height: MediaQuery.of(context).size.height / 2,
-                  //       showLocalFile: false,
-                  //       url: "assets/images/fall.jpg",
-                  //     ),
-                  //   ),
-                  IndexedStack(
-                    index: pageIndex,
-                    children: homeWidgets.values.toList(),
+                  // Arrière-plan pour certaines pages
+                  if (backImagePages.contains(pageIndex))
+                    AnimatedOpacity(
+                      opacity: 1.0,
+                      duration: const Duration(milliseconds: 300),
+                      child: Background(
+                        context: context,
+                        height: size.height / 2,
+                        showLocalFile: false,
+                        isNetworkImage: false,
+                        url: _getBackgroundImageForTheme(theme),
+                      ),
+                    ),
+
+                  // Page principale avec animation
+                  AnimatedPageSwitcher(
+                    duration: const Duration(milliseconds: 300),
+                    transitionType: previousPageIndex < pageIndex
+                        ? PageTransitionType.slideLeft
+                        : PageTransitionType.slideRight,
+                    child: homeWidgets[pageIndex] ?? const SizedBox(),
                   ),
                 ],
               ),
             ),
           );
         }
-        return const Scaffold(body: Center(child: CircularProgressIndicator()));
+
+        // Écran de chargement avec animation
+        return Scaffold(
+          backgroundColor: theme.scaffoldBackgroundColor,
+          body: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // Logo animé
+                TweenAnimationBuilder<double>(
+                  tween: Tween(begin: 0.8, end: 1.0),
+                  duration: const Duration(milliseconds: 1500),
+                  curve: Curves.elasticOut,
+                  builder: (context, value, child) {
+                    return Transform.scale(
+                      scale: value,
+                      child: child,
+                    );
+                  },
+                  child: Container(
+                    width: 100,
+                    height: 100,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: theme.colorScheme.primary.withOpacity(0.1),
+                    ),
+                    child: Center(
+                      child: Image.asset(
+                        'assets/images/dal-black-bg.png',
+                        width: 70,
+                        height: 70,
+                      ),
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 30),
+
+                // Spinner
+                SizedBox(
+                  width: 40,
+                  height: 40,
+                  child: CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                        theme.colorScheme.primary),
+                    strokeWidth: 3,
+                  ),
+                ),
+
+                const SizedBox(height: 20),
+
+                // Message
+                Text(
+                  'Loading your anime world...',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: theme.colorScheme.onBackground,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
       },
     );
+  }
+
+  // Obtenir l'image de fond selon le thème
+  String _getBackgroundImageForTheme(ThemeData theme) {
+    final brightness = theme.brightness;
+
+    // En fonction de la saison ou du thème
+    if (brightness == Brightness.dark) {
+      return "assets/images/fall.jpg"; // Automne pour le mode sombre
+    } else {
+      return "assets/images/spring.jpg"; // Printemps pour le mode clair
+    }
   }
 
   // Méthode pour retourner les pages en fonction du type de compte
   Map<int, Widget> _getHomeWidgets(AccountType accountType) {
     if (accountType == AccountType.myanimelist) {
       return {
-        0: OpacityAnima(animation: animation, child: MalHomePage()),
-        1: OpacityAnima(animation: animation, child: MalForumPage()),
-        2: OpacityAnima(animation: animation, child: MalUserPage()),
-        3: OpacityAnima(
-            animation: animation, child: MalUserProfilePage(isSelf: true)),
-        4: OpacityAnima(animation: animation, child: MalExplorePage()),
+        0: MalHomePage(),
+        1: MalForumPage(),
+        2: MalUserPage(),
+        3: MalUserProfilePage(isSelf: true),
+        4: MalExplorePage(),
       };
     } else if (accountType == AccountType.anilist) {
       return {
-        0: OpacityAnima(animation: animation, child: AnilistHomePage()),
-        1: OpacityAnima(animation: animation, child: AnilistForumPage()),
-        2: OpacityAnima(animation: animation, child: AnilistUserPage()),
-        3: OpacityAnima(
-            animation: animation, child: AnilistUserProfilePage(isSelf: true)),
-        4: OpacityAnima(animation: animation, child: AnilistExplorePage()),
+        0: AnilistHomePage(),
+        1: AnilistForumPage(),
+        2: AnilistUserPage(),
+        3: AnilistUserProfilePage(isSelf: true),
+        4: AnilistExplorePage(),
       };
     } else if (accountType == AccountType.kitsu) {
       return {
-        0: OpacityAnima(animation: animation, child: KitsuHomePage()),
-        1: OpacityAnima(animation: animation, child: KitsuForumPage()),
-        2: OpacityAnima(animation: animation, child: KitsuUserPage()),
-        3: OpacityAnima(
-            animation: animation, child: KitsuUserProfilePage(isSelf: true)),
-        4: OpacityAnima(animation: animation, child: KitsuExplorePage()),
+        0: KitsuHomePage(),
+        1: KitsuForumPage(),
+        2: KitsuUserPage(),
+        3: KitsuUserProfilePage(isSelf: true),
+        4: KitsuExplorePage(),
       };
     } else if (accountType == AccountType.simkl) {
       return {
-        0: OpacityAnima(animation: animation, child: SimklHomePage()),
-        1: OpacityAnima(animation: animation, child: SimklForumPage()),
-        2: OpacityAnima(animation: animation, child: SimklUserPage()),
-        3: OpacityAnima(
-            animation: animation, child: SimklUserProfilePage(isSelf: true)),
-        4: OpacityAnima(animation: animation, child: SimklExplorePage()),
+        0: SimklHomePage(),
+        1: SimklForumPage(),
+        2: SimklUserPage(),
+        3: SimklUserProfilePage(isSelf: true),
+        4: SimklExplorePage(),
       };
     }
 
-    // Par défaut, renvoie sur MAl pages
+    // Par défaut, renvoie les pages MAL
     return {
-      0: OpacityAnima(animation: animation, child: MalHomePage()),
-      1: OpacityAnima(animation: animation, child: MalForumPage()),
-      2: OpacityAnima(animation: animation, child: MalUserPage()),
-      3: OpacityAnima(
-          animation: animation, child: MalUserProfilePage(isSelf: true)),
-      4: OpacityAnima(animation: animation, child: MalExplorePage()),
+      0: MalHomePage(),
+      1: MalForumPage(),
+      2: MalUserPage(),
+      3: MalUserProfilePage(isSelf: true),
+      4: MalExplorePage(),
     };
   }
-
-  // @override
-  // Widget build(BuildContext context) {
-  //   return Scaffold(
-  //     endDrawer: AppSideBar(),
-  //     bottomNavigationBar: BottomNavBar(
-  //       startIndex: pageIndex,
-  //       onChanged: (value) {
-  //         _animationController.reset();
-  //         _animationController.forward();
-  //         setState(() {
-  //           pageIndex = value;
-  //         });
-  //       },
-  //     ),
-  //     body: WillPopScope(
-  //       onWillPop: () async => true, // Gérer le retour si nécessaire
-  //       child: Stack(
-  //         children: [
-  //           if (backImagePages.contains(pageIndex))
-  //             AnimatedOpacity(
-  //               opacity: 1.0,
-  //               duration: const Duration(milliseconds: 300),
-  //               child: Background(
-  //                 context: context,
-  //                 height: MediaQuery.of(context).size.height / 2,
-  //                 showLocalFile: false,
-  //                 url: "assets/images/fall.jpg",
-  //               ),
-  //             ),
-  //           IndexedStack(
-  //             index: pageIndex,
-  //             children: homeWidgets.values.toList(),
-  //           ),
-  //         ],
-  //       ),
-  //     ),
-  //   );
-  // }
 }

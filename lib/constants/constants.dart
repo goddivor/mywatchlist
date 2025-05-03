@@ -133,6 +133,35 @@ Future<T?> gotoPage<T>(
   );
 }
 
+Widget starField(
+  String score, {
+  double starHeight = 17.0,
+  TextStyle? textStyle,
+  bool useIcon = false,
+}) {
+  return Row(
+    children: [
+      if (useIcon)
+        Icon(
+          Icons.star,
+          size: starHeight,
+        )
+      else
+        SizedBox(
+          height: starHeight,
+          child: Image.asset("assets/images/star.png"),
+        ),
+      const SizedBox(
+        width: 5,
+      ),
+      Text(
+        score,
+        style: textStyle,
+      )
+    ],
+  );
+}
+
 Widget title(
   String? title, {
   double fontSize = 13,
@@ -520,4 +549,57 @@ bool shouldUpdateContent(
   } catch (e) {
     return false;
   }
+}
+
+
+Color getStatusColor(int index) {
+  switch (index) {
+    case 0:
+      return Colors.green;
+    case 1:
+      return Colors.blue;
+    case 2:
+      return Colors.yellow;
+    case 3:
+      return Colors.red;
+    case 4:
+      return Colors.orange;
+    default:
+      return Colors.grey;
+  }
+}
+
+Widget loadingError() {
+  return Center(
+    child: Stack(
+      children: [
+        const Center(
+          child: SizedBox(
+            width: 70,
+            height: 70,
+            child: CircularProgressIndicator(
+              strokeWidth: .8,
+              backgroundColor: Colors.white,
+              valueColor: AlwaysStoppedAnimation(Color(0xff757575)),
+            ),
+          ),
+        ),
+        _logoImage(),
+      ],
+    ),
+  );
+}
+
+
+Center _logoImage([double? height = 50.0, double? width = 50.0]) {
+  return Center(
+    child: ClipRRect(
+      borderRadius: BorderRadius.circular(32.0),
+      child: SizedBox(
+        height: height,
+        width: width,
+        child: Image.asset("assets/images/mal-icon.png"),
+      ),
+    ),
+  );
 }

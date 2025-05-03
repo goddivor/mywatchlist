@@ -1,20 +1,21 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:cached_network_image/cached_network_image.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:flutter/services.dart';
-import 'dart:convert';
+// import 'package:cached_network_image/cached_network_image.dart';
+// import 'package:path_provider/path_provider.dart';
+// import 'package:flutter/services.dart';
+// import 'dart:convert';
 import 'dart:async';
 
 import 'package:mywatchlist/constants/constants.dart';
+import 'package:mywatchlist/screens/settings/settings_page.dart';
 import 'package:mywatchlist/user/accounts/account_bloc.dart';
 import 'package:mywatchlist/user/accounts/models/account.dart';
-import 'package:mywatchlist/user/user.dart';
+// import 'package:mywatchlist/user/user.dart';
 import 'package:mywatchlist/user/user_preference.dart';
 import 'package:mywatchlist/widgets/avatar_widget.dart';
-import 'package:mywatchlist/widgets/custombutton.dart';
-import 'package:mywatchlist/utils/file_helper.dart';
+// import 'package:mywatchlist/widgets/custombutton.dart';
+// import 'package:mywatchlist/utils/file_helper.dart';
 import 'package:mywatchlist/utils/sidebar_bg_manager.dart';
 
 class AppSidebar extends StatefulWidget {
@@ -29,41 +30,42 @@ class AppSidebar extends StatefulWidget {
   State<AppSidebar> createState() => _AppSidebarState();
 }
 
-class _AppSidebarState extends State<AppSidebar> with SingleTickerProviderStateMixin {
+class _AppSidebarState extends State<AppSidebar>
+    with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _slideAnimation;
   String? _backgroundImagePath;
   bool _isLoadingImage = false;
   final UserPreference userPref = UserPreference();
   final SidebarBackgroundManager _bgManager = SidebarBackgroundManager.instance;
-  
+
   @override
   void initState() {
     super.initState();
-    
+
     // Initialize animations
     _animationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 300),
     );
-    
+
     _slideAnimation = CurvedAnimation(
       parent: _animationController,
       curve: Curves.easeOutCubic,
     );
-    
+
     _animationController.forward();
-    
+
     // Load background image path from preferences
     _loadBackgroundImage();
   }
-  
+
   @override
   void dispose() {
     _animationController.dispose();
     super.dispose();
   }
-  
+
   Future<void> _loadBackgroundImage() async {
     try {
       final path = await _bgManager.getCurrentBackgroundImagePath();
@@ -76,15 +78,15 @@ class _AppSidebarState extends State<AppSidebar> with SingleTickerProviderStateM
       debugPrint('Error loading background image: $e');
     }
   }
-  
+
   Future<void> _pickAndSaveBackgroundImage() async {
     setState(() {
       _isLoadingImage = true;
     });
-    
+
     try {
       final path = await _bgManager.setNewBackgroundImage(context: context);
-      
+
       if (mounted) {
         setState(() {
           _backgroundImagePath = path;
@@ -100,11 +102,11 @@ class _AppSidebarState extends State<AppSidebar> with SingleTickerProviderStateM
       }
     }
   }
-  
+
   Future<void> _removeBackgroundImage() async {
     try {
       final success = await _bgManager.removeBackgroundImage(context: context);
-      
+
       if (success && mounted) {
         setState(() {
           _backgroundImagePath = null;
@@ -114,10 +116,10 @@ class _AppSidebarState extends State<AppSidebar> with SingleTickerProviderStateM
       debugPrint('Error removing background image: $e');
     }
   }
-  
+
   void _showBackgroundImageOptions() {
     final theme = Theme.of(context);
-    
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -151,7 +153,7 @@ class _AppSidebarState extends State<AppSidebar> with SingleTickerProviderStateM
               ),
             ),
             const SizedBox(height: 20),
-            
+
             // Change background option
             ListTile(
               leading: Container(
@@ -171,7 +173,7 @@ class _AppSidebarState extends State<AppSidebar> with SingleTickerProviderStateM
                 _pickAndSaveBackgroundImage();
               },
             ),
-            
+
             // Remove background option (only if there's a background)
             if (_backgroundImagePath != null)
               ListTile(
@@ -192,9 +194,9 @@ class _AppSidebarState extends State<AppSidebar> with SingleTickerProviderStateM
                   _removeBackgroundImage();
                 },
               ),
-            
+
             const SizedBox(height: 10),
-            
+
             // Cancel button
             GestureDetector(
               onTap: () => Navigator.pop(context),
@@ -221,7 +223,7 @@ class _AppSidebarState extends State<AppSidebar> with SingleTickerProviderStateM
     final theme = Theme.of(context);
     final size = MediaQuery.of(context).size;
     final sidebarWidth = size.width * 0.85;
-    
+
     return AnimatedBuilder(
       animation: _slideAnimation,
       builder: (context, child) {
@@ -251,7 +253,7 @@ class _AppSidebarState extends State<AppSidebar> with SingleTickerProviderStateM
           children: [
             // User header with background image
             _buildSidebarHeader(theme),
-            
+
             // Menu items
             Expanded(
               child: ListView(
@@ -262,15 +264,21 @@ class _AppSidebarState extends State<AppSidebar> with SingleTickerProviderStateM
                     icon: Icons.settings,
                     title: 'Settings',
                     onTap: () {
-                      // Navigate to settings
+                      // Close sidebar
                       if (widget.onClose != null) {
                         widget.onClose!();
                       }
-                      Navigator.pop(context);
-                      // Add your navigation logic here
+                      // Navigator.pop(context);
+
+                      // Navigate to settings
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => const SettingsPage(),
+                        ),
+                      );
                     },
                   ),
-                  
+
                   // About
                   _buildMenuItem(
                     icon: Icons.info_outline,
@@ -284,20 +292,21 @@ class _AppSidebarState extends State<AppSidebar> with SingleTickerProviderStateM
                       // Add your navigation logic here
                     },
                   ),
-                  
+
                   // Divider
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 20, vertical: 10),
                     child: Divider(
                       color: theme.colorScheme.onSurface.withOpacity(0.1),
                     ),
                   ),
-                  
+
                   // Add more menu items here
                 ],
               ),
             ),
-            
+
             // Bottom section with app version
             Container(
               padding: const EdgeInsets.all(20),
@@ -326,31 +335,32 @@ class _AppSidebarState extends State<AppSidebar> with SingleTickerProviderStateM
       ),
     );
   }
-  
+
   Widget _buildSidebarHeader(ThemeData theme) {
     return BlocBuilder<AccountBloc, AccountState>(
       builder: (context, state) {
         String? profileImageUrl;
         String username = 'Guest';
         AccountType currentAccountType = AccountType.none;
-        
+
         if (state is AccountLoaded) {
           currentAccountType = state.selectedAccountType;
           profileImageUrl = state.profileImageUrl;
-          
+
           // Get username from accounts list
           final selectedAccount = state.availableAccounts.firstWhere(
             (account) => account.typeAcc == currentAccountType,
             orElse: () => Account(
               name: 'Guest',
               typeAcc: AccountType.none,
-              imageUrl: 'https://cdn-icons-png.flaticon.com/512/4140/4140037.png',
+              imageUrl:
+                  'https://cdn-icons-png.flaticon.com/512/4140/4140037.png',
             ),
           );
-          
+
           username = selectedAccount.name;
         }
-        
+
         return Stack(
           children: [
             // Background image or gradient
@@ -381,7 +391,7 @@ class _AppSidebarState extends State<AppSidebar> with SingleTickerProviderStateM
                     )
                   : null,
             ),
-            
+
             // Overlay for better text visibility
             Container(
               height: 200,
@@ -397,7 +407,7 @@ class _AppSidebarState extends State<AppSidebar> with SingleTickerProviderStateM
                 ),
               ),
             ),
-            
+
             // User info
             Positioned(
               bottom: 20,
@@ -416,9 +426,9 @@ class _AppSidebarState extends State<AppSidebar> with SingleTickerProviderStateM
                       borderWidth: 2,
                     ),
                   ),
-                  
+
                   const SizedBox(width: 15),
-                  
+
                   // Username
                   Expanded(
                     child: Column(
@@ -449,7 +459,7 @@ class _AppSidebarState extends State<AppSidebar> with SingleTickerProviderStateM
                 ],
               ),
             ),
-            
+
             // Background image edit button
             Positioned(
               top: 20,
@@ -475,7 +485,7 @@ class _AppSidebarState extends State<AppSidebar> with SingleTickerProviderStateM
                 ],
               ),
             ),
-            
+
             // Close sidebar button
             Positioned(
               top: 20,
@@ -501,7 +511,7 @@ class _AppSidebarState extends State<AppSidebar> with SingleTickerProviderStateM
                 ),
               ),
             ),
-            
+
             // Loading indicator (when changing background)
             if (_isLoadingImage)
               Container(
@@ -519,7 +529,7 @@ class _AppSidebarState extends State<AppSidebar> with SingleTickerProviderStateM
       },
     );
   }
-  
+
   Widget _buildMenuItem({
     required IconData icon,
     required String title,
@@ -528,7 +538,7 @@ class _AppSidebarState extends State<AppSidebar> with SingleTickerProviderStateM
     bool isActive = false,
   }) {
     final theme = Theme.of(context);
-    
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       child: Material(
@@ -540,8 +550,8 @@ class _AppSidebarState extends State<AppSidebar> with SingleTickerProviderStateM
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
-              color: isActive 
-                  ? theme.colorScheme.primary.withOpacity(0.1) 
+              color: isActive
+                  ? theme.colorScheme.primary.withOpacity(0.1)
                   : Colors.transparent,
               borderRadius: BorderRadius.circular(12),
             ),
@@ -559,28 +569,29 @@ class _AppSidebarState extends State<AppSidebar> with SingleTickerProviderStateM
                   child: Icon(
                     icon,
                     size: 20,
-                    color: isActive 
-                        ? theme.colorScheme.primary 
+                    color: isActive
+                        ? theme.colorScheme.primary
                         : theme.colorScheme.onSurface,
                   ),
                 ),
-                
+
                 const SizedBox(width: 16),
-                
+
                 // Title
                 Expanded(
                   child: Text(
                     title,
                     style: TextStyle(
                       fontSize: 16,
-                      fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
-                      color: isActive 
-                          ? theme.colorScheme.primary 
+                      fontWeight:
+                          isActive ? FontWeight.bold : FontWeight.normal,
+                      color: isActive
+                          ? theme.colorScheme.primary
                           : theme.colorScheme.onSurface,
                     ),
                   ),
                 ),
-                
+
                 // Trailing widget
                 if (trailing != null) trailing,
               ],
