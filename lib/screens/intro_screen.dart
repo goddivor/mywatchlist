@@ -1,10 +1,10 @@
 // ignore_for_file: library_private_types_in_public_api, deprecated_member_use
 
 import 'package:flutter/material.dart';
-import 'package:mywatchlist/screens/theme_settings.dart';
+import 'package:mywatchlist/screens/settings/language_settings.dart';
+import 'package:mywatchlist/screens/onboarding_trackers.dart';
+import 'package:mywatchlist/screens/settings/theme_settings.dart';
 import 'package:mywatchlist/widgets/background.dart';
-import 'package:mywatchlist/widgets/signin_widget.dart'; // Assurez-vous que cette classe existe
-// import 'package:mywatchlist/screens/home_screen.dart';
 
 class IntroScreen extends StatefulWidget {
   final int index;
@@ -29,7 +29,7 @@ class _IntroScreenState extends State<IntroScreen> {
 
   void changePage(int index) {
     pageController.animateToPage(index,
-        duration: const Duration(milliseconds: 500), curve: Curves.linear);
+        duration: const Duration(milliseconds: 500), curve: Curves.easeInOut);
     if (mounted) {
       setState(() {
         pageIndex = index;
@@ -63,10 +63,10 @@ class _IntroScreenState extends State<IntroScreen> {
               }
             },
             children: [
-              _page(),
-              _loginPage(),
-              _langPage(),
-              ThemeSettings(isIntroPage: true)
+              _welcomePage(),
+              const OnboardingTrackers(fromIntro: true),
+              const LanguageSettings(isIntroPage: true),
+              const ThemeSettings(isIntroPage: true)
             ],
           ),
           if (_showPageNavigator) _pageNavigator(),
@@ -75,58 +75,180 @@ class _IntroScreenState extends State<IntroScreen> {
     );
   }
 
-  Widget _loginPage() {
-    return const Center(
-      child: SigninWidget(),
-    );
-  }
-
-  Widget _langPage() {
-    return const Center(
-      child: Text("Language Page", style: TextStyle(fontSize: 24)),
-    );
-  }
-
-  Widget _page() {
+  Widget _welcomePage() {
+    final theme = Theme.of(context);
     return Stack(
       children: [
         Background(isNetworkImage: false, context: context, forceBg: true),
         Container(
           alignment: Alignment.topCenter,
-          padding: EdgeInsets.only(top: MediaQuery.of(context).size.height / 4),
+          padding: EdgeInsets.only(top: MediaQuery.of(context).size.height / 6),
           child: Column(
             children: [
-              const CircleAvatar(
-                backgroundImage: AssetImage('assets/images/dal-black-bg.png'),
-                radius: 48.0,
+              // App logo
+              Container(
+                height: 96,
+                width: 96,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.2),
+                      blurRadius: 15,
+                      offset: const Offset(0, 5),
+                    ),
+                  ],
+                ),
+                child: const CircleAvatar(
+                  backgroundImage: AssetImage('assets/images/mwl-black-bg.png'),
+                  radius: 48.0,
+                ),
               ),
-              const SizedBox(height: 30),
-              const Text("MyWatchList",
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+              
+              const SizedBox(height: 24),
+              
+              // App title with animation
+              TweenAnimationBuilder<double>(
+                tween: Tween(begin: 0.0, end: 1.0),
+                duration: const Duration(milliseconds: 800),
+                curve: Curves.easeOutCubic,
+                builder: (context, value, child) {
+                  return Opacity(
+                    opacity: value,
+                    child: Transform.translate(
+                      offset: Offset(0, 20 * (1 - value)),
+                      child: child,
+                    ),
+                  );
+                },
+                child: Text(
+                  "MyWatchList",
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: theme.colorScheme.onBackground,
+                  ),
+                ),
+              ),
             ],
           ),
         ),
+        
+        // Content
         Container(
           alignment: Alignment.topCenter,
           padding: EdgeInsets.only(
-              top: MediaQuery.of(context).size.height / 2, left: 15, right: 15),
+              top: MediaQuery.of(context).size.height / 2.5, left: 24, right: 24),
           child: SingleChildScrollView(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.center,
-              children: const [
-                SizedBox(height: 80),
-                Text(
-                  "The Unofficial Multi API App",
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
+              children: [
+                // Delayed animated content
+                TweenAnimationBuilder<double>(
+                  tween: Tween(begin: 0.0, end: 1.0),
+                  duration: const Duration(milliseconds: 1000),
+                  curve: Curves.easeOutCubic,
+                  builder: (context, value, child) {
+                    return Opacity(
+                      opacity: value,
+                      child: Transform.translate(
+                        offset: Offset(0, 30 * (1 - value)),
+                        child: child,
+                      ),
+                    );
+                  },
+                  child: Column(
+                    children: [
+                      // Title
+                      Text(
+                        "The Ultimate Anime, Manga & TV Shows Tracker",
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          color: theme.colorScheme.primary,
+                        ),
+                      ),
+                      
+                      const SizedBox(height: 24),
+                      
+                      // Features in a card
+                      Container(
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          color: theme.cardColor.withOpacity(0.8),
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.1),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          children: [
+                            _featureItem(
+                              icon: Icons.trending_up_rounded,
+                              title: "Track Your Anime & Manga",
+                              description: "Keep up with all your favorites across multiple services",
+                            ),
+                            
+                            const SizedBox(height: 16),
+                            
+                            _featureItem(
+                              icon: Icons.explore_rounded,
+                              title: "Discover New Content",
+                              description: "Find new anime and manga based on your preferences",
+                            ),
+                            
+                            const SizedBox(height: 16),
+                            
+                            _featureItem(
+                              icon: Icons.forum_rounded,
+                              title: "Join the Community",
+                              description: "Discuss your favorites in dedicated forums",
+                            ),
+                          ],
+                        ),
+                      ),
+                      
+                      const SizedBox(height: 24),
+                      
+                      // Get started button
+                      // SizedBox(
+                      //   width: double.infinity,
+                      //   child: ElevatedButton(
+                      //     onPressed: () => changePage(1),
+                      //     style: ElevatedButton.styleFrom(
+                      //       backgroundColor: theme.colorScheme.primary,
+                      //       foregroundColor: theme.colorScheme.onPrimary,
+                      //       padding: const EdgeInsets.symmetric(vertical: 16),
+                      //       shape: RoundedRectangleBorder(
+                      //         borderRadius: BorderRadius.circular(12),
+                      //       ),
+                      //       elevation: 4,
+                      //     ),
+                      //     child: Row(
+                      //       mainAxisAlignment: MainAxisAlignment.center,
+                      //       children: const [
+                      //         Text(
+                      //           "Get Started",
+                      //           style: TextStyle(
+                      //             fontSize: 18,
+                      //             fontWeight: FontWeight.bold,
+                      //           ),
+                      //         ),
+                      //         SizedBox(width: 8),
+                      //         Icon(Icons.arrow_forward_rounded),
+                      //       ],
+                      //     ),
+                      //   ),
+                      // ),
+                    ],
+                  ),
                 ),
-                SizedBox(height: 30),
-                Text("Keep track of your favorite anime/manga/shows",
-                    textAlign: TextAlign.center),
-                Text("- or -", textAlign: TextAlign.center),
-                Text("Surf through the forums to your hearts content.",
-                    textAlign: TextAlign.center),
               ],
             ),
           ),
@@ -135,91 +257,164 @@ class _IntroScreenState extends State<IntroScreen> {
     );
   }
 
-  Widget _pageNavigator() {
-    return Container(
-      alignment: Alignment.bottomCenter,
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-      child: Material(
-        borderRadius: BorderRadius.circular(32),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            _dots(),
-            if (pageIndex == 0)
-              Padding(
-                padding: const EdgeInsets.only(top: 5, bottom: 5, right: 15),
-                child: IconButton(
-                  onPressed: () {
-                    changePage(1);
-                  },
-                  icon: const Icon(Icons.arrow_forward_ios),
-                ),
-              ),
-            if (pageIndex != 0)
-              Expanded(
-                child: ButtonBar(
-                  buttonPadding: const EdgeInsets.fromLTRB(5, 0, 5, 5),
-                  children: [
-                    TextButton(
-                      onPressed: pageIndex == 0
-                          ? null
-                          : () => changePage(pageIndex - 1),
-                      child: const Text("Previous"),
-                    ),
-                    TextButton(
-                      onPressed:
-                          lastPage ? null : () => changePage(pageIndex + 1),
-                      child: Text(_nextButtonText),
-                    ),
-                  ],
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _dots() {
+  Widget _featureItem({required IconData icon, required String title, required String description}) {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: <Widget>[
-        Padding(
-          padding: const EdgeInsets.only(top: 0),
-          child: Opacity(
-            opacity: 1,
-            child: Container(
-              height: 20,
-              width: 100,
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-              decoration: BoxDecoration(
-                color: Colors.transparent,
-                borderRadius: BorderRadius.circular(23),
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Icon
+        Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(
+            icon,
+            color: Theme.of(context).colorScheme.primary,
+            size: 24,
+          ),
+        ),
+        
+        const SizedBox(width: 16),
+        
+        // Text content
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
               ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: <Widget>[
-                  for (int index = 0; index < pageLength; ++index) dot(index),
-                ],
+              const SizedBox(height: 4),
+              Text(
+                description,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                ),
               ),
-            ),
+            ],
           ),
         ),
       ],
     );
   }
 
-  Widget dot(int index) {
+  Widget _pageNavigator() {
+    final theme = Theme.of(context);
+    return Container(
+      alignment: Alignment.bottomCenter,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      child: Material(
+        borderRadius: BorderRadius.circular(32),
+        elevation: 4,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+          decoration: BoxDecoration(
+            color: theme.cardColor,
+            borderRadius: BorderRadius.circular(32),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              _dots(),
+              if (pageIndex == 0)
+                IconButton(
+                  onPressed: () => changePage(1),
+                  icon: Icon(
+                    Icons.arrow_forward_ios,
+                    color: theme.colorScheme.primary,
+                  ),
+                  style: IconButton.styleFrom(
+                    backgroundColor: theme.colorScheme.primary.withOpacity(0.1),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                ),
+              if (pageIndex != 0)
+                Row(
+                  children: [
+                    TextButton(
+                      onPressed: pageIndex == 0
+                          ? null
+                          : () => changePage(pageIndex - 1),
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                      child: Text(
+                        "Previous",
+                        style: TextStyle(
+                          color: theme.colorScheme.primary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    ElevatedButton(
+                      onPressed: lastPage ? null : () => changePage(pageIndex + 1),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: theme.colorScheme.primary,
+                        foregroundColor: theme.colorScheme.onPrimary,
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                      child: Text(_nextButtonText),
+                    ),
+                  ],
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _dots() {
+    final theme = Theme.of(context);
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: <Widget>[
+        Container(
+          height: 36,
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              for (int index = 0; index < pageLength; ++index) _dot(index),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _dot(int index) {
+    final theme = Theme.of(context);
+    final isActive = pageIndex == index;
+    
     return AnimatedContainer(
-      curve: Curves.easeIn,
+      margin: const EdgeInsets.symmetric(horizontal: 4),
       duration: const Duration(milliseconds: 200),
-      width: pageIndex == index ? 10 : 5,
-      height: pageIndex == index ? 10 : 5,
+      height: isActive ? 10 : 6,
+      width: isActive ? 24 : 6,
       decoration: BoxDecoration(
-        color: Theme.of(context).primaryColor,
-        shape: BoxShape.circle,
+        color: isActive 
+            ? theme.colorScheme.primary 
+            : theme.colorScheme.primary.withOpacity(0.3),
+        borderRadius: BorderRadius.circular(12),
       ),
     );
   }

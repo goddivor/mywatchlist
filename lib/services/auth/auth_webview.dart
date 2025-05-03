@@ -42,7 +42,7 @@ class _AuthWebViewState extends State<AuthWebView> {
     return Scaffold(
       appBar: AppBar(
         // ignore: prefer_const_constructors
-        title: Text('MAL Authenticatioin...'),
+        title: Text('Authenticatioin...'),
       ),
       body: WebViewWidget(controller: _controller),
     );

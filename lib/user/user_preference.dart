@@ -6,42 +6,72 @@ class UserPreference {
   static const String _keyFirstTime = "first_time";
   static const String _keyLanguage = "language";
   static const String _keyTheme = "theme";
+  static const String _keyBgImagePath = "bg_image_path";
+  static const String _keyShowBg = "show_bg";
 
   final Future<SharedPreferences> _prefs = SharedPreferences.getInstance();
 
-  // Vérifier si c'est la première ouverture
+  // Check if it's the first app launch
   Future<bool> isFirstTime() async {
     final prefs = await _prefs;
     return prefs.getBool(_keyFirstTime) ?? true;
   }
 
-  // Définir la première ouverture à false après l'onboarding
+  // Set first launch to false after onboarding
   Future<void> setFirstTimeFalse() async {
     final prefs = await _prefs;
     await prefs.setBool(_keyFirstTime, false);
   }
 
-  // Obtenir la langue préférée
+  // Get preferred language
   Future<String> getLanguage() async {
     final prefs = await _prefs;
-    return prefs.getString(_keyLanguage) ?? "fr";
+    return prefs.getString(_keyLanguage) ?? "en";
   }
 
-  // Définir la langue préférée
+  // Set preferred language
   Future<void> setLanguage(String language) async {
     final prefs = await _prefs;
     await prefs.setString(_keyLanguage, language);
   }
 
-  // Obtenir le thème (clair ou sombre)
+  // Get theme preference (light or dark)
   Future<bool> isDarkTheme() async {
     final prefs = await _prefs;
     return prefs.getBool(_keyTheme) ?? false;
   }
 
-  // Définir le thème
+  // Set theme preference
   Future<void> setTheme(bool isDark) async {
     final prefs = await _prefs;
     await prefs.setBool(_keyTheme, isDark);
+  }
+  
+  // Get background image path
+  Future<String?> getBackgroundImagePath() async {
+    final prefs = await _prefs;
+    return prefs.getString(_keyBgImagePath);
+  }
+  
+  // Set background image path
+  Future<void> setBackgroundImagePath(String? path) async {
+    final prefs = await _prefs;
+    if (path != null) {
+      await prefs.setString(_keyBgImagePath, path);
+    } else {
+      await prefs.remove(_keyBgImagePath);
+    }
+  }
+  
+  // Get show background preference
+  Future<bool> getShowBackground() async {
+    final prefs = await _prefs;
+    return prefs.getBool(_keyShowBg) ?? true;
+  }
+  
+  // Set show background preference
+  Future<void> setShowBackground(bool show) async {
+    final prefs = await _prefs;
+    await prefs.setBool(_keyShowBg, show);
   }
 }
