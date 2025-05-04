@@ -1,125 +1,164 @@
+// ignore_for_file: library_private_types_in_public_api
+
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mywatchlist/pages/login_page.dart';
+import 'package:mywatchlist/screens/open_screen.dart';
+import 'package:flutter_phoenix/flutter_phoenix.dart';
+import 'package:mywatchlist/services/api/Jikan/jikan_api.dart';
+import 'package:mywatchlist/services/api/MAL/mal_api.dart';
+import 'package:mywatchlist/services/api/MAL/scrapper/mal_scrapper.dart';
+import 'package:mywatchlist/services/auth/simkl_auth.dart';
+import 'package:app_links/app_links.dart';
+import 'package:mywatchlist/user/MAL/mal_home_preferences_bloc.dart';
+import 'package:mywatchlist/user/accounts/account_bloc.dart';
+import 'package:mywatchlist/user/accounts/provider/account_manager_singleton.dart';
+import 'package:mywatchlist/user/language/language_bloc.dart';
+import 'package:mywatchlist/user/language/language_event.dart';
+import 'package:mywatchlist/user/requests/requests_bloc.dart';
+import 'package:mywatchlist/user/theme/theme_bloc.dart';
+import 'package:mywatchlist/user/theme/theme_event.dart';
+import 'package:mywatchlist/user/theme/theme_state.dart';
+import 'package:mywatchlist/user/user.dart';
+import 'package:path/path.dart';
+import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-void main() {
-  runApp(const MyApp());
-}
+/// Global UserData
+late UserMal usermal;
+final int homeIndex = 0;
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
 
-  // This widget is the root of your application.
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
+  // Load shared preferences
+  final sharedPreferences = await SharedPreferences.getInstance();
+
+  // Initialize user data
+  await UserMal.instance.loadFromPreferences();
+  await UserAnilist.instance.loadFromPreferences();
+  await UserKitsu.instance.loadFromPreferences();
+  await UserSimkl.instance.loadFromPreferences();
+
+  // Initialize APIs
+  final jikanApi = JikanApi();
+  final malApi = MalApi();
+  final malScraper = MalScraper();
+
+  // Initialize blocs
+  final accountBloc = AccountBloc();
+  final themeBloc = ThemeBloc(prefs: sharedPreferences);
+  final languageBloc = LanguageBloc(prefs: sharedPreferences);
+
+  // Load initial data for blocs
+  accountBloc.add(LoadAccountEvent());
+  themeBloc.add(ThemeLoadStarted());
+  languageBloc.add(LanguageLoadStarted());
+
+  // Mettre à jour le singleton lorsqu'il y a un changement d'état dans AccountBloc
+  accountBloc.stream.listen((state) {
+    if (state is AccountLoaded) {
+      AccountManagerSingleton().updateAccountType(state.selectedAccountType);
+    }
+  });
+
+  runApp(
+    Phoenix(
+      child: MultiProvider(
+        providers: [
+          ChangeNotifierProvider(create: (_) => UserMal()),
+          ChangeNotifierProvider(create: (_) => UserAnilist()),
+          ChangeNotifierProvider(create: (_) => UserKitsu()),
+          ChangeNotifierProvider(create: (_) => UserSimkl()),
+        ],
+        child: MultiBlocProvider(
+          providers: [
+            BlocProvider(
+                create: (context) => AccountBloc()..add(LoadAccountEvent())),
+            BlocProvider(create: (context) => themeBloc),
+            BlocProvider(create: (context) => languageBloc),
+            BlocProvider(
+              create: (context) => RequestsBloc(
+                malScraper: malScraper,
+                jikanApi: jikanApi,
+                malApi: malApi,
+              ),
+            ),
+            BlocProvider(
+                create: (context) =>
+                    HomePreferencesBloc()..add(LoadHomePreferencesEvent())),
+            // I will add another BlocProvider for requests here
+          ],
+          child: MyWatchListApp(),
+        ),
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
-    );
-  }
+    ),
+  );
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
+class MyWatchListApp extends StatefulWidget {
+  const MyWatchListApp({super.key});
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  _MyWatchListAppState createState() => _MyWatchListAppState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+class _MyWatchListAppState extends State<MyWatchListApp> {
+  StreamSubscription? _sub;
 
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
+  @override
+  void initState() {
+    super.initState();
+    final appLinks = AppLinks();
+    _sub = appLinks.uriLinkStream.listen((Uri? uri) {
+      if (uri != null && uri.toString().startsWith('mywatchlist://callback')) {
+        SimklAuth().handleSimklAuthRedirect(
+            uri); // Traitement de l'authentification Simkl
+      }
     });
   }
 
   @override
+  void dispose() {
+    _sub?.cancel();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
-    return Scaffold(
-      appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
-      ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text(
-              'You have pushed the button this many times:',
-            ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
+    return BlocBuilder<ThemeBloc, ThemeState>(
+      builder: (context, themeState) {
+        return MaterialApp(
+          debugShowCheckedModeBanner: false,
+          title: 'MyWatchList',
+          // Apply the selected theme
+          theme: themeState.themeData,
+          home: const OpenScreen(),
+          routes: {
+            '/login': (context) => const LoginPage(),
+          },
+        );
+      },
     );
   }
+}
+
+// class MyWatchListApp extends StatelessWidget {
+//   const MyWatchListApp({super.key});
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return MaterialApp(
+//       debugShowCheckedModeBanner: false,
+//       title: 'Flutter Demo',
+//       home: OpenScreen(),
+//     );
+//   }
+// }
+
+// Fonction pour redémarrer l'application
+void restartApp(BuildContext context) {
+  Phoenix.rebirth(context);
 }
