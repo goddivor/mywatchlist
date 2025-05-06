@@ -27,6 +27,7 @@ import 'package:mywatchlist/widgets/recommanimewidget.dart';
 import 'package:mywatchlist/widgets/relatedanimewidget.dart';
 import 'package:mywatchlist/widgets/scorestatisticswidget.dart';
 import 'package:mywatchlist/widgets/shimmercolor.dart';
+import 'package:mywatchlist/widgets/show_featured.dart';
 import 'package:mywatchlist/widgets/show_news.dart';
 import 'package:mywatchlist/widgets/slivers.dart';
 import 'package:mywatchlist/widgets/synopsis_widget.dart';
@@ -431,10 +432,9 @@ class _ContentDetailedScreenState extends State<ContentDetailedScreen>
           contentDetailed != null,
           () => VisibleSection(
             'Featured Articles',
-            Container(
-              padding: const EdgeInsets.all(16),
-              height: 500,
-              child: const Text('This is the featured articles section.'),
+            ShowAnimeFeatured(
+              animeId: _id,
+              animeName: contentDetailed?.title ?? widget.node?.title ?? "",
             ),
           ),
         ),
@@ -758,14 +758,15 @@ class _ContentDetailedScreenState extends State<ContentDetailedScreen>
       width: 40,
       height: 40,
       child: ShadowButton(
-      padding: EdgeInsets.zero,
-      shape: const CircleBorder(),
-      onPressed: () => (),
-      backgroundColor: Theme.of(context).cardColor, // I'll add _openMoreInfo() later
-      child: Icon(
-        Icons.info,
-        color: Theme.of(context).iconTheme.color,
-      ),
+        padding: EdgeInsets.zero,
+        shape: const CircleBorder(),
+        onPressed: () => (),
+        backgroundColor:
+            Theme.of(context).cardColor, // I'll add _openMoreInfo() later
+        child: Icon(
+          Icons.info,
+          color: Theme.of(context).iconTheme.color,
+        ),
       ),
     );
   }

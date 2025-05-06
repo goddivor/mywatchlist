@@ -5,6 +5,7 @@ import 'package:html/dom.dart';
 import 'package:html_unescape/html_unescape_small.dart';
 import 'package:mywatchlist/constants/constants.dart';
 import 'package:mywatchlist/services/api/MAL/scrapper/anime_detailed_html.dart';
+import 'package:mywatchlist/services/api/MAL/scrapper/anime_featured.dart';
 import 'package:mywatchlist/services/api/MAL/scrapper/anime_featured_tags.dart';
 import 'package:mywatchlist/services/api/MAL/scrapper/anime_news_featured.dart';
 import 'package:mywatchlist/services/api/MAL/scrapper/anime_news_tags.dart';
@@ -858,5 +859,66 @@ class HtmlParsers {
     }).toList();
 
     return GenreCategoryList(categories: categories);
+  }
+
+// Helper function to parse the anime featured articles
+  static AnimeFeaturedResult parseAnimeFeaturedArticles(Document document) {
+    var featuredElements = document.querySelectorAll('.news-unit.clearfix');
+
+    var featuredArticles = featuredElements
+        .map((element) {
+          try {
+            // Get the title and URL
+            var titleElement = element.querySelector('.title a');
+            var title = titleElement?.text.trim() ?? '';
+            var url = titleElement?.attributes['href']?.trim() ?? '';
+
+            // Get the text
+            var textElement = element.querySelector('.text');
+            var text = textElement?.text.trim() ?? '';
+
+            // Get the image URL
+            var imageElement = element.querySelector('.image-link img');
+            var imageUrl = imageElement?.attributes['data-src'] ??
+                imageElement?.attributes['src'] ??
+                '';
+
+            // Get the author info
+            var authorElement = element.querySelector('.information .info a');
+            var author = authorElement?.text.trim() ?? '';
+            var authorUrl = authorElement?.attributes['href']?.trim() ?? '';
+
+            // Get views count
+            var viewsElement = element.querySelector('.information .pv');
+            var viewsText = viewsElement?.text.trim() ?? '0';
+            var viewsMatch = RegExp(r'(\d+)').firstMatch(viewsText);
+            var views = viewsMatch != null
+                ? int.tryParse(viewsMatch.group(1) ?? '0') ?? 0
+                : 0;
+
+            // Get tags
+            var tagElements = element.querySelectorAll('.tags a.tag');
+            var tags = tagElements.map((e) => e.text.trim()).toList();
+
+            return AnimeFeatured(
+              title: title,
+              text: text,
+              url: url,
+              imageUrl: imageUrl,
+              author: author,
+              authorUrl: authorUrl,
+              views: views,
+              tags: tags,
+            );
+          } catch (e) {
+            debugPrint('Error parsing featured article: $e');
+            return null;
+          }
+        })
+        .where((element) => element != null)
+        .cast<AnimeFeatured>()
+        .toList();
+
+    return AnimeFeaturedResult(featuredArticles: featuredArticles);
   }
 }

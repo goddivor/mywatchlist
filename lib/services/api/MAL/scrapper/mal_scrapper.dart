@@ -3,6 +3,7 @@ import 'package:html/parser.dart' as parser;
 import 'package:mywatchlist/constants/constants.dart';
 import 'package:mywatchlist/services/api/MAL/scrapper/html_parsers.dart';
 import 'package:mywatchlist/services/api/MAL/scrapper/http_connect.dart';
+import 'package:mywatchlist/utils/url_formatter.dart';
 
 class MalScraper {
   //get anime news by html
@@ -168,4 +169,19 @@ class MalScraper {
     );
     return studioListContent;
   }
+
+  
+// Ajouter cette méthode
+Future<Map<String, dynamic>?> getAnimeFeaturedArticles(
+    int animeId, String animeName) async {
+  final formattedName = animeName.formatForUrl();
+  final featuredUrl = '${Constants.malanimeUrl}/$animeId/$formattedName/featured';
+  
+  final featuredContent = await HttpConnect.htmlPage(
+    featuredUrl,
+    HtmlParsers.parseAnimeFeaturedArticles,
+  );
+  
+  return featuredContent;
+}
 }
