@@ -95,27 +95,22 @@ class ReviewDetailPage extends StatelessWidget {
               ),
               
               // Score
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
-                ),
-                decoration: BoxDecoration(
-                  color: scoreColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: scoreColor,
-                    width: 2,
+              Row(
+                children: [
+                  Text(
+                    '$score',
+                    style: TextStyle(
+                      color: scoreColor,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 24,
+                    ),
                   ),
-                ),
-                child: Text(
-                  '$score/10',
-                  style: TextStyle(
-                    color: scoreColor,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 18,
+                  const SizedBox(width: 4),
+                  Image.asset(
+                    'assets/images/star.png',
+                    height: 24,
                   ),
-                ),
+                ],
               ),
             ],
           ),
@@ -123,32 +118,39 @@ class ReviewDetailPage extends StatelessWidget {
           const SizedBox(height: 16),
           
           // Tags
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              if (review.isPreliminary == true)
-                _buildTag('Preliminary', theme.colorScheme.primary),
-                
-              if (review.isSpoiler == true)
-                _buildTag('Spoiler', Colors.red),
-                
-              // Add reaction tags if present
-              if ((review.reactions?.funny ?? 0) > 0)
-                _buildTag('Funny (${review.reactions!.funny})', Colors.orange),
-                
-              if ((review.reactions?.informative ?? 0) > 0)
-                _buildTag('Informative (${review.reactions!.informative})', Colors.blue),
-                
-              if ((review.reactions?.wellWritten ?? 0) > 0)
-                _buildTag('Well-written (${review.reactions!.wellWritten})', Colors.deepPurple),
-                
-              if ((review.reactions?.creative ?? 0) > 0)
-                _buildTag('Creative (${review.reactions!.creative})', Colors.teal),
-                
-              if ((review.reactions?.overall ?? 0) > 0)
-                _buildTag('Overall (${review.reactions!.overall})', Colors.grey),
-            ],
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                if (review.isPreliminary == true)
+                  _buildTag('Preliminary', theme.colorScheme.primary, Icons.hourglass_empty),
+                  
+                if (review.isSpoiler == true)
+                  _buildTag('Spoiler', Colors.red, Icons.warning),
+                  
+                // Add reaction tags if present
+                if ((review.reactions?.nice ?? 0) > 0)
+                  _buildTag('Nice', Colors.blue, Icons.thumb_up, review.reactions!.nice!),
+                  
+                if ((review.reactions?.loveIt ?? 0) > 0)
+                  _buildTag('Love it', Colors.pink, Icons.favorite, review.reactions!.loveIt!),
+                  
+                if ((review.reactions?.funny ?? 0) > 0)
+                  _buildTag('Funny', Colors.orange, Icons.mood, review.reactions!.funny!),
+                  
+                if ((review.reactions?.confusing ?? 0) > 0)
+                  _buildTag('Confusing', Colors.purple, Icons.question_mark, review.reactions!.confusing!),
+                  
+                if ((review.reactions?.informative ?? 0) > 0)
+                  _buildTag('Informative', Colors.blue, Icons.info, review.reactions!.informative!),
+                  
+                if ((review.reactions?.wellWritten ?? 0) > 0)
+                  _buildTag('Well-written', Colors.deepPurple, Icons.edit, review.reactions!.wellWritten!),
+                  
+                if ((review.reactions?.creative ?? 0) > 0)
+                  _buildTag('Creative', Colors.teal, Icons.auto_awesome, review.reactions!.creative!),
+              ],
+            ),
           ),
           
           const SizedBox(height: 16),
@@ -158,7 +160,7 @@ class ReviewDetailPage extends StatelessWidget {
           Expanded(
             child: SingleChildScrollView(
               child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8.0),              
+                padding: const EdgeInsets.symmetric(vertical: 8.0),
                 child: Text(
                   review.review ?? 'Aucun contenu de critique',
                   style: theme.textTheme.bodyLarge,
@@ -189,21 +191,47 @@ class ReviewDetailPage extends StatelessWidget {
     );
   }
   
-  Widget _buildTag(String text, Color color) {
+  Widget _buildTag(String text, Color color, IconData icon, [int? count]) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      margin: const EdgeInsets.only(right: 8),
       decoration: BoxDecoration(
         color: color.withOpacity(0.1),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: color.withOpacity(0.3)),
       ),
-      child: Text(
-        text,
-        style: TextStyle(
-          fontSize: 14,
-          color: color,
-          fontWeight: FontWeight.w500,
-        ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 16, color: color),
+          const SizedBox(width: 6),
+          Text(
+            text,
+            style: TextStyle(
+              fontSize: 14,
+              color: color,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          if (count != null) ...[
+            const SizedBox(width: 6),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                count.toString(),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: color,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }

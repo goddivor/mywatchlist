@@ -1,4 +1,4 @@
-// lib/widgets/review/review_filter_state.dart
+// lib/widgets/review/review_filter_state.dart (mise à jour)
 
 import 'package:flutter/material.dart';
 import 'package:mywatchlist/widgets/review/review_filters.dart';
@@ -16,10 +16,12 @@ class ReviewFilterState extends ChangeNotifier {
   
   ReviewSortType _sortType = ReviewSortType.dateDesc;
   Map<int, int>? _scoreDistribution;
+  int? _selectedScore;
   
   ReviewSortType get sortType => _sortType;
   Map<ReviewFilterType, FilterState> get filterStates => _filterStates;
   Map<int, int>? get scoreDistribution => _scoreDistribution;
+  int? get selectedScore => _selectedScore;
   
   void setSortType(ReviewSortType sortType) {
     _sortType = sortType;
@@ -28,6 +30,11 @@ class ReviewFilterState extends ChangeNotifier {
   
   void setScoreDistribution(Map<int, int> distribution) {
     _scoreDistribution = distribution;
+    notifyListeners();
+  }
+  
+  void setSelectedScore(int? score) {
+    _selectedScore = score;
     notifyListeners();
   }
   

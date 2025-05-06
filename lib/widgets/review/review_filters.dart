@@ -1,4 +1,4 @@
-// lib/widgets/review/review_filters.dart
+// lib/widgets/review/review_filters.dart (suite)
 
 enum ReviewSortType {
   dateDesc,
@@ -11,7 +11,10 @@ enum ReviewFilterType {
   recommended,
   mixedFeelings,
   notRecommended,
+  nice,
+  loveIt,
   funny,
+  confusing,
   informative,
   wellWritten,
   creative,
@@ -23,13 +26,19 @@ extension ReviewFilterTypeExtension on ReviewFilterType {
   String get displayName {
     switch (this) {
       case ReviewFilterType.recommended:
-        return 'Recommended';
+        return 'Recommandé';
       case ReviewFilterType.mixedFeelings:
-        return 'Mixed Feelings';
+        return 'Avis mitigé';
       case ReviewFilterType.notRecommended:
-        return 'Not Recommended';
+        return 'Non recommandé';
+      case ReviewFilterType.nice:
+        return 'Nice';
+      case ReviewFilterType.loveIt:
+        return 'Love it';
       case ReviewFilterType.funny:
         return 'Funny';
+      case ReviewFilterType.confusing:
+        return 'Confusing';
       case ReviewFilterType.informative:
         return 'Informative';
       case ReviewFilterType.wellWritten:
