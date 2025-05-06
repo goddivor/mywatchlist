@@ -1,11 +1,16 @@
 // ignore_for_file: deprecated_member_use, unnecessary_const, unnecessary_null_comparison, unnecessary_this, constant_identifier_names
 
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:mywatchlist/generated/l10n.dart';
+import 'package:mywatchlist/services/api/MAL/mal_anime.dart';
+import 'package:mywatchlist/widgets/custombutton.dart';
 import 'dart:ui' as ui;
 
 import 'package:mywatchlist/widgets/shimmercolor.dart';
 import 'package:mywatchlist/widgets/slivers.dart';
+import 'package:scroll_to_index/scroll_to_index.dart';
+import 'package:shimmer/shimmer.dart';
 
 enum AccountType {
   none,
@@ -414,6 +419,11 @@ extension StringExtension on String {
     return "${this[0].toUpperCase()}${substring(1)}";
   }
 
+  String? capitalise() {
+    if (isEmpty) return this;
+    return "${this[0].toUpperCase()}${substring(1)}";
+  }
+
   String? capitalizeAll() {
     if (this == null) return null;
     var split = this.split(" ");
@@ -551,7 +561,6 @@ bool shouldUpdateContent(
   }
 }
 
-
 Color getStatusColor(int index) {
   switch (index) {
     case 0:
@@ -590,7 +599,6 @@ Widget loadingError() {
   );
 }
 
-
 Center _logoImage([double? height = 50.0, double? width = 50.0]) {
   return Center(
     child: ClipRRect(
@@ -602,4 +610,484 @@ Center _logoImage([double? height = 50.0, double? width = 50.0]) {
       ),
     ),
   );
+}
+
+Widget loadingText(BuildContext context) {
+  final shimmerColors = ShimmerColors.fromContext(context);
+  return Padding(
+    padding: const EdgeInsets.fromLTRB(15, 5, 15, 60),
+    child: Shimmer.fromColors(
+        baseColor: shimmerColors.baseColor,
+        highlightColor: shimmerColors.highlightColor,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(
+              height: 20,
+            ),
+            Container(
+              width: 200,
+              height: 15,
+              decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(13),
+                  color: Theme.of(context).dividerColor),
+            ),
+            const SizedBox(
+              height: 20,
+            ),
+            Container(
+              width: 160,
+              height: 15,
+              decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(13),
+                  color: Theme.of(context).dividerColor),
+            ),
+            const SizedBox(
+              height: 20,
+            ),
+            Container(
+              width: 300,
+              height: 15,
+              decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(13),
+                  color: Theme.of(context).dividerColor),
+            )
+          ],
+        )),
+  );
+}
+
+Widget genresWidget(List<Genre> genres, String category, BuildContext context,
+    {TextAlign textAlign = TextAlign.center}) {
+  plainButtonBuild(Genre e, [String additional = '']) => PlainButton(
+        onPressed: () => onGenrePress(e, category, context),
+        padding: const EdgeInsets.symmetric(vertical: 0, horizontal: 5),
+        child: Text(
+          convertGenre(e, category).replaceAll("_", " "),
+          style: const TextStyle(fontSize: 12.0),
+        ),
+      );
+  final length = genres.length;
+  return RichText(
+    textAlign: textAlign,
+    text: TextSpan(
+        children: genres.asMap().entries.map((e) {
+      return TextSpan(
+        children: [
+          WidgetSpan(
+              child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 3),
+            child: plainButtonBuild(e.value),
+          )),
+          if (length != (e.key + 1))
+            WidgetSpan(
+              child: SizedBox(
+                width: 10.0,
+                child: PlainButton(
+                  onPressed: () {},
+                  padding: EdgeInsets.zero,
+                  child: const Text('·'),
+                ),
+              ),
+            ),
+        ],
+      );
+    }).toList()),
+  );
+}
+
+String convertGenre(Genre g, [String category = "anime"]) {
+  // var genres = category.equals("anime") ? Mal.animeGenres : Mal.mangaGenres;
+  // var genre = genres[g.id];
+  // if (genre == null) {
+  // genre = g.name;
+  // }
+  return g.name;
+}
+
+void onGenrePress(Genre e, String category, BuildContext context) {
+  // Navigate to the genre page
+  // Navigator.push(
+  //   context,
+  //   MaterialPageRoute(
+  //     builder: (context) => GenrePage(
+  //       genre: e,
+  //       category: category,
+  //     ),
+  //   ),
+  // );
+}
+
+bool nullOrEmpty(dynamic list) {
+  if (list == null) return true;
+  if (list is! List) return true;
+  if (list.isEmpty) return true;
+  return false;
+}
+
+String formatText(String text) {
+  // Remplace les retours à la ligne (\n) et les retours chariot (\r\n) par des espaces
+  return text.replaceAll(RegExp(r'(\r\n|\n|\r)'), ' ');
+}
+
+extension ListExtension<T> on List<T> {
+  T? tryAt([int index = 0]) {
+    if (this == null) null;
+    if (index < 0) return null;
+    if (index >= length) return null;
+    try {
+      return elementAt(index);
+    } catch (e) {
+      return null;
+    }
+  }
+}
+
+Widget conditional({
+  Key? key,
+  required bool on,
+  required Widget child,
+  required Widget Function(Widget child) parent,
+}) {
+  if (on) {
+    return parent(child);
+  } else {
+    return child;
+  }
+}
+
+const invalidUserNames = ['MyAnimeList', 'removed-user'];
+
+String displayTimeAgo(DateTime date, {bool numericDates = true}) {
+  final date2 = DateTime.now();
+  final difference = date2.difference(date);
+
+  if ((difference.inDays / 365).floor() >= 2) {
+    return '${(difference.inDays / 365).floor()} ${Intl.message(
+      'years ago',
+      name: 'years_ago',
+      desc: '',
+      args: [],
+    )}';
+  } else if ((difference.inDays / 365).floor() >= 1) {
+    return (numericDates)
+        ? Intl.message(
+            'an year ago',
+            name: 'year_ago',
+            desc: '',
+            args: [],
+          )
+        : Intl.message(
+            'Last year',
+            name: 'Last_year',
+            desc: '',
+            args: [],
+          );
+  } else if ((difference.inDays / 30).floor() >= 2) {
+    return '${(difference.inDays / 30).floor()} ${Intl.message(
+      'months ago',
+      name: 'months_ago',
+      desc: '',
+      args: [],
+    )}';
+  } else if ((difference.inDays / 30).floor() >= 1) {
+    return (numericDates)
+        ? Intl.message(
+            'a month ago',
+            name: 'month_ago',
+            desc: '',
+            args: [],
+          )
+        : Intl.message(
+            'Last month',
+            name: 'Last_month',
+            desc: '',
+            args: [],
+          );
+  } else if ((difference.inDays / 7).floor() >= 2) {
+    return '${(difference.inDays / 7).floor()}  ${Intl.message(
+      'weeks ago',
+      name: 'weeks_ago',
+      desc: '',
+      args: [],
+    )}';
+  } else if ((difference.inDays / 7).floor() >= 1) {
+    return (numericDates)
+        ? Intl.message(
+            'a week ago',
+            name: 'week_ago',
+            desc: '',
+            args: [],
+          )
+        : Intl.message(
+            'Last week',
+            name: 'Last_week',
+            desc: '',
+            args: [],
+          );
+  } else if (difference.inDays >= 2) {
+    return '${difference.inDays}  ${Intl.message(
+      'days ago',
+      name: 'days_ago',
+      desc: '',
+      args: [],
+    )}';
+  } else if (difference.inDays >= 1) {
+    return (numericDates)
+        ? Intl.message(
+            'a day ago',
+            name: 'day_ago',
+            desc: '',
+            args: [],
+          )
+        : Intl.message(
+            'Yesterday',
+            name: 'Yesterday',
+            desc: '',
+            args: [],
+          );
+  } else if (difference.inHours >= 2) {
+    return '${difference.inHours}  ${Intl.message(
+      'hours ago',
+      name: 'hours_ago',
+      desc: '',
+      args: [],
+    )}';
+  } else if (difference.inHours >= 1) {
+    return Intl.message(
+      'An hour ago',
+      name: 'hour_ago',
+      desc: '',
+      args: [],
+    );
+  } else if (difference.inMinutes >= 2) {
+    return '${difference.inMinutes}  ${Intl.message(
+      'minutes ago',
+      name: 'minutes_ago',
+      desc: '',
+      args: [],
+    )}';
+  } else if (difference.inMinutes >= 1) {
+    return Intl.message(
+      'a minute ago',
+      name: 'minute_ago',
+      desc: '',
+      args: [],
+    );
+  } else if (difference.inSeconds >= 3) {
+    return '${difference.inSeconds}  ${Intl.message(
+      'seconds ago',
+      name: 'seconds_ago',
+      desc: '',
+      args: [],
+    )}';
+  } else {
+    return Intl.message(
+      'Just now',
+      name: 'Just_now',
+      desc: '',
+      args: [],
+    );
+  }
+}
+
+int getStatusColorInt(int i) {
+  switch (i) {
+    case 0:
+      return Colors.green.value;
+    case 1:
+      return Colors.blue.value;
+    case 2:
+      return Colors.orange.value;
+    case 3:
+      return Colors.red.value;
+    case 4:
+      return Colors.brown.value;
+    default:
+      return Colors.grey.value;
+  }
+}
+
+enum TabType {
+  Synopsis,
+  Media,
+  Related,
+  Adaptations,
+  Reviews,
+  Recommendations,
+  Interest_Stacks,
+  Characters,
+  Forums,
+  Pictures,
+  Related_Anime,
+  News,
+  Featured_Articles,
+  User_Updates,
+  Stats,
+  ScoreStats,
+  More_Info,
+}
+
+Widget loadingGraph(BuildContext context) {
+  final shimmerColors = ShimmerColors.fromContext(context);
+  return Padding(
+    padding: const EdgeInsets.all(15),
+    child: Shimmer.fromColors(
+      baseColor: shimmerColors.baseColor,
+      highlightColor: shimmerColors.highlightColor,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: List.generate(5, (index) {
+          // Créer des barres de hauteurs variables pour simuler un graphique
+          double height =
+              (index + 1) * 40.0; // Chaque barre a une hauteur différente
+          return Container(
+            width: 20, // Largeur fixe des barres
+            height: height,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(8),
+              color: Theme.of(context).dividerColor,
+            ),
+          );
+        }),
+      ),
+    ),
+  );
+}
+
+Widget wrapScrollTag({
+  required int index,
+  required Widget child,
+  required AutoScrollController controller,
+  Color? highlightColor,
+}) {
+  return AutoScrollTag(
+      key: ValueKey(index),
+      controller: controller,
+      index: index,
+      highlightColor: highlightColor,
+      child: child);
+}
+
+Widget loadingInner() {
+  return Center(
+    child: Stack(
+      children: [
+        const Center(
+          child: SizedBox(
+            width: 70,
+            height: 70,
+            child: CircularProgressIndicator(
+              strokeWidth: .8,
+              backgroundColor: Colors.white,
+              valueColor: AlwaysStoppedAnimation(Color(0xff757575)),
+            ),
+          ),
+        ),
+        _logoImage()
+      ],
+    ),
+  );
+}
+
+Color getAnimeStatusColor(String? status) {
+  // Vérifie si le status existe dans la map
+  if (myAnimeStatusIntMap.containsKey(status) && status != null) {
+    // Récupère l'index correspondant au status
+    int index = myAnimeStatusIntMap[status]!;
+    // Utilise cet index pour obtenir la couleur correspondante
+    return getStatusColor(index);
+  } else {
+    // Si le status n'existe pas, retourne une couleur par défaut (gris)
+    return Colors.grey;
+  }
+}
+
+Map<String, String> myAnimeStatusMap = {
+  "watching": "Watching",
+  "completed": "Completed",
+  "on_hold": "On Hold",
+  "dropped": "Dropped",
+  "plan_to_watch": "Plan to Watch"
+};
+
+Map<String, int> myAnimeStatusIntMap = {
+  "watching": 0,
+  "completed": 1,
+  "on_hold": 2,
+  "dropped": 3,
+  "plan_to_watch": 4
+};
+
+Widget loadingCenter({
+  double? width,
+  double containerSide = 20,
+}) {
+  return Center(
+    child: SizedBox(
+      width: containerSide,
+      height: containerSide,
+      child: CircularProgressIndicator(
+        strokeWidth: width ?? 2,
+      ),
+    ),
+  );
+}
+
+enum HomePageTileSize { xs, s, m, l, xl }
+
+class TileSize {
+  final double contentHeight;
+  final double contentWidth;
+  final double containerHeight;
+  final double loadingContainerHeight;
+
+  const TileSize({
+    required this.contentHeight,
+    required this.contentWidth,
+    required this.containerHeight,
+    required this.loadingContainerHeight,
+  });
+}
+
+TileSize getTileSizeValues(HomePageTileSize size) {
+  switch (size) {
+    case HomePageTileSize.xs:
+      return const TileSize(
+        contentHeight: 104,
+        contentWidth: 80,
+        containerHeight: 187.6,
+        loadingContainerHeight: 130,
+      );
+    case HomePageTileSize.s:
+      return const TileSize(
+        contentHeight: 130,
+        contentWidth: 100,
+        containerHeight: 215,
+        loadingContainerHeight: 162.5,
+      );
+    case HomePageTileSize.m:
+      return const TileSize(
+        contentHeight: 160,
+        contentWidth: 120,
+        containerHeight: 237,
+        loadingContainerHeight: 200,
+      );
+    case HomePageTileSize.l:
+      return const TileSize(
+        contentHeight: 200,
+        contentWidth: 150,
+        containerHeight: 280,
+        loadingContainerHeight: 250,
+      );
+    case HomePageTileSize.xl:
+      return const TileSize(
+        contentHeight: 230,
+        contentWidth: 172.93,
+        containerHeight: 322,
+        loadingContainerHeight: 287.5,
+      );
+  }
 }
