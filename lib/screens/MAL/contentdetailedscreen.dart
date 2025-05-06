@@ -28,6 +28,7 @@ import 'package:mywatchlist/widgets/relatedanimewidget.dart';
 import 'package:mywatchlist/widgets/scorestatisticswidget.dart';
 import 'package:mywatchlist/widgets/shimmercolor.dart';
 import 'package:mywatchlist/widgets/show_featured.dart';
+import 'package:mywatchlist/widgets/show_forum.dart';
 import 'package:mywatchlist/widgets/show_news.dart';
 import 'package:mywatchlist/widgets/slivers.dart';
 import 'package:mywatchlist/widgets/synopsis_widget.dart';
@@ -404,11 +405,7 @@ class _ContentDetailedScreenState extends State<ContentDetailedScreen>
           contentDetailed != null,
           () => VisibleSection(
             'Forums',
-            Container(
-              padding: const EdgeInsets.all(16),
-              height: 500,
-              child: const Text('This is the forums section.'),
-            ),
+            ShowAnimeForum(animeId: _id),
           ),
         ),
       TabType.Pictures => _nullIf(
