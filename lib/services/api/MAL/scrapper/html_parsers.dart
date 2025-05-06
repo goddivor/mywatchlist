@@ -888,17 +888,31 @@ class HtmlParsers {
             var author = authorElement?.text.trim() ?? '';
             var authorUrl = authorElement?.attributes['href']?.trim() ?? '';
 
-            // Get views count
+            // Get views count - Handling commas in numbers (e.g., 55,578)
             var viewsElement = element.querySelector('.information .pv');
             var viewsText = viewsElement?.text.trim() ?? '0';
-            var viewsMatch = RegExp(r'(\d+)').firstMatch(viewsText);
+            var cleanViewsText = viewsText.replaceAll(',', ''); // Remove commas
+            var viewsMatch = RegExp(r'(\d+)').firstMatch(cleanViewsText);
             var views = viewsMatch != null
                 ? int.tryParse(viewsMatch.group(1) ?? '0') ?? 0
                 : 0;
 
-            // Get tags
-            var tagElements = element.querySelectorAll('.tags a.tag');
-            var tags = tagElements.map((e) => e.text.trim()).toList();
+            // Get tags - Handle both linked and non-linked tags
+            List<String> tags = [];
+
+            // Handle linked tags
+            var linkedTagElements =
+                element.querySelectorAll('.tags .tags-inner a.tag');
+            for (var tag in linkedTagElements) {
+              tags.add(tag.text.trim());
+            }
+
+            // Handle non-linked tags (like "Spoiler")
+            var nonLinkedTagElements = element
+                .querySelectorAll('.tags .tags-inner-attributes span.tag');
+            for (var tag in nonLinkedTagElements) {
+              tags.add(tag.text.trim());
+            }
 
             return AnimeFeatured(
               title: title,
