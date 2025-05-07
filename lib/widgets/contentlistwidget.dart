@@ -71,7 +71,7 @@ import 'package:flutter/material.dart';
 import 'package:mywatchlist/constants/constants.dart';
 import 'package:mywatchlist/services/api/MAL/mal_anime.dart';
 import 'package:mywatchlist/widgets/animegridcard.dart';
-import 'package:mywatchlist/screens/MAL/anime_detail_screen.dart';
+import 'package:mywatchlist/screens/MAL/contentdetailedscreen.dart';
 
 class ContentListWidget extends StatelessWidget {
   final String category;
@@ -210,7 +210,7 @@ class ContentListWidget extends StatelessWidget {
               context,
               PageRouteBuilder(
                 pageBuilder: (context, animation, secondaryAnimation) =>
-                    AnimeDetailScreen(anime: anime),
+                    ContentDetailedScreen(node: anime),
                 transitionsBuilder: (context, animation, secondaryAnimation, child) {
                   var begin = const Offset(1.0, 0.0);
                   var end = Offset.zero;
@@ -240,7 +240,7 @@ class ContentListWidget extends StatelessWidget {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => AnimeDetailScreen(anime: anime),
+                  builder: (context) => ContentDetailedScreen(node: anime),
                 ),
               );
             },

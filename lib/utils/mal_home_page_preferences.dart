@@ -1,8 +1,9 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:mywatchlist/constants/constants.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-enum HomePageTileSize { xs, s, m, l, xl }
+
 
 enum SectionType {
   news,

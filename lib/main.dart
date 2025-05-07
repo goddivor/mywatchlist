@@ -4,6 +4,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/pages/login_page.dart';
 import 'package:mywatchlist/screens/open_screen.dart';
 import 'package:flutter_phoenix/flutter_phoenix.dart';
@@ -25,6 +26,7 @@ import 'package:mywatchlist/user/user.dart';
 import 'package:path/path.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 /// Global UserData
 late UserMal usermal;
@@ -133,6 +135,14 @@ class _MyWatchListAppState extends State<MyWatchListApp> {
         return MaterialApp(
           debugShowCheckedModeBanner: false,
           title: 'MyWatchList',
+          localizationsDelegates: [
+            S.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          locale: Locale.fromSubtags(languageCode: "en_US"),
+          supportedLocales: S.delegate.supportedLocales,
           // Apply the selected theme
           theme: themeState.themeData,
           home: const OpenScreen(),

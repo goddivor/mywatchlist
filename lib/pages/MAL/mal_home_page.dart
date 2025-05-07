@@ -388,6 +388,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mywatchlist/constants/constants.dart';
 import 'package:mywatchlist/enums.dart';
 import 'package:mywatchlist/services/api/MAL/mal_anime.dart';
 import 'package:mywatchlist/services/api/MAL/mal_api.dart';
@@ -943,56 +944,4 @@ class _MalHomePageState extends State<MalHomePage>
   }
 }
 
-class TileSize {
-  final double contentHeight;
-  final double contentWidth;
-  final double containerHeight;
-  final double loadingContainerHeight;
 
-  const TileSize({
-    required this.contentHeight,
-    required this.contentWidth,
-    required this.containerHeight,
-    required this.loadingContainerHeight,
-  });
-}
-
-TileSize getTileSizeValues(HomePageTileSize size) {
-  switch (size) {
-    case HomePageTileSize.xs:
-      return const TileSize(
-        contentHeight: 104,
-        contentWidth: 80,
-        containerHeight: 187.6,
-        loadingContainerHeight: 130,
-      );
-    case HomePageTileSize.s:
-      return const TileSize(
-        contentHeight: 130,
-        contentWidth: 100,
-        containerHeight: 215,
-        loadingContainerHeight: 162.5,
-      );
-    case HomePageTileSize.m:
-      return const TileSize(
-        contentHeight: 160,
-        contentWidth: 120,
-        containerHeight: 237,
-        loadingContainerHeight: 200,
-      );
-    case HomePageTileSize.l:
-      return const TileSize(
-        contentHeight: 200,
-        contentWidth: 150,
-        containerHeight: 280,
-        loadingContainerHeight: 250,
-      );
-    case HomePageTileSize.xl:
-      return const TileSize(
-        contentHeight: 230,
-        contentWidth: 172.93,
-        containerHeight: 322,
-        loadingContainerHeight: 287.5,
-      );
-  }
-}
