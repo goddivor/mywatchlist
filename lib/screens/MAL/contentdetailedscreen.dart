@@ -363,14 +363,17 @@ class _ContentDetailedScreenState extends State<ContentDetailedScreen>
               // Handle different possible structures
               String? name;
               String? url;
+              String? imageUrl;
 
               if (link is Map<String, dynamic>) {
                 name = link['name']?.toString();
                 url = link['url']?.toString();
+                imageUrl = link['imageUrl']?.toString();
               } else if (link.runtimeType.toString().contains('Link')) {
-                // Dynamic access for objects with name and url properties
-                name = link.name?.toString();
-                url = link.url?.toString();
+                // Dynamic access for objects with name, url, and imageUrl properties
+                name = link.name;
+                url = link.url;
+                imageUrl = link.imageUrl;
               }
 
               if (name != null &&
@@ -380,6 +383,7 @@ class _ContentDetailedScreenState extends State<ContentDetailedScreen>
                 links.add(AnimeLink(
                   name: name,
                   url: url,
+                  imageUrl: imageUrl,
                   linkType: type,
                 ));
               }

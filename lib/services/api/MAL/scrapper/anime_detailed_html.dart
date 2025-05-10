@@ -1,3 +1,5 @@
+import 'package:mywatchlist/widgets/media_platforms.dart';
+
 class AnimeDetailHtml {
   final String? title;
   final String? mainPicture;
@@ -238,20 +240,59 @@ class Trailer {
 class Link {
   final String name;
   final String url;
+  final LinkType? linkType;
+  final String? imageUrl;
 
-  Link({required this.name, required this.url});
+  Link({
+    required this.name,
+    required this.url,
+    this.linkType,
+    this.imageUrl,
+  });
 
   factory Link.fromJson(Map<String, dynamic> json) {
     return Link(
-      name: json['name'],
-      url: json['url'],
+      name: json['name'] ?? '',
+      url: json['url'] ?? '',
+      linkType: _parseLinkType(json['linkType']),
+      imageUrl: json['imageUrl'],
     );
+  }
+
+  // Helper method to safely parse LinkType
+  static LinkType? _parseLinkType(dynamic linkTypeValue) {
+    if (linkTypeValue == null) return null;
+    
+    try {
+      // Handle string representation
+      if (linkTypeValue is String) {
+        // Remove "LinkType." prefix if present
+        final cleanValue = linkTypeValue.replaceFirst('LinkType.', '');
+        
+        // Try to find the matching enum value
+        return LinkType.values.firstWhere(
+          (e) => e.name == cleanValue || e.toString() == linkTypeValue,
+          orElse: () => LinkType.otherLists, // Default value
+        );
+      }
+      // Handle integer representation (if needed)
+      else if (linkTypeValue is int && linkTypeValue < LinkType.values.length) {
+        return LinkType.values[linkTypeValue];
+      }
+    } catch (e) {
+      print('Error parsing LinkType: $e');
+    }
+    
+    // Return default value if parsing fails
+    return null;
   }
 
   Map<String, dynamic> toJson() {
     return {
       'name': name,
       'url': url,
+      'linkType': linkType?.name, // Use .name instead of toString()
+      'imageUrl': imageUrl,
     };
   }
 }

@@ -13,6 +13,7 @@ import 'package:mywatchlist/services/api/MAL/scrapper/genre.dart';
 import 'package:mywatchlist/services/api/MAL/scrapper/paging.dart';
 import 'package:mywatchlist/services/api/MAL/scrapper/user_friends.dart';
 import 'package:mywatchlist/services/api/MAL/scrapper/user_history.dart';
+import 'package:mywatchlist/widgets/media_platforms.dart';
 
 class HtmlParsers {
   static final unescape = HtmlUnescape();
@@ -266,7 +267,14 @@ class HtmlParsers {
       var name = e.querySelector('.caption')?.text.trim() ??
           ''; // Le texte du lien est dans la div.caption
       var url = e.attributes['href']?.trim() ?? '';
-      return Link(name: name, url: url);
+      var imageUrl = e.querySelector('img')?.attributes['src']?.trim() ??
+          ''; // Récupérer l'URL de l'image si elle existe
+      return Link(
+        name: name,
+        url: url,
+        imageUrl: imageUrl,
+        linkType: LinkType.availableAt, // Ajouter le type de lien
+      );
     }).toList();
   }
 
@@ -280,7 +288,14 @@ class HtmlParsers {
       var name = e.querySelector('.caption')?.text.trim() ??
           ''; // Le texte du lien est dans la div.caption
       var url = e.attributes['href']?.trim() ?? '';
-      return Link(name: name, url: url);
+      var imageUrl = e.querySelector('img')?.attributes['src']?.trim() ??
+          ''; // Récupérer l'URL de l'image si elle existe
+      return Link(
+        name: name,
+        url: url,
+        imageUrl: imageUrl,
+        linkType: LinkType.resources, // Ajouter le type de lien
+      );
     }).toList();
   }
 
@@ -291,8 +306,16 @@ class HtmlParsers {
     return streamingElements.map((e) {
       var name = e.querySelector('.caption')?.text.trim() ??
           ''; // Le texte du lien est dans la div.caption
+      var title = e.attributes['title'] ?? e.text.trim();
       var url = e.attributes['href']?.trim() ?? '';
-      return Link(name: name, url: url);
+      // var imageUrl = e.querySelector('img')?.attributes['src']?.trim() ??
+          ''; // Récupérer l'URL de l'image si elle existe
+      return Link(
+        name: name,
+        url: url,
+        imageUrl: getDomainAsset(title),
+        linkType: LinkType.streaming, // Ajouter le type de lien
+      );
     }).toList();
   }
 
