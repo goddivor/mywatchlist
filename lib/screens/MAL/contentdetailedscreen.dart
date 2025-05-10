@@ -6,6 +6,8 @@ import 'package:flutter/rendering.dart';
 import 'package:intl/intl.dart';
 import 'package:mywatchlist/constants/constants.dart';
 import 'package:mywatchlist/enums.dart';
+import 'package:mywatchlist/services/api/Jikan/jikan_anime_videos.dart';
+import 'package:mywatchlist/services/api/Jikan/jikan_api.dart';
 // import 'package:cached_network_image/cached_network_image.dart';
 // import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mywatchlist/services/api/MAL/mal_anime.dart';
@@ -23,6 +25,7 @@ import 'package:mywatchlist/widgets/background.dart';
 import 'package:mywatchlist/widgets/custombutton.dart';
 import 'package:mywatchlist/widgets/image_preview.dart';
 import 'package:mywatchlist/widgets/intereststackwidget.dart';
+import 'package:mywatchlist/widgets/media_platforms.dart';
 import 'package:mywatchlist/widgets/recommanimewidget.dart';
 import 'package:mywatchlist/widgets/relatedanimewidget.dart';
 import 'package:mywatchlist/widgets/scorestatisticswidget.dart';
@@ -34,6 +37,7 @@ import 'package:mywatchlist/widgets/show_reviews.dart';
 import 'package:mywatchlist/widgets/slivers.dart';
 import 'package:mywatchlist/widgets/synopsis_widget.dart';
 import 'package:mywatchlist/widgets/userupdate_widget.dart';
+import 'package:mywatchlist/widgets/videowidget.dart';
 import 'package:scroll_to_index/scroll_to_index.dart';
 // import 'package:mywatchlist/user/theme/theme_bloc.dart';
 // import 'package:mywatchlist/user/theme/theme_state.dart';
@@ -105,6 +109,8 @@ class _ContentDetailedScreenState extends State<ContentDetailedScreen>
 
   String get _title => widget.node?.title ?? contentDetailed?.title;
   int get _id => (widget.node != null ? widget.node!.id : widget.id)!;
+  AnimeVideos? animeVideoV4;
+  dynamic _scheduleData;
 
   @override
   void initState() {
@@ -156,6 +162,7 @@ class _ContentDetailedScreenState extends State<ContentDetailedScreen>
       getMalApiContent(); // get content from malapi
       getMalApiHtmlContent(); //get content from html (malscraper)
       // implement  get content form jikan
+      getJikanVideos(); // get videos from jikan
 
       updateVisibleSections();
     } catch (e) {
@@ -170,6 +177,12 @@ class _ContentDetailedScreenState extends State<ContentDetailedScreen>
     // update UI
     updateVisibleSections();
     setStatus();
+  }
+
+  // get anime videos from jikan
+  void getJikanVideos() async {
+    animeVideoV4 = await JikanApi().getAnimeVideos(_id);
+    updateVisibleSections();
   }
 
   void getMalApiHtmlContent() async {
@@ -314,6 +327,104 @@ class _ContentDetailedScreenState extends State<ContentDetailedScreen>
     }
   }
 
+  bool get isAnimeVideosBlank {
+    if (animeVideoV4 == null && contentDetailed == null) return true;
+    if (nullOrEmpty(animeVideoV4?.episodes) &&
+        nullOrEmpty(animeVideoV4?.musicVideos) &&
+        nullOrEmpty(animeVideoV4?.promo) &&
+        nullOrEmpty(contentDetailed?.openingSongs) &&
+        nullOrEmpty(contentDetailed?.endingSongs)) {
+      return true;
+    }
+    return false;
+  }
+
+  bool get isStreamingBlank {
+    return animeDetailedHtml == null ||
+        (nullOrEmpty(animeDetailedHtml['availableAt']) &&
+            nullOrEmpty(animeDetailedHtml['resources']) &&
+            nullOrEmpty(animeDetailedHtml['streamingPlatforms']));
+  }
+
+  // Ajouter cette méthode pour convertir les liens de animeDetailedHtml
+  List<AnimeLink> _getAnimeLinks() {
+    if (animeDetailedHtml == null) return [];
+
+    List<AnimeLink> links = [];
+
+    try {
+      // Helper function to safely add links from a list
+      void addLinksFromList(dynamic linkList, LinkType type) {
+        if (linkList != null && linkList is List) {
+          for (var item in linkList) {
+            try {
+              dynamic link = item;
+
+              // Handle different possible structures
+              String? name;
+              String? url;
+              String? imageUrl;
+
+              if (link is Map<String, dynamic>) {
+                name = link['name']?.toString();
+                url = link['url']?.toString();
+                imageUrl = link['imageUrl']?.toString();
+              } else if (link.runtimeType.toString().contains('Link')) {
+                // Dynamic access for objects with name, url, and imageUrl properties
+                name = link.name;
+                url = link.url;
+                imageUrl = link.imageUrl;
+              }
+
+              if (name != null &&
+                  url != null &&
+                  name.isNotEmpty &&
+                  url.isNotEmpty) {
+                links.add(AnimeLink(
+                  name: name,
+                  url: url,
+                  imageUrl: imageUrl,
+                  linkType: type,
+                ));
+              }
+            } catch (e) {
+              print('Error processing individual link: $e');
+            }
+          }
+        }
+      }
+
+      // Process each category
+      addLinksFromList(animeDetailedHtml['availableAt'], LinkType.availableAt);
+      addLinksFromList(animeDetailedHtml['resources'], LinkType.resources);
+      addLinksFromList(
+          animeDetailedHtml['streamingPlatforms'], LinkType.streaming);
+    } catch (e) {
+      print('Error getting anime links: $e');
+    }
+
+    return links;
+  }
+
+  Widget get _buildMediaWidget {
+    final sp = AddtionalMediaPlatforms(
+      _getAnimeLinks(),
+      relatedLinks: _scheduleData?.relatedLinks,
+    );
+    final vW = VideosWidget(
+      videos: animeVideoV4,
+      horizPadding: horizPadding,
+      endingSongs: contentDetailed?.endingSongs,
+      openingSongs: contentDetailed?.openingSongs,
+    );
+    if (isAnimeVideosBlank) return sp;
+    if (isStreamingBlank) return vW;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [sp, SB.h20, vW],
+    );
+  }
+
   VisibleSection? _getAnimeSectionForType(TabType tabType) {
     return switch (tabType) {
       TabType.Synopsis => _nullIf(
@@ -330,14 +441,10 @@ class _ContentDetailedScreenState extends State<ContentDetailedScreen>
           ),
         ),
       TabType.Media => _nullIf(
-          contentDetailed != null,
+          contentDetailed != null && !isAnimeVideosBlank || !isStreamingBlank,
           () => VisibleSection(
             'Media',
-            Container(
-              padding: const EdgeInsets.all(16),
-              height: 500,
-              child: const Text('This is the media section.'),
-            ),
+            _buildMediaWidget,
           ),
         ),
       TabType.Related => _nullIf(

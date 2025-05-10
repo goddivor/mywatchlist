@@ -1,6 +1,8 @@
 // ignore_for_file: deprecated_member_use, unnecessary_const, unnecessary_null_comparison, unnecessary_this, constant_identifier_names
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:intl/intl.dart';
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/services/api/MAL/mal_anime.dart';
@@ -11,6 +13,7 @@ import 'package:mywatchlist/widgets/shimmercolor.dart';
 import 'package:mywatchlist/widgets/slivers.dart';
 import 'package:scroll_to_index/scroll_to_index.dart';
 import 'package:shimmer/shimmer.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 enum AccountType {
   none,
@@ -18,13 +21,6 @@ enum AccountType {
   anilist,
   kitsu,
   simkl,
-}
-
-enum LinkType {
-  resources,
-  availableAt,
-  streaming,
-  otherLists,
 }
 
 enum ContentType { anime, manga, character, characters, people, news, featured }
@@ -1090,4 +1086,107 @@ TileSize getTileSizeValues(HomePageTileSize size) {
         loadingContainerHeight: 287.5,
       );
   }
+}
+
+String getDomainAsset(String e, [String domain = 'streaming']) =>
+    'https://dailyanimelist.web.app/assets/$domain/${e.trim()}.png';
+
+void launchURLWithConfirmation(
+  String url, {
+  required BuildContext context,
+}) async {
+  var result = await showDialog<bool>(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: Text(
+        S.current.Just_a_sec,
+      ),
+      content: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(S.current.Url_open_conf),
+            Text("$url"),
+            Text(S.current.Continue),
+          ]),
+      actions: [
+        PlainButton(
+          onPressed: () {
+            Clipboard.setData(ClipboardData(text: url));
+            Navigator.of(context, rootNavigator: true).pop(false);
+          },
+          child: Text(S.current.Copy),
+        ),
+        ..._yesOrNoButtons(context)
+      ],
+    ),
+  );
+  if (result ?? false) {
+    final uri = Uri.tryParse(url);
+    if (uri != null && uri.host.isNotBlank) {
+      launchURL(url);
+    } else {
+      // final widget = await DalPathUtils.handleUri(uri, context);
+      // if (widget != null) {
+      //   gotoPage(context: context, newPage: widget);
+      // }
+    }
+  }
+}
+
+void launchURL(String url) async {
+  try {
+    await launch(url);
+  } catch (e) {
+    showToast("${S.current.Couldn_Launch} $url!");
+  }
+}
+
+Future<void> showToast(String message, {Toast? toast}) async {
+  await Fluttertoast.showToast(
+      gravity: ToastGravity.CENTER,
+      msg: message,
+      toastLength: toast,
+      backgroundColor: Colors.black,
+      textColor: Colors.white);
+}
+
+List<Widget> _yesOrNoButtons(BuildContext context) {
+  return [
+    PlainButton(
+      onPressed: () {
+        Navigator.of(context, rootNavigator: true)
+            .pop(false); // dismisses only the dialog and returns false
+      },
+      child: Text(S.current.No),
+    ),
+    ShadowButton(
+      onPressed: () {
+        Navigator.of(context, rootNavigator: true)
+            .pop(true); // dismisses only the dialog and returns true
+      },
+      child: Text(S.current.Yes),
+    ),
+  ];
+}
+
+Future<bool> showConfirmationDialog({
+  String alertTitle = "",
+  String desc = "",
+  required BuildContext context,
+  List<Widget>? addtionalActions,
+}) async {
+  return await showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: title(alertTitle, opacity: 1, fontSize: 14),
+      content: title(desc, opacity: 1, fontSize: 14),
+      actions: addtionalActions == null
+          ? _yesOrNoButtons(context)
+          : [
+              ...addtionalActions,
+              ..._yesOrNoButtons(context),
+            ],
+    ),
+  );
 }
