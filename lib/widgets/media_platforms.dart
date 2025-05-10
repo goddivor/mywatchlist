@@ -123,6 +123,7 @@ class _AddtionalMediaPlatformsState extends State<AddtionalMediaPlatforms> {
                   if (mounted) setState(() {});
                 },
                 padding: EdgeInsets.zero,
+                backgroundColor: Colors.transparent,
                 child: const Icon(Icons.more, size: 20.0),
               ),
             ),
