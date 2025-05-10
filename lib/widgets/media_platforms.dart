@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mywatchlist/constants/constants.dart';
+import 'package:mywatchlist/widgets/avatar_widget.dart';
 // import 'package:mywatchlist/services/api/MAL/scrapper/anime_detailed_html.dart';
 import 'package:mywatchlist/widgets/custombutton.dart';
 // import 'package:mywatchlist/utilities/url_launcher.dart';
@@ -194,17 +195,12 @@ Widget _buildLinkImage({
         ? ToolTipButton(
             message: link.name,
             onTap: () => _onLinkTap(context, link),
-            child: ClipRRect(
-              borderRadius: _borderRadiusTypes.contains(link.linkType)
-                  ? BorderRadius.circular(6)
+            child: AvatarAspect(
+              url: link.imageUrl,
+              useUserImageOnError: false,
+              radius: _borderRadiusTypes.contains(link.linkType)
+                  ? null
                   : BorderRadius.zero,
-              child: Image.network(
-                link.imageUrl!,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return const Icon(Icons.link);
-                },
-              ),
             ),
           )
         : ToolTipButton(
