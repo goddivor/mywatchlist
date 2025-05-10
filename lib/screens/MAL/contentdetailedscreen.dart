@@ -353,44 +353,48 @@ class _ContentDetailedScreenState extends State<ContentDetailedScreen>
     List<AnimeLink> links = [];
 
     try {
-      // Available At links
-      if (animeDetailedHtml['availableAt'] != null) {
-        for (Link link in animeDetailedHtml['availableAt']) {
-          if (link != null && link.name != null && link.url != null) {
-            links.add(AnimeLink(
-              name: link.name,
-              url: link.url,
-              linkType: LinkType.availableAt,
-            ));
+      // Helper function to safely add links from a list
+      void addLinksFromList(dynamic linkList, LinkType type) {
+        if (linkList != null && linkList is List) {
+          for (var item in linkList) {
+            try {
+              dynamic link = item;
+
+              // Handle different possible structures
+              String? name;
+              String? url;
+
+              if (link is Map<String, dynamic>) {
+                name = link['name']?.toString();
+                url = link['url']?.toString();
+              } else if (link.runtimeType.toString().contains('Link')) {
+                // Dynamic access for objects with name and url properties
+                name = link.name?.toString();
+                url = link.url?.toString();
+              }
+
+              if (name != null &&
+                  url != null &&
+                  name.isNotEmpty &&
+                  url.isNotEmpty) {
+                links.add(AnimeLink(
+                  name: name,
+                  url: url,
+                  linkType: type,
+                ));
+              }
+            } catch (e) {
+              print('Error processing individual link: $e');
+            }
           }
         }
       }
 
-      // Resources links
-      if (animeDetailedHtml['resources'] != null) {
-        for (Link link in animeDetailedHtml['resources']) {
-          if (link != null && link.name != null && link.url != null) {
-            links.add(AnimeLink(
-              name: link.name,
-              url: link.url,
-              linkType: LinkType.resources,
-            ));
-          }
-        }
-      }
-
-      // Streaming platforms
-      if (animeDetailedHtml['streamingPlatforms'] != null) {
-        for (Link link in animeDetailedHtml['streamingPlatforms']) {
-          if (link != null && link.name != null && link.url != null) {
-            links.add(AnimeLink(
-              name: link.name,
-              url: link.url,
-              linkType: LinkType.streaming,
-            ));
-          }
-        }
-      }
+      // Process each category
+      addLinksFromList(animeDetailedHtml['availableAt'], LinkType.availableAt);
+      addLinksFromList(animeDetailedHtml['resources'], LinkType.resources);
+      addLinksFromList(
+          animeDetailedHtml['streamingPlatforms'], LinkType.streaming);
     } catch (e) {
       print('Error getting anime links: $e');
     }
