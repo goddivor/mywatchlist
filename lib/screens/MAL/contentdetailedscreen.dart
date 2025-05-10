@@ -328,7 +328,7 @@ class _ContentDetailedScreenState extends State<ContentDetailedScreen>
   }
 
   bool get isAnimeVideosBlank {
-    if (animeVideoV4 == null) return true;
+    if (animeVideoV4 == null && contentDetailed == null) return true;
     if (nullOrEmpty(animeVideoV4?.episodes) &&
         nullOrEmpty(animeVideoV4?.musicVideos) &&
         nullOrEmpty(animeVideoV4?.promo) &&
@@ -352,37 +352,47 @@ class _ContentDetailedScreenState extends State<ContentDetailedScreen>
 
     List<AnimeLink> links = [];
 
-    // Available At links
-    if (animeDetailedHtml['availableAt'] != null) {
-      for (var link in animeDetailedHtml['availableAt']) {
-        links.add(AnimeLink(
-          name: link.name,
-          url: link.url,
-          linkType: LinkType.availableAt,
-        ));
+    try {
+      // Available At links
+      if (animeDetailedHtml['availableAt'] != null) {
+        for (Link link in animeDetailedHtml['availableAt']) {
+          if (link != null && link.name != null && link.url != null) {
+            links.add(AnimeLink(
+              name: link.name,
+              url: link.url,
+              linkType: LinkType.availableAt,
+            ));
+          }
+        }
       }
-    }
 
-    // Resources links
-    if (animeDetailedHtml['resources'] != null) {
-      for (var link in animeDetailedHtml['resources']) {
-        links.add(AnimeLink(
-          name: link.name,
-          url: link.url,
-          linkType: LinkType.resources,
-        ));
+      // Resources links
+      if (animeDetailedHtml['resources'] != null) {
+        for (Link link in animeDetailedHtml['resources']) {
+          if (link != null && link.name != null && link.url != null) {
+            links.add(AnimeLink(
+              name: link.name,
+              url: link.url,
+              linkType: LinkType.resources,
+            ));
+          }
+        }
       }
-    }
 
-    // Streaming platforms
-    if (animeDetailedHtml['streamingPlatforms'] != null) {
-      for (var link in animeDetailedHtml['streamingPlatforms']) {
-        links.add(AnimeLink(
-          name: link.name,
-          url: link.url,
-          linkType: LinkType.streaming,
-        ));
+      // Streaming platforms
+      if (animeDetailedHtml['streamingPlatforms'] != null) {
+        for (Link link in animeDetailedHtml['streamingPlatforms']) {
+          if (link != null && link.name != null && link.url != null) {
+            links.add(AnimeLink(
+              name: link.name,
+              url: link.url,
+              linkType: LinkType.streaming,
+            ));
+          }
+        }
       }
+    } catch (e) {
+      print('Error getting anime links: $e');
     }
 
     return links;
@@ -390,7 +400,7 @@ class _ContentDetailedScreenState extends State<ContentDetailedScreen>
 
   Widget get _buildMediaWidget {
     final sp = AddtionalMediaPlatforms(
-       _getAnimeLinks(),
+      _getAnimeLinks(),
       relatedLinks: _scheduleData?.relatedLinks,
     );
     final vW = VideosWidget(
@@ -423,7 +433,7 @@ class _ContentDetailedScreenState extends State<ContentDetailedScreen>
           ),
         ),
       TabType.Media => _nullIf(
-          !isAnimeVideosBlank || !isStreamingBlank,
+          contentDetailed != null && !isAnimeVideosBlank || !isStreamingBlank,
           () => VisibleSection(
             'Media',
             _buildMediaWidget,
