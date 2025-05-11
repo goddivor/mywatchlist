@@ -26,6 +26,7 @@ import 'package:mywatchlist/widgets/custombutton.dart';
 import 'package:mywatchlist/widgets/image_preview.dart';
 import 'package:mywatchlist/widgets/intereststackwidget.dart';
 import 'package:mywatchlist/widgets/media_platforms.dart';
+import 'package:mywatchlist/widgets/more_info_widget.dart';
 import 'package:mywatchlist/widgets/recommanimewidget.dart';
 import 'package:mywatchlist/widgets/relatedanimewidget.dart';
 import 'package:mywatchlist/widgets/scorestatisticswidget.dart';
@@ -557,10 +558,10 @@ class _ContentDetailedScreenState extends State<ContentDetailedScreen>
           contentDetailed != null,
           () => VisibleSection(
             'More Info',
-            Container(
-              padding: const EdgeInsets.all(16),
-              height: 500,
-              child: const Text('This is the more info section.'),
+            MoreInfoWidget(
+              anime: contentDetailed,
+              additionalTitles: animeDetailedHtml['additionalTitles'],
+              horizPadding: horizPadding,
             ),
           ),
         ),
