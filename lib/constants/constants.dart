@@ -412,7 +412,7 @@ extension StringExtension on String {
   String? capitalize() {
     if (this == null) return null;
     if (isEmpty) return this;
-    return "${this[0].toUpperCase()}${substring(1)}";
+    return "${this[0].toUpperCase()}${substring(1).toLowerCase()}";
   }
 
   String? capitalise() {
@@ -1189,4 +1189,20 @@ Future<bool> showConfirmationDialog({
             ],
     ),
   );
+}
+
+// Dans constants.dart, ajouter cette extension
+extension DateTimeExtension on DateTime {
+  DateTime nextDateTime(int day) {
+    return add(
+      Duration(
+        days: (day - weekday) % DateTime.daysPerWeek,
+      ),
+    );
+  }
+
+  DateTime nextDate(int day) {
+    return DateFormat("yyyy-MM-dd")
+        .parse(DateFormat("yyyy-MM-dd").format(nextDateTime(day)));
+  }
 }

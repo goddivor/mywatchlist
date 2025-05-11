@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:mywatchlist/constants/constants.dart';
 import 'package:mywatchlist/services/api/MAL/mal_anime.dart';
+import 'package:mywatchlist/services/api/MAL/mal_api.dart';
 import 'package:mywatchlist/services/api/MAL/scrapper/anime_detailed_html.dart';
+import 'package:intl/intl.dart';
 
 class MoreInfoWidget extends StatelessWidget {
   final MalAnime? anime;
@@ -39,14 +41,14 @@ class MoreInfoWidget extends StatelessWidget {
     final infoItems = [
       InfoItem('Media Type', anime?.mediaType?.toUpperCase() ?? 'N/A'),
       InfoItem('Episodes', anime?.numEpisodes?.toString() ?? 'N/A'),
-      InfoItem('Status', anime?.status ?? 'N/A'),
+      InfoItem('Status', anime?.status?.capitalize() ?? 'N/A'),
       InfoItem('MAL ID', anime?.id.toString() ?? 'N/A'),
       InfoItem('Premiered', _getPremiered(anime)),
       InfoItem('Aired', _getAiredPeriod(anime)),
-      InfoItem('Source', anime?.source ?? 'N/A'),
+      InfoItem('Source', anime?.source?.capitalize() ?? 'N/A'),
       InfoItem('Broadcast', _getBroadcast(anime)),
       InfoItem('Duration', _getDuration(anime)),
-      InfoItem('Rating', anime?.rating ?? 'N/A'),
+      InfoItem('Rating', anime?.rating?.toUpperCase() ?? 'N/A'),
       InfoItem('Studios', _getStudios(anime)),
     ];
 
@@ -61,8 +63,8 @@ class MoreInfoWidget extends StatelessWidget {
             Text(
               'Information',
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+                    fontWeight: FontWeight.bold,
+                  ),
             ),
             const SizedBox(height: 15),
             ...infoItems.map((item) => _buildInfoRow(context, item)),
@@ -83,8 +85,12 @@ class MoreInfoWidget extends StatelessWidget {
             child: Text(
               item.label,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
-              ),
+                    color: Theme.of(context)
+                        .textTheme
+                        .bodyMedium
+                        ?.color
+                        ?.withOpacity(0.7),
+                  ),
             ),
           ),
           Expanded(
@@ -102,9 +108,11 @@ class MoreInfoWidget extends StatelessWidget {
     final synonyms = anime?.alternativeTitles?.synonyms ?? [];
     final titles = [
       if (anime?.title != null) ('Original', anime!.title),
-      if (anime?.alternativeTitles?.en != null && anime!.alternativeTitles!.en.isNotEmpty) 
+      if (anime?.alternativeTitles?.en != null &&
+          anime!.alternativeTitles!.en.isNotEmpty)
         ('English', anime!.alternativeTitles!.en),
-      if (anime?.alternativeTitles?.ja != null && anime!.alternativeTitles!.ja.isNotEmpty) 
+      if (anime?.alternativeTitles?.ja != null &&
+          anime!.alternativeTitles!.ja.isNotEmpty)
         ('Japanese', anime!.alternativeTitles!.ja),
       ...synonyms.map((s) => ('Synonym', s)),
       ..._getAdditionalTitles(),
@@ -123,11 +131,12 @@ class MoreInfoWidget extends StatelessWidget {
             Text(
               'Alternative Titles',
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+                    fontWeight: FontWeight.bold,
+                  ),
             ),
             const SizedBox(height: 15),
-            ...titles.map((title) => _buildTitleRow(context, title.$1, title.$2)),
+            ...titles
+                .map((title) => _buildTitleRow(context, title.$1, title.$2)),
           ],
         ),
       ),
@@ -145,8 +154,12 @@ class MoreInfoWidget extends StatelessWidget {
             child: Text(
               type,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
-              ),
+                    color: Theme.of(context)
+                        .textTheme
+                        .bodyMedium
+                        ?.color
+                        ?.withOpacity(0.7),
+                  ),
             ),
           ),
           const SizedBox(width: 10),
@@ -163,7 +176,7 @@ class MoreInfoWidget extends StatelessWidget {
 
   Widget _buildGenresAndThemesSection(BuildContext context) {
     if (anime?.genres == null || anime!.genres!.isEmpty) return Container();
-    
+
     return _buildTagsRow(context, 'Genres', anime!.genres!);
   }
 
@@ -179,14 +192,16 @@ class MoreInfoWidget extends StatelessWidget {
             Text(
               label,
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+                    fontWeight: FontWeight.bold,
+                  ),
             ),
             const SizedBox(height: 10),
             Wrap(
               spacing: 8,
               runSpacing: 8,
-              children: genres.map((genre) => _buildGenreChip(context, genre)).toList(),
+              children: genres
+                  .map((genre) => _buildGenreChip(context, genre))
+                  .toList(),
             ),
           ],
         ),
@@ -215,7 +230,7 @@ class MoreInfoWidget extends StatelessWidget {
   String _getAiredPeriod(MalAnime? anime) {
     final start = anime?.startDate ?? '';
     final end = anime?.endDate ?? '';
-    
+
     if (start.isEmpty && end.isEmpty) return 'N/A';
     if (end.isEmpty) return 'From $start';
     if (start.isEmpty) return 'To $end';
@@ -224,23 +239,45 @@ class MoreInfoWidget extends StatelessWidget {
 
   String _getBroadcast(MalAnime? anime) {
     if (anime?.broadcast == null) return 'N/A';
+
+    // Try to use the new formatting method
+    try {
+      final formatted = MalApi.getFormattedAiringDate(anime!.broadcast!);
+      if (formatted != null) return formatted;
+    } catch (e) {
+      print('Error using formatted airing date: $e');
+    }
+
+    // Fallback to simple display
     final b = anime!.broadcast!;
-    final day = b.dayOfTheWeek ?? '';
+    final day = b.dayOfTheWeek?.capitalize() ?? '';
     final time = b.startTime ?? '';
-    
+
     if (day.isEmpty && time.isEmpty) return 'N/A';
     if (time.isEmpty) return day;
-    return '$day at $time';
+    return '$day at $time (JST)';
   }
 
+// Dans _getDuration, ajuster pour les bonnes unités
   String _getDuration(MalAnime? anime) {
-    if (anime?.averageEpisodeDuration == null) return 'N/A';
-    final minutes = anime!.averageEpisodeDuration!;
-    if (minutes < 60) return '${minutes} min';
-    final hours = minutes ~/ 60;
-    final remainingMinutes = minutes % 60;
-    if (remainingMinutes == 0) return '${hours}h';
-    return '${hours}h ${remainingMinutes}min';
+    final durationValue = anime?.averageEpisodeDuration;
+    if (durationValue == null || durationValue <= 0) return 'N/A';
+
+    // MAL API returns duration in seconds
+    Duration duration = Duration(seconds: durationValue);
+    final hours = duration.inHours;
+    final minDiff = duration.inMinutes.remainder(60);
+
+    String result = '';
+    if (hours > 0) {
+      result += '${hours}hr${hours > 1 ? 's' : ''} ';
+    }
+
+    if (minDiff > 0) {
+      result += '${minDiff}min${minDiff > 1 ? 's' : ''}';
+    }
+
+    return result.isNotEmpty ? result.trim() : 'Less than a minute';
   }
 
   String _getStudios(MalAnime? anime) {
@@ -253,15 +290,18 @@ class MoreInfoWidget extends StatelessWidget {
     if (additionalTitles is List) {
       try {
         final titles = additionalTitles as List<dynamic>;
-        return titles.map<(String, String)>((t) {
-          if (t is Map<String, dynamic>) {
-            return (t['language'] ?? '', t['title'] ?? '');
-          } else if (t.runtimeType.toString().contains('AdditionalTitle')) {
-            // Dynamic access for AdditionalTitle objects
-            return (t.language.toString(), t.title.toString());
-          }
-          return ('', '');
-        }).where((tuple) => tuple.$1.isNotEmpty && tuple.$2.isNotEmpty).toList();
+        return titles
+            .map<(String, String)>((t) {
+              if (t is Map<String, dynamic>) {
+                return (t['language'] ?? '', t['title'] ?? '');
+              } else if (t.runtimeType.toString().contains('AdditionalTitle')) {
+                // Dynamic access for AdditionalTitle objects
+                return (t.language.toString(), t.title.toString());
+              }
+              return ('', '');
+            })
+            .where((tuple) => tuple.$1.isNotEmpty && tuple.$2.isNotEmpty)
+            .toList();
       } catch (e) {
         print('Error parsing additional titles: $e');
         return [];

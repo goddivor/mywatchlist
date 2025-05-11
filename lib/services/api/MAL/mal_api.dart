@@ -2,6 +2,7 @@
 
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
 import 'dart:convert';
 
 import 'package:mywatchlist/constants/constants.dart';
@@ -564,5 +565,76 @@ class MalApi {
     }
 
     return headers;
+  }
+
+  // Dans mal_api.dart, ajouter ces méthodes statiques
+  static const weekdaysOrderMap = {
+    'Monday': 1,
+    'Tuesday': 2,
+    'Wednesday': 3,
+    'Thursday': 4,
+    'Friday': 5,
+    'Saturday': 6,
+    'Sunday': 7
+  };
+
+// Dans mal_api.dart, amélioration de getFormattedAiringDate
+static String? getFormattedAiringDate(
+  Broadcast broadcast, [
+  DateFormat? dateFormat,
+]) {
+  try {
+    final airingDate = getAiringDate(broadcast);
+    dateFormat ??= DateFormat('h:mm a E');
+    
+    if (airingDate != null) {
+      // Convert from JST to local time
+      final jstOffset = Duration(hours: 9);
+      final localOffset = DateTime.now().timeZoneOffset;
+      final timeDifference = localOffset - jstOffset;
+      
+      final localTime = airingDate.add(timeDifference);
+      
+      // Get timezone abbreviation
+      final now = DateTime.now();
+      final timeZoneName = DateFormat('z').format(now);
+      
+      return '${dateFormat.format(localTime)} ($timeZoneName)';
+    }
+  } catch (e) {
+    print('Error formatting airing date: $e');
+  }
+  return null;
+}
+
+  static DateTime? getAiringDate(Broadcast broadcast) {
+    final nowDate = DateTime.now();
+    try {
+      final weekday = weekdaysOrderMap[broadcast.dayOfTheWeek];
+      if (weekday != null) {
+        final timeSplit = broadcast.startTime.split(":");
+        final hours = int.tryParse(timeSplit[0]);
+        final mins = int.tryParse(timeSplit[1]);
+        if (hours != null && mins != null) {
+          return nowDate.nextDate(weekday).add(Duration(
+                hours: hours - 9, // Japan Time offset
+                minutes: mins,
+              ));
+        }
+      }
+    } catch (e) {
+      print('Error getting airing date: $e');
+    }
+    return null;
+  }
+
+  static DateTime getAdjustedTime(DateTime airingTime, DateTime nowDate) {
+    // Convert from Japan time to local time
+    return airingTime;
+  }
+
+  static String timeZoneName(DateTime dateTime) {
+    // Get local timezone name
+    return dateTime.timeZoneAbbreviation;
   }
 }
