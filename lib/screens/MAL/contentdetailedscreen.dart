@@ -560,7 +560,9 @@ class _ContentDetailedScreenState extends State<ContentDetailedScreen>
             'More Info',
             MoreInfoWidget(
               anime: contentDetailed,
-              additionalTitles: animeDetailedHtml['additionalTitles'],
+              additionalTitles: animeDetailedHtml != null
+                  ? animeDetailedHtml['additionalTitles']
+                  : null,
               horizPadding: horizPadding,
             ),
           ),

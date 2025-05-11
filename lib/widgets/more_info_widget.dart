@@ -5,7 +5,7 @@ import 'package:mywatchlist/services/api/MAL/scrapper/anime_detailed_html.dart';
 
 class MoreInfoWidget extends StatelessWidget {
   final MalAnime? anime;
-  final List<AdditionalTitle>? additionalTitles;
+  final dynamic additionalTitles; // Use dynamic to allow for various types
   final double horizPadding;
 
   const MoreInfoWidget({
@@ -102,10 +102,12 @@ class MoreInfoWidget extends StatelessWidget {
     final synonyms = anime?.alternativeTitles?.synonyms ?? [];
     final titles = [
       if (anime?.title != null) ('Original', anime!.title),
-      if (anime?.titleEnglish != null) ('English', anime!.titleEnglish!),
-      if (anime?.titleJapanese != null) ('Japanese', anime!.titleJapanese!),
+      if (anime?.alternativeTitles?.en != null && anime!.alternativeTitles!.en.isNotEmpty) 
+        ('English', anime!.alternativeTitles!.en),
+      if (anime?.alternativeTitles?.ja != null && anime!.alternativeTitles!.ja.isNotEmpty) 
+        ('Japanese', anime!.alternativeTitles!.ja),
       ...synonyms.map((s) => ('Synonym', s)),
-      ...(additionalTitles ?? []).map((t) => (t.language, t.title)),
+      ..._getAdditionalTitles(),
     ];
 
     if (titles.isEmpty) return Container();
@@ -160,20 +162,9 @@ class MoreInfoWidget extends StatelessWidget {
   }
 
   Widget _buildGenresAndThemesSection(BuildContext context) {
-    return Column(
-      children: [
-        if (anime?.genres != null && anime!.genres!.isNotEmpty)
-          _buildTagsRow(context, 'Genres', anime!.genres!),
-        if (anime?.themes != null && anime!.themes!.isNotEmpty)
-          const SizedBox(height: 12),
-        if (anime?.themes != null && anime!.themes!.isNotEmpty)
-          _buildTagsRow(context, 'Themes', anime!.themes!),
-        if (anime?.demographics != null && anime!.demographics!.isNotEmpty)
-          const SizedBox(height: 12),
-        if (anime?.demographics != null && anime!.demographics!.isNotEmpty)
-          _buildTagsRow(context, 'Demographics', anime!.demographics!),
-      ],
-    );
+    if (anime?.genres == null || anime!.genres!.isEmpty) return Container();
+    
+    return _buildTagsRow(context, 'Genres', anime!.genres!);
   }
 
   Widget _buildTagsRow(BuildContext context, String label, List<Genre> genres) {
@@ -255,6 +246,28 @@ class MoreInfoWidget extends StatelessWidget {
   String _getStudios(MalAnime? anime) {
     if (anime?.studios == null || anime!.studios!.isEmpty) return 'N/A';
     return anime.studios!.map((s) => s.name).join(', ');
+  }
+
+  List<(String, String)> _getAdditionalTitles() {
+    if (additionalTitles == null) return [];
+    if (additionalTitles is List) {
+      try {
+        final titles = additionalTitles as List<dynamic>;
+        return titles.map<(String, String)>((t) {
+          if (t is Map<String, dynamic>) {
+            return (t['language'] ?? '', t['title'] ?? '');
+          } else if (t.runtimeType.toString().contains('AdditionalTitle')) {
+            // Dynamic access for AdditionalTitle objects
+            return (t.language.toString(), t.title.toString());
+          }
+          return ('', '');
+        }).where((tuple) => tuple.$1.isNotEmpty && tuple.$2.isNotEmpty).toList();
+      } catch (e) {
+        print('Error parsing additional titles: $e');
+        return [];
+      }
+    }
+    return [];
   }
 }
 
