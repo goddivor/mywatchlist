@@ -240,21 +240,60 @@ class MoreInfoWidget extends StatelessWidget {
   String _getBroadcast(MalAnime? anime) {
     if (anime?.broadcast == null) return 'N/A';
 
-    // Try to use the new formatting method
+    final b = anime!.broadcast!;
+
+    // Essayer d'utiliser la méthode formatée
     try {
-      final formatted = MalApi.getFormattedAiringDate(anime!.broadcast!);
+      final formatted = MalApi.getFormattedAiringDate(b);
       if (formatted != null) return formatted;
     } catch (e) {
       print('Error using formatted airing date: $e');
     }
 
-    // Fallback to simple display
-    final b = anime!.broadcast!;
+    // Fallback manuel avec conversion simple
     final day = b.dayOfTheWeek?.capitalize() ?? '';
     final time = b.startTime ?? '';
 
     if (day.isEmpty && time.isEmpty) return 'N/A';
     if (time.isEmpty) return day;
+
+    // Calcul simple de l'heure locale
+    try {
+      final timeSplit = time.split(":");
+      final hours = int.tryParse(timeSplit[0]);
+      final mins = int.tryParse(timeSplit[1]);
+
+      if (hours != null && mins != null) {
+        // Conversion JST vers timezone local
+        final now = DateTime.now();
+        final localOffsetHours = now.timeZoneOffset.inHours;
+        final jstOffsetHours = 9;
+
+        var localHour = (hours + localOffsetHours - jstOffsetHours) % 24;
+        if (localHour < 0) localHour += 24;
+
+        final period = localHour >= 12 ? 'PM' : 'AM';
+        final displayHour = localHour % 12 == 0 ? 12 : localHour % 12;
+
+        // Obtenir le nom du timezone
+        String timezoneName;
+        try {
+          timezoneName = now.timeZoneName;
+        } catch (e) {
+          final offset = now.timeZoneOffset;
+          final hours = offset.inHours;
+          final minutes = offset.inMinutes.remainder(60);
+          timezoneName =
+              'UTC${hours >= 0 ? '+' : ''}$hours${minutes != 0 ? ':${minutes.abs().toString().padLeft(2, '0')}' : ''}';
+        }
+
+        return '$day at $displayHour:${mins.toString().padLeft(2, '0')} $period ($timezoneName)';
+      }
+    } catch (e) {
+      print('Error calculating local broadcast time: $e');
+    }
+
+    // Fallback final
     return '$day at $time (JST)';
   }
 

@@ -578,40 +578,55 @@ class MalApi {
     'Sunday': 7
   };
 
-// Version améliorée avec gestion des erreurs
-static String? getFormattedAiringDate(
-  Broadcast broadcast, [
-  DateFormat? dateFormat,
-]) {
-  try {
-    final airingDate = getAiringDate(broadcast);
-    dateFormat ??= DateFormat('h:mm a E');
-    
-    if (airingDate != null) {
-      // Convert from JST to local time
-      final jstOffset = Duration(hours: 9);
-      final localOffset = DateTime.now().timeZoneOffset;
-      final timeDifference = localOffset - jstOffset;
-      
-      final localTime = airingDate.add(timeDifference);
-      
-      // Get timezone abbreviation using DateFormat
+  static String? getFormattedAiringDate(
+    Broadcast broadcast, [
+    DateFormat? dateFormat,
+  ]) {
+    try {
+      final weekday = weekdaysOrderMap[broadcast.dayOfTheWeek];
+      if (weekday == null || broadcast.startTime.isEmpty) return null;
+
+      final timeSplit = broadcast.startTime.split(":");
+      final hours = int.tryParse(timeSplit[0]);
+      final mins = int.tryParse(timeSplit[1]);
+      if (hours == null || mins == null) return null;
+
+      // Get current date and time in user's timezone
       final now = DateTime.now();
-      String timeZoneAbbr;
+
+      // Create a date in JST (UTC+9)
+      final jstTime =
+          DateTime.utc(now.year, now.month, now.day, hours - 9, mins);
+
+      // Convert to user's local timezone
+      final localTime = jstTime.toLocal();
+
+      // Adjust to the correct day of the week
+      final targetDay = localTime.nextDate(weekday);
+      final finalTime = DateTime(targetDay.year, targetDay.month, targetDay.day,
+          localTime.hour, localTime.minute);
+
+      // Format the result
+      dateFormat ??= DateFormat('EEEE h:mm a');
+
+      // Get user's timezone name
+      String timezoneName;
       try {
-        timeZoneAbbr = DateFormat('z').format(now);
+        timezoneName = now.timeZoneName;
       } catch (e) {
-        // Fallback if timezone formatting fails
-        timeZoneAbbr = 'Local Time';
+        // Fallback si timeZoneName n'est pas disponible
+        final offsetHours = now.timeZoneOffset.inHours;
+        final offsetMinutes = now.timeZoneOffset.inMinutes.remainder(60);
+        timezoneName =
+            'UTC${offsetHours >= 0 ? '+' : ''}$offsetHours${offsetMinutes != 0 ? ':${offsetMinutes.abs().toString().padLeft(2, '0')}' : ''}';
       }
-      
-      return '${dateFormat.format(localTime)} ($timeZoneAbbr)';
+
+      return '${dateFormat.format(finalTime)} ($timezoneName)';
+    } catch (e) {
+      print('Error formatting airing date: $e');
     }
-  } catch (e) {
-    print('Error formatting airing date: $e');
+    return null;
   }
-  return null;
-}
 
   static DateTime? getAiringDate(Broadcast broadcast) {
     final nowDate = DateTime.now();
@@ -640,9 +655,9 @@ static String? getFormattedAiringDate(
   }
 
 // Dans mal_api.dart, remplacer la méthode timeZoneName
-static String timeZoneName(DateTime dateTime) {
-  // Utiliser DateFormat pour obtenir l'abréviation de la timezone
-  final format = DateFormat('z');
-  return format.format(dateTime);
-}
+  static String timeZoneName(DateTime dateTime) {
+    // Utiliser DateFormat pour obtenir l'abréviation de la timezone
+    final format = DateFormat('z');
+    return format.format(dateTime);
+  }
 }
