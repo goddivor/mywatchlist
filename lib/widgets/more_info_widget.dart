@@ -40,8 +40,8 @@ class MoreInfoWidget extends StatelessWidget {
   Widget _buildInfoSection(BuildContext context) {
     final infoItems = [
       InfoItem('Media Type', anime?.mediaType?.toUpperCase() ?? 'N/A'),
-      InfoItem('Episodes', anime?.numEpisodes?.toString() ?? 'N/A'),
-      InfoItem('Status', anime?.status?.capitalize() ?? 'N/A'),
+      InfoItem('Episodes', _getEpisodesDisplay(anime)),
+      InfoItem('Status', anime?.status?.standardize() ?? 'N/A'),
       InfoItem('MAL ID', anime?.id.toString() ?? 'N/A'),
       InfoItem('Premiered', _getPremiered(anime)),
       InfoItem('Aired', _getAiredPeriod(anime)),
@@ -63,8 +63,8 @@ class MoreInfoWidget extends StatelessWidget {
             Text(
               'Information',
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+                fontWeight: FontWeight.bold,
+              ),
             ),
             const SizedBox(height: 15),
             ...infoItems.map((item) => _buildInfoRow(context, item)),
@@ -85,22 +85,64 @@ class MoreInfoWidget extends StatelessWidget {
             child: Text(
               item.label,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context)
-                        .textTheme
-                        .bodyMedium
-                        ?.color
-                        ?.withOpacity(0.7),
-                  ),
+                color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
+              ),
             ),
           ),
           Expanded(
-            child: Text(
-              item.value,
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
+            child: item.label == 'Studios' 
+              ? _buildStudiosText(context, item.value)
+              : Text(
+                  item.value,
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildStudiosText(BuildContext context, String studiosText) {
+    if (anime?.studios == null || anime!.studios!.isEmpty) {
+      return Text(
+        studiosText,
+        style: Theme.of(context).textTheme.bodyMedium,
+      );
+    }
+
+    // Create a list of clickable studio names
+    final studioWidgets = <Widget>[];
+    for (int i = 0; i < anime!.studios!.length; i++) {
+      final studio = anime!.studios![i];
+      
+      studioWidgets.add(
+        InkWell(
+          onTap: () {
+            // TODO: Navigate to studio screen
+            print('Navigate to studio: ${studio.name} (ID: ${studio.id})');
+          },
+          child: Text(
+            studio.name,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              decoration: TextDecoration.underline,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+          ),
+        ),
+      );
+
+      if (i < anime!.studios!.length - 1) {
+        studioWidgets.add(
+          Text(
+            ', ',
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+        );
+      }
+    }
+
+    return Wrap(
+      children: studioWidgets,
     );
   }
 
@@ -108,11 +150,9 @@ class MoreInfoWidget extends StatelessWidget {
     final synonyms = anime?.alternativeTitles?.synonyms ?? [];
     final titles = [
       if (anime?.title != null) ('Original', anime!.title),
-      if (anime?.alternativeTitles?.en != null &&
-          anime!.alternativeTitles!.en.isNotEmpty)
+      if (anime?.alternativeTitles?.en != null && anime!.alternativeTitles!.en.isNotEmpty) 
         ('English', anime!.alternativeTitles!.en),
-      if (anime?.alternativeTitles?.ja != null &&
-          anime!.alternativeTitles!.ja.isNotEmpty)
+      if (anime?.alternativeTitles?.ja != null && anime!.alternativeTitles!.ja.isNotEmpty) 
         ('Japanese', anime!.alternativeTitles!.ja),
       ...synonyms.map((s) => ('Synonym', s)),
       ..._getAdditionalTitles(),
@@ -131,12 +171,11 @@ class MoreInfoWidget extends StatelessWidget {
             Text(
               'Alternative Titles',
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+                fontWeight: FontWeight.bold,
+              ),
             ),
             const SizedBox(height: 15),
-            ...titles
-                .map((title) => _buildTitleRow(context, title.$1, title.$2)),
+            ...titles.map((title) => _buildTitleRow(context, title.$1, title.$2)),
           ],
         ),
       ),
@@ -154,12 +193,8 @@ class MoreInfoWidget extends StatelessWidget {
             child: Text(
               type,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context)
-                        .textTheme
-                        .bodyMedium
-                        ?.color
-                        ?.withOpacity(0.7),
-                  ),
+                color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
+              ),
             ),
           ),
           const SizedBox(width: 10),
@@ -176,7 +211,7 @@ class MoreInfoWidget extends StatelessWidget {
 
   Widget _buildGenresAndThemesSection(BuildContext context) {
     if (anime?.genres == null || anime!.genres!.isEmpty) return Container();
-
+    
     return _buildTagsRow(context, 'Genres', anime!.genres!);
   }
 
@@ -192,16 +227,14 @@ class MoreInfoWidget extends StatelessWidget {
             Text(
               label,
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+                fontWeight: FontWeight.bold,
+              ),
             ),
             const SizedBox(height: 10),
             Wrap(
               spacing: 8,
               runSpacing: 8,
-              children: genres
-                  .map((genre) => _buildGenreChip(context, genre))
-                  .toList(),
+              children: genres.map((genre) => _buildGenreChip(context, genre)).toList(),
             ),
           ],
         ),
@@ -210,31 +243,60 @@ class MoreInfoWidget extends StatelessWidget {
   }
 
   Widget _buildGenreChip(BuildContext context, Genre genre) {
-    return Chip(
-      label: Text(
-        genre.name,
-        style: Theme.of(context).textTheme.bodySmall,
-      ),
-      backgroundColor: Theme.of(context).colorScheme.secondaryContainer,
-      side: BorderSide(
-        color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+    return InkWell(
+      onTap: () {
+        // TODO: Navigate to genre screen
+        print('Navigate to genre: ${genre.name} (ID: ${genre.id})');
+      },
+      child: Chip(
+        label: Text(
+          genre.name,
+          style: Theme.of(context).textTheme.bodySmall,
+        ),
+        backgroundColor: Theme.of(context).colorScheme.secondaryContainer,
+        side: BorderSide(
+          color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+        ),
       ),
     );
   }
 
+  String _getEpisodesDisplay(MalAnime? anime) {
+    if (anime?.numEpisodes == null || anime!.numEpisodes == 0) {
+      return 'Unknown';
+    }
+    return anime.numEpisodes.toString();
+  }
+
   String _getPremiered(MalAnime? anime) {
     if (anime?.startSeason == null) return 'N/A';
-    return '${anime!.startSeason!.season.titleCase()} ${anime.startSeason!.year}';
+    final season = anime!.startSeason!.season;
+    // Capitalize the first letter of the season
+    final capitalizedSeason = season.isNotEmpty 
+        ? '${season[0].toUpperCase()}${season.substring(1).toLowerCase()}'
+        : season;
+    return '$capitalizedSeason ${anime.startSeason!.year}';
   }
 
   String _getAiredPeriod(MalAnime? anime) {
     final start = anime?.startDate ?? '';
     final end = anime?.endDate ?? '';
-
+    
+    // Both empty
     if (start.isEmpty && end.isEmpty) return 'N/A';
-    if (end.isEmpty) return 'From $start';
-    if (start.isEmpty) return 'To $end';
-    return '$start to $end';
+    
+    // Only start date available
+    if (end.isEmpty && start.isNotEmpty) {
+      return '$start to ?';
+    }
+    
+    // Both dates available
+    if (start.isNotEmpty && end.isNotEmpty) {
+      return '$start to $end';
+    }
+    
+    // Only end date (rare case)
+    return '? to $end';
   }
 
   String _getBroadcast(MalAnime? anime) {
@@ -297,26 +359,22 @@ class MoreInfoWidget extends StatelessWidget {
     return '$day at $time (JST)';
   }
 
-// Dans _getDuration, ajuster pour les bonnes unités
   String _getDuration(MalAnime? anime) {
-    final durationValue = anime?.averageEpisodeDuration;
-    if (durationValue == null || durationValue <= 0) return 'N/A';
-
-    // MAL API returns duration in seconds
-    Duration duration = Duration(seconds: durationValue);
-    final hours = duration.inHours;
-    final minDiff = duration.inMinutes.remainder(60);
-
-    String result = '';
-    if (hours > 0) {
-      result += '${hours}hr${hours > 1 ? 's' : ''} ';
+    final durationInSeconds = anime?.averageEpisodeDuration;
+    if (durationInSeconds != null && durationInSeconds > 0) {
+      Duration duration = Duration(seconds: durationInSeconds);
+      final hours = duration.inHours;
+      final minDiff = duration.inMinutes.remainder(60);
+      
+      String result = '';
+      if (hours > 0) {
+        result += '$hours${hours == 1 ? 'hr' : 'hrs'} ';
+      }
+      result += '${minDiff.toString().padLeft(2, '0')}${minDiff == 1 ? 'min' : 'mins'}';
+      
+      return result;
     }
-
-    if (minDiff > 0) {
-      result += '${minDiff}min${minDiff > 1 ? 's' : ''}';
-    }
-
-    return result.isNotEmpty ? result.trim() : 'Less than a minute';
+    return 'N/A';
   }
 
   String _getStudios(MalAnime? anime) {
@@ -329,18 +387,15 @@ class MoreInfoWidget extends StatelessWidget {
     if (additionalTitles is List) {
       try {
         final titles = additionalTitles as List<dynamic>;
-        return titles
-            .map<(String, String)>((t) {
-              if (t is Map<String, dynamic>) {
-                return (t['language'] ?? '', t['title'] ?? '');
-              } else if (t.runtimeType.toString().contains('AdditionalTitle')) {
-                // Dynamic access for AdditionalTitle objects
-                return (t.language.toString(), t.title.toString());
-              }
-              return ('', '');
-            })
-            .where((tuple) => tuple.$1.isNotEmpty && tuple.$2.isNotEmpty)
-            .toList();
+        return titles.map<(String, String)>((t) {
+          if (t is Map<String, dynamic>) {
+            return (t['language'] ?? '', t['title'] ?? '');
+          } else if (t.runtimeType.toString().contains('AdditionalTitle')) {
+            // Dynamic access for AdditionalTitle objects
+            return (t.language.toString(), t.title.toString());
+          }
+          return ('', '');
+        }).where((tuple) => tuple.$1.isNotEmpty && tuple.$2.isNotEmpty).toList();
       } catch (e) {
         print('Error parsing additional titles: $e');
         return [];
