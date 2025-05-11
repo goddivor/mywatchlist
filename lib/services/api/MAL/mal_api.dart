@@ -578,7 +578,7 @@ class MalApi {
     'Sunday': 7
   };
 
-// Dans mal_api.dart, amélioration de getFormattedAiringDate
+// Version améliorée avec gestion des erreurs
 static String? getFormattedAiringDate(
   Broadcast broadcast, [
   DateFormat? dateFormat,
@@ -595,11 +595,17 @@ static String? getFormattedAiringDate(
       
       final localTime = airingDate.add(timeDifference);
       
-      // Get timezone abbreviation
+      // Get timezone abbreviation using DateFormat
       final now = DateTime.now();
-      final timeZoneName = DateFormat('z').format(now);
+      String timeZoneAbbr;
+      try {
+        timeZoneAbbr = DateFormat('z').format(now);
+      } catch (e) {
+        // Fallback if timezone formatting fails
+        timeZoneAbbr = 'Local Time';
+      }
       
-      return '${dateFormat.format(localTime)} ($timeZoneName)';
+      return '${dateFormat.format(localTime)} ($timeZoneAbbr)';
     }
   } catch (e) {
     print('Error formatting airing date: $e');
@@ -633,8 +639,10 @@ static String? getFormattedAiringDate(
     return airingTime;
   }
 
-  static String timeZoneName(DateTime dateTime) {
-    // Get local timezone name
-    return dateTime.timeZoneAbbreviation;
-  }
+// Dans mal_api.dart, remplacer la méthode timeZoneName
+static String timeZoneName(DateTime dateTime) {
+  // Utiliser DateFormat pour obtenir l'abréviation de la timezone
+  final format = DateFormat('z');
+  return format.format(dateTime);
+}
 }
