@@ -12,6 +12,7 @@ class AnimeDetailHtml {
   final List<MangaCharacters>? mangaCharacters;
   final List<CharacterNode>? staff;
   final List<InterestStack>? interestStacks;
+    final List<AdditionalTitle>? additionalTitles;
 
   AnimeDetailHtml({
     this.title,
@@ -25,6 +26,7 @@ class AnimeDetailHtml {
     this.mangaCharacters,
     this.staff,
     this.interestStacks,
+    this.additionalTitles,
   });
 
   factory AnimeDetailHtml.fromJson(Map<String, dynamic> json) {
@@ -56,6 +58,9 @@ class AnimeDetailHtml {
       interestStacks: (json['interestStacks'] as List?)
           ?.map((item) => InterestStack.fromJson(item))
           .toList(),
+       additionalTitles: (json['additionalTitles'] as List?)
+          ?.map((item) => AdditionalTitle.fromJson(item))
+          .toList(), 
     );
   }
 
@@ -74,6 +79,7 @@ class AnimeDetailHtml {
       'mangaCharacters': mangaCharacters?.map((item) => item.toJson()).toList(),
       'staff': staff?.map((item) => item.toJson()).toList(),
       'interestStacks': interestStacks?.map((item) => item.toJson()).toList(),
+      'additionalTitles': additionalTitles?.map((item) => item.toJson()).toList(),
     };
   }
 }
@@ -293,6 +299,30 @@ class Link {
       'url': url,
       'linkType': linkType?.name, // Use .name instead of toString()
       'imageUrl': imageUrl,
+    };
+  }
+}
+
+class AdditionalTitle {
+  final String title;
+  final String language;
+
+  AdditionalTitle({
+    required this.title,
+    required this.language,
+  });
+
+  factory AdditionalTitle.fromJson(Map<String, dynamic> json) {
+    return AdditionalTitle(
+      title: json['title'] as String,
+      language: json['language'] as String,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'title': title,
+      'language': language,
     };
   }
 }

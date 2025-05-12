@@ -2,6 +2,7 @@
 
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
 import 'dart:convert';
 
 import 'package:mywatchlist/constants/constants.dart';
@@ -564,5 +565,99 @@ class MalApi {
     }
 
     return headers;
+  }
+
+  // Dans mal_api.dart, ajouter ces méthodes statiques
+  static const weekdaysOrderMap = {
+    'Monday': 1,
+    'Tuesday': 2,
+    'Wednesday': 3,
+    'Thursday': 4,
+    'Friday': 5,
+    'Saturday': 6,
+    'Sunday': 7
+  };
+
+  static String? getFormattedAiringDate(
+    Broadcast broadcast, [
+    DateFormat? dateFormat,
+  ]) {
+    try {
+      final weekday = weekdaysOrderMap[broadcast.dayOfTheWeek];
+      if (weekday == null || broadcast.startTime.isEmpty) return null;
+
+      final timeSplit = broadcast.startTime.split(":");
+      final hours = int.tryParse(timeSplit[0]);
+      final mins = int.tryParse(timeSplit[1]);
+      if (hours == null || mins == null) return null;
+
+      // Get current date and time in user's timezone
+      final now = DateTime.now();
+
+      // Create a date in JST (UTC+9)
+      final jstTime =
+          DateTime.utc(now.year, now.month, now.day, hours - 9, mins);
+
+      // Convert to user's local timezone
+      final localTime = jstTime.toLocal();
+
+      // Adjust to the correct day of the week
+      final targetDay = localTime.nextDate(weekday);
+      final finalTime = DateTime(targetDay.year, targetDay.month, targetDay.day,
+          localTime.hour, localTime.minute);
+
+      // Format the result
+      dateFormat ??= DateFormat('EEEE h:mm a');
+
+      // Get user's timezone name
+      String timezoneName;
+      try {
+        timezoneName = now.timeZoneName;
+      } catch (e) {
+        // Fallback si timeZoneName n'est pas disponible
+        final offsetHours = now.timeZoneOffset.inHours;
+        final offsetMinutes = now.timeZoneOffset.inMinutes.remainder(60);
+        timezoneName =
+            'UTC${offsetHours >= 0 ? '+' : ''}$offsetHours${offsetMinutes != 0 ? ':${offsetMinutes.abs().toString().padLeft(2, '0')}' : ''}';
+      }
+
+      return '${dateFormat.format(finalTime)} ($timezoneName)';
+    } catch (e) {
+      print('Error formatting airing date: $e');
+    }
+    return null;
+  }
+
+  static DateTime? getAiringDate(Broadcast broadcast) {
+    final nowDate = DateTime.now();
+    try {
+      final weekday = weekdaysOrderMap[broadcast.dayOfTheWeek];
+      if (weekday != null) {
+        final timeSplit = broadcast.startTime.split(":");
+        final hours = int.tryParse(timeSplit[0]);
+        final mins = int.tryParse(timeSplit[1]);
+        if (hours != null && mins != null) {
+          return nowDate.nextDate(weekday).add(Duration(
+                hours: hours - 9, // Japan Time offset
+                minutes: mins,
+              ));
+        }
+      }
+    } catch (e) {
+      print('Error getting airing date: $e');
+    }
+    return null;
+  }
+
+  static DateTime getAdjustedTime(DateTime airingTime, DateTime nowDate) {
+    // Convert from Japan time to local time
+    return airingTime;
+  }
+
+// Dans mal_api.dart, remplacer la méthode timeZoneName
+  static String timeZoneName(DateTime dateTime) {
+    // Utiliser DateFormat pour obtenir l'abréviation de la timezone
+    final format = DateFormat('z');
+    return format.format(dateTime);
   }
 }

@@ -309,7 +309,7 @@ class HtmlParsers {
       var title = e.attributes['title'] ?? e.text.trim();
       var url = e.attributes['href']?.trim() ?? '';
       // var imageUrl = e.querySelector('img')?.attributes['src']?.trim() ??
-          ''; // Récupérer l'URL de l'image si elle existe
+      ''; // Récupérer l'URL de l'image si elle existe
       return Link(
         name: name,
         url: url,
@@ -623,6 +623,41 @@ class HtmlParsers {
     }).toList();
   }
 
+  static List<AdditionalTitle> _getAdditionalTitles(Document document) {
+    var alternativeTitlesElement =
+        document.querySelector('.js-alternative-titles');
+    if (alternativeTitlesElement == null) {
+      return [];
+    }
+
+    var titleElements =
+        alternativeTitlesElement.querySelectorAll('.spaceit_pad');
+    List<AdditionalTitle> additionalTitles = [];
+
+    for (var titleElement in titleElements) {
+      var languageElement = titleElement.querySelector('.dark_text');
+      if (languageElement == null) continue;
+
+      var language = languageElement.text.trim().replaceAll(':', '');
+
+      // Skip English titles
+      if (language.toLowerCase() == 'english') continue;
+
+      // Get the title text by removing the language part
+      var fullText = titleElement.text.trim();
+      var title = fullText.replaceFirst('$language:', '').trim();
+
+      if (title.isNotEmpty) {
+        additionalTitles.add(AdditionalTitle(
+          title: title,
+          language: language,
+        ));
+      }
+    }
+
+    return additionalTitles;
+  }
+
   static int? _getBeforeInt(String text,
       {String? endPattern, String? startPattern}) {
     return int.tryParse(
@@ -708,6 +743,7 @@ class HtmlParsers {
           type == ContentType.manga ? _getMangaCharacters(document) : null,
       staff: type == ContentType.anime ? _getStaff(document) : null,
       interestStacks: _getInterestStacks(document),
+      additionalTitles: _getAdditionalTitles(document),
     );
   }
 
