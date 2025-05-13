@@ -3,7 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:mywatchlist/constants/constants.dart';
 import 'package:mywatchlist/generated/l10n.dart';
-import 'package:mywatchlist/widgets/custombutton.dart';
+import 'package:mywatchlist/widgets/common/custombutton.dart';
 
 void _gotoSearch(BuildContext context) {
   // gotoPage(context: context, newPage: GeneralSearchScreen(autoFocus: false));

@@ -13,7 +13,7 @@ import 'package:mywatchlist/user/accounts/account_bloc.dart';
 import 'package:mywatchlist/user/accounts/models/account.dart';
 // import 'package:mywatchlist/user/user.dart';
 import 'package:mywatchlist/user/user_preference.dart';
-import 'package:mywatchlist/widgets/avatar_widget.dart';
+import 'package:mywatchlist/widgets/common/avatar_widget.dart';
 // import 'package:mywatchlist/widgets/custombutton.dart';
 // import 'package:mywatchlist/utils/file_helper.dart';
 import 'package:mywatchlist/utils/sidebar_bg_manager.dart';

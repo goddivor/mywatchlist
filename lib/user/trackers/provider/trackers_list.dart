@@ -12,8 +12,8 @@ import 'package:mywatchlist/user/accounts/account_bloc.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mywatchlist/user/trackers/models/tracker_model.dart';
 import 'package:mywatchlist/user/user.dart';
-import 'package:mywatchlist/widgets/kitsu_login_dialog.dart';
-import 'package:mywatchlist/widgets/logout_dialog.dart';
+import 'package:mywatchlist/widgets/Kitsu/kitsu_login_dialog.dart';
+import 'package:mywatchlist/widgets/common/logout_dialog.dart';
 
 // final List<Tracker> trackers = [
 //   Tracker(name: 'MyAnimeList', imageUrl: 'assets/images/mal-icon.png'),

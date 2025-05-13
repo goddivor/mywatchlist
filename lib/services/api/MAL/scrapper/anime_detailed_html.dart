@@ -1,4 +1,4 @@
-import 'package:mywatchlist/widgets/media_platforms.dart';
+import 'package:mywatchlist/widgets/MAL/content/media_platforms.dart';
 
 class AnimeDetailHtml {
   final String? title;

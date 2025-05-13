@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:mywatchlist/screens/settings/language_settings.dart';
 import 'package:mywatchlist/screens/onboarding_trackers.dart';
 import 'package:mywatchlist/screens/settings/theme_settings.dart';
-import 'package:mywatchlist/widgets/background.dart';
+import 'package:mywatchlist/widgets/common/background.dart';
 
 class IntroScreen extends StatefulWidget {
   final int index;

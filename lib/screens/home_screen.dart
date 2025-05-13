@@ -26,8 +26,8 @@ import 'package:mywatchlist/pages/MAL/mal_user_profile_page.dart';
 import 'package:mywatchlist/pages/side_bar.dart';
 import 'package:mywatchlist/user/accounts/account_bloc.dart';
 import 'package:mywatchlist/utils/page_transitions.dart';
-import 'package:mywatchlist/widgets/background.dart';
-import 'package:mywatchlist/widgets/bottomnavbar.dart';
+import 'package:mywatchlist/widgets/common/background.dart';
+import 'package:mywatchlist/widgets/common/bottomnavbar.dart';
 
 
 class HomeScreen extends StatefulWidget {

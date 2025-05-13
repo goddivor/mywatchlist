@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:mywatchlist/constants/constants.dart';
 import 'package:mywatchlist/main.dart';
 import 'package:mywatchlist/user/user.dart';
-import 'package:mywatchlist/widgets/home/accordion.dart';
+import 'package:mywatchlist/widgets/MAL/home/accordion.dart';
 
 class OptionTile extends StatelessWidget {
   final String? text;

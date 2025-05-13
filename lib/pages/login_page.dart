@@ -19,7 +19,7 @@ import 'package:mywatchlist/user/trackers/models/tracker_model.dart';
 import 'package:mywatchlist/user/trackers/provider/trackers_list.dart';
 import 'package:mywatchlist/user/trackers/widgets/tracker_item.dart';
 import 'package:mywatchlist/user/user.dart';
-import 'package:mywatchlist/widgets/background.dart';
+import 'package:mywatchlist/widgets/common/background.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});

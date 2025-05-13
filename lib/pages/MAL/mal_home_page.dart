@@ -397,14 +397,14 @@ import 'package:mywatchlist/user/MAL/mal_home_preferences_bloc.dart';
 import 'package:mywatchlist/user/requests/requests_bloc.dart';
 import 'package:mywatchlist/user/theme/theme_bloc.dart';
 import 'package:mywatchlist/user/theme/theme_state.dart';
-import 'package:mywatchlist/utils/mal_home_page_preferences.dart';
-import 'package:mywatchlist/widgets/contentlistwidget.dart';
+import 'package:mywatchlist/user/MAL/mal_home_page_preferences.dart';
+import 'package:mywatchlist/widgets/MAL/home/contentlistwidget.dart';
 // import 'package:mywatchlist/widgets/custombutton.dart';
-import 'package:mywatchlist/widgets/home/section_header.dart';
-import 'package:mywatchlist/widgets/homeappbar.dart';
-import 'package:mywatchlist/widgets/loadingcard.dart';
-import 'package:mywatchlist/widgets/news_widget.dart';
-import 'package:mywatchlist/widgets/slivers.dart';
+import 'package:mywatchlist/widgets/MAL/home/section_header.dart';
+import 'package:mywatchlist/widgets/MAL/home/homeappbar.dart';
+import 'package:mywatchlist/widgets/loading/loadingcard.dart';
+import 'package:mywatchlist/widgets/MAL/home/news_widget.dart';
+import 'package:mywatchlist/widgets/common/slivers.dart';
 
 class MalHomePage extends StatefulWidget {
   const MalHomePage({super.key});

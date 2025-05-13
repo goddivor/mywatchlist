@@ -6,11 +6,11 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:intl/intl.dart';
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/services/api/MAL/mal_anime.dart';
-import 'package:mywatchlist/widgets/custombutton.dart';
+import 'package:mywatchlist/widgets/common/custombutton.dart';
 import 'dart:ui' as ui;
 
-import 'package:mywatchlist/widgets/shimmercolor.dart';
-import 'package:mywatchlist/widgets/slivers.dart';
+import 'package:mywatchlist/widgets/loading/shimmercolor.dart';
+import 'package:mywatchlist/widgets/common/slivers.dart';
 import 'package:scroll_to_index/scroll_to_index.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:url_launcher/url_launcher.dart';
