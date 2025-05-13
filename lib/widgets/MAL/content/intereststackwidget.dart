@@ -72,19 +72,16 @@ class InterestStackContentList extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             if (!isHoriz) const SizedBox(height: 10),
-                            // title(
-                            //   item.title?.standardize() ?? '',
-                            //   opacity: 1,
-                            //   fontSize: 16,
-                            //   textOverflow: TextOverflow.fade,
-                            // ),
                             Text(
                               item.title?.standardize() ?? '',
                               maxLines: 5,
-                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                fontSize: 16,
-                                overflow: TextOverflow.ellipsis,
-                                ),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyMedium
+                                  ?.copyWith(
+                                    fontSize: 16,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
                             ),
                             _usernameWidget(context, item.username),
                             const SizedBox(height: 15),
@@ -97,7 +94,8 @@ class InterestStackContentList extends StatelessWidget {
                                 )}',
                                 fontSize: 11,
                                 textOverflow: TextOverflow.fade,
-                                textStyle: Theme.of(context).textTheme.bodyMedium),
+                                textStyle:
+                                    Theme.of(context).textTheme.bodyMedium),
                             const SizedBox(height: 5),
                             title(
                                 '${item.reStacks ?? 0} ${Intl.message(
@@ -108,25 +106,8 @@ class InterestStackContentList extends StatelessWidget {
                                 )}',
                                 fontSize: 11,
                                 textOverflow: TextOverflow.fade,
-                                textStyle: Theme.of(context).textTheme.bodyMedium),
-                            // if (!isHoriz &&
-                            //     item.updatedAt != null &&
-                            //     item.updatedAt!.isNotBlank) ...[
-                            //   const SizedBox(height:10),
-                            //   title(item.updatedAt, fontSize: 11),
-                            // ],
-                            // if (!isHoriz &&
-                            //     item.description != null &&
-                            //     item.description!.isNotBlank) ...[
-                            //   const SizedBox(height:10),
-                            //   Container(
-                            //     constraints: const BoxConstraints(maxHeight: 240.0),
-                            //     child: title(
-                            //       item.description,
-                            //       textOverflow: TextOverflow.fade,
-                            //     ),
-                            //   ),
-                            // ]
+                                textStyle:
+                                    Theme.of(context).textTheme.bodyMedium),
                           ],
                         ),
                       )
@@ -183,7 +164,9 @@ Widget _usernameWidget(
       padding: padding ?? const EdgeInsets.only(top: 15),
       child: conditional(
         on: !invalidUserNames.contains(username),
-        child: title(usernameText, textOverflow: TextOverflow.fade, textStyle: Theme.of(context).textTheme.bodyMedium),
+        child: title(usernameText,
+            textOverflow: TextOverflow.fade,
+            textStyle: Theme.of(context).textTheme.bodyMedium),
         parent: (ch) => ToolTipButton(
           message: usernameText,
           onTap: () => {},

@@ -1,5 +1,3 @@
-// lib/widgets/review/sort_dropdown.dart
-
 import 'package:flutter/material.dart';
 import 'package:mywatchlist/widgets/MAL/review/review_filters.dart';
 

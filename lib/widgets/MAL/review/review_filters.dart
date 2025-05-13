@@ -1,5 +1,3 @@
-// lib/widgets/review/review_filters.dart (suite)
-
 enum ReviewSortType {
   dateDesc,
   dateAsc,

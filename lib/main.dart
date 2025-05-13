@@ -23,7 +23,6 @@ import 'package:mywatchlist/user/theme/theme_bloc.dart';
 import 'package:mywatchlist/user/theme/theme_event.dart';
 import 'package:mywatchlist/user/theme/theme_state.dart';
 import 'package:mywatchlist/user/user.dart';
-import 'package:path/path.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -154,19 +153,6 @@ class _MyWatchListAppState extends State<MyWatchListApp> {
     );
   }
 }
-
-// class MyWatchListApp extends StatelessWidget {
-//   const MyWatchListApp({super.key});
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return MaterialApp(
-//       debugShowCheckedModeBanner: false,
-//       title: 'Flutter Demo',
-//       home: OpenScreen(),
-//     );
-//   }
-// }
 
 // Fonction pour redémarrer l'application
 void restartApp(BuildContext context) {

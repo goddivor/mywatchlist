@@ -308,7 +308,6 @@ class HtmlParsers {
           ''; // Le texte du lien est dans la div.caption
       var title = e.attributes['title'] ?? e.text.trim();
       var url = e.attributes['href']?.trim() ?? '';
-      // var imageUrl = e.querySelector('img')?.attributes['src']?.trim() ??
       ''; // Récupérer l'URL de l'image si elle existe
       return Link(
         name: name,

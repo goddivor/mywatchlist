@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:mywatchlist/constants/constants.dart';
 import 'package:mywatchlist/services/api/MAL/mal_anime.dart';
-// import 'package:my_watch_list/widgets/custombutton.dart';
+
 
 class SysonpsisWidget extends StatefulWidget {
   final String? synopsis;

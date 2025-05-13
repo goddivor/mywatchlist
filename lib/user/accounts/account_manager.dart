@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:mywatchlist/constants/constants.dart';
-// import 'package:mywatchlist/user/accounts/models/account.dart';
-// import 'package:mywatchlist/user/user.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AccountManager with ChangeNotifier {

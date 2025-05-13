@@ -1,6 +1,5 @@
 import 'package:html/dom.dart';
 import 'package:http/http.dart' as http;
-// import 'package:html/parser.dart' as parser;
 
 /// A utility class for connecting to HTTP resources and parsing HTML responses.
 class HttpConnect {

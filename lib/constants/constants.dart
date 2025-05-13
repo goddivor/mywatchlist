@@ -192,7 +192,6 @@ Widget title(
   } else {
     return Text(
       title,
-      // overflow: TextOverflow.ellipsis,
       overflow: textOverflow,
       textAlign: align,
       textScaleFactor: scaleFactor,
@@ -277,7 +276,6 @@ Widget iconAndText(
   }
   return Row(
     mainAxisAlignment: mainAxisAlignment,
-    // alignment: WrapAlignment.center,
     mainAxisSize: mainAxisSize,
     children: content,
   );

@@ -1,12 +1,8 @@
-// lib/widgets/show_forum.dart
-
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-// import 'package:mywatchlist/constants/constants.dart';
 import 'package:mywatchlist/services/api/Jikan/jikan_anime_forum.dart';
 import 'package:mywatchlist/services/api/Jikan/jikan_api.dart';
 import 'package:mywatchlist/widgets/loading/shimmercolor.dart';
-// import 'package:url_launcher/url_launcher.dart';
 
 class ShowAnimeForum extends StatefulWidget {
   final int animeId;

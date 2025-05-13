@@ -33,7 +33,6 @@ class AnimeCardBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // final userPrefResize = homePageTileSize != null;
     final editWidget = Icon(
       Icons.edit,
       color: nsv?.color == null ? Colors.black : Colors.white,

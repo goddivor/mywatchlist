@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:mywatchlist/constants/constants.dart';
 import 'package:mywatchlist/services/api/MAL/mal_anime.dart';
 import 'package:mywatchlist/services/api/MAL/mal_api.dart';
-import 'package:mywatchlist/services/api/MAL/scrapper/anime_detailed_html.dart';
-import 'package:intl/intl.dart';
 
 class MoreInfoWidget extends StatelessWidget {
   final MalAnime? anime;
@@ -313,8 +311,8 @@ class MoreInfoWidget extends StatelessWidget {
     }
 
     // Fallback manuel avec conversion simple
-    final day = b.dayOfTheWeek?.capitalize() ?? '';
-    final time = b.startTime ?? '';
+    final day = b.dayOfTheWeek.capitalize() ?? '';
+    final time = b.startTime;
 
     if (day.isEmpty && time.isEmpty) return 'N/A';
     if (time.isEmpty) return day;

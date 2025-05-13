@@ -5,12 +5,6 @@ import 'package:mywatchlist/services/api/MAL/mal_anime.dart';
 import 'package:mywatchlist/user/MAL/mal_home_preferences_bloc.dart';
 import 'package:mywatchlist/user/MAL/mal_home_page_preferences.dart';
 import 'package:mywatchlist/widgets/MAL/home/contentlistwidget.dart';
-// import 'package:my_watch_list/widgets/silvers.dart';
-
-// enum _SelectedView {
-//   list,
-//   graph,
-// }
 
 class RelatedAnimeWidget extends StatefulWidget {
   final List<RelatedAnime> relatedAnimeList;
@@ -64,26 +58,7 @@ class _RelatedAnimeWidgetState extends State<RelatedAnimeWidget>
     }
   }
 
-  void _setAnimeGraph() async {
-    // final now = DateTime.now().millisecondsSinceEpoch / 1000;
-    // try {
-    //   _graph = await DalApi.i.getAnimeGraph(widget.id);
-    //   final then = DateTime.now().millisecondsSinceEpoch / 1000;
-    //   if (_graph is AnimeGraph && nullOrEmpty(_graph.edges)) {
-    //     throw Error();
-    //   }
-    //   if ((then - now) > 1) {
-    //     showSnackBar(_graphSnackBar(), Duration(seconds: 3));
-    //   }
-    // } catch (e) {
-    //   final then = DateTime.now().millisecondsSinceEpoch / 1000;
-    //   _graph = e;
-    //   if ((then - now) > 1) {
-    //     showSnackBar(_graphSnackBar());
-    //   }
-    // }
-    // if (mounted) setState(() {});
-  }
+  void _setAnimeGraph() async {}
 
   @override
   Widget build(BuildContext context) {
@@ -103,155 +78,6 @@ class _RelatedAnimeWidgetState extends State<RelatedAnimeWidget>
     return const SizedBox();
   }
 
-  // Widget get _animeGraph {
-  //   if (_selectedView == _SelectedView.list) {
-  //     return _gridView;
-  //   } else {
-  //     if (_graph is AnimeGraph) {
-  //       return _graphWidget(_graph);
-  //     } else {
-  //       return _noContentView();
-  //     }
-  //   }
-  // }
-
-  // Widget _noContentView() {
-  //   return TitlebarScreen(
-  //     Center(child: showNoContent()),
-  //     appbarTitle: _appBarTitle,
-  //     actions: _getActions(false),
-  //     autoIncludeSearch: false,
-  //   );
-  // }
-
-  // Widget _graphWidget(AnimeGraph data) {
-  //   return AnimeGraphWidget(
-  //     id: widget.id,
-  //     graph: data,
-  //     statusMap: widget.statusMap ?? {},
-  //     actions: _getActions(true),
-  //   );
-  // }
-
-  // NestedScrollView get _gridView {
-  //   return NestedScrollView(
-  //     headerSliverBuilder: (context, innerBoxIsScrolled) => [
-  //       SliverAppBarWrapper(
-  //         bottom: _tabBar,
-  //         expandedHeight: 93,
-  //         title: Text(_appBarTitle),
-  //         actions: _getActions(innerBoxIsScrolled),
-  //       )
-  //     ],
-  //     body: TabBarView(
-  //       children: animeWidgets.values
-  //           .map((e) => CustomScrollWrapper([
-  //                 SB.lh20,
-  //                 _contentListWidget(e),
-  //                 SB.lh60,
-  //               ]))
-  //           .toList(),
-  //     ),
-  //   );
-  // }
-
-  // String get _appBarTitle => '${S.current.Related} ${widget.category}';
-
-  // Widget _graphSnackBar() {
-  //   return Row(
-  //     children: [
-  //       Expanded(
-  //         child: Text(
-  //           _graph is AnimeGraph
-  //               ? S.current.Graph_loaded
-  //               : S.current.Couldnt_generate_graph,
-  //         ),
-  //       ),
-  //       SB.w10,
-  //       if (_graph is AnimeGraph)
-  //         ShadowButton(
-  //           onPressed: () => _switchView(),
-  //           child: Text(S.current.Switch),
-  //         )
-  //     ],
-  //   );
-  // }
-
-  // List<Widget> _getActions(bool innerBoxIsScrolled) {
-  //   return [
-  //     if (_graph is AnimeGraph)
-  //       IconButton(
-  //         onPressed: () => _switchView(),
-  //         icon: Icon(
-  //           _selectedView == _SelectedView.list
-  //               ? Icons.graphic_eq
-  //               : Icons.list_alt,
-  //         ),
-  //       ),
-  //     if (_graph == null && !innerBoxIsScrolled)
-  //       SizedBox(
-  //         width: 25,
-  //         height: 25,
-  //         child: CircularProgressIndicator(
-  //           strokeWidth: 1.5,
-  //         ),
-  //       ),
-  //     PopupMenuBuilder(
-  //       menuItems: [
-  //         shareMenuItem()
-  //           ..onTap = () {
-  //             openShareBuilder(
-  //               context,
-  //               animeWidgets.entries
-  //                   .map((e) => ShareInput(
-  //                         title: e.key,
-  //                         content: e.value
-  //                             .map((f) => buildShareOutput(
-  //                                   buildShareInputs(
-  //                                     f.content,
-  //                                     DalPathUtils.browserUrl(DalNode(
-  //                                       category: widget.category,
-  //                                       id: f.content!.id!,
-  //                                     )),
-  //                                     category: widget.category,
-  //                                   ),
-  //                                   props: ShareOutputProps(prefix: '\t'),
-  //                                 ))
-  //                             .reduce((e1, e2) => '$e1 \n$e2'),
-  //                       ))
-  //                   .toList(),
-  //               S.current.Related,
-  //               props: ShareOutputProps(termSpace: '\n', forceReducer: true),
-  //             );
-  //           },
-  //         AppbarMenuItem(
-  //           S.current.Edit,
-  //           createIcon(Icons.edit),
-  //           onTap: () => DalPathUtils.launchNodeInBrowser(
-  //             DalNode(
-  //                 id: widget.id,
-  //                 category: widget.category,
-  //                 dalSubType: DalSubType.relations,
-  //                 queryParams: {
-  //                   '${widget.category.equals('anime') ? "aid" : "mid"}':
-  //                       widget.id,
-  //                 }),
-  //             context,
-  //           ),
-  //         ),
-  //       ],
-  //     ),
-  //   ];
-  // }
-
-  // void _switchView() {
-  //   setState(() {
-  //     _selectedView = _selectedView == _SelectedView.list
-  //         ? _SelectedView.graph
-  //         : _SelectedView.list;
-  //   });
-  // }
-
   Column _horizView(MalHomePreferences preferences) {
     final nodeList = animeWidgets[animeWidgets.keys.elementAt(pageIndex)];
     final tileSize = getTileSizeValues(preferences.tileSize);
@@ -270,19 +96,6 @@ class _RelatedAnimeWidgetState extends State<RelatedAnimeWidget>
       ],
     );
   }
-
-  // Widget _contentListWidget(List<BaseNode>? nodeList) {
-  //   return ContentListWithDisplayType(
-  //     category: widget.category,
-  //     items: nodeList ?? [],
-  //     sortFilterDisplay: SortFilterDisplay.withDisplayType(
-  //       DisplayOption(
-  //         displayType: DisplayType.grid,
-  //         displaySubType: DisplaySubType.compact,
-  //       ),
-  //     ),
-  //   );
-  // }
 
   Widget get _relationTypeHeader {
     return SizedBox(

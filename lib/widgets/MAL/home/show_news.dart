@@ -34,7 +34,6 @@ class _ShowAnimeNewsState extends State<ShowAnimeNews> {
   Future<void> scrollController() async {
     if (_scrollController.position.pixels ==
         _scrollController.position.maxScrollExtent) {
-      // print('Called');
       setState(() {});
       await _fetchNews();
       setState(() {});
@@ -42,7 +41,6 @@ class _ShowAnimeNewsState extends State<ShowAnimeNews> {
   }
 
   Future<void> _fetchNews() async {
-    // print(_hasNextPage);
     if (_hasNextPage) {
       final response =
           await JikanApi().getAnimeNews(widget.animeId, page: _currentPage);
@@ -144,7 +142,6 @@ class _ShowAnimeNewsState extends State<ShowAnimeNews> {
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           title(news.authorUsername ?? '', selectable: true),
-          // Text('${news.comments ?? 0} comments'),
           iconAndText(Icons.comment, news.comments.toString())
         ],
       ),

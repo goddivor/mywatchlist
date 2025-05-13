@@ -1,14 +1,8 @@
-// lib/widgets/show_featured.dart
-
 import 'package:flutter/material.dart';
-// import 'package:mywatchlist/constants/constants.dart';
 import 'package:mywatchlist/services/api/MAL/scrapper/anime_featured.dart';
 import 'package:mywatchlist/services/api/MAL/scrapper/mal_scrapper.dart';
-// import 'package:mywatchlist/utilities/url_formatter.dart';
 import 'package:mywatchlist/widgets/common/avatar_widget.dart';
-// import 'package:mywatchlist/widgets/custombutton.dart';
 import 'package:mywatchlist/widgets/loading/shimmercolor.dart';
-// import 'package:url_launcher/url_launcher.dart';
 
 class ShowAnimeFeatured extends StatefulWidget {
   final int animeId;

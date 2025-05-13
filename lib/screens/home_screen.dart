@@ -1,4 +1,4 @@
-// ignore_for_file: use_key_in_widget_constructors, library_private_types_in_public_api, deprecated_member_use
+// ignore_for_file: use_key_in_widget_constructors, library_private_types_in_public_api, deprecated_member_use, unused_field
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -28,7 +28,6 @@ import 'package:mywatchlist/user/accounts/account_bloc.dart';
 import 'package:mywatchlist/utils/page_transitions.dart';
 import 'package:mywatchlist/widgets/common/background.dart';
 import 'package:mywatchlist/widgets/common/bottomnavbar.dart';
-
 
 class HomeScreen extends StatefulWidget {
   final int? pageIndex;
@@ -72,17 +71,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   void dispose() {
     _animationController.dispose();
     super.dispose();
-  }
-
-  // Détermine la direction de transition en fonction de l'index précédent et actuel
-  SlideDirection _getTransitionDirection(int previous, int current) {
-    if (current > previous) {
-      return SlideDirection
-          .left; // Glisser vers la gauche lors du passage à un index supérieur
-    } else {
-      return SlideDirection
-          .right; // Glisser vers la droite lors du passage à un index inférieur
-    }
   }
 
   @override

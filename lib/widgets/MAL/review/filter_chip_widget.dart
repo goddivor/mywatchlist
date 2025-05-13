@@ -1,4 +1,4 @@
-// lib/widgets/review/filter_chip_widget.dart
+// ignore_for_file: unreachable_switch_default
 
 import 'package:flutter/material.dart';
 import 'package:mywatchlist/widgets/MAL/review/review_filter_state.dart';

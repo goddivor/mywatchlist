@@ -1,6 +1,5 @@
 import 'dart:io';
 import 'dart:math' as math;
-import 'package:flutter/material.dart';
 import 'package:path/path.dart' as path;
 
 /// Extension methods for File class

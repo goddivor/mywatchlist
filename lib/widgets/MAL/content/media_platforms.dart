@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mywatchlist/constants/constants.dart';
 import 'package:mywatchlist/widgets/common/avatar_widget.dart';
-// import 'package:mywatchlist/services/api/MAL/scrapper/anime_detailed_html.dart';
 import 'package:mywatchlist/widgets/common/custombutton.dart';
-// import 'package:mywatchlist/utilities/url_launcher.dart';
 
 enum LinkType {
   resources,

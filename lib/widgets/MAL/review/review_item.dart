@@ -1,5 +1,3 @@
-// lib/widgets/review/review_item.dart
-
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:mywatchlist/services/api/Jikan/jikan_anime_review.dart';

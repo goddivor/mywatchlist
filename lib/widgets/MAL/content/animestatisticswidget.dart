@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:mywatchlist/constants/constants.dart';
 import 'package:mywatchlist/services/api/MAL/mal_anime.dart';
-// import 'package:my_watch_list/services/MAL/mal_api.dart';
 
 class AnimeStatisticsWidget extends StatefulWidget {
   final Statistics stats;

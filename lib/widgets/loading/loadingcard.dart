@@ -57,11 +57,6 @@ class LoadingCard extends StatelessWidget {
           const SizedBox(
             height: 10,
           ),
-          // Container(
-          //   height: 20,
-          //   width: width,
-          //   color: Colors.grey[300],
-          // ),
         ],
       ),
     );

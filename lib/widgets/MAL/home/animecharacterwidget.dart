@@ -3,6 +3,8 @@ import 'package:mywatchlist/constants/constants.dart';
 import 'package:mywatchlist/services/api/MAL/scrapper/anime_detailed_html.dart';
 import 'package:mywatchlist/widgets/common/avatar_widget.dart';
 
+//this file will be renomed to content_character_widget.dart
+
 class AnimeCharacterWidget extends StatelessWidget {
   final List<CharactersVoiceActors> animeCharacterList;
   final DisplayType type;

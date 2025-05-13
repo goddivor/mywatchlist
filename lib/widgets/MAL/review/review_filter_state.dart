@@ -1,5 +1,3 @@
-// lib/widgets/review/review_filter_state.dart (mise à jour)
-
 import 'package:flutter/material.dart';
 import 'package:mywatchlist/widgets/MAL/review/review_filters.dart';
 

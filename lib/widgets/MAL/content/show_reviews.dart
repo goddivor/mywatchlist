@@ -1,7 +1,4 @@
-// lib/widgets/show_reviews.dart
-
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:mywatchlist/services/api/Jikan/jikan_anime_review.dart';
 import 'package:mywatchlist/services/api/Jikan/jikan_api.dart';
 import 'package:mywatchlist/widgets/MAL/review/review_detail_page.dart';
@@ -9,7 +6,6 @@ import 'package:mywatchlist/widgets/MAL/review/review_filter_state.dart';
 import 'package:mywatchlist/widgets/MAL/review/review_filters.dart';
 import 'package:mywatchlist/widgets/MAL/review/review_item.dart';
 import 'package:mywatchlist/widgets/MAL/review/filter_chip_widget.dart';
-import 'package:mywatchlist/widgets/MAL/review/sort_dropdown.dart';
 import 'package:mywatchlist/widgets/loading/shimmercolor.dart';
 import 'package:provider/provider.dart';
 import 'package:scroll_to_index/scroll_to_index.dart';

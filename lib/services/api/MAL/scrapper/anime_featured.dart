@@ -1,5 +1,3 @@
-// lib/services/api/MAL/scrapper/anime_featured.dart
-
 class AnimeFeaturedResult {
   final List<AnimeFeatured> featuredArticles;
 
