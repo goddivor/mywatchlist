@@ -46,7 +46,7 @@ class Constants {
   static const String anilistRedirectUri = 'mywatchlist://callback';
 
   //simkl client id, secret and redirecturi
-  static String simklClientId = dotenv.env['ANILIST_CLIENT_SECRET'] ?? '';
+  static String simklClientId = dotenv.env['SIMKL_CLIENT_ID'] ?? '';
   static String simklClientSecret = dotenv.env['SIMKL_CLIENT_SECRET'] ?? '';
   static const String simklRedirectUri = 'mywatchlist://callback';
 
