@@ -36,7 +36,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   //Load environment variables from the .env file
-  await dotenv.load(fileName: ".env");
+  await dotenv.load(fileName: "assets/.env");
 
   // Load shared preferences
   final sharedPreferences = await SharedPreferences.getInstance();

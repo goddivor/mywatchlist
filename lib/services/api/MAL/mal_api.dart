@@ -33,7 +33,7 @@ enum AnimeListSort {
 }
 
 class MalApi {
-  static const String clientId = Constants.malclientId;
+  static String clientId = Constants.malclientId;
   static const String animeEndPoint = Constants.malanimeEndPoint;
   static const String animeRankingEndPoint = Constants.malanimeRankingEndPoint;
   static const String mangaRankingEndPoint = Constants.malmangaRankingEndPoint;
