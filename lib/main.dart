@@ -26,6 +26,7 @@ import 'package:mywatchlist/user/user.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 /// Global UserData
 late UserMal usermal;
@@ -33,6 +34,9 @@ final int homeIndex = 0;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  //Load environment variables from the .env file
+  await dotenv.load(fileName: ".env");
 
   // Load shared preferences
   final sharedPreferences = await SharedPreferences.getInstance();
