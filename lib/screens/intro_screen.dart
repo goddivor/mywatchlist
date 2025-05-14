@@ -6,43 +6,48 @@ import 'package:mywatchlist/screens/onboarding_trackers.dart';
 import 'package:mywatchlist/screens/settings/theme_settings.dart';
 import 'package:mywatchlist/widgets/common/background.dart';
 
+/// Intro screen with multiple setup pages
 class IntroScreen extends StatefulWidget {
-  final int index;
-  final Function(bool)? onRtlChange;
+  final int index; // start page index
+  final Function(bool)? onRtlChange; // callback for RTL change
   const IntroScreen({this.onRtlChange, super.key, this.index = 0});
 
   @override
   _IntroScreenState createState() => _IntroScreenState();
 }
 
+/// State for handling page navigation and UI
 class _IntroScreenState extends State<IntroScreen> {
-  int pageLength = 4;
-  int pageIndex = 0;
-  late PageController pageController;
+  int pageLength = 4; // total pages count
+  int pageIndex = 0; // current page index
+  late PageController pageController; // controls page transitions
 
   @override
   void initState() {
     super.initState();
+    // initialize controller at given start index
     pageIndex = widget.index;
     pageController = PageController(initialPage: pageIndex);
   }
 
+  /// Animate to given page index
   void changePage(int index) {
     pageController.animateToPage(index,
         duration: const Duration(milliseconds: 500), curve: Curves.easeInOut);
     if (mounted) {
       setState(() {
-        pageIndex = index;
+        pageIndex = index; // update current index
       });
     }
   }
 
   @override
   void dispose() {
-    pageController.dispose();
+    pageController.dispose(); // cleanup controller
     super.dispose();
   }
 
+  // show navigator unless on last page
   bool get _showPageNavigator => !lastPage;
   bool get lastPage => pageIndex == (pageLength - 1);
   bool get isLoginPage => pageIndex == 1;
@@ -53,6 +58,7 @@ class _IntroScreenState extends State<IntroScreen> {
     return Scaffold(
       body: Stack(
         children: [
+          // main pages
           PageView(
             controller: pageController,
             onPageChanged: (value) {
@@ -69,23 +75,26 @@ class _IntroScreenState extends State<IntroScreen> {
               const ThemeSettings(isIntroPage: true)
             ],
           ),
+          // page navigation controls
           if (_showPageNavigator) _pageNavigator(),
         ],
       ),
     );
   }
 
+  /// First welcome page with logo and title
   Widget _welcomePage() {
     final theme = Theme.of(context);
     return Stack(
       children: [
         Background(isNetworkImage: false, context: context, forceBg: true),
+        // top logo and title area
         Container(
           alignment: Alignment.topCenter,
           padding: EdgeInsets.only(top: MediaQuery.of(context).size.height / 6),
           child: Column(
             children: [
-              // App logo
+              // circular logo with shadow
               Container(
                 height: 96,
                 width: 96,
@@ -107,7 +116,7 @@ class _IntroScreenState extends State<IntroScreen> {
 
               const SizedBox(height: 24),
 
-              // App title with animation
+              // animated app title
               TweenAnimationBuilder<double>(
                 tween: Tween(begin: 0.0, end: 1.0),
                 duration: const Duration(milliseconds: 800),
@@ -134,7 +143,7 @@ class _IntroScreenState extends State<IntroScreen> {
           ),
         ),
 
-        // Content
+        // feature overview cards
         Container(
           alignment: Alignment.topCenter,
           padding: EdgeInsets.only(
@@ -175,7 +184,7 @@ class _IntroScreenState extends State<IntroScreen> {
 
                       const SizedBox(height: 24),
 
-                      // Features in a card
+                      // list of feature items
                       Container(
                         padding: const EdgeInsets.all(20),
                         decoration: BoxDecoration(
@@ -227,6 +236,7 @@ class _IntroScreenState extends State<IntroScreen> {
     );
   }
 
+  /// Builds a row for a feature with icon, title, and description
   Widget _featureItem(
       {required IconData icon,
       required String title,
@@ -279,6 +289,7 @@ class _IntroScreenState extends State<IntroScreen> {
     );
   }
 
+  /// Page navigator with dots and buttons
   Widget _pageNavigator() {
     final theme = Theme.of(context);
     return Container(
@@ -358,8 +369,8 @@ class _IntroScreenState extends State<IntroScreen> {
     );
   }
 
+  /// Dots indicator row
   Widget _dots() {
-    // final theme = Theme.of(context);
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: CrossAxisAlignment.center,
@@ -378,6 +389,7 @@ class _IntroScreenState extends State<IntroScreen> {
     );
   }
 
+  /// Single dot widget, animated when active
   Widget _dot(int index) {
     final theme = Theme.of(context);
     final isActive = pageIndex == index;
