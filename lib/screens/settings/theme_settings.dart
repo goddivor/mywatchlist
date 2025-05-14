@@ -8,7 +8,7 @@ import 'package:mywatchlist/user/theme/theme_bloc.dart';
 import 'package:mywatchlist/user/theme/theme_event.dart';
 import 'package:mywatchlist/user/theme/theme_state.dart';
 import 'package:mywatchlist/user/user_preference.dart';
-import 'package:mywatchlist/widgets/background.dart';
+import 'package:mywatchlist/widgets/common/background.dart';
 
 class ThemeSettings extends StatefulWidget {
   final bool isIntroPage;

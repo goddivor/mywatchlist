@@ -3,7 +3,7 @@ import 'package:mywatchlist/screens/home_screen.dart';
 import 'package:mywatchlist/user/trackers/models/tracker_model.dart';
 import 'package:mywatchlist/user/trackers/provider/trackers_list.dart';
 import 'package:mywatchlist/user/user_preference.dart';
-import 'package:mywatchlist/widgets/background.dart';
+import 'package:mywatchlist/widgets/common/background.dart';
 
 class OnboardingTrackers extends StatefulWidget {
   final bool fromIntro;
@@ -156,50 +156,6 @@ class _OnboardingTrackersState extends State<OnboardingTrackers>
                         },
                       ),
                     ),
-
-                    // Continue button
-                    // SizedBox(
-                    //   width: double.infinity,
-                    //   child: ElevatedButton(
-                    //     onPressed: () {
-                    //       if (widget.fromIntro) {
-                    //         // Set first time to false
-                    //         userPref.setFirstTimeFalse();
-                    //       }
-
-                    //       // Navigate to home screen
-                    //       Navigator.pushReplacement(
-                    //         context,
-                    //         MaterialPageRoute(
-                    //           builder: (context) => const HomeScreen(),
-                    //         ),
-                    //       );
-                    //     },
-                    //     style: ElevatedButton.styleFrom(
-                    //       padding: const EdgeInsets.symmetric(vertical: 16),
-                    //       backgroundColor: theme.colorScheme.primary,
-                    //       foregroundColor: theme.colorScheme.onPrimary,
-                    //       elevation: 2,
-                    //       shape: RoundedRectangleBorder(
-                    //         borderRadius: BorderRadius.circular(16),
-                    //       ),
-                    //     ),
-                    //     child: Row(
-                    //       mainAxisAlignment: MainAxisAlignment.center,
-                    //       children: [
-                    //         Text(
-                    //           'Continue to App',
-                    //           style: TextStyle(
-                    //             fontSize: 18,
-                    //             fontWeight: FontWeight.bold,
-                    //           ),
-                    //         ),
-                    //         const SizedBox(width: 8),
-                    //         Icon(Icons.arrow_forward_rounded),
-                    //       ],
-                    //     ),
-                    //   ),
-                    // ),
 
                     // Skip text (only for first time users)
                     if (widget.fromIntro)

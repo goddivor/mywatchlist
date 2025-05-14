@@ -13,7 +13,7 @@ import 'package:mywatchlist/services/api/MAL/scrapper/genre.dart';
 import 'package:mywatchlist/services/api/MAL/scrapper/paging.dart';
 import 'package:mywatchlist/services/api/MAL/scrapper/user_friends.dart';
 import 'package:mywatchlist/services/api/MAL/scrapper/user_history.dart';
-import 'package:mywatchlist/widgets/media_platforms.dart';
+import 'package:mywatchlist/widgets/MAL/content/media_platforms.dart';
 
 class HtmlParsers {
   static final unescape = HtmlUnescape();
@@ -308,7 +308,6 @@ class HtmlParsers {
           ''; // Le texte du lien est dans la div.caption
       var title = e.attributes['title'] ?? e.text.trim();
       var url = e.attributes['href']?.trim() ?? '';
-      // var imageUrl = e.querySelector('img')?.attributes['src']?.trim() ??
       ''; // Récupérer l'URL de l'image si elle existe
       return Link(
         name: name,

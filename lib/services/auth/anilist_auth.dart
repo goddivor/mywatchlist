@@ -25,7 +25,6 @@ class AnilistAuth {
 
   Future<void> signInWithAnilist(BuildContext context, {Function? onComplete}) async {
     UserAnilist.instance.setStatus(AuthStatus.INPROGRESS);
-    // User.instance.setStatus(AuthStatus.INPROGRESS);
     String codeChallenge = getRandomString(127);
     String url = '$oauthEndPoint?client_id=$clientId&redirect_uri=$redirectUri&response_type=code';
 

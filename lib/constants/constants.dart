@@ -2,15 +2,16 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:intl/intl.dart';
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/services/api/MAL/mal_anime.dart';
-import 'package:mywatchlist/widgets/custombutton.dart';
+import 'package:mywatchlist/widgets/common/custombutton.dart';
 import 'dart:ui' as ui;
 
-import 'package:mywatchlist/widgets/shimmercolor.dart';
-import 'package:mywatchlist/widgets/slivers.dart';
+import 'package:mywatchlist/widgets/loading/shimmercolor.dart';
+import 'package:mywatchlist/widgets/common/slivers.dart';
 import 'package:scroll_to_index/scroll_to_index.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -36,20 +37,17 @@ class Constants {
       'AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz1234567890-._~';
 
   //myanimelist client id and redirecturi
-  static const String malclientId = '2954f0a5d477b5f83c468bad0d3f7052';
+  static String malclientId = dotenv.env['MAL_CLIENT_ID'] ?? '';
   static const String malredirectUri = 'mywatchlist://callback';
 
   //anilist client id, secret and redirecturi
-  static const String anilistClientId = '19606';
-  static const String anilistClientSecret =
-      '9NzyEe0bYpVb6T7xfZowoW1XsG2fmU3qAoyGQLbd';
+  static String anilistClientId = dotenv.env['ANILIST_CLIENT_ID'] ?? '';
+  static String anilistClientSecret = dotenv.env['ANILIST_CLIENT_SECRET'] ?? '';
   static const String anilistRedirectUri = 'mywatchlist://callback';
 
   //simkl client id, secret and redirecturi
-  static const String simklClientId =
-      '651c592199dadfe077ad844067becd03c64bdb72d5e7be704c9b3a0ae179224d';
-  static const String simklClientSecret =
-      'cea29efcdef0ed917bc5250c37eb1cd29211b3e69710e74f5d58bab6b776e7e0';
+  static String simklClientId = dotenv.env['SIMKL_CLIENT_ID'] ?? '';
+  static String simklClientSecret = dotenv.env['SIMKL_CLIENT_SECRET'] ?? '';
   static const String simklRedirectUri = 'mywatchlist://callback';
 
   //myanimelist api endpoints...
@@ -192,7 +190,6 @@ Widget title(
   } else {
     return Text(
       title,
-      // overflow: TextOverflow.ellipsis,
       overflow: textOverflow,
       textAlign: align,
       textScaleFactor: scaleFactor,
@@ -277,7 +274,6 @@ Widget iconAndText(
   }
   return Row(
     mainAxisAlignment: mainAxisAlignment,
-    // alignment: WrapAlignment.center,
     mainAxisSize: mainAxisSize,
     children: content,
   );

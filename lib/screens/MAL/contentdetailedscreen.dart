@@ -1,4 +1,4 @@
-// ignore_for_file: prefer_interpolation_to_compose_strings
+// ignore_for_file: prefer_interpolation_to_compose_strings, unused_element, unused_field
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -8,43 +8,35 @@ import 'package:mywatchlist/constants/constants.dart';
 import 'package:mywatchlist/enums.dart';
 import 'package:mywatchlist/services/api/Jikan/jikan_anime_videos.dart';
 import 'package:mywatchlist/services/api/Jikan/jikan_api.dart';
-// import 'package:cached_network_image/cached_network_image.dart';
-// import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mywatchlist/services/api/MAL/mal_anime.dart';
 import 'package:mywatchlist/services/api/MAL/mal_api.dart';
 import 'package:mywatchlist/services/api/MAL/scrapper/anime_detailed_html.dart';
 import 'package:mywatchlist/services/api/MAL/scrapper/mal_scrapper.dart';
-// import 'package:mywatchlist/user/anime_manga_tab_pref.dart';
-import 'package:mywatchlist/utilities/streamutils.dart';
-import 'package:mywatchlist/widgets/adaptation_widget.dart';
-import 'package:mywatchlist/widgets/animecharacterwidget.dart';
-import 'package:mywatchlist/widgets/animepictures.dart';
-import 'package:mywatchlist/widgets/animestatisticswidget.dart';
-import 'package:mywatchlist/widgets/auto_size_copy_text.dart';
-import 'package:mywatchlist/widgets/background.dart';
-import 'package:mywatchlist/widgets/custombutton.dart';
-import 'package:mywatchlist/widgets/image_preview.dart';
-import 'package:mywatchlist/widgets/intereststackwidget.dart';
-import 'package:mywatchlist/widgets/media_platforms.dart';
-import 'package:mywatchlist/widgets/more_info_widget.dart';
-import 'package:mywatchlist/widgets/recommanimewidget.dart';
-import 'package:mywatchlist/widgets/relatedanimewidget.dart';
-import 'package:mywatchlist/widgets/scorestatisticswidget.dart';
-import 'package:mywatchlist/widgets/shimmercolor.dart';
-import 'package:mywatchlist/widgets/show_featured.dart';
-import 'package:mywatchlist/widgets/show_forum.dart';
-import 'package:mywatchlist/widgets/show_news.dart';
-import 'package:mywatchlist/widgets/show_reviews.dart';
-import 'package:mywatchlist/widgets/slivers.dart';
-import 'package:mywatchlist/widgets/synopsis_widget.dart';
-import 'package:mywatchlist/widgets/userupdate_widget.dart';
-import 'package:mywatchlist/widgets/videowidget.dart';
+import 'package:mywatchlist/utils/streamutils.dart';
+import 'package:mywatchlist/widgets/MAL/content/adaptation_widget.dart';
+import 'package:mywatchlist/widgets/MAL/home/animecharacterwidget.dart';
+import 'package:mywatchlist/widgets/MAL/content/animepictures.dart';
+import 'package:mywatchlist/widgets/MAL/content/animestatisticswidget.dart';
+import 'package:mywatchlist/widgets/common/auto_size_copy_text.dart';
+import 'package:mywatchlist/widgets/common/background.dart';
+import 'package:mywatchlist/widgets/common/custombutton.dart';
+import 'package:mywatchlist/widgets/common/image_preview.dart';
+import 'package:mywatchlist/widgets/MAL/content/intereststackwidget.dart';
+import 'package:mywatchlist/widgets/MAL/content/media_platforms.dart';
+import 'package:mywatchlist/widgets/MAL/content/more_info_widget.dart';
+import 'package:mywatchlist/widgets/MAL/content/recommanimewidget.dart';
+import 'package:mywatchlist/widgets/MAL/content/relatedanimewidget.dart';
+import 'package:mywatchlist/widgets/MAL/content/scorestatisticswidget.dart';
+import 'package:mywatchlist/widgets/loading/shimmercolor.dart';
+import 'package:mywatchlist/widgets/MAL/content/show_featured.dart';
+import 'package:mywatchlist/widgets/MAL/content/show_forum.dart';
+import 'package:mywatchlist/widgets/MAL/home/show_news.dart';
+import 'package:mywatchlist/widgets/MAL/content/show_reviews.dart';
+import 'package:mywatchlist/widgets/common/slivers.dart';
+import 'package:mywatchlist/widgets/MAL/content/synopsis_widget.dart';
+import 'package:mywatchlist/widgets/MAL/content/userupdate_widget.dart';
+import 'package:mywatchlist/widgets/MAL/content/videowidget.dart';
 import 'package:scroll_to_index/scroll_to_index.dart';
-// import 'package:mywatchlist/user/theme/theme_bloc.dart';
-// import 'package:mywatchlist/user/theme/theme_state.dart';
-// import 'package:mywatchlist/widgets/animecardbar.dart';
-// import 'package:mywatchlist/widgets/home/section_header.dart';
-// import 'package:intl/intl.dart';
 
 enum TitleLang { en, ja, ro }
 
@@ -190,7 +182,6 @@ class _ContentDetailedScreenState extends State<ContentDetailedScreen>
     animeDetailedHtml =
         (await MalScraper().getAnimeDetailedHtml(ContentType.anime, _id));
     updateVisibleSections();
-    // print(animeDetailedHtml);
   }
 
   List<AdaptNode> getAdaptationsFromData(dynamic animeDetails) {
@@ -203,7 +194,6 @@ class _ContentDetailedScreenState extends State<ContentDetailedScreen>
     }
 
     // Convertit chaque élément JSON en objet Adaptation
-    // print(adaptationsJson);
     return adaptationsJson.map((json) => AdaptNode.fromJson(json)).toList();
   }
 
@@ -218,7 +208,6 @@ class _ContentDetailedScreenState extends State<ContentDetailedScreen>
     }
 
     // Convertit chaque élément JSON en objet CharactersVoiceActors
-    // print(charactersVoiceActorsJson);
     return charactersVoiceActorsJson
         .map((json) => CharactersVoiceActors.fromJson(json))
         .toList();
@@ -234,7 +223,6 @@ class _ContentDetailedScreenState extends State<ContentDetailedScreen>
     }
 
     // Convertit chaque élément JSON en objet InterestStack
-    // print(interestStacksJson);
     return interestStacksJson
         .map((json) => InterestStack.fromJson(json))
         .toList();
@@ -304,15 +292,7 @@ class _ContentDetailedScreenState extends State<ContentDetailedScreen>
     return [listViewTop, listViewBottom, listViewCenter];
   }
 
-  // List<VisibleSection> get _getVisibleSections {
-  //   return TabType.values
-  //       .map((tabType) => _getAnimeSectionForType(tabType))
-  //       .where((e) => e != null)
-  //       .map((e) => e!)
-  //       .toList();
-  // }
-
-  List<VisibleSection> get _animeVisibleSections {
+  List<VisibleSection> get _animeVisibleSections { // this will be updated to be getvisiblesection to handle anime or manga
     return TabType.values
         .map(_getAnimeSectionForType)
         .where((e) => e != null)
@@ -628,7 +608,6 @@ class _ContentDetailedScreenState extends State<ContentDetailedScreen>
           ),
         const SizedBox(height: 20),
         section.child,
-        // SB.h10,
       ],
     );
 

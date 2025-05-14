@@ -1,5 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:mywatchlist/utils/mal_home_page_preferences.dart';
+import 'package:mywatchlist/user/MAL/mal_home_page_preferences.dart';
 
 // Events
 abstract class HomePreferencesEvent {}

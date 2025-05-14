@@ -25,9 +25,6 @@ class SimklAuth {
     try {
       // ignore: deprecated_member_use
       await launch(url.toString()); // launh the url with the navigator
-      // if (onComplete != null) { //this logic must be move to handlesimkl...
-      //   onComplete();
-      // }
     } catch (e) {
       throw 'Could not launch $url';
     }
@@ -59,10 +56,6 @@ class SimklAuth {
         'grant_type': 'authorization_code',
       }),
     );
-
-    // if (kDebugMode) {
-    //   print(response);
-    // }
 
     if (response.statusCode == 200) {
       // showStatusCodeToast(response.statusCode);

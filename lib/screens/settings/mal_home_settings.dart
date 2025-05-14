@@ -5,7 +5,7 @@ import 'package:mywatchlist/constants/constants.dart';
 import 'package:mywatchlist/enums.dart';
 import 'package:mywatchlist/services/api/MAL/mal_api.dart';
 import 'package:mywatchlist/user/MAL/mal_home_preferences_bloc.dart';
-import 'package:mywatchlist/utils/mal_home_page_preferences.dart';
+import 'package:mywatchlist/user/MAL/mal_home_page_preferences.dart';
 
 class HomeSettingsPage extends StatefulWidget {
   const HomeSettingsPage({Key? key}) : super(key: key);

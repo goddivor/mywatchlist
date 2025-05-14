@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:mywatchlist/pages/side_bar.dart';
-// import 'package:mywatchlist/widgets/side.dart';
 
 /// Helper class to build custom sidebar implementations
 class SidebarBuilder {
@@ -60,58 +59,3 @@ class _ExtendedSidebarState extends State<_ExtendedSidebar> {
   }
 }
 
-/// Example usage:
-///
-/// ```dart
-/// Scaffold(
-///   key: _scaffoldKey,
-///   endDrawer: SidebarBuilder.buildWithItems(
-///     context: context,
-///     onClose: () {
-///       if (_scaffoldKey.currentState?.isEndDrawerOpen ?? false) {
-///         Navigator.pop(context);
-///       }
-///     },
-///     menuItems: [
-///       SidebarMenuItem(
-///         icon: Icons.home,
-///         title: 'Home',
-///         onTap: () {
-///           Navigator.pop(context);
-///           // Navigate to home
-///         },
-///       ),
-///       SidebarMenuItem(
-///         icon: Icons.list,
-///         title: 'My Anime List',
-///         onTap: () {
-///           Navigator.pop(context);
-///           // Navigate to anime list
-///         },
-///       ),
-///       SidebarMenuItem(
-///         icon: Icons.book,
-///         title: 'My Manga List',
-///         onTap: () {
-///           Navigator.pop(context);
-///           // Navigate to manga list
-///         },
-///         showDividerAfter: true, // Add divider after this item
-///       ),
-///       SidebarMenuItem(
-///         icon: Icons.settings,
-///         title: 'Settings',
-///         onTap: () {
-///           Navigator.pop(context);
-///           // Navigate to settings
-///         },
-///       ),
-///     ],
-///   ),
-///   body: YourMainContent(),
-/// )
-/// ```
-void exampleUsage() {
-  // This is just a placeholder to document usage
-  // See the comment above for actual implementation
-}

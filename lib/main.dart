@@ -23,10 +23,10 @@ import 'package:mywatchlist/user/theme/theme_bloc.dart';
 import 'package:mywatchlist/user/theme/theme_event.dart';
 import 'package:mywatchlist/user/theme/theme_state.dart';
 import 'package:mywatchlist/user/user.dart';
-import 'package:path/path.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 /// Global UserData
 late UserMal usermal;
@@ -34,6 +34,9 @@ final int homeIndex = 0;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  //Load environment variables from the .env file
+  await dotenv.load(fileName: "assets/.env");
 
   // Load shared preferences
   final sharedPreferences = await SharedPreferences.getInstance();
@@ -154,19 +157,6 @@ class _MyWatchListAppState extends State<MyWatchListApp> {
     );
   }
 }
-
-// class MyWatchListApp extends StatelessWidget {
-//   const MyWatchListApp({super.key});
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return MaterialApp(
-//       debugShowCheckedModeBanner: false,
-//       title: 'Flutter Demo',
-//       home: OpenScreen(),
-//     );
-//   }
-// }
 
 // Fonction pour redémarrer l'application
 void restartApp(BuildContext context) {

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:mywatchlist/widgets/homeappbar.dart';
+import 'package:mywatchlist/widgets/MAL/home/homeappbar.dart';
 
 class SimklHomePage extends StatelessWidget {
   const SimklHomePage({super.key});

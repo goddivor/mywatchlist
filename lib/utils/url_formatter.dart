@@ -1,5 +1,3 @@
-// lib/utilities/url_formatter.dart
-
 extension StringExtension on String {
   String formatForUrl() {
     if (trim() == '...') return '-';

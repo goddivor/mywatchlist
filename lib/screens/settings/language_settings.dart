@@ -8,7 +8,7 @@ import 'package:mywatchlist/user/language/language_event.dart';
 import 'package:mywatchlist/user/language/language_state.dart';
 import 'package:mywatchlist/user/language/supported_languages.dart';
 import 'package:mywatchlist/user/user_preference.dart';
-import 'package:mywatchlist/widgets/background.dart';
+import 'package:mywatchlist/widgets/common/background.dart';
 
 class LanguageSettings extends StatefulWidget {
   final bool isIntroPage;

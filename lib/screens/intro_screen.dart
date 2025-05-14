@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:mywatchlist/screens/settings/language_settings.dart';
 import 'package:mywatchlist/screens/onboarding_trackers.dart';
 import 'package:mywatchlist/screens/settings/theme_settings.dart';
-import 'package:mywatchlist/widgets/background.dart';
+import 'package:mywatchlist/widgets/common/background.dart';
 
 class IntroScreen extends StatefulWidget {
   final int index;
@@ -104,9 +104,9 @@ class _IntroScreenState extends State<IntroScreen> {
                   radius: 48.0,
                 ),
               ),
-              
+
               const SizedBox(height: 24),
-              
+
               // App title with animation
               TweenAnimationBuilder<double>(
                 tween: Tween(begin: 0.0, end: 1.0),
@@ -133,12 +133,14 @@ class _IntroScreenState extends State<IntroScreen> {
             ],
           ),
         ),
-        
+
         // Content
         Container(
           alignment: Alignment.topCenter,
           padding: EdgeInsets.only(
-              top: MediaQuery.of(context).size.height / 2.5, left: 24, right: 24),
+              top: MediaQuery.of(context).size.height / 2.5,
+              left: 24,
+              right: 24),
           child: SingleChildScrollView(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -170,9 +172,9 @@ class _IntroScreenState extends State<IntroScreen> {
                           color: theme.colorScheme.primary,
                         ),
                       ),
-                      
+
                       const SizedBox(height: 24),
-                      
+
                       // Features in a card
                       Container(
                         padding: const EdgeInsets.all(20),
@@ -192,60 +194,28 @@ class _IntroScreenState extends State<IntroScreen> {
                             _featureItem(
                               icon: Icons.trending_up_rounded,
                               title: "Track Your Anime & Manga",
-                              description: "Keep up with all your favorites across multiple services",
+                              description:
+                                  "Keep up with all your favorites across multiple services",
                             ),
-                            
                             const SizedBox(height: 16),
-                            
                             _featureItem(
                               icon: Icons.explore_rounded,
                               title: "Discover New Content",
-                              description: "Find new anime and manga based on your preferences",
+                              description:
+                                  "Find new anime and manga based on your preferences",
                             ),
-                            
                             const SizedBox(height: 16),
-                            
                             _featureItem(
                               icon: Icons.forum_rounded,
                               title: "Join the Community",
-                              description: "Discuss your favorites in dedicated forums",
+                              description:
+                                  "Discuss your favorites in dedicated forums",
                             ),
                           ],
                         ),
                       ),
-                      
+
                       const SizedBox(height: 24),
-                      
-                      // Get started button
-                      // SizedBox(
-                      //   width: double.infinity,
-                      //   child: ElevatedButton(
-                      //     onPressed: () => changePage(1),
-                      //     style: ElevatedButton.styleFrom(
-                      //       backgroundColor: theme.colorScheme.primary,
-                      //       foregroundColor: theme.colorScheme.onPrimary,
-                      //       padding: const EdgeInsets.symmetric(vertical: 16),
-                      //       shape: RoundedRectangleBorder(
-                      //         borderRadius: BorderRadius.circular(12),
-                      //       ),
-                      //       elevation: 4,
-                      //     ),
-                      //     child: Row(
-                      //       mainAxisAlignment: MainAxisAlignment.center,
-                      //       children: const [
-                      //         Text(
-                      //           "Get Started",
-                      //           style: TextStyle(
-                      //             fontSize: 18,
-                      //             fontWeight: FontWeight.bold,
-                      //           ),
-                      //         ),
-                      //         SizedBox(width: 8),
-                      //         Icon(Icons.arrow_forward_rounded),
-                      //       ],
-                      //     ),
-                      //   ),
-                      // ),
                     ],
                   ),
                 ),
@@ -257,7 +227,10 @@ class _IntroScreenState extends State<IntroScreen> {
     );
   }
 
-  Widget _featureItem({required IconData icon, required String title, required String description}) {
+  Widget _featureItem(
+      {required IconData icon,
+      required String title,
+      required String description}) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -274,9 +247,9 @@ class _IntroScreenState extends State<IntroScreen> {
             size: 24,
           ),
         ),
-        
+
         const SizedBox(width: 16),
-        
+
         // Text content
         Expanded(
           child: Column(
@@ -295,7 +268,8 @@ class _IntroScreenState extends State<IntroScreen> {
                 description,
                 style: TextStyle(
                   fontSize: 14,
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                  color:
+                      Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                 ),
               ),
             ],
@@ -346,7 +320,8 @@ class _IntroScreenState extends State<IntroScreen> {
                           ? null
                           : () => changePage(pageIndex - 1),
                       style: TextButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 8),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16),
                         ),
@@ -361,11 +336,13 @@ class _IntroScreenState extends State<IntroScreen> {
                     ),
                     const SizedBox(width: 8),
                     ElevatedButton(
-                      onPressed: lastPage ? null : () => changePage(pageIndex + 1),
+                      onPressed:
+                          lastPage ? null : () => changePage(pageIndex + 1),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: theme.colorScheme.primary,
                         foregroundColor: theme.colorScheme.onPrimary,
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 8),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16),
                         ),
@@ -382,7 +359,7 @@ class _IntroScreenState extends State<IntroScreen> {
   }
 
   Widget _dots() {
-    final theme = Theme.of(context);
+    // final theme = Theme.of(context);
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: CrossAxisAlignment.center,
@@ -404,15 +381,15 @@ class _IntroScreenState extends State<IntroScreen> {
   Widget _dot(int index) {
     final theme = Theme.of(context);
     final isActive = pageIndex == index;
-    
+
     return AnimatedContainer(
       margin: const EdgeInsets.symmetric(horizontal: 4),
       duration: const Duration(milliseconds: 200),
       height: isActive ? 10 : 6,
       width: isActive ? 24 : 6,
       decoration: BoxDecoration(
-        color: isActive 
-            ? theme.colorScheme.primary 
+        color: isActive
+            ? theme.colorScheme.primary
             : theme.colorScheme.primary.withOpacity(0.3),
         borderRadius: BorderRadius.circular(12),
       ),

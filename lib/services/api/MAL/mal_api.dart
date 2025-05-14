@@ -11,31 +11,6 @@ import 'package:mywatchlist/services/api/MAL/mal_anime.dart';
 import 'package:mywatchlist/user/accounts/provider/account_manager_singleton.dart';
 import 'package:mywatchlist/user/user.dart';
 
-// import 'package:my_watch_list/user/account_bloc.dart';
-// import 'package:my_watch_list/user/account_manager.dart';
-
-// import 'package:path/path.dart';
-// import 'package:flutter_bloc/flutter_bloc.dart';
-
-// enum SeasonType {
-//   WINTER,
-//   SPRING,
-//   SUMMER,
-//   FALL,
-// }
-
-// enum RankingType {
-//   all,
-//   airing,
-//   upcoming,
-//   tv,
-//   ova,
-//   movie,
-//   special,
-//   bypopularity,
-//   favorite,
-// }
-
 enum SeasonalAnimeSortOption {
   score,
   numListUsers,
@@ -58,7 +33,7 @@ enum AnimeListSort {
 }
 
 class MalApi {
-  static const String clientId = Constants.malclientId;
+  static String clientId = Constants.malclientId;
   static const String animeEndPoint = Constants.malanimeEndPoint;
   static const String animeRankingEndPoint = Constants.malanimeRankingEndPoint;
   static const String mangaRankingEndPoint = Constants.malmangaRankingEndPoint;
@@ -80,7 +55,7 @@ class MalApi {
     final url = '$animeEndPoint/$animeId?fields=$fields';
 
     // Obtenir le type de compte sélectionné et les en-têtes appropriés
-    // AccountType selectedAcc = AccountManager().getSelectedAccountType();
+
     final selectedAcc = AccountManagerSingleton().selectedAcc;
     // print(selectedAcc);
     final Map<String, String> headers = getHeadersForAccountType(selectedAcc);
@@ -113,7 +88,6 @@ class MalApi {
     }
 
     // Obtenir le type de compte sélectionné et les en-têtes appropriés
-    // AccountType selectedAcc = AccountManager().getSelectedAccountType();
     final selectedAcc = AccountManagerSingleton().selectedAcc;
     final Map<String, String> headers = getHeadersForAccountType(selectedAcc);
 
@@ -139,7 +113,6 @@ class MalApi {
     List<String>? fields,
   }) async {
     // Get the raking type name using enum
-    // String rankingTypeValue = getRankingTypeValue(rankingType);
     String rankingTypeValue = (category.equals("anime")
         ? rankingMap[rankingType]
         : mangaRankingMap[rankingType])!;
@@ -161,7 +134,6 @@ class MalApi {
     }
 
     // Obtenir le type de compte sélectionné et les en-têtes appropriés
-    // AccountType selectedAcc = AccountManager().getSelectedAccountType();
     final selectedAcc = AccountManagerSingleton().selectedAcc;
     final Map<String, String> headers = getHeadersForAccountType(selectedAcc);
 
@@ -222,7 +194,6 @@ class MalApi {
     }
 
     // Obtenir le type de compte sélectionné et les en-têtes appropriés
-    // AccountType selectedAcc = AccountManager().getSelectedAccountType();
     final selectedAcc = AccountManagerSingleton().selectedAcc;
     final Map<String, String> headers = getHeadersForAccountType(selectedAcc);
 
@@ -263,7 +234,7 @@ class MalApi {
     }
 
     // Obtenir le type de compte sélectionné et les en-têtes appropriés
-    // AccountType selectedAcc = AccountManager().getSelectedAccountType();
+
     final selectedAcc = AccountManagerSingleton().selectedAcc;
     final Map<String, String> headers = getHeadersForAccountType(selectedAcc);
 
@@ -324,7 +295,7 @@ class MalApi {
     }
 
     // Obtenir le type de compte sélectionné et les en-têtes appropriés
-    // AccountType selectedAcc = AccountManager().getSelectedAccountType();
+
     final selectedAcc = AccountManagerSingleton().selectedAcc;
     final Map<String, String> headers = getHeadersForAccountType(selectedAcc);
 
@@ -361,7 +332,7 @@ class MalApi {
     String url = '$animeEndPoint/$animeId/my_list_status';
 
     // Get the selected account type and headers
-    // AccountType selectedAcc = AccountManager().getSelectedAccountType();
+
     final selectedAcc = AccountManagerSingleton().selectedAcc;
     final Map<String, String> headers = getHeadersForAccountType(selectedAcc);
 
