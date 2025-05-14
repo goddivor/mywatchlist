@@ -1,4 +1,4 @@
-// ignore_for_file: library_private_types_in_public_api
+// ignore_for_file: library_private_types_in_public_api, depend_on_referenced_packages
 
 import 'dart:async';
 
@@ -28,47 +28,51 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
-/// Global UserData
+/// Global reference to the current logged-in MAL user
 late UserMal usermal;
+/// Initial index for home navigation
 final int homeIndex = 0;
 
+/// Application entry point
+/// Initializes services, preferences and runs the app
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  //Load environment variables from the .env file
+  // Load environment variables from .env
   await dotenv.load(fileName: "assets/.env");
 
   // Load shared preferences
   final sharedPreferences = await SharedPreferences.getInstance();
 
-  // Initialize user data
+  // Initialize user data from stored preferences
   await UserMal.instance.loadFromPreferences();
   await UserAnilist.instance.loadFromPreferences();
   await UserKitsu.instance.loadFromPreferences();
   await UserSimkl.instance.loadFromPreferences();
 
-  // Initialize APIs
-  final jikanApi = JikanApi();
-  final malApi = MalApi();
-  final malScraper = MalScraper();
+  // Initialize API clients
+  final jikanApi = JikanApi(); // Jikan REST client
+  final malApi = MalApi();     // MAL REST client
+  final malScraper = MalScraper(); // MAL scraper client
 
-  // Initialize blocs
+  // Initialize Blocs for state management
   final accountBloc = AccountBloc();
   final themeBloc = ThemeBloc(prefs: sharedPreferences);
   final languageBloc = LanguageBloc(prefs: sharedPreferences);
 
-  // Load initial data for blocs
+  // Trigger initial loading of data in Blocs
   accountBloc.add(LoadAccountEvent());
   themeBloc.add(ThemeLoadStarted());
   languageBloc.add(LanguageLoadStarted());
 
-  // Mettre à jour le singleton lorsqu'il y a un changement d'état dans AccountBloc
+  // Update account singleton on account changes
   accountBloc.stream.listen((state) {
     if (state is AccountLoaded) {
       AccountManagerSingleton().updateAccountType(state.selectedAccountType);
     }
   });
 
+  // Run the Flutter app with Phoenix for hot restart
   runApp(
     Phoenix(
       child: MultiProvider(
@@ -80,8 +84,7 @@ void main() async {
         ],
         child: MultiBlocProvider(
           providers: [
-            BlocProvider(
-                create: (context) => AccountBloc()..add(LoadAccountEvent())),
+            BlocProvider(create: (context) => AccountBloc()..add(LoadAccountEvent())),
             BlocProvider(create: (context) => themeBloc),
             BlocProvider(create: (context) => languageBloc),
             BlocProvider(
@@ -91,10 +94,7 @@ void main() async {
                 malApi: malApi,
               ),
             ),
-            BlocProvider(
-                create: (context) =>
-                    HomePreferencesBloc()..add(LoadHomePreferencesEvent())),
-            // I will add another BlocProvider for requests here
+            BlocProvider(create: (context) => HomePreferencesBloc()..add(LoadHomePreferencesEvent())),
           ],
           child: MyWatchListApp(),
         ),
@@ -103,6 +103,7 @@ void main() async {
   );
 }
 
+/// Root widget of the MyWatchList application
 class MyWatchListApp extends StatefulWidget {
   const MyWatchListApp({super.key});
 
@@ -116,23 +117,24 @@ class _MyWatchListAppState extends State<MyWatchListApp> {
   @override
   void initState() {
     super.initState();
+    // Listen for deep links (auth callbacks)
     final appLinks = AppLinks();
     _sub = appLinks.uriLinkStream.listen((Uri? uri) {
       if (uri != null && uri.toString().startsWith('mywatchlist://callback')) {
-        SimklAuth().handleSimklAuthRedirect(
-            uri); // Traitement de l'authentification Simkl
+        SimklAuth().handleSimklAuthRedirect(uri);
       }
     });
   }
 
   @override
   void dispose() {
-    _sub?.cancel();
+    _sub?.cancel(); // Cancel deep link subscription
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    // Rebuild UI when theme changes
     return BlocBuilder<ThemeBloc, ThemeState>(
       builder: (context, themeState) {
         return MaterialApp(
@@ -146,8 +148,7 @@ class _MyWatchListAppState extends State<MyWatchListApp> {
           ],
           locale: Locale.fromSubtags(languageCode: "en_US"),
           supportedLocales: S.delegate.supportedLocales,
-          // Apply the selected theme
-          theme: themeState.themeData,
+          theme: themeState.themeData, // Apply selected theme
           home: const OpenScreen(),
           routes: {
             '/login': (context) => const LoginPage(),
@@ -158,7 +159,7 @@ class _MyWatchListAppState extends State<MyWatchListApp> {
   }
 }
 
-// Fonction pour redémarrer l'application
+/// Restarts the application using Phoenix
 void restartApp(BuildContext context) {
   Phoenix.rebirth(context);
 }
