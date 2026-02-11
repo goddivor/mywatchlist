@@ -1,0 +1,135 @@
+name: Release Build
+
+on:
+  push:
+    tags:
+      - '*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (yyyy.m.n format)'
+        required: true
+        type: string
+
+jobs:
+  build-android:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+          cache: 'gradle'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.27.3'
+          channel: 'stable'
+          cache: true
+
+      - name: Get Flutter dependencies
+        run: flutter pub get
+
+      - name: Run Flutter analyzer
+        run: flutter analyze
+
+      - name: Generate localization files
+        run: flutter gen-l10n
+
+      - name: Generate JSON serialization models
+        run: dart run build_runner build --delete-conflicting-outputs
+
+      - name: Create .env file
+        run: |
+          echo "MAL_CLIENT_ID=${{ secrets.MAL_CLIENT_ID }}" >> assets/.env
+          echo "ANILIST_CLIENT_ID=${{ secrets.ANILIST_CLIENT_ID }}" >> assets/.env
+          echo "ANILIST_CLIENT_SECRET=${{ secrets.ANILIST_CLIENT_SECRET }}" >> assets/.env
+          echo "SIMKL_CLIENT_ID=${{ secrets.SIMKL_CLIENT_ID }}" >> assets/.env
+          echo "SIMKL_CLIENT_SECRET=${{ secrets.SIMKL_CLIENT_SECRET }}" >> assets/.env
+
+      - name: Build APK
+        run: flutter build apk --release --split-per-abi
+
+      - name: Build APK (universal)
+        run: flutter build apk --release
+
+      - name: Get version from pubspec
+        id: version
+        run: |
+          VERSION=$(grep '^version:' pubspec.yaml | cut -d' ' -f2 | cut -d'+' -f1)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Rename APK files
+        run: |
+          VERSION=${{ steps.version.outputs.version }}
+          mkdir -p release-artifacts
+          cp build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk release-artifacts/MyWatchList-v${VERSION}-armeabi-v7a.apk || true
+          cp build/app/outputs/flutter-apk/app-arm64-v8a-release.apk release-artifacts/MyWatchList-v${VERSION}-arm64-v8a.apk || true
+          cp build/app/outputs/flutter-apk/app-x86_64-release.apk release-artifacts/MyWatchList-v${VERSION}-x86_64.apk || true
+          cp build/app/outputs/flutter-apk/app-release.apk release-artifacts/MyWatchList-v${VERSION}-universal.apk
+
+      - name: Generate checksums
+        run: |
+          cd release-artifacts
+          sha256sum *.apk > checksums.txt
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            release-artifacts/*.apk
+            release-artifacts/checksums.txt
+          tag_name: ${{ github.ref_name }}
+          name: Release ${{ steps.version.outputs.version }}
+          body: |
+            ## MyWatchList ${{ steps.version.outputs.version }}
+
+            Multi-platform anime/manga tracking app with support for:
+            - MyAnimeList
+            - AniList
+            - Kitsu
+            - Simkl
+
+            ### Downloads
+
+            **Android APK builds:**
+            - `arm64-v8a` - For most modern Android devices (64-bit ARM)
+            - `armeabi-v7a` - For older Android devices (32-bit ARM)
+            - `x86_64` - For Android emulators and x86 devices
+            - `universal` - Works on all devices (larger file size)
+
+            ### Installation
+
+            1. Download the appropriate APK for your device
+            2. Enable "Install from Unknown Sources" in Android settings
+            3. Install the APK
+
+            ### Verification
+
+            Verify your download integrity using the `checksums.txt` file:
+            ```bash
+            sha256sum -c checksums.txt
+            ```
+
+            ### Changelog
+
+            See commit history for detailed changes.
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-release-apks
+          path: release-artifacts/*.apk
+          retention-days: 30
