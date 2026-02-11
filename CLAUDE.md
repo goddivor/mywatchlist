@@ -6,6 +6,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 MyWatchList is a Flutter multi-platform anime/manga tracking app (inspired by DailyAL) that integrates multiple APIs: MyAnimeList, Jikan, AniList, Kitsu, and Simkl. Users can browse, search, and manage watchlists across all platforms from a single app.
 
+## Reference Project (DailyAL)
+
+**IMPORTANT**: When implementing any feature that exists in DailyAL, ALWAYS check the DailyAL codebase first for reference.
+
+- **DailyAL Repository Path**: `/home/thinkpad/Bureau/android-project/DailyAL`
+- **Purpose**: DailyAL is the reference implementation. It has more mature features (Material 3, notifications, clubs, calendar, charts, etc.)
+- **Workflow**: Before implementing a feature from `TODO.md`, read the corresponding DailyAL code to understand their approach
+- **See**: `diff.txt` for detailed comparison between MyWatchList and DailyAL
+- **See**: `TODO.md` for the full list of features to port from DailyAL
+
 ## Common Commands
 
 ```bash

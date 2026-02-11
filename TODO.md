@@ -19,11 +19,6 @@ Ce fichier liste toutes les tâches à accomplir pour aligner MyWatchList sur Da
 - [ ] Mettre à jour SDK Dart (actuellement 3.6.1)
 - [ ] Vérifier compatibilité avec dernière version stable de Flutter
 
-### Licensing
-- [ ] Ajouter licence MIT au projet
-- [ ] Créer fichier `LICENSE` à la racine
-- [ ] Ajouter headers de licence dans les fichiers sources principaux
-
 ---
 
 ## 🌐 Localisation (i18n)
@@ -233,7 +228,6 @@ Ce fichier liste toutes les tâches à accomplir pour aligner MyWatchList sur Da
 - **Garder la structure BLoC + Provider** : ne pas tout réécrire, améliorer progressivement
 - **Tester chaque tracker** : vérifier que chaque feature fonctionne sur les 4 trackers
 - **Versioning sémantique** : yyyy.m.n (année.mois.numéro)
-- **Licence MIT** : ajouter avant toute publication
 
 ---
 
