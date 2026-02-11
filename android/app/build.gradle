@@ -15,7 +15,7 @@ if (keystorePropertiesFile.exists()) {
 }
 
 android {
-    namespace = "io.github.divor"
+    namespace = "com.teen.mywatchlist"
     compileSdk = 36
     ndkVersion = flutter.ndkVersion
 
@@ -39,12 +39,12 @@ android {
     }
 
     defaultConfig {
-        applicationId = "io.github.divor"
+        applicationId = "com.teen.mywatchlist"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
-        manifestPlaceholders += [appAuthRedirectScheme: "mywatchlist"]
+        manifestPlaceholders += [appAuthRedirectScheme: "com.teen.mywatchlist"]
     }
 
     buildTypes {
