@@ -43,7 +43,7 @@ class AnilistAuthResponse {
       "expires_in": expiresIn,
       "token_type": tokenType,
       "refresh_token": refreshToken,
-      "created_time": createdTime.toString()
+      "created_time": createdTime?.toString()
     };
   }
 }
