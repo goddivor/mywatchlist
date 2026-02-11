@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import 'package:mywatchlist/constants/constants.dart';
 import 'package:mywatchlist/services/api/SimKl/simkl_user_prof.dart';
-import 'package:mywatchlist/user/user.dart';
+import 'package:mywatchlist/user/user_simkl_v2.dart';
 import 'package:http/http.dart' as http;
 
 class SimklUser {
@@ -10,7 +10,7 @@ class SimklUser {
   final String clientid = Constants.simklClientId;
 
   Future<UserProfSimkl> getUserInfo() async {
-    final authToken = UserSimkl.instance.accessToken;
+    final authToken = UserSimklV2.instance.accessToken;
     
 
     final response = await http.get(
@@ -22,10 +22,14 @@ class SimklUser {
       },
     );
 
+    print('Simkl getUserInfo response: ${response.statusCode}');
+    print('Simkl access token: ${authToken != null ? "present" : "null"}');
     if (response.statusCode == 200) {
       final Map<String, dynamic> data = json.decode(response.body);
+      print('Simkl user data: $data');
       return UserProfSimkl.fromJson(data);
     } else {
+      print('Simkl getUserInfo error: ${response.body}');
       throw Exception('Failed to load user info');
     }
   }

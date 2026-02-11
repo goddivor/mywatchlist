@@ -9,6 +9,7 @@ import 'package:flutter_web_auth_2/flutter_web_auth_2.dart';
 import 'package:http/http.dart' as http;
 import 'package:mywatchlist/constants/constants.dart';
 import 'package:mywatchlist/services/auth/simkl_authresp.dart';
+import 'package:mywatchlist/services/api/SimKl/simkl_user.dart';
 import 'package:mywatchlist/user/user_simkl_v2.dart';
 import 'package:mywatchlist/user/base_user.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -201,6 +202,14 @@ class SimklAuthV2 {
         UserSimklV2.instance.setAuthResponse(authResponse);
         UserSimklV2.instance.setStatus(AuthStatus.AUTHENTICATED);
         UserSimklV2.instance.notifyAccountChange();
+
+        // Fetch user profile data
+        try {
+          final userProfile = await SimklUser().getUserInfo();
+          UserSimklV2.instance.setUserInfo(userProfile.name, userProfile.avatar);
+        } catch (e) {
+          print('Failed to fetch Simkl user profile: $e');
+        }
 
         // Clear cached state
         await _clearState();
