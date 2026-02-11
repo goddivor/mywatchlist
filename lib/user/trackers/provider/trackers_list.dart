@@ -14,6 +14,7 @@ import 'package:mywatchlist/services/auth/simkl_auth_v2.dart';
 import 'package:mywatchlist/user/user_mal_v2.dart';
 import 'package:mywatchlist/user/user_anilist_v2.dart';
 import 'package:mywatchlist/user/user_simkl_v2.dart';
+import 'package:mywatchlist/user/user_kitsu_v2.dart';
 import 'package:mywatchlist/user/user_manager.dart';
 import 'package:mywatchlist/user/accounts/account_bloc.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -143,7 +144,7 @@ Future<void> handleAnilistAuth(
 Future<void> handleKitsuAuth(
     BuildContext context, int index, VoidCallback updateUI) async {
   if (trackers[index].isActive ||
-      UserKitsu.instance.getStatus() == AuthStatus.AUTHENTICATED) {
+      UserKitsuV2.instance.getStatus() == AuthStatus.AUTHENTICATED) {
     // Log out the user
     awesomeLogoutDialog(context, trackers[index].name, () async {
       await _kitsuAuth.signout();
@@ -161,7 +162,7 @@ Future<void> handleKitsuAuth(
           onLogin: (username, password) async {
             await _kitsuAuth.signInWithKitsu(context, username, password,
                 onComplete: () {
-              if (UserKitsu.instance.getStatus() == AuthStatus.AUTHENTICATED) {
+              if (UserKitsuV2.instance.getStatus() == AuthStatus.AUTHENTICATED) {
                 trackers[index].isActive = true;
                 updateUI();
               }

@@ -6,6 +6,8 @@ class Tracker {
   bool isActive;
   final Color primaryColor;
   final String description;
+  String? username;
+  String? profileImage;
 
   Tracker({
     required this.name,
@@ -13,6 +15,8 @@ class Tracker {
     this.isActive = false,
     this.primaryColor = Colors.blue,
     this.description = '',
+    this.username,
+    this.profileImage,
   });
 }
 
