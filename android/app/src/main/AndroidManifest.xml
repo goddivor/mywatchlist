@@ -25,13 +25,29 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
 
-            <!-- Intent for web auth and callback deeplinking -->
+            <!-- Intent for OAuth callback deeplinking - Multiple trackers -->
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <!-- Accepts URIs that begin with YOUR_SCHEME://YOUR_HOST -->
-                <data android:scheme="mywatchlist" android:host="callback" />
+                <!-- MyAnimeList OAuth callback -->
+                <data android:scheme="com.teen.mywatchlist" android:host="myanimelist-callback" />
+            </intent-filter>
+
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <!-- AniList OAuth callback -->
+                <data android:scheme="com.teen.mywatchlist" android:host="anilist-callback" />
+            </intent-filter>
+
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <!-- Simkl OAuth callback -->
+                <data android:scheme="com.teen.mywatchlist" android:host="simkl-callback" />
             </intent-filter>
             <!-- Deep linking -->
             <meta-data

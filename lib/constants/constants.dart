@@ -36,19 +36,23 @@ class Constants {
   static const String chars =
       'AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz1234567890-._~';
 
-  //myanimelist client id and redirecturi
+  //myanimelist client id, secret and redirecturi
   static String malclientId = dotenv.env['MAL_CLIENT_ID'] ?? '';
-  static const String malredirectUri = 'mywatchlist://callback';
+  static String malClientSecret = dotenv.env['MAL_CLIENT_SECRET'] ?? '';
+  static const String malredirectUri = 'com.teen.mywatchlist://myanimelist-callback';
+  static const String malCallbackScheme = 'com.teen.mywatchlist';
 
   //anilist client id, secret and redirecturi
   static String anilistClientId = dotenv.env['ANILIST_CLIENT_ID'] ?? '';
   static String anilistClientSecret = dotenv.env['ANILIST_CLIENT_SECRET'] ?? '';
-  static const String anilistRedirectUri = 'mywatchlist://callback';
+  static const String anilistRedirectUri = 'com.teen.mywatchlist://anilist-callback';
+  static const String anilistCallbackScheme = 'com.teen.mywatchlist';
 
   //simkl client id, secret and redirecturi
   static String simklClientId = dotenv.env['SIMKL_CLIENT_ID'] ?? '';
   static String simklClientSecret = dotenv.env['SIMKL_CLIENT_SECRET'] ?? '';
-  static const String simklRedirectUri = 'mywatchlist://callback';
+  static const String simklRedirectUri = 'com.teen.mywatchlist://simkl-callback';
+  static const String simklCallbackScheme = 'com.teen.mywatchlist';
 
   //myanimelist api endpoints...
   static const String malapiUrl = 'https://api.myanimelist.net/v2';
