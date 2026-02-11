@@ -2,7 +2,9 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:mywatchlist/services/auth/kitsu_authresp.dart';
-import 'package:mywatchlist/user/user.dart';
+import 'package:mywatchlist/services/api/Kitsu/kitsu_user.dart';
+import 'package:mywatchlist/user/user_kitsu_v2.dart';
+import 'package:mywatchlist/user/base_user.dart';
 import 'package:http/http.dart' as http;
 
 class KitsuAuth {
@@ -16,7 +18,7 @@ class KitsuAuth {
   Future<void> signInWithKitsu(
       BuildContext context, String username, String password,
       {Function? onComplete}) async {
-    UserKitsu.instance.setStatus(AuthStatus
+    UserKitsuV2.instance.setStatus(AuthStatus
         .INPROGRESS); // Set user status to in-progress during authentication
     final url = Uri.parse(
         _baseUrl + _tokenEndpoint); // Construct the token endpoint URL
@@ -38,8 +40,17 @@ class KitsuAuth {
           json.decode(response.body); // Decode JSON response
       KitsuAuthResponse authResponse = KitsuAuthResponse.fromJson(
           responseData); // Parse response into KitsuAuthResponse
-      UserKitsu.instance.setKitsuAuthResponse(
+      UserKitsuV2.instance.setAuthResponse(
           authResponse); // Save authentication response to user instance
+
+      // Fetch user profile data
+      try {
+        final userProfile = await KitsuUser().getUserInfo();
+        UserKitsuV2.instance.setUserInfo(userProfile.name, userProfile.avatar);
+      } catch (e) {
+        print('Failed to fetch Kitsu user profile: $e');
+      }
+
       if (onComplete != null) {
         onComplete(); // Call onComplete callback if provided
       }
@@ -51,7 +62,7 @@ class KitsuAuth {
 
   /// Clears stored Kitsu credentials to sign out user
   Future<void> signout() async {
-    UserKitsu.instance.clear(); // Clear user data on sign out
+    UserKitsuV2.instance.clear(); // Clear user data on sign out
     // showToast("Log out"); // Uncomment to show a toast message on logout
   }
 }
