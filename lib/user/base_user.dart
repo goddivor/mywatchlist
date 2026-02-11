@@ -40,10 +40,13 @@ abstract class BaseUser<T> with ChangeNotifier {
 
   /// Set user info (username and profile image)
   void setUserInfo(String name, String image) {
+    print('📝 setUserInfo called - name: $name, image: $image');
     username = name;
     profileImage = image;
+    print('✅ setUserInfo assigned - username: $username, profileImage: $profileImage');
     _saveUserInfo();
     notifyListeners();
+    print('🔔 setUserInfo notified listeners');
   }
 
   /// Set authentication status
