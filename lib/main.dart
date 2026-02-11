@@ -11,7 +11,10 @@ import 'package:flutter_phoenix/flutter_phoenix.dart';
 import 'package:mywatchlist/services/api/Jikan/jikan_api.dart';
 import 'package:mywatchlist/services/api/MAL/mal_api.dart';
 import 'package:mywatchlist/services/api/MAL/scrapper/mal_scrapper.dart';
-import 'package:mywatchlist/services/auth/simkl_auth.dart';
+import 'package:mywatchlist/services/auth/mal_auth_v2.dart';
+import 'package:mywatchlist/services/auth/anilist_auth_v2.dart';
+import 'package:mywatchlist/services/auth/simkl_auth_v2.dart';
+import 'package:mywatchlist/user/user_manager.dart';
 import 'package:app_links/app_links.dart';
 import 'package:mywatchlist/user/MAL/mal_home_preferences_bloc.dart';
 import 'package:mywatchlist/user/accounts/account_bloc.dart';
@@ -28,8 +31,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
-/// Global reference to the current logged-in MAL user
-late UserMal usermal;
+/// Global UserManager instance (POO architecture for multi-tracker)
+late UserManager userManager;
 /// Initial index for home navigation
 final int homeIndex = 0;
 
@@ -44,11 +47,9 @@ void main() async {
   // Load shared preferences
   final sharedPreferences = await SharedPreferences.getInstance();
 
-  // Initialize user data from stored preferences
-  await UserMal.instance.loadFromPreferences();
-  await UserAnilist.instance.loadFromPreferences();
-  await UserKitsu.instance.loadFromPreferences();
-  await UserSimkl.instance.loadFromPreferences();
+  // Initialize UserManager (POO architecture with BaseUser inheritance)
+  userManager = UserManager.instance;
+  await userManager.initializeAllUsers();
 
   // Initialize API clients
   final jikanApi = JikanApi(); // Jikan REST client
@@ -77,10 +78,13 @@ void main() async {
     Phoenix(
       child: MultiProvider(
         providers: [
+          // Legacy User singletons (used by existing API/UI code)
           ChangeNotifierProvider(create: (_) => UserMal()),
           ChangeNotifierProvider(create: (_) => UserAnilist()),
           ChangeNotifierProvider(create: (_) => UserKitsu()),
           ChangeNotifierProvider(create: (_) => UserSimkl()),
+          // UserManager with V2 architecture
+          ChangeNotifierProvider.value(value: userManager),
         ],
         child: MultiBlocProvider(
           providers: [
@@ -117,13 +121,63 @@ class _MyWatchListAppState extends State<MyWatchListApp> {
   @override
   void initState() {
     super.initState();
-    // Listen for deep links (auth callbacks)
+    // Listen for deep links (OAuth callbacks from multiple trackers)
     final appLinks = AppLinks();
     _sub = appLinks.uriLinkStream.listen((Uri? uri) {
-      if (uri != null && uri.toString().startsWith('mywatchlist://callback')) {
-        SimklAuth().handleSimklAuthRedirect(uri);
+      if (uri != null && uri.scheme == 'com.teen.mywatchlist') {
+        _handleOAuthCallback(uri);
       }
     });
+  }
+
+  /// Route OAuth callbacks to the appropriate tracker auth handler
+  /// Based on the callback host (myanimelist-callback, anilist-callback, simkl-callback)
+  /// Uses new V2 Auth classes with UserManager architecture
+  Future<void> _handleOAuthCallback(Uri uri) async {
+    print('🔗 OAuth callback received: ${uri.toString()}');
+    print('   Host: ${uri.host}');
+    print('   Code: ${uri.queryParameters['code']?.substring(0, 10)}...');
+
+    // Route based on callback host
+    switch (uri.host) {
+      case 'myanimelist-callback':
+        print('✅ Routing to MAL auth handler (V2)');
+        final malAuth = MalAuthV2();
+        final success = await malAuth.checkIfSignIn(uri);
+        if (success) {
+          print('   ✅ MAL authentication successful');
+          // UserMalV2 is already updated via setAuthResponse
+          // UserManager listeners will propagate the change
+        } else {
+          print('   ❌ MAL authentication failed');
+        }
+        break;
+
+      case 'anilist-callback':
+        print('✅ Routing to AniList auth handler (V2)');
+        final anilistAuth = AnilistAuthV2();
+        final success = await anilistAuth.checkIfSignIn(uri);
+        if (success) {
+          print('   ✅ AniList authentication successful');
+        } else {
+          print('   ❌ AniList authentication failed');
+        }
+        break;
+
+      case 'simkl-callback':
+        print('✅ Routing to Simkl auth handler (V2)');
+        final simklAuth = SimklAuthV2();
+        final success = await simklAuth.checkIfSignIn(uri);
+        if (success) {
+          print('   ✅ Simkl authentication successful');
+        } else {
+          print('   ❌ Simkl authentication failed');
+        }
+        break;
+
+      default:
+        print('❌ Unknown callback host: ${uri.host}');
+    }
   }
 
   @override

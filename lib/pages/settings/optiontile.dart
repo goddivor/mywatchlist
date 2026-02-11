@@ -36,7 +36,9 @@ class OptionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return (!authOnly || usermal.status == AuthStatus.AUTHENTICATED)
+    // Check if any tracker is authenticated when authOnly is true
+    final isAuthenticated = userManager.currentUser?.status == AuthStatus.AUTHENTICATED;
+    return (!authOnly || isAuthenticated)
         ? ListTile(
             onTap: onPressed,
             horizontalTitleGap: smallTiles ? 10.0 : 20.0,

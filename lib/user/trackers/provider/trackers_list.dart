@@ -6,6 +6,15 @@ import 'package:mywatchlist/services/auth/anilist_auth.dart';
 import 'package:mywatchlist/services/auth/kitsu_auth.dart';
 import 'package:mywatchlist/services/auth/mal_auth.dart';
 import 'package:mywatchlist/services/auth/simkl_auth.dart';
+// V2 Auth classes with Custom Tabs + Desktop support
+import 'package:mywatchlist/services/auth/mal_auth_v2.dart';
+import 'package:mywatchlist/services/auth/anilist_auth_v2.dart';
+import 'package:mywatchlist/services/auth/simkl_auth_v2.dart';
+// V2 User classes with BaseUser inheritance
+import 'package:mywatchlist/user/user_mal_v2.dart';
+import 'package:mywatchlist/user/user_anilist_v2.dart';
+import 'package:mywatchlist/user/user_simkl_v2.dart';
+import 'package:mywatchlist/user/user_manager.dart';
 import 'package:mywatchlist/user/accounts/account_bloc.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mywatchlist/user/trackers/models/tracker_model.dart';
@@ -45,10 +54,16 @@ final List<Tracker> trackers = [
   ),
 ];
 
+// Old auth instances (deprecated, will be removed)
 final MalAuth _malAuth = MalAuth();
 final SimklAuth _simklAuth = SimklAuth();
 final AnilistAuth _anilistAuth = AnilistAuth();
 final KitsuAuth _kitsuAuth = KitsuAuth();
+
+// New V2 auth instances with Custom Tabs + Desktop support
+final MalAuthV2 _malAuthV2 = MalAuthV2();
+final AnilistAuthV2 _anilistAuthV2 = AnilistAuthV2();
+final SimklAuthV2 _simklAuthV2 = SimklAuthV2();
 
 /// Handle MyAnimeList authentication
 Future<void> handleMalAuth(
@@ -158,9 +173,112 @@ Future<void> handleKitsuAuth(
   }
 }
 
+/// Handle MyAnimeList authentication (V2 with UserManager)
+Future<void> handleMalAuthV2(
+    BuildContext context, int index, VoidCallback updateUI) async {
+  final userManager = UserManager.instance;
+
+  if (trackers[index].isActive ||
+      userManager.isAuthenticated(AccountType.myanimelist)) {
+    // Log out the user
+    awesomeLogoutDialog(context, trackers[index].name, () async {
+      await _malAuthV2.signOut();
+      trackers[index].isActive = false;
+
+      context
+          .read<AccountBloc>()
+          .add(RemoveAccountEvent(AccountType.myanimelist));
+      updateUI();
+    });
+  } else {
+    // Authenticate the user
+    final success = await _malAuthV2.handleSignIn(context: context);
+    if (success || userManager.mal.status == AuthStatus.INPROGRESS) {
+      // Wait for callback to complete (handled by main.dart)
+      // Listen for status change
+      Future.delayed(Duration(seconds: 1), () {
+        if (userManager.isAuthenticated(AccountType.myanimelist)) {
+          trackers[index].isActive = true;
+          updateUI();
+        }
+      });
+    }
+  }
+}
+
+/// Handle Anilist authentication (V2 with UserManager)
+Future<void> handleAnilistAuthV2(
+    BuildContext context, int index, VoidCallback updateUI) async {
+  final userManager = UserManager.instance;
+
+  if (trackers[index].isActive ||
+      userManager.isAuthenticated(AccountType.anilist)) {
+    // Log out the user
+    awesomeLogoutDialog(context, trackers[index].name, () async {
+      await _anilistAuthV2.signOut();
+      trackers[index].isActive = false;
+
+      context.read<AccountBloc>().add(RemoveAccountEvent(AccountType.anilist));
+      updateUI();
+    });
+  } else {
+    // Authenticate the user
+    final success = await _anilistAuthV2.handleSignIn(context: context);
+    if (success || userManager.anilist.status == AuthStatus.INPROGRESS) {
+      // Wait for callback to complete (handled by main.dart)
+      Future.delayed(Duration(seconds: 1), () {
+        if (userManager.isAuthenticated(AccountType.anilist)) {
+          trackers[index].isActive = true;
+          updateUI();
+        }
+      });
+    }
+  }
+}
+
+/// Handle Simkl authentication (V2 with UserManager)
+Future<void> handleSimklAuthV2(
+    BuildContext context, int index, VoidCallback updateUI) async {
+  final userManager = UserManager.instance;
+
+  if (trackers[index].isActive ||
+      userManager.isAuthenticated(AccountType.simkl)) {
+    // Log out the user
+    awesomeLogoutDialog(context, trackers[index].name, () async {
+      await _simklAuthV2.signOut();
+      trackers[index].isActive = false;
+
+      context.read<AccountBloc>().add(RemoveAccountEvent(AccountType.simkl));
+      updateUI();
+    });
+  } else {
+    // Authenticate the user
+    final success = await _simklAuthV2.handleSignIn(context: context);
+    if (success || userManager.simkl.status == AuthStatus.INPROGRESS) {
+      // Wait for callback to complete (handled by main.dart)
+      Future.delayed(Duration(seconds: 1), () {
+        if (userManager.isAuthenticated(AccountType.simkl)) {
+          trackers[index].isActive = true;
+          updateUI();
+        }
+      });
+    }
+  }
+}
+
 /// Map of tracker names to their authentication functions
+/// Using V2 handlers with UserManager architecture
 final Map<String, Future<void> Function(BuildContext, int, VoidCallback)>
     trackerFunctions = {
+  'MyAnimeList': handleMalAuthV2, // Using V2
+  'Anilist': handleAnilistAuthV2, // Using V2
+  'Kitsu': handleKitsuAuth, // Still using old (Kitsu uses password auth)
+  'Simkl': handleSimklAuthV2, // Using V2
+};
+
+/// Legacy map (old handlers, kept for reference)
+final Map<String, Future<void> Function(BuildContext, int, VoidCallback)>
+    trackerFunctionsLegacy = {
   'MyAnimeList': handleMalAuth,
   'Anilist': handleAnilistAuth,
   'Kitsu': handleKitsuAuth,
