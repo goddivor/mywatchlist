@@ -9,7 +9,9 @@ import 'package:flutter_web_auth_2/flutter_web_auth_2.dart';
 import 'package:http/http.dart' as http;
 import 'package:mywatchlist/constants/constants.dart';
 import 'package:mywatchlist/services/auth/mal_authresp.dart';
-import 'package:mywatchlist/user/user.dart';
+import 'package:mywatchlist/services/api/MAL/mal_user.dart';
+import 'package:mywatchlist/user/user_mal_v2.dart';
+import 'package:mywatchlist/user/base_user.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Enhanced MAL authentication with Custom Tabs (mobile) and flutter_web_auth_2 (desktop)
@@ -31,23 +33,23 @@ class MalAuthV2 {
   /// Handle sign-in process
   /// Returns true if sign-in is successful, false otherwise
   Future<bool> handleSignIn({BuildContext? context}) async {
-    final currentStatus = UserMal.instance.getStatus();
+    final currentStatus = UserMalV2.instance.getStatus();
 
     // Prevent double-click
     if (currentStatus == AuthStatus.INPROGRESS) {
       return false;
     }
 
-    UserMal.instance.setStatus(AuthStatus.INPROGRESS);
-    UserMal.instance.notifyAccountChange();
+    UserMalV2.instance.setStatus(AuthStatus.INPROGRESS);
+    UserMalV2.instance.notifyAccountChange();
 
     try {
       final success = await _oAuthSignIn(context: context);
       return success;
     } catch (e) {
       print('Sign-in error: $e');
-      UserMal.instance.setStatus(AuthStatus.UNAUTHENTICATED);
-      UserMal.instance.notifyAccountChange();
+      UserMalV2.instance.setStatus(AuthStatus.UNAUTHENTICATED);
+      UserMalV2.instance.notifyAccountChange();
       return false;
     }
   }
@@ -101,14 +103,14 @@ class MalAuthV2 {
         return await _exchangeCodeForToken(code, codeChallenge);
       } else {
         print('No code received from OAuth callback');
-        UserMal.instance.setStatus(AuthStatus.UNAUTHENTICATED);
-        UserMal.instance.notifyAccountChange();
+        UserMalV2.instance.setStatus(AuthStatus.UNAUTHENTICATED);
+        UserMalV2.instance.notifyAccountChange();
         return false;
       }
     } catch (e) {
       print('OAuth error on desktop: $e');
-      UserMal.instance.setStatus(AuthStatus.UNAUTHENTICATED);
-      UserMal.instance.notifyAccountChange();
+      UserMalV2.instance.setStatus(AuthStatus.UNAUTHENTICATED);
+      UserMalV2.instance.notifyAccountChange();
       return false;
     }
   }
@@ -149,8 +151,8 @@ class MalAuthV2 {
       return true;
     } catch (e) {
       print('Custom Tabs error: $e');
-      UserMal.instance.setStatus(AuthStatus.UNAUTHENTICATED);
-      UserMal.instance.notifyAccountChange();
+      UserMalV2.instance.setStatus(AuthStatus.UNAUTHENTICATED);
+      UserMalV2.instance.notifyAccountChange();
       return false;
     }
   }
@@ -172,8 +174,8 @@ class MalAuthV2 {
       return false;
     } catch (e) {
       print('Fallback auth error: $e');
-      UserMal.instance.setStatus(AuthStatus.UNAUTHENTICATED);
-      UserMal.instance.notifyAccountChange();
+      UserMalV2.instance.setStatus(AuthStatus.UNAUTHENTICATED);
+      UserMalV2.instance.notifyAccountChange();
       return false;
     }
   }
@@ -200,9 +202,17 @@ class MalAuthV2 {
         final Map<String, dynamic> responseData = json.decode(response.body);
         final authResponse = AuthResponse.fromJson(responseData);
 
-        UserMal.instance.setAuthResponse(authResponse);
-        UserMal.instance.setStatus(AuthStatus.AUTHENTICATED);
-        UserMal.instance.notifyAccountChange();
+        UserMalV2.instance.setAuthResponse(authResponse);
+        UserMalV2.instance.setStatus(AuthStatus.AUTHENTICATED);
+        UserMalV2.instance.notifyAccountChange();
+
+        // Fetch user profile data
+        try {
+          final userProfile = await MalUser().getUserInfo();
+          UserMalV2.instance.setUserInfo(userProfile.name, userProfile.picture);
+        } catch (e) {
+          print('Failed to fetch MAL user profile: $e');
+        }
 
         // Clear cached code challenge
         await _clearChallengeCode();
@@ -210,14 +220,14 @@ class MalAuthV2 {
         return true;
       } else {
         print('Token exchange failed: ${response.statusCode} - ${response.body}');
-        UserMal.instance.setStatus(AuthStatus.UNAUTHENTICATED);
-        UserMal.instance.notifyAccountChange();
+        UserMalV2.instance.setStatus(AuthStatus.UNAUTHENTICATED);
+        UserMalV2.instance.notifyAccountChange();
         return false;
       }
     } catch (e) {
       print('Error exchanging code for token: $e');
-      UserMal.instance.setStatus(AuthStatus.UNAUTHENTICATED);
-      UserMal.instance.notifyAccountChange();
+      UserMalV2.instance.setStatus(AuthStatus.UNAUTHENTICATED);
+      UserMalV2.instance.notifyAccountChange();
       return false;
     }
   }
@@ -255,7 +265,7 @@ class MalAuthV2 {
 
   /// Sign out
   Future<void> signOut() async {
-    UserMal.instance.clear();
+    UserMalV2.instance.clear();
     await _clearChallengeCode();
   }
 }

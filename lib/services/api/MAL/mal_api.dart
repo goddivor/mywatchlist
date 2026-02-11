@@ -9,7 +9,7 @@ import 'package:mywatchlist/constants/constants.dart';
 import 'package:mywatchlist/enums.dart';
 import 'package:mywatchlist/services/api/MAL/mal_anime.dart';
 import 'package:mywatchlist/user/accounts/provider/account_manager_singleton.dart';
-import 'package:mywatchlist/user/user.dart';
+import 'package:mywatchlist/user/user_mal_v2.dart';
 
 enum SeasonalAnimeSortOption {
   score,
@@ -518,7 +518,7 @@ class MalApi {
 
     switch (accountType) {
       case AccountType.myanimelist:
-        final accessToken = UserMal.instance.authResponse?.accessToken;
+        final accessToken = UserMalV2.instance.authResponse?.accessToken;
         if (accessToken != null) {
           headers.addAll({
             'Authorization': 'Bearer $accessToken',

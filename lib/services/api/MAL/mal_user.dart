@@ -4,12 +4,12 @@ import 'package:http/http.dart' as http;
 import 'package:mywatchlist/constants/constants.dart';
 import 'package:mywatchlist/services/api/MAL/mal_anime.dart';
 import 'package:mywatchlist/services/api/MAL/mal_user_prof.dart';
-import 'package:mywatchlist/user/user.dart';
+import 'package:mywatchlist/user/user_mal_v2.dart';
 
 class MalUser {
   static const String userBaseEndPoint = Constants.maluserBaseEndPoint;
   Future<MalUserProf> getUserInfo({List<String>? fields, String username = "@me"}) async {
-    final accessToken = UserMal.instance.authResponse?.accessToken;
+    final accessToken = UserMalV2.instance.authResponse?.accessToken;
 
     // Construction de l'URL avec les champs spécifiés
     String url = '$userBaseEndPoint/$username';
@@ -36,7 +36,7 @@ class MalUser {
     List<String>? fields,
     String username = "@me",
   }) async {
-    final accessToken = UserMal.instance.authResponse?.accessToken;
+    final accessToken = UserMalV2.instance.authResponse?.accessToken;
 
     String fieldsString = (fields != null && fields.isNotEmpty)
         ? fields.join(",")
