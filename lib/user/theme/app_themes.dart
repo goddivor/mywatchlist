@@ -52,7 +52,7 @@ class AppThemes {
         color: Color(0xFF76C893),
         elevation: 0,
       ),
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         color: Colors.white,
         elevation: 2,
         shape: RoundedRectangleBorder(
@@ -102,7 +102,7 @@ class AppThemes {
         color: Color(0xFF2D6A4F),
         elevation: 0,
       ),
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         color: const Color(0xFF2D3B45),
         elevation: 2,
         shape: RoundedRectangleBorder(
@@ -159,7 +159,7 @@ class AppThemes {
         color: Color(0xFF48CAE4),
         elevation: 0,
       ),
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         color: Colors.white,
         elevation: 2,
         shape: RoundedRectangleBorder(
@@ -209,7 +209,7 @@ class AppThemes {
         color: Color(0xFF0077B6),
         elevation: 0,
       ),
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         color: const Color(0xFF1E293B),
         elevation: 2,
         shape: RoundedRectangleBorder(
@@ -266,7 +266,7 @@ class AppThemes {
         color: Color(0xFFF9A826),
         elevation: 0,
       ),
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         color: Colors.white,
         elevation: 2,
         shape: RoundedRectangleBorder(
@@ -316,7 +316,7 @@ class AppThemes {
         color: Color(0xFFCB8A00),
         elevation: 0,
       ),
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         color: const Color(0xFF3C2E23),
         elevation: 2,
         shape: RoundedRectangleBorder(
@@ -373,7 +373,7 @@ class AppThemes {
         color: Color(0xFF6B7FD7),
         elevation: 0,
       ),
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         color: Colors.white,
         elevation: 2,
         shape: RoundedRectangleBorder(
@@ -423,7 +423,7 @@ class AppThemes {
         color: Color(0xFF4C5BA6),
         elevation: 0,
       ),
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         color: const Color(0xFF1E293B),
         elevation: 2,
         shape: RoundedRectangleBorder(
