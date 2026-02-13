@@ -13,17 +13,28 @@ enum SectionType {
   topScore,
   topFavorites,
   topPopular,
+  topAnimeAiring,
+  topAnimeTV,
+  topAnimeMovie,
+  topAnimeSpecial,
+  topManga,
+  topMangaPopular,
+  features,
 }
 
 class HomeSectionPreference {
   SectionType type;
   bool enabled;
   int itemCount;
+  String? customTitle;
+  int cacheDurationHours;
 
   HomeSectionPreference({
     required this.type,
     this.enabled = true,
     this.itemCount = 15,
+    this.customTitle,
+    this.cacheDurationHours = 2,
   });
 
   // Convert to JSON for storage
@@ -32,6 +43,8 @@ class HomeSectionPreference {
       'type': type.index,
       'enabled': enabled,
       'itemCount': itemCount,
+      'customTitle': customTitle,
+      'cacheDurationHours': cacheDurationHours,
     };
   }
 
@@ -41,13 +54,15 @@ class HomeSectionPreference {
       type: SectionType.values[json['type'] as int],
       enabled: json['enabled'] as bool,
       itemCount: json['itemCount'] as int,
+      customTitle: json['customTitle'] as String?,
+      cacheDurationHours: json['cacheDurationHours'] as int? ?? 2,
     );
   }
 
-  String getTitle(String seasonName, int seasonYear) {
+  String getDefaultTitle(String seasonName, int seasonYear) {
     switch (type) {
       case SectionType.news:
-        return 'Anime News & Features';
+        return 'Anime News';
       case SectionType.seasonNow:
         return '$seasonName $seasonYear Anime';
       case SectionType.suggested:
@@ -60,7 +75,28 @@ class HomeSectionPreference {
         return 'All-time Anime Favorites';
       case SectionType.topPopular:
         return 'Most Popular Anime';
+      case SectionType.topAnimeAiring:
+        return 'Top Airing Anime';
+      case SectionType.topAnimeTV:
+        return 'Top Anime TV Series';
+      case SectionType.topAnimeMovie:
+        return 'Top Anime Movies';
+      case SectionType.topAnimeSpecial:
+        return 'Top Anime Specials';
+      case SectionType.topManga:
+        return 'Top Manga';
+      case SectionType.topMangaPopular:
+        return 'Most Popular Manga';
+      case SectionType.features:
+        return 'Anime Features';
     }
+  }
+
+  String getDisplayTitle(String seasonName, int seasonYear) {
+    if (customTitle != null && customTitle!.isNotEmpty) {
+      return customTitle!;
+    }
+    return getDefaultTitle(seasonName, seasonYear);
   }
 
   IconData getIcon() {
@@ -79,6 +115,20 @@ class HomeSectionPreference {
         return Icons.favorite;
       case SectionType.topPopular:
         return Icons.trending_up;
+      case SectionType.topAnimeAiring:
+        return Icons.live_tv;
+      case SectionType.topAnimeTV:
+        return Icons.connected_tv;
+      case SectionType.topAnimeMovie:
+        return Icons.movie;
+      case SectionType.topAnimeSpecial:
+        return Icons.auto_awesome;
+      case SectionType.topManga:
+        return Icons.menu_book;
+      case SectionType.topMangaPopular:
+        return Icons.auto_stories;
+      case SectionType.features:
+        return Icons.featured_play_list;
     }
   }
 }
@@ -90,13 +140,13 @@ class MalHomePreferences {
   // Constructor with default values
   MalHomePreferences({
     List<HomeSectionPreference>? sections,
-    this.tileSize = HomePageTileSize.m,
+    this.tileSize = HomePageTileSize.l,
   }) : sections = sections ?? _getDefaultSections();
 
   // Default section order and settings
   static List<HomeSectionPreference> _getDefaultSections() {
     return [
-      HomeSectionPreference(type: SectionType.news, itemCount: 10),
+      HomeSectionPreference(type: SectionType.news, itemCount: 10, cacheDurationHours: 8),
       HomeSectionPreference(type: SectionType.seasonNow, itemCount: 15),
       HomeSectionPreference(type: SectionType.suggested, itemCount: 15),
       HomeSectionPreference(type: SectionType.upcoming, itemCount: 15),
@@ -164,6 +214,6 @@ class MalHomePreferences {
   // Reset to default preferences
   void reset() {
     sections = _getDefaultSections();
-    tileSize = HomePageTileSize.m;
+    tileSize = HomePageTileSize.l;
   }
 }
