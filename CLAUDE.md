@@ -83,3 +83,14 @@ The app loads OAuth credentials from `assets/.env` at runtime via `flutter_doten
 - Navigation uses `gotoPage()` helper from `constants.dart` for standard push navigation
 - `constants.dart` also contains shared widget builders: `title()`, `text()`, `heading()`, `iconAndText()`, `starField()`, `cardLoading()`
 - Advanced search uses `@` and `#` prefixes in the search bar
+
+## Device Testing
+
+The app is tested on a physical Android phone connected via USB.
+
+- **Device ID**: `10591f3e0506` (Xiaomi 21061119BI, Android 13 arm64)
+- **Run on phone**: `flutter run -d 10591f3e0506`
+- **Known issue**: The Flutter process often loses connection to the device after deploying the APK (`Lost connection to device`). This is normal — the APK is installed and runs fine, hot-reload just won't work. Simply rebuild and redeploy when needed.
+- **Check device**: Run `flutter devices` first to confirm the phone is connected
+- **Read logs**: Run `flutter run` in background mode and `tail` the output file to monitor logs. Filter Flutter-specific errors with `grep -i "flutter" | grep -i "error\|exception"` — ignore native `gralloc4` or GPU format warnings as they are harmless Android-level noise.
+- **Workflow**: After code changes, run `flutter analyze` to check for errors, then `flutter run -d 10591f3e0506` to deploy and test on the phone.
