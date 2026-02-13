@@ -23,7 +23,6 @@ import 'package:mywatchlist/pages/Simkl/simkl_user_page.dart';
 import 'package:mywatchlist/pages/Simkl/simkl_user_profile_page.dart';
 import 'package:mywatchlist/pages/MAL/mal_user_page.dart';
 import 'package:mywatchlist/pages/MAL/mal_user_profile_page.dart';
-import 'package:mywatchlist/pages/side_bar.dart';
 import 'package:mywatchlist/user/accounts/account_bloc.dart';
 import 'package:mywatchlist/utils/page_transitions.dart';
 import 'package:mywatchlist/widgets/common/background.dart';
@@ -95,13 +94,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
           return Scaffold(
             key: _scaffoldKey,
-            endDrawer: AppSidebar(
-              onClose: () {
-                if (_scaffoldKey.currentState?.isEndDrawerOpen ?? false) {
-                  Navigator.pop(context);
-                }
-              },
-            ),
             backgroundColor: theme.scaffoldBackgroundColor,
             // BottomNavBar modernisée
             bottomNavigationBar: BottomNavBar(
@@ -176,7 +168,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     ),
                     child: Center(
                       child: Image.asset(
-                        'assets/images/dal-black-bg.png',
+                        'assets/images/mwl-black-bg.png',
                         width: 70,
                         height: 70,
                       ),

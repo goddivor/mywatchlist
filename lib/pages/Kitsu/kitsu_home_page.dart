@@ -7,7 +7,11 @@ class KitsuHomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBarHome(),
+      appBar: AppBarHome(
+        showSearch: false,
+        showBookmarks: false,
+        showCalendar: false,
+      ),
       body: Center(
         child: Text("Kitsu Home Page", style: TextStyle(fontSize: 24)),
       ),

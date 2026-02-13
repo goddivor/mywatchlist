@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mywatchlist/constants/constants.dart';
+import 'package:mywatchlist/screens/account_switcher_page.dart';
 import 'package:mywatchlist/user/accounts/account_bloc.dart';
 import 'package:mywatchlist/user/accounts/models/account.dart';
-import 'package:mywatchlist/widgets/common/acc_widget.dart';
+import 'package:mywatchlist/utils/page_transitions.dart';
 import 'package:mywatchlist/widgets/common/avatar_widget.dart';
 
 class AppBarHome extends StatefulWidget implements PreferredSizeWidget {
@@ -14,11 +15,13 @@ class AppBarHome extends StatefulWidget implements PreferredSizeWidget {
   final bool showSearch;
   final bool showBookmarks;
   final bool showCalendar;
+  final bool showSettings;
   final bool transparent;
   final Color? backgroundColor;
   final VoidCallback? onSearchTap;
   final VoidCallback? onBookmarksTap;
   final VoidCallback? onCalendarTap;
+  final VoidCallback? onSettingsTap;
 
   const AppBarHome({
     super.key,
@@ -29,11 +32,13 @@ class AppBarHome extends StatefulWidget implements PreferredSizeWidget {
     this.showSearch = true,
     this.showBookmarks = true,
     this.showCalendar = true,
+    this.showSettings = false,
     this.transparent = false,
     this.backgroundColor,
     this.onSearchTap,
     this.onBookmarksTap,
     this.onCalendarTap,
+    this.onSettingsTap,
   });
 
   @override
@@ -166,55 +171,21 @@ class _AppBarHomeState extends State<AppBarHome> with TickerProviderStateMixin {
       return widget.titleWidget!;
     }
 
-    return Row(
-      children: [
-        Container(
-          height: 32,
-          width: 32,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                theme.colorScheme.primary,
-                theme.colorScheme.primary.withOpacity(0.7),
-              ],
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: theme.colorScheme.primary.withOpacity(0.3),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Center(
-            child: Text(
-              'M',
-              style: TextStyle(
-                color: theme.colorScheme.onPrimary,
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(width: 8),
-        Text(
-          widget.title ?? 'MyWatchList',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: theme.colorScheme.onBackground,
-          ),
-        ),
-      ],
+    return CircleAvatar(
+      radius: 18,
+      backgroundImage: const AssetImage('assets/images/mwl-black-bg.png'),
+      backgroundColor: theme.colorScheme.surfaceContainerHighest,
     );
   }
 
   Widget _buildActionButtons(ThemeData theme) {
     final iconColor = theme.colorScheme.onBackground;
+    final hasAnyButton = widget.showSearch ||
+        widget.showBookmarks ||
+        widget.showCalendar ||
+        widget.showSettings;
+
+    if (!hasAnyButton) return const SizedBox.shrink();
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
@@ -246,6 +217,14 @@ class _AppBarHomeState extends State<AppBarHome> with TickerProviderStateMixin {
               icon: Icons.calendar_today_outlined,
               tooltip: 'Calendar',
               onTap: widget.onCalendarTap ?? () {},
+              iconColor: iconColor,
+              theme: theme,
+            ),
+          if (widget.showSettings)
+            _buildIconButton(
+              icon: Icons.settings_outlined,
+              tooltip: 'Settings',
+              onTap: widget.onSettingsTap ?? () {},
               iconColor: iconColor,
               theme: theme,
             ),
@@ -319,17 +298,13 @@ class _AppBarHomeState extends State<AppBarHome> with TickerProviderStateMixin {
 
   void _showAccountSelectionModal(BuildContext context,
       AccountType currentAccountType, List<Account> accounts) {
-    showDialog(
-      context: context,
-      builder: (context) => AccountModal(
-        currentAccountType: currentAccountType,
-        accounts: accounts,
-        onAccountChanged: (AccountType newAccountType) {
-          context.read<AccountBloc>().add(ChangeAccountEvent(newAccountType));
-          if (widget.onUiChange != null) {
-            widget.onUiChange!();
-          }
-        },
+    Navigator.push(
+      context,
+      SlidePageRoute(
+        direction: SlideDirection.left,
+        page: AccountSwitcherPage(
+          onUiChange: widget.onUiChange,
+        ),
       ),
     );
   }

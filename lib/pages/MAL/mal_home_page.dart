@@ -18,6 +18,7 @@ import 'package:mywatchlist/widgets/MAL/home/homeappbar.dart';
 import 'package:mywatchlist/widgets/loading/loadingcard.dart';
 import 'package:mywatchlist/widgets/MAL/home/news_widget.dart';
 import 'package:mywatchlist/widgets/common/slivers.dart';
+import 'package:mywatchlist/screens/settings/settings_page.dart';
 
 class MalHomePage extends StatefulWidget {
   const MalHomePage({super.key});
@@ -137,7 +138,7 @@ class _MalHomePageState extends State<MalHomePage>
 
       return BlocBuilder<ThemeBloc, ThemeState>(builder: (context, themeState) {
         final theme = Theme.of(context);
-        final isDark = themeState.isDarkMode;
+        final isDark = theme.brightness == Brightness.dark;
 
         return Padding(
           padding: const EdgeInsets.only(left: 0, right: 0, top: 0),
@@ -193,12 +194,12 @@ class _MalHomePageState extends State<MalHomePage>
       pinned: true,
       floating: true,
       title: AppBarHome(
-        title: 'MyAnimeList',
         transparent: constraints.scrollOffset < 50,
         backgroundColor: constraints.scrollOffset >= 50
             ? theme.appBarTheme.backgroundColor
             : Colors.transparent,
         showAvatar: true,
+        showSettings: true,
         onSearchTap: () {
           // Handle search
         },
@@ -207,6 +208,12 @@ class _MalHomePageState extends State<MalHomePage>
         },
         onCalendarTap: () {
           // Handle calendar
+        },
+        onSettingsTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const SettingsPage()),
+          );
         },
       ),
       actions: const <Widget>[],
