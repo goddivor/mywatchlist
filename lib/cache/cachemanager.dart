@@ -1,8 +1,12 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
+import 'package:mywatchlist/services/api/MAL/mal_anime.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class CacheManager {
+  static const String homepageService = 'homepage';
+
   static CacheManager instance = new CacheManager();
   static SharedPreferences? pref;
 
@@ -169,5 +173,60 @@ class CacheManager {
 
   void setFirstTime(String s) {
     setValue(s, "true");
+  }
+
+  // --- Homepage cache helpers ---
+
+  Future<void> cacheAnimeList(String sectionKey, List<Anime> animeList) async {
+    final jsonList = animeList.map((a) => a.toJson()).toList();
+    final jsonString = jsonEncode(jsonList);
+    await setValueForServiceAutoExpireIn(homepageService, sectionKey, jsonString);
+  }
+
+  Future<List<Anime>?> getCachedAnimeList(
+      String sectionKey, [int expiresInSeconds = 7200]) async {
+    final jsonString = await getValueForServiceAutoExpire(
+        homepageService, sectionKey, expiresInSeconds);
+    if (jsonString == null) return null;
+    try {
+      final List<dynamic> jsonList = jsonDecode(jsonString);
+      return jsonList
+          .map((json) => Anime.fromMAlJson(json as Map<String, dynamic>))
+          .toList();
+    } catch (e) {
+      debugPrint('Cache error (anime) $sectionKey: $e');
+      return null;
+    }
+  }
+
+  Future<void> cacheNewsList(
+      String sectionKey, List<Map<String, String>> news) async {
+    final jsonString = jsonEncode(news);
+    await setValueForServiceAutoExpireIn(homepageService, sectionKey, jsonString);
+  }
+
+  Future<List<Map<String, String>>?> getCachedNewsList(
+      String sectionKey, [int expiresInSeconds = 28800]) async {
+    final jsonString = await getValueForServiceAutoExpire(
+        homepageService, sectionKey, expiresInSeconds);
+    if (jsonString == null) return null;
+    try {
+      final List<dynamic> jsonList = jsonDecode(jsonString);
+      return jsonList
+          .map((item) => Map<String, String>.from(item as Map))
+          .toList();
+    } catch (e) {
+      debugPrint('Cache error (news) $sectionKey: $e');
+      return null;
+    }
+  }
+
+  Future<void> clearHomepageCache() async {
+    pref = pref ?? await SharedPreferences.getInstance();
+    final keys =
+        pref!.getKeys().where((key) => key.startsWith('$homepageService - '));
+    for (final key in keys) {
+      await pref!.remove(key);
+    }
   }
 }
