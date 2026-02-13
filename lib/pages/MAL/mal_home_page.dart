@@ -18,6 +18,7 @@ import 'package:mywatchlist/widgets/MAL/home/homeappbar.dart';
 import 'package:mywatchlist/widgets/loading/loadingcard.dart';
 import 'package:mywatchlist/widgets/MAL/home/news_widget.dart';
 import 'package:mywatchlist/widgets/common/slivers.dart';
+import 'package:mywatchlist/widgets/common/custombutton.dart';
 import 'package:mywatchlist/screens/settings/settings_page.dart';
 
 class MalHomePage extends StatefulWidget {
@@ -26,95 +27,114 @@ class MalHomePage extends StatefulWidget {
   _MalHomePageState createState() => _MalHomePageState();
 }
 
-class _MalHomePageState extends State<MalHomePage>
-    with SingleTickerProviderStateMixin {
+class _MalHomePageState extends State<MalHomePage> {
   bool hasOpened = false;
-  // late MalHomePreferences _preferences;
+  bool _initialDataLoaded = false;
   final MalApi malApi = MalApi();
   final SeasonType currentSeason = MalApi.getSeasonType();
   String get currentSeasonName => MalApi.getSeasonName(currentSeason);
   int get currentSeasonYear => MalApi.getCurrentSeasonYear();
   late ScrollController scrollController;
-  late AnimationController _animationController;
 
-  final Map<String, dynamic> topFilters = {
-    'Trending': () => print('Trending Selected'),
-    'Popular': () => print('Popular Selected'),
-    'New': () => print('New Selected'),
-    'All': () => print('All Selected'),
-  };
+  late Map<String, dynamic> topHeaders;
+
+  void _initTopHeaders() {
+    topHeaders = {
+      'Categories': () {},
+      'Genres': () {},
+      'Top Anime': () {},
+      'Top Manga': () {},
+      'Top Airing': () {},
+      'Popular Anime': () {},
+      'Popular Manga': () {},
+    };
+  }
 
   @override
   void initState() {
     super.initState();
     hasOpened = false;
     scrollController = ScrollController();
+    _initTopHeaders();
 
-    _animationController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 600),
-    );
-
-    // Load preferences using BLoC
+    // Load preferences using BLoC — _loadData will be triggered by BlocListener
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<HomePreferencesBloc>().add(LoadHomePreferencesEvent());
     });
 
-    // Load user preferences
-    // _loadPreferences();
-
-    // Start animation and load data
     startOpeningAnimation();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadData();
-    });
   }
 
   @override
   void dispose() {
     scrollController.dispose();
-    _animationController.dispose();
     super.dispose();
   }
 
-  void _loadData() {
+  void _loadData({bool forceUpdate = false}) {
     final requestsBloc = BlocProvider.of<RequestsBloc>(context);
     final preferences = context.read<HomePreferencesBloc>().state.preferences;
 
-    // Load all data based on enabled sections
-    if (preferences.sections.any(
-        (section) => section.type == SectionType.news && section.enabled)) {
-      requestsBloc.add(LoadNewsEvent());
-    }
-
-    if (preferences.sections.any((section) =>
-        section.type == SectionType.seasonNow && section.enabled)) {
-      requestsBloc.add(LoadSeasonNowEvent());
-    }
-
-    if (preferences.sections.any(
-        (section) => section.type == SectionType.upcoming && section.enabled)) {
-      requestsBloc.add(LoadUpcomingAnimeEvent());
-    }
-
-    if (preferences.sections.any((section) =>
-        section.type == SectionType.topFavorites && section.enabled)) {
-      requestsBloc.add(LoadTopAnimeFavoriteEvent());
-    }
-
-    if (preferences.sections.any((section) =>
-        section.type == SectionType.topPopular && section.enabled)) {
-      requestsBloc.add(LoadTopAnimeByPopularityEvent());
-    }
-
-    if (preferences.sections.any(
-        (section) => section.type == SectionType.topScore && section.enabled)) {
-      requestsBloc.add(LoadTopAnimeByScoreEvent());
-    }
-
-    if (preferences.sections.any((section) =>
-        section.type == SectionType.suggested && section.enabled)) {
-      requestsBloc.add(LoadSuggestedAnimeEvent());
+    for (final section in preferences.sections.where((s) => s.enabled)) {
+      final cache = section.cacheDurationHours;
+      switch (section.type) {
+        case SectionType.news:
+          requestsBloc.add(LoadNewsEvent(
+              forceUpdate: forceUpdate, cacheDurationHours: cache));
+          break;
+        case SectionType.seasonNow:
+          requestsBloc.add(LoadSeasonNowEvent(
+              forceUpdate: forceUpdate, cacheDurationHours: cache));
+          break;
+        case SectionType.upcoming:
+          requestsBloc.add(LoadUpcomingAnimeEvent(
+              forceUpdate: forceUpdate, cacheDurationHours: cache));
+          break;
+        case SectionType.topFavorites:
+          requestsBloc.add(LoadTopAnimeFavoriteEvent(
+              forceUpdate: forceUpdate, cacheDurationHours: cache));
+          break;
+        case SectionType.topPopular:
+          requestsBloc.add(LoadTopAnimeByPopularityEvent(
+              forceUpdate: forceUpdate, cacheDurationHours: cache));
+          break;
+        case SectionType.topScore:
+          requestsBloc.add(LoadTopAnimeByScoreEvent(
+              forceUpdate: forceUpdate, cacheDurationHours: cache));
+          break;
+        case SectionType.suggested:
+          requestsBloc.add(LoadSuggestedAnimeEvent(
+              forceUpdate: forceUpdate, cacheDurationHours: cache));
+          break;
+        case SectionType.topAnimeAiring:
+          requestsBloc.add(LoadTopAnimeAiringEvent(
+              forceUpdate: forceUpdate, cacheDurationHours: cache));
+          break;
+        case SectionType.topAnimeTV:
+          requestsBloc.add(LoadTopAnimeTVEvent(
+              forceUpdate: forceUpdate, cacheDurationHours: cache));
+          break;
+        case SectionType.topAnimeMovie:
+          requestsBloc.add(LoadTopAnimeMovieEvent(
+              forceUpdate: forceUpdate, cacheDurationHours: cache));
+          break;
+        case SectionType.topAnimeSpecial:
+          requestsBloc.add(LoadTopAnimeSpecialEvent(
+              forceUpdate: forceUpdate, cacheDurationHours: cache));
+          break;
+        case SectionType.topManga:
+          requestsBloc.add(LoadTopMangaEvent(
+              forceUpdate: forceUpdate, cacheDurationHours: cache));
+          break;
+        case SectionType.topMangaPopular:
+          requestsBloc.add(LoadTopMangaByPopularityEvent(
+              forceUpdate: forceUpdate, cacheDurationHours: cache));
+          break;
+        case SectionType.features:
+          requestsBloc.add(LoadFeaturesEvent(
+              forceUpdate: forceUpdate, cacheDurationHours: cache));
+          break;
+      }
     }
   }
 
@@ -124,61 +144,53 @@ class _MalHomePageState extends State<MalHomePage>
       setState(() {
         hasOpened = true;
       });
-      _animationController.forward();
     }
   }
 
-  // No longer need edit mode functions since editing is moved to settings
-
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<HomePreferencesBloc, HomePreferencesState>(
-        builder: (context, homePreferencesState) {
+    return BlocConsumer<HomePreferencesBloc, HomePreferencesState>(
+        listener: (context, homePreferencesState) {
+      if (!homePreferencesState.isLoading && !_initialDataLoaded) {
+        _initialDataLoaded = true;
+        _loadData();
+      }
+    }, builder: (context, homePreferencesState) {
       final homePreferences = homePreferencesState.preferences;
 
       return BlocBuilder<ThemeBloc, ThemeState>(builder: (context, themeState) {
         final theme = Theme.of(context);
         final isDark = theme.brightness == Brightness.dark;
 
-        return Padding(
-          padding: const EdgeInsets.only(left: 0, right: 0, top: 0),
-          child: AnimatedOpacity(
-            opacity: hasOpened ? 1 : 0,
-            duration: const Duration(milliseconds: 500),
-            child: Scaffold(
-              backgroundColor: theme.scaffoldBackgroundColor,
-              // floatingActionButton: _buildFloatingActionButton(theme),
-              body: DefaultTabController(
-                length: topFilters.length,
-                child: NestedScrollView(
-                  controller: scrollController,
-                  headerSliverBuilder: (_, __) => [
-                    SliverLayoutBuilder(
-                      builder: (context, constraints) =>
-                          _buildAppBar(constraints, theme, isDark),
-                    )
-                  ],
-                  body: RefreshIndicator(
-                    color: theme.colorScheme.primary,
-                    backgroundColor: isDark ? theme.cardColor : Colors.white,
-                    onRefresh: () async {
-                      if (mounted) {
-                        // Reload preferences using BLoC
-                        context
-                            .read<HomePreferencesBloc>()
-                            .add(LoadHomePreferencesEvent());
-                        // Reload all data when refreshing
-                        _loadData();
-                        // Wait for data to load
-                        await Future.delayed(const Duration(milliseconds: 800));
-                      }
-                    },
-                    child: homePreferencesState.isLoading
-                        ? Center(child: CircularProgressIndicator())
-                        : CustomScrollWrapper(
-                            _buildSections(theme, homePreferences)),
-                  ),
-                ),
+        return AnimatedOpacity(
+          opacity: hasOpened ? 1 : 0,
+          duration: const Duration(milliseconds: 500),
+          child: Scaffold(
+            backgroundColor: theme.scaffoldBackgroundColor,
+            body: NestedScrollView(
+              controller: scrollController,
+              headerSliverBuilder: (_, __) => [
+                SliverLayoutBuilder(
+                  builder: (context, constraints) =>
+                      _buildAppBar(constraints, theme, isDark),
+                )
+              ],
+              body: RefreshIndicator(
+                color: theme.colorScheme.primary,
+                backgroundColor: isDark ? theme.cardColor : Colors.white,
+                onRefresh: () async {
+                  if (mounted) {
+                    context
+                        .read<HomePreferencesBloc>()
+                        .add(LoadHomePreferencesEvent());
+                    _loadData(forceUpdate: true);
+                    await Future.delayed(const Duration(milliseconds: 800));
+                  }
+                },
+                child: homePreferencesState.isLoading
+                    ? const Center(child: CircularProgressIndicator())
+                    : CustomScrollWrapper(
+                        _buildSections(theme, homePreferences)),
               ),
             ),
           ),
@@ -200,15 +212,9 @@ class _MalHomePageState extends State<MalHomePage>
             : Colors.transparent,
         showAvatar: true,
         showSettings: true,
-        onSearchTap: () {
-          // Handle search
-        },
-        onBookmarksTap: () {
-          // Handle bookmarks
-        },
-        onCalendarTap: () {
-          // Handle calendar
-        },
+        onSearchTap: () {},
+        onBookmarksTap: () {},
+        onCalendarTap: () {},
         onSettingsTap: () {
           Navigator.push(
             context,
@@ -222,249 +228,295 @@ class _MalHomePageState extends State<MalHomePage>
           ? theme.appBarTheme.backgroundColor
           : Colors.transparent,
       toolbarHeight: kToolbarHeight,
-      bottom: _buildFiltersTab(constraints, theme, isDark),
+      bottom: _buildTopHeader(constraints, theme),
     );
   }
 
-  PreferredSize _buildFiltersTab(
-      SliverConstraints constraints, ThemeData theme, bool isDark) {
+  PreferredSize _buildTopHeader(
+      SliverConstraints constraints, ThemeData theme) {
     return PreferredSize(
       preferredSize: const Size(double.infinity, 52),
-      child: Container(
-        color: constraints.scrollOffset > 20
-            ? theme.appBarTheme.backgroundColor
-            : Colors.transparent,
-        child: Padding(
-          padding: const EdgeInsets.only(bottom: 0, top: 4.0),
-          child: TabBar(
-            isScrollable: true,
-            indicatorSize: TabBarIndicatorSize.label,
-            indicatorColor: theme.colorScheme.primary,
-            labelColor: theme.colorScheme.secondary,
-            unselectedLabelColor: theme.colorScheme.onSurface.withOpacity(0.7),
-            dividerColor: Colors.transparent,
-            tabs: topFilters.keys.map((key) {
-              return Tab(text: key);
-            }).toList(),
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: 10, top: 7.0),
+        child: SizedBox(
+          height: 35,
+          child: ListView(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            children: topHeaders.keys
+                .map((key) => Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 3),
+                      child: ShadowButton(
+                        elevation: 0.0,
+                        child: Text(
+                          key,
+                          style: theme.textTheme.bodySmall,
+                        ),
+                        onPressed: () {
+                          final value = topHeaders[key];
+                          if (value is Widget) {
+                            gotoPage(context: context, newPage: value);
+                          } else if (value is Function) {
+                            value();
+                          }
+                        },
+                        backgroundColor: theme.cardColor.withOpacity(
+                          constraints.scrollOffset > 0 ? 0.1 : 0.4,
+                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 15),
+                      ),
+                    ))
+                .toList(),
           ),
         ),
       ),
     );
   }
 
-  // Edit mode content has been moved to settings
-
-  List<Widget> _buildSections(ThemeData theme, MalHomePreferences preferences) {
+  List<Widget> _buildSections(
+      ThemeData theme, MalHomePreferences preferences) {
     final tileSize = getTileSizeValues(preferences.tileSize);
+    final enabledSections =
+        preferences.sections.where((s) => s.enabled).toList();
 
     return [
-      SliverList(
-        delegate: SliverChildListDelegate(
-          preferences.sections
-              .where((section) => section.enabled)
-              .map((section) {
-            switch (section.type) {
-              case SectionType.news:
-                return _buildNewsSection(theme, section);
-              case SectionType.seasonNow:
-                return _buildAnimeSection(
-                  theme,
-                  preferences,
-                  section,
-                  '$currentSeasonName $currentSeasonYear Anime',
-                  (state) => state.isSeasonNowLoaded,
-                  (state) => state.seasonNow,
-                  tileSize,
-                );
-              case SectionType.suggested:
-                return _buildAnimeSection(
-                  theme,
-                  preferences,
-                  section,
-                  'Suggested For You',
-                  (state) => state.isSuggestedAnimeLoaded,
-                  (state) => state.suggestedAnime,
-                  tileSize,
-                );
-              case SectionType.upcoming:
-                return _buildAnimeSection(
-                  theme,
-                  preferences,
-                  section,
-                  'Top Upcoming Anime',
-                  (state) => state.isUpcomingAnimeLoaded,
-                  (state) => state.upcomingAnime,
-                  tileSize,
-                );
-              case SectionType.topScore:
-                return _buildAnimeSection(
-                  theme,
-                  preferences,
-                  section,
-                  'Top Anime by Score',
-                  (state) => state.isTopAnimeByScoreLoaded,
-                  (state) => state.topAnimeByScore,
-                  tileSize,
-                );
-              case SectionType.topFavorites:
-                return _buildAnimeSection(
-                  theme,
-                  preferences,
-                  section,
-                  'All-time Anime Favorites',
-                  (state) => state.isTopAnimeFavoriteLoaded,
-                  (state) => state.topAnimeFavorite,
-                  tileSize,
-                );
-              case SectionType.topPopular:
-                return _buildAnimeSection(
-                  theme,
-                  preferences,
-                  section,
-                  'Most Popular Anime',
-                  (state) => state.isTopAnimeByPopularityLoaded,
-                  (state) => state.topAnimeByPopularity,
-                  tileSize,
-                );
-              default:
-                return const SizedBox.shrink();
-            }
-          }).toList(),
-        ),
+      SliverList.builder(
+        itemCount: enabledSections.length,
+        itemBuilder: (context, index) {
+          return RepaintBoundary(
+            child: _buildSection(
+                theme, preferences, enabledSections[index], tileSize),
+          );
+        },
       ),
     ];
   }
 
-  Widget _buildNewsSection(ThemeData theme, HomeSectionPreference section) {
-    return AnimatedBuilder(
-      animation: _animationController,
-      builder: (context, child) {
-        return FadeTransition(
-          opacity: Tween<double>(begin: 0.0, end: 1.0).animate(
-            CurvedAnimation(
-              parent: _animationController,
-              curve: Interval(0.1, 1.0, curve: Curves.easeOut),
-            ),
-          ),
-          child: child,
+  Widget _buildSection(ThemeData theme, MalHomePreferences preferences,
+      HomeSectionPreference section, TileSize tileSize) {
+    final title =
+        section.getDisplayTitle(currentSeasonName, currentSeasonYear);
+    switch (section.type) {
+      case SectionType.news:
+        return _buildNewsSection(theme, section);
+      case SectionType.seasonNow:
+        return _buildAnimeSection(
+          theme, section, title,
+          (state) => state.isSeasonNowLoaded,
+          (state) => state.seasonNow, tileSize,
         );
-      },
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 10.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SectionHeader(
-              title: 'Anime News & Features',
-              onTap: () {
-                // Navigate to all news
-              },
-              color: theme.colorScheme.primary,
-            ),
-            BlocBuilder<RequestsBloc, RequestsState>(
-              builder: (context, state) {
-                if (!state.isNewsLoaded) {
-                  return loadingCardList(
-                    containerHeight: 250.0,
-                    height: 250.0,
-                    width: 320,
-                    itemCount: section.itemCount > 15 ? 15 : section.itemCount,
-                    listPadding: const EdgeInsets.only(left: 12, right: 15),
-                  );
-                } else if (state.news.isEmpty) {
-                  return _buildEmptyState(theme, 'No news available');
-                } else {
-                  final newsItems = state.news.length > section.itemCount
-                      ? state.news.sublist(0, section.itemCount)
-                      : state.news;
+      case SectionType.suggested:
+        return _buildAnimeSection(
+          theme, section, title,
+          (state) => state.isSuggestedAnimeLoaded,
+          (state) => state.suggestedAnime, tileSize,
+        );
+      case SectionType.upcoming:
+        return _buildAnimeSection(
+          theme, section, title,
+          (state) => state.isUpcomingAnimeLoaded,
+          (state) => state.upcomingAnime, tileSize,
+        );
+      case SectionType.topScore:
+        return _buildAnimeSection(
+          theme, section, title,
+          (state) => state.isTopAnimeByScoreLoaded,
+          (state) => state.topAnimeByScore, tileSize,
+        );
+      case SectionType.topFavorites:
+        return _buildAnimeSection(
+          theme, section, title,
+          (state) => state.isTopAnimeFavoriteLoaded,
+          (state) => state.topAnimeFavorite, tileSize,
+        );
+      case SectionType.topPopular:
+        return _buildAnimeSection(
+          theme, section, title,
+          (state) => state.isTopAnimeByPopularityLoaded,
+          (state) => state.topAnimeByPopularity, tileSize,
+        );
+      case SectionType.topAnimeAiring:
+        return _buildAnimeSection(
+          theme, section, title,
+          (state) => state.isTopAnimeAiringLoaded,
+          (state) => state.topAnimeAiring, tileSize,
+        );
+      case SectionType.topAnimeTV:
+        return _buildAnimeSection(
+          theme, section, title,
+          (state) => state.isTopAnimeTVLoaded,
+          (state) => state.topAnimeTV, tileSize,
+        );
+      case SectionType.topAnimeMovie:
+        return _buildAnimeSection(
+          theme, section, title,
+          (state) => state.isTopAnimeMovieLoaded,
+          (state) => state.topAnimeMovie, tileSize,
+        );
+      case SectionType.topAnimeSpecial:
+        return _buildAnimeSection(
+          theme, section, title,
+          (state) => state.isTopAnimeSpecialLoaded,
+          (state) => state.topAnimeSpecial, tileSize,
+        );
+      case SectionType.topManga:
+        return _buildAnimeSection(
+          theme, section, title,
+          (state) => state.isTopMangaLoaded,
+          (state) => state.topManga, tileSize,
+        );
+      case SectionType.topMangaPopular:
+        return _buildAnimeSection(
+          theme, section, title,
+          (state) => state.isTopMangaByPopularityLoaded,
+          (state) => state.topMangaByPopularity, tileSize,
+        );
+      case SectionType.features:
+        return _buildFeaturesSection(theme, section);
+    }
+  }
 
-                  return HomePageNewsWidget(newsItems);
-                }
-              },
-            ),
-          ],
-        ),
+  Widget _buildNewsSection(ThemeData theme, HomeSectionPreference section) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 10.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SectionHeader(
+            title: section.getDisplayTitle(
+                currentSeasonName, currentSeasonYear),
+            onTap: () {
+              // Navigate to all news
+            },
+          ),
+          BlocBuilder<RequestsBloc, RequestsState>(
+            builder: (context, state) {
+              if (!state.isNewsLoaded) {
+                return loadingCardList(
+                  containerHeight: 250.0,
+                  height: 250.0,
+                  width: 320,
+                  itemCount:
+                      section.itemCount > 15 ? 15 : section.itemCount,
+                  listPadding:
+                      const EdgeInsets.only(left: 12, right: 15),
+                );
+              } else if (state.news.isEmpty) {
+                return _buildEmptyState(theme, 'No news available');
+              } else {
+                final newsItems = state.news.length > section.itemCount
+                    ? state.news.sublist(0, section.itemCount)
+                    : state.news;
+
+                return HomePageNewsWidget(newsItems);
+              }
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFeaturesSection(ThemeData theme, HomeSectionPreference section) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 10.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SectionHeader(
+            title: section.getDisplayTitle(
+                currentSeasonName, currentSeasonYear),
+            onTap: () {
+              // Navigate to all features
+            },
+          ),
+          BlocBuilder<RequestsBloc, RequestsState>(
+            builder: (context, state) {
+              if (!state.isFeaturesLoaded) {
+                return loadingCardList(
+                  containerHeight: 250.0,
+                  height: 250.0,
+                  width: 320,
+                  itemCount:
+                      section.itemCount > 15 ? 15 : section.itemCount,
+                  listPadding:
+                      const EdgeInsets.only(left: 12, right: 15),
+                );
+              } else if (state.features.isEmpty) {
+                return _buildEmptyState(theme, 'No features available');
+              } else {
+                final featureItems = state.features.length > section.itemCount
+                    ? state.features.sublist(0, section.itemCount)
+                    : state.features;
+
+                return HomePageNewsWidget(featureItems);
+              }
+            },
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildAnimeSection(
     ThemeData theme,
-    MalHomePreferences preferences,
     HomeSectionPreference section,
     String title,
     bool Function(RequestsState) isLoaded,
     List<Anime> Function(RequestsState) getItems,
     TileSize tileSize,
   ) {
-    return AnimatedBuilder(
-      animation: _animationController,
-      builder: (context, child) {
-        final delay =
-            preferences.sections.indexWhere((s) => s.type == section.type) *
-                0.1;
-        final start = 0.1 + delay;
-        final end = 1.0;
+    // Match DailyAL: width = containerHeight * (2/3)
+    final double cardWidth = tileSize.containerHeight * (2 / 3);
+    final double cardHeight = tileSize.containerHeight;
 
-        return FadeTransition(
-          opacity: Tween<double>(begin: 0.0, end: 1.0).animate(
-            CurvedAnimation(
-              parent: _animationController,
-              curve: Interval(start, end, curve: Curves.easeOut),
-            ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 10.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SectionHeader(
+            title: title,
+            onTap: () {
+              // Navigate to full section
+            },
           ),
-          child: child,
-        );
-      },
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 10.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SectionHeader(
-              title: title,
-              onTap: () {
-                // Navigate to full section
-              },
-              color: theme.colorScheme.primary,
-            ),
-            BlocBuilder<RequestsBloc, RequestsState>(
-              builder: (context, state) {
-                if (!isLoaded(state)) {
-                  return loadingCardList(
-                    containerHeight: tileSize.containerHeight,
-                    height: tileSize.contentHeight,
-                    width: tileSize.contentWidth,
-                    axis: Axis.horizontal,
-                    itemCount: section.itemCount,
-                    listPadding: const EdgeInsets.all(8.0),
-                  );
-                } else {
-                  final items = getItems(state);
+          BlocBuilder<RequestsBloc, RequestsState>(
+            builder: (context, state) {
+              if (!isLoaded(state)) {
+                return loadingCardList(
+                  containerHeight: cardHeight,
+                  height: cardHeight,
+                  width: cardWidth,
+                  axis: Axis.horizontal,
+                  itemCount: section.itemCount,
+                  listPadding: const EdgeInsets.all(8.0),
+                );
+              } else {
+                final items = getItems(state);
 
-                  if (items.isEmpty) {
-                    return _buildEmptyState(theme, 'No items available');
-                  }
-
-                  final limitedItems = items.length > section.itemCount
-                      ? items.sublist(0, section.itemCount)
-                      : items;
-
-                  return ContentListWidget(
-                    category: "anime",
-                    items: limitedItems,
-                    height: tileSize.containerHeight,
-                    showTime: section.type == SectionType.seasonNow ||
-                        section.type == SectionType.upcoming,
-                    padding: const EdgeInsets.all(8.0),
-                    tileWidth: tileSize.contentWidth,
-                    tileHeight: tileSize.contentHeight,
-                  );
+                if (items.isEmpty) {
+                  return _buildEmptyState(theme, 'No items available');
                 }
-              },
-            ),
-          ],
-        ),
+
+                final limitedItems = items.length > section.itemCount
+                    ? items.sublist(0, section.itemCount)
+                    : items;
+
+                return ContentListWidget(
+                  category: "anime",
+                  items: limitedItems,
+                  height: cardHeight,
+                  showTime: section.type == SectionType.seasonNow ||
+                      section.type == SectionType.upcoming,
+                  padding: const EdgeInsets.all(8.0),
+                  tileWidth: cardWidth,
+                  tileHeight: cardHeight,
+                );
+              }
+            },
+          ),
+        ],
       ),
     );
   }
