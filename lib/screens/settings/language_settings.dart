@@ -8,7 +8,6 @@ import 'package:mywatchlist/user/language/language_event.dart';
 import 'package:mywatchlist/user/language/language_state.dart';
 import 'package:mywatchlist/user/language/supported_languages.dart';
 import 'package:mywatchlist/user/user_preference.dart';
-import 'package:mywatchlist/widgets/common/background.dart';
 
 class LanguageSettings extends StatefulWidget {
   final bool isIntroPage;
@@ -21,175 +20,221 @@ class LanguageSettings extends StatefulWidget {
 
 class _LanguageSettingsState extends State<LanguageSettings> {
   final UserPreference userPref = UserPreference();
-  
+
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async => !widget.isIntroPage,
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return PopScope(
+      canPop: !widget.isIntroPage,
       child: Scaffold(
-        appBar: widget.isIntroPage 
-          ? null 
-          : AppBar(
-              title: const Text('Language Settings'),
-              elevation: 0,
-            ),
-        floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-        floatingActionButton: widget.isIntroPage 
-          ? FloatingActionButton(
-              onPressed: () async {
-                if (widget.isIntroPage) {
-                  // If it's intro page, just continue to next page
-                  Navigator.of(context).pop();
-                }
-              },
-              child: const Icon(Icons.check),
-            )
-          : null,
+        appBar: widget.isIntroPage
+            ? null
+            : AppBar(
+                title: const Text('Language Settings'),
+                elevation: 0,
+              ),
         body: BlocBuilder<LanguageBloc, LanguageState>(
           builder: (context, state) {
-            return Stack(
-              children: [
-                // Background for aesthetic
-                if (widget.isIntroPage)
-                  Background(
-                    isNetworkImage: false, 
-                    context: context, 
-                    forceBg: true,
-                    url: 'assets/images/languages_bg.jpg',
-                  ),
-                
-                // Main content
-                SafeArea(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const SizedBox(height: 20),
-                      
-                      // Header section
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Choose Your Language',
-                              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
+            return SafeArea(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SizedBox(height: widget.isIntroPage ? 48 : 8),
+
+                  // Header section
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (widget.isIntroPage) ...[
+                          Text(
+                            'Choose Your Language',
+                            style: theme.textTheme.headlineMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: colorScheme.onSurface,
                             ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'Select your preferred language for the app interface',
-                              style: Theme.of(context).textTheme.bodyLarge,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Select your preferred language for the app interface',
+                            style: theme.textTheme.bodyLarge?.copyWith(
+                              color: colorScheme.onSurfaceVariant,
                             ),
-                            const SizedBox(height: 24),
-                            
-                            // System language toggle
-                            SwitchListTile(
-                              title: const Text('Use System Language'),
-                              subtitle: const Text(
-                                'App will follow your device language settings',
-                              ),
-                              value: state.useSystemLanguage,
-                              onChanged: (value) {
-                                context.read<LanguageBloc>().add(
-                                  LanguageChanged(
-                                    languageCode: state.languageCode,
-                                    useSystemLanguage: value,
-                                  ),
-                                );
-                              },
-                              secondary: const CircleAvatar(
-                                child: Icon(Icons.phone_android),
-                              ),
+                          ),
+                          const SizedBox(height: 24),
+                        ],
+
+                        // System language toggle
+                        Card(
+                          elevation: 0,
+                          color: colorScheme.surfaceContainerLow,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            side: BorderSide(
+                              color: colorScheme.outlineVariant,
+                              width: 0.5,
                             ),
-                            
-                            const Divider(thickness: 1),
-                            const SizedBox(height: 8),
-                            
-                            Text(
-                              'Available Languages',
-                              style: Theme.of(context).textTheme.titleLarge,
+                          ),
+                          child: SwitchListTile(
+                            title: const Text('Use System Language'),
+                            subtitle: const Text(
+                              'Follow your device language settings',
                             ),
-                          ],
-                        ),
-                      ),
-                      
-                      const SizedBox(height: 8),
-                      
-                      // Language list
-                      Expanded(
-                        child: ListView.builder(
-                          itemCount: SupportedLanguages.languages.length,
-                          itemBuilder: (context, index) {
-                            final language = SupportedLanguages.languages[index];
-                            final isSelected = language.code == state.languageCode;
-                            
-                            return ListTile(
-                              leading: Text(
-                                language.flag,
-                                style: const TextStyle(fontSize: 24),
-                              ),
-                              title: Text(language.name),
-                              trailing: isSelected 
-                                ? Icon(
-                                    Icons.check_circle,
-                                    color: Theme.of(context).colorScheme.primary,
-                                  )
-                                : null,
-                              selected: isSelected,
-                              onTap: () {
-                                if (state.languageCode != language.code) {
-                                  context.read<LanguageBloc>().add(
+                            value: state.useSystemLanguage,
+                            onChanged: (value) {
+                              context.read<LanguageBloc>().add(
                                     LanguageChanged(
-                                      languageCode: language.code,
-                                      useSystemLanguage: false,
+                                      languageCode: state.languageCode,
+                                      useSystemLanguage: value,
                                     ),
                                   );
-                                  
-                                  // Save to preferences
-                                  userPref.setLanguage(language.code);
-                                  
-                                  // Show a confirmation snackbar
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(
-                                        'Language changed to ${language.name}',
-                                      ),
-                                      duration: const Duration(seconds: 2),
-                                    ),
-                                  );
-                                }
-                              },
-                            );
-                          },
-                        ),
-                      ),
-                      
-                      if (!widget.isIntroPage)
-                        Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton(
-                              onPressed: () async {
-                                // Apply language changes and restart app to apply
-                                restartApp(context);
-                              },
-                              style: ElevatedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(vertical: 16),
+                            },
+                            secondary: Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: colorScheme.primaryContainer,
+                                borderRadius: BorderRadius.circular(10),
                               ),
-                              child: const Text(
-                                'Apply Changes',
-                                style: TextStyle(fontSize: 16),
+                              child: Icon(
+                                Icons.phone_android_rounded,
+                                color: colorScheme.onPrimaryContainer,
                               ),
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
                             ),
                           ),
                         ),
-                    ],
+
+                        const SizedBox(height: 20),
+
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.translate_rounded,
+                              size: 20,
+                              color: colorScheme.primary,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Available Languages',
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: colorScheme.onSurface,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ],
+
+                  const SizedBox(height: 8),
+
+                  // Language list
+                  Expanded(
+                    child: ListView.builder(
+                      padding: const EdgeInsets.only(
+                        left: 20,
+                        right: 20,
+                        bottom: 100,
+                      ),
+                      itemCount: SupportedLanguages.languages.length,
+                      itemBuilder: (context, index) {
+                        final language = SupportedLanguages.languages[index];
+                        final isSelected =
+                            language.code == state.languageCode;
+
+                        return Card(
+                          elevation: 0,
+                          margin: const EdgeInsets.only(bottom: 4),
+                          color: isSelected
+                              ? colorScheme.primaryContainer.withAlpha(80)
+                              : Colors.transparent,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: ListTile(
+                            leading: Text(
+                              language.flag,
+                              style: const TextStyle(fontSize: 24),
+                            ),
+                            title: Text(
+                              language.name,
+                              style: TextStyle(
+                                fontWeight: isSelected
+                                    ? FontWeight.bold
+                                    : FontWeight.normal,
+                              ),
+                            ),
+                            trailing: isSelected
+                                ? Icon(
+                                    Icons.check_circle_rounded,
+                                    color: colorScheme.primary,
+                                  )
+                                : null,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            onTap: () {
+                              if (state.languageCode != language.code) {
+                                context.read<LanguageBloc>().add(
+                                      LanguageChanged(
+                                        languageCode: language.code,
+                                        useSystemLanguage: false,
+                                      ),
+                                    );
+
+                                userPref.setLanguage(language.code);
+
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      'Language changed to ${language.name}',
+                                    ),
+                                    behavior: SnackBarBehavior.floating,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius:
+                                          BorderRadius.circular(10),
+                                    ),
+                                    duration:
+                                        const Duration(seconds: 2),
+                                  ),
+                                );
+                              }
+                            },
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+
+                  if (!widget.isIntroPage)
+                    Padding(
+                      padding: const EdgeInsets.all(20.0),
+                      child: SizedBox(
+                        width: double.infinity,
+                        child: FilledButton(
+                          onPressed: () => restartApp(context),
+                          style: FilledButton.styleFrom(
+                            padding:
+                                const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                          ),
+                          child: const Text(
+                            'Apply Changes',
+                            style: TextStyle(fontSize: 16),
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
             );
           },
         ),
