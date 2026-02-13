@@ -204,12 +204,22 @@ class MyListStatus {
 
   factory MyListStatus.fromJson(Map<String, dynamic> json) {
     return MyListStatus(
-      status: json['status'],
-      score: json['score'],
-      numEpisodesWatched: json['num_episodes_watched'],
-      isRewatching: json['is_rewatching'],
-      updatedAt: json['updated_at'],
+      status: json['status'] ?? '',
+      score: json['score'] ?? 0,
+      numEpisodesWatched: json['num_episodes_watched'] ?? 0,
+      isRewatching: json['is_rewatching'] ?? false,
+      updatedAt: json['updated_at'] ?? '',
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'status': status,
+      'score': score,
+      'num_episodes_watched': numEpisodesWatched,
+      'is_rewatching': isRewatching,
+      'updated_at': updatedAt,
+    };
   }
 }
 
@@ -430,10 +440,13 @@ class Anime {
 
   // Formateur MAL
   factory Anime.fromMAlJson(Map<String, dynamic> json) {
+    final mainPicture = json['main_picture'] as Map<String, dynamic>?;
     return Anime(
       id: json['id'] as int,
       title: json['title'] as String,
-      imageUrl: json['main_picture']['large'] as String,
+      imageUrl: mainPicture?['large'] as String? ??
+          mainPicture?['medium'] as String? ??
+          '',
       score: (json['mean'] ?? 0.0).toDouble(),
       members: (json['num_list_users'] ?? 0).toInt(),
       rank: json['rank'] as int?,
@@ -448,5 +461,24 @@ class Anime {
           ? MyListStatus.fromJson(json['my_list_status'])
           : null,
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'title': title,
+      'main_picture': {'large': imageUrl, 'medium': imageUrl},
+      'mean': score,
+      'num_list_users': members,
+      'rank': rank,
+      'popularity': popularity,
+      'synopsis': synopsis,
+      'num_episodes': numEpisodes,
+      'start_date': startDate,
+      'end_date': endDate,
+      'media_type': mediaType,
+      'status': status,
+      'my_list_status': myListStatus?.toJson(),
+    };
   }
 }
