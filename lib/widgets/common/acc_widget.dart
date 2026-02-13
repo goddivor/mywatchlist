@@ -77,7 +77,7 @@ class _AccountModalState extends State<AccountModal>
       case AccountType.simkl:
         return 'assets/images/simkl-icon.png';
       default:
-        return 'assets/images/dal-black-bg.png';
+        return 'assets/images/mwl-black-bg.png';
     }
   }
 

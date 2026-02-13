@@ -2,7 +2,7 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mywatchlist/constants/constants.dart';
 import 'package:mywatchlist/user/accounts/models/account.dart';
-import 'package:mywatchlist/user/user.dart';
+import 'package:mywatchlist/user/user_manager.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 // Evénements BLoC
@@ -151,19 +151,11 @@ class AccountBloc extends Bloc<AccountEvent, AccountState> {
   }
 
   String? _getProfileImageUrl(AccountType accountType) {
-    if (accountType == AccountType.myanimelist) {
-      return UserMal.instance.profileImage;
-    } else if (accountType == AccountType.anilist) {
-      return UserAnilist.instance.profileImage;
-    } else if (accountType == AccountType.kitsu) {
-      return UserKitsu.instance.profileImage;
-    } else if (accountType == AccountType.simkl) {
-      return UserSimkl.instance.profileImage;
-    }
-    return null;
+    return UserManager.instance.getProfileImage(accountType);
   }
 
   List<Account> _getAvailableAccounts() {
+    final userManager = UserManager.instance;
     List<Account> accounts = [
       Account(
         name: 'Disconnect',
@@ -172,35 +164,35 @@ class AccountBloc extends Bloc<AccountEvent, AccountState> {
       ),
     ];
 
-    if (UserMal.instance.getStatus() == AuthStatus.AUTHENTICATED) {
+    if (userManager.isAuthenticated(AccountType.myanimelist)) {
       accounts.add(Account(
-        name: UserMal.instance.username ?? 'MyAnimeList User',
+        name: userManager.getUsername(AccountType.myanimelist) ?? 'MyAnimeList User',
         typeAcc: AccountType.myanimelist,
-        imageUrl: UserMal.instance.profileImage ?? 'URL_TO_IMAGE',
+        imageUrl: userManager.getProfileImage(AccountType.myanimelist) ?? 'URL_TO_IMAGE',
       ));
     }
 
-    if (UserSimkl.instance.getStatus() == AuthStatus.AUTHENTICATED) {
+    if (userManager.isAuthenticated(AccountType.simkl)) {
       accounts.add(Account(
-        name: UserSimkl.instance.username ?? 'Simkl User',
+        name: userManager.getUsername(AccountType.simkl) ?? 'Simkl User',
         typeAcc: AccountType.simkl,
-        imageUrl: UserSimkl.instance.profileImage ?? 'URL_TO_IMAGE',
+        imageUrl: userManager.getProfileImage(AccountType.simkl) ?? 'URL_TO_IMAGE',
       ));
     }
 
-    if (UserAnilist.instance.getStatus() == AuthStatus.AUTHENTICATED) {
+    if (userManager.isAuthenticated(AccountType.anilist)) {
       accounts.add(Account(
-        name: UserAnilist.instance.username ?? 'Anilist User',
+        name: userManager.getUsername(AccountType.anilist) ?? 'Anilist User',
         typeAcc: AccountType.anilist,
-        imageUrl: UserAnilist.instance.profileImage ?? 'URL_TO_IMAGE',
+        imageUrl: userManager.getProfileImage(AccountType.anilist) ?? 'URL_TO_IMAGE',
       ));
     }
 
-    if (UserKitsu.instance.getStatus() == AuthStatus.AUTHENTICATED) {
+    if (userManager.isAuthenticated(AccountType.kitsu)) {
       accounts.add(Account(
-        name: UserKitsu.instance.username ?? 'Kitsu User',
+        name: userManager.getUsername(AccountType.kitsu) ?? 'Kitsu User',
         typeAcc: AccountType.kitsu,
-        imageUrl: UserKitsu.instance.profileImage ?? 'URL_TO_IMAGE',
+        imageUrl: userManager.getProfileImage(AccountType.kitsu) ?? 'URL_TO_IMAGE',
       ));
     }
 
