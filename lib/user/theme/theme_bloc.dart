@@ -1,4 +1,4 @@
-// import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:mywatchlist/user/theme/theme_state.dart';
@@ -8,43 +8,91 @@ import 'package:mywatchlist/user/theme/app_themes.dart';
 class ThemeBloc extends Bloc<ThemeEvent, ThemeState> {
   final SharedPreferences prefs;
 
+  static const String _keySeedColor = 'seed_color';
+  static const String _keyFontFamily = 'font_family';
+  static const String _keyThemeModeName = 'theme_mode_name';
+  static const String _keyBgImagePath = 'bg_image_path';
+  static const String _keyShowBg = 'show_bg';
+
   ThemeBloc({required this.prefs}) : super(ThemeState.initial()) {
     on<ThemeLoadStarted>(_onThemeLoadStarted);
-    on<ThemeChanged>(_onThemeChanged);
+    on<ThemeSeedColorChanged>(_onSeedColorChanged);
+    on<ThemeModeChanged>(_onThemeModeChanged);
+    on<ThemeFontChanged>(_onFontChanged);
+    on<ThemeBackgroundChanged>(_onBackgroundChanged);
   }
 
   void _onThemeLoadStarted(ThemeLoadStarted event, Emitter<ThemeState> emit) {
-    final String? themeName = prefs.getString('app_theme');
-    final bool isDarkMode = prefs.getBool('is_dark_mode') ?? true; // Default to dark mode
+    final int? seedColorValue = prefs.getInt(_keySeedColor);
+    final String? fontFamily = prefs.getString(_keyFontFamily);
+    final String? themeModeName = prefs.getString(_keyThemeModeName);
+    final String? bgImagePath = prefs.getString(_keyBgImagePath);
+    final bool showBg = prefs.getBool(_keyShowBg) ?? false;
 
-    // Find the theme based on stored name or use spring as default
-    final AppTheme selectedTheme = AppThemes.availableThemes
-        .firstWhere(
-          (theme) => theme.name == themeName,
-          orElse: () => AppThemes.springTheme,
-        );
-
-    emit(state.copyWith(
-      themeName: selectedTheme.name,
-      themeData: isDarkMode ? selectedTheme.darkTheme : selectedTheme.lightTheme,
-      isDarkMode: isDarkMode,
+    emit(ThemeState.fromPreferences(
+      seedColor: seedColorValue != null
+          ? Color(seedColorValue)
+          : AppThemes.defaultSeedColor,
+      fontFamily: fontFamily ?? AppThemes.defaultFontFamily,
+      themeModeName: themeModeName ?? 'auto',
+      backgroundImagePath: bgImagePath,
+      showBackground: showBg,
     ));
   }
 
-  void _onThemeChanged(ThemeChanged event, Emitter<ThemeState> emit) async {
-    final AppTheme selectedTheme = AppThemes.availableThemes
-        .firstWhere(
-          (theme) => theme.name == event.themeName,
-          orElse: () => AppThemes.springTheme,
-        );
+  void _onSeedColorChanged(
+      ThemeSeedColorChanged event, Emitter<ThemeState> emit) {
+    prefs.setInt(_keySeedColor, event.seedColor.value);
 
-    await prefs.setString('app_theme', selectedTheme.name);
-    await prefs.setBool('is_dark_mode', event.isDarkMode);
+    emit(ThemeState.fromPreferences(
+      seedColor: event.seedColor,
+      fontFamily: state.fontFamily,
+      themeModeName: state.themeModeName,
+      backgroundImagePath: state.backgroundImagePath,
+      showBackground: state.showBackground,
+    ));
+  }
 
-    emit(state.copyWith(
-      themeName: selectedTheme.name,
-      themeData: event.isDarkMode ? selectedTheme.darkTheme : selectedTheme.lightTheme,
-      isDarkMode: event.isDarkMode,
+  void _onThemeModeChanged(
+      ThemeModeChanged event, Emitter<ThemeState> emit) {
+    prefs.setString(_keyThemeModeName, event.themeModeName);
+
+    emit(ThemeState.fromPreferences(
+      seedColor: state.seedColor,
+      fontFamily: state.fontFamily,
+      themeModeName: event.themeModeName,
+      backgroundImagePath: state.backgroundImagePath,
+      showBackground: state.showBackground,
+    ));
+  }
+
+  void _onFontChanged(ThemeFontChanged event, Emitter<ThemeState> emit) {
+    prefs.setString(_keyFontFamily, event.fontFamily);
+
+    emit(ThemeState.fromPreferences(
+      seedColor: state.seedColor,
+      fontFamily: event.fontFamily,
+      themeModeName: state.themeModeName,
+      backgroundImagePath: state.backgroundImagePath,
+      showBackground: state.showBackground,
+    ));
+  }
+
+  void _onBackgroundChanged(
+      ThemeBackgroundChanged event, Emitter<ThemeState> emit) {
+    if (event.backgroundImagePath != null) {
+      prefs.setString(_keyBgImagePath, event.backgroundImagePath!);
+    } else {
+      prefs.remove(_keyBgImagePath);
+    }
+    prefs.setBool(_keyShowBg, event.showBackground);
+
+    emit(ThemeState.fromPreferences(
+      seedColor: state.seedColor,
+      fontFamily: state.fontFamily,
+      themeModeName: state.themeModeName,
+      backgroundImagePath: event.backgroundImagePath,
+      showBackground: event.showBackground,
     ));
   }
 }
