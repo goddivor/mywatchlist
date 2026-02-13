@@ -202,7 +202,9 @@ class _MyWatchListAppState extends State<MyWatchListApp> {
           ],
           locale: Locale.fromSubtags(languageCode: "en_US"),
           supportedLocales: S.delegate.supportedLocales,
-          theme: themeState.themeData, // Apply selected theme
+          theme: themeState.lightThemeData, // Light theme
+          darkTheme: themeState.darkThemeData, // Dark theme
+          themeMode: themeState.themeMode, // Theme mode (light/dark/system)
           home: const OpenScreen(),
           routes: {
             '/login': (context) => const LoginPage(),
