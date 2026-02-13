@@ -12,7 +12,8 @@ class KitsuLoginDialog extends StatefulWidget {
   State<KitsuLoginDialog> createState() => _KitsuLoginDialogState();
 }
 
-class _KitsuLoginDialogState extends State<KitsuLoginDialog> with SingleTickerProviderStateMixin {
+class _KitsuLoginDialogState extends State<KitsuLoginDialog>
+    with SingleTickerProviderStateMixin {
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
@@ -28,14 +29,14 @@ class _KitsuLoginDialogState extends State<KitsuLoginDialog> with SingleTickerPr
       vsync: this,
       duration: const Duration(milliseconds: 400),
     );
-    
+
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
         parent: _animationController,
         curve: Curves.easeOut,
       ),
     );
-    
+
     _animationController.forward();
   }
 
@@ -52,7 +53,7 @@ class _KitsuLoginDialogState extends State<KitsuLoginDialog> with SingleTickerPr
       setState(() {
         _isLoading = true;
       });
-      
+
       // Simulate a small delay for animation
       Future.delayed(const Duration(milliseconds: 300), () {
         if (mounted) {
@@ -77,8 +78,8 @@ class _KitsuLoginDialogState extends State<KitsuLoginDialog> with SingleTickerPr
         child: Container(
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
-            color: isDark 
-                ? theme.colorScheme.surface 
+            color: isDark
+                ? theme.colorScheme.surface
                 : theme.colorScheme.background,
             borderRadius: BorderRadius.circular(24),
             boxShadow: [
@@ -96,19 +97,15 @@ class _KitsuLoginDialogState extends State<KitsuLoginDialog> with SingleTickerPr
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Container(
-                    height: 50,
-                    width: 50,
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: isDark 
-                          ? Colors.black26 
-                          : Colors.white,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Image.asset(
-                      'assets/images/kitsu-icon.png',
-                      fit: BoxFit.contain,
+                  CircleAvatar(
+                    radius: 25,
+                    backgroundColor: isDark ? Colors.black26 : Colors.white,
+                    child: Padding(
+                      padding: const EdgeInsets.all(8),
+                      child: Image.asset(
+                        'assets/images/kitsu-icon.png',
+                        fit: BoxFit.contain,
+                      ),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -134,9 +131,9 @@ class _KitsuLoginDialogState extends State<KitsuLoginDialog> with SingleTickerPr
                   ),
                 ],
               ),
-              
+
               const SizedBox(height: 24),
-              
+
               // Form
               Form(
                 key: _formKey,
@@ -179,9 +176,9 @@ class _KitsuLoginDialogState extends State<KitsuLoginDialog> with SingleTickerPr
                         return null;
                       },
                     ),
-                    
+
                     const SizedBox(height: 16),
-                    
+
                     // Password field
                     TextFormField(
                       controller: _passwordController,
@@ -195,7 +192,7 @@ class _KitsuLoginDialogState extends State<KitsuLoginDialog> with SingleTickerPr
                         ),
                         suffixIcon: IconButton(
                           icon: Icon(
-                            _obscurePassword 
+                            _obscurePassword
                                 ? Icons.visibility_outlined
                                 : Icons.visibility_off_outlined,
                             color: theme.colorScheme.onSurfaceVariant,
@@ -233,9 +230,9 @@ class _KitsuLoginDialogState extends State<KitsuLoginDialog> with SingleTickerPr
                         return null;
                       },
                     ),
-                    
+
                     const SizedBox(height: 16),
-                    
+
                     // Create account link
                     Row(
                       mainAxisAlignment: MainAxisAlignment.end,
@@ -259,17 +256,17 @@ class _KitsuLoginDialogState extends State<KitsuLoginDialog> with SingleTickerPr
                         ),
                       ],
                     ),
-                    
+
                     const SizedBox(height: 24),
-                    
+
                     // Action buttons
                     Row(
                       children: [
                         // Cancel button
                         Expanded(
                           child: OutlinedButton(
-                            onPressed: _isLoading 
-                                ? null 
+                            onPressed: _isLoading
+                                ? null
                                 : () => Navigator.of(context).pop(),
                             style: OutlinedButton.styleFrom(
                               padding: const EdgeInsets.symmetric(vertical: 14),
@@ -286,16 +283,17 @@ class _KitsuLoginDialogState extends State<KitsuLoginDialog> with SingleTickerPr
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w500,
-                                color: _isLoading 
-                                    ? theme.colorScheme.onSurface.withOpacity(0.38) 
+                                color: _isLoading
+                                    ? theme.colorScheme.onSurface
+                                        .withOpacity(0.38)
                                     : theme.colorScheme.primary,
                               ),
                             ),
                           ),
                         ),
-                        
+
                         const SizedBox(width: 16),
-                        
+
                         // Login button
                         Expanded(
                           child: ElevatedButton(
