@@ -24,9 +24,20 @@ import 'package:mywatchlist/pages/Simkl/simkl_user_profile_page.dart';
 import 'package:mywatchlist/pages/MAL/mal_user_page.dart';
 import 'package:mywatchlist/pages/MAL/mal_user_profile_page.dart';
 import 'package:mywatchlist/user/accounts/account_bloc.dart';
-import 'package:mywatchlist/utils/page_transitions.dart';
 import 'package:mywatchlist/widgets/common/background.dart';
 import 'package:mywatchlist/widgets/common/bottomnavbar.dart';
+
+class OpacityAnima extends AnimatedWidget {
+  final Widget? child;
+  const OpacityAnima({super.key, required Animation<double> animation, this.child})
+      : super(listenable: animation);
+
+  @override
+  Widget build(BuildContext context) {
+    final animation = listenable as Animation<double>;
+    return Opacity(opacity: animation.value, child: child);
+  }
+}
 
 class HomeScreen extends StatefulWidget {
   final int? pageIndex;
@@ -39,31 +50,25 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   int pageIndex = 0;
-  int previousPageIndex = 0;
   late AnimationController _animationController;
-  late Animation<double> _fadeAnimation;
-  final List<int> backImagePages = [0]; // HomePage a un background
+  late Animation<double> _animation;
+  final List<int> backImagePages = [0];
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   Map<int, Widget> homeWidgets = {};
+  AccountType? _lastAccountType;
 
   @override
   void initState() {
     super.initState();
     pageIndex = widget.pageIndex ?? 0;
-    previousPageIndex = pageIndex;
 
     _animationController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 300),
+      value: 1.0,
+      duration: const Duration(milliseconds: 250),
     );
-
-    _fadeAnimation = CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeOut,
-    );
-
-    _animationController.forward();
+    _animation = Tween(begin: 0.0, end: 1.0).animate(_animationController);
   }
 
   @override
@@ -82,58 +87,50 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         if (state is AccountLoaded) {
           AccountType currentAccountType = state.selectedAccountType;
 
-          // Si aucun compte n'est connecté, rediriger vers la page de connexion
           if (currentAccountType == AccountType.none) {
             WidgetsBinding.instance.addPostFrameCallback((_) {
               Navigator.pushReplacementNamed(context, '/login');
             });
-            return const SizedBox(); // Évite d'afficher un écran avant la redirection
+            return const SizedBox();
           }
 
-          homeWidgets = _getHomeWidgets(currentAccountType);
+          // Only rebuild widgets when account type changes
+          if (_lastAccountType != currentAccountType) {
+            _lastAccountType = currentAccountType;
+            homeWidgets = _getHomeWidgets(currentAccountType);
+          }
 
           return Scaffold(
             key: _scaffoldKey,
             backgroundColor: theme.scaffoldBackgroundColor,
-            // BottomNavBar modernisée
             bottomNavigationBar: BottomNavBar(
               startIndex: pageIndex,
               onChanged: (value) {
-                setState(() {
-                  previousPageIndex = pageIndex;
-                  pageIndex = value;
-                });
-
-                // Animer le changement de page
                 _animationController.reset();
                 _animationController.forward();
+                setState(() {
+                  pageIndex = value;
+                });
               },
             ),
-            body: WillPopScope(
-              onWillPop: () async => true,
+            body: PopScope(
+              canPop: true,
               child: Stack(
                 children: [
-                  // Arrière-plan pour certaines pages
-                  if (backImagePages.contains(pageIndex))
-                    AnimatedOpacity(
-                      opacity: 1.0,
-                      duration: const Duration(milliseconds: 300),
-                      child: Background(
-                        context: context,
-                        height: size.height / 2,
-                        showLocalFile: false,
-                        isNetworkImage: false,
-                        url: _getBackgroundImageForTheme(theme),
-                      ),
-                    ),
-
-                  // Page principale avec animation
-                  AnimatedPageSwitcher(
+                  AnimatedOpacity(
+                    opacity: backImagePages.contains(pageIndex) ? 1 : 0,
                     duration: const Duration(milliseconds: 300),
-                    transitionType: previousPageIndex < pageIndex
-                        ? PageTransitionType.slideLeft
-                        : PageTransitionType.slideRight,
-                    child: homeWidgets[pageIndex] ?? const SizedBox(),
+                    child: Background(
+                      context: context,
+                      height: size.height / 2,
+                      showLocalFile: false,
+                      isNetworkImage: false,
+                      url: _getBackgroundImageForTheme(theme),
+                    ),
+                  ),
+                  IndexedStack(
+                    index: pageIndex,
+                    children: homeWidgets.values.toList(),
                   ),
                 ],
               ),
@@ -219,49 +216,50 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     }
   }
 
-  // Méthode pour retourner les pages en fonction du type de compte
   Map<int, Widget> _getHomeWidgets(AccountType accountType) {
+    Widget wrap(Widget child) =>
+        OpacityAnima(animation: _animation, child: child);
+
     if (accountType == AccountType.myanimelist) {
       return {
-        0: MalHomePage(),
-        1: MalForumPage(),
-        2: MalUserPage(),
-        3: MalUserProfilePage(isSelf: true),
-        4: MalExplorePage(),
+        0: wrap(const MalHomePage()),
+        1: wrap(MalForumPage()),
+        2: wrap(MalUserPage()),
+        3: wrap(MalUserProfilePage(isSelf: true)),
+        4: wrap(MalExplorePage()),
       };
     } else if (accountType == AccountType.anilist) {
       return {
-        0: AnilistHomePage(),
-        1: AnilistForumPage(),
-        2: AnilistUserPage(),
-        3: AnilistUserProfilePage(isSelf: true),
-        4: AnilistExplorePage(),
+        0: wrap(AnilistHomePage()),
+        1: wrap(AnilistForumPage()),
+        2: wrap(AnilistUserPage()),
+        3: wrap(AnilistUserProfilePage(isSelf: true)),
+        4: wrap(AnilistExplorePage()),
       };
     } else if (accountType == AccountType.kitsu) {
       return {
-        0: KitsuHomePage(),
-        1: KitsuForumPage(),
-        2: KitsuUserPage(),
-        3: KitsuUserProfilePage(isSelf: true),
-        4: KitsuExplorePage(),
+        0: wrap(KitsuHomePage()),
+        1: wrap(KitsuForumPage()),
+        2: wrap(KitsuUserPage()),
+        3: wrap(KitsuUserProfilePage(isSelf: true)),
+        4: wrap(KitsuExplorePage()),
       };
     } else if (accountType == AccountType.simkl) {
       return {
-        0: SimklHomePage(),
-        1: SimklForumPage(),
-        2: SimklUserPage(),
-        3: SimklUserProfilePage(isSelf: true),
-        4: SimklExplorePage(),
+        0: wrap(SimklHomePage()),
+        1: wrap(SimklForumPage()),
+        2: wrap(SimklUserPage()),
+        3: wrap(SimklUserProfilePage(isSelf: true)),
+        4: wrap(SimklExplorePage()),
       };
     }
 
-    // Par défaut, renvoie les pages MAL
     return {
-      0: MalHomePage(),
-      1: MalForumPage(),
-      2: MalUserPage(),
-      3: MalUserProfilePage(isSelf: true),
-      4: MalExplorePage(),
+      0: wrap(const MalHomePage()),
+      1: wrap(MalForumPage()),
+      2: wrap(MalUserPage()),
+      3: wrap(MalUserProfilePage(isSelf: true)),
+      4: wrap(MalExplorePage()),
     };
   }
 }
