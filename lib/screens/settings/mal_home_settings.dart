@@ -1,11 +1,14 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mywatchlist/cache/cachemanager.dart';
 import 'package:mywatchlist/constants/constants.dart';
 import 'package:mywatchlist/enums.dart';
 import 'package:mywatchlist/services/api/MAL/mal_api.dart';
 import 'package:mywatchlist/user/MAL/mal_home_preferences_bloc.dart';
 import 'package:mywatchlist/user/MAL/mal_home_page_preferences.dart';
+import 'package:mywatchlist/widgets/common/custombutton.dart';
 
 class HomeSettingsPage extends StatefulWidget {
   const HomeSettingsPage({Key? key}) : super(key: key);
@@ -15,9 +18,6 @@ class HomeSettingsPage extends StatefulWidget {
 }
 
 class _HomeSettingsPageState extends State<HomeSettingsPage> {
-  bool _isLoading = true;
-  bool _hasChanges = false;
-  bool _isSaving = false;
   final ScrollController _scrollController = ScrollController();
   final SeasonType currentSeason = MalApi.getSeasonType();
   String get currentSeasonName => MalApi.getSeasonName(currentSeason);
@@ -28,7 +28,7 @@ class _HomeSettingsPageState extends State<HomeSettingsPage> {
   @override
   void initState() {
     super.initState();
-    _loadPreferences();
+    _initPreferences();
   }
 
   @override
@@ -37,85 +37,28 @@ class _HomeSettingsPageState extends State<HomeSettingsPage> {
     super.dispose();
   }
 
-  Future<void> _loadPreferences() async {
-    setState(() {
-      _isLoading = true; // Set to loading
-    });
-    try {
-      // Clone the current preferences from the BLoC
-      final currentPreferences =
-          context.read<HomePreferencesBloc>().state.preferences;
+  void _initPreferences() {
+    final currentPreferences =
+        context.read<HomePreferencesBloc>().state.preferences;
 
-      // Create a deep copy to avoid modifying the original
-      _preferences = MalHomePreferences(
-        sections: currentPreferences.sections
-            .map((section) => HomeSectionPreference(
-                  type: section.type,
-                  enabled: section.enabled,
-                  itemCount: section.itemCount,
-                ))
-            .toList(),
-        tileSize: currentPreferences.tileSize,
-      );
-
-      // Set loading to false when done
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
-    } catch (e) {
-      debugPrint('Error loading preferences: $e');
-      setState(() {
-        _isLoading = false; // Set to not loading
-      });
-    }
+    _preferences = MalHomePreferences(
+      sections: currentPreferences.sections
+          .map((section) => HomeSectionPreference(
+                type: section.type,
+                enabled: section.enabled,
+                itemCount: section.itemCount,
+                customTitle: section.customTitle,
+                cacheDurationHours: section.cacheDurationHours,
+              ))
+          .toList(),
+      tileSize: currentPreferences.tileSize,
+    );
   }
 
-  Future<void> _savePreferences() async {
-    if (_isSaving) return; // Prevent multiple saves
-
-    setState(() {
-      _isSaving = true;
-    });
-
-    try {
-// Use the BLoC to update preferences
-      context
-          .read<HomePreferencesBloc>()
-          .add(UpdateHomePreferencesEvent(_preferences));
-
-      if (mounted) {
-        setState(() {
-          _isSaving = false;
-          _hasChanges = false;
-        });
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Home settings saved'),
-            backgroundColor: Theme.of(context).colorScheme.primary,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
-    } catch (e) {
-      debugPrint('Error saving preferences: $e');
-
-      if (mounted) {
-        setState(() {
-          _isSaving = false;
-        });
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error saving settings: ${e.toString()}'),
-            backgroundColor: Theme.of(context).colorScheme.error,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
-    }
+  void _autoSave() {
+    context
+        .read<HomePreferencesBloc>()
+        .add(UpdateHomePreferencesEvent(_preferences));
   }
 
   void _resetPreferences() {
@@ -167,23 +110,90 @@ class _HomeSettingsPageState extends State<HomeSettingsPage> {
     setState(() {
       final section = _preferences.sections.removeAt(oldIndex);
       _preferences.sections.insert(newIndex, section);
-      _hasChanges = true;
     });
+    _autoSave();
   }
 
   void _toggleSectionEnabled(int index) {
     setState(() {
       _preferences.sections[index].enabled =
           !_preferences.sections[index].enabled;
-      _hasChanges = true;
     });
+    _autoSave();
   }
 
-  void _updateSectionItemCount(int index, int count) {
-    setState(() {
-      _preferences.sections[index].itemCount = count;
-      _hasChanges = true;
-    });
+
+  void _showSectionEditDialog({HomeSectionPreference? section, int? index}) {
+    showCupertinoDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (dialogContext) => AnimatedPadding(
+        padding: MediaQuery.of(dialogContext).viewInsets,
+        duration: const Duration(milliseconds: 100),
+        curve: Curves.decelerate,
+        child: _SectionEditDialog(
+          section: section,
+          seasonName: currentSeasonName,
+          seasonYear: currentSeasonYear,
+          canDelete: section != null && _preferences.sections.length > 3,
+          onSave: (result) {
+            setState(() {
+              if (index != null) {
+                _preferences.sections[index] = result;
+              } else {
+                _preferences.sections.insert(0, result);
+              }
+            });
+            _autoSave();
+          },
+          onDelete: index != null
+              ? () {
+                  setState(() {
+                    _preferences.sections.removeAt(index);
+                  });
+                  _autoSave();
+                }
+              : null,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _clearCache() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Clear Homepage Cache?'),
+        content: const Text(
+            'This will clear all cached homepage data. Fresh data will be fetched on next load.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(
+              'Clear',
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.error,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      await CacheManager.instance.clearHomepageCache();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Homepage cache cleared'),
+          backgroundColor: Theme.of(context).colorScheme.primary,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
   }
 
   @override
@@ -207,6 +217,12 @@ class _HomeSettingsPageState extends State<HomeSettingsPage> {
           title: const Text('Home Page Settings'),
           elevation: 0,
           actions: [
+            // Clear cache button
+            IconButton(
+              icon: const Icon(Icons.delete_sweep_outlined),
+              tooltip: 'Clear Cache',
+              onPressed: _clearCache,
+            ),
             // Reset button
             IconButton(
               icon: const Icon(Icons.restore),
@@ -215,202 +231,101 @@ class _HomeSettingsPageState extends State<HomeSettingsPage> {
             ),
           ],
         ),
-        body: _isLoading
-            ? Center(
-                child: CircularProgressIndicator(
-                  color: theme.colorScheme.primary,
-                ),
-              )
-            : Column(
+        body: ListView(
+                controller: _scrollController,
+                padding: const EdgeInsets.only(bottom: 32),
                 children: [
-                  Expanded(
-                    child: ListView(
-                      controller: _scrollController,
-                      padding: const EdgeInsets.only(bottom: 100),
-                      children: [
-                        // Tile Size section
-                        _buildTileSizeSection(theme),
+                  _buildTileSizeSection(theme),
 
-                        const Divider(height: 32),
+                  const Divider(height: 32),
 
-                        // Sections Order and Customization
-                        _buildSectionsHeader(theme),
+                  _buildSectionsHeader(theme),
 
-                        // Reorderable list of sections
-                        ReorderableListView.builder(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount: _preferences.sections.length,
-                          onReorder: _reorderSections,
-                          itemBuilder: (context, index) {
-                            final section = _preferences.sections[index];
-                            return _buildSectionTile(
-                              theme,
-                              section,
-                              index,
-                              key: ValueKey(section.type),
-                            );
-                          },
+                  // Add Item button
+                  if (_preferences.sections.length < 40)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 8),
+                      child: BorderButton(
+                        onPressed: () => _showSectionEditDialog(),
+                        borderColor: theme.colorScheme.primary.withOpacity(0.5),
+                        borderRadius: 12,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.add,
+                                size: 20,
+                                color: theme.colorScheme.primary),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Add an Item',
+                              style: TextStyle(
+                                color: theme.colorScheme.primary,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
                         ),
-                      ],
+                      ),
                     ),
-                  ),
 
-                  // Save button
-                  if (_hasChanges) _buildSaveButton(theme),
+                  // Reorderable list of sections
+                  ReorderableListView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: _preferences.sections.length,
+                    onReorder: _reorderSections,
+                    itemBuilder: (context, index) {
+                      final section = _preferences.sections[index];
+                      return _buildSectionTile(
+                        theme,
+                        section,
+                        index,
+                        key: ValueKey('${section.type}_$index'),
+                      );
+                    },
+                  ),
                 ],
               ),
       );
     });
   }
 
-  Widget _buildSaveButton(ThemeData theme) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: theme.scaffoldBackgroundColor,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, -5),
-          ),
-        ],
-      ),
-      child: SizedBox(
-        width: double.infinity,
-        child: ElevatedButton(
-          onPressed: _isSaving ? null : _savePreferences,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: theme.colorScheme.primary,
-            foregroundColor: theme.colorScheme.onPrimary,
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
-          child: _isSaving
-              ? SizedBox(
-                  height: 24,
-                  width: 24,
-                  child: CircularProgressIndicator(
-                    color: theme.colorScheme.onPrimary,
-                    strokeWidth: 2,
-                  ),
-                )
-              : const Text(
-                  'Save Changes',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-        ),
-      ),
-    );
-  }
-
   Widget _buildTileSizeSection(ThemeData theme) {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+    return ListTile(
+      title: Row(
         children: [
           Text(
-            'Content Tile Size',
+            'Anime/Manga tile size',
             style: theme.textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: 8),
-          Text(
-            'Choose the size of anime and manga tiles displayed on the home page',
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurface.withOpacity(0.6),
+          const SizedBox(width: 8),
+          Tooltip(
+            message: 'Sets the size of anime and manga cards on the home page (XS, S, M, L, XL)',
+            child: Icon(
+              Icons.info_outline,
+              size: 18,
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
             ),
-          ),
-          const SizedBox(height: 16),
-
-          // Tile size selector
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: HomePageTileSize.values.map((size) {
-              return _buildTileSizeOption(theme, size);
-            }).toList(),
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildTileSizeOption(ThemeData theme, HomePageTileSize size) {
-    final isSelected = _preferences.tileSize == size;
-
-    // Get size dimensions for preview
-    final tileSize = getTileSizeValues(size);
-    final previewWidth = tileSize.contentWidth * 0.4;
-    final previewHeight = tileSize.contentHeight * 0.4;
-
-    return GestureDetector(
-      onTap: () {
-        HapticFeedback.lightImpact();
-        setState(() {
-          _preferences.tileSize = size;
-          _hasChanges = true;
-        });
-      },
-      child: Column(
-        children: [
-          // Size preview
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            width: previewWidth,
-            height: previewHeight,
-            decoration: BoxDecoration(
-              color: isSelected
-                  ? theme.colorScheme.primary
-                  : theme.colorScheme.surfaceVariant,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(
-                color: isSelected
-                    ? theme.colorScheme.primary
-                    : theme.colorScheme.outline.withOpacity(0.5),
-                width: 2,
-              ),
-              boxShadow: isSelected
-                  ? [
-                      BoxShadow(
-                        color: theme.colorScheme.primary.withOpacity(0.3),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ]
-                  : null,
-            ),
-            child: Center(
-              child: Icon(
-                Icons.photo,
-                color: isSelected
-                    ? theme.colorScheme.onPrimary
-                    : theme.colorScheme.onSurfaceVariant,
-                size: previewWidth * 0.5,
-              ),
-            ),
-          ),
-          const SizedBox(height: 8),
-
-          // Size label
-          Text(
-            size.name.toUpperCase(),
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-              color: isSelected
-                  ? theme.colorScheme.primary
-                  : theme.colorScheme.onSurface,
-            ),
-          ),
-        ],
+      subtitle: Slider(
+        value: _preferences.tileSize.index.toDouble(),
+        max: HomePageTileSize.values.length.toDouble() - 1,
+        divisions: HomePageTileSize.values.length - 1,
+        label: _preferences.tileSize.name.toUpperCase(),
+        onChanged: (value) {
+          HapticFeedback.lightImpact();
+          setState(() {
+            _preferences.tileSize =
+                HomePageTileSize.values.elementAt(value.toInt());
+          });
+          _autoSave();
+        },
       ),
     );
   }
@@ -449,86 +364,303 @@ class _HomeSettingsPageState extends State<HomeSettingsPage> {
       key: key,
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        child: Row(
           children: [
-            // Header with icon, title and toggle
-            Row(
-              children: [
-                Icon(
-                  section.getIcon(),
-                  color: theme.colorScheme.primary,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    section.getTitle(currentSeasonName, currentSeasonYear),
-                    style: theme.textTheme.titleMedium,
-                  ),
-                ),
-                Switch(
-                  value: section.enabled,
-                  onChanged: (value) => _toggleSectionEnabled(index),
-                  activeColor: theme.colorScheme.primary,
-                ),
-                ReorderableDragStartListener(
-                  index: index,
-                  child: Icon(
-                    Icons.drag_handle,
-                    color: theme.colorScheme.onSurface.withOpacity(0.5),
-                  ),
-                ),
-              ],
+            Icon(
+              section.getIcon(),
+              color: theme.colorScheme.primary,
             ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                section.getDisplayTitle(currentSeasonName, currentSeasonYear),
+                style: theme.textTheme.titleMedium,
+              ),
+            ),
+            IconButton(
+              icon: Icon(Icons.edit, size: 20,
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.6)),
+              onPressed: () => _showSectionEditDialog(
+                  section: section, index: index),
+              tooltip: 'Edit section',
+            ),
+            Switch(
+              value: section.enabled,
+              onChanged: (value) => _toggleSectionEnabled(index),
+              activeColor: theme.colorScheme.primary,
+            ),
+            ReorderableDragStartListener(
+              index: index,
+              child: Icon(
+                Icons.drag_handle,
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
 
-            // Item count slider
-            if (section.enabled)
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Text(
-                        'Number of items: ',
-                        style: theme.textTheme.bodyMedium,
-                      ),
-                      Text(
-                        '${section.itemCount}',
-                        style: TextStyle(
-                          color: theme.colorScheme.primary,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  SliderTheme(
-                    data: SliderThemeData(
-                      activeTrackColor: theme.colorScheme.primary,
-                      inactiveTrackColor:
-                          theme.colorScheme.primary.withOpacity(0.2),
-                      thumbColor: theme.colorScheme.primary,
-                      trackHeight: 4,
-                      thumbShape: const RoundSliderThumbShape(
-                        enabledThumbRadius: 6,
-                      ),
-                      overlayShape: SliderComponentShape.noOverlay,
+class _SectionEditDialog extends StatefulWidget {
+  final HomeSectionPreference? section;
+  final String seasonName;
+  final int seasonYear;
+  final bool canDelete;
+  final void Function(HomeSectionPreference) onSave;
+  final VoidCallback? onDelete;
+
+  const _SectionEditDialog({
+    this.section,
+    required this.seasonName,
+    required this.seasonYear,
+    required this.canDelete,
+    required this.onSave,
+    this.onDelete,
+  });
+
+  @override
+  State<_SectionEditDialog> createState() => _SectionEditDialogState();
+}
+
+class _SectionEditDialogState extends State<_SectionEditDialog> {
+  late SectionType _type;
+  late TextEditingController _titleController;
+  late int _itemCount;
+  late int _cacheDurationHours;
+  bool get _isEditing => widget.section != null;
+
+  @override
+  void initState() {
+    super.initState();
+    _type = widget.section?.type ?? SectionType.seasonNow;
+    _titleController =
+        TextEditingController(text: widget.section?.customTitle ?? '');
+    _itemCount = widget.section?.itemCount ?? 15;
+    _cacheDurationHours = widget.section?.cacheDurationHours ?? 2;
+  }
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    super.dispose();
+  }
+
+  void _save() {
+    final title = _titleController.text.trim();
+    final result = HomeSectionPreference(
+      type: _type,
+      enabled: widget.section?.enabled ?? true,
+      itemCount: _itemCount,
+      customTitle: title.isEmpty ? null : title,
+      cacheDurationHours: _cacheDurationHours,
+    );
+    widget.onSave(result);
+    Navigator.pop(context);
+  }
+
+  void _reset() {
+    if (widget.section != null) {
+      setState(() {
+        _type = widget.section!.type;
+        _titleController.text = widget.section!.customTitle ?? '';
+        _itemCount = widget.section!.itemCount;
+        _cacheDurationHours = widget.section!.cacheDurationHours;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Center(
+      child: Material(
+        color: Colors.transparent,
+        child: Container(
+          width: MediaQuery.of(context).size.width * 0.9,
+          constraints: const BoxConstraints(maxWidth: 400),
+          decoration: BoxDecoration(
+            color: theme.dialogBackgroundColor,
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  _isEditing ? 'Edit Section' : 'Add Section',
+                  style: theme.textTheme.titleLarge,
+                ),
+                const SizedBox(height: 20),
+
+                // Section type dropdown
+                Text('Section Type', style: theme.textTheme.bodySmall),
+                const SizedBox(height: 6),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: theme.colorScheme.outline.withOpacity(0.5),
                     ),
-                    child: Slider(
-                      value: section.itemCount.toDouble(),
-                      min: 5,
-                      max: 30,
-                      divisions: 5,
+                  ),
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<SectionType>(
+                      value: _type,
+                      isExpanded: true,
+                      items: SectionType.values.map((type) {
+                        final temp = HomeSectionPreference(type: type);
+                        return DropdownMenuItem(
+                          value: type,
+                          child: Row(
+                            children: [
+                              Icon(temp.getIcon(), size: 20,
+                                  color: theme.colorScheme.primary),
+                              const SizedBox(width: 10),
+                              Text(temp.getDefaultTitle(
+                                  widget.seasonName, widget.seasonYear)),
+                            ],
+                          ),
+                        );
+                      }).toList(),
                       onChanged: (value) {
-                        _updateSectionItemCount(index, value.toInt());
+                        if (value != null) {
+                          setState(() => _type = value);
+                        }
                       },
                     ),
                   ),
-                ],
-              ),
-          ],
+                ),
+                const SizedBox(height: 16),
+
+                // Custom title
+                Text('Custom Title', style: theme.textTheme.bodySmall),
+                const SizedBox(height: 6),
+                TextFormField(
+                  controller: _titleController,
+                  decoration: InputDecoration(
+                    hintText: HomeSectionPreference(type: _type).getDefaultTitle(
+                        widget.seasonName, widget.seasonYear),
+                    hintStyle: TextStyle(
+                      color: theme.colorScheme.onSurface.withOpacity(0.4),
+                    ),
+                    isDense: true,
+                    contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Item count slider
+                Row(
+                  children: [
+                    Text('Items: ', style: theme.textTheme.bodySmall),
+                    Text('$_itemCount',
+                        style: TextStyle(
+                          color: theme.colorScheme.primary,
+                          fontWeight: FontWeight.bold,
+                        )),
+                  ],
+                ),
+                Slider(
+                  value: _itemCount.toDouble(),
+                  min: 5,
+                  max: 30,
+                  divisions: 5,
+                  activeColor: theme.colorScheme.primary,
+                  onChanged: (value) {
+                    setState(() => _itemCount = value.toInt());
+                  },
+                ),
+                const SizedBox(height: 8),
+
+                // Cache duration dropdown
+                Row(
+                  children: [
+                    Icon(Icons.cached, size: 16,
+                        color: theme.colorScheme.onSurface.withOpacity(0.7)),
+                    const SizedBox(width: 6),
+                    Text('Cache refresh: ',
+                        style: theme.textTheme.bodySmall),
+                    const Spacer(),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: theme.colorScheme.outline.withOpacity(0.5),
+                        ),
+                      ),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<int>(
+                          value: _cacheDurationHours,
+                          isDense: true,
+                          items: const [
+                            DropdownMenuItem(value: 1, child: Text('1h')),
+                            DropdownMenuItem(value: 2, child: Text('2h')),
+                            DropdownMenuItem(value: 4, child: Text('4h')),
+                            DropdownMenuItem(value: 8, child: Text('8h')),
+                            DropdownMenuItem(value: 12, child: Text('12h')),
+                            DropdownMenuItem(value: 24, child: Text('24h')),
+                          ],
+                          onChanged: (value) {
+                            if (value != null) {
+                              setState(() => _cacheDurationHours = value);
+                            }
+                          },
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+
+                // Action buttons
+                Row(
+                  children: [
+                    // Delete button (only when editing and min 3 sections)
+                    if (_isEditing && widget.canDelete)
+                      TextButton.icon(
+                        onPressed: () {
+                          widget.onDelete?.call();
+                          Navigator.pop(context);
+                        },
+                        icon: Icon(Icons.delete_outline,
+                            color: theme.colorScheme.error, size: 20),
+                        label: Text('Delete',
+                            style: TextStyle(color: theme.colorScheme.error)),
+                      ),
+                    const Spacer(),
+                    // Reset button (only when editing)
+                    if (_isEditing)
+                      TextButton(
+                        onPressed: _reset,
+                        child: const Text('Reset'),
+                      ),
+                    const SizedBox(width: 8),
+                    // Save button
+                    ElevatedButton(
+                      onPressed: _save,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: theme.colorScheme.primary,
+                        foregroundColor: theme.colorScheme.onPrimary,
+                      ),
+                      child: const Text('Save'),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -547,44 +679,4 @@ class TileSize {
     required this.containerHeight,
     required this.loadingContainerHeight,
   });
-}
-
-TileSize getTileSizeValues(HomePageTileSize size) {
-  switch (size) {
-    case HomePageTileSize.xs:
-      return const TileSize(
-        contentHeight: 104,
-        contentWidth: 80,
-        containerHeight: 187.6,
-        loadingContainerHeight: 130,
-      );
-    case HomePageTileSize.s:
-      return const TileSize(
-        contentHeight: 130,
-        contentWidth: 100,
-        containerHeight: 215,
-        loadingContainerHeight: 162.5,
-      );
-    case HomePageTileSize.m:
-      return const TileSize(
-        contentHeight: 160,
-        contentWidth: 120,
-        containerHeight: 237,
-        loadingContainerHeight: 200,
-      );
-    case HomePageTileSize.l:
-      return const TileSize(
-        contentHeight: 200,
-        contentWidth: 150,
-        containerHeight: 280,
-        loadingContainerHeight: 250,
-      );
-    case HomePageTileSize.xl:
-      return const TileSize(
-        contentHeight: 230,
-        contentWidth: 172.93,
-        containerHeight: 322,
-        loadingContainerHeight: 287.5,
-      );
-  }
 }
