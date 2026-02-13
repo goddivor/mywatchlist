@@ -31,7 +31,7 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.27.3'
+          flutter-version: '3.35.6'
           channel: 'stable'
           cache: true
 
@@ -81,47 +81,111 @@ jobs:
           cd release-artifacts
           sha256sum *.apk > checksums.txt
 
+      - name: Generate changelog
+        id: changelog
+        run: |
+          # Get the previous tag
+          PREVIOUS_TAG=$(git tag --sort=-creatordate | grep -v "^${{ github.ref_name }}$" | head -1)
+
+          if [ -z "$PREVIOUS_TAG" ]; then
+            COMMITS=$(git log --pretty=format:"%s" --no-merges)
+            COMPARE_TEXT="Initial release"
+          else
+            COMMITS=$(git log "${PREVIOUS_TAG}..HEAD" --pretty=format:"%s" --no-merges)
+            COMPARE_TEXT="Changes since ${PREVIOUS_TAG}"
+          fi
+
+          # Group commits by conventional commit type
+          FEATURES=$(echo "$COMMITS" | grep -E "^feat:" | sed 's/^feat: //' | sed 's/^/- /' || true)
+          FIXES=$(echo "$COMMITS" | grep -E "^fix:" | sed 's/^fix: //' | sed 's/^/- /' || true)
+          REFACTORS=$(echo "$COMMITS" | grep -E "^refactor:" | sed 's/^refactor: //' | sed 's/^/- /' || true)
+          STYLES=$(echo "$COMMITS" | grep -E "^style:" | sed 's/^style: //' | sed 's/^/- /' || true)
+          DOCS=$(echo "$COMMITS" | grep -E "^docs:" | sed 's/^docs: //' | sed 's/^/- /' || true)
+          CHORES=$(echo "$COMMITS" | grep -E "^chore:" | sed 's/^chore: //' | sed 's/^/- /' || true)
+          TESTS=$(echo "$COMMITS" | grep -E "^test:" | sed 's/^test: //' | sed 's/^/- /' || true)
+
+          # Build the full release body
+          {
+            echo "## MyWatchList ${{ steps.version.outputs.version }}"
+            echo ""
+            echo "> ${COMPARE_TEXT}"
+            echo ""
+            echo "---"
+            echo ""
+            echo "## Changelog"
+            echo ""
+
+            if [ -n "$FEATURES" ]; then
+              echo "### New Features"
+              echo "$FEATURES"
+              echo ""
+            fi
+            if [ -n "$FIXES" ]; then
+              echo "### Bug Fixes"
+              echo "$FIXES"
+              echo ""
+            fi
+            if [ -n "$REFACTORS" ]; then
+              echo "### Refactoring"
+              echo "$REFACTORS"
+              echo ""
+            fi
+            if [ -n "$STYLES" ]; then
+              echo "### Style"
+              echo "$STYLES"
+              echo ""
+            fi
+            if [ -n "$DOCS" ]; then
+              echo "### Documentation"
+              echo "$DOCS"
+              echo ""
+            fi
+            if [ -n "$CHORES" ]; then
+              echo "### Chores"
+              echo "$CHORES"
+              echo ""
+            fi
+            if [ -n "$TESTS" ]; then
+              echo "### Tests"
+              echo "$TESTS"
+              echo ""
+            fi
+
+            if [ -z "$FEATURES" ] && [ -z "$FIXES" ] && [ -z "$REFACTORS" ] && [ -z "$STYLES" ] && [ -z "$DOCS" ] && [ -z "$CHORES" ] && [ -z "$TESTS" ]; then
+              echo "See commit history for detailed changes."
+              echo ""
+            fi
+
+            echo "---"
+            echo ""
+            echo "## Downloads"
+            echo ""
+            echo "| Variant | Description |"
+            echo "|---------|-------------|"
+            echo "| \`arm64-v8a\` | Most modern Android devices (64-bit ARM) |"
+            echo "| \`armeabi-v7a\` | Older Android devices (32-bit ARM) |"
+            echo "| \`x86_64\` | Android emulators and x86 devices |"
+            echo "| \`universal\` | Works on all devices (larger file size) |"
+            echo ""
+            echo "### Verification"
+            echo ""
+            echo "Verify your download with \`checksums.txt\`:"
+            echo "\`\`\`bash"
+            echo "sha256sum -c checksums.txt"
+            echo "\`\`\`"
+          } > release_body.md
+
       - name: Create Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           files: |
             release-artifacts/*.apk
             release-artifacts/checksums.txt
           tag_name: ${{ github.ref_name }}
           name: Release ${{ steps.version.outputs.version }}
-          body: |
-            ## MyWatchList ${{ steps.version.outputs.version }}
-
-            Multi-platform anime/manga tracking app with support for:
-            - MyAnimeList
-            - AniList
-            - Kitsu
-            - Simkl
-
-            ### Downloads
-
-            **Android APK builds:**
-            - `arm64-v8a` - For most modern Android devices (64-bit ARM)
-            - `armeabi-v7a` - For older Android devices (32-bit ARM)
-            - `x86_64` - For Android emulators and x86 devices
-            - `universal` - Works on all devices (larger file size)
-
-            ### Installation
-
-            1. Download the appropriate APK for your device
-            2. Enable "Install from Unknown Sources" in Android settings
-            3. Install the APK
-
-            ### Verification
-
-            Verify your download integrity using the `checksums.txt` file:
-            ```bash
-            sha256sum -c checksums.txt
-            ```
-
-            ### Changelog
-
-            See commit history for detailed changes.
+          body_path: release_body.md
+          generate_release_notes: true
+          append_body: true
           draft: false
           prerelease: false
         env:
