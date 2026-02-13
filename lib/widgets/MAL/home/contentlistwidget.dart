@@ -15,9 +15,6 @@ class ContentListWidget extends StatelessWidget {
   final bool showCardBar;
   final VoidCallback? onViewAll;
   final DisplaySubType displaySubType;
-  final bool enableAnimation;
-  final Duration animationDuration;
-  final Curve animationCurve;
 
   const ContentListWidget({
     super.key,
@@ -31,45 +28,16 @@ class ContentListWidget extends StatelessWidget {
     this.showCardBar = true,
     this.onViewAll,
     this.displaySubType = DisplaySubType.compact,
-    this.enableAnimation = true,
-    this.animationDuration = const Duration(milliseconds: 300),
-    this.animationCurve = Curves.easeOut,
   });
 
   @override
   Widget build(BuildContext context) {
-    return horizontalList(
-      context: context,
-      category: category,
-      items: items,
-      height: height,
-      tileWidth: tileWidth,
-      tileHeight: tileHeight,
-      showTime: showTime,
-      padding: padding,
-      showCardBar: showCardBar,
-      displaySubType: displaySubType,
-    );
-  }
-
-  Widget horizontalList({
-    required BuildContext context,
-    required String category,
-    required List<Anime> items,
-    double? height,
-    double? tileWidth,
-    double? tileHeight,
-    bool showTime = false,
-    EdgeInsetsGeometry? padding,
-    bool showCardBar = true,
-    DisplaySubType displaySubType = DisplaySubType.compact,
-  }) {
     final theme = Theme.of(context);
     final double effectiveHeight = height ?? 220;
     final double effectiveWidth = tileWidth ?? 120;
     final double effectiveContentHeight = tileHeight ?? 160;
-    
-    final Widget container = Container(
+
+    return Container(
       height: effectiveHeight,
       padding: padding ?? const EdgeInsets.all(8.0),
       child: items.isEmpty
@@ -89,25 +57,12 @@ class ContentListWidget extends StatelessWidget {
                   showCardBar,
                   displaySubType,
                   showTime,
-                  index,
                 );
               },
             ),
     );
-    
-    // Apply animation conditionally
-    if (enableAnimation) {
-      return AnimatedContainer(
-        duration: animationDuration,
-        curve: animationCurve,
-        height: effectiveHeight,
-        child: container,
-      );
-    } else {
-      return container;
-    }
   }
-  
+
   Widget _buildAnimeCard(
     BuildContext context,
     Anime anime,
@@ -116,71 +71,54 @@ class ContentListWidget extends StatelessWidget {
     bool showCardBar,
     DisplaySubType displaySubType,
     bool showTime,
-    int index,
   ) {
-    // Add staggered animation for each card
-    return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0.0, end: 1.0),
-      duration: Duration(milliseconds: 500 + (index * 50)),
-      curve: Curves.easeOutCubic,
-      builder: (context, value, child) {
-        return Transform.translate(
-          offset: Offset(0, 20 * (1 - value)),
-          child: Opacity(
-            opacity: value,
-            child: child,
-          ),
-        );
-      },
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 5),
-        child: GestureDetector(
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 5),
+      child: GestureDetector(
+        onTap: () {
+          Navigator.push(
+            context,
+            PageRouteBuilder(
+              pageBuilder: (context, animation, secondaryAnimation) =>
+                  ContentDetailedScreen(node: anime),
+              transitionsBuilder:
+                  (context, animation, secondaryAnimation, child) {
+                var begin = const Offset(1.0, 0.0);
+                var end = Offset.zero;
+                var curve = Curves.easeOutCubic;
+                var tween = Tween(begin: begin, end: end).chain(
+                  CurveTween(curve: curve),
+                );
+                return SlideTransition(
+                  position: animation.drive(tween),
+                  child: child,
+                );
+              },
+            ),
+          );
+        },
+        child: AnimeGridCard(
+          node: anime,
+          showMemberCount: true,
+          showCardBar: showCardBar,
+          width: width,
+          height: height,
+          gridHeight: height,
+          displaySubType: displaySubType,
+          showTime: showTime,
           onTap: () {
-            // Navigate to anime details screen
             Navigator.push(
               context,
-              PageRouteBuilder(
-                pageBuilder: (context, animation, secondaryAnimation) =>
-                    ContentDetailedScreen(node: anime),
-                transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                  var begin = const Offset(1.0, 0.0);
-                  var end = Offset.zero;
-                  var curve = Curves.easeOutCubic;
-                  var tween = Tween(begin: begin, end: end).chain(
-                    CurveTween(curve: curve),
-                  );
-                  return SlideTransition(
-                    position: animation.drive(tween),
-                    child: child,
-                  );
-                },
+              MaterialPageRoute(
+                builder: (context) => ContentDetailedScreen(node: anime),
               ),
             );
           },
-          child: AnimeGridCard(
-            node: anime,
-            showMemberCount: true,
-            showCardBar: showCardBar,
-            width: width,
-            height: height,
-            gridHeight: height,
-            displaySubType: displaySubType,
-            showTime: showTime,
-            onTap: () {
-              // Navigate to anime details
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => ContentDetailedScreen(node: anime),
-                ),
-              );
-            },
-          ),
         ),
       ),
     );
   }
-  
+
   Widget _buildEmptyState(ThemeData theme) {
     return Center(
       child: Column(
