@@ -387,7 +387,7 @@ class HtmlParsers {
         var characterElement = tds[0].querySelector('.picSurround img');
         var characterImage =
             getOriginalImageQuality(characterElement, imageQuality).trim();
-        var characterNameElement = tds[1].querySelector('h3 a');
+        var characterNameElement = tds[1].querySelector('a');
         var characterName = Link(
           name: characterNameElement?.text.trim() ?? '',
           url: characterNameElement?.attributes['href']?.trim() ?? '',

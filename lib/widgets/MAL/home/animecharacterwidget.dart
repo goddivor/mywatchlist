@@ -23,15 +23,20 @@ class AnimeCharacterWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (type == DisplayType.grid) {
+      final itemsPerPage = _isManga ? 4 : 3;
+      final itemHeight = _isManga ? 120.0 : 140.0;
       return _buildGridView(
           _characters.length,
           (i, pageIndex) {
-            final idx = pageIndex * 3 + i;
+            final idx = pageIndex * itemsPerPage + i;
             if (_isManga) {
               return _buildMangaCharacterWidget(mangaCharacterList![idx]);
             }
             return _buildCharacterWidget(animeCharacterList[idx]);
-          });
+          },
+          .89,
+          itemsPerPage,
+          itemHeight);
     } else {
       return _buildListView();
     }
@@ -73,9 +78,10 @@ class AnimeCharacterWidget extends StatelessWidget {
   }
 
   Widget _buildMangaCharacterWidget(MangaCharacters? details) {
+    final isGrid = type == DisplayType.grid;
     return Padding(
-      padding: type == DisplayType.grid
-          ? const EdgeInsets.fromLTRB(0, 5, 10, 5)
+      padding: isGrid
+          ? const EdgeInsets.fromLTRB(0, 3, 10, 3)
           : const EdgeInsets.symmetric(horizontal: 5, vertical: 5),
       child: SizedBox(
         width: double.infinity,
@@ -85,7 +91,9 @@ class AnimeCharacterWidget extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.start,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                _characterWidget(null, details?.character.image),
+                _characterWidget(null, details?.character.image,
+                    height: isGrid ? 110.0 : 120.0,
+                    width: isGrid ? 85.0 : 100.0),
                 Expanded(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 10),
@@ -155,13 +163,14 @@ Widget _buildGridView(
   final int length,
   Widget Function(int, int) itemBuilder, [
   final double viewportFraction = .89,
+  final int itemsPerPage = 3,
+  final double itemHeight = 140.0,
 ]) {
-  const double itemHeight = 140.0;
   final pageController =
       PageController(initialPage: 0, viewportFraction: viewportFraction);
-  final noOfPages = (length / 3).ceilToDouble().toInt();
+  final noOfPages = (length / itemsPerPage).ceilToDouble().toInt();
   final lastPage = noOfPages - 1;
-  final itemsOnSinglePage = noOfPages == 1 ? length : 3;
+  final itemsOnSinglePage = noOfPages == 1 ? length : itemsPerPage;
   return SizedBox(
     height: itemsOnSinglePage * itemHeight,
     child: PageView.builder(
@@ -170,8 +179,9 @@ Widget _buildGridView(
       clipBehavior: Clip.none,
       itemBuilder: ((context, pageIndex) {
         return ListView.builder(
-          itemCount:
-              pageIndex == lastPage ? (length % 3 == 0 ? 3 : length % 3) : 3,
+          itemCount: pageIndex == lastPage
+              ? (length % itemsPerPage == 0 ? itemsPerPage : length % itemsPerPage)
+              : itemsPerPage,
           scrollDirection: Axis.vertical,
           padding: EdgeInsets.zero,
           shrinkWrap: true,
@@ -247,217 +257,3 @@ Widget _characterWidget(
     ),
   );
 }
-
-// class MangaCharacterWidget extends StatelessWidget {
-//   final DisplayType type;
-//   final List<MangaCharacterHtml> mangaCharacters;
-//   const MangaCharacterWidget({
-//     Key? key,
-//     required this.mangaCharacters,
-//     this.type = DisplayType.grid,
-//   }) : super(key: key);
-
-//   @override
-//   Widget build(BuildContext context) {
-//     if (type == DisplayType.grid) {
-//       return _buildGridView(
-//         mangaCharacters.length,
-//         (i, pageIndex) =>
-//             _buildCharacterRow(mangaCharacters.tryAt(pageIndex * 3 + i)),
-//         .79,
-//       );
-//     } else {
-//       return ListView.builder(
-//         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 20),
-//         itemBuilder: (_, i) => _buildCharacterRow(mangaCharacters.tryAt(i)),
-//         itemCount: mangaCharacters.length,
-//       );
-//     }
-//   }
-
-//   Padding _buildCharacterRow(MangaCharacterHtml? char) {
-//     return Padding(
-//       padding: const EdgeInsets.symmetric(vertical: 5),
-//       child: Row(
-//         mainAxisSize: MainAxisSize.min,
-//         children: [
-//           _characterWidget(
-//             char?.characterId,
-//             char?.animePicture,
-//           ),
-//           SB.w15,
-//           Column(
-//             crossAxisAlignment: CrossAxisAlignment.start,
-//             children: [
-//               title(
-//                 char?.characterName ?? "?",
-//                 opacity: 1,
-//                 fontSize: 16,
-//               ),
-//               SB.h10,
-//               if (char?.characterType != null) title(char!.characterType!),
-//             ],
-//           )
-//         ],
-//       ),
-//     );
-//   }
-// }
-
-// class AllCharsWidget extends StatefulWidget {
-//   final String category;
-//   final int id;
-//   const AllCharsWidget({Key? key, required this.category, required this.id})
-//       : super(key: key);
-
-//   @override
-//   State<AllCharsWidget> createState() => _AllCharsWidgetState();
-// }
-
-// class _AllCharsWidgetState extends State<AllCharsWidget> {
-//   late Future<ContentAllCharData> allCharsAndStaffFuture;
-//   final _roleMap = {'m': 'Main', 's': 'Supporting'};
-//   final _headers = [S.current.Characters, S.current.Staff];
-//   int _currIndex = 0;
-//   @override
-//   void initState() {
-//     super.initState();
-//     allCharsAndStaffFuture =
-//         DalApi.i.getAllCharsAndStaff(widget.category, widget.id);
-//   }
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return CFutureBuilder<ContentAllCharData>(
-//       future: allCharsAndStaffFuture,
-//       done: (sp) => buildWidget(sp.data),
-//       loadingChild: loadingBelowText(),
-//     );
-//   }
-
-//   Widget buildWidget(ContentAllCharData? dd) {
-//     if (dd?.data == null) return showNoContent();
-//     final chars = dd?.data?.characters ?? [];
-//     final staffs = dd?.data?.staffs ?? [];
-//     return CustomScrollView(
-//       slivers: [
-//         if (staffs.isNotEmpty)
-//           SliverWrapper(Padding(
-//             padding: const EdgeInsets.only(top: 30),
-//             child: HeaderWidget(
-//               header: _headers,
-//               selectedIndex: _currIndex,
-//               shouldAnimate: false,
-//               onPressed: (index) {
-//                 if (mounted)
-//                   setState(() {
-//                     _currIndex = index;
-//                   });
-//               },
-//             ),
-//           )),
-//         SB.lh30,
-//         if (_currIndex == 0)
-//           chars.isEmpty
-//               ? showNoContentSliver()
-//               : SliverList(
-//                   delegate: SliverChildBuilderDelegate(
-//                   (context, index) => _buildCharTile(chars[index]),
-//                   childCount: chars.length,
-//                 )),
-//         if (_currIndex == 1)
-//           SliverList(
-//               delegate: SliverChildBuilderDelegate(
-//             (context, index) => _buildStaffTile(staffs[index]),
-//             childCount: staffs.length,
-//           ))
-//       ],
-//     );
-//   }
-
-//   Widget _buildCharTile(Character char) {
-//     return Padding(
-//       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-//       child: Row(
-//         crossAxisAlignment: CrossAxisAlignment.start,
-//         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-//         children: [
-//           Expanded(
-//             child: Row(
-//               children: [
-//                 _characterWidget(
-//                   char.charInfo?.id,
-//                   char.characterImage?.large ?? char.characterImage?.medium,
-//                   height: 80,
-//                   width: 60,
-//                 ),
-//                 SB.w10,
-//                 Expanded(
-//                   child: _buildNameAndRole(char.charInfo?.name ?? '',
-//                       _roleMap[char.charInfo?.role ?? 's'] ?? 'Unknown'),
-//                 )
-//               ],
-//             ),
-//           ),
-//           if (char.staffInfoList != null && char.staffInfoList!.isNotEmpty)
-//             Expanded(
-//               child: Padding(
-//                 padding: EdgeInsets.only(
-//                     top: char.staffInfoList!.length == 1 ? 0 : 25),
-//                 child: Column(
-//                   crossAxisAlignment: CrossAxisAlignment.end,
-//                   children: char.staffInfoList
-//                       !.map((staff) => Padding(
-//                             padding: const EdgeInsets.only(bottom: 10),
-//                             child: Row(
-//                               children: [
-//                                 Expanded(
-//                                     child: _buildSeiyuuNameAndRole(
-//                                         staff.name!, staff.language!)),
-//                                 SB.w10,
-//                                 _seiyuuWidget(
-//                                   staff.id,
-//                                   staff.image?.large ?? staff.image?.medium,
-//                                   height: 80,
-//                                   width: 60,
-//                                 ),
-//                               ],
-//                             ),
-//                           ))
-//                       .toList(),
-//                 ),
-//               ),
-//             )
-//         ],
-//       ),
-//     );
-//   }
-
-//   Widget _buildStaffTile(Staff staff) {
-//     return Padding(
-//       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-//       child: Row(
-//         crossAxisAlignment: CrossAxisAlignment.start,
-//         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-//         children: [
-//           Expanded(
-//             child: Row(
-//               children: [
-//                 _characterWidget(
-//                     staff.id, staff.image?.large ?? staff.image?.medium,
-//                     height: 80, width: 60, category: 'seiyuu'),
-//                 SB.w10,
-//                 Expanded(
-//                   child: _buildNameAndRole(
-//                     staff.name!,
-//                     staff.role ?? 'Unknown',
-//                   ),
-//                 )
-//               ],
-//             ),
-//           ),
-//         ],
-//       ),
-//     );
-//   }
-// }
