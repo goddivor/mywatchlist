@@ -7,21 +7,31 @@ import 'package:mywatchlist/widgets/common/avatar_widget.dart';
 
 class AnimeCharacterWidget extends StatelessWidget {
   final List<CharactersVoiceActors> animeCharacterList;
+  final List<MangaCharacters>? mangaCharacterList;
   final DisplayType type;
   const AnimeCharacterWidget({
     super.key,
-    required this.animeCharacterList,
+    this.animeCharacterList = const [],
+    this.mangaCharacterList,
     required double horizPadding,
     this.type = DisplayType.grid,
   });
+
+  bool get _isManga => mangaCharacterList != null && mangaCharacterList!.isNotEmpty;
+  List get _characters => _isManga ? mangaCharacterList! : animeCharacterList;
 
   @override
   Widget build(BuildContext context) {
     if (type == DisplayType.grid) {
       return _buildGridView(
-          animeCharacterList.length,
-          (i, pageIndex) =>
-              _buildCharacterWidget(animeCharacterList[pageIndex * 3 + i]));
+          _characters.length,
+          (i, pageIndex) {
+            final idx = pageIndex * 3 + i;
+            if (_isManga) {
+              return _buildMangaCharacterWidget(mangaCharacterList![idx]);
+            }
+            return _buildCharacterWidget(animeCharacterList[idx]);
+          });
     } else {
       return _buildListView();
     }
@@ -30,9 +40,13 @@ class AnimeCharacterWidget extends StatelessWidget {
   Widget _buildListView() {
     return ListView.builder(
       padding: const EdgeInsets.symmetric(vertical: 20),
-      itemBuilder: (context, index) =>
-          _buildCharacterWidget(animeCharacterList[index]),
-      itemCount: animeCharacterList.length,
+      itemBuilder: (context, index) {
+        if (_isManga) {
+          return _buildMangaCharacterWidget(mangaCharacterList![index]);
+        }
+        return _buildCharacterWidget(animeCharacterList[index]);
+      },
+      itemCount: _characters.length,
     );
   }
 
@@ -58,18 +72,53 @@ class AnimeCharacterWidget extends StatelessWidget {
     );
   }
 
+  Widget _buildMangaCharacterWidget(MangaCharacters? details) {
+    return Padding(
+      padding: type == DisplayType.grid
+          ? const EdgeInsets.fromLTRB(0, 5, 10, 5)
+          : const EdgeInsets.symmetric(horizontal: 5, vertical: 5),
+      child: SizedBox(
+        width: double.infinity,
+        child: Material(
+            color: Colors.transparent,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                _characterWidget(null, details?.character.image),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                    child: _buildNameAndRole(
+                      details?.character.name.name ?? "?",
+                      details?.character.role ?? "",
+                    ),
+                  ),
+                ),
+              ],
+            )),
+      ),
+    );
+  }
+
   Padding _centerTextWidegt(CharactersVoiceActors? chara) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 10),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.max,
         children: [
-          _buildNameAndRole(
-              chara?.character.name.name ?? "?", chara?.character.role ?? ""),
-          const SizedBox(height: 30),
-          _buildSeiyuuNameAndRole(chara?.voiceActor.name.name ?? 'Unknown',
-              chara?.voiceActor.role ?? ''),
+          Flexible(
+            child: _buildNameAndRole(
+                chara?.character.name.name ?? "?", chara?.character.role ?? ""),
+          ),
+          const SizedBox(height: 10),
+          Flexible(
+            child: _buildSeiyuuNameAndRole(
+                chara?.voiceActor.name.name ?? 'Unknown',
+                chara?.voiceActor.role ?? ''),
+          ),
         ],
       ),
     );
@@ -107,15 +156,18 @@ Widget _buildGridView(
   Widget Function(int, int) itemBuilder, [
   final double viewportFraction = .89,
 ]) {
+  const double itemHeight = 140.0;
   final pageController =
       PageController(initialPage: 0, viewportFraction: viewportFraction);
   final noOfPages = (length / 3).ceilToDouble().toInt();
   final lastPage = noOfPages - 1;
+  final itemsOnSinglePage = noOfPages == 1 ? length : 3;
   return SizedBox(
-    height: (noOfPages == 1 && length != 3) ? (length == 1 ? 140 : 280) : 390,
+    height: itemsOnSinglePage * itemHeight,
     child: PageView.builder(
       itemCount: noOfPages,
       controller: pageController,
+      clipBehavior: Clip.none,
       itemBuilder: ((context, pageIndex) {
         return ListView.builder(
           itemCount:
@@ -124,7 +176,10 @@ Widget _buildGridView(
           padding: EdgeInsets.zero,
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          itemBuilder: (_, i) => itemBuilder(i, pageIndex),
+          itemBuilder: (_, i) => SizedBox(
+            height: itemHeight,
+            child: itemBuilder(i, pageIndex),
+          ),
         );
       }),
     ),
