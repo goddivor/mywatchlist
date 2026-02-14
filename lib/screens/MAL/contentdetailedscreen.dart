@@ -154,8 +154,9 @@ class _ContentDetailedScreenState extends State<ContentDetailedScreen>
     try {
       getMalApiContent(); // get content from malapi
       getMalApiHtmlContent(); //get content from html (malscraper)
-      // implement  get content form jikan
-      getJikanVideos(); // get videos from jikan
+      if (widget.category == "anime") {
+        getJikanVideos(); // get videos from jikan (anime only)
+      }
 
       updateVisibleSections();
     } catch (e) {
@@ -164,24 +165,40 @@ class _ContentDetailedScreenState extends State<ContentDetailedScreen>
   }
 
   void getMalApiContent() async {
-    // Call Mal API to get anime content
-    contentDetailed =
-        await MalApi().getAnimeDetails(_id); //52991 frieren for test
-    // update UI
-    updateVisibleSections();
-    setStatus();
+    try {
+      if (widget.category == "manga") {
+        contentDetailed = await MalApi().getMangaDetails(_id);
+      } else {
+        contentDetailed = await MalApi().getAnimeDetails(_id);
+      }
+      updateVisibleSections();
+      setStatus();
+    } catch (e) {
+      debugPrint('Error loading MAL details for $_id: $e');
+      if (mounted) setState(() {});
+    }
   }
 
-  // get anime videos from jikan
   void getJikanVideos() async {
-    animeVideoV4 = await JikanApi().getAnimeVideos(_id);
-    updateVisibleSections();
+    try {
+      animeVideoV4 = await JikanApi().getAnimeVideos(_id);
+      updateVisibleSections();
+    } catch (e) {
+      debugPrint('Error loading Jikan videos for $_id: $e');
+    }
   }
 
   void getMalApiHtmlContent() async {
-    animeDetailedHtml =
-        (await MalScraper().getAnimeDetailedHtml(ContentType.anime, _id));
-    updateVisibleSections();
+    try {
+      final contentType = widget.category == "manga"
+          ? ContentType.manga
+          : ContentType.anime;
+      animeDetailedHtml =
+          (await MalScraper().getAnimeDetailedHtml(contentType, _id));
+      updateVisibleSections();
+    } catch (e) {
+      debugPrint('Error loading HTML details for $_id: $e');
+    }
   }
 
   List<AdaptNode> getAdaptationsFromData(dynamic animeDetails) {
@@ -213,6 +230,12 @@ class _ContentDetailedScreenState extends State<ContentDetailedScreen>
         .toList();
   }
 
+  List<MangaCharacters> getMangaCharacters(dynamic animeDetails) {
+    List<dynamic>? mangaCharsJson = animeDetails['mangaCharacters'];
+    if (mangaCharsJson == null) return [];
+    return mangaCharsJson.map((json) => MangaCharacters.fromJson(json)).toList();
+  }
+
   List<InterestStack> getInterestStack(dynamic animeDetails) {
     // Récupère la liste "interestStacks" du Map si elle existe
     List<dynamic>? interestStacksJson = animeDetails['interestStacks'];
@@ -237,7 +260,7 @@ class _ContentDetailedScreenState extends State<ContentDetailedScreen>
   }
 
   void updateVisibleSections() {
-    visibleSections = _animeVisibleSections;
+    visibleSections = _contentVisibleSections;
     visibleTabSections =
         visibleSections.where((e) => e.isTab).map((e) => e.title).toList();
     _tabController = TabController(
@@ -292,9 +315,9 @@ class _ContentDetailedScreenState extends State<ContentDetailedScreen>
     return [listViewTop, listViewBottom, listViewCenter];
   }
 
-  List<VisibleSection> get _animeVisibleSections { // this will be updated to be getvisiblesection to handle anime or manga
+  List<VisibleSection> get _contentVisibleSections {
     return TabType.values
-        .map(_getAnimeSectionForType)
+        .map(_getSectionForType)
         .where((e) => e != null)
         .map((e) => e!)
         .toList();
@@ -406,7 +429,9 @@ class _ContentDetailedScreenState extends State<ContentDetailedScreen>
     );
   }
 
-  VisibleSection? _getAnimeSectionForType(TabType tabType) {
+  bool get _isManga => widget.category == "manga";
+
+  VisibleSection? _getSectionForType(TabType tabType) {
     return switch (tabType) {
       TabType.Synopsis => _nullIf(
           contentDetailed != null,
@@ -416,24 +441,41 @@ class _ContentDetailedScreenState extends State<ContentDetailedScreen>
               synopsis: contentDetailed.synopsis,
               genres: contentDetailed.genres,
               background: contentDetailed.background,
-              category: "anime",
+              category: widget.category,
               horizPadding: horizPadding,
             ),
           ),
         ),
-      TabType.Media => _nullIf(
-          contentDetailed != null && !isAnimeVideosBlank || !isStreamingBlank,
-          () => VisibleSection(
-            'Media',
-            _buildMediaWidget,
-          ),
-        ),
+      TabType.Media => _isManga
+          ? _nullIf(
+              !isStreamingBlank,
+              () => VisibleSection(
+                'Media',
+                _buildMediaWidget,
+              ),
+            )
+          : _nullIf(
+              contentDetailed != null && !isAnimeVideosBlank || !isStreamingBlank,
+              () => VisibleSection(
+                'Media',
+                _buildMediaWidget,
+              ),
+            ),
       TabType.Related => _nullIf(
-          !nullOrEmpty(contentDetailed?.relatedAnime),
+          !nullOrEmpty(contentDetailed?.relatedAnime) ||
+              !nullOrEmpty(contentDetailed?.relatedManga),
           () => VisibleSection(
             'Related',
             RelatedAnimeWidget(
-              relatedAnimeList: contentDetailed.relatedAnime,
+              relatedAnimeList: [
+                ...?contentDetailed?.relatedAnime,
+                ...?contentDetailed?.relatedManga
+                    ?.map((rm) => RelatedAnime(
+                          animenode: rm.manganode,
+                          relationType: rm.relationType,
+                          relationTypeFormatted: rm.relationTypeFormatted,
+                        )),
+              ],
               horizPadding: horizPadding,
               id: _id,
             ),
@@ -463,7 +505,7 @@ class _ContentDetailedScreenState extends State<ContentDetailedScreen>
           () => VisibleSection(
             'Recommendations',
             RecommendedAnimeWidget(
-              category: 'anime',
+              category: widget.category,
               horizPadding: horizPadding,
               recommAnime: contentDetailed.recommendations,
             ),
@@ -483,17 +525,22 @@ class _ContentDetailedScreenState extends State<ContentDetailedScreen>
           animeDetailedHtml != null,
           () => VisibleSection(
             'Characters',
-            AnimeCharacterWidget(
-              animeCharacterList: getCharactersVoiceActors(animeDetailedHtml),
-              horizPadding: horizPadding,
-            ),
+            _isManga
+                ? AnimeCharacterWidget(
+                    mangaCharacterList: getMangaCharacters(animeDetailedHtml),
+                    horizPadding: horizPadding,
+                  )
+                : AnimeCharacterWidget(
+                    animeCharacterList: getCharactersVoiceActors(animeDetailedHtml),
+                    horizPadding: horizPadding,
+                  ),
           ),
         ),
       TabType.Forums => _nullIf(
           contentDetailed != null,
           () => VisibleSection(
             'Forums',
-            ShowAnimeForum(animeId: _id),
+            ShowAnimeForum(animeId: _id, category: widget.category),
           ),
         ),
       TabType.Pictures => _nullIf(
@@ -510,7 +557,7 @@ class _ContentDetailedScreenState extends State<ContentDetailedScreen>
           contentDetailed != null,
           () => VisibleSection(
             'News',
-            ShowAnimeNews(animeId: _id),
+            ShowAnimeNews(animeId: _id, category: widget.category),
           ),
         ),
       TabType.Featured_Articles => _nullIf(
@@ -520,6 +567,7 @@ class _ContentDetailedScreenState extends State<ContentDetailedScreen>
             ShowAnimeFeatured(
               animeId: _id,
               animeName: contentDetailed?.title ?? widget.node?.title ?? "",
+              category: widget.category,
             ),
           ),
         ),
@@ -544,6 +592,7 @@ class _ContentDetailedScreenState extends State<ContentDetailedScreen>
                   ? animeDetailedHtml['additionalTitles']
                   : null,
               horizPadding: horizPadding,
+              category: widget.category,
             ),
           ),
         ),
@@ -628,15 +677,14 @@ class _ContentDetailedScreenState extends State<ContentDetailedScreen>
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async {
-        if (showContentEdit && mounted) {
+    return PopScope(
+      canPop: !showContentEdit,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop && showContentEdit && mounted) {
           setState(() {
             showContentEdit = false;
           });
-          return false;
         }
-        return true;
       },
       child: Scaffold(
         floatingActionButtonLocation:
@@ -677,7 +725,7 @@ class _ContentDetailedScreenState extends State<ContentDetailedScreen>
           showShimmer: contentDetailed == null,
           baseColor: Theme.of(context).scaffoldBackgroundColor,
           highlightColor:
-              Theme.of(context).scaffoldBackgroundColor.withOpacity(.3),
+              Theme.of(context).scaffoldBackgroundColor.withValues(alpha: .3),
           child: animeHeader,
         ),
       ),
@@ -806,9 +854,9 @@ class _ContentDetailedScreenState extends State<ContentDetailedScreen>
   Widget get animeCard {
     final urlList = [_url];
     if (!nullOrEmpty(contentDetailed?.pictures)) {
-      List<String> list = (contentDetailed.pictures as List<Picture>)
+      final list = (contentDetailed.pictures as List<Picture>)
           .map((e) => e.large)
-          .toList();
+          .whereType<String>();
       urlList.addAll(list);
     }
     return _heroWrapper(
@@ -923,7 +971,7 @@ class _ContentDetailedScreenState extends State<ContentDetailedScreen>
                     .textTheme
                     .bodyMedium
                     ?.color
-                    ?.withOpacity(.7)),
+                    ?.withValues(alpha: .7)),
           ),
           const SizedBox(
             height: 10,
@@ -948,7 +996,7 @@ class _ContentDetailedScreenState extends State<ContentDetailedScreen>
                     .textTheme
                     .bodySmall
                     ?.color
-                    ?.withOpacity(.7)),
+                    ?.withValues(alpha: .7)),
           ),
           const SizedBox(
             height: 3,
@@ -981,7 +1029,7 @@ class _ContentDetailedScreenState extends State<ContentDetailedScreen>
                     .textTheme
                     .bodySmall
                     ?.color
-                    ?.withOpacity(.7)),
+                    ?.withValues(alpha: .7)),
           ),
           const SizedBox(
             height: 3,
@@ -1012,7 +1060,7 @@ class _ContentDetailedScreenState extends State<ContentDetailedScreen>
                     .textTheme
                     .bodySmall
                     ?.color
-                    ?.withOpacity(.7)),
+                    ?.withValues(alpha: .7)),
           ),
           const SizedBox(
             height: 3,
@@ -1048,7 +1096,7 @@ class _ContentDetailedScreenState extends State<ContentDetailedScreen>
                     .textTheme
                     .bodySmall
                     ?.color
-                    ?.withOpacity(.7)),
+                    ?.withValues(alpha: .7)),
           ),
           const SizedBox(
             height: 3,

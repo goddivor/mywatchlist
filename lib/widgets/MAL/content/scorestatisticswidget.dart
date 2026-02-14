@@ -32,7 +32,7 @@ class _ScoreStatisticsWidgetState extends State<ScoreStatisticsWidget>
   @override
   void initState() {
     super.initState();
-    animestatsFuture = JikanApi.getAnimeStatistics(widget.id);
+    animestatsFuture = JikanApi.getAnimeStatistics(widget.id, category: widget.category);
   }
 
   @override
@@ -153,29 +153,29 @@ class _ScoreStatisticsWidgetState extends State<ScoreStatisticsWidget>
   int getColorForScore(int score) {
     switch (score) {
       case 0:
-        return Colors.red.value; // Score 0
+        return Colors.red.toARGB32(); // Score 0
       case 1:
-        return Colors.redAccent.value; // Score 1
+        return Colors.redAccent.toARGB32(); // Score 1
       case 2:
-        return Colors.orange.value; // Score 2
+        return Colors.orange.toARGB32(); // Score 2
       case 3:
-        return Colors.orangeAccent.value; // Score 3
+        return Colors.orangeAccent.toARGB32(); // Score 3
       case 4:
-        return Colors.yellow.value; // Score 4
+        return Colors.yellow.toARGB32(); // Score 4
       case 5:
-        return Colors.lightGreen.value; // Score 5
+        return Colors.lightGreen.toARGB32(); // Score 5
       case 6:
-        return Colors.green.value; // Score 6
+        return Colors.green.toARGB32(); // Score 6
       case 7:
-        return Colors.greenAccent.value; // Score 7
+        return Colors.greenAccent.toARGB32(); // Score 7
       case 8:
-        return Colors.lightBlue.value; // Score 8
+        return Colors.lightBlue.toARGB32(); // Score 8
       case 9:
-        return Colors.blue.value; // Score 9
+        return Colors.blue.toARGB32(); // Score 9
       case 10:
-        return Colors.blueAccent.value; // Score 10
+        return Colors.blueAccent.toARGB32(); // Score 10
       default:
-        return Colors.grey.value; // Should not reach here
+        return Colors.grey.toARGB32(); // Should not reach here
     }
   }
 

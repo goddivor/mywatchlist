@@ -7,13 +7,17 @@ class MoreInfoWidget extends StatelessWidget {
   final MalAnime? anime;
   final dynamic additionalTitles; // Use dynamic to allow for various types
   final double horizPadding;
+  final String category;
 
   const MoreInfoWidget({
     Key? key,
     this.anime,
     this.additionalTitles,
     required this.horizPadding,
+    this.category = "anime",
   }) : super(key: key);
+
+  bool get _isManga => category == "manga";
 
   @override
   Widget build(BuildContext context) {
@@ -36,19 +40,7 @@ class MoreInfoWidget extends StatelessWidget {
   }
 
   Widget _buildInfoSection(BuildContext context) {
-    final infoItems = [
-      InfoItem('Media Type', anime?.mediaType?.toUpperCase() ?? 'N/A'),
-      InfoItem('Episodes', _getEpisodesDisplay(anime)),
-      InfoItem('Status', anime?.status?.standardize() ?? 'N/A'),
-      InfoItem('MAL ID', anime?.id.toString() ?? 'N/A'),
-      InfoItem('Premiered', _getPremiered(anime)),
-      InfoItem('Aired', _getAiredPeriod(anime)),
-      InfoItem('Source', anime?.source?.capitalize() ?? 'N/A'),
-      InfoItem('Broadcast', _getBroadcast(anime)),
-      InfoItem('Duration', _getDuration(anime)),
-      InfoItem('Rating', anime?.rating?.toUpperCase() ?? 'N/A'),
-      InfoItem('Studios', _getStudios(anime)),
-    ];
+    final infoItems = _isManga ? _buildMangaInfoItems() : _buildAnimeInfoItems();
 
     return Card(
       elevation: 2,
@@ -83,7 +75,7 @@ class MoreInfoWidget extends StatelessWidget {
             child: Text(
               item.label,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
+                color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
               ),
             ),
           ),
@@ -148,9 +140,9 @@ class MoreInfoWidget extends StatelessWidget {
     final synonyms = anime?.alternativeTitles?.synonyms ?? [];
     final titles = [
       if (anime?.title != null) ('Original', anime!.title),
-      if (anime?.alternativeTitles?.en != null && anime!.alternativeTitles!.en.isNotEmpty) 
+      if (anime?.alternativeTitles?.en != null && anime!.alternativeTitles!.en!.isNotEmpty) 
         ('English', anime!.alternativeTitles!.en),
-      if (anime?.alternativeTitles?.ja != null && anime!.alternativeTitles!.ja.isNotEmpty) 
+      if (anime?.alternativeTitles?.ja != null && anime!.alternativeTitles!.ja!.isNotEmpty) 
         ('Japanese', anime!.alternativeTitles!.ja),
       ...synonyms.map((s) => ('Synonym', s)),
       ..._getAdditionalTitles(),
@@ -173,7 +165,7 @@ class MoreInfoWidget extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 15),
-            ...titles.map((title) => _buildTitleRow(context, title.$1, title.$2)),
+            ...titles.map((title) => _buildTitleRow(context, title.$1, title.$2 ?? '')),
           ],
         ),
       ),
@@ -191,7 +183,7 @@ class MoreInfoWidget extends StatelessWidget {
             child: Text(
               type,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
+                color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
               ),
             ),
           ),
@@ -253,10 +245,62 @@ class MoreInfoWidget extends StatelessWidget {
         ),
         backgroundColor: Theme.of(context).colorScheme.secondaryContainer,
         side: BorderSide(
-          color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
         ),
       ),
     );
+  }
+
+  List<InfoItem> _buildAnimeInfoItems() {
+    return [
+      InfoItem('Media Type', anime?.mediaType?.toUpperCase() ?? 'N/A'),
+      InfoItem('Episodes', _getEpisodesDisplay(anime)),
+      InfoItem('Status', anime?.status?.standardize() ?? 'N/A'),
+      InfoItem('MAL ID', anime?.id.toString() ?? 'N/A'),
+      InfoItem('Premiered', _getPremiered(anime)),
+      InfoItem('Aired', _getAiredPeriod(anime)),
+      InfoItem('Source', anime?.source?.capitalize() ?? 'N/A'),
+      InfoItem('Broadcast', _getBroadcast(anime)),
+      InfoItem('Duration', _getDuration(anime)),
+      InfoItem('Rating', anime?.rating?.toUpperCase() ?? 'N/A'),
+      InfoItem('Studios', _getStudios(anime)),
+    ];
+  }
+
+  List<InfoItem> _buildMangaInfoItems() {
+    return [
+      InfoItem('Media Type', anime?.mediaType?.toUpperCase() ?? 'N/A'),
+      InfoItem('Volumes', _getVolumesDisplay(anime)),
+      InfoItem('Chapters', _getChaptersDisplay(anime)),
+      InfoItem('Status', anime?.status?.standardize() ?? 'N/A'),
+      InfoItem('MAL ID', anime?.id.toString() ?? 'N/A'),
+      InfoItem('Published', _getAiredPeriod(anime)),
+      InfoItem('Serialization', _getSerialization(anime)),
+      InfoItem('Authors', _getAuthors(anime)),
+    ];
+  }
+
+  String _getVolumesDisplay(MalAnime? anime) {
+    if (anime?.numVolumes == null || anime!.numVolumes == 0) return 'Unknown';
+    return anime.numVolumes.toString();
+  }
+
+  String _getChaptersDisplay(MalAnime? anime) {
+    if (anime?.numChapters == null || anime!.numChapters == 0) return 'Unknown';
+    return anime.numChapters.toString();
+  }
+
+  String _getSerialization(MalAnime? anime) {
+    if (anime?.serialization == null || anime!.serialization!.isEmpty) return 'N/A';
+    return anime.serialization!.map((s) => s.name).join(', ');
+  }
+
+  String _getAuthors(MalAnime? anime) {
+    if (anime?.authors == null || anime!.authors!.isEmpty) return 'N/A';
+    return anime.authors!.map((a) {
+      final name = '${a.author.firstName} ${a.author.lastName}'.trim();
+      return a.role.isNotEmpty ? '$name (${a.role})' : name;
+    }).join(', ');
   }
 
   String _getEpisodesDisplay(MalAnime? anime) {
@@ -302,7 +346,6 @@ class MoreInfoWidget extends StatelessWidget {
 
     final b = anime!.broadcast!;
 
-    // Essayer d'utiliser la méthode formatée
     try {
       final formatted = MalApi.getFormattedAiringDate(b);
       if (formatted != null) return formatted;

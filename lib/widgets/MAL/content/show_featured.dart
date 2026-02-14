@@ -7,21 +7,27 @@ import 'package:mywatchlist/widgets/loading/shimmercolor.dart';
 class ShowAnimeFeatured extends StatefulWidget {
   final int animeId;
   final String animeName;
+  final String category;
 
   const ShowAnimeFeatured({
     super.key,
     required this.animeId,
     required this.animeName,
+    this.category = "anime",
   });
 
   @override
   State<ShowAnimeFeatured> createState() => _ShowAnimeFeaturedState();
 }
 
-class _ShowAnimeFeaturedState extends State<ShowAnimeFeatured> {
+class _ShowAnimeFeaturedState extends State<ShowAnimeFeatured>
+    with AutomaticKeepAliveClientMixin {
   AnimeFeaturedResult? featuredArticles;
   bool isLoading = true;
   final ScrollController _scrollController = ScrollController();
+
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
@@ -34,15 +40,17 @@ class _ShowAnimeFeaturedState extends State<ShowAnimeFeatured> {
       final response = await MalScraper().getAnimeFeaturedArticles(
         widget.animeId,
         widget.animeName,
+        category: widget.category,
       );
 
-      if (response != null) {
+      if (response != null && mounted) {
         setState(() {
           featuredArticles = AnimeFeaturedResult.fromJson(response);
           isLoading = false;
         });
       }
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         isLoading = false;
       });
@@ -52,6 +60,8 @@ class _ShowAnimeFeaturedState extends State<ShowAnimeFeatured> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
+
     if (isLoading) {
       return _buildLoadingState();
     }
@@ -167,7 +177,7 @@ class _ShowAnimeFeaturedState extends State<ShowAnimeFeatured> {
           style: TextStyle(
             fontSize: 13,
             color:
-                Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.8),
+                Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.8),
           ),
           maxLines: 6, // Augmentation du nombre de lignes de 4 à 6
           overflow: TextOverflow.ellipsis,
@@ -218,7 +228,7 @@ class _ShowAnimeFeaturedState extends State<ShowAnimeFeatured> {
                           horizontal: 8, vertical: 2),
                       decoration: BoxDecoration(
                         color: isSpoilerTag
-                            ? Colors.red.withOpacity(0.7)
+                            ? Colors.red.withValues(alpha: 0.7)
                             : Theme.of(context).colorScheme.primaryContainer,
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -310,13 +320,13 @@ class _ShowAnimeFeaturedState extends State<ShowAnimeFeatured> {
             Icon(
               Icons.article_outlined,
               size: 48,
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
             ),
             const SizedBox(height: 16),
             Text(
               'Aucun article en vedette disponible',
               style: TextStyle(
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
               ),
             ),
           ],

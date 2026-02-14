@@ -34,7 +34,7 @@ class _UserUpdatesPageState extends State<UserUpdatesPage>
   @override
   void initState() {
     super.initState();
-    updatesFuture = JikanApi.getAnimeUserUpdates(widget.id);
+    updatesFuture = JikanApi.getAnimeUserUpdates(widget.id, category: widget.category);
   }
 
   @override
