@@ -139,10 +139,10 @@ class _UserUpdatesPageState extends State<UserUpdatesPage>
   }
 
   Widget _combinedProgress(AnimeUserUpdate e) {
-    return
-        // widget.category.equals("anime")
-        //     ?
-        _progressWidget(
+    if (widget.category == "manga") {
+      return _mangaProgressWidget(e);
+    }
+    return _progressWidget(
       e.episodesSeen,
       e.episodesTotal,
       Intl.message(
@@ -151,6 +151,44 @@ class _UserUpdatesPageState extends State<UserUpdatesPage>
         desc: '',
         args: [],
       ),
+    );
+  }
+
+  Widget _mangaProgressWidget(AnimeUserUpdate e) {
+    final chRead = e.chaptersRead;
+    final chTotal = e.chaptersTotal;
+    final chProgress = (chRead == null || chTotal == null || chTotal == 0)
+        ? 0.0
+        : (chRead.toDouble() / chTotal.toDouble());
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        SizedBox(
+          height: 40,
+          width: 40,
+          child: Stack(
+            children: [
+              Center(
+                child: CircularProgressIndicator(
+                  strokeWidth: 1.5,
+                  value: chProgress,
+                ),
+              ),
+              Center(
+                child: title('${chRead ?? "-"}/${chTotal ?? "-"}', fontSize: 8),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 2),
+        title('Ch.', fontSize: 10),
+        const SizedBox(height: 1),
+        Text(
+          'Vol. ${e.volumesRead ?? "-"}/${e.volumesTotal ?? "-"}',
+          style: const TextStyle(fontSize: 9),
+          overflow: TextOverflow.ellipsis,
+        ),
+      ],
     );
   }
 
