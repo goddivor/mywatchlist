@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 
 import 'package:intl/intl.dart';
+import 'package:mywatchlist/constants/constants.dart';
 import 'package:mywatchlist/services/api/Jikan/jikan_anime_news.dart';
 import 'package:mywatchlist/services/api/Jikan/jikan_api.dart';
 import 'package:mywatchlist/widgets/common/avatar_widget.dart';
@@ -67,6 +68,10 @@ class _ShowAnimeNewsState extends State<ShowAnimeNews>
 
     if (newsFullList.isEmpty && newsList == null) {
       return _buildLoadingState();
+    }
+
+    if (newsFullList.isEmpty && newsList != null) {
+      return showNoContent();
     }
 
     return SizedBox(
