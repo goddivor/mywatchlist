@@ -81,6 +81,8 @@ class _RelatedAnimeWidgetState extends State<RelatedAnimeWidget>
   Column _horizView(MalHomePreferences preferences) {
     final nodeList = animeWidgets[animeWidgets.keys.elementAt(pageIndex)];
     final tileSize = getTileSizeValues(preferences.tileSize);
+    final double cardWidth = tileSize.containerHeight * (2 / 3);
+    final double cardHeight = tileSize.containerHeight;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -88,10 +90,10 @@ class _RelatedAnimeWidgetState extends State<RelatedAnimeWidget>
         const SizedBox(height: 20),
         ContentListWidget(
           category: widget.category,
-          height: tileSize.containerHeight,
+          height: cardHeight,
           items: nodeList ?? [],
-          tileWidth: tileSize.contentWidth,
-          tileHeight: tileSize.contentHeight,
+          tileWidth: cardWidth,
+          tileHeight: cardHeight,
         ),
       ],
     );

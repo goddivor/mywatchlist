@@ -21,15 +21,17 @@ class RecommendedAnimeWidget extends StatelessWidget {
       builder: (context, homePreferencesState) {
         final preferences = homePreferencesState.preferences;
         final tileSize = getTileSizeValues(preferences.tileSize);
+        final double cardWidth = tileSize.containerHeight * (2 / 3);
+        final double cardHeight = tileSize.containerHeight;
         return ContentListWidget(
           category: category,
           padding: EdgeInsets.symmetric(horizontal: horizPadding + 5.0),
           items: recommAnime
               .map((recommendation) => recommendation.animenode)
               .toList(),
-          height: tileSize.containerHeight,
-          tileWidth: tileSize.contentWidth,
-          tileHeight: tileSize.contentHeight,
+          height: cardHeight,
+          tileWidth: cardWidth,
+          tileHeight: cardHeight,
         );
       },
     );
