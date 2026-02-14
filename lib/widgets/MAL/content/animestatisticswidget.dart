@@ -28,21 +28,24 @@ class _AnimeStatisticsWidgetState extends State<AnimeStatisticsWidget> {
   ];
   NumberFormat statFormat = NumberFormat.compact();
 
+  double _toDouble(dynamic value) {
+    if (value is num) return value.toDouble();
+    if (value is String) return double.tryParse(value) ?? 0.0;
+    return 0.0;
+  }
+
   @override
   void initState() {
     super.initState();
 
     Future.delayed(Duration.zero).then((value) {
-      statList[0] = double.tryParse(widget.stats.status.watching)!;
-      statList[1] = double.tryParse(widget.stats.status.completed)!;
-      statList[2] = double.tryParse(widget.stats.status.onHold)!;
-      statList[3] = double.tryParse(widget.stats.status.dropped)!;
-      statList[4] = double.tryParse(widget.stats.status.planToWatch)!;
+      statList[0] = _toDouble(widget.stats.status.watching);
+      statList[1] = _toDouble(widget.stats.status.completed);
+      statList[2] = _toDouble(widget.stats.status.onHold);
+      statList[3] = _toDouble(widget.stats.status.dropped);
+      statList[4] = _toDouble(widget.stats.status.planToWatch);
 
-      double maxProp = 0.0;
-
-      maxProp = max(statList[0],
-          max(statList[1], max(statList[2], max(statList[3], statList[4]))));
+      double maxProp = statList.reduce(max);
       if (maxProp == 0) maxProp = 1;
       var multiplier = 100 / maxProp;
       for (var i = 0; i < statList.length; i++) {
