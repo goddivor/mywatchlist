@@ -15,7 +15,7 @@ class FadingEffect extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
       ..shader = LinearGradient(
-        colors: [color.withOpacity(start / 255), color.withOpacity(end / 255)],
+        colors: [color.withValues(alpha: start / 255), color.withValues(alpha: end / 255)],
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
       ).createShader(Rect.fromLTRB(0, 0, size.width, size.height));

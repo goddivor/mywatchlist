@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:mywatchlist/utils/file_service.dart';
 import 'package:mywatchlist/utils/streamutils.dart';
 import 'package:mywatchlist/widgets/common/custombutton.dart';
+import 'package:mywatchlist/widgets/loading/shimmercolor.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:photo_view/photo_view.dart';
@@ -228,13 +229,16 @@ Widget _pageIndicator(int imageIndex, List<String> urlList) {
 
 Center _imageLoader(ImageChunkEvent? event) {
   return Center(
-    child: SizedBox(
-      width: 20.0,
-      height: 20.0,
-      child: CircularProgressIndicator(
-        value: event == null
-            ? 0
-            : event.cumulativeBytesLoaded / (event.expectedTotalBytes ?? 1),
+    child: Builder(
+      builder: (context) => ShimmerColor(
+        Container(
+          width: 40,
+          height: 40,
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            shape: BoxShape.circle,
+          ),
+        ),
       ),
     ),
   );

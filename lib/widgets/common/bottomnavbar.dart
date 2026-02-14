@@ -81,7 +81,7 @@ class _BottomNavBarState extends State<BottomNavBar>
         color: Colors.transparent,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, -5),
           ),
@@ -99,7 +99,7 @@ class _BottomNavBarState extends State<BottomNavBar>
             decoration: BoxDecoration(
               color: isDark
                   ? theme.colorScheme.surface
-                  : theme.colorScheme.background,
+                  : theme.colorScheme.surface,
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(20),
                 topRight: Radius.circular(20),
@@ -127,7 +127,7 @@ class _BottomNavBarState extends State<BottomNavBar>
   Widget _buildNavItem(int index, ThemeData theme) {
     final bool isSelected = pageIndex == index;
     final Color activeColor = theme.colorScheme.primary;
-    final Color inactiveColor = theme.colorScheme.onSurface.withOpacity(0.5);
+    final Color inactiveColor = theme.colorScheme.onSurface.withValues(alpha: 0.5);
 
     return Expanded(
       child: Tooltip(

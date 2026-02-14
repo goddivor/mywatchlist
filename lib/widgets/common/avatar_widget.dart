@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:mywatchlist/widgets/loading/shimmercolor.dart';
 import 'package:mywatchlist/cache/cachemanager.dart';
 import 'package:mywatchlist/widgets/common/image_preview.dart';
 
@@ -57,7 +58,7 @@ class AvatarWidget extends StatelessWidget {
           ),
           boxShadow: [
             BoxShadow(
-              color: effectiveBorderColor.withOpacity(0.4),
+              color: effectiveBorderColor.withValues(alpha: 0.4),
               blurRadius: 8,
               spreadRadius: 1,
             ),
@@ -105,22 +106,12 @@ class AvatarWidget extends StatelessWidget {
   }
 
   Widget _buildShimmerLoader(BuildContext context, BorderRadius? radius) {
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius:
-            userRoundBorderforLoading! ? BorderRadius.circular(32) : radius,
-        color: Theme.of(context).colorScheme.surfaceVariant,
-      ),
-      child: Center(
-        child: SizedBox(
-          width: (height ?? 35) * 0.5,
-          height: (width ?? 35) * 0.5,
-          child: CircularProgressIndicator(
-            strokeWidth: 2,
-            valueColor: AlwaysStoppedAnimation<Color>(
-              Theme.of(context).colorScheme.primary,
-            ),
-          ),
+    return ShimmerColor(
+      Container(
+        decoration: BoxDecoration(
+          borderRadius:
+              userRoundBorderforLoading! ? BorderRadius.circular(32) : radius,
+          color: Colors.white,
         ),
       ),
     );
@@ -163,22 +154,12 @@ Widget cachedImage(
 
 Widget _shimmerLoader(BuildContext context, BorderRadius? radius,
     bool userRoundBorderforLoading) {
-  return Container(
-    decoration: BoxDecoration(
-      borderRadius:
-          userRoundBorderforLoading ? BorderRadius.circular(32) : radius,
-      color: Theme.of(context).colorScheme.surfaceVariant,
-    ),
-    child: Center(
-      child: SizedBox(
-        width: 20,
-        height: 20,
-        child: CircularProgressIndicator(
-          strokeWidth: 2,
-          valueColor: AlwaysStoppedAnimation<Color>(
-            Theme.of(context).colorScheme.primary,
-          ),
-        ),
+  return ShimmerColor(
+    Container(
+      decoration: BoxDecoration(
+        borderRadius:
+            userRoundBorderforLoading ? BorderRadius.circular(32) : radius,
+        color: Colors.white,
       ),
     ),
   );

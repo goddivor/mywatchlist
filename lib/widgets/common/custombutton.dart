@@ -37,7 +37,7 @@ class PlainButton extends StatelessWidget {
         ),
         backgroundColor: MaterialStateProperty.all(
           (onPressed == null && buttonColor != null)
-              ? buttonColor?.withOpacity(.5)
+              ? buttonColor?.withValues(alpha: .5)
               : buttonColor,
         ),
         overlayColor: MaterialStateProperty.all(overlayColor),

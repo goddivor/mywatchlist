@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mywatchlist/widgets/loading/shimmercolor.dart';
 
 class KitsuLoginDialog extends StatefulWidget {
   final void Function(String username, String password) onLogin;
@@ -80,11 +81,11 @@ class _KitsuLoginDialogState extends State<KitsuLoginDialog>
           decoration: BoxDecoration(
             color: isDark
                 ? theme.colorScheme.surface
-                : theme.colorScheme.background,
+                : theme.colorScheme.surface,
             borderRadius: BorderRadius.circular(24),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.2),
+                color: Colors.black.withValues(alpha: 0.2),
                 blurRadius: 20,
                 offset: const Offset(0, 10),
               ),
@@ -124,7 +125,7 @@ class _KitsuLoginDialogState extends State<KitsuLoginDialog>
                         'Enter your credentials',
                         style: TextStyle(
                           fontSize: 14,
-                          color: theme.colorScheme.onSurface.withOpacity(0.7),
+                          color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
                         ),
                       ),
                     ],
@@ -158,7 +159,7 @@ class _KitsuLoginDialogState extends State<KitsuLoginDialog>
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                           borderSide: BorderSide(
-                            color: theme.colorScheme.outline.withOpacity(0.5),
+                            color: theme.colorScheme.outline.withValues(alpha: 0.5),
                           ),
                         ),
                         focusedBorder: OutlineInputBorder(
@@ -212,7 +213,7 @@ class _KitsuLoginDialogState extends State<KitsuLoginDialog>
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                           borderSide: BorderSide(
-                            color: theme.colorScheme.outline.withOpacity(0.5),
+                            color: theme.colorScheme.outline.withValues(alpha: 0.5),
                           ),
                         ),
                         focusedBorder: OutlineInputBorder(
@@ -285,7 +286,7 @@ class _KitsuLoginDialogState extends State<KitsuLoginDialog>
                                 fontWeight: FontWeight.w500,
                                 color: _isLoading
                                     ? theme.colorScheme.onSurface
-                                        .withOpacity(0.38)
+                                        .withValues(alpha: 0.38)
                                     : theme.colorScheme.primary,
                               ),
                             ),
@@ -308,12 +309,14 @@ class _KitsuLoginDialogState extends State<KitsuLoginDialog>
                               ),
                             ),
                             child: _isLoading
-                                ? SizedBox(
-                                    height: 20,
-                                    width: 20,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      color: theme.colorScheme.onPrimary,
+                                ? ShimmerColor(
+                                    Container(
+                                      height: 20,
+                                      width: 60,
+                                      decoration: BoxDecoration(
+                                        color: Colors.white,
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
                                     ),
                                   )
                                 : const Text(

@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:mywatchlist/constants/constants.dart';
+import 'package:mywatchlist/widgets/loading/shimmercolor.dart';
 import 'package:mywatchlist/user/accounts/models/account.dart';
 
 class AccountModal extends StatefulWidget {
@@ -96,11 +97,11 @@ class _AccountModalState extends State<AccountModal>
           decoration: BoxDecoration(
             color: isDark
                 ? theme.colorScheme.surface
-                : theme.colorScheme.background,
+                : theme.colorScheme.surface,
             borderRadius: BorderRadius.circular(24),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.2),
+                color: Colors.black.withValues(alpha: 0.2),
                 blurRadius: 20,
                 offset: const Offset(0, 10),
               ),
@@ -118,7 +119,7 @@ class _AccountModalState extends State<AccountModal>
                     end: Alignment.bottomRight,
                     colors: [
                       _getAccountColor(_selectedAccountType),
-                      _getAccountColor(_selectedAccountType).withOpacity(0.7),
+                      _getAccountColor(_selectedAccountType).withValues(alpha: 0.7),
                     ],
                   ),
                   borderRadius: const BorderRadius.only(
@@ -143,7 +144,7 @@ class _AccountModalState extends State<AccountModal>
                           ),
                         ),
                         Material(
-                          color: Colors.white.withOpacity(0.2),
+                          color: Colors.white.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(20),
                           child: InkWell(
                             onTap: () => Navigator.pop(context),
@@ -180,7 +181,7 @@ class _AccountModalState extends State<AccountModal>
                               ),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0.2),
+                                  color: Colors.black.withValues(alpha: 0.2),
                                   blurRadius: 10,
                                   spreadRadius: 2,
                                 ),
@@ -196,19 +197,9 @@ class _AccountModalState extends State<AccountModal>
                                               _selectedAccountType)
                                           .imageUrl,
                                       fit: BoxFit.cover,
-                                      placeholder: (context, url) => Container(
-                                        color: Colors.grey[300],
-                                        child: const Center(
-                                          child: SizedBox(
-                                            width: 20,
-                                            height: 20,
-                                            child: CircularProgressIndicator(
-                                              strokeWidth: 2,
-                                              valueColor:
-                                                  AlwaysStoppedAnimation<Color>(
-                                                      Colors.white),
-                                            ),
-                                          ),
+                                      placeholder: (context, url) => ShimmerColor(
+                                        Container(
+                                          color: Colors.white,
                                         ),
                                       ),
                                       errorWidget: (context, url, error) =>
@@ -269,7 +260,7 @@ class _AccountModalState extends State<AccountModal>
                                             .last
                                         : 'Select an account',
                                     style: TextStyle(
-                                      color: Colors.white.withOpacity(0.8),
+                                      color: Colors.white.withValues(alpha: 0.8),
                                       fontSize: 14,
                                     ),
                                   ),
@@ -295,7 +286,7 @@ class _AccountModalState extends State<AccountModal>
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
-                        color: theme.colorScheme.onBackground,
+                        color: theme.colorScheme.onSurface,
                       ),
                     ),
 
@@ -314,8 +305,8 @@ class _AccountModalState extends State<AccountModal>
                                       account.typeAcc != _selectedAccountType)
                                   .length,
                               separatorBuilder: (context, index) => Divider(
-                                color: theme.colorScheme.onBackground
-                                    .withOpacity(0.1),
+                                color: theme.colorScheme.onSurface
+                                    .withValues(alpha: 0.1),
                                 height: 1,
                               ),
                               itemBuilder: (context, index) {
@@ -332,8 +323,8 @@ class _AccountModalState extends State<AccountModal>
                                 child: Text(
                                   'No other connected accounts',
                                   style: TextStyle(
-                                    color: theme.colorScheme.onBackground
-                                        .withOpacity(0.6),
+                                    color: theme.colorScheme.onSurface
+                                        .withValues(alpha: 0.6),
                                     fontSize: 14,
                                   ),
                                 ),
@@ -347,7 +338,7 @@ class _AccountModalState extends State<AccountModal>
                     Container(
                       decoration: BoxDecoration(
                         color:
-                            theme.colorScheme.surfaceVariant.withOpacity(0.3),
+                            theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Column(
@@ -358,7 +349,7 @@ class _AccountModalState extends State<AccountModal>
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
                                 color:
-                                    theme.colorScheme.primary.withOpacity(0.1),
+                                    theme.colorScheme.primary.withValues(alpha: 0.1),
                                 shape: BoxShape.circle,
                               ),
                               child: Icon(
@@ -370,22 +361,22 @@ class _AccountModalState extends State<AccountModal>
                             title: Text(
                               'Manage accounts',
                               style: TextStyle(
-                                color: theme.colorScheme.onBackground,
+                                color: theme.colorScheme.onSurface,
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
                             subtitle: Text(
                               'Add or remove connected services',
                               style: TextStyle(
-                                color: theme.colorScheme.onBackground
-                                    .withOpacity(0.6),
+                                color: theme.colorScheme.onSurface
+                                    .withValues(alpha: 0.6),
                                 fontSize: 12,
                               ),
                             ),
                             trailing: Icon(
                               Icons.arrow_forward_ios,
-                              color: theme.colorScheme.onBackground
-                                  .withOpacity(0.3),
+                              color: theme.colorScheme.onSurface
+                                  .withValues(alpha: 0.3),
                               size: 16,
                             ),
                             onTap: () {
@@ -397,7 +388,7 @@ class _AccountModalState extends State<AccountModal>
 
                           Divider(
                             color:
-                                theme.colorScheme.onBackground.withOpacity(0.1),
+                                theme.colorScheme.onSurface.withValues(alpha: 0.1),
                             height: 1,
                           ),
 
@@ -407,7 +398,7 @@ class _AccountModalState extends State<AccountModal>
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
                                 color: theme.colorScheme.secondary
-                                    .withOpacity(0.1),
+                                    .withValues(alpha: 0.1),
                                 shape: BoxShape.circle,
                               ),
                               child: Icon(
@@ -419,14 +410,14 @@ class _AccountModalState extends State<AccountModal>
                             title: Text(
                               'Connect new account',
                               style: TextStyle(
-                                color: theme.colorScheme.onBackground,
+                                color: theme.colorScheme.onSurface,
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
                             trailing: Icon(
                               Icons.arrow_forward_ios,
-                              color: theme.colorScheme.onBackground
-                                  .withOpacity(0.3),
+                              color: theme.colorScheme.onSurface
+                                  .withValues(alpha: 0.3),
                               size: 16,
                             ),
                             onTap: () {
@@ -484,7 +475,7 @@ class _AccountModalState extends State<AccountModal>
                       imageUrl: account.imageUrl,
                       fit: BoxFit.cover,
                       placeholder: (context, url) => Container(
-                        color: theme.colorScheme.surfaceVariant,
+                        color: theme.colorScheme.surfaceContainerHighest,
                       ),
                       errorWidget: (context, url, error) => Image.asset(
                         'assets/images/user_dal_old.png',
@@ -506,7 +497,7 @@ class _AccountModalState extends State<AccountModal>
                         color: theme.cardColor,
                         shape: BoxShape.circle,
                         border: Border.all(
-                          color: theme.colorScheme.background,
+                          color: theme.colorScheme.surface,
                           width: 2,
                         ),
                       ),
@@ -534,7 +525,7 @@ class _AccountModalState extends State<AccountModal>
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w500,
-                      color: theme.colorScheme.onBackground,
+                      color: theme.colorScheme.onSurface,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -544,7 +535,7 @@ class _AccountModalState extends State<AccountModal>
                     account.typeAcc.toString().split('.').last,
                     style: TextStyle(
                       fontSize: 12,
-                      color: theme.colorScheme.onBackground.withOpacity(0.6),
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                     ),
                   ),
                 ],
@@ -558,10 +549,10 @@ class _AccountModalState extends State<AccountModal>
                 vertical: 6,
               ),
               decoration: BoxDecoration(
-                color: accountColor.withOpacity(0.1),
+                color: accountColor.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: accountColor.withOpacity(0.3),
+                  color: accountColor.withValues(alpha: 0.3),
                   width: 1,
                 ),
               ),

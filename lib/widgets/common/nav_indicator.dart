@@ -29,7 +29,7 @@ class NavIndicator extends StatelessWidget {
         boxShadow: isActive
             ? [
                 BoxShadow(
-                  color: color.withOpacity(0.3),
+                  color: color.withValues(alpha: 0.3),
                   blurRadius: 4,
                   offset: const Offset(0, 1),
                 ),
@@ -64,13 +64,13 @@ class NavItemContainer extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(borderRadius),
-      splashColor: activeColor.withOpacity(0.1),
-      highlightColor: activeColor.withOpacity(0.05),
+      splashColor: activeColor.withValues(alpha: 0.1),
+      highlightColor: activeColor.withValues(alpha: 0.05),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         decoration: BoxDecoration(
           color: isSelected
-              ? activeColor.withOpacity(0.1)
+              ? activeColor.withValues(alpha: 0.1)
               : Colors.transparent,
           borderRadius: BorderRadius.circular(borderRadius),
         ),
