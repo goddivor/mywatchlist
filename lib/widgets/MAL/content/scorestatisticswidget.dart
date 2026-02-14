@@ -181,7 +181,6 @@ class _ScoreStatisticsWidgetState extends State<ScoreStatisticsWidget>
 
   @override
   void dispose() {
-    animestatsFuture?.cancel();
     super.dispose();
   }
 

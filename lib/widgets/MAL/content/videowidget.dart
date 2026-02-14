@@ -12,6 +12,39 @@ class VideoTile {
   final String? url;
   final String? imageUrl;
   VideoTile(this.title, this.url, this.imageUrl);
+
+  /// Extract YouTube video ID from an embed URL and build a proper VideoTile
+  /// with thumbnail and watch URL when the API returns nulls.
+  static VideoTile fromTrailer(String? title, Trailer? trailer) {
+    String? url = trailer?.url;
+    String? imageUrl = trailer?.images?.largeImageUrl ??
+        trailer?.images?.maximumImageUrl ??
+        trailer?.images?.mediumImageUrl ??
+        trailer?.images?.imageUrl;
+
+    // Fallback: extract video ID from embed_url
+    if ((url == null || imageUrl == null) && trailer?.embedUrl != null) {
+      final videoId = _extractYoutubeId(trailer!.embedUrl!);
+      if (videoId != null) {
+        url ??= 'https://www.youtube.com/watch?v=$videoId';
+        imageUrl ??= 'https://img.youtube.com/vi/$videoId/hqdefault.jpg';
+      }
+    }
+
+    // Fallback: build thumbnail from youtube_id
+    if ((url == null || imageUrl == null) && trailer?.youtubeId != null) {
+      url ??= 'https://www.youtube.com/watch?v=${trailer!.youtubeId}';
+      imageUrl ??= 'https://img.youtube.com/vi/${trailer!.youtubeId}/hqdefault.jpg';
+    }
+
+    return VideoTile(title, url, imageUrl);
+  }
+
+  static String? _extractYoutubeId(String embedUrl) {
+    final regex = RegExp(r'/embed/([a-zA-Z0-9_-]+)');
+    final match = regex.firstMatch(embedUrl);
+    return match?.group(1);
+  }
 }
 
 class VideosWidget extends StatefulWidget {
@@ -81,22 +114,14 @@ class _VideosWidgetState extends State<VideosWidget> {
 
   Widget get promoWidget {
     return videoTiles(widget.videos!.promo
-            ?.map((e) => VideoTile(
-                  e.title,
-                  e.trailer?.url,
-                  e.trailer?.images?.largeImageUrl,
-                ))
+            ?.map((e) => VideoTile.fromTrailer(e.title, e.trailer))
             .toList() ??
         []);
   }
 
   Widget get musicVidoeWidget {
     return videoTiles(widget.videos?.musicVideos
-            ?.map((e) => VideoTile(
-                  e.title,
-                  e.video?.url,
-                  e.video?.images?.largeImageUrl,
-                ))
+            ?.map((e) => VideoTile.fromTrailer(e.title, e.video))
             .toList() ??
         []);
   }
@@ -119,55 +144,65 @@ class _VideosWidgetState extends State<VideosWidget> {
         itemCount: tiles.length,
         padding: EdgeInsets.symmetric(horizontal: widget.horizPadding + 10),
         scrollDirection: Axis.horizontal,
-        itemBuilder: (_, i) => Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 7),
-          child: Container(
-            width: 200,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  height: 140,
-                  child: Material(
-                    color: Colors.transparent,
-                    borderRadius: borderRadius,
-                    child: Ink(
-                      decoration: BoxDecoration(
-                        borderRadius: borderRadius,
-                        image: DecorationImage(
-                          image: CachedNetworkImageProvider(
-                              tiles[i].imageUrl ?? ''),
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                      child: InkWell(
-                        borderRadius: borderRadius,
-                        child: Stack(
-                          children: [
-                            Align(
-                              alignment: Alignment.bottomLeft,
-                              child: _videoIconWidget(borderRadius, useYTIcon),
-                            ),
-                            if (tiles[i].url != null) _copyButton(tiles, i),
-                          ],
-                        ),
-                        onTap: tiles[i].url == null
-                            ? () {}
-                            : () {
-                                showYouTubeVideo(
-                                    url: tiles[i].url!, context: context);
-                              },
-                      ),
+        itemBuilder: (_, i) {
+          final hasImage = tiles[i].imageUrl != null && tiles[i].imageUrl!.isNotEmpty;
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 7),
+            child: Container(
+              width: 200,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    height: 140,
+                    child: Material(
+                      color: hasImage
+                          ? Colors.transparent
+                          : Theme.of(context).colorScheme.surfaceContainerHighest,
+                      borderRadius: borderRadius,
+                      child: hasImage
+                          ? Ink(
+                              decoration: BoxDecoration(
+                                borderRadius: borderRadius,
+                                image: DecorationImage(
+                                  image: CachedNetworkImageProvider(
+                                      tiles[i].imageUrl!),
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
+                              child: _videoInkWell(tiles, i, borderRadius, useYTIcon),
+                            )
+                          : _videoInkWell(tiles, i, borderRadius, useYTIcon),
                     ),
                   ),
-                ),
-                const SizedBox(height: 10),
-                title(tiles[i].title, textOverflow: TextOverflow.ellipsis),
-              ],
+                  const SizedBox(height: 10),
+                  title(tiles[i].title, textOverflow: TextOverflow.ellipsis),
+                ],
+              ),
             ),
-          ),
-        ),
+          );
+        },
       ),
+    );
+  }
+
+  Widget _videoInkWell(List<VideoTile> tiles, int i, BorderRadius borderRadius, bool useYTIcon) {
+    return InkWell(
+      borderRadius: borderRadius,
+      child: Stack(
+        children: [
+          Align(
+            alignment: Alignment.bottomLeft,
+            child: _videoIconWidget(borderRadius, useYTIcon),
+          ),
+          if (tiles[i].url != null) _copyButton(tiles, i),
+        ],
+      ),
+      onTap: tiles[i].url == null
+          ? () {}
+          : () {
+              showYouTubeVideo(url: tiles[i].url!, context: context);
+            },
     );
   }
 

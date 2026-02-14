@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:mywatchlist/services/api/MAL/scrapper/anime_featured.dart';
 import 'package:mywatchlist/services/api/MAL/scrapper/mal_scrapper.dart';
 import 'package:mywatchlist/widgets/common/avatar_widget.dart';
@@ -71,96 +72,80 @@ class _ShowAnimeFeaturedState extends State<ShowAnimeFeatured>
       return _buildEmptyState();
     }
 
-    return Padding(
-      padding: const EdgeInsets.only(left: 15.0),
-      child: SizedBox(
-        height: 270,
-        child: ListView.builder(
-          controller: _scrollController,
-          scrollDirection: Axis.horizontal,
-          itemCount: featuredArticles!.featuredArticles.length,
-          itemBuilder: (context, index) {
-            final article = featuredArticles!.featuredArticles[index];
-            return SizedBox(
-              width: 300,
-              child: Card(
-                margin: const EdgeInsets.only(right: 12.0),
-                child: InkWell(
-                  onTap: () async {
-                    if (article.url.isNotEmpty) {
-                      // final Uri url = Uri.parse(article.url);
-                      // if (await canLaunchUrl(url)) {
-                      //   await launchUrl(url);
-                      // }
-                    }
-                  },
-                  borderRadius: BorderRadius.circular(12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _imageWidget(article),
-                      _titleWidget(article),
-                      _summaryWidget(article),
-                      _authorAndTagsWidget(article),
-                    ],
-                  ),
+    return SizedBox(
+      height: 280,
+      child: ListView.builder(
+        controller: _scrollController,
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        itemCount: featuredArticles!.featuredArticles.length,
+        itemBuilder: (context, index) {
+          final article = featuredArticles!.featuredArticles[index];
+          final theme = Theme.of(context);
+          return SizedBox(
+            width: 300,
+            child: Card(
+              margin: const EdgeInsets.only(right: 10, bottom: 4, top: 4),
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+                side: BorderSide(
+                  color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
                 ),
               ),
-            );
-          },
-        ),
+              clipBehavior: Clip.antiAlias,
+              child: InkWell(
+                onTap: () async {
+                  if (article.url.isNotEmpty) {}
+                },
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _imageWidget(article),
+                    _titleWidget(article, theme),
+                    _summaryWidget(article, theme),
+                    _authorAndTagsWidget(article, theme),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
       ),
     );
   }
 
   Widget _imageWidget(AnimeFeatured article) {
+    if (article.imageUrl.isNotEmpty) {
+      return AvatarWidget(
+        height: 110,
+        width: double.infinity,
+        url: article.imageUrl,
+        radius: BorderRadius.zero,
+        userRoundBorderforLoading: false,
+      );
+    }
     return Container(
-      height: 100,
-      width: double.infinity,
-      decoration: BoxDecoration(
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(12),
-          topRight: Radius.circular(12),
+      height: 110,
+      color: Theme.of(context).colorScheme.primaryContainer,
+      child: Center(
+        child: Icon(
+          Icons.article_outlined,
+          size: 40,
+          color: Theme.of(context).colorScheme.onPrimaryContainer,
         ),
-      ),
-      child: ClipRRect(
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(12),
-          topRight: Radius.circular(12),
-        ),
-        child: article.imageUrl.isNotEmpty
-            ? AvatarWidget(
-                height: 100,
-                width: double.infinity,
-                url: article.imageUrl,
-                radius: const BorderRadius.only(
-                  topLeft: Radius.circular(12),
-                  topRight: Radius.circular(12),
-                ),
-                userRoundBorderforLoading: false,
-              )
-            : Container(
-                color: Theme.of(context).colorScheme.primaryContainer,
-                child: Center(
-                  child: Icon(
-                    Icons.article_outlined,
-                    size: 40,
-                    color: Theme.of(context).colorScheme.onPrimaryContainer,
-                  ),
-                ),
-              ),
       ),
     );
   }
 
-  Widget _titleWidget(AnimeFeatured article) {
+  Widget _titleWidget(AnimeFeatured article, ThemeData theme) {
     return Padding(
-      padding: const EdgeInsets.all(8.0),
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 0),
       child: Text(
         article.title,
-        style: const TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.bold,
+        style: theme.textTheme.titleSmall?.copyWith(
+          fontWeight: FontWeight.w600,
+          height: 1.3,
         ),
         maxLines: 2,
         overflow: TextOverflow.ellipsis,
@@ -168,85 +153,77 @@ class _ShowAnimeFeaturedState extends State<ShowAnimeFeatured>
     );
   }
 
-  Widget _summaryWidget(AnimeFeatured article) {
+  Widget _summaryWidget(AnimeFeatured article, ThemeData theme) {
     return Expanded(
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8.0),
+        padding: const EdgeInsets.fromLTRB(12, 6, 12, 0),
         child: Text(
           article.text,
-          style: TextStyle(
-            fontSize: 13,
-            color:
-                Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.8),
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+            height: 1.4,
           ),
-          maxLines: 6, // Augmentation du nombre de lignes de 4 à 6
-          overflow: TextOverflow.ellipsis,
+          overflow: TextOverflow.fade,
         ),
       ),
     );
   }
 
-  Widget _authorAndTagsWidget(AnimeFeatured article) {
+  Widget _authorAndTagsWidget(AnimeFeatured article, ThemeData theme) {
+    final viewsFormatted = NumberFormat.compact().format(article.views);
+    final mutedColor = theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6);
     return Padding(
-      padding: const EdgeInsets.all(8.0),
+      padding: const EdgeInsets.fromLTRB(12, 6, 12, 10),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Icon(Icons.person, size: 16),
-              const SizedBox(width: 4),
-              Text(
-                article.author,
-                style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
+              Expanded(
+                child: Text(
+                  article.author,
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: theme.colorScheme.primary,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
-              const Spacer(),
-              const Icon(Icons.visibility, size: 16),
+              Icon(Icons.visibility_outlined, size: 13, color: mutedColor),
               const SizedBox(width: 4),
               Text(
-                article.views.toString(),
-                style: const TextStyle(fontSize: 12),
+                viewsFormatted,
+                style: theme.textTheme.labelSmall?.copyWith(color: mutedColor),
               ),
             ],
           ),
           if (article.tags.isNotEmpty) ...[
-            const SizedBox(height: 4),
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: article.tags.map((tag) {
-                  // Special handling for "Spoiler" tag
-                  final bool isSpoilerTag = tag.toLowerCase() == 'spoiler';
-
-                  return Padding(
-                    padding: const EdgeInsets.only(right: 4),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: isSpoilerTag
-                            ? Colors.red.withValues(alpha: 0.7)
-                            : Theme.of(context).colorScheme.primaryContainer,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        tag,
-                        style: TextStyle(
-                          fontSize: 10,
-                          color: isSpoilerTag
-                              ? Colors.white
-                              : Theme.of(context)
-                                  .colorScheme
-                                  .onPrimaryContainer,
-                        ),
-                      ),
+            const SizedBox(height: 6),
+            Wrap(
+              spacing: 4,
+              runSpacing: 4,
+              children: article.tags.take(3).map((tag) {
+                final bool isSpoiler = tag.toLowerCase() == 'spoiler';
+                return Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: isSpoiler
+                        ? Colors.red.withValues(alpha: 0.15)
+                        : theme.colorScheme.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Text(
+                    tag,
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w500,
+                      color: isSpoiler
+                          ? Colors.red
+                          : theme.colorScheme.onSurfaceVariant,
                     ),
-                  );
-                }).toList(),
-              ),
+                  ),
+                );
+              }).toList(),
             ),
           ],
         ],
@@ -254,57 +231,89 @@ class _ShowAnimeFeaturedState extends State<ShowAnimeFeatured>
     );
   }
 
-  // Loading state widget
   Widget _buildLoadingState() {
-    return Padding(
-      padding: const EdgeInsets.only(left: 15.0),
-      child: SizedBox(
-        height: 270,
-        child: ListView.builder(
-          scrollDirection: Axis.horizontal,
-          itemCount: 3, // Show 3 placeholder cards
-          itemBuilder: (context, index) {
-            return SizedBox(
-              width: 300,
-              child: Card(
-                margin: const EdgeInsets.only(right: 12.0),
-                child: ShimmerColor(
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Container(
-                        height: 100,
-                        color: Colors.white,
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Container(
-                          height: 20,
+    return SizedBox(
+      height: 280,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        itemCount: 3,
+        itemBuilder: (context, index) {
+          return SizedBox(
+            width: 300,
+            child: Card(
+              margin: const EdgeInsets.only(right: 10, bottom: 4, top: 4),
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: ShimmerColor(
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(height: 110, color: Colors.white),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(12, 10, 12, 0),
+                      child: Container(
+                        height: 16,
+                        width: double.infinity,
+                        decoration: BoxDecoration(
                           color: Colors.white,
+                          borderRadius: BorderRadius.circular(4),
                         ),
                       ),
-                      Expanded(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                          child: Container(
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(12, 6, 12, 0),
+                      child: Container(
+                        height: 16,
+                        width: 180,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+                        child: Container(
+                          decoration: BoxDecoration(
                             color: Colors.white,
+                            borderRadius: BorderRadius.circular(4),
                           ),
                         ),
                       ),
-                      Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Container(
-                          height: 30,
-                          color: Colors.white,
-                        ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(12, 6, 12, 10),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Container(
+                            height: 12, width: 70,
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                          ),
+                          Container(
+                            height: 12, width: 40,
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
-            );
-          },
-        ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -324,7 +333,7 @@ class _ShowAnimeFeaturedState extends State<ShowAnimeFeatured>
             ),
             const SizedBox(height: 16),
             Text(
-              'Aucun article en vedette disponible',
+              'No featured articles available',
               style: TextStyle(
                 color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
               ),
