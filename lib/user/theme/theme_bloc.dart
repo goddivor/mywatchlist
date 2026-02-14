@@ -12,7 +12,9 @@ class ThemeBloc extends Bloc<ThemeEvent, ThemeState> {
   static const String _keyFontFamily = 'font_family';
   static const String _keyThemeModeName = 'theme_mode_name';
   static const String _keyBgImagePath = 'bg_image_path';
+  static const String _keyCustomBgImagePath = 'custom_bg_image_path';
   static const String _keyShowBg = 'show_bg';
+  static const String _keyBgMigrated = 'bg_migrated_v1';
 
   ThemeBloc({required this.prefs}) : super(ThemeState.initial()) {
     on<ThemeLoadStarted>(_onThemeLoadStarted);
@@ -27,7 +29,13 @@ class ThemeBloc extends Bloc<ThemeEvent, ThemeState> {
     final String? fontFamily = prefs.getString(_keyFontFamily);
     final String? themeModeName = prefs.getString(_keyThemeModeName);
     final String? bgImagePath = prefs.getString(_keyBgImagePath);
-    final bool showBg = prefs.getBool(_keyShowBg) ?? false;
+    final String? customBgImagePath = prefs.getString(_keyCustomBgImagePath);
+    // Migrate: old show_bg=false was never functional, reset to true once
+    if (!prefs.containsKey(_keyBgMigrated)) {
+      prefs.setBool(_keyShowBg, true);
+      prefs.setBool(_keyBgMigrated, true);
+    }
+    final bool showBg = prefs.getBool(_keyShowBg) ?? true;
 
     emit(ThemeState.fromPreferences(
       seedColor: seedColorValue != null
@@ -36,6 +44,7 @@ class ThemeBloc extends Bloc<ThemeEvent, ThemeState> {
       fontFamily: fontFamily ?? AppThemes.defaultFontFamily,
       themeModeName: themeModeName ?? 'auto',
       backgroundImagePath: bgImagePath,
+      customBgImagePath: customBgImagePath,
       showBackground: showBg,
     ));
   }
@@ -49,6 +58,7 @@ class ThemeBloc extends Bloc<ThemeEvent, ThemeState> {
       fontFamily: state.fontFamily,
       themeModeName: state.themeModeName,
       backgroundImagePath: state.backgroundImagePath,
+      customBgImagePath: state.customBgImagePath,
       showBackground: state.showBackground,
     ));
   }
@@ -62,6 +72,7 @@ class ThemeBloc extends Bloc<ThemeEvent, ThemeState> {
       fontFamily: state.fontFamily,
       themeModeName: event.themeModeName,
       backgroundImagePath: state.backgroundImagePath,
+      customBgImagePath: state.customBgImagePath,
       showBackground: state.showBackground,
     ));
   }
@@ -74,6 +85,7 @@ class ThemeBloc extends Bloc<ThemeEvent, ThemeState> {
       fontFamily: event.fontFamily,
       themeModeName: state.themeModeName,
       backgroundImagePath: state.backgroundImagePath,
+      customBgImagePath: state.customBgImagePath,
       showBackground: state.showBackground,
     ));
   }
@@ -87,11 +99,22 @@ class ThemeBloc extends Bloc<ThemeEvent, ThemeState> {
     }
     prefs.setBool(_keyShowBg, event.showBackground);
 
+    // Handle custom image path separately
+    String? customPath = state.customBgImagePath;
+    if (event.customBgImagePath != null) {
+      customPath = event.customBgImagePath;
+      prefs.setString(_keyCustomBgImagePath, customPath!);
+    } else if (event.clearCustomImage == true) {
+      customPath = null;
+      prefs.remove(_keyCustomBgImagePath);
+    }
+
     emit(ThemeState.fromPreferences(
       seedColor: state.seedColor,
       fontFamily: state.fontFamily,
       themeModeName: state.themeModeName,
       backgroundImagePath: event.backgroundImagePath,
+      customBgImagePath: customPath,
       showBackground: event.showBackground,
     ));
   }

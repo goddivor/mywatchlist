@@ -3,6 +3,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mywatchlist/constants/constants.dart';
+import 'package:mywatchlist/user/theme/theme_bloc.dart';
+import 'package:mywatchlist/user/theme/theme_state.dart';
 import 'package:mywatchlist/widgets/loading/shimmercolor.dart';
 import 'package:mywatchlist/pages/Anilist/anilist_explore_page.dart';
 import 'package:mywatchlist/pages/Anilist/anilist_forum_page.dart';
@@ -101,41 +103,51 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             homeWidgets = _getHomeWidgets(currentAccountType);
           }
 
-          return Scaffold(
-            key: _scaffoldKey,
-            backgroundColor: theme.scaffoldBackgroundColor,
-            bottomNavigationBar: BottomNavBar(
-              startIndex: pageIndex,
-              onChanged: (value) {
-                _animationController.reset();
-                _animationController.forward();
-                setState(() {
-                  pageIndex = value;
-                });
-              },
-            ),
-            body: PopScope(
-              canPop: true,
-              child: Stack(
-                children: [
-                  AnimatedOpacity(
-                    opacity: backImagePages.contains(pageIndex) ? 1 : 0,
-                    duration: const Duration(milliseconds: 300),
-                    child: Background(
-                      context: context,
-                      height: size.height / 2,
-                      showLocalFile: false,
-                      isNetworkImage: false,
-                      url: _getBackgroundImageForTheme(theme),
-                    ),
+          return BlocBuilder<ThemeBloc, ThemeState>(
+            builder: (context, themeState) {
+              final showBg = themeState.showBackground &&
+                  backImagePages.contains(pageIndex);
+              final bgPath = themeState.backgroundImagePath;
+              final isLocalFile = bgPath != null && bgPath.startsWith('/');
+
+              return Scaffold(
+                key: _scaffoldKey,
+                backgroundColor: theme.scaffoldBackgroundColor,
+                bottomNavigationBar: BottomNavBar(
+                  startIndex: pageIndex,
+                  onChanged: (value) {
+                    _animationController.reset();
+                    _animationController.forward();
+                    setState(() {
+                      pageIndex = value;
+                    });
+                  },
+                ),
+                body: PopScope(
+                  canPop: true,
+                  child: Stack(
+                    children: [
+                      AnimatedOpacity(
+                        opacity: showBg ? 1 : 0,
+                        duration: const Duration(milliseconds: 300),
+                        child: Background(
+                          context: context,
+                          height: size.height / 2,
+                          showLocalFile: isLocalFile,
+                          isNetworkImage: false,
+                          url: bgPath ??
+                              _getBackgroundImageForTheme(theme),
+                        ),
+                      ),
+                      IndexedStack(
+                        index: pageIndex,
+                        children: homeWidgets.values.toList(),
+                      ),
+                    ],
                   ),
-                  IndexedStack(
-                    index: pageIndex,
-                    children: homeWidgets.values.toList(),
-                  ),
-                ],
-              ),
-            ),
+                ),
+              );
+            },
           );
         }
 

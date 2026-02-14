@@ -166,7 +166,7 @@ class _MalHomePageState extends State<MalHomePage> {
           opacity: hasOpened ? 1 : 0,
           duration: const Duration(milliseconds: 500),
           child: Scaffold(
-            backgroundColor: theme.scaffoldBackgroundColor,
+            backgroundColor: Colors.transparent,
             body: NestedScrollView(
               controller: scrollController,
               headerSliverBuilder: (_, __) => [

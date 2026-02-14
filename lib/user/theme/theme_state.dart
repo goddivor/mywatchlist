@@ -7,6 +7,7 @@ class ThemeState extends Equatable {
   final String fontFamily;
   final String themeModeName; // 'auto', 'light', 'dark', 'black'
   final String? backgroundImagePath;
+  final String? customBgImagePath;
   final bool showBackground;
   final ThemeData lightThemeData;
   final ThemeData darkThemeData;
@@ -17,6 +18,7 @@ class ThemeState extends Equatable {
     required this.fontFamily,
     required this.themeModeName,
     required this.backgroundImagePath,
+    this.customBgImagePath,
     required this.showBackground,
     required this.lightThemeData,
     required this.darkThemeData,
@@ -29,7 +31,8 @@ class ThemeState extends Equatable {
       fontFamily: AppThemes.defaultFontFamily,
       themeModeName: 'auto',
       backgroundImagePath: null,
-      showBackground: false,
+      customBgImagePath: null,
+      showBackground: true,
       lightThemeData: AppThemes.generateThemeData(
         seedColor: AppThemes.defaultSeedColor,
         fontFamily: AppThemes.defaultFontFamily,
@@ -49,7 +52,8 @@ class ThemeState extends Equatable {
     required String fontFamily,
     required String themeModeName,
     String? backgroundImagePath,
-    bool showBackground = false,
+    String? customBgImagePath,
+    bool showBackground = true,
   }) {
     final isBlack = themeModeName == 'black';
 
@@ -58,6 +62,7 @@ class ThemeState extends Equatable {
       fontFamily: fontFamily,
       themeModeName: themeModeName,
       backgroundImagePath: backgroundImagePath,
+      customBgImagePath: customBgImagePath,
       showBackground: showBackground,
       lightThemeData: AppThemes.generateThemeData(
         seedColor: seedColor,
@@ -93,6 +98,7 @@ class ThemeState extends Equatable {
         fontFamily,
         themeModeName,
         backgroundImagePath,
+        customBgImagePath,
         showBackground,
         lightThemeData,
         darkThemeData,

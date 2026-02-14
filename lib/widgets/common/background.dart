@@ -58,19 +58,21 @@ class Background extends StatelessWidget {
         ),
         SizedBox(
           width: width,
-          height: showLocalFile
-              ? null
-              : (height ?? MediaQuery.of(context).size.height / 1.9),
+          height: height ?? MediaQuery.of(context).size.height / 1.9,
           child: CustomPaint(
             foregroundPainter: FadingEffect(
               color: bgColor ?? Theme.of(context).scaffoldBackgroundColor,
               start: 200,
               end: 255,
             ),
-            child: showLocalFile
+            child: showLocalFile && url != null
                 ? Image.file(
                     File(url!),
                     fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => Image.asset(
+                      "assets/images/fall.jpg",
+                      fit: BoxFit.cover,
+                    ),
                   )
                 : url == null || !isNetworkImage
                     ? Image.asset(

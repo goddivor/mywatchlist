@@ -39,13 +39,18 @@ class ThemeFontChanged extends ThemeEvent {
 
 class ThemeBackgroundChanged extends ThemeEvent {
   final String? backgroundImagePath;
+  final String? customBgImagePath;
+  final bool? clearCustomImage;
   final bool showBackground;
 
   const ThemeBackgroundChanged({
     this.backgroundImagePath,
+    this.customBgImagePath,
+    this.clearCustomImage,
     required this.showBackground,
   });
 
   @override
-  List<Object?> get props => [backgroundImagePath, showBackground];
+  List<Object?> get props =>
+      [backgroundImagePath, customBgImagePath, clearCustomImage, showBackground];
 }

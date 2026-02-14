@@ -1,5 +1,7 @@
 // ignore_for_file: use_build_context_synchronously
 
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mywatchlist/main.dart';
@@ -8,6 +10,7 @@ import 'package:mywatchlist/user/theme/theme_bloc.dart';
 import 'package:mywatchlist/user/theme/theme_event.dart';
 import 'package:mywatchlist/user/theme/theme_state.dart';
 import 'package:mywatchlist/user/user_preference.dart';
+import 'package:mywatchlist/utils/sidebar_bg_manager.dart';
 
 class ThemeSettings extends StatefulWidget {
   final bool isIntroPage;
@@ -282,14 +285,23 @@ class _ThemeSettingsState extends State<ThemeSettings> {
   Widget _buildBackgroundImageSelector(
       BuildContext context, ThemeState state) {
     final colorScheme = Theme.of(context).colorScheme;
+    final customPath = state.customBgImagePath;
+
+    // 5 predefined + 1 custom slot
+    final totalItems = AppThemes.backgroundImages.length + 1;
 
     return SizedBox(
       height: 120,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
-        itemCount: AppThemes.backgroundImages.length,
+        itemCount: totalItems,
         separatorBuilder: (_, __) => const SizedBox(width: 12),
         itemBuilder: (context, index) {
+          // Last item = custom gallery option
+          if (index == AppThemes.backgroundImages.length) {
+            return _buildCustomImageOption(context, state, customPath);
+          }
+
           final imagePath = AppThemes.backgroundImages[index];
           final isSelected = state.backgroundImagePath == imagePath;
 
@@ -298,59 +310,217 @@ class _ThemeSettingsState extends State<ThemeSettings> {
               context.read<ThemeBloc>().add(
                     ThemeBackgroundChanged(
                       backgroundImagePath: imagePath,
-                      showBackground: state.showBackground,
+                      showBackground: true,
                     ),
                   );
             },
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              width: 160,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(16),
-                border: isSelected
-                    ? Border.all(
-                        color: colorScheme.primary,
-                        width: 3,
-                      )
-                    : Border.all(
-                        color: colorScheme.outlineVariant,
-                        width: 1,
-                      ),
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(isSelected ? 13 : 15),
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    Image.asset(
-                      imagePath,
-                      fit: BoxFit.cover,
-                    ),
-                    if (isSelected)
-                      Container(
-                        color: colorScheme.primary.withAlpha(60),
-                        child: Center(
-                          child: Container(
-                            padding: const EdgeInsets.all(6),
-                            decoration: BoxDecoration(
-                              color: colorScheme.primary,
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(
-                              Icons.check_rounded,
-                              color: colorScheme.onPrimary,
-                              size: 20,
-                            ),
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
+            child: _buildImageCard(
+              isSelected: isSelected,
+              colorScheme: colorScheme,
+              child: Image.asset(imagePath, fit: BoxFit.cover),
             ),
           );
         },
       ),
+    );
+  }
+
+  Widget _buildCustomImageOption(
+      BuildContext context, ThemeState state, String? customPath) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final hasCustomImage = customPath != null && File(customPath).existsSync();
+    final isSelected = hasCustomImage && state.backgroundImagePath == customPath;
+
+    if (hasCustomImage) {
+      return GestureDetector(
+        onTap: () {
+          context.read<ThemeBloc>().add(
+                ThemeBackgroundChanged(
+                  backgroundImagePath: customPath,
+                  showBackground: true,
+                ),
+              );
+        },
+        onLongPress: () => _showCustomImageOptions(context, state, customPath),
+        child: _buildImageCard(
+          isSelected: isSelected,
+          colorScheme: colorScheme,
+          child: Image.file(File(customPath), fit: BoxFit.cover),
+          badge: Positioned(
+            top: 6,
+            right: 6,
+            child: GestureDetector(
+              onTap: () => _showCustomImageOptions(context, state, customPath),
+              child: Container(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: Colors.black54,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(Icons.more_horiz, color: Colors.white, size: 16),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    // No custom image yet — show "+" add button
+    return GestureDetector(
+      onTap: () => _pickCustomImage(context, state),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        width: 160,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: colorScheme.outlineVariant,
+            width: 1,
+          ),
+          color: colorScheme.surfaceContainerLow,
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.add_photo_alternate_outlined,
+              size: 32,
+              color: colorScheme.onSurfaceVariant,
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'Gallery',
+              style: TextStyle(
+                fontSize: 12,
+                color: colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildImageCard({
+    required bool isSelected,
+    required ColorScheme colorScheme,
+    required Widget child,
+    Widget? badge,
+  }) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      width: 160,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        border: isSelected
+            ? Border.all(color: colorScheme.primary, width: 3)
+            : Border.all(color: colorScheme.outlineVariant, width: 1),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(isSelected ? 13 : 15),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            child,
+            if (isSelected)
+              Container(
+                color: colorScheme.primary.withAlpha(60),
+                child: Center(
+                  child: Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: colorScheme.primary,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.check_rounded,
+                      color: colorScheme.onPrimary,
+                      size: 20,
+                    ),
+                  ),
+                ),
+              ),
+            if (badge != null) badge,
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _pickCustomImage(BuildContext context, ThemeState state) async {
+    final manager = SidebarBackgroundManager.instance;
+    final path = await manager.setNewBackgroundImage(context: context);
+    if (path != null && context.mounted) {
+      context.read<ThemeBloc>().add(
+            ThemeBackgroundChanged(
+              backgroundImagePath: path,
+              customBgImagePath: path,
+              showBackground: true,
+            ),
+          );
+    }
+  }
+
+  void _showCustomImageOptions(
+      BuildContext context, ThemeState state, String customPath) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (sheetContext) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: colorScheme.onSurfaceVariant.withAlpha(80),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                ListTile(
+                  leading: Icon(Icons.photo_library_outlined,
+                      color: colorScheme.primary),
+                  title: const Text('Change image'),
+                  onTap: () async {
+                    Navigator.pop(sheetContext);
+                    await _pickCustomImage(context, state);
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.delete_outline, color: Colors.red),
+                  title: const Text('Remove custom image'),
+                  onTap: () async {
+                    Navigator.pop(sheetContext);
+                    await SidebarBackgroundManager.instance
+                        .removeBackgroundImage(context: context);
+                    if (context.mounted) {
+                      // Fall back to first predefined image
+                      context.read<ThemeBloc>().add(
+                            ThemeBackgroundChanged(
+                              backgroundImagePath:
+                                  AppThemes.backgroundImages.first,
+                              clearCustomImage: true,
+                              showBackground: state.showBackground,
+                            ),
+                          );
+                    }
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
