@@ -202,7 +202,7 @@ class _ThemeSettingsState extends State<ThemeSettings> {
       itemCount: AppThemes.predefinedColors.length,
       itemBuilder: (context, index) {
         final color = AppThemes.predefinedColors[index];
-        final isSelected = state.seedColor.value == color.value;
+        final isSelected = state.seedColor.toARGB32() == color.toARGB32();
 
         return GestureDetector(
           onTap: () {

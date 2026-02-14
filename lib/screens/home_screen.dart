@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mywatchlist/constants/constants.dart';
+import 'package:mywatchlist/widgets/loading/shimmercolor.dart';
 import 'package:mywatchlist/pages/Anilist/anilist_explore_page.dart';
 import 'package:mywatchlist/pages/Anilist/anilist_forum_page.dart';
 import 'package:mywatchlist/pages/Anilist/anilist_home_page.dart';
@@ -161,7 +162,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     height: 100,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: theme.colorScheme.primary.withOpacity(0.1),
+                      color: theme.colorScheme.primary.withValues(alpha: 0.1),
                     ),
                     child: Center(
                       child: Image.asset(
@@ -175,25 +176,28 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
                 const SizedBox(height: 30),
 
-                // Spinner
-                SizedBox(
-                  width: 40,
-                  height: 40,
-                  child: CircularProgressIndicator(
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                        theme.colorScheme.primary),
-                    strokeWidth: 3,
-                  ),
-                ),
-
-                const SizedBox(height: 20),
-
-                // Message
-                Text(
-                  'Loading your anime world...',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: theme.colorScheme.onBackground,
+                // Shimmer loading bars
+                ShimmerColor(
+                  Column(
+                    children: [
+                      Container(
+                        height: 12,
+                        width: 180,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Container(
+                        height: 12,
+                        width: 120,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],

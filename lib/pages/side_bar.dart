@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'dart:async';
 import 'package:mywatchlist/constants/constants.dart';
+import 'package:mywatchlist/widgets/loading/shimmercolor.dart';
 import 'package:mywatchlist/screens/settings/settings_page.dart';
 import 'package:mywatchlist/user/accounts/account_bloc.dart';
 import 'package:mywatchlist/user/accounts/models/account.dart';
@@ -132,7 +133,7 @@ class _AppSidebarState extends State<AppSidebar>
               height: 4,
               margin: const EdgeInsets.only(bottom: 20),
               decoration: BoxDecoration(
-                color: theme.colorScheme.onSurface.withOpacity(0.2),
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -151,7 +152,7 @@ class _AppSidebarState extends State<AppSidebar>
               leading: Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: theme.colorScheme.primary.withOpacity(0.1),
+                  color: theme.colorScheme.primary.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
@@ -172,7 +173,7 @@ class _AppSidebarState extends State<AppSidebar>
                 leading: Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: theme.colorScheme.error.withOpacity(0.1),
+                    color: theme.colorScheme.error.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
@@ -235,7 +236,7 @@ class _AppSidebarState extends State<AppSidebar>
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
+              color: Colors.black.withValues(alpha: 0.1),
               blurRadius: 10,
               offset: const Offset(-5, 0),
             ),
@@ -290,7 +291,7 @@ class _AppSidebarState extends State<AppSidebar>
                     padding: const EdgeInsets.symmetric(
                         horizontal: 20, vertical: 10),
                     child: Divider(
-                      color: theme.colorScheme.onSurface.withOpacity(0.1),
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.1),
                     ),
                   ),
 
@@ -308,7 +309,7 @@ class _AppSidebarState extends State<AppSidebar>
                     'Version 1.0.0',
                     style: TextStyle(
                       fontSize: 12,
-                      color: theme.colorScheme.onSurface.withOpacity(0.5),
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
                     ),
                   ),
                   const SizedBox(height: 10),
@@ -316,7 +317,7 @@ class _AppSidebarState extends State<AppSidebar>
                     '© 2025 MyWatchList',
                     style: TextStyle(
                       fontSize: 12,
-                      color: theme.colorScheme.onSurface.withOpacity(0.5),
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
                     ),
                   ),
                 ],
@@ -360,7 +361,7 @@ class _AppSidebarState extends State<AppSidebar>
               height: 200,
               width: double.infinity,
               decoration: BoxDecoration(
-                color: theme.colorScheme.surfaceVariant,
+                color: theme.colorScheme.surfaceContainerHighest,
                 image: _backgroundImagePath != null
                     ? DecorationImage(
                         image: FileImage(File(_backgroundImagePath!)),
@@ -376,7 +377,7 @@ class _AppSidebarState extends State<AppSidebar>
                           end: Alignment.bottomRight,
                           colors: [
                             theme.colorScheme.primary,
-                            theme.colorScheme.primary.withOpacity(0.7),
+                            theme.colorScheme.primary.withValues(alpha: 0.7),
                           ],
                         ),
                       ),
@@ -393,8 +394,8 @@ class _AppSidebarState extends State<AppSidebar>
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    Colors.black.withOpacity(0.1),
-                    Colors.black.withOpacity(0.5),
+                    Colors.black.withValues(alpha: 0.1),
+                    Colors.black.withValues(alpha: 0.5),
                   ],
                 ),
               ),
@@ -442,7 +443,7 @@ class _AppSidebarState extends State<AppSidebar>
                               : 'Not connected',
                           style: TextStyle(
                             fontSize: 14,
-                            color: Colors.white.withOpacity(0.8),
+                            color: Colors.white.withValues(alpha: 0.8),
                           ),
                         ),
                       ],
@@ -461,7 +462,7 @@ class _AppSidebarState extends State<AppSidebar>
                   // Edit button
                   Container(
                     decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.5),
+                      color: Colors.black.withValues(alpha: 0.5),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: IconButton(
@@ -484,7 +485,7 @@ class _AppSidebarState extends State<AppSidebar>
               left: 20,
               child: Container(
                 decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.5),
+                  color: Colors.black.withValues(alpha: 0.5),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: IconButton(
@@ -509,10 +510,17 @@ class _AppSidebarState extends State<AppSidebar>
               Container(
                 height: 200,
                 width: double.infinity,
-                color: Colors.black.withOpacity(0.5),
-                child: const Center(
-                  child: CircularProgressIndicator(
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                color: Colors.black.withValues(alpha: 0.5),
+                child: Center(
+                  child: ShimmerColor(
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: const BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -543,7 +551,7 @@ class _AppSidebarState extends State<AppSidebar>
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
               color: isActive
-                  ? theme.colorScheme.primary.withOpacity(0.1)
+                  ? theme.colorScheme.primary.withValues(alpha: 0.1)
                   : Colors.transparent,
               borderRadius: BorderRadius.circular(12),
             ),
@@ -554,8 +562,8 @@ class _AppSidebarState extends State<AppSidebar>
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
                     color: isActive
-                        ? theme.colorScheme.primary.withOpacity(0.2)
-                        : theme.colorScheme.surfaceVariant.withOpacity(0.5),
+                        ? theme.colorScheme.primary.withValues(alpha: 0.2)
+                        : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(

@@ -176,7 +176,7 @@ class _LoginPageState extends State<LoginPage>
                           ),
                           decoration: BoxDecoration(
                             color:
-                                colorScheme.primaryContainer.withOpacity(0.5),
+                                colorScheme.primaryContainer.withValues(alpha: 0.5),
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Text(
@@ -274,15 +274,15 @@ class _LoginPageState extends State<LoginPage>
           color: isSelected
               ? colorScheme.primary
               : tracker.isActive
-                  ? tracker.primaryColor.withOpacity(0.5)
-                  : colorScheme.outlineVariant.withOpacity(0.5),
+                  ? tracker.primaryColor.withValues(alpha: 0.5)
+                  : colorScheme.outlineVariant.withValues(alpha: 0.5),
           width: isSelected ? 2 : 1,
         ),
       ),
       color: isSelected
-          ? colorScheme.primaryContainer.withOpacity(0.3)
+          ? colorScheme.primaryContainer.withValues(alpha: 0.3)
           : tracker.isActive
-              ? tracker.primaryColor.withOpacity(0.05)
+              ? tracker.primaryColor.withValues(alpha: 0.05)
               : colorScheme.surfaceContainerLow,
       child: InkWell(
         onTap: tracker.isActive
@@ -302,12 +302,12 @@ class _LoginPageState extends State<LoginPage>
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       color: tracker.isActive
-                          ? tracker.primaryColor.withOpacity(0.15)
+                          ? tracker.primaryColor.withValues(alpha: 0.15)
                           : colorScheme.surfaceContainerHighest,
                     ),
                     child: CircleAvatar(
                       radius: 30,
-                      backgroundColor: tracker.primaryColor.withOpacity(0.15),
+                      backgroundColor: tracker.primaryColor.withValues(alpha: 0.15),
                       backgroundImage:
                           tracker.isActive && tracker.profileImage != null
                               ? NetworkImage(tracker.profileImage!)
@@ -330,7 +330,7 @@ class _LoginPageState extends State<LoginPage>
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: colorScheme.primary.withOpacity(0.3),
+                              color: colorScheme.primary.withValues(alpha: 0.3),
                               blurRadius: 6,
                             ),
                           ],
@@ -437,7 +437,7 @@ class _LoginPageState extends State<LoginPage>
                           vertical: 8,
                         ),
                         decoration: BoxDecoration(
-                          color: tracker.primaryColor.withOpacity(0.2),
+                          color: tracker.primaryColor.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(16),
                         ),
                         child: Text(

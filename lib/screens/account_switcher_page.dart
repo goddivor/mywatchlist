@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mywatchlist/constants/constants.dart';
+import 'package:mywatchlist/widgets/loading/shimmercolor.dart';
 import 'package:mywatchlist/pages/login_page.dart';
 import 'package:mywatchlist/screens/manage_accounts_page.dart';
 import 'package:mywatchlist/user/accounts/account_bloc.dart';
@@ -311,17 +312,9 @@ class _AccountSwitcherPageState extends State<AccountSwitcherPage> {
                         ? CachedNetworkImage(
                             imageUrl: currentAccount.imageUrl,
                             fit: BoxFit.cover,
-                            placeholder: (context, url) => Container(
-                              color: colorScheme.surfaceContainerHighest,
-                              child: Center(
-                                child: SizedBox(
-                                  width: 24,
-                                  height: 24,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: accountColor,
-                                  ),
-                                ),
+                            placeholder: (context, url) => ShimmerColor(
+                              Container(
+                                color: Colors.white,
                               ),
                             ),
                             errorWidget: (context, url, error) => Image.asset(

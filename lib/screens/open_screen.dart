@@ -1,6 +1,7 @@
 // ignore_for_file: library_private_types_in_public_api
 
 import 'package:flutter/material.dart';
+import 'package:mywatchlist/constants/constants.dart';
 import 'package:mywatchlist/screens/home_screen.dart';
 import 'package:mywatchlist/screens/intro_screen.dart';
 import 'package:mywatchlist/user/user_preference.dart';
@@ -40,8 +41,8 @@ class _OpenScreenState extends State<OpenScreen> {
   Widget build(BuildContext context) {
     // Show loading indicator until flag is loaded
     if (isFirstTime == null) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
+      return Scaffold(
+        body: loadingError(),
       );
     }
     // Show intro on first launch, otherwise go to home

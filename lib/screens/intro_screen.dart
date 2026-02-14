@@ -158,9 +158,9 @@ class _IntroScreenState extends State<IntroScreen> with TickerProviderStateMixin
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            colorScheme.primaryContainer.withOpacity(0.3),
+            colorScheme.primaryContainer.withValues(alpha: 0.3),
             colorScheme.surface,
-            colorScheme.secondaryContainer.withOpacity(0.2),
+            colorScheme.secondaryContainer.withValues(alpha: 0.2),
           ],
         ),
       ),
@@ -186,7 +186,7 @@ class _IntroScreenState extends State<IntroScreen> with TickerProviderStateMixin
                           color: colorScheme.primaryContainer,
                           boxShadow: [
                             BoxShadow(
-                              color: colorScheme.primary.withOpacity(0.3),
+                              color: colorScheme.primary.withValues(alpha: 0.3),
                               blurRadius: 40,
                               spreadRadius: 5,
                             ),
@@ -308,17 +308,17 @@ class _IntroScreenState extends State<IntroScreen> with TickerProviderStateMixin
         case 0:
           return [
             colorScheme.primaryContainer,
-            colorScheme.primaryContainer.withOpacity(0.6),
+            colorScheme.primaryContainer.withValues(alpha: 0.6),
           ];
         case 1:
           return [
             colorScheme.secondaryContainer,
-            colorScheme.secondaryContainer.withOpacity(0.6),
+            colorScheme.secondaryContainer.withValues(alpha: 0.6),
           ];
         case 2:
           return [
             colorScheme.tertiaryContainer,
-            colorScheme.tertiaryContainer.withOpacity(0.6),
+            colorScheme.tertiaryContainer.withValues(alpha: 0.6),
           ];
         default:
           return [colorScheme.primaryContainer, colorScheme.primaryContainer];
@@ -347,7 +347,7 @@ class _IntroScreenState extends State<IntroScreen> with TickerProviderStateMixin
           ),
           borderRadius: BorderRadius.circular(28),
           border: Border.all(
-            color: colorScheme.outline.withOpacity(0.1),
+            color: colorScheme.outline.withValues(alpha: 0.1),
             width: 1,
           ),
         ),
@@ -356,7 +356,7 @@ class _IntroScreenState extends State<IntroScreen> with TickerProviderStateMixin
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: colorScheme.surface.withOpacity(0.9),
+                color: colorScheme.surface.withValues(alpha: 0.9),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Icon(
@@ -418,12 +418,12 @@ class _IntroScreenState extends State<IntroScreen> with TickerProviderStateMixin
           color: colorScheme.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(32),
           border: Border.all(
-            color: colorScheme.outline.withOpacity(0.2),
+            color: colorScheme.outline.withValues(alpha: 0.2),
             width: 1,
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.08),
+              color: Colors.black.withValues(alpha: 0.08),
               blurRadius: 16,
               offset: const Offset(0, 4),
             ),

@@ -248,7 +248,7 @@ class _HomeSettingsPageState extends State<HomeSettingsPage> {
                           horizontal: 16, vertical: 8),
                       child: BorderButton(
                         onPressed: () => _showSectionEditDialog(),
-                        borderColor: theme.colorScheme.primary.withOpacity(0.5),
+                        borderColor: theme.colorScheme.primary.withValues(alpha: 0.5),
                         borderRadius: 12,
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         child: Row(
@@ -346,7 +346,7 @@ class _HomeSettingsPageState extends State<HomeSettingsPage> {
           Text(
             'Customize the content shown on your home page. Drag to reorder sections, toggle to show/hide, and set the number of items to display.',
             style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurface.withOpacity(0.6),
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
             ),
           ),
         ],
@@ -388,7 +388,7 @@ class _HomeSettingsPageState extends State<HomeSettingsPage> {
             Switch(
               value: section.enabled,
               onChanged: (value) => _toggleSectionEnabled(index),
-              activeColor: theme.colorScheme.primary,
+              activeThumbColor: theme.colorScheme.primary,
             ),
             ReorderableDragStartListener(
               index: index,
@@ -483,7 +483,7 @@ class _SectionEditDialogState extends State<_SectionEditDialog> {
           width: MediaQuery.of(context).size.width * 0.9,
           constraints: const BoxConstraints(maxWidth: 400),
           decoration: BoxDecoration(
-            color: theme.dialogBackgroundColor,
+            color: theme.dialogTheme.backgroundColor ?? theme.colorScheme.surface,
             borderRadius: BorderRadius.circular(16),
           ),
           child: SingleChildScrollView(
@@ -507,7 +507,7 @@ class _SectionEditDialogState extends State<_SectionEditDialog> {
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
-                      color: theme.colorScheme.outline.withOpacity(0.5),
+                      color: theme.colorScheme.outline.withValues(alpha: 0.5),
                     ),
                   ),
                   child: DropdownButtonHideUnderline(
@@ -548,7 +548,7 @@ class _SectionEditDialogState extends State<_SectionEditDialog> {
                     hintText: HomeSectionPreference(type: _type).getDefaultTitle(
                         widget.seasonName, widget.seasonYear),
                     hintStyle: TextStyle(
-                      color: theme.colorScheme.onSurface.withOpacity(0.4),
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
                     ),
                     isDense: true,
                     contentPadding: const EdgeInsets.symmetric(
@@ -587,7 +587,7 @@ class _SectionEditDialogState extends State<_SectionEditDialog> {
                 Row(
                   children: [
                     Icon(Icons.cached, size: 16,
-                        color: theme.colorScheme.onSurface.withOpacity(0.7)),
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.7)),
                     const SizedBox(width: 6),
                     Text('Cache refresh: ',
                         style: theme.textTheme.bodySmall),
@@ -597,7 +597,7 @@ class _SectionEditDialogState extends State<_SectionEditDialog> {
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(
-                          color: theme.colorScheme.outline.withOpacity(0.5),
+                          color: theme.colorScheme.outline.withValues(alpha: 0.5),
                         ),
                       ),
                       child: DropdownButtonHideUnderline(
