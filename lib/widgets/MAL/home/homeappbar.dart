@@ -125,7 +125,7 @@ class _AppBarHomeState extends State<AppBarHome> with TickerProviderStateMixin {
             ? null
             : [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.04),
+                  color: Colors.black.withValues(alpha: 0.04),
                   blurRadius: 8,
                   offset: const Offset(0, 2),
                 ),
@@ -179,7 +179,7 @@ class _AppBarHomeState extends State<AppBarHome> with TickerProviderStateMixin {
   }
 
   Widget _buildActionButtons(ThemeData theme) {
-    final iconColor = theme.colorScheme.onBackground;
+    final iconColor = theme.colorScheme.onSurface;
     final hasAnyButton = widget.showSearch ||
         widget.showBookmarks ||
         widget.showCalendar ||
@@ -191,7 +191,7 @@ class _AppBarHomeState extends State<AppBarHome> with TickerProviderStateMixin {
       duration: const Duration(milliseconds: 200),
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceVariant.withOpacity(0.3),
+        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(24),
       ),
       child: Row(
@@ -275,7 +275,7 @@ class _AppBarHomeState extends State<AppBarHome> with TickerProviderStateMixin {
         shape: BoxShape.circle,
         boxShadow: [
           BoxShadow(
-            color: effectiveColor.withOpacity(0.2),
+            color: effectiveColor.withValues(alpha: 0.2),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),

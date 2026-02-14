@@ -360,7 +360,7 @@ class AnimeGridCard extends StatelessWidget {
         left: 5,
         child: Container(
           decoration: BoxDecoration(
-            color: Colors.black.withOpacity(0.5),
+            color: Colors.black.withValues(alpha: 0.5),
             borderRadius: BorderRadius.circular(borderRadius),
           ),
           child: Padding(
@@ -485,7 +485,7 @@ class AnimeGridCard extends StatelessWidget {
       child: Container(
         height: 20,
         decoration: BoxDecoration(
-          color: Colors.black.withOpacity(0.5),
+          color: Colors.black.withValues(alpha: 0.5),
           borderRadius: BorderRadius.only(
             topLeft: Radius.circular(borderRadius),
             topRight: Radius.circular(borderRadius),

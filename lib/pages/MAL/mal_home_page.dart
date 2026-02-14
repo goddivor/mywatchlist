@@ -188,7 +188,7 @@ class _MalHomePageState extends State<MalHomePage> {
                   }
                 },
                 child: homePreferencesState.isLoading
-                    ? const Center(child: CircularProgressIndicator())
+                    ? loadingError()
                     : CustomScrollWrapper(
                         _buildSections(theme, homePreferences)),
               ),
@@ -260,7 +260,7 @@ class _MalHomePageState extends State<MalHomePage> {
                             value();
                           }
                         },
-                        backgroundColor: theme.cardColor.withOpacity(
+                        backgroundColor: theme.cardColor.withValues(alpha: 
                           constraints.scrollOffset > 0 ? 0.1 : 0.4,
                         ),
                         padding: const EdgeInsets.symmetric(horizontal: 15),
@@ -503,8 +503,10 @@ class _MalHomePageState extends State<MalHomePage> {
                     ? items.sublist(0, section.itemCount)
                     : items;
 
+                final isMangaSection = section.type == SectionType.topManga ||
+                    section.type == SectionType.topMangaPopular;
                 return ContentListWidget(
-                  category: "anime",
+                  category: isMangaSection ? "manga" : "anime",
                   items: limitedItems,
                   height: cardHeight,
                   showTime: section.type == SectionType.seasonNow ||
@@ -527,10 +529,10 @@ class _MalHomePageState extends State<MalHomePage> {
       width: double.infinity,
       margin: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceVariant.withOpacity(0.5),
+        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: theme.colorScheme.outline.withOpacity(0.3),
+          color: theme.colorScheme.outline.withValues(alpha: 0.3),
           width: 1,
         ),
       ),
@@ -540,7 +542,7 @@ class _MalHomePageState extends State<MalHomePage> {
           Icon(
             Icons.inbox_outlined,
             size: 48,
-            color: theme.colorScheme.onSurfaceVariant.withOpacity(0.6),
+            color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
           ),
           const SizedBox(height: 16),
           Text(

@@ -80,7 +80,7 @@ class ContentListWidget extends StatelessWidget {
             context,
             PageRouteBuilder(
               pageBuilder: (context, animation, secondaryAnimation) =>
-                  ContentDetailedScreen(node: anime),
+                  ContentDetailedScreen(node: anime, category: category),
               transitionsBuilder:
                   (context, animation, secondaryAnimation, child) {
                 var begin = const Offset(1.0, 0.0);
@@ -110,7 +110,7 @@ class ContentListWidget extends StatelessWidget {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => ContentDetailedScreen(node: anime),
+                builder: (context) => ContentDetailedScreen(node: anime, category: category),
               ),
             );
           },
@@ -127,13 +127,13 @@ class ContentListWidget extends StatelessWidget {
           Icon(
             Icons.movie_filter_outlined,
             size: 36,
-            color: theme.colorScheme.onSurface.withOpacity(0.4),
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
           ),
           const SizedBox(height: 12),
           Text(
             'No $category available',
             style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurface.withOpacity(0.6),
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
             ),
           ),
         ],

@@ -155,7 +155,7 @@ class StatusBadge extends StatelessWidget {
             color: nsv.color, borderRadius: BorderRadius.circular(16)),
         child: Center(
           child: title(nsv.status ?? "",
-              opacity: 1, fontSize: 11, colorVal: Colors.white.value),
+              opacity: 1, fontSize: 11, colorVal: Colors.white.toARGB32()),
         ));
   }
 }
