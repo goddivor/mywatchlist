@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:mywatchlist/constants/constants.dart';
@@ -323,29 +324,31 @@ class JikanApi {
     }
   }
 
-  Future<AnimeNewsResponse> getAnimeNews(int animeId, {int page = 1}) async {
-    final url = Uri.parse('$_baseUrl/$animeId/news?page=$page');
+  Future<AnimeNewsResponse> getAnimeNews(int animeId, {int page = 1, String category = "anime"}) async {
+    final base = category == "manga" ? '$_jikanv4/manga' : _baseUrl;
+    final url = Uri.parse('$base/$animeId/news?page=$page');
     final response = await http.get(url);
 
     if (response.statusCode == 200) {
       final jsonData = jsonDecode(response.body);
       return AnimeNewsResponse.fromJson(jsonData);
     } else {
-      throw Exception('Failed to load anime news');
+      throw Exception('Failed to load $category news');
     }
   }
 
   Future<AnimeForumResponse> getAnimeForum(
-      int animeId, AnimeForumFilter filter) async {
+      int animeId, AnimeForumFilter filter, {String category = "anime"}) async {
     final filterValue = getAnimeForumFilterValue(filter);
-    final url = Uri.parse('$_baseUrl/$animeId/forum?filter=$filterValue');
+    final base = category == "manga" ? '$_jikanv4/manga' : _baseUrl;
+    final url = Uri.parse('$base/$animeId/forum?filter=$filterValue');
     final response = await http.get(url);
 
     if (response.statusCode == 200) {
       final jsonData = jsonDecode(response.body);
       return AnimeForumResponse.fromJson(jsonData);
     } else {
-      throw Exception('Failed to load anime forum');
+      throw Exception('Failed to load $category forum');
     }
   }
 
@@ -357,56 +360,61 @@ class JikanApi {
       final jsonData = jsonDecode(response.body);
       return AnimeVideos.fromJson(jsonData['data']);
     } else {
-      throw Exception('Failed to load anime videos');
+      debugPrint('Jikan API error: ${response.statusCode} for $url');
+      throw Exception('Failed to load anime videos (${response.statusCode})');
     }
   }
 
-  Future<AnimePicturesResponse> getAnimePictures(int animeId) async {
-    final url = Uri.parse('$_baseUrl/$animeId/pictures');
+  Future<AnimePicturesResponse> getAnimePictures(int animeId, {String category = "anime"}) async {
+    final base = category == "manga" ? '$_jikanv4/manga' : _baseUrl;
+    final url = Uri.parse('$base/$animeId/pictures');
     final response = await http.get(url);
 
     if (response.statusCode == 200) {
       final jsonData = jsonDecode(response.body);
       return AnimePicturesResponse.fromJson(jsonData);
     } else {
-      throw Exception('Failed to load anime pictures');
+      throw Exception('Failed to load $category pictures');
     }
   }
 
-  static Future<AnimeStatistics> getAnimeStatistics(int animeId) async {
-    final url = Uri.parse('$_baseUrl/$animeId/statistics');
+  static Future<AnimeStatistics> getAnimeStatistics(int animeId, {String category = "anime"}) async {
+    final base = category == "manga" ? '$_jikanv4/manga' : _baseUrl;
+    final url = Uri.parse('$base/$animeId/statistics');
     final response = await http.get(url);
 
     if (response.statusCode == 200) {
       final jsonData = jsonDecode(response.body);
       return AnimeStatistics.fromJson(jsonData['data']);
     } else {
-      throw Exception('Failed to load anime statistics');
+      throw Exception('Failed to load $category statistics');
     }
   }
 
   static Future<AnimeUserUpdatesResponse> getAnimeUserUpdates(int animeId,
-      {int page = 1}) async {
-    final url = Uri.parse('$_baseUrl/$animeId/userupdates?page=$page');
+      {int page = 1, String category = "anime"}) async {
+    final base = category == "manga" ? '$_jikanv4/manga' : _baseUrl;
+    final url = Uri.parse('$base/$animeId/userupdates?page=$page');
     final response = await http.get(url);
 
     if (response.statusCode == 200) {
       final jsonData = jsonDecode(response.body);
       return AnimeUserUpdatesResponse.fromJson(jsonData);
     } else {
-      throw Exception('Failed to load anime user updates');
+      throw Exception('Failed to load $category user updates');
     }
   }
 
   Future<AnimeReviewsResponse> getAnimeReviews(int animeId,
-      {int page = 1, bool? preliminary, bool? spoilers}) async {
+      {int page = 1, bool? preliminary, bool? spoilers, String category = "anime"}) async {
     final queryParameters = {
       'page': page.toString(),
       if (preliminary != null) 'preliminary': preliminary.toString(),
       if (spoilers != null) 'spoilers': spoilers.toString(),
     };
 
-    final url = Uri.parse('$_baseUrl/$animeId/reviews')
+    final base = category == "manga" ? '$_jikanv4/manga' : _baseUrl;
+    final url = Uri.parse('$base/$animeId/reviews')
         .replace(queryParameters: queryParameters);
     final response = await http.get(url);
 
@@ -414,11 +422,10 @@ class JikanApi {
       final jsonData = jsonDecode(response.body);
       return AnimeReviewsResponse.fromJson(jsonData);
     } else {
-      throw Exception('Failed to load anime reviews');
+      throw Exception('Failed to load $category reviews');
     }
   }
 
-  //a revoir en long et en large
   Future<List<JikanAnime>> getAnimeSearch({
     bool? unapproved,
     int? page,
@@ -505,8 +512,6 @@ class JikanApi {
     }
   }
 
-  // i have to add getcharactersearch when i'll fix getanimeSearch
-
   Future<PersonFull> getPersonFullById(int id) async {
     final url = Uri.parse('$_jikanv4/people/$id/full');
     final response = await http.get(url);
@@ -518,8 +523,6 @@ class JikanApi {
       throw Exception('Failed to load person details');
     }
   }
-
-  // i have to add getPeopleSearch when i'll fix getanimeSearch
 
   Future<ProducerFull> getProducerFullById(int id) async {
     final url = Uri.parse('$_jikanv4/producers/$id/full');
@@ -559,6 +562,268 @@ class JikanApi {
       return ProducersResponse.fromJson(jsonData);
     } else {
       throw Exception('Failed to load producers');
+    }
+  }
+
+  // ---- Manga endpoints ----
+
+  Future<List<JikanAnime>> getMangaSearch({
+    bool? unapproved,
+    int? page,
+    int? limit,
+    String? q,
+    String? type,
+    double? score,
+    double? minScore,
+    double? maxScore,
+    String? status,
+    bool? sfw,
+    String? genres,
+    String? genresExclude,
+    String? orderBy,
+    String? sort,
+    String? letter,
+    String? magazines,
+    String? startDate,
+    String? endDate,
+  }) async {
+    final queryParameters = {
+      if (unapproved != null) 'unapproved': unapproved.toString(),
+      if (page != null) 'page': page.toString(),
+      if (limit != null) 'limit': limit.toString(),
+      if (q != null) 'q': q,
+      if (type != null) 'type': type,
+      if (score != null) 'score': score.toString(),
+      if (minScore != null) 'min_score': minScore.toString(),
+      if (maxScore != null) 'max_score': maxScore.toString(),
+      if (status != null) 'status': status,
+      if (sfw != null) 'sfw': sfw.toString(),
+      if (genres != null) 'genres': genres,
+      if (genresExclude != null) 'genres_exclude': genresExclude,
+      if (orderBy != null) 'order_by': orderBy,
+      if (sort != null) 'sort': sort,
+      if (letter != null) 'letter': letter,
+      if (magazines != null) 'magazines': magazines,
+      if (startDate != null) 'start_date': startDate,
+      if (endDate != null) 'end_date': endDate,
+    };
+
+    final url =
+        Uri.parse('$_jikanv4/manga').replace(queryParameters: queryParameters);
+    final response = await http.get(url);
+
+    if (response.statusCode == 200) {
+      final jsonData = jsonDecode(response.body);
+      return (jsonData['data'] as List)
+          .map((e) => JikanAnime.fromJson(e))
+          .toList();
+    } else {
+      throw Exception('Failed to search manga');
+    }
+  }
+
+  Future<JikanAnime> getMangaFullById(int id) async {
+    final url = Uri.parse('$_jikanv4/manga/$id/full');
+    final response = await http.get(url);
+
+    if (response.statusCode == 200) {
+      final jsonData = jsonDecode(response.body);
+      return JikanAnime.fromJson(jsonData['data']);
+    } else {
+      throw Exception('Failed to load manga data');
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getMangaCharacters(int id) async {
+    final url = Uri.parse('$_jikanv4/manga/$id/characters');
+    final response = await http.get(url);
+
+    if (response.statusCode == 200) {
+      final jsonData = jsonDecode(response.body);
+      return (jsonData['data'] as List).cast<Map<String, dynamic>>();
+    } else {
+      throw Exception('Failed to load manga characters');
+    }
+  }
+
+  /// Use [getAnimePictures] with `category: "manga"` instead.
+  @Deprecated('Use getAnimePictures(id, category: "manga") instead')
+  Future<AnimePicturesResponse> getMangaPictures(int id) async {
+    return getAnimePictures(id, category: "manga");
+  }
+
+  /// Use [getAnimeStatistics] with `category: "manga"` instead.
+  @Deprecated('Use getAnimeStatistics(id, category: "manga") instead')
+  static Future<AnimeStatistics> getMangaStatistics(int id) async {
+    return getAnimeStatistics(id, category: "manga");
+  }
+
+  /// Use [getAnimeReviews] with `category: "manga"` instead.
+  @Deprecated('Use getAnimeReviews(id, category: "manga") instead')
+  Future<AnimeReviewsResponse> getMangaReviews(int id,
+      {int page = 1}) async {
+    return getAnimeReviews(id, page: page, category: "manga");
+  }
+
+  // ---- Seasons & Schedule endpoints ----
+
+  Future<List<Anime>> getSeasonByYearAndSeason(int year, String season,
+      {String? filter, int? limit, int? page}) async {
+    final queryParameters = {
+      if (filter != null) 'filter': filter,
+      if (limit != null) 'limit': limit.toString(),
+      if (page != null) 'page': page.toString(),
+    };
+
+    final url = Uri.parse('$_jikanv4/seasons/$year/$season')
+        .replace(queryParameters: queryParameters);
+    final response = await http.get(url);
+
+    if (response.statusCode == 200) {
+      final jsonData = jsonDecode(response.body);
+      return (jsonData['data'] as List)
+          .map((e) => Anime.fromJikanJson(e))
+          .toList();
+    } else {
+      throw Exception('Failed to load season data for $season $year');
+    }
+  }
+
+  Future<Map<String, dynamic>> getSeasonsList() async {
+    final url = Uri.parse('$_jikanv4/seasons');
+    final response = await http.get(url);
+
+    if (response.statusCode == 200) {
+      final jsonData = jsonDecode(response.body);
+      return jsonData as Map<String, dynamic>;
+    } else {
+      throw Exception('Failed to load seasons list');
+    }
+  }
+
+  Future<List<Anime>> getSchedules(
+      {String? filter, int? page, int? limit}) async {
+    final queryParameters = {
+      if (filter != null) 'filter': filter,
+      if (page != null) 'page': page.toString(),
+      if (limit != null) 'limit': limit.toString(),
+    };
+
+    final url = Uri.parse('$_jikanv4/schedules')
+        .replace(queryParameters: queryParameters);
+    final response = await http.get(url);
+
+    if (response.statusCode == 200) {
+      final jsonData = jsonDecode(response.body);
+      return (jsonData['data'] as List)
+          .map((e) => Anime.fromJikanJson(e))
+          .toList();
+    } else {
+      throw Exception('Failed to load schedules');
+    }
+  }
+
+  // ---- Search endpoints ----
+
+  Future<List<CharacterFull>> searchCharacters({
+    String? q,
+    int? page,
+    int? limit,
+    String? orderBy,
+    String? sort,
+    String? letter,
+  }) async {
+    final queryParameters = {
+      if (q != null) 'q': q,
+      if (page != null) 'page': page.toString(),
+      if (limit != null) 'limit': limit.toString(),
+      if (orderBy != null) 'order_by': orderBy,
+      if (sort != null) 'sort': sort,
+      if (letter != null) 'letter': letter,
+    };
+
+    final url = Uri.parse('$_jikanv4/characters')
+        .replace(queryParameters: queryParameters);
+    final response = await http.get(url);
+
+    if (response.statusCode == 200) {
+      final jsonData = jsonDecode(response.body);
+      return (jsonData['data'] as List)
+          .map((e) => CharacterFull.fromJson(e))
+          .toList();
+    } else {
+      throw Exception('Failed to search characters');
+    }
+  }
+
+  Future<List<PersonFull>> searchPeople({
+    String? q,
+    int? page,
+    int? limit,
+    String? orderBy,
+    String? sort,
+    String? letter,
+  }) async {
+    final queryParameters = {
+      if (q != null) 'q': q,
+      if (page != null) 'page': page.toString(),
+      if (limit != null) 'limit': limit.toString(),
+      if (orderBy != null) 'order_by': orderBy,
+      if (sort != null) 'sort': sort,
+      if (letter != null) 'letter': letter,
+    };
+
+    final url = Uri.parse('$_jikanv4/people')
+        .replace(queryParameters: queryParameters);
+    final response = await http.get(url);
+
+    if (response.statusCode == 200) {
+      final jsonData = jsonDecode(response.body);
+      return (jsonData['data'] as List)
+          .map((e) => PersonFull.fromJson(e))
+          .toList();
+    } else {
+      throw Exception('Failed to search people');
+    }
+  }
+
+  // ---- Random endpoints ----
+
+  Future<JikanAnime> getRandomAnime() async {
+    final url = Uri.parse('$_jikanv4/random/anime');
+    final response = await http.get(url);
+
+    if (response.statusCode == 200) {
+      final jsonData = jsonDecode(response.body);
+      return JikanAnime.fromJson(jsonData['data']);
+    } else {
+      throw Exception('Failed to load random anime');
+    }
+  }
+
+  Future<JikanAnime> getRandomManga() async {
+    final url = Uri.parse('$_jikanv4/random/manga');
+    final response = await http.get(url);
+
+    if (response.statusCode == 200) {
+      final jsonData = jsonDecode(response.body);
+      return JikanAnime.fromJson(jsonData['data']);
+    } else {
+      throw Exception('Failed to load random manga');
+    }
+  }
+
+  // ---- User endpoints ----
+
+  Future<Map<String, dynamic>> getUserFullProfile(String username) async {
+    final url = Uri.parse('$_jikanv4/users/$username/full');
+    final response = await http.get(url);
+
+    if (response.statusCode == 200) {
+      final jsonData = jsonDecode(response.body);
+      return jsonData['data'] as Map<String, dynamic>;
+    } else {
+      throw Exception('Failed to load user profile for $username');
     }
   }
 }
