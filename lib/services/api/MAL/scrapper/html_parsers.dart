@@ -4,6 +4,9 @@ import 'package:flutter/foundation.dart';
 import 'package:html/dom.dart';
 import 'package:html_unescape/html_unescape_small.dart';
 import 'package:mywatchlist/constants/constants.dart';
+import 'package:mywatchlist/services/api/MAL/mal_anime.dart' hide Genre;
+import 'package:mywatchlist/services/api/MAL/models/all_search_result.dart';
+import 'package:mywatchlist/services/api/MAL/models/mal_user_search.dart';
 import 'package:mywatchlist/services/api/MAL/scrapper/anime_detailed_html.dart';
 import 'package:mywatchlist/services/api/MAL/scrapper/anime_featured.dart';
 import 'package:mywatchlist/services/api/MAL/scrapper/anime_featured_tags.dart';
@@ -20,76 +23,85 @@ class HtmlParsers {
 
   static String getImageUrlByQuality(
       Element? imageElement, String imageQuality) {
-    // Initialiser une variable vide pour l'URL de l'image
+    // Initialize empty image URL
     String imageUrl = '';
 
-    // Vérifier que l'élément n'est pas null
+    // Check if the element is not null
     if (imageElement != null) {
-      // Vérifier si l'attribut 'data-srcset' est présent
+      // Check if the 'data-srcset' attribute is present
       if (imageElement.attributes.containsKey('data-srcset')) {
-        // Extraire 'srcset' et le transformer en une liste d'URLs
+        // Extract 'srcset' and transform it into a list of URLs
         var srcset = imageElement.attributes['data-srcset']!;
         var srcsetUrls =
             srcset.split(',').map((e) => e.trim().split(' ')[0]).toList();
 
-        // Trouver la première URL qui correspond à la qualité demandée
+        // Find the first URL matching the requested quality
         imageUrl = srcsetUrls.firstWhere((url) => url.contains(imageQuality),
             orElse: () => '');
       } else if (imageElement.attributes.containsKey('data-src')) {
-        // Si 'srcset' n'est pas disponible, utiliser 'data-src'
+        // If 'srcset' is not available, use 'data-src'
         imageUrl = imageElement.attributes['data-src']!;
       } else if (imageElement.attributes.containsKey('src')) {
-        // Si 'data-src' n'est pas disponible, utiliser 'src'
+        // If 'data-src' is not available, use 'src'
         imageUrl = imageElement.attributes['src']!;
       }
     }
 
-    // Retourner l'URL de l'image (ou une chaîne vide si aucune URL n'est trouvée)
+    // Return the image URL (or empty string if none found)
     return imageUrl;
   }
 
   static String getOriginalImageQuality(
       Element? imageElement, String imageQuality) {
-    // Initialiser une variable pour stocker l'URL de l'image
+    // Initialize image URL variable
     String imageUrl = '';
 
-    // Vérifier si l'élément n'est pas null
+    // Check if the element is not null
     if (imageElement != null) {
-      // Vérifier si l'attribut 'data-src' existe, sinon utiliser 'src'
+      // Check if 'data-src' attribute exists, otherwise use 'src'
       imageUrl = imageElement.attributes['data-src'] ??
           imageElement.attributes['src'] ??
           '';
     }
 
-    // Si une URL valide est trouvée, on procède à la modification
+    // If a valid URL is found, modify it to get original quality
     if (imageUrl.isNotEmpty) {
-      // Remplacer l'imageQuality par une chaîne vide
-      imageUrl = imageUrl.replaceAll(imageQuality, '');
-
-      // Récupérer la partie avant le premier '?' (paramètres URL)
-      int queryIndex = imageUrl.indexOf('?');
-      if (queryIndex != -1) {
-        imageUrl = imageUrl.substring(0, queryIndex);
-      }
+      imageUrl = stripImageResize(imageUrl);
     }
 
-    // Retourner l'URL modifiée ou vide si aucune URL n'est trouvée
+    // Return the modified URL or empty string if none found
     return imageUrl;
   }
 
-  //method to parse anime news or featured
+  /// Strips the `/r/NxN/` resize prefix from MAL CDN image URLs to get the
+  /// original quality image. Also removes query parameters.
+  /// Example: `.../r/42x62/images/...?s=abc` → `.../images/...`
+  static String stripImageResize(String url) {
+    // Remove any /r/{width}x{height}/ resize prefix
+    url = url.replaceAll(RegExp(r'/r/\d+x\d+/'), '/');
+
+    // Remove URL query parameters (everything after '?')
+    int queryIndex = url.indexOf('?');
+    if (queryIndex != -1) {
+      url = url.substring(0, queryIndex);
+    }
+
+    return url;
+  }
+
+  // Parse anime news or featured articles
   static AnimeNewsOrFeaturedResult parseAnimeNewsOrFeatured(Document document) {
     var newsElements = document.querySelectorAll('.news-unit');
 
     var newsItems = newsElements
         .map((element) {
-          // Récupérer le titre et l'URL
+          // Get the title and URL
           var linkElement = element.querySelector('.title a');
           var title = linkElement != null ? linkElement.text.trim() : '';
           var url =
               linkElement != null ? linkElement.attributes['href']!.trim() : '';
 
-          // Extraire l'ID à partir de l'URL
+          // Extract the ID from the URL
           int id = 0;
           if (url.startsWith(Constants.malnewsUrl)) {
             id = int.parse(
@@ -100,21 +112,21 @@ class HtmlParsers {
                 .split('/')[0]);
           }
 
-          // Récupérer le texte
+          // Get the text
           var textElement = element.querySelector('.text');
           var text = textElement != null ? textElement.text.trim() : '';
 
-          // Récupérer les tags
+          // Get the tags
           var tags = '';
           var tagElements =
-              element.querySelectorAll('.information .tags a'); // Premier cas
+              element.querySelectorAll('.information .tags a'); // Linked tags
           if (tagElements.isEmpty) {
-            // Deuxième cas où les tags sont dans des spans
+            // Fallback: tags in spans
             tagElements = element.querySelectorAll('.information .tags .tag');
           }
           tags = tagElements.map((e) => e.text.trim()).join(', ');
 
-          // Récupérer l'image
+          // Get the image
           var imageElement = element.querySelector('.image-link img');
           var imageQuality = 'r/100x156'; // Image quality x1; 'r/200x312' x2
           var imageUrl = getOriginalImageQuality(imageElement, imageQuality);
@@ -136,8 +148,8 @@ class HtmlParsers {
         .cast<AnimeNewsOrFeaturedItem>()
         .toList();
 
-    // Parsing de la pagination
-    var paging = Paging(previous: '', next: ''); // Valeurs par défaut
+    // Parse pagination
+    var paging = Paging(previous: '', next: ''); // Default values
     var paginationElement = document.querySelector('.pagination.ac');
 
     if (paginationElement != null) {
@@ -155,16 +167,16 @@ class HtmlParsers {
     return AnimeNewsOrFeaturedResult(newsorfeatured: newsItems, paging: paging);
   }
 
-  //method to parse anime featured tags...
+  // Parse anime featured tags
   static AnimefeaturedTagsResult parseAnimeFeaturedTags(Document document) {
-    // Récupérer le conteneur des tags
+    // Get the tags container
     var tagContainer = document.querySelector('.news-tags-table');
 
-    // Récupérer tous les liens de tags
+    // Get all tag links
     var tagElements =
         tagContainer?.querySelectorAll('.tag-list a.tag-name-link');
 
-    // Construire la liste des tags
+    // Build the tags list
     var tags = tagElements?.map((element) {
           var url = element.attributes['href']!.trim();
           var name = element.querySelector('span.tag-name')?.text.trim() ?? '';
@@ -173,38 +185,37 @@ class HtmlParsers {
         }).toList() ??
         [];
 
-    // Retourner le résultat
     return AnimefeaturedTagsResult(tags: tags);
   }
 
-  //method to parse anime news tag...
+  // Parse anime news tags
   static AnimeNewsTagsResult parseAnimeNewsTags(Document document) {
-    // Récupérer le conteneur des catégories de tags
+    // Get the tag categories container
     var menuCategoryTags = document.querySelector('.menu-category-tags');
 
-    // Récupérer tous les éléments de catégorie
+    // Get all category elements
     var categoryElements = menuCategoryTags?.querySelectorAll('.btn-category');
 
-    // Construire la liste des catégories à partir des data-id
+    // Build category list from data-id attributes
     var listCategory = categoryElements?.map((element) {
           return element.attributes['data-id']!.trim();
         }).toList() ??
         [];
 
-    // Liste pour stocker les catégories et leurs tags
+    // List to store categories and their tags
     var categories = <AnimeNewsTagCat>[];
 
-    // Parcourir chaque catégorie
+    // Iterate through each category
     for (var category in listCategory) {
       var categoryElement = document.getElementById(category);
 
       if (categoryElement != null) {
-        // Récupérer le nom de la catégorie
+        // Get the category name
         var categoryName =
             categoryElement.querySelector('.news-tags-header')?.text.trim() ??
                 '';
 
-        // Récupérer tous les tags de cette catégorie
+        // Get all tags for this category
         var tagElements =
             categoryElement.querySelectorAll('.news-tags-table tr');
         var tags = tagElements.map((tagElement) {
@@ -219,16 +230,15 @@ class HtmlParsers {
           return AnimeNewsTag(url: url, name: name, description: description);
         }).toList();
 
-        // Ajouter la catégorie avec ses tags à la liste des catégories
+        // Add the category with its tags
         categories.add(AnimeNewsTagCat(categoryName: categoryName, tags: tags));
       }
     }
 
-    // Retourner le résultat
     return AnimeNewsTagsResult(categories: categories);
   }
 
-  //another methods here...
+  // Helper method to extract title from document
   static _getTitle(Document document, ContentType type) {
     if (type case ContentType.anime) {
       var titleElement = document.querySelector('.title-name strong');
@@ -260,41 +270,41 @@ class HtmlParsers {
   static List<Link> _getAvailableAtLinks(Document document) {
     var availableAtElement = document
         .querySelectorAll('.external_links')
-        .first; // Le premier .external_links
+        .first; // First .external_links block
     var linkElements = availableAtElement.querySelectorAll('a.ga-click');
 
     return linkElements.map((e) {
       var name = e.querySelector('.caption')?.text.trim() ??
-          ''; // Le texte du lien est dans la div.caption
+          ''; // Link text is in div.caption
       var url = e.attributes['href']?.trim() ?? '';
       var imageUrl = e.querySelector('img')?.attributes['src']?.trim() ??
-          ''; // Récupérer l'URL de l'image si elle existe
+          ''; // Get image URL if it exists
       return Link(
         name: name,
         url: url,
         imageUrl: imageUrl,
-        linkType: LinkType.availableAt, // Ajouter le type de lien
+        linkType: LinkType.availableAt,
       );
     }).toList();
   }
 
   static List<Link> _getResourceLinks(Document document) {
-    var resourceElement = document
-        .querySelectorAll('.external_links')
-        .elementAt(1); // Le second .external_links
+    var externalLinksBlocks = document.querySelectorAll('.external_links');
+    if (externalLinksBlocks.length < 2) return [];
+    var resourceElement = externalLinksBlocks.elementAt(1);
     var linkElements = resourceElement.querySelectorAll('a.ga-click');
 
     return linkElements.map((e) {
       var name = e.querySelector('.caption')?.text.trim() ??
-          ''; // Le texte du lien est dans la div.caption
+          ''; // Link text is in div.caption
       var url = e.attributes['href']?.trim() ?? '';
       var imageUrl = e.querySelector('img')?.attributes['src']?.trim() ??
-          ''; // Récupérer l'URL de l'image si elle existe
+          ''; // Get image URL if it exists
       return Link(
         name: name,
         url: url,
         imageUrl: imageUrl,
-        linkType: LinkType.resources, // Ajouter le type de lien
+        linkType: LinkType.resources,
       );
     }).toList();
   }
@@ -305,15 +315,14 @@ class HtmlParsers {
 
     return streamingElements.map((e) {
       var name = e.querySelector('.caption')?.text.trim() ??
-          ''; // Le texte du lien est dans la div.caption
+          ''; // Link text is in div.caption
       var title = e.attributes['title'] ?? e.text.trim();
       var url = e.attributes['href']?.trim() ?? '';
-      ''; // Récupérer l'URL de l'image si elle existe
       return Link(
         name: name,
         url: url,
         imageUrl: getDomainAsset(title),
-        linkType: LinkType.streaming, // Ajouter le type de lien
+        linkType: LinkType.streaming,
       );
     }).toList();
   }
@@ -324,20 +333,18 @@ class HtmlParsers {
     return adaptationElements
         .where((e) => e.text.contains('Adaptation'))
         .map((e) {
-      // Récupérer l'image de l'adaptation
+      // Get the adaptation image
       var imageElement = e.querySelector('.image img');
       var imageQuality =
-          'r/50x70'; // Qualité de l'image rendu x2; 'r/50x70' rendu x1
+          'r/50x70'; // Image quality x1; 'r/100x140' for x2
 
-      // var image = getImageUrlByQuality(imageElement, imageQuality).trim();
       var image = getOriginalImageQuality(imageElement, imageQuality).trim();
-      // var image = imageElement?.attributes['data-src']?.trim() ?? '';
 
-      // Récupérer la relation (par exemple, "Adaptation (Manga)")
+      // Get the relation (e.g., "Adaptation (Manga)")
       var relationElement = e.querySelector('.content .relation');
       var relation = relationElement?.text.trim() ?? '';
 
-      // Récupérer le titre de l'adaptation
+      // Get the adaptation title
       var titleElement = e.querySelector('.content .title a');
       var animeTitle = Link(
         name: titleElement?.text.trim() ?? '',
@@ -353,34 +360,33 @@ class HtmlParsers {
   }
 
   static List<MangaCharacters> _getMangaCharacters(Document document) {
-    // Sélectionner le premier `.detail-characters-list.clearfix`
+    // Select the first `.detail-characters-list.clearfix`
     var characterList =
         document.querySelector('.detail-characters-list.clearfix');
     if (characterList == null) {
       return [];
     }
 
-    // Vérifier et récupérer les deux colonnes s'ils existent
+    // Get both columns if they exist
     var leftColumn = characterList.querySelector('.left-column');
     var rightColumn = characterList.querySelector('.left-right');
 
-    // Fonction pour extraire les personnages et acteurs à partir des lignes `tr`
+    // Extract characters from table rows
     List<MangaCharacters> extractMangaCharacters(Element column) {
       var rows = column.querySelectorAll('table tr');
       List<MangaCharacters> mangaCharactersList = [];
+      const imageQuality = 'r/42x62';
 
       for (var row in rows) {
         var tds = row.querySelectorAll('td.borderClass');
         if (tds.length != 2) {
-          continue; // S'assurer qu'il y a bien 3 colonnes (td)
+          continue; // Ensure there are exactly 2 columns (td)
         }
 
-        //Extraire les informations du personnage
-        var characterImage = tds[0]
-                .querySelector('.picSurround img')
-                ?.attributes['data-src']
-                ?.trim() ??
-            '';
+        // Extract character info — strip resize prefix to get original quality
+        var characterElement = tds[0].querySelector('.picSurround img');
+        var characterImage =
+            getOriginalImageQuality(characterElement, imageQuality).trim();
         var characterNameElement = tds[1].querySelector('h3 a');
         var characterName = Link(
           name: characterNameElement?.text.trim() ?? '',
@@ -395,14 +401,14 @@ class HtmlParsers {
           role: characterRole,
         );
 
-        //Ajouter les peronnage a la liste
+        // Add character to the list
         mangaCharactersList.add(MangaCharacters(character: character));
       }
 
       return mangaCharactersList;
     }
 
-    // Extraire les données des deux colonnes s'ils existent
+    // Extract data from both columns if they exist
     List<MangaCharacters> mangaCharactersList = [];
     if (leftColumn != null) {
       mangaCharactersList.addAll(extractMangaCharacters(leftColumn));
@@ -416,18 +422,18 @@ class HtmlParsers {
 
   static List<CharactersVoiceActors> _getCharactersVoiceActors(
       Document document) {
-    // Sélectionner le premier `.detail-characters-list.clearfix`
+    // Select the first `.detail-characters-list.clearfix`
     var characterList =
         document.querySelector('.detail-characters-list.clearfix');
     if (characterList == null) {
       return [];
     }
 
-    // Vérifier et récupérer les deux colonnes s'ils existent
+    // Get both columns if they exist
     var leftColumn = characterList.querySelector('.left-column');
     var rightColumn = characterList.querySelector('.left-right');
 
-    // Fonction pour extraire les personnages et acteurs de voix à partir des lignes `tr`
+    // Extract characters and voice actors from table rows
     List<CharactersVoiceActors> extractCharactersVoiceActors(Element column) {
       var rows = column.querySelectorAll('table tr');
       List<CharactersVoiceActors> characterVoiceActorsList = [];
@@ -435,17 +441,17 @@ class HtmlParsers {
       for (var row in rows) {
         var tds = row.querySelectorAll('td.borderClass');
         if (tds.length != 3) {
-          continue; // S'assurer qu'il y a bien 3 colonnes (td)
+          continue; // Ensure there are exactly 3 columns (td)
         }
 
-        // Extraire les informations du personnage
+        // Extract character info
         // var characterImage = tds[0]
         //         .querySelector('.picSurround img')
         //         ?.attributes['data-src']
         //         ?.trim() ??
         //     '';
         var imageQuality =
-            'r/42x62'; // image quality rendu x2; 'r/42x62' rendu x1
+            'r/42x62'; // Image quality x1; double for x2
         var characterElement = tds[0].querySelector('.picSurround img');
         // var characterImage = getImageUrlByQuality(characterElement, imageQuality).trim();
         var characterImage =
@@ -465,7 +471,7 @@ class HtmlParsers {
           role: characterRole,
         );
 
-        // Extraire les informations de l'acteur de voix
+        // Extract voice actor info
         var voiceActorNameElement = tds[2].querySelector('td.va-t a');
         var voiceActorName = Link(
           name: voiceActorNameElement?.text.trim() ?? '',
@@ -489,7 +495,7 @@ class HtmlParsers {
           role: voiceActorRole,
         );
 
-        // Ajouter le pair personnage/acteur à la liste
+        // Add the character/voice actor pair to the list
         characterVoiceActorsList.add(CharactersVoiceActors(
           character: character,
           voiceActor: voiceActor,
@@ -499,7 +505,7 @@ class HtmlParsers {
       return characterVoiceActorsList;
     }
 
-    // Extraire les données des deux colonnes s'ils existent
+    // Extract data from both columns if they exist
     List<CharactersVoiceActors> charactersVoiceActorsList = [];
     if (leftColumn != null) {
       charactersVoiceActorsList
@@ -514,19 +520,19 @@ class HtmlParsers {
   }
 
   static List<CharacterNode> _getStaff(Document document) {
-    // Sélectionner le deuxième `.detail-characters-list.clearfix`
+    // Select the second `.detail-characters-list.clearfix`
     var staffList =
         document.querySelectorAll('.detail-characters-list.clearfix');
     if (staffList.length < 2) {
-      return []; // S'assurer qu'il y a au moins deux éléments
+      return []; // Ensure there are at least two elements
     }
-    var secondStaffList = staffList[1]; // Le deuxième élément dans la liste
+    var secondStaffList = staffList[1]; // Second element in the list
 
-    // Vérifier et récupérer les deux colonnes s'ils existent
+    // Get both columns if they exist
     var leftColumn = secondStaffList.querySelector('.left-column');
     var rightColumn = secondStaffList.querySelector('.left-right');
 
-    // Fonction pour extraire les membres du staff à partir des lignes `tr`
+    // Extract staff members from table rows
     List<CharacterNode> extractStaff(Element column) {
       var rows = column.querySelectorAll('table tr');
       List<CharacterNode> staffListResult = [];
@@ -534,18 +540,18 @@ class HtmlParsers {
       for (var row in rows) {
         var tds = row.querySelectorAll('td.borderClass');
         if (tds.length != 2) {
-          continue; // S'assurer qu'il y a bien 2 colonnes (td)
+          continue; // Ensure there are exactly 2 columns (td)
         }
 
-        // Extraire l'image du membre du staff
+        // Extract staff member image
         var imageQuality =
-            'r/42x62'; // Image quality rendu x2; 'r/42x62" rendu x1
+            'r/42x62'; // Image quality x1; double for x2
         var staffElement = tds[0].querySelector('.picSurround img');
         // var staffImage = getImageUrlByQuality(staffElement, imageQuality).trim();
         var staffImage =
             getOriginalImageQuality(staffElement, imageQuality).trim();
 
-        // Extraire le nom, l'URL et le rôle du membre du staff
+        // Extract name, URL and role of the staff member
         var staffNameElement = tds[1].querySelector('a');
         var staffName = Link(
           name: staffNameElement?.text.trim() ?? '',
@@ -554,21 +560,21 @@ class HtmlParsers {
         var staffRole =
             tds[1].querySelector('.spaceit_pad small')?.text.trim() ?? '';
 
-        // Créer un objet CharacterNode pour le membre du staff
+        // Create a CharacterNode object for the staff member
         var staffMember = CharacterNode(
           image: staffImage,
           name: staffName,
           role: staffRole,
         );
 
-        // Ajouter le membre du staff à la liste des résultats
+        // Add the staff member to the results list
         staffListResult.add(staffMember);
       }
 
       return staffListResult;
     }
 
-    // Extraire les données des deux colonnes s'ils existent
+    // Extract data from both columns if they exist
     List<CharacterNode> staffListResult = [];
     if (leftColumn != null) {
       staffListResult.addAll(extractStaff(leftColumn));
@@ -585,32 +591,32 @@ class HtmlParsers {
         document.querySelectorAll('.detail-stack-block .column-item');
 
     return stackElements.map((e) {
-      // Récupérer l'URL du stack
+      // Get the stack URL
       var urlElement = e.querySelector('a');
       var url = urlElement?.attributes['href']?.trim() ?? '';
 
-      // Récupérer le titre du stack
+      // Get the stack title
       var titleElement = e.querySelector('.title a');
       var title = titleElement?.text.trim() ?? '';
 
-      // Récupérer les images associées au stack
+      // Get images associated with the stack
       var imageElements = e.querySelectorAll('.img .edge img');
       var imageUrls = imageElements
           .map((img) => img.attributes['src']?.trim() ?? '')
           .toList();
 
-      // Récupérer l'auteur du stack
+      // Get the stack author
       var authorElement = e.querySelector('.tag a');
       var username = authorElement?.text.trim() ?? '';
 
-      // Récupérer les statistiques du stack (Entries et Restacks)
+      // Get the stack statistics (Entries and Restacks)
       var statElement = e.querySelector('.foot .stat');
       var statsText = statElement?.text.trim() ?? '';
       int? entries = _getBeforeInt(statsText, endPattern: 'Entries');
       int? reStacks =
           _getBeforeInt(statsText, endPattern: 'Restacks', startPattern: '·');
 
-      // Retourner un objet InterestStack
+      // Return an InterestStack object
       return InterestStack(
         url: url,
         title: title,
@@ -723,7 +729,7 @@ class HtmlParsers {
     return queryParamsUri(Uri.tryParse(url), key, defaultValue);
   }
 
-  //method to parse anime details...
+  // Parse anime/manga details page
   static AnimeDetailHtml parseAnimeDetailedHtml(Document document,
       {ContentType type = ContentType.anime}) {
     return AnimeDetailHtml(
@@ -746,7 +752,7 @@ class HtmlParsers {
     );
   }
 
-  //method to parse user history...
+  // Parse user history page
   static UserHistoryList parseUserHistory(Document? document) {
     final content = document?.body?.querySelector('.history_content_wrapper');
     if (content == null) {
@@ -797,7 +803,7 @@ class HtmlParsers {
     return UserHistoryList(histories: histories);
   }
 
-  //method to parse user friends list...
+  // Parse user friends list page
   static UserFriendsList parseUserFriends(Document? document) {
     final friendsContainer = document?.body?.querySelector('.friend');
     if (friendsContainer == null) {
@@ -834,7 +840,7 @@ class HtmlParsers {
     return UserFriendsList(friends: friends);
   }
 
-  //method to parse mal genre...
+  // Parse MAL genre page
   static GenreCategoryList parseGenres(Document document) {
     final types = ['Genres', 'Explicit Genres', 'Themes', 'Demographics'];
 
@@ -851,7 +857,7 @@ class HtmlParsers {
             final id = int.tryParse(uri?.pathSegments.elementAt(2) ?? '');
             final linkText = element.text.trim();
             final name = linkText
-                .getAlphabets(); // Extract a specific fonction on the extension strings...
+                .getAlphabets(); // Extract alphabetic characters using String extension
             final count = int.tryParse(linkText.replaceAll(
                 RegExp(r'\D'), '')); // Extract digits as count
 
@@ -876,7 +882,7 @@ class HtmlParsers {
     return GenreCategoryList(categories: categories);
   }
 
-  //method to parse anime producer
+  // Parse anime producer/magazine page
   static GenreCategoryList parseProducer(Document document) {
     const characters = '#ABCDEFGHIJKLMNOPQRSTUVWXYZ';
     final types = characters.split('');
@@ -894,7 +900,7 @@ class HtmlParsers {
             final id = int.tryParse(uri?.pathSegments.elementAt(2) ?? '');
             final linkText = element.text.trim();
             final name = linkText
-                .getAlphabets(); // Extract a specific fonction on the extension strings...
+                .getAlphabets(); // Extract alphabetic characters using String extension
             final count = int.tryParse(linkText.replaceAll(
                 RegExp(r'\D'), '')); // Extract digits as count
 
@@ -992,5 +998,344 @@ class HtmlParsers {
         .toList();
 
     return AnimeFeaturedResult(featuredArticles: featuredArticles);
+  }
+
+  /// Parse MAL's /search/all page to extract results from all categories.
+  static AllSearchResult parseAllSearchResults(Document document) {
+    final categories = <String, List<Anime>>{};
+
+    for (final type in AllSearchResult.allTypes) {
+      categories[type] = [];
+    }
+
+    try {
+      final articles = document.getElementsByTagName('article');
+      for (final article in articles) {
+        final items = article.getElementsByClassName('list');
+        String? category;
+        final List<Anime> data = [];
+
+        for (final item in items) {
+          int? id;
+          String title = 'Unknown';
+          String? imageUrl;
+          String? mediaType;
+          int? numEpisodes;
+          double? mean;
+          int? numListUsers;
+
+          // Extract picture and link
+          final picSurround = item.getElementsByClassName('picSurround');
+          if (picSurround.isNotEmpty) {
+            final anchors = picSurround.first.getElementsByTagName('a');
+            if (anchors.isNotEmpty) {
+              final href = anchors.first.attributes['href'];
+              if (href != null) {
+                category ??= _getCategoryFromUrl(href);
+                id = _extractIdFromUrl(href, category ?? '');
+              }
+              // Extract image
+              final imgs = picSurround.first.getElementsByTagName('img');
+              if (imgs.isNotEmpty) {
+                final imgAttr = ['news', 'featured'].contains(category)
+                    ? 'src'
+                    : 'data-src';
+                imageUrl = imgs.first.attributes[imgAttr]
+                    ?.replaceAll('r/100x140/', '')
+                    .replaceAll('r/50x50/', '');
+              }
+            }
+          }
+
+          // Extract info
+          final infoList = item.getElementsByClassName('information');
+          if (infoList.isNotEmpty) {
+            final anchors = infoList.first.getElementsByTagName('a');
+            if (anchors.isNotEmpty) {
+              title = anchors.first.text.trim();
+            }
+            // Parse metadata for anime/manga
+            final metaList = infoList.first.getElementsByClassName('fn-grey4');
+            if (metaList.isNotEmpty && ['anime', 'manga'].contains(category)) {
+              final infoText = metaList.first.text.trim();
+              final lines = infoText
+                  .split('\n')
+                  .map((l) => l.trim())
+                  .where((l) => l.isNotEmpty)
+                  .toList();
+              if (lines.isNotEmpty) {
+                mediaType =
+                    lines.first.replaceAll(RegExp(r'[^a-zA-Z]'), '').trim();
+              }
+              if (lines.length >= 2) {
+                numEpisodes =
+                    int.tryParse(lines[0].replaceAll(RegExp(r'\D'), ''));
+                mean =
+                    double.tryParse(lines[1].replaceAll('Scored', '').trim());
+              }
+              if (lines.length >= 3) {
+                numListUsers =
+                    int.tryParse(lines[2].replaceAll(RegExp(r'\D'), ''));
+              }
+            }
+          }
+
+          if (id != null) {
+            data.add(Anime(
+              id: id,
+              title: title,
+              imageUrl: imageUrl ?? '',
+              score: mean ?? 0.0,
+              members: numListUsers ?? 0,
+              mediaType: mediaType,
+              numEpisodes: numEpisodes,
+            ));
+          }
+        }
+
+        if (category != null &&
+            AllSearchResult.allTypes.contains(category) &&
+            !categories.containsKey(category)) {
+          categories[category] = data;
+        } else if (category != null &&
+            categories.containsKey(category) &&
+            categories[category]!.isEmpty) {
+          categories[category] = data;
+        }
+      }
+    } catch (e) {
+      // Silently fail - return partial results
+    }
+
+    return AllSearchResult(categories: categories);
+  }
+
+  static String? _getCategoryFromUrl(String href) {
+    if (href.contains('/anime/')) return 'anime';
+    if (href.contains('/manga/')) return 'manga';
+    if (href.contains('/character/')) return 'character';
+    if (href.contains('/people/')) return 'person';
+    if (href.contains('/forum/')) return 'forum';
+    if (href.contains('/clubs.php')) return 'club';
+    if (href.contains('/featured/')) return 'featured';
+    if (href.contains('/news/')) return 'news';
+    return null;
+  }
+
+  static int? _extractIdFromUrl(String href, String category) {
+    try {
+      if (['news', 'featured'].contains(category)) {
+        final match = RegExp(r'/(?:news|featured)/(\d+)').firstMatch(href);
+        return match != null ? int.tryParse(match.group(1)!) : null;
+      } else if (['forum', 'club'].contains(category)) {
+        final match =
+            RegExp(r'[?&](?:topicid|cid|id)=(\d+)').firstMatch(href);
+        if (match != null) return int.tryParse(match.group(1)!);
+        // Fallback: last number in URL
+        final numMatch = RegExp(r'(\d+)').allMatches(href).lastOrNull;
+        return numMatch != null ? int.tryParse(numMatch.group(1)!) : null;
+      } else {
+        // anime, manga, character, person: /type/ID/name
+        final trimmed =
+            href.endsWith('/') ? href.substring(0, href.length - 1) : href;
+        final lastSlash = trimmed.lastIndexOf('/');
+        final segment = trimmed.substring(lastSlash + 1);
+        final parsed = int.tryParse(segment);
+        if (parsed != null) return parsed;
+        // Try second-to-last segment
+        final beforeLast = trimmed.substring(0, lastSlash);
+        final prevSlash = beforeLast.lastIndexOf('/');
+        return int.tryParse(beforeLast.substring(prevSlash + 1));
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  /// Parse MAL's /clubs.php page to extract club listings.
+  static Map<String, dynamic> parseClubList(Document document) {
+    final clubs = <Map<String, dynamic>>[];
+
+    try {
+      final rows = document.querySelectorAll('.normal_header ~ table tr');
+      for (final row in rows) {
+        final cells = row.getElementsByTagName('td');
+        if (cells.length >= 2) {
+          final link = cells[0].querySelector('a');
+          if (link != null) {
+            final href = link.attributes['href'] ?? '';
+            final idMatch = RegExp(r'cid=(\d+)').firstMatch(href);
+            clubs.add({
+              'id': idMatch != null ? int.tryParse(idMatch.group(1)!) : null,
+              'name': link.text.trim(),
+              'members': cells.length >= 3 ? cells[2].text.trim() : '',
+            });
+          }
+        }
+      }
+    } catch (e) {
+      // Partial results
+    }
+
+    return {'clubs': clubs};
+  }
+
+  /// Parse MAL's /profile/{username}/clubs page.
+  static Map<String, dynamic> parseUserClubs(Document document) {
+    final clubs = <Map<String, dynamic>>[];
+
+    try {
+      final items = document
+          .querySelectorAll('.normal_header ~ ol li, .user-clubs li, li');
+      for (final item in items) {
+        final link = item.querySelector('a');
+        if (link != null) {
+          final href = link.attributes['href'] ?? '';
+          if (href.contains('clubs.php') || href.contains('/clubs/')) {
+            final idMatch = RegExp(r'cid=(\d+)').firstMatch(href);
+            clubs.add({
+              'id': idMatch != null ? int.tryParse(idMatch.group(1)!) : null,
+              'name': link.text.trim(),
+            });
+          }
+        }
+      }
+    } catch (e) {
+      // Partial results
+    }
+
+    return {'clubs': clubs};
+  }
+
+  /// Parse MAL's /users.php search results page.
+  static MalUserSearchResult parseUserSearch(Document document) {
+    final users = <MalUserNode>[];
+
+    try {
+      // Fallback: look for user listing pattern
+      final rows = document.querySelectorAll('td.borderClass');
+      for (final row in rows) {
+        final link = row.querySelector('a');
+        final img = row.querySelector('img');
+        final infoDiv = row.querySelector('.information, .fn-grey4');
+
+        if (link != null) {
+          final href = link.attributes['href'] ?? '';
+          if (href.contains('/profile/')) {
+            final username =
+                href.split('/profile/').last.replaceAll('/', '');
+            users.add(MalUserNode(
+              username: username.isNotEmpty ? username : link.text.trim(),
+              imageUrl:
+                  img?.attributes['data-src'] ?? img?.attributes['src'],
+              lastOnline: infoDiv?.text.trim(),
+            ));
+          }
+        }
+      }
+
+      // If no results from table, try direct anchor patterns
+      if (users.isEmpty) {
+        final anchors = document.querySelectorAll('a[href*="/profile/"]');
+        final seen = <String>{};
+        for (final a in anchors) {
+          final href = a.attributes['href'] ?? '';
+          final username =
+              href.split('/profile/').last.replaceAll('/', '');
+          if (username.isNotEmpty && !seen.contains(username)) {
+            seen.add(username);
+            users.add(MalUserNode(
+              username: username,
+              imageUrl: a.querySelector('img')?.attributes['src'],
+            ));
+          }
+        }
+      }
+    } catch (e) {
+      // Partial results
+    }
+
+    return MalUserSearchResult(users: users);
+  }
+
+  /// Parse a single MAL featured article page.
+  static Map<String, dynamic> parseFeaturedArticle(Document document, int id,
+      {String category = "featured"}) {
+    final result = <String, dynamic>{'id': id, 'category': category};
+
+    try {
+      // Title
+      final titleEl =
+          document.querySelector('h1.title, .news-info-block h1, h1');
+      result['title'] = titleEl?.text.trim() ?? '';
+
+      // Content
+      final contentEl = document.querySelector(
+          '.news-container .content, .article-body, .usertext');
+      result['content'] = contentEl?.innerHtml ?? '';
+      result['contentText'] = contentEl?.text.trim() ?? '';
+
+      // Image
+      final imgEl =
+          document.querySelector('.news-container img, .article-body img');
+      result['imageUrl'] = imgEl?.attributes['src'] ?? '';
+
+      // Author
+      final authorEl = document
+          .querySelector('.news-info-block .information a, .author a');
+      result['author'] = authorEl?.text.trim() ?? '';
+
+      // Date
+      final dateEl =
+          document.querySelector('.news-info-block .information, .date');
+      result['date'] = dateEl?.text.trim() ?? '';
+
+      // Tags
+      final tagEls =
+          document.querySelectorAll('.tags a, .information .tags a');
+      result['tags'] = tagEls.map((t) => t.text.trim()).toList();
+    } catch (e) {
+      // Partial results
+    }
+
+    return result;
+  }
+
+  /// Parse forum topics from MAL HTML page (fallback when API is unavailable).
+  static Map<String, dynamic> parseForumTopicsHtml(Document document) {
+    final topics = <Map<String, dynamic>>[];
+
+    try {
+      final rows = document.querySelectorAll(
+          '.forum-topic-list tr, table.forum_border_around tr');
+      for (final row in rows) {
+        final cells = row.getElementsByTagName('td');
+        if (cells.length >= 4) {
+          final titleCell = cells[1];
+          final link = titleCell.querySelector('a');
+          if (link != null) {
+            final href = link.attributes['href'] ?? '';
+            final topicIdMatch =
+                RegExp(r'topicid=(\d+)').firstMatch(href);
+
+            topics.add({
+              'id': topicIdMatch != null
+                  ? int.tryParse(topicIdMatch.group(1)!)
+                  : null,
+              'title': link.text.trim(),
+              'created_by':
+                  cells.length > 2 ? cells[2].text.trim() : '',
+              'replies':
+                  cells.length > 3 ? cells[3].text.trim() : '',
+              'last_post':
+                  cells.length > 4 ? cells[4].text.trim() : '',
+            });
+          }
+        }
+      }
+    } catch (e) {
+      // Partial results
+    }
+
+    return {'data': topics};
   }
 }

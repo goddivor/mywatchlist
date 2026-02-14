@@ -3,13 +3,13 @@ class UserHistoryList {
 
   UserHistoryList({required this.histories});
 
-  // Méthode pour convertir un JSON en UserHistoryList
+  // Factory to create UserHistoryList from JSON
   factory UserHistoryList.fromJson(List<dynamic> json) {
     var histories = json.map((item) => UserHistory.fromJson(item as Map<String, dynamic>)).toList();
     return UserHistoryList(histories: histories);
   }
 
- // Méthode pour convertir UserHistoryList en JSON
+  // Convert UserHistoryList to JSON
   Map<String, dynamic> toJson() {
     return {
       'histories': histories.map((history) => history.toJson()).toList(),
