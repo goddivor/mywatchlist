@@ -41,6 +41,8 @@ class AvatarWidget extends StatelessWidget {
     final theme = Theme.of(context);
     final effectiveBorderColor = borderColor ?? theme.colorScheme.primary;
 
+    final isCircular = userRoundBorderforLoading ?? true;
+
     return GestureDetector(
       onTap: onTap as void Function()?,
       onLongPress: onLongPress != null
@@ -50,20 +52,22 @@ class AvatarWidget extends StatelessWidget {
               : null),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          border: Border.all(
-            color: effectiveBorderColor,
-            width: borderWidth,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: effectiveBorderColor.withValues(alpha: 0.4),
-              blurRadius: 8,
-              spreadRadius: 1,
-            ),
-          ],
-        ),
+        decoration: isCircular
+            ? BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: effectiveBorderColor,
+                  width: borderWidth,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: effectiveBorderColor.withValues(alpha: 0.4),
+                    blurRadius: 8,
+                    spreadRadius: 1,
+                  ),
+                ],
+              )
+            : null,
         child: ClipRRect(
           borderRadius: radius ?? BorderRadius.circular(50),
           child: Container(
