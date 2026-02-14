@@ -6,20 +6,24 @@ import 'package:mywatchlist/widgets/loading/shimmercolor.dart';
 
 class ShowAnimeForum extends StatefulWidget {
   final int animeId;
+  final String category;
 
-  const ShowAnimeForum({super.key, required this.animeId});
+  const ShowAnimeForum(
+      {super.key, required this.animeId, this.category = "anime"});
 
   @override
   State<ShowAnimeForum> createState() => _ShowAnimeForumState();
 }
 
-class _ShowAnimeForumState extends State<ShowAnimeForum> {
-  List<AnimeForum>? forumTopics;
+class _ShowAnimeForumState extends State<ShowAnimeForum>
+    with AutomaticKeepAliveClientMixin {
   List<AnimeForum> forumTopicsList = [];
   bool isLoading = true;
   bool hasError = false;
-  final ScrollController _scrollController = ScrollController();
-  final DateFormat dateFormat = DateFormat('dd MMM yyyy');
+  final DateFormat _dateFormat = DateFormat('MMM d, yyyy');
+
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
@@ -32,14 +36,16 @@ class _ShowAnimeForumState extends State<ShowAnimeForum> {
       final response = await JikanApi().getAnimeForum(
         widget.animeId,
         AnimeForumFilter.all,
+        category: widget.category,
       );
 
+      if (!mounted) return;
       setState(() {
-        forumTopics = response.data;
-        forumTopicsList.addAll(forumTopics ?? []);
+        forumTopicsList = response.data;
         isLoading = false;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         isLoading = false;
         hasError = true;
@@ -50,6 +56,8 @@ class _ShowAnimeForumState extends State<ShowAnimeForum> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
+
     if (isLoading) {
       return _buildLoadingState();
     }
@@ -62,141 +70,162 @@ class _ShowAnimeForumState extends State<ShowAnimeForum> {
       return _buildEmptyState();
     }
 
+    // Show max 15 topics in a paginated vertical card layout
+    final topics = forumTopicsList.take(15).toList();
+    const int itemsPerPage = 3;
+    final int pageCount = (topics.length / itemsPerPage).ceil();
+
+    // Dynamic height based on item count per page
+    final double containerHeight;
+    if (topics.length == 1) {
+      containerHeight = 110;
+    } else if (topics.length == 2) {
+      containerHeight = 210;
+    } else {
+      containerHeight = 310;
+    }
+
     return SizedBox(
-      height: 270, // Reduced height
-      child: ListView.builder(
-        controller: _scrollController,
-        scrollDirection: Axis.horizontal,
-        itemCount: forumTopicsList.length,
-        padding: const EdgeInsets.symmetric(horizontal: 15),
-        itemBuilder: (context, index) {
-          final topic = forumTopicsList[index];
-          return _buildForumCard(topic);
+      height: containerHeight,
+      child: PageView.builder(
+        padEnds: false,
+        controller: PageController(viewportFraction: 0.92),
+        itemCount: pageCount,
+        itemBuilder: (context, pageIndex) {
+          final startIndex = pageIndex * itemsPerPage;
+          final endIndex = (startIndex + itemsPerPage).clamp(0, topics.length);
+          final pageTopics = topics.sublist(startIndex, endIndex);
+
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            child: Column(
+              children: pageTopics.map((topic) {
+                return _buildForumTopicCard(context, topic);
+              }).toList(),
+            ),
+          );
         },
       ),
     );
   }
 
-  Widget _buildForumCard(AnimeForum topic) {
-    return SizedBox(
-      width: 280,
-      child: Card(
-        margin: const EdgeInsets.only(right: 10),
-        elevation: 2,
-        clipBehavior: Clip.antiAlias,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: InkWell(
-          onTap: () async {
-            if (topic.url != null && topic.url!.isNotEmpty) {
-              // final Uri url = Uri.parse(topic.url!);
-              // if (await canLaunchUrl(url)) {
-              //   await launchUrl(url, mode: LaunchMode.externalApplication);
-              // }
-            }
-          },
-          child: Padding(
-            padding: const EdgeInsets.all(12.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Topic title
-                Text(
-                  topic.title ?? 'Sans titre',
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
+  Widget _buildForumTopicCard(BuildContext context, AnimeForum topic) {
+    final theme = Theme.of(context);
 
-                const SizedBox(height: 8),
-
-                // Author info
-                Row(
-                  children: [
-                    const Icon(Icons.person_outline, size: 14),
-                    const SizedBox(width: 4),
-                    Expanded(
-                      child: Text(
-                        topic.authorUsername ?? 'Inconnu',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
-                        overflow: TextOverflow.ellipsis,
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: SizedBox(
+        height: 96,
+        child: Card(
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: BorderSide(
+              color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
+            ),
+          ),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(12),
+            onTap: () {
+              // TODO: Navigate to forum topic
+            },
+            child: Padding(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  // Title
+                  Expanded(
+                    child: Text(
+                      topic.title ?? 'Untitled',
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        fontWeight: FontWeight.w600,
                       ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                  ],
-                ),
-
-                const SizedBox(height: 4),
-
-                // Date and comments info
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    // Date
-                    Row(
-                      children: [
-                        const Icon(Icons.calendar_today_outlined, size: 14),
-                        const SizedBox(width: 4),
+                  ),
+                  const SizedBox(height: 6),
+                  // Bottom row: author + date | post count
+                  Row(
+                    children: [
+                      // Author
+                      Icon(
+                        Icons.person_outline,
+                        size: 14,
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                      const SizedBox(width: 4),
+                      Flexible(
+                        child: Text(
+                          topic.authorUsername ?? 'Unknown',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.primary,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      // Date
+                      if (topic.date != null) ...[
+                        Text(
+                          ' · ',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
                         Text(
                           _formatDate(topic.date),
-                          style: const TextStyle(fontSize: 12),
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
                         ),
                       ],
-                    ),
-
-                    // Comments count
+                      const Spacer(),
+                      // Post count
+                      Icon(
+                        Icons.forum_outlined,
+                        size: 14,
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${topic.comments ?? 0}',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                  // Last reply info
+                  if (topic.lastComment != null) ...[
+                    const SizedBox(height: 4),
                     Row(
                       children: [
-                        const Icon(Icons.comment_outlined, size: 14),
-                        const SizedBox(width: 2),
-                        Text(
-                          '${topic.comments ?? 0}',
-                          style: const TextStyle(fontSize: 12),
+                        Icon(
+                          Icons.reply,
+                          size: 12,
+                          color: theme.colorScheme.onSurfaceVariant
+                              .withValues(alpha: 0.7),
+                        ),
+                        const SizedBox(width: 4),
+                        Flexible(
+                          child: Text(
+                            '${topic.lastComment!.authorUsername ?? ''} · ${_formatDate(topic.lastComment!.date)}',
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant
+                                  .withValues(alpha: 0.7),
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
                       ],
                     ),
                   ],
-                ),
-
-                const Divider(height: 16),
-
-                // Last comment section if available
-                if (topic.lastComment != null)
-                  Expanded(
-                    child: _buildLastComment(topic.lastComment!),
-                  )
-                else
-                  const Spacer(),
-
-                // "View discussion" button
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: TextButton(
-                    onPressed: () async {
-                      if (topic.url != null && topic.url!.isNotEmpty) {
-                        // final Uri url = Uri.parse(topic.url!);
-                        // if (await canLaunchUrl(url)) {
-                        //   await launchUrl(url, mode: LaunchMode.externalApplication);
-                        // }
-                      }
-                    },
-                    style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 4),
-                      minimumSize: Size.zero,
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    ),
-                    child: const Text('Voir la discussion',
-                        style: TextStyle(fontSize: 12)),
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
@@ -205,148 +234,88 @@ class _ShowAnimeForumState extends State<ShowAnimeForum> {
   }
 
   String _formatDate(String? dateStr) {
-    if (dateStr == null) return 'Date inconnue';
-
+    if (dateStr == null) return '';
     try {
       final date = DateTime.parse(dateStr);
-      return dateFormat.format(date);
+      return _dateFormat.format(date);
     } catch (e) {
       return dateStr;
     }
   }
 
-  Widget _buildLastComment(LastComment lastComment) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      padding: const EdgeInsets.all(8),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              // Last comment author
-              Expanded(
-                child: Row(
-                  children: [
-                    const Icon(Icons.chat_bubble_outline, size: 12),
-                    const SizedBox(width: 4),
-                    Expanded(
-                      child: Text(
-                        lastComment.authorUsername ?? 'Inconnu',
-                        style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              // Last comment date
-              Text(
-                _formatDate(lastComment.date),
-                style: const TextStyle(fontSize: 11),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 4),
-
-          // "Last reply" indicator
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(4),
-            ),
-            child: Text(
-              'Last reply',
-              style: TextStyle(
-                fontSize: 10,
-                color: Theme.of(context).colorScheme.primary,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildLoadingState() {
     return SizedBox(
-      height: 270,
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        itemCount: 3,
+      height: 310,
+      child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 15),
-        itemBuilder: (context, index) {
-          return SizedBox(
-            width: 280,
-            child: Card(
-              margin: const EdgeInsets.only(right: 10),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: ShimmerColor(
-                Padding(
-                  padding: const EdgeInsets.all(12.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Container(
-                        height: 32,
-                        color: Colors.white,
-                      ),
-                      const SizedBox(height: 8),
-                      Container(
-                        height: 14,
-                        width: 150,
-                        color: Colors.white,
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
+        child: ShimmerColor(
+          Column(
+            children: List.generate(
+              3,
+              (index) => Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: SizedBox(
+                  height: 96,
+                  child: Card(
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Container(
-                            height: 14,
-                            width: 100,
-                            color: Colors.white,
+                            height: 16,
+                            width: double.infinity,
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
                           ),
+                          const SizedBox(height: 6),
                           Container(
                             height: 14,
-                            width: 50,
-                            color: Colors.white,
+                            width: 200,
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Row(
+                            children: [
+                              Container(
+                                height: 12,
+                                width: 120,
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                              ),
+                              const Spacer(),
+                              Container(
+                                height: 12,
+                                width: 40,
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
-                      const Divider(height: 16),
-                      Expanded(
-                        child: Container(
-                          color: Colors.white.withOpacity(0.7),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: Container(
-                          height: 14,
-                          width: 100,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
                 ),
               ),
             ),
-          );
-        },
+          ),
+        ),
       ),
     );
   }
@@ -361,13 +330,19 @@ class _ShowAnimeForumState extends State<ShowAnimeForum> {
             Icon(
               Icons.forum_outlined,
               size: 48,
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+              color: Theme.of(context)
+                  .colorScheme
+                  .onSurface
+                  .withValues(alpha: 0.6),
             ),
             const SizedBox(height: 16),
             Text(
-              'Aucun sujet de forum disponible',
+              'No forum topics available',
               style: TextStyle(
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                color: Theme.of(context)
+                    .colorScheme
+                    .onSurface
+                    .withValues(alpha: 0.6),
               ),
             ),
           ],
@@ -390,7 +365,7 @@ class _ShowAnimeForumState extends State<ShowAnimeForum> {
             ),
             const SizedBox(height: 16),
             Text(
-              'Erreur lors du chargement des sujets du forum',
+              'Failed to load forum topics',
               style: TextStyle(
                 color: Theme.of(context).colorScheme.error,
               ),
@@ -404,17 +379,11 @@ class _ShowAnimeForumState extends State<ShowAnimeForum> {
                 });
                 _fetchForumTopics();
               },
-              child: const Text('Réessayer'),
+              child: const Text('Retry'),
             ),
           ],
         ),
       ),
     );
-  }
-
-  @override
-  void dispose() {
-    _scrollController.dispose();
-    super.dispose();
   }
 }
