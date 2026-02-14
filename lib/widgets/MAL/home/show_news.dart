@@ -1,49 +1,57 @@
 import 'package:flutter/material.dart';
-import 'package:mywatchlist/constants/constants.dart';
 import 'dart:async';
 
+import 'package:intl/intl.dart';
 import 'package:mywatchlist/services/api/Jikan/jikan_anime_news.dart';
 import 'package:mywatchlist/services/api/Jikan/jikan_api.dart';
 import 'package:mywatchlist/widgets/common/avatar_widget.dart';
+import 'package:mywatchlist/widgets/loading/shimmercolor.dart';
 
-// Classe ShowAnimeNews qui affiche les news avec pagination et défilement infini
 class ShowAnimeNews extends StatefulWidget {
   final int animeId;
+  final String category;
 
-  const ShowAnimeNews({super.key, required this.animeId});
+  const ShowAnimeNews(
+      {super.key, required this.animeId, this.category = "anime"});
 
   @override
-  // ignore: library_private_types_in_public_api
   _ShowAnimeNewsState createState() => _ShowAnimeNewsState();
 }
 
-class _ShowAnimeNewsState extends State<ShowAnimeNews> {
+class _ShowAnimeNewsState extends State<ShowAnimeNews>
+    with AutomaticKeepAliveClientMixin {
   List<AnimeNews>? newsList;
-  List newsFullList = [];
+  List<AnimeNews> newsFullList = [];
   int _currentPage = 1;
   bool _hasNextPage = true;
+  bool _isLoadingMore = false;
   final ScrollController _scrollController = ScrollController();
+
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
     super.initState();
-    _scrollController.addListener(scrollController);
+    _scrollController.addListener(_onScroll);
     _fetchNews();
   }
 
-  Future<void> scrollController() async {
+  Future<void> _onScroll() async {
     if (_scrollController.position.pixels ==
-        _scrollController.position.maxScrollExtent) {
-      setState(() {});
+            _scrollController.position.maxScrollExtent &&
+        !_isLoadingMore) {
+      _isLoadingMore = true;
       await _fetchNews();
-      setState(() {});
+      _isLoadingMore = false;
     }
   }
 
   Future<void> _fetchNews() async {
     if (_hasNextPage) {
-      final response =
-          await JikanApi().getAnimeNews(widget.animeId, page: _currentPage);
+      final response = await JikanApi().getAnimeNews(widget.animeId,
+          page: _currentPage, category: widget.category);
+      if (!mounted) return;
       setState(() {
         newsList = response.data;
         newsFullList.addAll(newsList!);
@@ -55,101 +63,252 @@ class _ShowAnimeNewsState extends State<ShowAnimeNews> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 15.0),
-      child: SizedBox(
-        height: 270,
-        child: GridView.builder(
-          controller: _scrollController,
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisSpacing: 0,
-            crossAxisCount: 1,
-            mainAxisSpacing: 0,
-            childAspectRatio: .9,
+    super.build(context);
+
+    if (newsFullList.isEmpty && newsList == null) {
+      return _buildLoadingState();
+    }
+
+    return SizedBox(
+      height: 280,
+      child: ListView.builder(
+        controller: _scrollController,
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        itemCount: newsFullList.length + (_hasNextPage ? 1 : 0),
+        itemBuilder: (context, index) {
+          if (index < newsFullList.length) {
+            return _buildNewsCard(newsFullList[index]);
+          }
+          return _buildLoadingCard();
+        },
+      ),
+    );
+  }
+
+  Widget _buildNewsCard(AnimeNews news) {
+    final theme = Theme.of(context);
+    final dateStr = news.date != null
+        ? DateFormat('MMM d, yyyy')
+            .format(DateTime.parse(news.date!))
+        : '';
+
+    return SizedBox(
+      width: 320,
+      child: Card(
+        margin: const EdgeInsets.only(right: 10, bottom: 4, top: 4),
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(
+            color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
           ),
-          itemCount: newsFullList.length + (_hasNextPage ? 1 : 0),
-          scrollDirection: Axis.horizontal,
-          itemBuilder: (context, index) {
-            if (index < newsFullList.length) {
-              final news = newsFullList[index];
-              return Card(
-                child: InkWell(
-                  onTap: () {
-                    // Action lorsqu'on appuie sur la carte (par exemple ouvrir un lien)
-                  },
+        ),
+        child: InkWell(
+          onTap: () {},
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Left: Image thumbnail
+                ClipRRect(
                   borderRadius: BorderRadius.circular(12),
+                  child: AvatarWidget(
+                    height: 240,
+                    width: 90,
+                    url: news.images?.jpg?.imageUrl,
+                    userRoundBorderforLoading: false,
+                    radius: BorderRadius.circular(12),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                // Right: Content
+                Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _titleWidget(news),
-                      const SizedBox(height: 10),
-                      _summaryWidget(news),
-                      const SizedBox(height: 10),
-                      _bottomWidget(news),
-                      const SizedBox(height: 10),
+                      // Title
+                      Text(
+                        news.title ?? '',
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          height: 1.3,
+                        ),
+                        maxLines: 3,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 8),
+                      // Excerpt
+                      Expanded(
+                        child: Text(
+                          news.excerpt ?? '',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                            height: 1.4,
+                          ),
+                          overflow: TextOverflow.fade,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      // Bottom: Author + Date + Comments
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              news.authorUsername ?? '',
+                              style: theme.textTheme.labelSmall?.copyWith(
+                                color: theme.colorScheme.primary,
+                                fontWeight: FontWeight.w500,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          if (dateStr.isNotEmpty)
+                            Text(
+                              dateStr,
+                              style: theme.textTheme.labelSmall?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant
+                                    .withValues(alpha: 0.6),
+                              ),
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      // Comments count
+                      if (news.comments != null && news.comments! > 0)
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.chat_bubble_outline,
+                              size: 13,
+                              color: theme.colorScheme.onSurfaceVariant
+                                  .withValues(alpha: 0.6),
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              '${news.comments}',
+                              style: theme.textTheme.labelSmall?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant
+                                    .withValues(alpha: 0.6),
+                              ),
+                            ),
+                          ],
+                        ),
                     ],
                   ),
                 ),
-              );
-            } else {
-              return const Center(child: CircularProgressIndicator());
-            }
-          },
-        ),
-      ),
-    );
-  }
-
-  Widget _titleWidget(AnimeNews news) {
-    return Expanded(
-      child: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.start,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            AvatarWidget(
-              height: 40,
-              width: 40,
-              url: news.images?.jpg?.imageUrl,
-              userRoundBorderforLoading: false,
+              ],
             ),
-            const SizedBox(width: 20),
-            Expanded(
-              child: title(news.title ?? '', textOverflow: TextOverflow.fade),
-            )
-          ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _summaryWidget(AnimeNews news) {
-    return Expanded(
-      flex: 2,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10),
-        child: title(news.excerpt ?? ''),
+  Widget _buildLoadingState() {
+    return SizedBox(
+      height: 280,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        itemCount: 3,
+        itemBuilder: (context, index) => _buildLoadingCard(),
       ),
     );
   }
 
-  Widget _bottomWidget(AnimeNews news) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          title(news.authorUsername ?? '', selectable: true),
-          iconAndText(Icons.comment, news.comments.toString())
-        ],
+  Widget _buildLoadingCard() {
+    return SizedBox(
+      width: 320,
+      child: Card(
+        margin: const EdgeInsets.only(right: 10, bottom: 4, top: 4),
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: ShimmerColor(
+          Padding(
+            padding: const EdgeInsets.all(12),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  height: 240,
+                  width: 90,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        height: 16,
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Container(
+                        height: 16,
+                        width: 140,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Expanded(
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Container(
+                            height: 12,
+                            width: 70,
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                          ),
+                          Container(
+                            height: 12,
+                            width: 80,
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
 
   @override
   void dispose() {
+    _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
     super.dispose();
   }
