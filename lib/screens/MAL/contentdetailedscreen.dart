@@ -482,7 +482,8 @@ class _ContentDetailedScreenState extends State<ContentDetailedScreen>
           ),
         ),
       TabType.Adaptations => _nullIf(
-          animeDetailedHtml != null,
+          animeDetailedHtml != null &&
+              (getAdaptationsFromData(animeDetailedHtml)).isNotEmpty,
           () => VisibleSection(
             'Adaptations',
             AdaptationsWidget(
