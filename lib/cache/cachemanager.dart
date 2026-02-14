@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:mywatchlist/services/api/MAL/mal_anime.dart';
+import 'package:mywatchlist/services/api/MAL/models/search_result.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class CacheManager {
@@ -217,6 +218,27 @@ class CacheManager {
           .toList();
     } catch (e) {
       debugPrint('Cache error (news) $sectionKey: $e');
+      return null;
+    }
+  }
+
+  /// Cache a SearchResult with auto-expiry.
+  Future<void> cacheSearchResult(String sectionKey, SearchResult result) async {
+    final jsonString = jsonEncode(result.toJson());
+    await setValueForServiceAutoExpireIn(homepageService, sectionKey, jsonString);
+  }
+
+  /// Get a cached SearchResult.
+  Future<SearchResult?> getCachedSearchResult(
+      String sectionKey, [int expiresInSeconds = 7200]) async {
+    final jsonString = await getValueForServiceAutoExpire(
+        homepageService, sectionKey, expiresInSeconds);
+    if (jsonString == null) return null;
+    try {
+      final Map<String, dynamic> jsonMap = jsonDecode(jsonString);
+      return SearchResult.fromJson(jsonMap);
+    } catch (e) {
+      debugPrint('Cache error (searchResult) $sectionKey: $e');
       return null;
     }
   }

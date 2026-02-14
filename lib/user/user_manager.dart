@@ -1,9 +1,5 @@
 import 'package:flutter/foundation.dart';
 import 'package:mywatchlist/constants/constants.dart';
-import 'package:mywatchlist/services/auth/mal_authresp.dart';
-import 'package:mywatchlist/services/auth/anilist_authresp.dart';
-import 'package:mywatchlist/services/auth/kitsu_authresp.dart';
-import 'package:mywatchlist/services/auth/simkl_authresp.dart';
 import 'package:mywatchlist/user/base_user.dart';
 import 'package:mywatchlist/user/user_mal_v2.dart';
 import 'package:mywatchlist/user/user_anilist_v2.dart';

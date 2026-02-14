@@ -2,12 +2,16 @@
 
 import 'package:shared_preferences/shared_preferences.dart';
 
+/// User preference for timezone display in airing schedules.
+enum TimezonePref { utc, jst, local }
+
 class UserPreference {
   static const String _keyFirstTime = "first_time";
   static const String _keyLanguage = "language";
   static const String _keyTheme = "theme";
   static const String _keyBgImagePath = "bg_image_path";
   static const String _keyShowBg = "show_bg";
+  static const String _keyTimezonePref = "timezone_pref";
 
   final Future<SharedPreferences> _prefs = SharedPreferences.getInstance();
 
@@ -73,5 +77,21 @@ class UserPreference {
   Future<void> setShowBackground(bool show) async {
     final prefs = await _prefs;
     await prefs.setBool(_keyShowBg, show);
+  }
+
+  // Get timezone preference for airing schedule display
+  Future<TimezonePref> getTimezonePref() async {
+    final prefs = await _prefs;
+    final value = prefs.getString(_keyTimezonePref) ?? 'local';
+    return TimezonePref.values.firstWhere(
+      (e) => e.name == value,
+      orElse: () => TimezonePref.local,
+    );
+  }
+
+  // Set timezone preference
+  Future<void> setTimezonePref(TimezonePref pref) async {
+    final prefs = await _prefs;
+    await prefs.setString(_keyTimezonePref, pref.name);
   }
 }

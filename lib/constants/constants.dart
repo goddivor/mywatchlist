@@ -36,25 +36,25 @@ class Constants {
   static const String chars =
       'AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz1234567890-._~';
 
-  //myanimelist client id, secret and redirecturi
+  // MyAnimeList client id, secret and redirect URI
   static String malclientId = dotenv.env['MAL_CLIENT_ID'] ?? '';
   static String malClientSecret = dotenv.env['MAL_CLIENT_SECRET'] ?? '';
   static const String malredirectUri = 'com.teen.mywatchlist://myanimelist-callback';
   static const String malCallbackScheme = 'com.teen.mywatchlist';
 
-  //anilist client id, secret and redirecturi
+  // AniList client id, secret and redirect URI
   static String anilistClientId = dotenv.env['ANILIST_CLIENT_ID'] ?? '';
   static String anilistClientSecret = dotenv.env['ANILIST_CLIENT_SECRET'] ?? '';
   static const String anilistRedirectUri = 'com.teen.mywatchlist://anilist-callback';
   static const String anilistCallbackScheme = 'com.teen.mywatchlist';
 
-  //simkl client id, secret and redirecturi
+  // Simkl client id, secret and redirect URI
   static String simklClientId = dotenv.env['SIMKL_CLIENT_ID'] ?? '';
   static String simklClientSecret = dotenv.env['SIMKL_CLIENT_SECRET'] ?? '';
   static const String simklRedirectUri = 'com.teen.mywatchlist://simkl-callback';
   static const String simklCallbackScheme = 'com.teen.mywatchlist';
 
-  //myanimelist api endpoints...
+  // MyAnimeList API endpoints
   static const String malapiUrl = 'https://api.myanimelist.net/v2';
   static const String maloauthEndPoint =
       'https://myanimelist.net/v1/oauth2/authorize';
@@ -75,25 +75,29 @@ class Constants {
       'https://api.myanimelist.net/v2/anime/suggestions';
   static const String malmangaSuggestedEndPoint =
       'https://api.myanimelist.net/v2/manga/suggestions';
+  static const String malmangaEndPoint =
+      'https://api.myanimelist.net/v2/manga';
+  static const String malforumEndPoint =
+      'https://api.myanimelist.net/v2/forum';
 
-  //anilist api endpoints...
+  // AniList API endpoints
   static const String anilistOAuthEndPoint =
       'https://anilist.co/api/v2/oauth/authorize';
   static const String anilistTokenEndPoint =
       'https://anilist.co/api/v2/oauth/token';
 
-  //simkl api endpoints...
+  // Simkl API endpoints
   static const String simklapiUrl = 'https://api.simkl.com/';
   static const String simklOAuthEndPoint = 'https://simkl.com/oauth/authorize';
   static const String simklTokenEndPoint = 'https://api.simkl.com/oauth/token';
   static const String simkUserSettingEndPoint =
       'https://api.simkl.com/users/settings';
 
-  //stantard things on all api
+  // Standard token keys for all APIs
   static const String refreshToken = 'refreshToken';
   static const String expiresAt = 'expiresAt';
 
-  //myanimelist scrapping endpoints...
+  // MyAnimeList scraping endpoints
   static const String malnewsUrl = 'https://myanimelist.net/news';
   static const String malfeaturedUrl = 'https://myanimelist.net/featured';
   static const String malfeaturedTagsUrl =
@@ -123,6 +127,21 @@ class Constants {
 
   static const String malAnimeFields =
       'id,title,main_picture,alternative_titles,ending_themes,opening_themes,start_date,end_date,synopsis,mean,rank,popularity,num_list_users,num_scoring_users,nsfw,created_at,updated_at,media_type,status,genres,my_list_status{is_rewatching,is_rereading,num_times_rewatched,num_times_reread,priority,rewatch_value,reread_value,start_date,finish_date,tags,comments},num_episodes,start_season,broadcast,source,average_episode_duration,rating,pictures,background,related_anime{my_list_status,mean,num_list_users},related_manga,recommendations{my_list_status,mean,num_list_users},studios,statistics';
+
+  static const String malMangaFields =
+      'id,title,main_picture,alternative_titles,start_date,end_date,synopsis,mean,rank,popularity,num_list_users,num_scoring_users,nsfw,created_at,updated_at,media_type,status,genres,my_list_status{is_rereading,num_times_reread,priority,reread_value,start_date,finish_date,tags,comments},num_volumes,num_chapters,authors{first_name,last_name},pictures,background,related_anime,related_manga,recommendations,serialization{name}';
+
+  static const String malDefaultAnimeListFields =
+      'id,title,main_picture,alternative_titles,start_date,end_date,synopsis,mean,rank,popularity,num_list_users,num_scoring_users,nsfw,created_at,updated_at,media_type,status,genres,my_list_status,num_episodes,start_season,broadcast,source,average_episode_duration,rating,pictures,background,related_anime,related_manga,recommendations,studios,statistics';
+
+  // Kitsu API
+  static const String kitsuApiUrl = 'https://kitsu.io/api/edge';
+
+  // AniList API
+  static const String anilistApiUrl = 'https://graphql.anilist.co';
+
+  // Simkl API
+  static const String simklApiBaseUrl = 'https://api.simkl.com';
 }
 
 Future<T?> gotoPage<T>(
@@ -188,7 +207,7 @@ Widget title(
         fontSize: fontSize,
         fontWeight: fontWeight,
         fontStyle: fontStyle,
-        color: colorVal == null ? null : Color(colorVal).withOpacity(opacity),
+        color: colorVal == null ? null : Color(colorVal).withValues(alpha: opacity),
       ),
     );
   } else {
@@ -201,7 +220,7 @@ Widget title(
         fontSize: fontSize,
         fontWeight: fontWeight,
         fontStyle: fontStyle,
-        color: colorVal == null ? null : Color(colorVal).withOpacity(opacity),
+        color: colorVal == null ? null : Color(colorVal).withValues(alpha: opacity),
       ),
     );
   }
@@ -576,19 +595,9 @@ Color getStatusColor(int index) {
 
 Widget loadingError() {
   return Center(
-    child: Stack(
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        const Center(
-          child: SizedBox(
-            width: 70,
-            height: 70,
-            child: CircularProgressIndicator(
-              strokeWidth: .8,
-              backgroundColor: Colors.white,
-              valueColor: AlwaysStoppedAnimation(Color(0xff757575)),
-            ),
-          ),
-        ),
         _logoImage(),
       ],
     ),
@@ -723,7 +732,7 @@ bool nullOrEmpty(dynamic list) {
 }
 
 String formatText(String text) {
-  // Remplace les retours à la ligne (\n) et les retours chariot (\r\n) par des espaces
+  // Replace line breaks (\n) and carriage returns (\r\n) with spaces
   return text.replaceAll(RegExp(r'(\r\n|\n|\r)'), ' ');
 }
 
@@ -891,17 +900,17 @@ String displayTimeAgo(DateTime date, {bool numericDates = true}) {
 int getStatusColorInt(int i) {
   switch (i) {
     case 0:
-      return Colors.green.value;
+      return Colors.green.toARGB32();
     case 1:
-      return Colors.blue.value;
+      return Colors.blue.toARGB32();
     case 2:
-      return Colors.orange.value;
+      return Colors.orange.toARGB32();
     case 3:
-      return Colors.red.value;
+      return Colors.red.toARGB32();
     case 4:
-      return Colors.brown.value;
+      return Colors.brown.toARGB32();
     default:
-      return Colors.grey.value;
+      return Colors.grey.toARGB32();
   }
 }
 
@@ -936,11 +945,11 @@ Widget loadingGraph(BuildContext context) {
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: List.generate(5, (index) {
-          // Créer des barres de hauteurs variables pour simuler un graphique
+          // Create bars of varying heights to simulate a graph
           double height =
-              (index + 1) * 40.0; // Chaque barre a une hauteur différente
+              (index + 1) * 40.0; // Each bar has a different height
           return Container(
-            width: 20, // Largeur fixe des barres
+            width: 20, // Fixed bar width
             height: height,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(8),
@@ -969,34 +978,24 @@ Widget wrapScrollTag({
 
 Widget loadingInner() {
   return Center(
-    child: Stack(
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        const Center(
-          child: SizedBox(
-            width: 70,
-            height: 70,
-            child: CircularProgressIndicator(
-              strokeWidth: .8,
-              backgroundColor: Colors.white,
-              valueColor: AlwaysStoppedAnimation(Color(0xff757575)),
-            ),
-          ),
-        ),
-        _logoImage()
+        _logoImage(),
       ],
     ),
   );
 }
 
 Color getAnimeStatusColor(String? status) {
-  // Vérifie si le status existe dans la map
+  // Check if the status exists in the map
   if (myAnimeStatusIntMap.containsKey(status) && status != null) {
-    // Récupère l'index correspondant au status
+    // Get the index corresponding to the status
     int index = myAnimeStatusIntMap[status]!;
-    // Utilise cet index pour obtenir la couleur correspondante
+    // Use this index to get the corresponding color
     return getStatusColor(index);
   } else {
-    // Si le status n'existe pas, retourne une couleur par défaut (gris)
+    // If the status doesn't exist, return a default color (grey)
     return Colors.grey;
   }
 }
@@ -1021,12 +1020,19 @@ Widget loadingCenter({
   double? width,
   double containerSide = 20,
 }) {
-  return Center(
-    child: SizedBox(
-      width: containerSide,
-      height: containerSide,
-      child: CircularProgressIndicator(
-        strokeWidth: width ?? 2,
+  return Builder(
+    builder: (context) => Center(
+      child: ShimmerColor(
+        SizedBox(
+          width: containerSide,
+          height: containerSide,
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(containerSide / 2),
+            ),
+          ),
+        ),
       ),
     ),
   );
@@ -1191,7 +1197,7 @@ Future<bool> showConfirmationDialog({
   );
 }
 
-// Dans constants.dart, ajouter cette extension
+// DateTime extension for calculating next weekday dates
 extension DateTimeExtension on DateTime {
   DateTime nextDateTime(int day) {
     return add(

@@ -86,7 +86,7 @@ class _TrackerConnectionStatusState extends State<TrackerConnectionStatus>
                     width: 80 * _pulseAnimation.value,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: trackColor.withOpacity(0.2),
+                      color: trackColor.withValues(alpha: 0.2),
                     ),
                   );
                 },
@@ -99,12 +99,12 @@ class _TrackerConnectionStatusState extends State<TrackerConnectionStatus>
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: widget.tracker.isActive
-                    ? trackColor.withOpacity(0.3)
-                    : theme.colorScheme.surfaceVariant,
+                    ? trackColor.withValues(alpha: 0.3)
+                    : theme.colorScheme.surfaceContainerHighest,
                 border: Border.all(
                   color: widget.tracker.isActive
                       ? trackColor
-                      : theme.colorScheme.outline.withOpacity(0.5),
+                      : theme.colorScheme.outline.withValues(alpha: 0.5),
                   width: 2,
                 ),
               ),
@@ -120,7 +120,7 @@ class _TrackerConnectionStatusState extends State<TrackerConnectionStatus>
                 color: theme.colorScheme.surface,
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
+                    color: Colors.black.withValues(alpha: 0.1),
                     blurRadius: 5,
                     offset: const Offset(0, 2),
                   ),
@@ -143,7 +143,7 @@ class _TrackerConnectionStatusState extends State<TrackerConnectionStatus>
                   shape: BoxShape.circle,
                   color: widget.tracker.isActive
                       ? Colors.green
-                      : theme.colorScheme.onSurfaceVariant.withOpacity(0.4),
+                      : theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
                   border: Border.all(
                     color: theme.colorScheme.surface,
                     width: 2,
@@ -180,7 +180,7 @@ class _TrackerConnectionStatusState extends State<TrackerConnectionStatus>
             fontSize: 14,
             color: widget.tracker.isActive
                 ? trackColor
-                : theme.colorScheme.onSurface.withOpacity(0.6),
+                : theme.colorScheme.onSurface.withValues(alpha: 0.6),
           ),
         ),
 

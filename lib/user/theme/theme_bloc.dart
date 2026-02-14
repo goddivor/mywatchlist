@@ -42,7 +42,7 @@ class ThemeBloc extends Bloc<ThemeEvent, ThemeState> {
 
   void _onSeedColorChanged(
       ThemeSeedColorChanged event, Emitter<ThemeState> emit) {
-    prefs.setInt(_keySeedColor, event.seedColor.value);
+    prefs.setInt(_keySeedColor, event.seedColor.toARGB32());
 
     emit(ThemeState.fromPreferences(
       seedColor: event.seedColor,

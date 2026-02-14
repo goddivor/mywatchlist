@@ -11,9 +11,6 @@ import 'package:mywatchlist/services/auth/mal_auth_v2.dart';
 import 'package:mywatchlist/services/auth/anilist_auth_v2.dart';
 import 'package:mywatchlist/services/auth/simkl_auth_v2.dart';
 // V2 User classes with BaseUser inheritance
-import 'package:mywatchlist/user/user_mal_v2.dart';
-import 'package:mywatchlist/user/user_anilist_v2.dart';
-import 'package:mywatchlist/user/user_simkl_v2.dart';
 import 'package:mywatchlist/user/user_kitsu_v2.dart';
 import 'package:mywatchlist/user/user_manager.dart';
 import 'package:mywatchlist/user/accounts/account_bloc.dart';

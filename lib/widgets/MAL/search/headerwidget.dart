@@ -129,8 +129,8 @@ class HeaderWidget extends StatelessWidget {
 
   Widget _textWidget(String pageName, int index, BuildContext context) {
     final colorVal = applyTextColor
-        ? defaultTextColor?.value
-        : (selectedIndex == index ? selectedColor?.value : null);
+        ? defaultTextColor?.toARGB32()
+        : (selectedIndex == index ? selectedColor?.toARGB32() : null);
     double opacity = selectedIndex == index ? 1.0 : unSelectedOpacity;
     return Text(
       (formatText ? pageName.replaceAll("_", " ") : pageName),
@@ -142,8 +142,8 @@ class HeaderWidget extends StatelessWidget {
                         .textTheme
                         .bodyMedium
                         ?.color
-                        ?.withOpacity(opacity)
-                    : Color(colorVal).withOpacity(opacity),
+                        ?.withValues(alpha: opacity)
+                    : Color(colorVal).withValues(alpha: opacity),
                 fontSize: fontSize,
               ),
     );
@@ -256,7 +256,7 @@ class IncludeExcludeWidget extends StatelessWidget {
         child: title(
             formatText ? pageName.replaceAll("_", " ").capitalize() : pageName,
             colorVal: (include.contains(pageName) || exclude.contains(pageName))
-                ? selectedColor?.value
+                ? selectedColor?.toARGB32()
                 : null,
             fontSize: fontSize,
             opacity: (include.contains(pageName) || exclude.contains(pageName))

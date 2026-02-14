@@ -28,7 +28,7 @@ class TrackerItem extends StatelessWidget {
           duration: const Duration(milliseconds: 200),
           decoration: BoxDecoration(
             color: isSelected
-                ? theme.colorScheme.primary.withOpacity(0.1)
+                ? theme.colorScheme.primary.withValues(alpha: 0.1)
                 : isDark
                     ? theme.cardColor
                     : Colors.white,
@@ -40,7 +40,7 @@ class TrackerItem extends StatelessWidget {
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
+                color: Colors.black.withValues(alpha: 0.05),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),
@@ -57,7 +57,7 @@ class TrackerItem extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: isDark
                         ? theme.colorScheme.surface
-                        : theme.colorScheme.surface.withOpacity(0.7),
+                        : theme.colorScheme.surface.withValues(alpha: 0.7),
                     shape: BoxShape.circle,
                   ),
                   padding: const EdgeInsets.all(10),
@@ -89,7 +89,7 @@ class TrackerItem extends StatelessWidget {
                           fontSize: 14,
                           color: tracker.isActive
                               ? theme.colorScheme.primary
-                              : theme.colorScheme.onSurface.withOpacity(0.6),
+                              : theme.colorScheme.onSurface.withValues(alpha: 0.6),
                         ),
                       ),
                     ],
@@ -112,7 +112,7 @@ class TrackerItem extends StatelessWidget {
                             height: 40,
                             width: 40,
                             decoration: BoxDecoration(
-                              color: theme.colorScheme.primary.withOpacity(0.1),
+                              color: theme.colorScheme.primary.withValues(alpha: 0.1),
                               shape: BoxShape.circle,
                             ),
                             child: Icon(
@@ -130,14 +130,14 @@ class TrackerItem extends StatelessWidget {
                               shape: BoxShape.circle,
                               border: Border.all(
                                 color: theme.colorScheme.onSurface
-                                    .withOpacity(0.2),
+                                    .withValues(alpha: 0.2),
                                 width: 1,
                               ),
                             ),
                             child: Icon(
                               Icons.add_circle_outline,
                               color:
-                                  theme.colorScheme.onSurface.withOpacity(0.5),
+                                  theme.colorScheme.onSurface.withValues(alpha: 0.5),
                               size: 24,
                             ),
                           ),
