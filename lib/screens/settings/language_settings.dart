@@ -2,7 +2,6 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:mywatchlist/main.dart';
 import 'package:mywatchlist/user/language/language_bloc.dart';
 import 'package:mywatchlist/user/language/language_event.dart';
 import 'package:mywatchlist/user/language/language_state.dart';
@@ -109,130 +108,112 @@ class _LanguageSettingsState extends State<LanguageSettings> {
                           ),
                         ),
 
-                        const SizedBox(height: 20),
-
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.translate_rounded,
-                              size: 20,
-                              color: colorScheme.primary,
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              'Available Languages',
-                              style: theme.textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.bold,
-                                color: colorScheme.onSurface,
+                        if (!state.useSystemLanguage) ...[
+                          const SizedBox(height: 20),
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.translate_rounded,
+                                size: 20,
+                                color: colorScheme.primary,
                               ),
-                            ),
-                          ],
-                        ),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Available Languages',
+                                style: theme.textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: colorScheme.onSurface,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ],
                     ),
                   ),
 
-                  const SizedBox(height: 8),
+                  if (!state.useSystemLanguage) ...[
+                    const SizedBox(height: 8),
 
-                  // Language list
-                  Expanded(
-                    child: ListView.builder(
-                      padding: const EdgeInsets.only(
-                        left: 20,
-                        right: 20,
-                        bottom: 100,
-                      ),
-                      itemCount: SupportedLanguages.languages.length,
-                      itemBuilder: (context, index) {
-                        final language = SupportedLanguages.languages[index];
-                        final isSelected =
-                            language.code == state.languageCode;
+                    // Language list
+                    Expanded(
+                      child: ListView.builder(
+                        padding: const EdgeInsets.only(
+                          left: 20,
+                          right: 20,
+                          bottom: 100,
+                        ),
+                        itemCount: SupportedLanguages.languages.length,
+                        itemBuilder: (context, index) {
+                          final language =
+                              SupportedLanguages.languages[index];
+                          final isSelected =
+                              language.code == state.languageCode;
 
-                        return Card(
-                          elevation: 0,
-                          margin: const EdgeInsets.only(bottom: 4),
-                          color: isSelected
-                              ? colorScheme.primaryContainer.withAlpha(80)
-                              : Colors.transparent,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: ListTile(
-                            leading: Text(
-                              language.flag,
-                              style: const TextStyle(fontSize: 24),
-                            ),
-                            title: Text(
-                              language.name,
-                              style: TextStyle(
-                                fontWeight: isSelected
-                                    ? FontWeight.bold
-                                    : FontWeight.normal,
-                              ),
-                            ),
-                            trailing: isSelected
-                                ? Icon(
-                                    Icons.check_circle_rounded,
-                                    color: colorScheme.primary,
-                                  )
-                                : null,
+                          return Card(
+                            elevation: 0,
+                            margin: const EdgeInsets.only(bottom: 4),
+                            color: isSelected
+                                ? colorScheme.primaryContainer.withAlpha(80)
+                                : Colors.transparent,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
-                            onTap: () {
-                              if (state.languageCode != language.code) {
-                                context.read<LanguageBloc>().add(
-                                      LanguageChanged(
-                                        languageCode: language.code,
-                                        useSystemLanguage: false,
+                            child: ListTile(
+                              leading: Text(
+                                language.flag,
+                                style: const TextStyle(fontSize: 24),
+                              ),
+                              title: Text(
+                                language.name,
+                                style: TextStyle(
+                                  fontWeight: isSelected
+                                      ? FontWeight.bold
+                                      : FontWeight.normal,
+                                ),
+                              ),
+                              trailing: isSelected
+                                  ? Icon(
+                                      Icons.check_circle_rounded,
+                                      color: colorScheme.primary,
+                                    )
+                                  : null,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              onTap: () {
+                                if (state.languageCode != language.code) {
+                                  context.read<LanguageBloc>().add(
+                                        LanguageChanged(
+                                          languageCode: language.code,
+                                          useSystemLanguage: false,
+                                        ),
+                                      );
+
+                                  userPref.setLanguage(language.code);
+
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        'Language changed to ${language.name}',
                                       ),
-                                    );
-
-                                userPref.setLanguage(language.code);
-
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                      'Language changed to ${language.name}',
+                                      behavior: SnackBarBehavior.floating,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius:
+                                            BorderRadius.circular(10),
+                                      ),
+                                      duration:
+                                          const Duration(seconds: 2),
                                     ),
-                                    behavior: SnackBarBehavior.floating,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius:
-                                          BorderRadius.circular(10),
-                                    ),
-                                    duration:
-                                        const Duration(seconds: 2),
-                                  ),
-                                );
-                              }
-                            },
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-
-                  if (!widget.isIntroPage)
-                    Padding(
-                      padding: const EdgeInsets.all(20.0),
-                      child: SizedBox(
-                        width: double.infinity,
-                        child: FilledButton(
-                          onPressed: () => restartApp(context),
-                          style: FilledButton.styleFrom(
-                            padding:
-                                const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
+                                  );
+                                }
+                              },
                             ),
-                          ),
-                          child: const Text(
-                            'Apply Changes',
-                            style: TextStyle(fontSize: 16),
-                          ),
-                        ),
+                          );
+                        },
                       ),
                     ),
+                  ],
                 ],
               ),
             );
