@@ -37,8 +37,10 @@ class _ShowAnimeReviewsState extends State<ShowAnimeReviews>
   PageController? _modalController;
 
   // Filter state
-  String _sortBy = 'date'; // 'date', 'score_desc', 'score_asc'
+  String _sortBy = 'date_desc';
   int? _selectedScore;
+  Set<String> _selectedTags = {};
+  List<String> _availableTags = [];
   Map<int, int> _scoreDistribution = {};
 
   @override
@@ -81,12 +83,15 @@ class _ShowAnimeReviewsState extends State<ShowAnimeReviews>
         reviews.addAll(response.data);
         isLoading = false;
         hasMoreReviews = response.pagination.hasNextPage ?? false;
-        // Recompute score distribution
+        // Recompute score distribution and available tags
         _scoreDistribution = {};
+        final tagSet = <String>{};
         for (var review in reviews) {
           final score = review.score ?? 0;
           _scoreDistribution[score] = (_scoreDistribution[score] ?? 0) + 1;
+          if (review.tags != null) tagSet.addAll(review.tags!);
         }
+        _availableTags = tagSet.toList();
       });
 
       _applyFilters();
@@ -116,6 +121,14 @@ class _ShowAnimeReviewsState extends State<ShowAnimeReviews>
           result.where((review) => review.score == _selectedScore).toList();
     }
 
+    // Tag filter
+    if (_selectedTags.isNotEmpty) {
+      result = result.where((review) {
+        if (review.tags == null) return false;
+        return review.tags!.any((t) => _selectedTags.contains(t));
+      }).toList();
+    }
+
     // Sort
     switch (_sortBy) {
       case 'score_desc':
@@ -124,7 +137,10 @@ class _ShowAnimeReviewsState extends State<ShowAnimeReviews>
       case 'score_asc':
         result.sort((a, b) => (a.score ?? 0).compareTo(b.score ?? 0));
         break;
-      case 'date':
+      case 'date_asc':
+        result = result.reversed.toList();
+        break;
+      case 'date_desc':
       default:
         // Keep API order (newest first)
         break;
@@ -171,11 +187,12 @@ class _ShowAnimeReviewsState extends State<ShowAnimeReviews>
   Widget build(BuildContext context) {
     super.build(context);
 
+    final hasContent = reviews.isNotEmpty;
     return Column(
       children: [
-        _buildFilterBar(),
+        if (hasContent) _buildFilterBar(),
         SizedBox(
-          height: 340,
+          height: hasContent ? 340 : 200,
           child: isLoading && reviews.isEmpty
               ? _buildLoadingState()
               : hasError
@@ -304,62 +321,18 @@ class _ShowAnimeReviewsState extends State<ShowAnimeReviews>
                 ),
               ),
 
-            // Sort chips
-            _buildSortChip(theme, 'Recent', 'date'),
-            const SizedBox(width: 6),
-            _buildSortChip(theme, 'Best', 'score_desc'),
-            const SizedBox(width: 6),
-            _buildSortChip(theme, 'Worst', 'score_asc'),
+            // Sort select
+            _buildSortSelect(theme),
 
             if (scores.isNotEmpty) ...[
-              const SizedBox(width: 12),
-              // Vertical divider
-              Container(
-                width: 1,
-                height: 20,
-                margin: const EdgeInsets.symmetric(vertical: 8),
-                color: theme.colorScheme.outlineVariant,
-              ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 8),
+              _buildScoreSelect(theme, scores),
+            ],
 
-              // Score filter chips
-              if (_selectedScore != null)
-                Padding(
-                  padding: const EdgeInsets.only(right: 6),
-                  child: ActionChip(
-                    label: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Image.asset('assets/images/star.png', height: 14),
-                        const SizedBox(width: 4),
-                        Text('$_selectedScore'),
-                        const SizedBox(width: 4),
-                        const Icon(Icons.close, size: 14),
-                      ],
-                    ),
-                    onPressed: () {
-                      setState(() => _selectedScore = null);
-                      _applyFilters();
-                    },
-                    visualDensity: VisualDensity.compact,
-                    padding: const EdgeInsets.symmetric(horizontal: 4),
-                  ),
-                )
-              else
-                ...scores.reversed.map((score) => Padding(
-                      padding: const EdgeInsets.only(right: 6),
-                      child: ActionChip(
-                        avatar:
-                            Image.asset('assets/images/star.png', height: 14),
-                        label: Text('$score'),
-                        onPressed: () {
-                          setState(() => _selectedScore = score);
-                          _applyFilters();
-                        },
-                        visualDensity: VisualDensity.compact,
-                        padding: const EdgeInsets.symmetric(horizontal: 0),
-                      ),
-                    )),
+            // Tag filters
+            if (_availableTags.isNotEmpty) ...[
+              const SizedBox(width: 8),
+              ..._availableTags.map((tag) => _buildTagButton(theme, tag)),
             ],
           ],
         ),
@@ -367,25 +340,267 @@ class _ShowAnimeReviewsState extends State<ShowAnimeReviews>
     );
   }
 
-  Widget _buildSortChip(ThemeData theme, String label, String sortValue) {
-    final isSelected = _sortBy == sortValue;
-    return FilterChip(
-      label: Text(
-        label,
-        style: TextStyle(
-          fontSize: 12,
-          color: isSelected ? theme.colorScheme.onPrimary : null,
+  static const _sortOptions = {
+    'date_desc': ('Date', Icons.arrow_downward),
+    'date_asc': ('Date', Icons.arrow_upward),
+    'score_desc': ('Score', Icons.arrow_downward),
+    'score_asc': ('Score', Icons.arrow_upward),
+  };
+
+  Widget _buildSortSelect(ThemeData theme) {
+    final current = _sortOptions[_sortBy]!;
+    return SizedBox(
+      height: 36,
+      child: Material(
+        color: theme.colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(8),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(8),
+          onTap: () {
+            final RenderBox box = context.findRenderObject() as RenderBox;
+            final overlay = Overlay.of(context).context.findRenderObject() as RenderBox;
+            showMenu<String>(
+              context: context,
+              position: RelativeRect.fromRect(
+                Rect.fromLTWH(
+                  0,
+                  box.localToGlobal(Offset.zero, ancestor: overlay).dy + 36,
+                  150,
+                  0,
+                ),
+                Offset.zero & overlay.size,
+              ),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              items: _sortOptions.entries.map((entry) {
+                final isSelected = _sortBy == entry.key;
+                return PopupMenuItem<String>(
+                  value: entry.key,
+                  height: 40,
+                  child: Row(
+                    children: [
+                      Icon(
+                        entry.value.$2,
+                        size: 16,
+                        color: isSelected ? theme.colorScheme.primary : theme.colorScheme.onSurfaceVariant,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        entry.value.$1,
+                        style: TextStyle(
+                          fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                          color: isSelected ? theme.colorScheme.primary : null,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }).toList(),
+            ).then((value) {
+              if (value != null && mounted) {
+                setState(() => _sortBy = value);
+                _applyFilters();
+              }
+            });
+          },
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.sort, size: 16, color: theme.colorScheme.onSurfaceVariant),
+                const SizedBox(width: 6),
+                Text(
+                  current.$1,
+                  style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurfaceVariant),
+                ),
+                const SizedBox(width: 2),
+                Icon(current.$2, size: 14, color: theme.colorScheme.onSurfaceVariant),
+              ],
+            ),
+          ),
         ),
       ),
-      selected: isSelected,
-      onSelected: (_) {
-        setState(() => _sortBy = sortValue);
-        _applyFilters();
-      },
-      selectedColor: theme.colorScheme.primary,
-      showCheckmark: false,
-      visualDensity: VisualDensity.compact,
-      padding: const EdgeInsets.symmetric(horizontal: 4),
+    );
+  }
+
+  Widget _buildScoreSelect(ThemeData theme, List<int> scores) {
+    final hasSelection = _selectedScore != null;
+    final starWidget = Image.asset('assets/images/star.png', height: 14);
+
+    return SizedBox(
+      height: 36,
+      child: Material(
+        color: hasSelection
+            ? theme.colorScheme.primaryContainer
+            : theme.colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(8),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(8),
+          onTap: () {
+            final RenderBox button = context.findRenderObject() as RenderBox;
+            final overlay = Overlay.of(context).context.findRenderObject() as RenderBox;
+            showMenu<int>(
+              context: context,
+              position: RelativeRect.fromRect(
+                Rect.fromLTWH(
+                  button.size.width - 120,
+                  button.localToGlobal(Offset.zero, ancestor: overlay).dy + 36,
+                  120,
+                  0,
+                ),
+                Offset.zero & overlay.size,
+              ),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              items: scores.reversed.map((score) {
+                return PopupMenuItem<int>(
+                  value: score,
+                  height: 40,
+                  child: Row(
+                    children: [
+                      Image.asset('assets/images/star.png', height: 16),
+                      const SizedBox(width: 8),
+                      Text(
+                        '$score',
+                        style: TextStyle(
+                          fontWeight: score == _selectedScore
+                              ? FontWeight.w600
+                              : FontWeight.normal,
+                          color: score == _selectedScore
+                              ? theme.colorScheme.primary
+                              : null,
+                        ),
+                      ),
+                      const Spacer(),
+                      if (_scoreDistribution[score] != null)
+                        Text(
+                          '${_scoreDistribution[score]}',
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                    ],
+                  ),
+                );
+              }).toList(),
+            ).then((value) {
+              if (value != null && mounted) {
+                setState(() => _selectedScore = value);
+                _applyFilters();
+              }
+            });
+          },
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (hasSelection) ...[
+                  GestureDetector(
+                    onTap: () {
+                      setState(() => _selectedScore = null);
+                      _applyFilters();
+                    },
+                    child: Icon(
+                      Icons.close,
+                      size: 16,
+                      color: theme.colorScheme.onPrimaryContainer,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  VerticalDivider(
+                    width: 1,
+                    thickness: 1,
+                    indent: 8,
+                    endIndent: 8,
+                    color: theme.colorScheme.onPrimaryContainer.withValues(alpha: 0.3),
+                  ),
+                  const SizedBox(width: 6),
+                ],
+                starWidget,
+                const SizedBox(width: 6),
+                if (hasSelection)
+                  Text(
+                    '$_selectedScore',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: theme.colorScheme.onPrimaryContainer,
+                    ),
+                  )
+                else ...[
+                  VerticalDivider(
+                    width: 1,
+                    thickness: 1,
+                    indent: 8,
+                    endIndent: 8,
+                    color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
+                  ),
+                  Icon(
+                    Icons.arrow_drop_down,
+                    size: 20,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTagButton(ThemeData theme, String tag) {
+    final isSelected = _selectedTags.contains(tag);
+    return Padding(
+      padding: const EdgeInsets.only(right: 6),
+      child: SizedBox(
+        height: 36,
+        child: Material(
+          color: isSelected
+              ? theme.colorScheme.primaryContainer
+              : theme.colorScheme.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(8),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(8),
+            onTap: () {
+              setState(() {
+                if (isSelected) {
+                  _selectedTags.remove(tag);
+                } else {
+                  _selectedTags.add(tag);
+                }
+              });
+              _applyFilters();
+            },
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (isSelected) ...[
+                    Icon(
+                      Icons.close,
+                      size: 14,
+                      color: theme.colorScheme.onPrimaryContainer,
+                    ),
+                    const SizedBox(width: 4),
+                  ],
+                  Text(
+                    tag,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                      color: isSelected
+                          ? theme.colorScheme.onPrimaryContainer
+                          : theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 

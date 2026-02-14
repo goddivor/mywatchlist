@@ -200,24 +200,23 @@ class ReviewItem extends StatelessWidget {
     reactionList.sort((a, b) => b.count.compareTo(a.count));
 
     final theme = Theme.of(context);
-    return Row(
+    return Wrap(
+      spacing: 10,
+      runSpacing: 4,
       children: reactionList.take(4).map((r) {
-        return Padding(
-          padding: const EdgeInsets.only(right: 10),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(r.icon,
-                  size: 14, color: theme.colorScheme.onSurfaceVariant),
-              const SizedBox(width: 3),
-              Text(
-                '${r.count}',
-                style: theme.textTheme.labelSmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(r.icon,
+                size: 14, color: theme.colorScheme.onSurfaceVariant),
+            const SizedBox(width: 3),
+            Text(
+              '${r.count}',
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
               ),
-            ],
-          ),
+            ),
+          ],
         );
       }).toList(),
     );
