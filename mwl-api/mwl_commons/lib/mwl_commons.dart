@@ -13,4 +13,6 @@ export 'src/model/html/paging.dart';
 export 'src/model/html/user_anime_statistics.dart';
 export 'src/model/html/user_friends.dart';
 export 'src/model/html/user_history.dart';
+export 'src/model/mal_user_search.dart';
+export 'src/services/html_parser.dart';
 export 'src/util/extensions.dart';

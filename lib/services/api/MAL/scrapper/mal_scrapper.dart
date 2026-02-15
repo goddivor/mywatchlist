@@ -217,7 +217,7 @@ class MalScraper {
       final response = await http.get(Uri.parse(url));
       if (response.statusCode == 200) {
         final document = parser.parse(response.body);
-        return HtmlParsers.parseAllSearchResults(document);
+        return HtmlParsersApp.parseAllSearchResults(document);
       }
     } catch (e) {
       // Silently fail

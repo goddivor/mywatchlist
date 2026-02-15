@@ -1,3 +1,6 @@
+/// Content type for anime/manga and related categories.
+enum ContentType { anime, manga, character, characters, people, news, featured }
+
 /// Shared API endpoint constants for MyWatchList.
 class Constants {
   Constants._();
@@ -11,6 +14,8 @@ class Constants {
 
   // MAL website (for HTML scraping)
   static const String malBaseUrl = 'https://myanimelist.net';
+  static const String malnewsUrl = '$malBaseUrl/news';
+  static const String malfeaturedUrl = '$malBaseUrl/featured';
 
   /// Fields for anime details requests (MAL API v2).
   static const String animeFields =
@@ -39,3 +44,7 @@ class Constants {
 void logMwl(dynamic message) {
   print('[MWL-API] $message');
 }
+
+/// Generate a CDN asset URL for streaming/platform logos.
+String getDomainAsset(String e, [String domain = 'streaming']) =>
+    'https://dailyanimelist.web.app/assets/$domain/${e.trim()}.png';

@@ -1,3 +1,6 @@
+/// Regex for matching alphabetic characters and spaces.
+final _alphaDigitExp = RegExp(r'[a-zA-Z ]');
+
 /// Shared string extensions.
 extension StringExtensions on String? {
   bool get isNullOrEmpty => this == null || this!.isEmpty;
@@ -5,6 +8,20 @@ extension StringExtensions on String? {
   bool equals(dynamic other) {
     if (other == null || this == null) return false;
     return this!.toLowerCase() == other.toString().toLowerCase();
+  }
+}
+
+/// Non-nullable string extensions for parsing helpers.
+extension StringParsingExtensions on String {
+  /// Returns only alphabetic characters and spaces from the string.
+  String getAlphabets() {
+    final buffer = StringBuffer();
+    for (int i = 0; i < length; ++i) {
+      if (_alphaDigitExp.hasMatch(this[i])) {
+        buffer.write(this[i]);
+      }
+    }
+    return buffer.toString();
   }
 }
 

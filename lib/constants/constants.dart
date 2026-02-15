@@ -1,5 +1,7 @@
 // ignore_for_file: deprecated_member_use, unnecessary_const, unnecessary_null_comparison, unnecessary_this, constant_identifier_names
 
+export 'package:mwl_commons/src/constants/constant.dart' show ContentType;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -24,7 +26,7 @@ enum AccountType {
   simkl,
 }
 
-enum ContentType { anime, manga, character, characters, people, news, featured }
+// ContentType is re-exported from mwl_commons (shared with backend).
 
 enum DisplayType { list_vert, grid, list_horiz }
 
