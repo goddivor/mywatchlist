@@ -36,6 +36,7 @@ import 'package:mywatchlist/widgets/common/slivers.dart';
 import 'package:mywatchlist/widgets/MAL/content/synopsis_widget.dart';
 import 'package:mywatchlist/widgets/MAL/content/userupdate_widget.dart';
 import 'package:mywatchlist/widgets/MAL/content/videowidget.dart';
+import 'package:mywatchlist/screens/search/search_history.dart';
 import 'package:scroll_to_index/scroll_to_index.dart';
 
 enum TitleLang { en, ja, ro }
@@ -126,6 +127,7 @@ class _ContentDetailedScreenState extends State<ContentDetailedScreen>
     _autoScrollController = AutoScrollController();
 
     _addFabListener();
+    _recordVisit();
     Future.delayed(Duration.zero).then((_) {
       getPageContent();
     });
@@ -148,6 +150,16 @@ class _ContentDetailedScreenState extends State<ContentDetailedScreen>
       fabListener.update(_autoScrollController!.position.userScrollDirection ==
           ScrollDirection.forward);
     });
+  }
+
+  void _recordVisit() {
+    if (widget.node != null) {
+      if (widget.category == 'manga') {
+        SearchHistory.instance.addRecentManga(widget.node!);
+      } else {
+        SearchHistory.instance.addRecentAnime(widget.node!);
+      }
+    }
   }
 
   getPageContent() {
@@ -523,7 +535,10 @@ class _ContentDetailedScreenState extends State<ContentDetailedScreen>
           ),
         ),
       TabType.Characters => _nullIf(
-          animeDetailedHtml != null,
+          animeDetailedHtml != null &&
+              (_isManga
+                  ? getMangaCharacters(animeDetailedHtml).isNotEmpty
+                  : getCharactersVoiceActors(animeDetailedHtml).isNotEmpty),
           () => VisibleSection(
             'Characters',
             _isManga
