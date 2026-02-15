@@ -285,7 +285,7 @@ class MalApi {
     List<String>? fields,
   }) async {
     String season = getSeasonName(seasonType).toLowerCase();
-    String sortValue = sortMap[sortType]!;
+    String sortValue = sortMap[sortType] ?? 'anime_score';
 
     String url =
         '$animeSeasonalEndPoint/$year/$season?sort=$sortValue&limit=$limit&offset=$offset';
