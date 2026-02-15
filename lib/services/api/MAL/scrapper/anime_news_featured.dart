@@ -7,9 +7,10 @@ class AnimeNewsOrFeaturedResult {
   AnimeNewsOrFeaturedResult({required this.newsorfeatured, required this.paging});
 
   factory AnimeNewsOrFeaturedResult.fromJson(Map<String, dynamic> json) {
+    final list = json['newsorfeatured'] as List? ?? json['news'] as List? ?? [];
     return AnimeNewsOrFeaturedResult(
-      newsorfeatured: (json['news'] as List).map((item) => AnimeNewsOrFeaturedItem.fromJson(item)).toList(),
-      paging: Paging.fromJson(json['paging']),
+      newsorfeatured: list.map((item) => AnimeNewsOrFeaturedItem.fromJson(item as Map<String, dynamic>)).toList(),
+      paging: Paging.fromJson(json['paging'] as Map<String, dynamic>?),
     );
   }
 

@@ -1048,34 +1048,64 @@ class HtmlParsers {
           }
 
           // Extract info
+          String? synopsis;
+          String? owner;
+          String? dateStr;
+
           final infoList = item.getElementsByClassName('information');
           if (infoList.isNotEmpty) {
             final anchors = infoList.first.getElementsByTagName('a');
             if (anchors.isNotEmpty) {
               title = anchors.first.text.trim();
             }
-            // Parse metadata for anime/manga
             final metaList = infoList.first.getElementsByClassName('fn-grey4');
-            if (metaList.isNotEmpty && ['anime', 'manga'].contains(category)) {
+            if (metaList.isNotEmpty) {
               final infoText = metaList.first.text.trim();
               final lines = infoText
                   .split('\n')
                   .map((l) => l.trim())
                   .where((l) => l.isNotEmpty)
                   .toList();
-              if (lines.isNotEmpty) {
-                mediaType =
-                    lines.first.replaceAll(RegExp(r'[^a-zA-Z]'), '').trim();
-              }
-              if (lines.length >= 2) {
-                numEpisodes =
-                    int.tryParse(lines[0].replaceAll(RegExp(r'\D'), ''));
-                mean =
-                    double.tryParse(lines[1].replaceAll('Scored', '').trim());
-              }
-              if (lines.length >= 3) {
-                numListUsers =
-                    int.tryParse(lines[2].replaceAll(RegExp(r'\D'), ''));
+
+              if (['anime', 'manga'].contains(category)) {
+                // Parse anime/manga metadata
+                if (lines.isNotEmpty) {
+                  mediaType =
+                      lines.first.replaceAll(RegExp(r'[^a-zA-Z]'), '').trim();
+                }
+                if (lines.length >= 2) {
+                  numEpisodes =
+                      int.tryParse(lines[0].replaceAll(RegExp(r'\D'), ''));
+                  mean =
+                      double.tryParse(lines[1].replaceAll('Scored', '').trim());
+                }
+                if (lines.length >= 3) {
+                  numListUsers =
+                      int.tryParse(lines[2].replaceAll(RegExp(r'\D'), ''));
+                }
+              } else {
+                // For news/featured/forum/club/character/person:
+                // extract raw text lines as synopsis + parse owner/date
+                synopsis = lines.join(' · ');
+                for (final line in lines) {
+                  if (line.startsWith('by ')) {
+                    owner = line.substring(3).trim();
+                  }
+                  // Try to detect date-like text (e.g. "Jan 15, 2026")
+                  final dateMatch = RegExp(
+                          r'(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+\d{1,2},\s+\d{4}')
+                      .firstMatch(line);
+                  if (dateMatch != null) {
+                    dateStr = dateMatch.group(0);
+                  }
+                  // Members count for clubs
+                  final membersMatch =
+                      RegExp(r'(\d[\d,]*)\s*[Mm]embers').firstMatch(line);
+                  if (membersMatch != null) {
+                    numListUsers = int.tryParse(
+                        membersMatch.group(1)!.replaceAll(',', ''));
+                  }
+                }
               }
             }
           }
@@ -1089,6 +1119,9 @@ class HtmlParsers {
               members: numListUsers ?? 0,
               mediaType: mediaType,
               numEpisodes: numEpisodes,
+              synopsis: synopsis,
+              status: owner,
+              startDate: dateStr,
             ));
           }
         }
@@ -1156,19 +1189,105 @@ class HtmlParsers {
     final clubs = <Map<String, dynamic>>[];
 
     try {
-      final rows = document.querySelectorAll('.normal_header ~ table tr');
-      for (final row in rows) {
-        final cells = row.getElementsByTagName('td');
-        if (cells.length >= 2) {
-          final link = cells[0].querySelector('a');
-          if (link != null) {
-            final href = link.attributes['href'] ?? '';
-            final idMatch = RegExp(r'cid=(\d+)').firstMatch(href);
-            clubs.add({
-              'id': idMatch != null ? int.tryParse(idMatch.group(1)!) : null,
-              'name': link.text.trim(),
-              'members': cells.length >= 3 ? cells[2].text.trim() : '',
-            });
+      // Try the club-list table first (newer MAL layout)
+      final tableClass = document.getElementsByClassName('club-list');
+      if (tableClass.isNotEmpty) {
+        final rows = tableClass.first.getElementsByClassName('table-data');
+        for (final row in rows) {
+          final tdList = row.getElementsByTagName('td');
+          if (tdList.isEmpty) continue;
+
+          int? clubId;
+          String? clubName, desc, imgUrl, noOfMembers, lastPostBy, lastPostTime;
+
+          try {
+            final firstTd = tdList.first;
+
+            // Image
+            try {
+              final img = firstTd.getElementsByTagName('img');
+              if (img.isNotEmpty) {
+                imgUrl = img.first.attributes['data-srcset'] ?? '';
+                if (imgUrl.contains('1x,') && imgUrl.contains('2x')) {
+                  imgUrl = imgUrl.substring(
+                      imgUrl.indexOf('1x,') + 3, imgUrl.indexOf(' 2x'));
+                  imgUrl = imgUrl.trim();
+                } else {
+                  imgUrl = img.first.attributes['src'];
+                }
+              }
+            } catch (_) {}
+
+            // Name & ID
+            try {
+              final dom = firstTd.getElementsByClassName('fw-b');
+              if (dom.isNotEmpty) {
+                clubName = dom.first.text.trim();
+                final cUrl = dom.first.attributes['href'] ?? '';
+                if (cUrl.contains('cid=')) {
+                  clubId = int.tryParse(
+                      cUrl.substring(cUrl.indexOf('cid=') + 4));
+                }
+              }
+            } catch (_) {}
+
+            // Description
+            try {
+              final descEl =
+                  firstTd.getElementsByClassName('pt4 pb4 word-break');
+              if (descEl.isNotEmpty) {
+                desc = descEl.first.text.trim();
+              }
+            } catch (_) {}
+
+            // Members
+            if (tdList.length >= 2) {
+              noOfMembers = tdList.elementAt(1).text.trim();
+            }
+
+            // Last post info
+            if (tdList.length >= 3) {
+              final thirdTd = tdList.elementAt(2);
+              try {
+                final diIb = thirdTd.getElementsByClassName('di-ib');
+                if (diIb.isNotEmpty) lastPostTime = diIb.first.text.trim();
+              } catch (_) {}
+              try {
+                final aTag = thirdTd.getElementsByTagName('a');
+                if (aTag.isNotEmpty) lastPostBy = aTag.first.text.trim();
+              } catch (_) {}
+            }
+          } catch (_) {}
+
+          clubs.add({
+            'id': clubId,
+            'name': clubName ?? '',
+            'imgUrl': imgUrl,
+            'desc': desc ?? '',
+            'members': noOfMembers ?? '',
+            'lastPostBy': lastPostBy,
+            'lastPostTime': lastPostTime,
+          });
+        }
+      } else {
+        // Fallback: older layout
+        final rows =
+            document.querySelectorAll('.normal_header ~ table tr');
+        for (final row in rows) {
+          final cells = row.getElementsByTagName('td');
+          if (cells.length >= 2) {
+            final link = cells[0].querySelector('a');
+            if (link != null) {
+              final href = link.attributes['href'] ?? '';
+              final idMatch = RegExp(r'cid=(\d+)').firstMatch(href);
+              clubs.add({
+                'id': idMatch != null
+                    ? int.tryParse(idMatch.group(1)!)
+                    : null,
+                'name': link.text.trim(),
+                'members': cells.length >= 3 ? cells[2].text.trim() : '',
+              });
+            }
           }
         }
       }
@@ -1337,5 +1456,78 @@ class HtmlParsers {
     }
 
     return {'data': topics};
+  }
+
+  /// Parse interest stack search results from MAL HTML.
+  /// URL: https://myanimelist.net/stacks/search?q=QUERY&type=TYPE&p=PAGE
+  static List<Map<String, dynamic>> parseInterestStackSearch(
+      Document document) {
+    final stacks = <Map<String, dynamic>>[];
+
+    try {
+      final items =
+          document.querySelectorAll('.search-list .column-item');
+      for (final e in items) {
+        // ID from anchor href
+        int? id;
+        try {
+          final anchor = e.querySelector('a');
+          if (anchor != null) {
+            final href = anchor.attributes['href'] ?? '';
+            final match = RegExp(r'/stacks/(\d+)').firstMatch(href);
+            if (match != null) id = int.tryParse(match.group(1)!);
+          }
+        } catch (_) {}
+
+        // Title
+        final title =
+            e.querySelector('.detail .title')?.text.trim() ?? '';
+
+        // Username
+        final username =
+            e.querySelector('.detail .tag a')?.text.trim();
+
+        // Description
+        final description = e.querySelector('.text')?.text.trim();
+
+        // Stats (entries, restacks)
+        final statText =
+            e.querySelector('.detail .stat')?.text ?? '';
+        int? entries;
+        int? reStacks;
+        try {
+          final entriesMatch =
+              RegExp(r'(\d+)\s*Entries').firstMatch(statText);
+          if (entriesMatch != null) {
+            entries = int.tryParse(entriesMatch.group(1)!);
+          }
+          final restacksMatch =
+              RegExp(r'(\d+)\s*Restacks').firstMatch(statText);
+          if (restacksMatch != null) {
+            reStacks = int.tryParse(restacksMatch.group(1)!);
+          }
+        } catch (_) {}
+
+        // Images
+        final imageUrls = e
+            .querySelectorAll('.img .edge img')
+            .map((f) => f.attributes['data-src'] ?? f.attributes['src'])
+            .where((s) => s != null && s.isNotEmpty)
+            .cast<String>()
+            .toList();
+
+        stacks.add({
+          'id': id,
+          'title': title,
+          'username': username,
+          'description': description,
+          'entries': entries,
+          'reStacks': reStacks,
+          'imageUrls': imageUrls,
+        });
+      }
+    } catch (_) {}
+
+    return stacks;
   }
 }

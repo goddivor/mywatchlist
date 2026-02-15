@@ -3,6 +3,7 @@ import 'package:html/parser.dart' as parser;
 import 'package:mywatchlist/constants/constants.dart';
 import 'package:mywatchlist/services/api/MAL/models/all_search_result.dart';
 import 'package:mywatchlist/services/api/MAL/models/mal_user_search.dart';
+import 'package:mywatchlist/services/api/MAL/scrapper/anime_news_featured.dart';
 import 'package:mywatchlist/services/api/MAL/scrapper/html_parsers.dart';
 import 'package:mywatchlist/services/api/MAL/scrapper/http_connect.dart';
 import 'package:mywatchlist/utils/url_formatter.dart';
@@ -278,6 +279,82 @@ class MalScraper {
         return HtmlParsers.parseUserSearch(document);
       }
     } catch (e) {
+      // Silently fail
+    }
+    return null;
+  }
+
+  /// Search for MAL interest stacks (HTML scraping).
+  Future<List<Map<String, dynamic>>> searchInterestStacks(
+    String query, {
+    String? type,
+    int page = 1,
+  }) async {
+    try {
+      final params = <String, String>{
+        if (query.isNotEmpty) 'q': query,
+        if (type != null) 'type': type,
+        'p': page.toString(),
+      };
+      final uri = Uri.https(
+          'myanimelist.net', '/stacks/search', params);
+      final response = await http.get(uri);
+      if (response.statusCode == 200) {
+        final document = parser.parse(response.body);
+        return HtmlParsers.parseInterestStackSearch(document);
+      }
+    } catch (_) {
+      // Silently fail
+    }
+    return [];
+  }
+
+  /// Search news articles on MAL (HTML scraping /news/search).
+  /// When [tag] is provided, fetches by tag instead of query.
+  Future<AnimeNewsOrFeaturedResult?> searchNews(
+    String query, {
+    String? tag,
+    int page = 1,
+  }) async {
+    return _searchNewsOrFeatured(query, category: 'news', tag: tag, page: page);
+  }
+
+  /// Search featured articles on MAL (HTML scraping /featured/search).
+  /// When [tag] is provided, fetches by tag instead of query.
+  Future<AnimeNewsOrFeaturedResult?> searchFeatured(
+    String query, {
+    String? tag,
+    int page = 1,
+  }) async {
+    return _searchNewsOrFeatured(query, category: 'featured', tag: tag, page: page);
+  }
+
+  Future<AnimeNewsOrFeaturedResult?> _searchNewsOrFeatured(
+    String query, {
+    required String category,
+    String? tag,
+    int page = 1,
+  }) async {
+    try {
+      String url;
+      if (tag != null && tag.isNotEmpty) {
+        final formattedTag = tag.toLowerCase().replaceAll(' ', '_');
+        url = 'https://myanimelist.net/$category/tag/$formattedTag?p=$page';
+      } else if (query.isNotEmpty) {
+        url =
+            'https://myanimelist.net/$category/search?q=${Uri.encodeComponent(query)}&cat=$category&p=$page';
+      } else {
+        url = 'https://myanimelist.net/$category?p=$page';
+      }
+
+      final result = await HttpConnect.htmlPage(
+        url,
+        HtmlParsers.parseAnimeNewsOrFeatured,
+      );
+      if (result != null) {
+        return AnimeNewsOrFeaturedResult.fromJson(result);
+      }
+    } catch (_) {
       // Silently fail
     }
     return null;
