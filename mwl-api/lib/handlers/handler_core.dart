@@ -26,12 +26,14 @@ class HandlerCore {
       PathMatcher('character/*id', _handleCharacterInfo, ['data']),
       PathMatcher('people/*id', _handlePeopleInfo, ['data']),
       PathMatcher('genres', _handleGenres, ['data']),
+      PathMatcher('users/search', _handleUserSearch, ['data']),
       PathMatcher('users/about', _handleUserAbout, ['data']),
       PathMatcher('users/friends', _handleUserFriends, ['data']),
       PathMatcher('users/history', _handleUserHistory, ['data']),
       PathMatcher('clubs', _handleClubs, ['data']),
       PathMatcher('schedules', _handleSchedules, ['data']),
       PathMatcher('stacks/*stackType', _handleContentStack),
+      PathMatcher('content/featured', _handleContentFeatured, ['data']),
     ];
   }
 
@@ -173,7 +175,7 @@ class HandlerCore {
       url = '${Constants.malBaseUrl}/news?p=$page';
     }
 
-    final result = await HttpConnect.htmlPage(url, (doc) => {'raw': doc.body?.text ?? ''});
+    final result = await HttpConnect.htmlPage(url, HtmlParsers.parseAnimeNewsOrFeatured);
     return {'url': uri.path, 'data': result, 'fromCache': false};
   }
 
@@ -194,11 +196,11 @@ class HandlerCore {
       url = '${Constants.malBaseUrl}/featured?p=$page';
     }
 
-    final result = await HttpConnect.htmlPage(url, (doc) => {'raw': doc.body?.text ?? ''});
+    final result = await HttpConnect.htmlPage(url, HtmlParsers.parseAnimeNewsOrFeatured);
     return {'url': uri.path, 'data': result, 'fromCache': false};
   }
 
-  /// Reviews (HTML scraping).
+  /// Reviews (HTML scraping — kept as raw text since reviews use inline widget parser).
   Future<Map<String, dynamic>> _handleReviews(
       PathMatcher path, Uri uri, Map<String, String> params) async {
     final id = queryParams<int>(uri, 'id');
@@ -244,12 +246,23 @@ class HandlerCore {
     final category = queryParams<String>(uri, 'category', 'anime')!;
     final result = await HttpConnect.htmlPage(
       '${Constants.malBaseUrl}/$category.php',
-      (doc) => {'raw': doc.body?.text ?? ''},
+      HtmlParsers.parseGenres,
     );
     return {'url': uri.path, 'data': result, 'fromCache': false};
   }
 
-  /// User about/bio (HTML scraping).
+  /// User search (HTML scraping).
+  Future<Map<String, dynamic>> _handleUserSearch(
+      PathMatcher path, Uri uri, Map<String, String> params) async {
+    final query = queryParams<String>(uri, 'q', '')!;
+    final offset = queryParams<int>(uri, 'offset', 0)!;
+    final url =
+        '${Constants.malBaseUrl}/users.php?cat=user&q=${Uri.encodeComponent(query)}&show=$offset';
+    final result = await HttpConnect.htmlPage(url, HtmlParsers.parseUserSearch);
+    return {'url': uri.path, 'data': result, 'fromCache': false};
+  }
+
+  /// User about/bio (HTML scraping — kept as raw, complex profile parsing).
   Future<Map<String, dynamic>> _handleUserAbout(
       PathMatcher path, Uri uri, Map<String, String> params) async {
     final username = queryParams<String>(uri, 'username', '')!;
@@ -279,7 +292,7 @@ class HandlerCore {
     final type = queryParams<String>(uri, 'type', 'anime')!;
     final result = await HttpConnect.htmlPage(
       '${Constants.malBaseUrl}/history/$username/$type',
-      (doc) => {'raw': doc.body?.text ?? ''},
+      HtmlParsers.parseUserHistory,
     );
     return {'url': uri.path, 'data': result, 'fromCache': false};
   }
@@ -297,7 +310,7 @@ class HandlerCore {
       url = '${Constants.malBaseUrl}/clubs.php?p=$page';
     }
 
-    final result = await HttpConnect.htmlPage(url, (doc) => {'raw': doc.body?.text ?? ''});
+    final result = await HttpConnect.htmlPage(url, HtmlParsers.parseClubList);
     return {'url': uri.path, 'data': result, 'fromCache': false};
   }
 
@@ -334,7 +347,27 @@ class HandlerCore {
       url = '${Constants.malBaseUrl}/stacks?type=$stackType&p=$page';
     }
 
-    final result = await HttpConnect.htmlPage(url, (doc) => {'raw': doc.body?.text ?? ''});
+    final result = await HttpConnect.htmlPage(url, HtmlParsers.parseInterestStackSearch);
+    return {'url': uri.path, 'data': result, 'fromCache': false};
+  }
+
+  /// Featured articles for a specific anime/manga (HTML scraping).
+  ///
+  /// Accepts optional `name` param for the slug (produces the canonical MAL URL
+  /// with more results). Without it, falls back to the short URL.
+  Future<Map<String, dynamic>> _handleContentFeatured(
+      PathMatcher path, Uri uri, Map<String, String> params) async {
+    final id = queryParams<int>(uri, 'id');
+    final category = queryParams<String>(uri, 'category', 'anime')!;
+    final name = queryParams<String>(uri, 'name');
+
+    if (id == null) {
+      return {'error': true, 'message': 'Missing id parameter'};
+    }
+
+    final slug = (name != null && name.isNotEmpty) ? '/$name' : '';
+    final url = '${Constants.malBaseUrl}/$category/$id$slug/featured';
+    final result = await HttpConnect.htmlPage(url, HtmlParsers.parseAnimeFeaturedArticles);
     return {'url': uri.path, 'data': result, 'fromCache': false};
   }
 
@@ -344,9 +377,10 @@ class HandlerCore {
 
   Future<Map<String, dynamic>?> _getHtmlContent(String category, int id) async {
     try {
+      final type = category == 'manga' ? ContentType.manga : ContentType.anime;
       return await HttpConnect.htmlPage(
         '${Constants.malBaseUrl}/$category/$id',
-        (doc) => {'raw': doc.body?.text ?? ''},
+        (doc) => HtmlParsers.parseAnimeDetailedHtml(doc, type: type),
       );
     } catch (e) {
       logMwl('_getHtmlContent error for $category/$id: $e');
