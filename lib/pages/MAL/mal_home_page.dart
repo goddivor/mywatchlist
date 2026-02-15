@@ -17,6 +17,8 @@ import 'package:mywatchlist/widgets/MAL/home/section_header.dart';
 import 'package:mywatchlist/widgets/MAL/home/homeappbar.dart';
 import 'package:mywatchlist/widgets/loading/loadingcard.dart';
 import 'package:mywatchlist/widgets/MAL/home/news_widget.dart';
+import 'package:mywatchlist/screens/search/general_search_screen.dart';
+import 'package:mywatchlist/widgets/MAL/search/filtermodal.dart';
 import 'package:mywatchlist/widgets/common/slivers.dart';
 import 'package:mywatchlist/widgets/common/custombutton.dart';
 import 'package:mywatchlist/screens/settings/settings_page.dart';
@@ -212,7 +214,12 @@ class _MalHomePageState extends State<MalHomePage> {
             : Colors.transparent,
         showAvatar: true,
         showSettings: true,
-        onSearchTap: () {},
+        onSearchTap: () {
+          gotoPage(
+            context: context,
+            newPage: const GeneralSearchScreen(showBackButton: true),
+          );
+        },
         onBookmarksTap: () {},
         onCalendarTap: () {},
         onSettingsTap: () {
@@ -386,7 +393,23 @@ class _MalHomePageState extends State<MalHomePage> {
             title: section.getDisplayTitle(
                 currentSeasonName, currentSeasonYear),
             onTap: () {
-              // Navigate to all news
+              gotoPage(
+                context: context,
+                newPage: GeneralSearchScreen(
+                  category: 'news',
+                  showBackButton: true,
+                  autoFocus: false,
+                  filterOutputs: {
+                    'tags': FilterOption(
+                      fieldName: 'Tags',
+                      type: FilterType.single_list,
+                      apiFieldName: 'tags',
+                      singleList: ForumConstants.newsTags,
+                      value: 'All',
+                    ),
+                  },
+                ),
+              );
             },
           ),
           BlocBuilder<RequestsBloc, RequestsState>(
@@ -427,7 +450,24 @@ class _MalHomePageState extends State<MalHomePage> {
             title: section.getDisplayTitle(
                 currentSeasonName, currentSeasonYear),
             onTap: () {
-              // Navigate to all features
+              gotoPage(
+                context: context,
+                newPage: GeneralSearchScreen(
+                  category: 'featured',
+                  showBackButton: true,
+                  autoFocus: false,
+                  filterOutputs: {
+                    'tags': FilterOption(
+                      fieldName: 'Tags',
+                      type: FilterType.select,
+                      apiFieldName: 'tags',
+                      apiValues: ForumConstants.tags.keys.toList(),
+                      values: ForumConstants.tags.values.toList(),
+                      value: 'All',
+                    ),
+                  },
+                ),
+              );
             },
           ),
           BlocBuilder<RequestsBloc, RequestsState>(
@@ -458,6 +498,38 @@ class _MalHomePageState extends State<MalHomePage> {
     );
   }
 
+  String? _getSearchQueryForSection(SectionType type) {
+    switch (type) {
+      case SectionType.seasonNow:
+        final season = currentSeasonName.toLowerCase();
+        return '#$season@$currentSeasonYear';
+      case SectionType.suggested:
+        return '#suggested@anime';
+      case SectionType.upcoming:
+        return '#upcoming';
+      case SectionType.topScore:
+        return '#all';
+      case SectionType.topFavorites:
+        return '#favorite';
+      case SectionType.topPopular:
+        return '#bypopularity';
+      case SectionType.topAnimeAiring:
+        return '#airing';
+      case SectionType.topAnimeTV:
+        return '#tv';
+      case SectionType.topAnimeMovie:
+        return '#movie';
+      case SectionType.topAnimeSpecial:
+        return '#special';
+      case SectionType.topManga:
+        return '#all@manga';
+      case SectionType.topMangaPopular:
+        return '#bypopularity@manga';
+      default:
+        return null;
+    }
+  }
+
   Widget _buildAnimeSection(
     ThemeData theme,
     HomeSectionPreference section,
@@ -478,7 +550,17 @@ class _MalHomePageState extends State<MalHomePage> {
           SectionHeader(
             title: title,
             onTap: () {
-              // Navigate to full section
+              final query = _getSearchQueryForSection(section.type);
+              if (query != null) {
+                gotoPage(
+                  context: context,
+                  newPage: GeneralSearchScreen(
+                    searchQuery: query,
+                    showBackButton: true,
+                    autoFocus: false,
+                  ),
+                );
+              }
             },
           ),
           BlocBuilder<RequestsBloc, RequestsState>(
