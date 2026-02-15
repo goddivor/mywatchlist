@@ -54,6 +54,12 @@ class Constants {
   static const String simklRedirectUri = 'com.teen.mywatchlist://simkl-callback';
   static const String simklCallbackScheme = 'com.teen.mywatchlist';
 
+  // Backend config
+  static String get appConfigUrl => dotenv.env['APP_CONFIG_URL'] ?? '';
+  static String get buildVariant => dotenv.env['BUILD_VARIANT'] ?? 'github';
+  static String get apiUrl => dotenv.env['API_URL'] ?? '';
+  static String get apiSecret => dotenv.env['API_SECRET'] ?? '';
+
   // MyAnimeList API endpoints
   static const String malapiUrl = 'https://api.myanimelist.net/v2';
   static const String maloauthEndPoint =

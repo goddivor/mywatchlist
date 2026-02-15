@@ -1,26 +1,56 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:mwl_api/handlers/handler_core.dart';
 
 /// Network utility class for MAL API calls.
 /// Provides retry logic, connectivity checks, and maintenance detection.
+/// Supports in-process backend calls for local server URLs.
 class MalConnect {
   static const int _maxAttempts = 8;
   static const Duration _retryTimeout = Duration(seconds: 10);
 
+  static HandlerCore? _handlerCore;
+
+  /// Whether the URL targets the local in-process backend.
+  static bool _isLocalBackend(String url) {
+    return url.startsWith('http://0.0.0.0:8080') ||
+        url.startsWith('http://localhost:8080') ||
+        url.startsWith('http://127.0.0.1:8080');
+  }
+
+  /// Get or create the shared HandlerCore instance.
+  static HandlerCore get _handler {
+    _handlerCore ??= HandlerCore();
+    return _handlerCore!;
+  }
+
   /// Perform an HTTP GET with automatic retry on transient failures.
   /// Retries up to [_maxAttempts] times on SocketException or TimeoutException.
+  /// For local backend URLs, routes requests in-process via HandlerCore.
   static Future<http.Response> retryGet(
     String url,
     Map<String, String> headers,
   ) async {
+    final isLocal = _isLocalBackend(url);
     Object? lastError;
 
     for (int attempt = 1; attempt <= _maxAttempts; attempt++) {
       try {
+        if (isLocal) {
+          final value = await _handler
+              .handleRequestAsString(Uri.parse(url))
+              .timeout(_retryTimeout);
+          return http.Response.bytes(
+            utf8.encode(value ?? ''),
+            200,
+            headers: {'content-type': 'application/json; charset=utf-8'},
+          );
+        }
         final response = await http
             .get(Uri.parse(url), headers: headers)
             .timeout(_retryTimeout);

@@ -1,14 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:mwl_commons/src/model/html/anime_detailed_html.dart';
 import 'package:mywatchlist/constants/constants.dart';
 import 'package:mywatchlist/widgets/common/avatar_widget.dart';
 import 'package:mywatchlist/widgets/common/custombutton.dart';
 
-enum LinkType {
-  resources,
-  availableAt,
-  streaming,
-  otherLists,
-}
+export 'package:mwl_commons/src/model/html/anime_detailed_html.dart' show LinkType;
 
 class AnimeLink {
   final String name;
