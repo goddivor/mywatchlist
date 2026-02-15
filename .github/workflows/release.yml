@@ -50,10 +50,16 @@ jobs:
       - name: Create .env file
         run: |
           echo "MAL_CLIENT_ID=${{ secrets.MAL_CLIENT_ID }}" >> assets/.env
+          echo "MAL_CLIENT_SECRET=${{ secrets.MAL_CLIENT_SECRET }}" >> assets/.env
           echo "ANILIST_CLIENT_ID=${{ secrets.ANILIST_CLIENT_ID }}" >> assets/.env
           echo "ANILIST_CLIENT_SECRET=${{ secrets.ANILIST_CLIENT_SECRET }}" >> assets/.env
           echo "SIMKL_CLIENT_ID=${{ secrets.SIMKL_CLIENT_ID }}" >> assets/.env
           echo "SIMKL_CLIENT_SECRET=${{ secrets.SIMKL_CLIENT_SECRET }}" >> assets/.env
+          echo "APP_CONFIG_URL=${{ secrets.APP_CONFIG_URL }}" >> assets/.env
+          echo "BUILD_VARIANT=github" >> assets/.env
+          echo "API_URL=${{ secrets.API_URL }}" >> assets/.env
+          echo "API_SECRET=${{ secrets.API_SECRET }}" >> assets/.env
+          echo "ERROR_REPORT_URL=${{ secrets.ERROR_REPORT_URL }}" >> assets/.env
 
       - name: Build APK
         run: flutter build apk --release --split-per-abi
