@@ -1,0 +1,15 @@
+{
+  "errorLogging": true,
+  "maxLoad": 100,
+  "featureFlags": {},
+  "preferredServers": [
+    {
+      "load": 1,
+      "url": "http://0.0.0.0:8080/"
+    }
+  ],
+  "strategy": "load",
+  "mwlAPIUrl": "",
+  "discordLink": "",
+  "platformMaintenances": []
+}
