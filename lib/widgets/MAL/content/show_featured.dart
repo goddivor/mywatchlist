@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:mywatchlist/services/api/MAL/scrapper/anime_featured.dart';
-import 'package:mywatchlist/services/api/MAL/scrapper/mal_scrapper.dart';
+import 'package:mywatchlist/services/api/mwl_api.dart';
+import 'package:mywatchlist/utils/url_formatter.dart';
 import 'package:mywatchlist/widgets/common/avatar_widget.dart';
 import 'package:mywatchlist/widgets/loading/shimmercolor.dart';
 
@@ -38,10 +39,10 @@ class _ShowAnimeFeaturedState extends State<ShowAnimeFeatured>
 
   Future<void> _fetchFeaturedArticles() async {
     try {
-      final response = await MalScraper().getAnimeFeaturedArticles(
+      final response = await MwlApi.i.getContentFeaturedArticles(
         widget.animeId,
-        widget.animeName,
-        category: widget.category,
+        widget.category,
+        name: widget.animeName.formatForUrl(),
       );
 
       if (response != null && mounted) {

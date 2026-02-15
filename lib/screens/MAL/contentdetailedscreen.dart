@@ -11,7 +11,7 @@ import 'package:mywatchlist/services/api/Jikan/jikan_api.dart';
 import 'package:mywatchlist/services/api/MAL/mal_anime.dart';
 import 'package:mywatchlist/services/api/MAL/mal_api.dart';
 import 'package:mywatchlist/services/api/MAL/scrapper/anime_detailed_html.dart';
-import 'package:mywatchlist/services/api/MAL/scrapper/mal_scrapper.dart';
+import 'package:mywatchlist/services/api/mwl_api.dart';
 import 'package:mywatchlist/utils/streamutils.dart';
 import 'package:mywatchlist/widgets/MAL/content/adaptation_widget.dart';
 import 'package:mywatchlist/widgets/MAL/home/animecharacterwidget.dart';
@@ -202,11 +202,8 @@ class _ContentDetailedScreenState extends State<ContentDetailedScreen>
 
   void getMalApiHtmlContent() async {
     try {
-      final contentType = widget.category == "manga"
-          ? ContentType.manga
-          : ContentType.anime;
       animeDetailedHtml =
-          (await MalScraper().getAnimeDetailedHtml(contentType, _id));
+          await MwlApi.i.getAnimeDetailedHtml(widget.category, _id);
       updateVisibleSections();
     } catch (e) {
       debugPrint('Error loading HTML details for $_id: $e');

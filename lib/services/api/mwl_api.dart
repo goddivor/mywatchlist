@@ -4,7 +4,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:mwl_api/handlers/environment.dart';
-import 'package:mwl_commons/mwl_commons.dart' hide Constants;
+import 'package:mwl_commons/mwl_commons.dart' hide Constants, ContentType;
 
 import 'package:mywatchlist/constants/constants.dart';
 import 'package:mywatchlist/services/api/MAL/mal_connect.dart';
@@ -343,6 +343,123 @@ class MwlApi {
     final result =
         await httpGet('stacks/$stackType?$qs', fromCache: fromCache);
     return result as Map<String, dynamic>?;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Typed convenience methods (unwrap handler_core envelope)
+  // ---------------------------------------------------------------------------
+
+  /// Fetch anime/manga detailed HTML data (parsed).
+  Future<Map<String, dynamic>?> getAnimeDetailedHtml(
+    String category,
+    int id, {
+    bool fromCache = true,
+  }) async {
+    final result = await getContentHtml(category, id, fromCache: fromCache);
+    return result?['html'] as Map<String, dynamic>?;
+  }
+
+  /// Search MAL users.
+  Future<MalUserSearchResult?> searchUsers(
+    String query, {
+    int offset = 0,
+    bool fromCache = true,
+  }) async {
+    final params = <String, dynamic>{
+      'q': query,
+      'offset': offset,
+    };
+    final qs = _buildQuery(params);
+    final result = await httpGet('users/search?$qs', fromCache: fromCache);
+    final data = (result as Map<String, dynamic>?)?['data'];
+    if (data is Map<String, dynamic>) {
+      return MalUserSearchResult.fromJson(data);
+    }
+    return null;
+  }
+
+  /// Search news articles (typed).
+  Future<AnimeNewsOrFeaturedResult?> searchNews(
+    String query, {
+    String? tag,
+    int page = 1,
+    bool fromCache = true,
+  }) async {
+    final result =
+        await getNews(query: query, tag: tag, page: page, fromCache: fromCache);
+    final data = result?['data'];
+    if (data is Map<String, dynamic>) {
+      return AnimeNewsOrFeaturedResult.fromJson(data);
+    }
+    return null;
+  }
+
+  /// Search featured articles (typed).
+  Future<AnimeNewsOrFeaturedResult?> searchFeatured(
+    String query, {
+    String? tag,
+    int page = 1,
+    bool fromCache = true,
+  }) async {
+    final result = await getFeatured(
+        query: query, tag: tag, page: page, fromCache: fromCache);
+    final data = result?['data'];
+    if (data is Map<String, dynamic>) {
+      return AnimeNewsOrFeaturedResult.fromJson(data);
+    }
+    return null;
+  }
+
+  /// Search clubs (typed).
+  Future<Map<String, dynamic>?> searchClubs(
+    String query, {
+    int page = 1,
+    bool fromCache = true,
+  }) async {
+    final result =
+        await getClubs(query: query, page: page, fromCache: fromCache);
+    return result?['data'] as Map<String, dynamic>?;
+  }
+
+  /// Search interest stacks (typed).
+  Future<List<Map<String, dynamic>>> searchInterestStacks(
+    String query, {
+    String? type,
+    int page = 1,
+    bool fromCache = true,
+  }) async {
+    final result = await getInterestStacks(
+      stackType: type ?? 'anime',
+      query: query,
+      page: page,
+      fromCache: fromCache,
+    );
+    final data = result?['data'];
+    if (data is List) return data.cast<Map<String, dynamic>>();
+    return [];
+  }
+
+  /// Get featured articles for a specific content (anime/manga).
+  ///
+  /// Pass [name] (the anime/manga title) to get the full featured page
+  /// from MAL (canonical URL with slug).
+  Future<Map<String, dynamic>?> getContentFeaturedArticles(
+    int id,
+    String category, {
+    String? name,
+    bool fromCache = true,
+  }) async {
+    final params = <String, dynamic>{
+      'id': id,
+      'category': category,
+      if (name != null) 'name': name,
+    };
+    final qs = _buildQuery(params);
+    final result = await httpGet(
+      'content/featured?$qs',
+      fromCache: fromCache,
+    );
+    return (result as Map<String, dynamic>?)?['data'] as Map<String, dynamic>?;
   }
 
   // ---------------------------------------------------------------------------

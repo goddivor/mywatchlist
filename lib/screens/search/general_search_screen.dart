@@ -18,7 +18,7 @@ import 'package:mywatchlist/services/api/MAL/models/all_search_result.dart';
 import 'package:mywatchlist/services/api/MAL/models/mal_user_search.dart';
 import 'package:mywatchlist/services/api/MAL/models/search_result.dart';
 import 'package:mywatchlist/services/api/MAL/scrapper/anime_news_featured.dart';
-import 'package:mywatchlist/services/api/MAL/scrapper/mal_scrapper.dart';
+import 'package:mywatchlist/services/api/mwl_api.dart';
 import 'package:mywatchlist/user/MAL/mal_home_preferences_bloc.dart';
 import 'package:mywatchlist/widgets/MAL/home/animegridcard.dart';
 import 'package:mywatchlist/widgets/common/image_preview.dart';
@@ -307,19 +307,14 @@ class _GeneralSearchScreenState extends State<GeneralSearchScreen>
 
   Future<void> _searchUsers(String query) async {
     _userOffset = 0;
-    final scrapper = MalScraper();
-    final result = await scrapper.searchUser(
-      query,
-      offset: 0,
-    );
+    final result = await MwlApi.i.searchUsers(query, offset: 0);
     _userResults = result?.users ?? [];
     _hasMoreResults = _userResults.length >= 24;
   }
 
   Future<void> _searchClubs(String query) async {
     _clubPage = 1;
-    final scrapper = MalScraper();
-    final result = await scrapper.searchClubs(query, page: 1);
+    final result = await MwlApi.i.searchClubs(query, page: 1);
     _clubResults = (result?['clubs'] as List<dynamic>?)
             ?.cast<Map<String, dynamic>>() ??
         [];
@@ -328,7 +323,6 @@ class _GeneralSearchScreenState extends State<GeneralSearchScreen>
 
   Future<void> _searchFeaturedOrNews(String query) async {
     _newsOrFeaturedPage = 1;
-    final scraper = MalScraper();
     // Extract tag filter if present
     String? tag;
     if (_filterOutputs.containsKey('tags') &&
@@ -337,8 +331,8 @@ class _GeneralSearchScreenState extends State<GeneralSearchScreen>
       tag = _filterOutputs['tags']!.value;
     }
     final result = _category == 'news'
-        ? await scraper.searchNews(query, tag: tag, page: 1)
-        : await scraper.searchFeatured(query, tag: tag, page: 1);
+        ? await MwlApi.i.searchNews(query, tag: tag, page: 1)
+        : await MwlApi.i.searchFeatured(query, tag: tag, page: 1);
     _newsOrFeaturedResults = result?.newsorfeatured ?? [];
     _hasMoreResults = result?.paging.next != null &&
         result!.paging.next!.isNotEmpty;
@@ -360,8 +354,7 @@ class _GeneralSearchScreenState extends State<GeneralSearchScreen>
       }
     }
 
-    final scraper = MalScraper();
-    _interestStackResults = await scraper.searchInterestStacks(
+    _interestStackResults = await MwlApi.i.searchInterestStacks(
       query,
       type: type,
       page: 1,
@@ -685,9 +678,8 @@ class _GeneralSearchScreenState extends State<GeneralSearchScreen>
 
         case 'user':
           _userOffset += 24;
-          final scrapper = MalScraper();
           final result =
-              await scrapper.searchUser(_prevQuery, offset: _userOffset);
+              await MwlApi.i.searchUsers(_prevQuery, offset: _userOffset);
           final users = result?.users ?? [];
           _userResults.addAll(users);
           _hasMoreResults = users.length >= 24;
@@ -695,9 +687,8 @@ class _GeneralSearchScreenState extends State<GeneralSearchScreen>
 
         case 'club':
           _clubPage++;
-          final scrapper = MalScraper();
           final result =
-              await scrapper.searchClubs(_prevQuery, page: _clubPage);
+              await MwlApi.i.searchClubs(_prevQuery, page: _clubPage);
           final clubs = (result?['clubs'] as List<dynamic>?)
                   ?.cast<Map<String, dynamic>>() ??
               [];
@@ -719,8 +710,7 @@ class _GeneralSearchScreenState extends State<GeneralSearchScreen>
               type = _filterOutputs['type']!.apiValues![idx]?.toString();
             }
           }
-          final scraper = MalScraper();
-          final stacks = await scraper.searchInterestStacks(
+          final stacks = await MwlApi.i.searchInterestStacks(
             _prevQuery,
             type: type,
             page: _interestStackPage,
@@ -732,7 +722,6 @@ class _GeneralSearchScreenState extends State<GeneralSearchScreen>
         case 'news':
         case 'featured':
           _newsOrFeaturedPage++;
-          final scraper = MalScraper();
           String? tag;
           if (_filterOutputs.containsKey('tags') &&
               _filterOutputs['tags']!.value != null &&
@@ -740,9 +729,9 @@ class _GeneralSearchScreenState extends State<GeneralSearchScreen>
             tag = _filterOutputs['tags']!.value;
           }
           final nfResult = _category == 'news'
-              ? await scraper.searchNews(_prevQuery,
+              ? await MwlApi.i.searchNews(_prevQuery,
                   tag: tag, page: _newsOrFeaturedPage)
-              : await scraper.searchFeatured(_prevQuery,
+              : await MwlApi.i.searchFeatured(_prevQuery,
                   tag: tag, page: _newsOrFeaturedPage);
           final nfItems = nfResult?.newsorfeatured ?? [];
           _newsOrFeaturedResults.addAll(nfItems);
