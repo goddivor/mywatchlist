@@ -1,0 +1,27 @@
+[package]
+name = "mwl-rust-api"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+axum = { version = "0.8.8", features = ["multipart"] }
+tokio = { version = "1.49.0", features = ["full"] }
+tower-http = { version = "0.6.8", features = ["cors"] }
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0.149"
+reqwest = { version = "0.12.28", features = ["json", "multipart"] }
+dotenv = "0.15.0"
+chrono = "0.4.43"
+futures = "0.3.31"
+async-recursion = "1.1.1"
+seahash = "4.1.0"
+simsearch = "0.3.0"
+uuid = { version = "1.21.0", features = ["serde", "v4"] }
+redis = { version = "0.27.6", features = ["tokio-comp", "aio"] }
+tokio-cron-scheduler = "0.15.1"
+
+[profile.release]
+overflow-checks = true
+
+[profile.dev]
+opt-level = 3
