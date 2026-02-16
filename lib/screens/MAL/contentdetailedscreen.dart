@@ -10,6 +10,10 @@ import 'package:mywatchlist/services/api/Jikan/jikan_anime_videos.dart';
 import 'package:mywatchlist/services/api/Jikan/jikan_api.dart';
 import 'package:mywatchlist/services/api/MAL/mal_anime.dart';
 import 'package:mywatchlist/services/api/MAL/mal_api.dart';
+import 'package:mywatchlist/services/api/MAL/models/my_anime_list_status.dart'
+    as mal_status;
+import 'package:mywatchlist/services/api/MAL/models/my_manga_list_status.dart'
+    as mal_manga_status;
 import 'package:mywatchlist/services/api/MAL/scrapper/anime_detailed_html.dart';
 import 'package:mywatchlist/services/api/mwl_api.dart';
 import 'package:mywatchlist/utils/streamutils.dart';
@@ -37,6 +41,10 @@ import 'package:mywatchlist/widgets/MAL/content/synopsis_widget.dart';
 import 'package:mywatchlist/widgets/MAL/content/userupdate_widget.dart';
 import 'package:mywatchlist/widgets/MAL/content/videowidget.dart';
 import 'package:mywatchlist/screens/search/search_history.dart';
+import 'package:mywatchlist/widgets/user/contenteditwidget.dart';
+import 'package:mywatchlist/widgets/user/cross_tracker_widget.dart';
+import 'package:mywatchlist/user/user_manager.dart';
+import 'package:mywatchlist/user/user_preference.dart';
 import 'package:scroll_to_index/scroll_to_index.dart';
 
 enum TitleLang { en, ja, ro }
@@ -98,8 +106,14 @@ class _ContentDetailedScreenState extends State<ContentDetailedScreen>
       NumberFormat.currency(decimalDigits: 0, name: "");
   NumberFormat ratingFormat = NumberFormat.currency(name: "");
   bool showContentEdit = false;
+  bool _crossTrackerEnabled = true;
   dynamic contentDetailed;
   dynamic animeDetailedHtml;
+
+  // Live MAL status for cross-tracker sync (updated immediately on edit)
+  String? _liveMalStatus;
+  int? _liveMalScore;
+  int? _liveMalProgress;
 
   String get _title => widget.node?.title ?? contentDetailed?.title;
   int get _id => (widget.node != null ? widget.node!.id : widget.id)!;
@@ -128,6 +142,7 @@ class _ContentDetailedScreenState extends State<ContentDetailedScreen>
 
     _addFabListener();
     _recordVisit();
+    _loadCrossTrackerPref();
     Future.delayed(Duration.zero).then((_) {
       getPageContent();
     });
@@ -141,6 +156,15 @@ class _ContentDetailedScreenState extends State<ContentDetailedScreen>
     _autoScrollController?.dispose();
     _tabController?.dispose();
     fabListener.dispose();
+  }
+
+  bool get _hasOtherTrackers => UserManager.instance.authenticatedTrackers
+      .where((t) => t != AccountType.myanimelist)
+      .isNotEmpty;
+
+  Future<void> _loadCrossTrackerPref() async {
+    final enabled = await UserPreference().getCrossTrackerEnabled();
+    if (mounted) setState(() => _crossTrackerEnabled = enabled);
   }
 
   void _addFabListener() {
@@ -159,6 +183,25 @@ class _ContentDetailedScreenState extends State<ContentDetailedScreen>
       } else {
         SearchHistory.instance.addRecentAnime(widget.node!);
       }
+    }
+  }
+
+  void _recordVisitFromContent() {
+    if (contentDetailed == null) return;
+    final imageUrl = contentDetailed?.mainPicture?.large ??
+        contentDetailed?.mainPicture?.medium ??
+        '';
+    final anime = Anime(
+      id: _id,
+      title: contentDetailed?.title ?? '',
+      imageUrl: imageUrl,
+      score: (contentDetailed?.mean ?? 0.0).toDouble(),
+      members: contentDetailed?.numListUsers ?? 0,
+    );
+    if (widget.category == 'manga') {
+      SearchHistory.instance.addRecentManga(anime);
+    } else {
+      SearchHistory.instance.addRecentAnime(anime);
     }
   }
 
@@ -182,6 +225,10 @@ class _ContentDetailedScreenState extends State<ContentDetailedScreen>
         contentDetailed = await MalApi().getMangaDetails(_id);
       } else {
         contentDetailed = await MalApi().getAnimeDetails(_id);
+      }
+      // Record/update visit after API load with accurate data
+      if (contentDetailed != null) {
+        _recordVisitFromContent();
       }
       updateVisibleSections();
       setStatus();
@@ -243,6 +290,12 @@ class _ContentDetailedScreenState extends State<ContentDetailedScreen>
     List<dynamic>? mangaCharsJson = animeDetails['mangaCharacters'];
     if (mangaCharsJson == null) return [];
     return mangaCharsJson.map((json) => MangaCharacters.fromJson(json)).toList();
+  }
+
+  List<CharacterNode> getStaff(dynamic animeDetails) {
+    List<dynamic>? staffJson = animeDetails['staff'];
+    if (staffJson == null) return [];
+    return staffJson.map((json) => CharacterNode.fromJson(json)).toList();
   }
 
   List<InterestStack> getInterestStack(dynamic animeDetails) {
@@ -522,7 +575,8 @@ class _ContentDetailedScreenState extends State<ContentDetailedScreen>
           ),
         ),
       TabType.Interest_Stacks => _nullIf(
-          animeDetailedHtml != null,
+          animeDetailedHtml != null &&
+              getInterestStack(animeDetailedHtml).isNotEmpty,
           () => VisibleSection(
             'Interest Stacks',
             InterestStackContentList(
@@ -547,6 +601,18 @@ class _ContentDetailedScreenState extends State<ContentDetailedScreen>
                     animeCharacterList: getCharactersVoiceActors(animeDetailedHtml),
                     horizPadding: horizPadding,
                   ),
+          ),
+        ),
+      TabType.Staff => _nullIf(
+          !_isManga &&
+              animeDetailedHtml != null &&
+              getStaff(animeDetailedHtml).isNotEmpty,
+          () => VisibleSection(
+            'Staff',
+            AnimeCharacterWidget(
+              staffList: getStaff(animeDetailedHtml),
+              horizPadding: horizPadding,
+            ),
           ),
         ),
       TabType.Forums => _nullIf(
@@ -701,7 +767,7 @@ class _ContentDetailedScreenState extends State<ContentDetailedScreen>
       },
       child: Scaffold(
         floatingActionButtonLocation:
-            showContentEdit ? FloatingActionButtonLocation.centerFloat : null,
+            showContentEdit ? FloatingActionButtonLocation.endFloat : null,
         floatingActionButton: _buildFloatingActionButton(),
         floatingActionButtonAnimator: NoScalingAnimation(),
         body: Stack(
@@ -718,6 +784,75 @@ class _ContentDetailedScreenState extends State<ContentDetailedScreen>
                 const SliverWrapper(SizedBox(height: 80)),
               ],
             ),
+            if (showContentEdit && contentDetailed != null)
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 70,
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxHeight: MediaQuery.of(context).size.height * 0.6,
+                  ),
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        ContentEditWidget(
+                          id: _id,
+                          contentDetailed: contentDetailed,
+                          category: widget.category,
+                          onUpdate: (success) {
+                            if (success) getMalApiContent();
+                          },
+                          onListStatusChange: (status) {
+                            if (mounted) {
+                              setState(() {
+                                if (status
+                                    is mal_status.MyAnimeListStatus) {
+                                  _liveMalStatus = status.status;
+                                  _liveMalScore = status.score;
+                                  _liveMalProgress =
+                                      status.numEpisodesWatched;
+                                } else if (status
+                                    is mal_manga_status.MyMangaListStatus) {
+                                  _liveMalStatus = status.status;
+                                  _liveMalScore = status.score;
+                                  _liveMalProgress =
+                                      status.numChaptersRead;
+                                }
+                              });
+                            }
+                          },
+                          onDelete: () {
+                            if (mounted) {
+                              setState(() {
+                                showContentEdit = false;
+                              });
+                            }
+                            getMalApiContent();
+                          },
+                        ),
+                        if (_crossTrackerEnabled && _hasOtherTrackers)
+                          CrossTrackerWidget(
+                            malId: _id,
+                            title: contentDetailed?.title ?? '',
+                            category: widget.category,
+                            malStatus: _liveMalStatus ??
+                                contentDetailed?.myListStatus?.status,
+                            malScore: _liveMalScore ??
+                                contentDetailed?.myListStatus?.score,
+                            malProgress: _liveMalProgress ??
+                                (widget.category == 'anime'
+                                    ? contentDetailed
+                                        ?.myListStatus?.numEpisodesWatched
+                                    : contentDetailed
+                                        ?.myListStatus?.numChaptersRead),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
           ],
         ),
       ),
@@ -861,8 +996,11 @@ class _ContentDetailedScreenState extends State<ContentDetailedScreen>
     }
   }
 
-  String get _url =>
-      widget.node?.imageUrl ?? contentDetailed?.mainPicture?.large ?? "";
+  String get _url {
+    final nodeUrl = widget.node?.imageUrl;
+    if (nodeUrl != null && nodeUrl.isNotEmpty) return nodeUrl;
+    return contentDetailed?.mainPicture?.large ?? "";
+  }
 
   Widget get animeCard {
     final urlList = [_url];

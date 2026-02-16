@@ -56,16 +56,17 @@ class SimklUser {
   }
 
   // Add to list - POST /sync/add-to-list
-  Future<Map<String, dynamic>> addToList(List<Map<String, dynamic>> items) async {
+  // Body should be: {"anime": [...], "shows": [...], "movies": [...]}
+  Future<Map<String, dynamic>> addToList(Map<String, dynamic> body) async {
     final uri = Uri.parse('${Constants.simklApiBaseUrl}/sync/add-to-list');
     final response = await http.post(
       uri,
       headers: _authHeaders,
-      body: jsonEncode(items),
+      body: jsonEncode(body),
     );
 
     debugPrint('Simkl addToList response: ${response.statusCode}');
-    if (response.statusCode == 200) {
+    if (response.statusCode == 200 || response.statusCode == 201) {
       return json.decode(response.body) as Map<String, dynamic>;
     } else {
       debugPrint('Simkl addToList error: ${response.body}');
@@ -74,17 +75,20 @@ class SimklUser {
   }
 
   // Remove from list - POST /sync/remove-from-list
-  Future<Map<String, dynamic>> removeFromList(List<Map<String, dynamic>> items) async {
+  // Body should be: {"anime": [...], "shows": [...], "movies": [...]}
+  Future<Map<String, dynamic>> removeFromList(Map<String, dynamic> body) async {
     final uri = Uri.parse('${Constants.simklApiBaseUrl}/sync/remove-from-list');
     final response = await http.post(
       uri,
       headers: _authHeaders,
-      body: jsonEncode(items),
+      body: jsonEncode(body),
     );
 
     debugPrint('Simkl removeFromList response: ${response.statusCode}');
-    if (response.statusCode == 200) {
-      return json.decode(response.body) as Map<String, dynamic>;
+    if (response.statusCode == 200 || response.statusCode == 204) {
+      if (response.body.isEmpty) return {};
+      final decoded = json.decode(response.body);
+      return decoded is Map<String, dynamic> ? decoded : {};
     } else {
       debugPrint('Simkl removeFromList error: ${response.body}');
       throw Exception('Failed to remove items from Simkl list');

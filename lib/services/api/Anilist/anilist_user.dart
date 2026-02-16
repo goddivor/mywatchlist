@@ -190,6 +190,27 @@ class AnilistUser {
     return response;
   }
 
+  /// Get the authenticated user's media list entry for a specific media.
+  Future<Map<String, dynamic>> getMediaListEntry(int mediaId) async {
+    const query = '''
+    query (\$mediaId: Int) {
+      MediaList(mediaId: \$mediaId) {
+        id
+        status
+        score
+        progress
+      }
+    }
+    ''';
+
+    final response = await _authenticatedGraphqlQuery(
+      query,
+      variables: {'mediaId': mediaId},
+    );
+    debugPrint('AniList getMediaListEntry response for mediaId: $mediaId');
+    return response;
+  }
+
   /// Get a user's anime and manga statistics.
   Future<Map<String, dynamic>> getUserStatistics(int userId) async {
     const query = '''

@@ -20,6 +20,38 @@ class KitsuUser {
         'Authorization': 'Bearer ${UserKitsuV2.instance.accessToken}',
       };
 
+  /// Ensure the Kitsu access token is valid, refreshing if expired.
+  Future<void> _ensureValidToken() async {
+    final user = UserKitsuV2.instance;
+    if (user.isTokenExpired) {
+      debugPrint('Kitsu token expired, refreshing...');
+      final refreshed = await user.refreshAccessToken();
+      debugPrint('Kitsu token refresh: ${refreshed ? "success" : "failed"}');
+    }
+  }
+
+  String? _cachedUserId;
+
+  /// Get the authenticated user's Kitsu user ID.
+  Future<String?> getSelfUserId() async {
+    if (_cachedUserId != null) return _cachedUserId;
+    await _ensureValidToken();
+    final accessToken = UserKitsuV2.instance.accessToken;
+    if (accessToken == null) return null;
+
+    final url = Uri.parse(_userBaseEndPoint + _userEndpoint);
+    final response = await http.get(url, headers: _authHeaders);
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body)['data'] as List;
+      if (data.isNotEmpty) {
+        _cachedUserId = data[0]['id'] as String;
+        return _cachedUserId;
+      }
+    }
+    return null;
+  }
+
   Future<KitsuUserProf> getUserInfo() async {
     final accessToken = UserKitsuV2.instance.accessToken;
 
@@ -85,6 +117,38 @@ class KitsuUser {
     }
   }
 
+  /// Find a library entry for a specific media (anime/manga) by its ID.
+  /// Returns the raw JSON:API resource data or null if not found.
+  Future<Map<String, dynamic>?> getLibraryEntryForMedia({
+    required String mediaId,
+    required String mediaType,
+  }) async {
+    final userId = await getSelfUserId();
+    if (userId == null) return null;
+    final filterKey = mediaType == 'anime' ? 'animeId' : 'mangaId';
+    final params = <String, String>{
+      'filter[userId]': userId,
+      'filter[$filterKey]': mediaId,
+      'page[limit]': '1',
+    };
+
+    final uri = Uri.parse('$_userBaseEndPoint/library-entries')
+        .replace(queryParameters: params);
+    debugPrint('Kitsu getLibraryEntryForMedia: userId=$userId, $filterKey=$mediaId');
+    final response = await http.get(uri, headers: _authHeaders);
+    debugPrint('Kitsu getLibraryEntryForMedia response: ${response.statusCode}');
+
+    if (response.statusCode == 200) {
+      final body = json.decode(response.body) as Map<String, dynamic>;
+      final data = body['data'] as List<dynamic>?;
+      debugPrint('Kitsu getLibraryEntryForMedia entries found: ${data?.length ?? 0}');
+      if (data != null && data.isNotEmpty) {
+        return data.first as Map<String, dynamic>;
+      }
+    }
+    return null;
+  }
+
   /// Create a new library entry.
   ///
   /// [mediaId] - The ID of the anime or manga.
@@ -95,7 +159,9 @@ class KitsuUser {
     required String mediaType,
     required String status,
   }) async {
-    final body = json.encode({
+    await _ensureValidToken();
+    final userId = await getSelfUserId();
+    final bodyMap = {
       'data': {
         'type': 'libraryEntries',
         'attributes': {
@@ -108,17 +174,18 @@ class KitsuUser {
               'id': mediaId.toString(),
             },
           },
-          'user': {
-            'data': {
-              'type': 'users',
-              'id': UserKitsuV2.instance.accessToken != null
-                  ? null
-                  : null, // userId is inferred from the auth token by Kitsu
+          if (userId != null)
+            'user': {
+              'data': {
+                'type': 'users',
+                'id': userId,
+              },
             },
-          },
         },
       },
-    });
+    };
+    final body = json.encode(bodyMap);
+    debugPrint('Kitsu createLibraryEntry body: $body');
 
     final response = await http.post(
       Uri.parse('$_userBaseEndPoint/library-entries'),
@@ -147,6 +214,7 @@ class KitsuUser {
     int? progress,
     double? ratingTwenty,
   }) async {
+    await _ensureValidToken();
     final attributes = <String, dynamic>{};
     if (status != null) attributes['status'] = status;
     if (progress != null) attributes['progress'] = progress;
@@ -179,6 +247,7 @@ class KitsuUser {
   ///
   /// [entryId] - The library entry ID to delete.
   Future<void> deleteLibraryEntry(String entryId) async {
+    await _ensureValidToken();
     final response = await http.delete(
       Uri.parse('$_userBaseEndPoint/library-entries/$entryId'),
       headers: _authHeaders,
