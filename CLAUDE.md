@@ -94,3 +94,4 @@ The app is tested on a physical Android phone connected via USB.
 - **Check device**: Run `flutter devices` first to confirm the phone is connected
 - **Read logs**: Run `flutter run` in background mode and `tail` the output file to monitor logs. Filter Flutter-specific errors with `grep -i "flutter" | grep -i "error\|exception"` — ignore native `gralloc4` or GPU format warnings as they are harmless Android-level noise.
 - **Workflow**: After code changes, run `flutter analyze` to check for errors, then `flutter run -d 10591f3e0506` to deploy and test on the phone.
+- **IMPORTANT**: Always launch `flutter run` in background mode (using `run_in_background: true` in Bash tool). The process will lose connection to the device anyway, so running in background avoids blocking.
