@@ -13,7 +13,11 @@ import 'package:mywatchlist/services/api/Jikan/jikan_anime.dart' as jikan_model;
 import 'package:mywatchlist/services/api/Jikan/jikan_api.dart';
 import 'package:mywatchlist/services/api/MAL/mal_anime.dart';
 import 'package:mywatchlist/services/api/MAL/mal_api.dart';
+import 'package:mywatchlist/screens/forum/club_screen.dart';
+import 'package:mywatchlist/screens/forum/forum_posts_screen.dart';
 import 'package:mywatchlist/services/api/MAL/mal_forum_api.dart';
+import 'package:mywatchlist/services/api/MAL/models/club/club_html.dart';
+import 'package:mywatchlist/services/api/MAL/models/forum/forum_models.dart';
 import 'package:mywatchlist/services/api/MAL/models/all_search_result.dart';
 import 'package:mywatchlist/services/api/MAL/models/mal_user_search.dart';
 import 'package:mywatchlist/services/api/MAL/models/search_result.dart';
@@ -40,7 +44,7 @@ class GeneralSearchScreen extends StatefulWidget {
     this.searchQuery,
     this.category = 'all',
     this.showBackButton = false,
-    this.autoFocus = true,
+    this.autoFocus = false,
     this.filterOutputs,
   });
 
@@ -60,7 +64,7 @@ class _GeneralSearchScreenState extends State<GeneralSearchScreen>
   bool _showFilter = false;
 
   // Category-specific results
-  List<Map<String, dynamic>> _forumResults = [];
+  List<ForumTopicsData> _forumResults = [];
   List<MalUserNode> _userResults = [];
   List<Map<String, dynamic>> _clubResults = [];
   List<AnimeNewsOrFeaturedItem> _newsOrFeaturedResults = [];
@@ -300,9 +304,8 @@ class _GeneralSearchScreenState extends State<GeneralSearchScreen>
       limit: 30,
       offset: 0,
     );
-    final data = result['data'] as List<dynamic>? ?? [];
-    _forumResults = data.cast<Map<String, dynamic>>();
-    _hasMoreResults = data.length >= 30;
+    _forumResults = result?.data ?? [];
+    _hasMoreResults = _forumResults.length >= 30;
   }
 
   Future<void> _searchUsers(String query) async {
@@ -670,8 +673,7 @@ class _GeneralSearchScreenState extends State<GeneralSearchScreen>
             limit: 30,
             offset: _forumOffset,
           );
-          final data = (result['data'] as List<dynamic>? ?? [])
-              .cast<Map<String, dynamic>>();
+          final data = result?.data ?? [];
           _forumResults.addAll(data);
           _hasMoreResults = data.length >= 30;
           break;
@@ -2120,23 +2122,14 @@ class _GeneralSearchScreenState extends State<GeneralSearchScreen>
     final theme = Theme.of(context);
     return Column(
       children: _forumResults.map((topic) {
-        final title = topic['title'] as String? ?? '';
-        final createdBy =
-            (topic['created_by'] as Map<String, dynamic>?)?['name'] as String? ??
-                '';
-        final lastPost = topic['last_post_created_at'] as String? ?? '';
-        final posts = topic['number_of_posts'] as int? ?? 0;
-        final topicId = topic['id'] as int?;
+        final title = topic.title ?? '';
+        final createdBy = topic.createdBy?.name ?? '';
+        final posts = topic.numberOfPosts ?? 0;
 
         String formattedDate = '';
-        if (lastPost.isNotEmpty) {
-          try {
-            final dt = DateTime.parse(lastPost);
-            formattedDate =
-                '${dt.day}/${dt.month}/${dt.year}';
-          } catch (_) {
-            formattedDate = lastPost;
-          }
+        if (topic.lastPostCreatedAt != null) {
+          final dt = topic.lastPostCreatedAt!;
+          formattedDate = '${dt.day}/${dt.month}/${dt.year}';
         }
 
         return Column(
@@ -2174,9 +2167,12 @@ class _GeneralSearchScreenState extends State<GeneralSearchScreen>
               ),
               contentPadding:
                   const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
-              onTap: topicId != null
+              onTap: topic.id != null
                   ? () {
-                      // TODO: Navigate to forum topic detail
+                      gotoPage(
+                        context: context,
+                        newPage: ForumPostsScreen(topic: topic),
+                      );
                     }
                   : null,
             ),
@@ -2244,9 +2240,23 @@ class _GeneralSearchScreenState extends State<GeneralSearchScreen>
           final lastPostBy = club['lastPostBy'] as String?;
           final lastPostTime = club['lastPostTime'] as String?;
 
+          final clubId = club['id'] as int?;
           return InkWell(
             onTap: () {
-              // TODO: Navigate to club detail
+              if (clubId != null) {
+                gotoPage(
+                  context: context,
+                  newPage: ClubScreen(
+                    clubHtml: ClubHtml(
+                      id: clubId,
+                      name: name,
+                      imgUrl: imgUrl,
+                      desc: desc,
+                      members: members,
+                    ),
+                  ),
+                );
+              }
             },
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 10),
@@ -2680,7 +2690,15 @@ class _GeneralSearchScreenState extends State<GeneralSearchScreen>
           return InkWell(
             borderRadius: BorderRadius.circular(8),
             onTap: () {
-              // TODO: Navigate to forum topic
+              gotoPage(
+                context: context,
+                newPage: ForumPostsScreen(
+                  topic: ForumTopicsData(
+                    id: item.id,
+                    title: item.title,
+                  ),
+                ),
+              );
             },
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 6),
@@ -2768,7 +2786,16 @@ class _GeneralSearchScreenState extends State<GeneralSearchScreen>
           return InkWell(
             borderRadius: BorderRadius.circular(8),
             onTap: () {
-              // TODO: Navigate to club detail
+              gotoPage(
+                context: context,
+                newPage: ClubScreen(
+                  clubHtml: ClubHtml(
+                    id: item.id,
+                    name: item.title,
+                    imgUrl: item.imageUrl.isNotEmpty ? item.imageUrl : null,
+                  ),
+                ),
+              );
             },
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 6),

@@ -1146,32 +1146,93 @@ class HtmlParsers {
     final topics = <Map<String, dynamic>>[];
 
     try {
-      final rows = document.querySelectorAll(
-          '.forum-topic-list tr, table.forum_border_around tr');
+      // New MAL HTML: table#forumTopics with tr[data-topic-id]
+      var rows = document.querySelectorAll(
+          '#forumTopics tr[data-topic-id]');
+      // Fallback to old selectors
+      if (rows.isEmpty) {
+        rows = document.querySelectorAll(
+            '.forum-topic-list tr, table.forum_border_around tr');
+      }
+
       for (final row in rows) {
         final cells = row.getElementsByTagName('td');
-        if (cells.length >= 4) {
-          final titleCell = cells[1];
-          final link = titleCell.querySelector('a');
-          if (link != null) {
-            final href = link.attributes['href'] ?? '';
-            final topicIdMatch =
-                RegExp(r'topicid=(\d+)').firstMatch(href);
+        if (cells.length < 3) continue;
 
-            topics.add({
-              'id': topicIdMatch != null
-                  ? int.tryParse(topicIdMatch.group(1)!)
-                  : null,
-              'title': link.text.trim(),
-              'created_by':
-                  cells.length > 2 ? cells[2].text.trim() : '',
-              'replies':
-                  cells.length > 3 ? cells[3].text.trim() : '',
-              'last_post':
-                  cells.length > 4 ? cells[4].text.trim() : '',
-            });
-          }
+        // Try data-topic-id attribute first
+        int? topicId;
+        final dataTopicId = row.attributes['data-topic-id'];
+        if (dataTopicId != null) {
+          topicId = int.tryParse(dataTopicId);
         }
+
+        // TD layout: [0]=watch icon, [1]=title+author, [2]=replies, [3]=last post
+        final titleCell = cells.length > 1 ? cells[1] : cells[0];
+        final link = titleCell.querySelector('a');
+        if (link == null) continue;
+
+        // Extract topic ID from href if not found in attribute
+        if (topicId == null) {
+          final href = link.attributes['href'] ?? '';
+          final topicIdMatch =
+              RegExp(r'topicid=(\d+)').firstMatch(href);
+          topicId = topicIdMatch != null
+              ? int.tryParse(topicIdMatch.group(1)!)
+              : null;
+        }
+
+        // Extract title
+        final title = link.text.trim();
+
+        // Extract created_by from span.forum_postusername
+        String? createdBy;
+        try {
+          final userSpan =
+              titleCell.querySelector('.forum_postusername a');
+          createdBy = userSpan?.text.trim();
+        } catch (_) {}
+
+        // Extract replies from TD[2] (strip commas)
+        String? replies;
+        if (cells.length > 2) {
+          replies = cells[2].text.trim().replaceAll(',', '');
+        }
+
+        // Extract last post info from TD[3]
+        String? lastPostBy;
+        String? lastPostTime;
+        if (cells.length > 3) {
+          try {
+            final lastTd = cells[3];
+            final lastPostLink = lastTd.querySelector('a');
+            if (lastPostLink != null) {
+              final href = lastPostLink.attributes['href'] ?? '';
+              if (href.contains('/profile/')) {
+                lastPostBy = lastPostLink.text.trim();
+              }
+            }
+            // Time is the text after <br>
+            final tdHtml = lastTd.innerHtml;
+            final brIndex = tdHtml.indexOf('<br');
+            if (brIndex != -1) {
+              final afterBr = tdHtml.substring(
+                  tdHtml.indexOf('>', brIndex) + 1);
+              // Strip tags and get plain text
+              lastPostTime = afterBr
+                  .replaceAll(RegExp(r'<[^>]*>'), '')
+                  .trim();
+            }
+          } catch (_) {}
+        }
+
+        topics.add({
+          'id': topicId,
+          'title': title,
+          'created_by': createdBy ?? '',
+          'replies': replies ?? '',
+          'last_post_created_by': lastPostBy ?? '',
+          'last_post': lastPostTime ?? '',
+        });
       }
     } catch (e) {
       // Partial results

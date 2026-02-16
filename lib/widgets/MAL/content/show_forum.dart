@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:mywatchlist/constants/constants.dart';
+import 'package:mywatchlist/screens/forum/forum_posts_screen.dart';
 import 'package:mywatchlist/services/api/Jikan/jikan_anime_forum.dart';
 import 'package:mywatchlist/services/api/Jikan/jikan_api.dart';
+import 'package:mywatchlist/services/api/MAL/models/forum/forum_models.dart';
 import 'package:mywatchlist/widgets/loading/shimmercolor.dart';
 
 class ShowAnimeForum extends StatefulWidget {
@@ -127,7 +130,19 @@ class _ShowAnimeForumState extends State<ShowAnimeForum>
           child: InkWell(
             borderRadius: BorderRadius.circular(12),
             onTap: () {
-              // TODO: Navigate to forum topic
+              if (topic.malId != null) {
+                gotoPage(
+                  context: context,
+                  newPage: ForumPostsScreen(
+                    topic: ForumTopicsData(
+                      id: topic.malId,
+                      title: topic.title,
+                      createdBy: ForumUser(name: topic.authorUsername),
+                      numberOfPosts: topic.comments,
+                    ),
+                  ),
+                );
+              }
             },
             child: Padding(
               padding:
