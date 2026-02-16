@@ -8,27 +8,33 @@ import 'package:mywatchlist/widgets/common/avatar_widget.dart';
 class AnimeCharacterWidget extends StatelessWidget {
   final List<CharactersVoiceActors> animeCharacterList;
   final List<MangaCharacters>? mangaCharacterList;
+  final List<CharacterNode>? staffList;
   final DisplayType type;
   const AnimeCharacterWidget({
     super.key,
     this.animeCharacterList = const [],
     this.mangaCharacterList,
+    this.staffList,
     required double horizPadding,
     this.type = DisplayType.grid,
   });
 
+  bool get _isStaff => staffList != null && staffList!.isNotEmpty;
   bool get _isManga => mangaCharacterList != null && mangaCharacterList!.isNotEmpty;
-  List get _characters => _isManga ? mangaCharacterList! : animeCharacterList;
+  List get _characters => _isStaff ? staffList! : (_isManga ? mangaCharacterList! : animeCharacterList);
 
   @override
   Widget build(BuildContext context) {
     if (type == DisplayType.grid) {
-      final itemsPerPage = _isManga ? 4 : 3;
-      final itemHeight = _isManga ? 120.0 : 140.0;
+      final itemsPerPage = (_isManga || _isStaff) ? 4 : 3;
+      final itemHeight = (_isManga || _isStaff) ? 120.0 : 140.0;
       return _buildGridView(
           _characters.length,
           (i, pageIndex) {
             final idx = pageIndex * itemsPerPage + i;
+            if (_isStaff) {
+              return _buildStaffWidget(staffList![idx]);
+            }
             if (_isManga) {
               return _buildMangaCharacterWidget(mangaCharacterList![idx]);
             }
@@ -46,6 +52,9 @@ class AnimeCharacterWidget extends StatelessWidget {
     return ListView.builder(
       padding: const EdgeInsets.symmetric(vertical: 20),
       itemBuilder: (context, index) {
+        if (_isStaff) {
+          return _buildStaffWidget(staffList![index]);
+        }
         if (_isManga) {
           return _buildMangaCharacterWidget(mangaCharacterList![index]);
         }
@@ -100,6 +109,43 @@ class AnimeCharacterWidget extends StatelessWidget {
                     child: _buildNameAndRole(
                       details?.character.name.name ?? "?",
                       details?.character.role ?? "",
+                    ),
+                  ),
+                ),
+              ],
+            )),
+      ),
+    );
+  }
+
+  Widget _buildStaffWidget(CharacterNode staff) {
+    final isGrid = type == DisplayType.grid;
+    final hasQuestionmark = staff.image.contains('questionmark');
+    return Padding(
+      padding: isGrid
+          ? const EdgeInsets.fromLTRB(0, 3, 10, 3)
+          : const EdgeInsets.symmetric(horizontal: 5, vertical: 5),
+      child: SizedBox(
+        width: double.infinity,
+        child: Material(
+            color: Colors.transparent,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                hasQuestionmark
+                    ? _assetImageWidget(
+                        height: isGrid ? 110.0 : 120.0,
+                        width: isGrid ? 85.0 : 100.0)
+                    : _characterWidget(null, staff.image,
+                        height: isGrid ? 110.0 : 120.0,
+                        width: isGrid ? 85.0 : 100.0),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                    child: _buildNameAndRole(
+                      staff.name.name,
+                      staff.role,
                     ),
                   ),
                 ),
@@ -254,6 +300,28 @@ Widget _characterWidget(
       radius: const BorderRadius.only(
           topLeft: Radius.circular(8), bottomLeft: Radius.circular(8)),
       url: imageUrl,
+    ),
+  );
+}
+
+Widget _assetImageWidget({
+  double height = 120.0,
+  double width = 100.0,
+}) {
+  const borderRadius = BorderRadius.only(
+      topLeft: Radius.circular(8), bottomLeft: Radius.circular(8));
+  return Material(
+    color: Colors.transparent,
+    elevation: 4,
+    borderRadius: borderRadius,
+    child: ClipRRect(
+      borderRadius: borderRadius,
+      child: Image.asset(
+        'assets/images/user_dal.png',
+        height: height,
+        width: width,
+        fit: BoxFit.cover,
+      ),
     ),
   );
 }

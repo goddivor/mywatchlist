@@ -63,6 +63,18 @@ class ContentListWidget extends StatelessWidget {
     );
   }
 
+  static const _mangaMediaTypes = {
+    'manga', 'light_novel', 'one_shot', 'doujinshi', 'manhwa', 'manhua', 'novel'
+  };
+
+  String _categoryForItem(Anime anime) {
+    if (anime.mediaType != null && _mangaMediaTypes.contains(anime.mediaType)) {
+      return 'manga';
+    }
+    if (anime.mediaType != null) return 'anime';
+    return category;
+  }
+
   Widget _buildAnimeCard(
     BuildContext context,
     Anime anime,
@@ -72,6 +84,7 @@ class ContentListWidget extends StatelessWidget {
     DisplaySubType displaySubType,
     bool showTime,
   ) {
+    final itemCategory = _categoryForItem(anime);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 5),
       child: GestureDetector(
@@ -80,7 +93,7 @@ class ContentListWidget extends StatelessWidget {
             context,
             PageRouteBuilder(
               pageBuilder: (context, animation, secondaryAnimation) =>
-                  ContentDetailedScreen(node: anime, category: category),
+                  ContentDetailedScreen(node: anime, category: itemCategory),
               transitionsBuilder:
                   (context, animation, secondaryAnimation, child) {
                 var begin = const Offset(1.0, 0.0);
@@ -110,7 +123,7 @@ class ContentListWidget extends StatelessWidget {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => ContentDetailedScreen(node: anime, category: category),
+                builder: (context) => ContentDetailedScreen(node: anime, category: itemCategory),
               ),
             );
           },

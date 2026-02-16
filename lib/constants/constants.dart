@@ -121,6 +121,8 @@ class Constants {
   static const String maluserProfileUrl = 'https://myanimelist.net/profile';
   static const String malcharacterUrl = 'https://myanimelist.net/character.php';
   static const String malcdnEndPoint = "https://cdn.myanimelist.net/";
+  static const String malUserImageEndPoint =
+      "${malcdnEndPoint}images/userimages/";
 
   static const String malclientHeader = 'X-MAL-CLIENT-ID';
 
@@ -134,10 +136,10 @@ class Constants {
   static const String jikanTopManga = "https://api.jikan.moe/v4/top/manga";
 
   static const String malAnimeFields =
-      'id,title,main_picture,alternative_titles,ending_themes,opening_themes,start_date,end_date,synopsis,mean,rank,popularity,num_list_users,num_scoring_users,nsfw,created_at,updated_at,media_type,status,genres,my_list_status{is_rewatching,is_rereading,num_times_rewatched,num_times_reread,priority,rewatch_value,reread_value,start_date,finish_date,tags,comments},num_episodes,start_season,broadcast,source,average_episode_duration,rating,pictures,background,related_anime{my_list_status,mean,num_list_users},related_manga,recommendations{my_list_status,mean,num_list_users},studios,statistics';
+      'id,title,main_picture,alternative_titles,ending_themes,opening_themes,start_date,end_date,synopsis,mean,rank,popularity,num_list_users,num_scoring_users,nsfw,created_at,updated_at,media_type,status,genres,my_list_status{is_rewatching,is_rereading,num_times_rewatched,num_times_reread,priority,rewatch_value,reread_value,start_date,finish_date,tags,comments},num_episodes,start_season,broadcast,source,average_episode_duration,rating,pictures,background,related_anime{my_list_status,mean,num_list_users,media_type},related_manga{my_list_status,mean,num_list_users,media_type},recommendations{my_list_status,mean,num_list_users,media_type},studios,statistics';
 
   static const String malMangaFields =
-      'id,title,main_picture,alternative_titles,start_date,end_date,synopsis,mean,rank,popularity,num_list_users,num_scoring_users,nsfw,created_at,updated_at,media_type,status,genres,my_list_status{is_rereading,num_times_reread,priority,reread_value,start_date,finish_date,tags,comments},num_volumes,num_chapters,authors{first_name,last_name},pictures,background,related_anime,related_manga,recommendations,serialization{name}';
+      'id,title,main_picture,alternative_titles,start_date,end_date,synopsis,mean,rank,popularity,num_list_users,num_scoring_users,nsfw,created_at,updated_at,media_type,status,genres,my_list_status{is_rereading,num_times_reread,priority,reread_value,start_date,finish_date,tags,comments},num_volumes,num_chapters,authors{first_name,last_name},pictures,background,related_anime{my_list_status,mean,num_list_users,media_type},related_manga{my_list_status,mean,num_list_users,media_type},recommendations{my_list_status,mean,num_list_users,media_type},serialization{name}';
 
   static const String malDefaultAnimeListFields =
       'id,title,main_picture,alternative_titles,start_date,end_date,synopsis,mean,rank,popularity,num_list_users,num_scoring_users,nsfw,created_at,updated_at,media_type,status,genres,my_list_status,num_episodes,start_season,broadcast,source,average_episode_duration,rating,pictures,background,related_anime,related_manga,recommendations,studios,statistics';
@@ -772,6 +774,10 @@ Widget conditional({
 
 const invalidUserNames = ['MyAnimeList', 'removed-user'];
 
+String getUserImage(int id) {
+  return "${Constants.malUserImageEndPoint}$id.jpg";
+}
+
 String displayTimeAgo(DateTime date, {bool numericDates = true}) {
   final date2 = DateTime.now();
   final difference = date2.difference(date);
@@ -931,6 +937,7 @@ enum TabType {
   Recommendations,
   Interest_Stacks,
   Characters,
+  Staff,
   Forums,
   Pictures,
   Related_Anime,

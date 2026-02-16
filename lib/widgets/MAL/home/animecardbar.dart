@@ -88,13 +88,13 @@ class AnimeCardBar extends StatelessWidget {
             ),
             const SizedBox(width: 5),
             title(
-                (detailed.score == null
+                (detailed.score == null || detailed.score == 0
                     ? '-'
                     : ratingFormat.format(detailed.score)),
                 fontSize: 14,
                 opacity: 1),
             const SizedBox(width: 5),
-            if (showMemberCount && detailed.members != null)
+            if (showMemberCount && detailed.members != null && detailed.members != 0)
               Expanded(
                 child: title(
                   '(${userCountFormat.format(detailed.members)})',

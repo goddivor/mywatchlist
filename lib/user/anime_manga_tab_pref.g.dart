@@ -29,6 +29,7 @@ const _$TabTypeEnumMap = {
   TabType.Recommendations: 'Recommendations',
   TabType.Interest_Stacks: 'Interest_Stacks',
   TabType.Characters: 'Characters',
+  TabType.Staff: 'Staff',
   TabType.Forums: 'Forums',
   TabType.Related_Anime: 'Related_Anime',
   TabType.Pictures: 'Pictures',

@@ -5,6 +5,8 @@ import 'dart:ui';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:mywatchlist/constants/constants.dart';
+import 'package:mywatchlist/user/user_preference.dart';
 import 'package:mywatchlist/utils/file_service.dart';
 import 'package:mywatchlist/utils/streamutils.dart';
 import 'package:mywatchlist/widgets/common/custombutton.dart';
@@ -86,40 +88,62 @@ Widget imageButtons(String url, BuildContext context,
   );
 }
 
+/// Returns the user's chosen save path, or falls back to the default.
+Future<String> _getSavePath() async {
+  final customPath = await UserPreference().getDownloadPath();
+  if (customPath != null) {
+    final dir = Directory(customPath);
+    if (await dir.exists()) return customPath;
+  }
+  return FileStorage.getExternalDocumentPath();
+}
+
 Future<void> saveImageBytes(Uint8List bytes) async {
   try {
-    var path = await FileStorage.getExternalDocumentPath();
+    var path = await _getSavePath();
     var fileName = '${Random().nextInt(10000000)}.jpg';
     var newPath = '$path/$fileName';
     File file = File(newPath);
     await file.writeAsBytes(bytes);
-    // showToast('Image saved to $newPath');
+    showToast('Image saved');
   } catch (e) {
-    // showToast('Error saving image');
+    showToast('Error saving image');
   }
 }
 
 void saveImage(String url) async {
-  var path = await downloadImage(url);
-  File file = File(path);
-  var fileName = _getFileName(path);
-  var newPath = '${await FileStorage.getExternalDocumentPath()}/$fileName';
-  file.copy(newPath);
-  // showToast('Image saved to $newPath');
+  try {
+    var path = await downloadImage(url);
+    File file = File(path);
+    var fileName = _getFileName(url);
+    var destPath = '${await _getSavePath()}/$fileName';
+    await file.copy(destPath);
+    showToast('Image saved');
+  } catch (e) {
+    showToast('Error saving image');
+  }
 }
 
 /// download image from url and share it
 void shareImage(String url) async {
-  var path = await downloadImage(url);
-  XFile file = XFile(path);
-  Share.shareXFiles([file], text: 'Image from MyWatchList');
+  try {
+    var path = await downloadImage(url);
+    XFile file = XFile(path);
+    Share.shareXFiles([file], text: 'Image from MyWatchList');
+  } catch (e) {
+    showToast('Error sharing image');
+  }
 }
 
 Future<String> downloadImage(String url) async {
   var savePath = await getLocalImagePath(url);
+  // Ensure directory exists
+  final dir = Directory(p.dirname(savePath));
+  if (!await dir.exists()) {
+    await dir.create(recursive: true);
+  }
   var response = await Dio().download(url, savePath);
   if (response.statusCode != 200) {
-    // showToast('Error downloading file');
     throw Exception('Error downloading file');
   }
   return savePath;
@@ -131,31 +155,55 @@ Future<String> getLocalImagePath(String url) async {
 }
 
 String _getFileName(String url) {
-  var fileName = url.split('/').last;
+  // Remove query params
+  var cleanUrl = url.split('?').first;
+  var fileName = cleanUrl.split('/').last;
   String? extension;
   if (fileName.contains('.')) {
     extension = fileName.split('.').last;
   }
-  if (extension == null) {
+  if (extension == null || extension.length > 5) {
     return '${Random().nextInt(10000000)}.jpg';
   } else {
     return fileName;
   }
 }
 
-Future<String?> _getPathToDownload() async {
+/// Returns the default download path (for display in settings).
+Future<String> getDefaultDownloadPath() async {
   if (Platform.isAndroid) {
-    final externalStorageFolder = await getExternalStorageDirectory();
-    if (externalStorageFolder != null) {
-      return p.join(externalStorageFolder.path, "Downloads");
+    final dir = await getExternalStorageDirectory();
+    if (dir != null) {
+      return p.join(dir.path, "Downloads");
     }
   } else {
-    final downloadFolder = await getDownloadsDirectory();
-    if (downloadFolder != null) {
-      return downloadFolder.path;
+    final dir = await getDownloadsDirectory();
+    if (dir != null) return dir.path;
+  }
+  final tempDir = await getTemporaryDirectory();
+  return tempDir.path;
+}
+
+Future<String> _getPathToDownload() async {
+  Directory? dir;
+  if (Platform.isAndroid) {
+    dir = await getExternalStorageDirectory();
+    if (dir != null) {
+      final downloadDir = Directory(p.join(dir.path, "Downloads"));
+      if (!await downloadDir.exists()) {
+        await downloadDir.create(recursive: true);
+      }
+      return downloadDir.path;
+    }
+  } else {
+    dir = await getDownloadsDirectory();
+    if (dir != null) {
+      return dir.path;
     }
   }
-  return null;
+  // Fallback to temp directory
+  final tempDir = await getTemporaryDirectory();
+  return tempDir.path;
 }
 
 void zoomInImageList(BuildContext context, List<String> urlList,

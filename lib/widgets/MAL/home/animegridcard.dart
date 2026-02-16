@@ -352,7 +352,7 @@ class AnimeGridCard extends StatelessWidget {
       final int? memberCount = node.members;
       // ignore: unnecessary_nullable_for_final_variable_declarations
       final double? meanScore = node.score;
-      if (memberCount == null && meanScore == null) {
+      if ((memberCount == null || memberCount == 0) && (meanScore == null || meanScore == 0)) {
         return const SizedBox.shrink();
       }
       return Positioned(
@@ -367,7 +367,7 @@ class AnimeGridCard extends StatelessWidget {
             padding: const EdgeInsets.all(4.0),
             child: Center(
               child: Text(
-                "${meanScore == null || meanScore == 0 ? '' : '${meanScore.toStringAsFixed(2)} | '}${memberCount == null ? '' : userCountFormat.format(memberCount)}",
+                "${meanScore == null || meanScore == 0 ? '' : '${meanScore.toStringAsFixed(2)} | '}${memberCount == null || memberCount == 0 ? '' : userCountFormat.format(memberCount)}",
                 textAlign: TextAlign.center,
                 style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w500),
               ),

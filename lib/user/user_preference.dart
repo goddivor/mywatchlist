@@ -12,6 +12,8 @@ class UserPreference {
   static const String _keyBgImagePath = "bg_image_path";
   static const String _keyShowBg = "show_bg";
   static const String _keyTimezonePref = "timezone_pref";
+  static const String _keyDownloadPath = "download_path";
+  static const String _keyCrossTracker = "cross_tracker_enabled";
 
   final Future<SharedPreferences> _prefs = SharedPreferences.getInstance();
 
@@ -93,5 +95,33 @@ class UserPreference {
   Future<void> setTimezonePref(TimezonePref pref) async {
     final prefs = await _prefs;
     await prefs.setString(_keyTimezonePref, pref.name);
+  }
+
+  // Get custom download path (null = use default)
+  Future<String?> getDownloadPath() async {
+    final prefs = await _prefs;
+    return prefs.getString(_keyDownloadPath);
+  }
+
+  // Set custom download path (null = reset to default)
+  Future<void> setDownloadPath(String? path) async {
+    final prefs = await _prefs;
+    if (path != null) {
+      await prefs.setString(_keyDownloadPath, path);
+    } else {
+      await prefs.remove(_keyDownloadPath);
+    }
+  }
+
+  // Get cross-tracker sync preference (enabled by default)
+  Future<bool> getCrossTrackerEnabled() async {
+    final prefs = await _prefs;
+    return prefs.getBool(_keyCrossTracker) ?? true;
+  }
+
+  // Set cross-tracker sync preference
+  Future<void> setCrossTrackerEnabled(bool enabled) async {
+    final prefs = await _prefs;
+    await prefs.setBool(_keyCrossTracker, enabled);
   }
 }

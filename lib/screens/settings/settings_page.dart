@@ -1,10 +1,30 @@
 import 'package:flutter/material.dart';
+import 'package:mywatchlist/screens/settings/download_settings.dart';
 import 'package:mywatchlist/screens/settings/language_settings.dart';
 import 'package:mywatchlist/screens/settings/mal_home_settings.dart';
 import 'package:mywatchlist/screens/settings/theme_settings.dart';
+import 'package:mywatchlist/user/user_preference.dart';
 
-class SettingsPage extends StatelessWidget {
+class SettingsPage extends StatefulWidget {
   const SettingsPage({Key? key}) : super(key: key);
+
+  @override
+  State<SettingsPage> createState() => _SettingsPageState();
+}
+
+class _SettingsPageState extends State<SettingsPage> {
+  bool _crossTrackerEnabled = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPrefs();
+  }
+
+  Future<void> _loadPrefs() async {
+    final enabled = await UserPreference().getCrossTrackerEnabled();
+    if (mounted) setState(() => _crossTrackerEnabled = enabled);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -73,6 +93,42 @@ class SettingsPage extends StatelessWidget {
                   builder: (context) => const HomeSettingsPage(),
                 ),
               );
+            },
+          ),
+
+          // Download Settings
+          _buildSettingTile(
+            context,
+            icon: Icons.download_outlined,
+            title: 'Download Settings',
+            subtitle: 'Choose where images are saved',
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const DownloadSettings(),
+                ),
+              );
+            },
+          ),
+
+          // Cross-Tracker Sync
+          _buildSettingTile(
+            context,
+            icon: Icons.sync_outlined,
+            title: 'Cross-Tracker Sync',
+            subtitle: 'Update anime/manga across all connected trackers',
+            trailing: Switch(
+              value: _crossTrackerEnabled,
+              onChanged: (value) async {
+                setState(() => _crossTrackerEnabled = value);
+                await UserPreference().setCrossTrackerEnabled(value);
+              },
+            ),
+            onTap: () async {
+              final newValue = !_crossTrackerEnabled;
+              setState(() => _crossTrackerEnabled = newValue);
+              await UserPreference().setCrossTrackerEnabled(newValue);
             },
           ),
 

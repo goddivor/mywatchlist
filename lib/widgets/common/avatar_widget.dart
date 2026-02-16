@@ -100,7 +100,7 @@ class AvatarWidget extends StatelessWidget {
                     },
                   )
                 : Image.asset(
-                    'assets/images/user_dal_old.png',
+                    url ?? 'assets/images/user_dal_old.png',
                     fit: fit,
                   ),
           ),
