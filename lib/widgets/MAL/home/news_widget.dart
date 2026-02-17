@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:mywatchlist/constants/constants.dart';
+import 'package:mywatchlist/screens/MAL/featured_screen.dart';
 import 'package:mywatchlist/widgets/common/avatar_widget.dart';
 import 'package:mywatchlist/widgets/common/image_preview.dart';
 import 'package:mywatchlist/widgets/loading/shimmercolor.dart';
@@ -7,7 +9,8 @@ import 'package:mywatchlist/widgets/loading/shimmercolor.dart';
 
 class HomePageNewsWidget extends StatelessWidget {
   final List<Map<String, String>> featuredList;
-  const HomePageNewsWidget(this.featuredList, {super.key});
+  final String category;
+  const HomePageNewsWidget(this.featuredList, {super.key, this.category = 'news'});
 
   @override
   Widget build(BuildContext context) {
@@ -28,8 +31,18 @@ class HomePageNewsWidget extends StatelessWidget {
               child: Card(
                 child: InkWell(
                   onTap: () {
-                    // doit renvoyer vers la page d'affichage des donné du news
-                    // todo later
+                    final id = int.tryParse(node['id'] ?? '');
+                    if (id != null) {
+                      gotoPage(
+                        context: context,
+                        newPage: FeaturedScreen(
+                          id: id,
+                          featureTitle: node['title'],
+                          imgUrl: node['imageUrl'],
+                          category: category,
+                        ),
+                      );
+                    }
                   },
                   // onLongPress: node['imageUrl'] == null ? null : () => zoomInImage(context, node['imageUrl']!),
                   borderRadius: BorderRadius.circular(radius),

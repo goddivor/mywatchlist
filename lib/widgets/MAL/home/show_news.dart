@@ -3,6 +3,7 @@ import 'dart:async';
 
 import 'package:intl/intl.dart';
 import 'package:mywatchlist/constants/constants.dart';
+import 'package:mywatchlist/screens/MAL/featured_screen.dart';
 import 'package:mywatchlist/services/api/Jikan/jikan_anime_news.dart';
 import 'package:mywatchlist/services/api/Jikan/jikan_api.dart';
 import 'package:mywatchlist/widgets/common/avatar_widget.dart';
@@ -110,7 +111,19 @@ class _ShowAnimeNewsState extends State<ShowAnimeNews>
           ),
         ),
         child: InkWell(
-          onTap: () {},
+          onTap: () {
+            if (news.malId != null) {
+              gotoPage(
+                context: context,
+                newPage: FeaturedScreen(
+                  id: news.malId!,
+                  featureTitle: news.title,
+                  imgUrl: news.images?.jpg?.imageUrl,
+                  category: 'news',
+                ),
+              );
+            }
+          },
           borderRadius: BorderRadius.circular(16),
           child: Padding(
             padding: const EdgeInsets.all(12),

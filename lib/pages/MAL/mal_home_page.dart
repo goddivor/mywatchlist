@@ -489,7 +489,7 @@ class _MalHomePageState extends State<MalHomePage> {
                     ? state.features.sublist(0, section.itemCount)
                     : state.features;
 
-                return HomePageNewsWidget(featureItems);
+                return HomePageNewsWidget(featureItems, category: 'featured');
               }
             },
           ),

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:mywatchlist/constants/constants.dart';
+import 'package:mywatchlist/screens/MAL/featured_screen.dart';
 import 'package:mywatchlist/services/api/MAL/scrapper/anime_featured.dart';
 import 'package:mywatchlist/services/api/mwl_api.dart';
 import 'package:mywatchlist/utils/url_formatter.dart';
@@ -96,8 +98,20 @@ class _ShowAnimeFeaturedState extends State<ShowAnimeFeatured>
               ),
               clipBehavior: Clip.antiAlias,
               child: InkWell(
-                onTap: () async {
-                  if (article.url.isNotEmpty) {}
+                onTap: () {
+                  final match = RegExp(r'/featured/(\d+)').firstMatch(article.url);
+                  final id = match != null ? int.tryParse(match.group(1)!) : null;
+                  if (id != null) {
+                    gotoPage(
+                      context: context,
+                      newPage: FeaturedScreen(
+                        id: id,
+                        featureTitle: article.title,
+                        imgUrl: article.imageUrl,
+                        category: 'featured',
+                      ),
+                    );
+                  }
                 },
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
