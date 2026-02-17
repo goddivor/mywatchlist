@@ -124,6 +124,8 @@ class InterestStack {
   final String? username;
   final int? entries;
   final int? reStacks;
+  final String? description;
+  final String? updatedAt;
 
   InterestStack({
     this.url,
@@ -132,6 +134,8 @@ class InterestStack {
     this.username,
     this.entries,
     this.reStacks,
+    this.description,
+    this.updatedAt,
   });
 
   factory InterestStack.fromJson(Map<String, dynamic> json) {
@@ -142,6 +146,8 @@ class InterestStack {
       username: json['username'],
       entries: json['entries'],
       reStacks: json['reStacks'],
+      description: json['description'],
+      updatedAt: json['updatedAt'],
     );
   }
 
@@ -153,6 +159,8 @@ class InterestStack {
       'username': username,
       'entries': entries,
       'reStacks': reStacks,
+      'description': description,
+      'updatedAt': updatedAt,
     };
   }
 }

@@ -33,3 +33,11 @@ bool nullOrEmpty(dynamic value) {
   if (value is Map) return value.isEmpty;
   return false;
 }
+
+/// Safe index access on lists.
+extension ListSafeAccess<T> on List<T> {
+  T? tryAt([int index = 0]) {
+    if (index < 0 || index >= length) return null;
+    return this[index];
+  }
+}
