@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:mywatchlist/constants/constants.dart';
+import 'package:mywatchlist/screens/MAL/interest_stack_detail_screen.dart';
 import 'package:mywatchlist/services/api/MAL/scrapper/anime_detailed_html.dart';
 import 'package:mywatchlist/widgets/common/avatar_widget.dart';
 import 'package:mywatchlist/widgets/common/custombutton.dart';
@@ -51,7 +52,10 @@ class InterestStackContentList extends StatelessWidget {
                 borderRadius: radius,
                 color: Colors.transparent,
                 child: InkWell(
-                  onTap: () => {},
+                  onTap: () => gotoPage(
+                    context: context,
+                    newPage: InterestStackDetailScreen(stack: item),
+                  ),
                   borderRadius: radius,
                   splashColor: Theme.of(context).splashColor,
                   child: Row(
@@ -108,6 +112,25 @@ class InterestStackContentList extends StatelessWidget {
                                 textOverflow: TextOverflow.fade,
                                 textStyle:
                                     Theme.of(context).textTheme.bodyMedium),
+                            if (!isHoriz &&
+                                item.updatedAt != null &&
+                                item.updatedAt!.isNotEmpty) ...[
+                              const SizedBox(height: 10),
+                              title(item.updatedAt, fontSize: 11),
+                            ],
+                            if (!isHoriz &&
+                                item.description != null &&
+                                item.description!.isNotEmpty) ...[
+                              const SizedBox(height: 10),
+                              ConstrainedBox(
+                                constraints:
+                                    const BoxConstraints(maxHeight: 240.0),
+                                child: title(
+                                  item.description,
+                                  textOverflow: TextOverflow.fade,
+                                ),
+                              ),
+                            ],
                           ],
                         ),
                       )
