@@ -6,6 +6,7 @@ import 'package:flutter/rendering.dart';
 import 'package:intl/intl.dart';
 import 'package:mywatchlist/constants/constants.dart';
 import 'package:mywatchlist/enums.dart';
+import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/services/api/Jikan/jikan_anime_videos.dart';
 import 'package:mywatchlist/services/api/Jikan/jikan_api.dart';
 import 'package:mywatchlist/services/api/MAL/mal_anime.dart';
@@ -21,6 +22,7 @@ import 'package:mywatchlist/widgets/MAL/content/adaptation_widget.dart';
 import 'package:mywatchlist/widgets/MAL/home/animecharacterwidget.dart';
 import 'package:mywatchlist/widgets/MAL/content/animepictures.dart';
 import 'package:mywatchlist/widgets/MAL/content/animestatisticswidget.dart';
+import 'package:mywatchlist/widgets/common/avatar_widget.dart';
 import 'package:mywatchlist/widgets/common/auto_size_copy_text.dart';
 import 'package:mywatchlist/widgets/common/background.dart';
 import 'package:mywatchlist/widgets/common/custombutton.dart';
@@ -40,6 +42,8 @@ import 'package:mywatchlist/widgets/common/slivers.dart';
 import 'package:mywatchlist/widgets/MAL/content/synopsis_widget.dart';
 import 'package:mywatchlist/widgets/MAL/content/userupdate_widget.dart';
 import 'package:mywatchlist/widgets/MAL/content/videowidget.dart';
+import 'package:mywatchlist/screens/forum/forum_topics_screen.dart';
+import 'package:mywatchlist/screens/MAL/characters_staff_screen.dart';
 import 'package:mywatchlist/screens/search/search_history.dart';
 import 'package:mywatchlist/widgets/user/contenteditwidget.dart';
 import 'package:mywatchlist/widgets/user/cross_tracker_widget.dart';
@@ -572,6 +576,7 @@ class _ContentDetailedScreenState extends State<ContentDetailedScreen>
               horizPadding: horizPadding,
               recommAnime: contentDetailed.recommendations,
             ),
+            onViewAll: () => _recommShowAll(),
           ),
         ),
       TabType.Interest_Stacks => _nullIf(
@@ -583,6 +588,7 @@ class _ContentDetailedScreenState extends State<ContentDetailedScreen>
               horizPadding: horizPadding,
               interestStacks: getInterestStack(animeDetailedHtml),
             ),
+            onViewAll: () => _showInterestStackAll(),
           ),
         ),
       TabType.Characters => _nullIf(
@@ -601,6 +607,13 @@ class _ContentDetailedScreenState extends State<ContentDetailedScreen>
                     animeCharacterList: getCharactersVoiceActors(animeDetailedHtml),
                     horizPadding: horizPadding,
                   ),
+            onViewAll: () => gotoPage(
+              context: context,
+              newPage: CharactersStaffScreen(
+                id: _id,
+                category: widget.category,
+              ),
+            ),
           ),
         ),
       TabType.Staff => _nullIf(
@@ -613,6 +626,14 @@ class _ContentDetailedScreenState extends State<ContentDetailedScreen>
               staffList: getStaff(animeDetailedHtml),
               horizPadding: horizPadding,
             ),
+            onViewAll: () => gotoPage(
+              context: context,
+              newPage: CharactersStaffScreen(
+                id: _id,
+                category: widget.category,
+                initialTab: 1,
+              ),
+            ),
           ),
         ),
       TabType.Forums => _nullIf(
@@ -620,6 +641,14 @@ class _ContentDetailedScreenState extends State<ContentDetailedScreen>
           () => VisibleSection(
             'Forums',
             ShowAnimeForum(animeId: _id, category: widget.category),
+            onViewAll: () => gotoPage(
+              context: context,
+              newPage: ForumTopicsScreen(
+                animeId: widget.category == 'anime' ? _id : null,
+                mangaId: widget.category == 'manga' ? _id : null,
+                title: 'Forums',
+              ),
+            ),
           ),
         ),
       TabType.Pictures => _nullIf(
@@ -694,6 +723,33 @@ class _ContentDetailedScreenState extends State<ContentDetailedScreen>
           ),
         ),
     };
+  }
+
+  void _showInterestStackAll() {
+    gotoPage(
+      context: context,
+      newPage: Scaffold(
+        appBar: AppBar(title: Text(S.current.Interest_Stacks)),
+        body: _InterestStackAllBody(
+          category: widget.category,
+          categoryId: _id,
+          initialStacks: getInterestStack(animeDetailedHtml),
+        ),
+      ),
+    );
+  }
+
+  void _recommShowAll() {
+    gotoPage(
+      context: context,
+      newPage: Scaffold(
+        appBar: AppBar(title: Text(S.current.Recommendations)),
+        body: ContentFullRecommendation(
+          id: _id,
+          category: widget.category,
+        ),
+      ),
+    );
   }
 
   Widget _buildVisibleSection(int index) {
@@ -1432,5 +1488,365 @@ class NoScalingAnimation extends FloatingActionButtonAnimator {
   @override
   Animation<double> getScaleAnimation({required Animation<double> parent}) {
     return Tween<double>(begin: 1.0, end: 1.0).animate(parent);
+  }
+}
+
+/// Fetches and displays all interest stacks for an anime/manga.
+class _InterestStackAllBody extends StatefulWidget {
+  final String category;
+  final int categoryId;
+  final List<InterestStack> initialStacks;
+
+  const _InterestStackAllBody({
+    required this.category,
+    required this.categoryId,
+    required this.initialStacks,
+  });
+
+  @override
+  State<_InterestStackAllBody> createState() => _InterestStackAllBodyState();
+}
+
+class _InterestStackAllBodyState extends State<_InterestStackAllBody> {
+  List<InterestStack>? _stacks;
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetch();
+  }
+
+  Future<void> _fetch() async {
+    try {
+      final result = await MwlApi.i.getInterestStacksForContent(
+        category: widget.category,
+        categoryId: widget.categoryId,
+      );
+      if (mounted) {
+        setState(() {
+          _stacks = result.isNotEmpty ? result : widget.initialStacks;
+          _loading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _stacks = widget.initialStacks;
+          _loading = false;
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_loading) return loadingCenter();
+    return InterestStackContentList(
+      horizPadding: 0,
+      interestStacks: _stacks ?? widget.initialStacks,
+      type: DisplayType.list_vert,
+    );
+  }
+}
+
+/// Full recommendation page with selector tabs and user comments.
+///
+/// Matches DailyAL's `ContentFullRecommendation`.
+class ContentFullRecommendation extends StatefulWidget {
+  final int id;
+  final String category;
+  const ContentFullRecommendation({
+    super.key,
+    required this.id,
+    required this.category,
+  });
+
+  @override
+  State<ContentFullRecommendation> createState() =>
+      _ContentFullRecommendationState();
+}
+
+class _ContentFullRecommendationState extends State<ContentFullRecommendation>
+    with SingleTickerProviderStateMixin {
+  late Future<List<Map<String, dynamic>>> _future;
+  TabController? _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _future = MwlApi.i.getRecommendationData(
+      id: widget.id,
+      category: widget.category,
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller?.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<List<Map<String, dynamic>>>(
+      future: _future,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState != ConnectionState.done) {
+          return Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              loadingCenter(),
+              SB.h20,
+              Padding(
+                padding: const EdgeInsets.all(10.0),
+                child: title(S.current.Recommendation_Loading),
+              ),
+            ],
+          );
+        }
+        final data = snapshot.data;
+        if (data == null || data.isEmpty) return showNoContent();
+        return _buildContent(data);
+      },
+    );
+  }
+
+  Widget _buildContent(List<Map<String, dynamic>> data) {
+    _controller ??= TabController(length: data.length, vsync: this);
+
+    return NestedScrollView(
+      headerSliverBuilder: (context, innerBoxIsScrolled) {
+        return [
+          SliverToBoxAdapter(
+            child: _RecommSelectorNodes(
+              data: data,
+              category: widget.category,
+              controller: _controller!,
+            ),
+          ),
+        ];
+      },
+      body: TabBarView(
+        controller: _controller,
+        physics: const BouncingScrollPhysics(),
+        children: data.map((e) => _RecomTabView(recomBase: e)).toList(),
+      ),
+    );
+  }
+}
+
+/// A single tab view showing recommendation comments for one anime.
+/// Uses AutomaticKeepAliveClientMixin to preserve scroll state.
+class _RecomTabView extends StatefulWidget {
+  final Map<String, dynamic> recomBase;
+  const _RecomTabView({required this.recomBase});
+
+  @override
+  State<_RecomTabView> createState() => _RecomTabViewState();
+}
+
+class _RecomTabViewState extends State<_RecomTabView>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    final recommendations =
+        (widget.recomBase['recommendations'] as List?)
+                ?.cast<Map<String, dynamic>>() ??
+            [];
+    return CustomScrollView(
+      slivers: [
+        SliverToBoxAdapter(
+          child: Align(
+            alignment: Alignment.center,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 10),
+              child: title(
+                '${recommendations.length} ${S.current.Recommendations}',
+              ),
+            ),
+          ),
+        ),
+        if (recommendations.isEmpty)
+          SliverToBoxAdapter(child: showNoContent())
+        else
+          SliverPadding(
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            sliver: SliverList(
+              delegate: SliverChildBuilderDelegate((_, index) {
+                final item = recommendations[index];
+                final username = item['username'] as String?;
+                final commentText = item['text'] as String? ?? '';
+                return RepaintBoundary(
+                  child: Card(
+                    child: Column(
+                      children: [
+                        SB.h10,
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 10),
+                          child: Row(
+                            children: [
+                              SizedBox(
+                                height: 40,
+                                width: 40,
+                                child: userImage(
+                                  BorderRadius.circular(20),
+                                  null,
+                                  username: username,
+                                ),
+                              ),
+                              SB.w20,
+                              Expanded(child: title(username)),
+                            ],
+                          ),
+                        ),
+                        SB.h10,
+                        Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: title(commentText),
+                        ),
+                        SB.h10,
+                      ],
+                    ),
+                  ),
+                );
+              }, childCount: recommendations.length),
+            ),
+          ),
+        const SliverToBoxAdapter(child: SB.h80),
+      ],
+    );
+  }
+}
+
+/// Horizontal tab selector showing recommended anime/manga covers.
+///
+/// Matches DailyAL's `SelectorNodesWidget`.
+class _RecommSelectorNodes extends StatefulWidget {
+  final List<Map<String, dynamic>> data;
+  final String category;
+  final TabController controller;
+
+  const _RecommSelectorNodes({
+    required this.data,
+    required this.category,
+    required this.controller,
+  });
+
+  @override
+  State<_RecommSelectorNodes> createState() => _RecommSelectorNodesState();
+}
+
+class _RecommSelectorNodesState extends State<_RecommSelectorNodes> {
+  static const double tabWidth = 240.0;
+
+  @override
+  void initState() {
+    super.initState();
+    widget.controller.addListener(() {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final double sidePadding = (screenWidth - tabWidth) / 2;
+
+    return SizedBox(
+      height: 80,
+      child: TabBar(
+        isScrollable: true,
+        controller: widget.controller,
+        indicatorColor: Colors.transparent,
+        dividerColor: Colors.transparent,
+        physics: const BouncingScrollPhysics(),
+        labelPadding: EdgeInsets.zero,
+        tabAlignment: TabAlignment.start,
+        tabs: List.generate(
+          widget.data.length,
+          (i) => Padding(
+            padding: EdgeInsets.only(
+              left: i == 0 ? sidePadding : 8,
+              right: i == widget.data.length - 1 ? sidePadding : 8,
+            ),
+            child: _buildSelectorNode(widget.data[i], i),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSelectorNode(Map<String, dynamic> recomBase, int index) {
+    final node = recomBase['relatedNode'] as Map<String, dynamic>? ?? {};
+    final mainPic = node['mainPicture'] as Map<String, dynamic>? ?? {};
+    final imageUrl =
+        mainPic['large'] as String? ?? mainPic['medium'] as String? ?? '';
+    final nodeTitle = node['title'] as String? ?? '';
+    final nodeId = node['id'] as int?;
+    final isSelected = widget.controller.index == index;
+
+    return SizedBox(
+      width: tabWidth,
+      child: RepaintBoundary(
+        child: GestureDetector(
+          onTap: () {
+            if (mounted) {
+              setState(() {
+                widget.controller.index = index;
+              });
+            }
+          },
+          child: Card(
+            elevation: isSelected ? 4 : 0,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+              side: isSelected
+                  ? BorderSide(
+                      color: Theme.of(context).colorScheme.primary,
+                      width: 2,
+                    )
+                  : BorderSide.none,
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  RepaintBoundary(
+                    child: AvatarWidget(
+                      url: imageUrl,
+                      height: 50,
+                      width: 50,
+                      onTap: nodeId != null
+                          ? () => gotoPage(
+                                context: context,
+                                newPage: ContentDetailedScreen(
+                                  category: widget.category,
+                                  id: nodeId,
+                                  node: null,
+                                ),
+                              )
+                          : null,
+                    ),
+                  ),
+                  SB.w10,
+                  Expanded(
+                    child: title(
+                      nodeTitle,
+                      textOverflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }

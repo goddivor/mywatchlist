@@ -8,6 +8,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mywatchlist/constants/constants.dart';
 import 'package:mywatchlist/enums.dart';
 import 'package:mywatchlist/screens/MAL/contentdetailedscreen.dart';
+import 'package:mywatchlist/screens/MAL/character_screen.dart';
+import 'package:mywatchlist/screens/MAL/featured_screen.dart';
+import 'package:mywatchlist/screens/MAL/interest_stack_detail_screen.dart';
+import 'package:mywatchlist/services/api/MAL/scrapper/anime_detailed_html.dart';
 import 'package:mywatchlist/screens/search/search_history.dart';
 import 'package:mywatchlist/services/api/Jikan/jikan_anime.dart' as jikan_model;
 import 'package:mywatchlist/services/api/Jikan/jikan_api.dart';
@@ -2382,7 +2386,15 @@ class _GeneralSearchScreenState extends State<GeneralSearchScreen>
               : <String>[];
           return InkWell(
             onTap: () {
-              // TODO: Navigate to news/featured detail
+              gotoPage(
+                context: context,
+                newPage: FeaturedScreen(
+                  id: item.id,
+                  featureTitle: item.title,
+                  imgUrl: item.imageUrl,
+                  category: isNews ? 'news' : 'featured',
+                ),
+              );
             },
             child: Card(
               margin: const EdgeInsets.symmetric(vertical: 6),
@@ -2509,7 +2521,15 @@ class _GeneralSearchScreenState extends State<GeneralSearchScreen>
           final date = item.startDate;
           return InkWell(
             onTap: () {
-              // TODO: Navigate to news/featured detail
+              gotoPage(
+                context: context,
+                newPage: FeaturedScreen(
+                  id: item.id,
+                  featureTitle: item.title,
+                  imgUrl: item.imageUrl,
+                  category: isNews ? 'news' : 'featured',
+                ),
+              );
             },
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 6),
@@ -2598,7 +2618,13 @@ class _GeneralSearchScreenState extends State<GeneralSearchScreen>
         children: items.map((item) {
           return InkWell(
             onTap: () {
-              // TODO: Navigate to character/person detail
+              gotoPage(
+                context: context,
+                newPage: CharacterScreen(
+                  id: item.id,
+                  category: isCharacter ? 'character' : 'person',
+                ),
+              );
             },
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 6),
@@ -2890,7 +2916,12 @@ class _GeneralSearchScreenState extends State<GeneralSearchScreen>
 
           return InkWell(
             onTap: () {
-              // TODO: Navigate to interest stack detail
+              gotoPage(
+                context: context,
+                newPage: InterestStackDetailScreen(
+                  stack: InterestStack.fromJson(stack),
+                ),
+              );
             },
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 8),
