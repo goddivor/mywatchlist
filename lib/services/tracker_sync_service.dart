@@ -391,6 +391,7 @@ class TrackerSyncService {
     String? malStatus,
     int? malScore,
     int? progress,
+    int? malId,
   }) async {
     // Reject invalid/stale link IDs
     if (trackerId == 'null' || trackerId.isEmpty) return false;
@@ -403,7 +404,7 @@ class TrackerSyncService {
             malStatus: malStatus, malScore: malScore, progress: progress);
       case AccountType.simkl:
         return _updateSimkl(trackerId, category,
-            malStatus: malStatus, malScore: malScore);
+            malStatus: malStatus, malScore: malScore, malId: malId);
       default:
         return false;
     }
@@ -502,23 +503,31 @@ class TrackerSyncService {
   }
 
   Future<bool> _updateSimkl(String simklId, String category,
-      {String? malStatus, int? malScore}) async {
+      {String? malStatus, int? malScore, int? malId}) async {
     try {
       if (category != 'anime') return false;
-      final parsedId = int.tryParse(simklId);
-      if (parsedId == null) return false;
       final user = SimklUser();
       final status = malStatus != null
           ? mapStatusToTracker(malStatus, AccountType.simkl, category)
           : null;
+      // Build IDs map: prefer MAL ID (most reliable for Simkl), include simkl ID too
+      final ids = <String, dynamic>{};
+      if (malId != null) ids['mal'] = malId;
+      final parsedSimklId = int.tryParse(simklId);
+      if (parsedSimklId != null) ids['simkl'] = parsedSimklId;
+      if (ids.isEmpty) return false;
+
       final item = <String, dynamic>{
-        'ids': {'simkl': parsedId},
+        'ids': ids,
         if (status != null) 'to': status,
         if (malScore != null && malScore > 0)
           'rating': convertScoreToTracker(malScore, AccountType.simkl),
       };
-      // Simkl uses "shows" for anime in sync endpoints
-      await user.addToList({'shows': [item]});
+      // Simkl uses "anime" key for anime in sync endpoints
+      debugPrint('Simkl addToList body: ${{
+        'anime': [item]
+      }}');
+      await user.addToList({'anime': [item]});
       return true;
     } catch (e) {
       debugPrint('Simkl update error: $e');
@@ -531,7 +540,8 @@ class TrackerSyncService {
   // -------------------------------------------------------------------------
 
   Future<bool> deleteEntry(
-      AccountType tracker, String trackerId, String category) async {
+      AccountType tracker, String trackerId, String category,
+      {int? malId}) async {
     if (trackerId == 'null' || trackerId.isEmpty) return false;
     switch (tracker) {
       case AccountType.anilist:
@@ -539,7 +549,7 @@ class TrackerSyncService {
       case AccountType.kitsu:
         return _deleteKitsu(trackerId, category);
       case AccountType.simkl:
-        return _deleteSimkl(trackerId, category);
+        return _deleteSimkl(trackerId, category, malId: malId);
       default:
         return false;
     }
@@ -573,17 +583,20 @@ class TrackerSyncService {
     }
   }
 
-  Future<bool> _deleteSimkl(String simklId, String category) async {
+  Future<bool> _deleteSimkl(String simklId, String category,
+      {int? malId}) async {
     try {
       if (category != 'anime') return false;
+      final ids = <String, dynamic>{};
+      if (malId != null) ids['mal'] = malId;
       final parsedId = int.tryParse(simklId);
-      if (parsedId == null) return false;
+      if (parsedId != null) ids['simkl'] = parsedId;
+      if (ids.isEmpty) return false;
+
       final user = SimklUser();
       await user.removeFromList({
-        'shows': [
-          {
-            'ids': {'simkl': parsedId},
-          }
+        'anime': [
+          {'ids': ids}
         ]
       });
       return true;

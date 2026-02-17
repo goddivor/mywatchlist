@@ -123,8 +123,9 @@ class _CrossTrackerWidgetState extends State<CrossTrackerWidget> {
     if (confirmed != true || !mounted) return;
 
     setState(() => _syncing[tracker] = true);
-    final success =
-        await _service.deleteEntry(tracker, linkId, widget.category);
+    final success = await _service.deleteEntry(
+        tracker, linkId, widget.category,
+        malId: widget.malId);
 
     if (mounted) {
       setState(() => _syncing[tracker] = false);
@@ -155,6 +156,7 @@ class _CrossTrackerWidgetState extends State<CrossTrackerWidget> {
       malStatus: widget.malStatus,
       malScore: widget.malScore,
       progress: widget.malProgress,
+      malId: widget.malId,
     );
 
     if (success) {
