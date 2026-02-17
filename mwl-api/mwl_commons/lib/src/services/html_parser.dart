@@ -1104,41 +1104,302 @@ class HtmlParsers {
   }
 
   /// Parse a single MAL featured article page.
+  ///
+  /// Returns a map with keys: id, category, title, summary, content (body HTML),
+  /// tags, postedBy, postedDate, views, topicId, relatedDatabaseEntries,
+  /// relatedArticles, relatedNews.
   static Map<String, dynamic> parseFeaturedArticle(
       Document document, int id,
       {String category = "featured"}) {
-    final result = <String, dynamic>{'id': id, 'category': category};
+    final result = <String, dynamic>{
+      'id': id,
+      'category': category,
+      'title': '',
+      'summary': '',
+      'content': '',
+      'tags': <String>[],
+      'postedBy': '',
+      'postedDate': '',
+      'views': '',
+      'topicId': null,
+      'relatedDatabaseEntries': <String, List<Map<String, dynamic>>>{},
+      'relatedArticles': <Map<String, dynamic>>[],
+      'relatedNews': <String, List<Map<String, dynamic>>>{},
+    };
 
     try {
-      final titleEl = document
-          .querySelector('h1.title, .news-info-block h1, h1');
-      result['title'] = titleEl?.text.trim() ?? '';
+      // --- Main container ---
+      final container = document.querySelector('.news-container');
+      if (container != null) {
+        result['title'] =
+            container.querySelector('.title')?.text.trim() ?? '';
+        result['summary'] =
+            container.querySelector('.summary')?.text.trim() ?? '';
 
-      final contentEl = document.querySelector(
-          '.news-container .content, .article-body, .usertext');
-      result['content'] = contentEl?.innerHtml ?? '';
-      result['contentText'] = contentEl?.text.trim() ?? '';
+        // Tags
+        final tagsEl = container.querySelector('.tags');
+        if (tagsEl != null) {
+          final tagList = tagsEl.getElementsByClassName('tag');
+          final tags = <String>[];
+          for (final tagE in tagList) {
+            final t = tagE.text.trim();
+            if (t.isNotEmpty) tags.add(t);
+          }
+          result['tags'] = tags;
+        }
 
-      final imgEl = document.querySelector(
-          '.news-container img, .article-body img');
-      result['imageUrl'] = imgEl?.attributes['src'] ?? '';
+        // News info block: author, date, views / comments
+        final newsInfoEl = container.querySelector('.news-info-block');
+        if (newsInfoEl != null) {
+          final infoEl = newsInfoEl.querySelector('.information');
+          if (infoEl != null) {
+            // Author is the first <a> in the information block
+            result['postedBy'] =
+                infoEl.querySelector('a')?.text.trim() ?? '';
 
-      final authorEl = document.querySelector(
-          '.news-info-block .information a, .author a');
-      result['author'] = authorEl?.text.trim() ?? '';
+            if (category == 'featured') {
+              // For featured articles, views is in the <b> tag
+              result['views'] =
+                  infoEl.querySelector('b')?.text.trim() ?? '';
+            } else {
+              // For news, comment count & topicId from .comment link
+              final commentEl = infoEl.querySelector('.comment');
+              if (commentEl != null) {
+                // Extract only digits from the comment text
+                result['views'] =
+                    commentEl.text.replaceAll(RegExp(r'[^0-9]'), '');
+                // Extract topicId from the comment href
+                final href = commentEl.attributes['href'] ?? '';
+                final uri = Uri.tryParse(href);
+                if (uri != null) {
+                  // Try query parameter first (forum links)
+                  final topicParam = uri.queryParameters['topicid'];
+                  if (topicParam != null) {
+                    result['topicId'] = int.tryParse(topicParam);
+                  } else if (uri.pathSegments.isNotEmpty) {
+                    // Fall back to path-based ID extraction
+                    for (int i = 0; i < uri.pathSegments.length; i++) {
+                      if (uri.pathSegments[i] == 'forum' &&
+                          i + 1 < uri.pathSegments.length) {
+                        result['topicId'] =
+                            int.tryParse(uri.pathSegments[i + 1]);
+                        break;
+                      }
+                    }
+                  }
+                }
+              }
+            }
 
-      final dateEl = document.querySelector(
-          '.news-info-block .information, .date');
-      result['date'] = dateEl?.text.trim() ?? '';
+            // Posted date: text before "|", minus "by <author>"
+            final infoText = infoEl.text;
+            final pipeIndex = infoText.indexOf('|');
+            if (pipeIndex > 0) {
+              var dateStr = infoText.substring(0, pipeIndex);
+              final postedBy = result['postedBy'] as String;
+              if (postedBy.isNotEmpty) {
+                dateStr = dateStr.replaceAll('by $postedBy', '');
+              }
+              result['postedDate'] = dateStr.trim();
+            }
+          }
+        }
 
-      final tagEls = document
-          .querySelectorAll('.tags a, .information .tags a');
-      result['tags'] = tagEls.map((t) => t.text.trim()).toList();
+        // Body content HTML
+        result['content'] =
+            container.querySelector('.content')?.innerHtml ?? '';
+      }
+
+      // --- Related database entries (table after .mt24 element) ---
+      final mt24 = document.querySelector('.mt24');
+      if (mt24 != null) {
+        final table = mt24.nextElementSibling;
+        if (table != null) {
+          final trList = table.getElementsByTagName('tr');
+          if (trList.isNotEmpty) {
+            final relEntries = <String, List<Map<String, dynamic>>>{};
+            for (final tr in trList) {
+              final tdList = tr.getElementsByTagName('td');
+              if (tdList.length == 2) {
+                final cat = _getCategory(tdList.first.text);
+                if (cat != null && cat.isNotEmpty) {
+                  final nodes = <Map<String, dynamic>>[];
+                  final anchors = tdList[1].getElementsByTagName('a');
+                  for (final a in anchors) {
+                    var href = a.attributes['href'] ?? '';
+                    if (href.isNotEmpty) {
+                      // Extract ID: remove trailing slug, get numeric segment
+                      if (href.contains('/')) {
+                        href = href.substring(0, href.lastIndexOf('/'));
+                      }
+                      if (href.contains('/')) {
+                        href = href.substring(href.lastIndexOf('/') + 1);
+                      }
+                      final entryId = int.tryParse(href);
+                      if (entryId != null) {
+                        nodes.add({
+                          'id': entryId,
+                          'title': a.text.trim(),
+                        });
+                      }
+                    }
+                  }
+                  if (nodes.isNotEmpty) {
+                    relEntries[cat] = nodes;
+                  }
+                }
+              }
+            }
+            result['relatedDatabaseEntries'] = relEntries;
+          }
+        }
+      }
+
+      // --- Related articles from "news-list" container ---
+      result['relatedArticles'] = _parseFeaturedList(
+        document.querySelector('.news-list'),
+        category: category,
+        unitClass: 'news-unit',
+        rightClass: 'news-unit-right',
+        infoClass: 'information',
+        isSideBlock: false,
+      );
+
+      // --- Related news from "news-side-block" elements ---
+      final newsBlocks =
+          document.getElementsByClassName('news-side-block');
+      final relatedNews = <String, List<Map<String, dynamic>>>{};
+      for (final block in newsBlocks) {
+        final header = block.querySelector('.header');
+        if (header != null) {
+          final headerText = header.text.trim();
+          final items = _parseFeaturedList(
+            block,
+            category: 'news',
+            unitClass: 'clearfix',
+            rightClass: 'spaceit',
+            infoClass: 'lightLink',
+            isSideBlock: true,
+          );
+          if (items.isNotEmpty) {
+            relatedNews[headerText] = items;
+          }
+        }
+      }
+      result['relatedNews'] = relatedNews;
     } catch (e) {
-      // Partial results
+      // Return partial results on error
     }
 
     return result;
+  }
+
+  /// Categorize database entry type from table cell text.
+  static String? _getCategory(String text) {
+    if (text.trim().isEmpty) return null;
+    final lower = text.trim().toLowerCase();
+    if (lower.contains('anime')) return 'anime';
+    if (lower.contains('manga')) return 'manga';
+    if (lower.contains('people')) return 'person';
+    if (lower.contains('character')) return 'character';
+    return null;
+  }
+
+  /// Parse a list of featured/news items from a container element.
+  ///
+  /// Handles both the main "news-list" container and side-block layouts.
+  static List<Map<String, dynamic>> _parseFeaturedList(
+    Element? container, {
+    required String category,
+    required String unitClass,
+    required String rightClass,
+    required String infoClass,
+    required bool isSideBlock,
+  }) {
+    if (container == null) return [];
+    final list = <Map<String, dynamic>>[];
+    try {
+      var units = container.getElementsByClassName(unitClass);
+      // For side blocks, filter to only elements that contain a .clearfix child
+      if (isSideBlock) {
+        units = units
+            .where((el) => el.querySelector('.clearfix') != null)
+            .toList();
+      }
+
+      for (final unit in units) {
+        int? itemId;
+        String? imgUrl;
+
+        // Extract ID and image from the first <a> tag
+        final anchor = unit.querySelector('a');
+        if (anchor != null) {
+          var href = anchor.attributes['href'] ?? '';
+          if (href.isNotEmpty) {
+            if (category == 'featured') {
+              // Remove trailing slug for featured
+              if (href.contains('/')) {
+                href = href.substring(0, href.lastIndexOf('/'));
+              }
+            }
+            if (href.contains('/')) {
+              href = href.substring(href.lastIndexOf('/') + 1);
+            }
+            itemId = int.tryParse(href);
+          }
+          final img = anchor.querySelector('img');
+          if (img != null) {
+            if (category == 'featured' || isSideBlock) {
+              imgUrl = img.attributes['data-src'] ?? img.attributes['src'];
+            } else {
+              imgUrl = (img.attributes['src'] ?? '')
+                  .replaceAll('r/100x156/', '');
+            }
+          }
+        }
+
+        // Right section: title, summary, info, tags
+        final right = unit.querySelector('.$rightClass');
+        final info = right?.querySelector('.$infoClass');
+
+        // Tags
+        final tags = <String>[];
+        final tagsEl = right?.querySelector('.tags');
+        if (tagsEl != null) {
+          for (final tag in tagsEl.getElementsByClassName('tag')) {
+            final t = tag.text.trim();
+            if (t.isNotEmpty) tags.add(t);
+          }
+        }
+
+        if (itemId != null) {
+          list.add({
+            'id': itemId,
+            'title': isSideBlock
+                ? (right?.text.trim() ?? '')
+                : (right?.querySelector('.title')?.text.trim() ?? ''),
+            'imageUrl': imgUrl ?? '',
+            'summary':
+                right?.querySelector('.text')?.text.trim() ?? '',
+            'author': isSideBlock
+                ? (info?.text.trim() ?? '')
+                : (info?.querySelector('.info')?.querySelector('a')?.text
+                        .trim() ??
+                    ''),
+            'views': info
+                    ?.querySelector('.di-tc')
+                    ?.querySelector('b')
+                    ?.text
+                    .trim() ??
+                '',
+            'tags': tags,
+          });
+        }
+      }
+    } catch (e) {
+      // Return partial list on error
+    }
+    return list;
   }
 
   /// Parse forum topics from MAL HTML page.
@@ -1298,6 +1559,9 @@ class HtmlParsers {
 
         stacks.add({
           'id': id,
+          'url': id != null
+              ? '${Constants.malBaseUrl}/stacks/$id'
+              : null,
           'title': title,
           'username': username,
           'description': description,
@@ -1309,5 +1573,424 @@ class HtmlParsers {
     } catch (_) {}
 
     return stacks;
+  }
+
+  /// Parses interest stacks from a content stacks page
+  /// (`/{anime|manga}/{id}/_/stacks`).
+  ///
+  /// Same structure as search but uses `.stacks .column-item` selector.
+  static List<Map<String, dynamic>> parseInterestStackContent(
+      Document document) {
+    return _parseInterestStackColumnItems(
+        document.querySelectorAll('.stacks .column-item'));
+  }
+
+  /// Shared parser for `.column-item` interest stack elements.
+  static List<Map<String, dynamic>> _parseInterestStackColumnItems(
+      List<Element> items) {
+    final stacks = <Map<String, dynamic>>[];
+    for (final e in items) {
+      try {
+        int? id;
+        String? url;
+        final anchor = e.querySelector('a');
+        if (anchor != null) {
+          final href = anchor.attributes['href'] ?? '';
+          url = href;
+          final match = RegExp(r'/stacks/(\d+)').firstMatch(href);
+          if (match != null) {
+            id = int.tryParse(match.group(1)!);
+          }
+        }
+
+        final title = e.querySelector('.detail .title')?.text.trim() ?? '';
+        final username = e.querySelector('.detail .tag a')?.text.trim();
+        final description = e.querySelector('.text')?.text.trim();
+
+        final statText = e.querySelector('.detail .stat')?.text ?? '';
+        int? entries;
+        int? reStacks;
+        final entriesMatch =
+            RegExp(r'(\d+)\s*Entries').firstMatch(statText);
+        if (entriesMatch != null) {
+          entries = int.tryParse(entriesMatch.group(1)!);
+        }
+        // Try .foot .stack-balloon first (content page), then stat text
+        final balloonText =
+            e.querySelector('.foot .stack-balloon')?.text.trim();
+        if (balloonText != null) {
+          reStacks = int.tryParse(balloonText);
+        }
+        if (reStacks == null) {
+          final restacksMatch =
+              RegExp(r'(\d+)\s*Restacks').firstMatch(statText);
+          if (restacksMatch != null) {
+            reStacks = int.tryParse(restacksMatch.group(1)!);
+          }
+        }
+
+        // updatedAt from stat text (after '·')
+        String? updatedAt;
+        if (statText.contains('·')) {
+          updatedAt = statText.split('·').last.trim();
+        }
+
+        final imageUrls = e
+            .querySelectorAll('.img .edge img')
+            .map((f) => f.attributes['data-src'] ?? f.attributes['src'])
+            .where((s) => s != null && s.isNotEmpty)
+            .cast<String>()
+            .toList();
+
+        stacks.add({
+          'id': id,
+          'url': url,
+          'title': title,
+          'username': username,
+          'description': description,
+          'entries': entries,
+          'reStacks': reStacks,
+          'updatedAt': updatedAt,
+          'imageUrls': imageUrls,
+        });
+      } catch (_) {
+        continue;
+      }
+    }
+    return stacks;
+  }
+
+  /// Parses a MAL interest stack detail page (`/stacks/{id}`).
+  ///
+  /// Follows the same approach as DailyAL's `interestStackDetailedFromHtml`.
+  static Map<String, dynamic> parseInterestStackDetail(Document document) {
+    final result = <String, dynamic>{};
+
+    try {
+      final sd = document.querySelector('.stacks-detail');
+      if (sd == null) return result;
+
+      // --- Parse entries from seasonal view (.seasonal-anime-list) ---
+      final entries = <Map<String, dynamic>>[];
+      final entryElements =
+          sd.querySelectorAll('.seasonal-anime-list .seasonal-anime');
+      // Fallback to tile view if seasonal view not found
+      final elements = entryElements.isNotEmpty
+          ? entryElements
+          : sd.querySelectorAll('.seasonal-anime');
+      final isSeasonalView = entryElements.isNotEmpty;
+
+      for (final e in elements) {
+        try {
+          // Extract MAL ID from title or image link
+          int? malId;
+          String? category;
+          final titleAnchor = e.querySelector('.link-title') ??
+              e.querySelector('.title a') ??
+              e.querySelector('.image a');
+          if (titleAnchor != null) {
+            final href = titleAnchor.attributes['href'] ?? '';
+            final animeMatch =
+                RegExp(r'/anime/(\d+)').firstMatch(href);
+            final mangaMatch =
+                RegExp(r'/manga/(\d+)').firstMatch(href);
+            if (animeMatch != null) {
+              malId = int.tryParse(animeMatch.group(1)!);
+              category = 'anime';
+            } else if (mangaMatch != null) {
+              malId = int.tryParse(mangaMatch.group(1)!);
+              category = 'manga';
+            }
+          }
+
+          if (malId == null) continue;
+
+          // Title
+          final entryTitle = e.querySelector('.link-title')?.text.trim() ??
+              e.querySelector('.title a')?.text.trim() ??
+              '';
+
+          // English subtitle
+          final enTitle =
+              e.querySelector('.h3_anime_subtitle')?.text.trim();
+
+          // Image
+          final imgEl = e.querySelector('.image img');
+          final imageUrl = imgEl?.attributes['data-src'] ??
+              imgEl?.attributes['src'] ??
+              '';
+
+          // Production source info (media type, status, additional)
+          final prodsrc =
+              e.querySelectorAll('.prodsrc .info .item');
+          final mediaType = prodsrc.tryAt()?.text.trim() ?? '';
+          final status = prodsrc.tryAt(1)?.text.trim() ?? '';
+          final additionalInfo = prodsrc.tryAt(2)?.text
+                  .trim()
+                  .replaceAll('\n', '')
+                  .replaceAll(' ', '')
+                  .replaceFirst(',', ', ') ??
+              '';
+
+          // Score
+          double? score;
+          String? members;
+          if (isSeasonalView) {
+            score = double.tryParse(
+                e.querySelector('.information .score')?.text.trim() ?? '');
+            members =
+                _escape(e.querySelector('.information .member')?.text.trim() ?? '');
+          } else {
+            score = double.tryParse(
+                e.querySelector('.stars')?.text.trim() ?? '');
+            members =
+                _escape(e.querySelector('.users')?.text.trim() ?? '');
+          }
+
+          // Synopsis
+          final synopsis =
+              _escape(e.querySelector('.synopsis .preline')?.text ?? '');
+
+          // Genres
+          final genres = e
+              .querySelectorAll('.genres .genre')
+              .map((g) {
+                int? genreId;
+                final href = g.querySelector('a')?.attributes['href'] ?? '';
+                final match =
+                    RegExp(r'/genre/(\d+)').firstMatch(href);
+                if (match != null) {
+                  genreId = int.tryParse(match.group(1)!);
+                }
+                return <String, dynamic>{
+                  'id': genreId,
+                  'name': g.text.trim(),
+                };
+              })
+              .toList();
+
+          // Category info fallback for tile view
+          final categoryText =
+              e.querySelector('.category')?.text.trim() ?? '';
+
+          entries.add({
+            'malId': malId,
+            'title': entryTitle,
+            'enTitle': enTitle,
+            'imageUrl': imageUrl,
+            'category': category,
+            'mediaType':
+                mediaType.isNotEmpty ? mediaType : categoryText,
+            'status': status,
+            'additionalInfo': additionalInfo,
+            'score': score,
+            'members': members,
+            'synopsis': synopsis,
+            'genres': genres,
+          });
+        } catch (_) {
+          continue;
+        }
+      }
+
+      // --- Parse username and dates from .information ---
+      final String? username =
+          sd.querySelector('.information a')?.text.trim();
+      // Remove <a> and <span> to isolate raw date text
+      sd.querySelector('.information a')?.remove();
+      sd.querySelector('.information span')?.remove();
+      final information =
+          sd.querySelector('.information')?.text.trim() ?? '';
+
+      // createdAt is text before '|', updatedAt is text after '|'
+      final createdAt = _getBefore(information, endPattern: '|');
+      final updatedAt = _getBefore(information, startPattern: '|');
+
+      // --- Build node ---
+      result['title'] = _escape(
+          sd.querySelector('h2.title')?.text.trim() ?? '');
+      result['description'] =
+          _escape(sd.querySelector('.introduction')?.text ?? '');
+      result['username'] = username;
+      result['entries'] = entries.length;
+      result['reStacks'] = int.tryParse(
+          sd.querySelector('.stack-balloon p')?.text.trim() ?? '');
+      result['updatedAt'] = updatedAt;
+      result['createdAt'] = createdAt;
+      result['items'] = entries;
+
+      // --- Images from the stack header ---
+      result['imageUrls'] = sd
+          .querySelectorAll('.img .edge img')
+          .map((e) => e.attributes['data-src'] ?? e.attributes['src'])
+          .where((s) => s != null && s.isNotEmpty)
+          .cast<String>()
+          .toList();
+
+      // --- Parse related stacks from .content-right .side-list ---
+      // Index 0: "More Like This" (similar stacks)
+      // Index 1: "Challenge Interest Stacks"
+      // Index 2: "MyAnimeList Interest Stacks"
+      final sideLists =
+          document.querySelectorAll('.content-right .side-list');
+      result['similarStacks'] =
+          _parseInterestStacksFromSideList(sideLists.tryAt());
+      result['myAnimeListStacks'] =
+          _parseInterestStacksFromSideList(sideLists.tryAt(2));
+    } catch (e) {
+      result['error'] = e.toString();
+    }
+
+    return result;
+  }
+
+  /// Parses interest stacks from a `.side-list` element (similar/MAL stacks).
+  static List<Map<String, dynamic>> _parseInterestStacksFromSideList(
+      Element? element) {
+    if (element == null) return [];
+    return element
+        .querySelectorAll('.column-item')
+        .map((e) {
+          // Extract ID from anchor href
+          int? id;
+          String? url;
+          final anchor = e.querySelector('a');
+          if (anchor != null) {
+            final href = anchor.attributes['href'] ?? '';
+            url = href;
+            final match = RegExp(r'/stacks/(\d+)').firstMatch(href);
+            if (match != null) {
+              id = int.tryParse(match.group(1)!);
+            }
+          }
+
+          final title =
+              _getText(e, '.detail .title');
+          final username = e
+                  .querySelector('.detail .by')
+                  ?.nextElementSibling
+                  ?.text
+                  .trim() ??
+              '';
+
+          final img = e.querySelector('img');
+          final imageUrl =
+              img?.attributes['src'] ?? img?.attributes['data-src'];
+
+          final statText =
+              e.querySelector('.detail span')?.text ?? '';
+
+          return {
+            'id': id,
+            'url': url,
+            'title': title,
+            'username': username,
+            'imageUrls': imageUrl != null ? [imageUrl] : <String>[],
+            'entries': _getBeforeInt(statText, endPattern: 'Entries'),
+            'reStacks': _getBeforeInt(statText,
+                endPattern: 'Restacks', startPattern: '·'),
+          };
+        })
+        .toList();
+  }
+
+  // ---------------------------------------------------------------------------
+  // Recommendations
+  // ---------------------------------------------------------------------------
+
+  /// Parse the user recommendations page for a specific anime/manga.
+  ///
+  /// URL: `/{category}/{id}/_/userrecs`
+  static List<Map<String, dynamic>> getRecommendations(Document doc) {
+    return doc
+        .querySelectorAll('div.borderClass')
+        .where((e) => e.className == 'borderClass')
+        .map((e) {
+      final pic = e.querySelector('.picSurround');
+      final titleStrong = e.querySelector('td a strong');
+      final textElements = e.querySelectorAll('.detail-user-recs-text');
+      final moreLink =
+          e.querySelector('.js-similar-recommendations-button strong');
+      return <String, dynamic>{
+        'relatedNode': _getNodeFromPicElement(pic, titleStrong?.text.trim()),
+        'count': int.tryParse(moreLink?.text.trim() ?? '0'),
+        'recommendations': textElements.map((textEle) {
+          final text = unescape
+              .convert(textEle.text.replaceFirst('read more', '').trim());
+          final sibs = textEle.nextElementSibling?.querySelectorAll('a');
+          final reportSib =
+              sibs != null && sibs.isNotEmpty ? sibs.first : null;
+          return <String, dynamic>{
+            'text': text,
+            'id': _getQueryParam(reportSib?.attributes['href'], 'id'),
+            'username': sibs != null && sibs.length > 1
+                ? sibs.elementAt(1).text.trim()
+                : null,
+          };
+        }).toList(),
+      };
+    }).toList();
+  }
+
+  /// Extract a node (id, title, image, category) from a `.picSurround` element.
+  ///
+  /// [externalTitle] is used when the title is in a sibling element (e.g.
+  /// recommendations page where the title `<strong>` is outside `.picSurround`).
+  static Map<String, dynamic> _getNodeFromPicElement(
+      Element? ele, [String? externalTitle]) {
+    final anchor = ele?.querySelector('a');
+    final img = ele?.querySelector('img');
+    final href = anchor?.attributes['href'] ?? '';
+
+    int? id;
+    String? category;
+    final match = RegExp(r'/(anime|manga)/(\d+)').firstMatch(href);
+    if (match != null) {
+      category = match.group(1);
+      id = int.tryParse(match.group(2)!);
+    }
+
+    final imageUrl =
+        img?.attributes['data-src'] ?? img?.attributes['src'] ?? '';
+    final srcSet = img?.attributes['data-srcset']?.split(',') ?? [];
+    String? medImage, largeImage;
+    if (srcSet.isNotEmpty) {
+      medImage = srcSet.first.replaceFirst('1x', '').trim();
+      largeImage = srcSet.length > 1
+          ? srcSet[1].replaceFirst('2x', '').trim()
+          : medImage;
+    } else {
+      medImage = imageUrl;
+      largeImage = imageUrl;
+    }
+
+    // Use external title first, then fallback to anchor text or img alt.
+    final anchorText = anchor?.text.trim();
+    final altText = img?.attributes['alt']?.trim().replaceFirst(
+        RegExp(r'^(Anime|Manga):\s*'), '');
+    final nodeTitle = (externalTitle != null && externalTitle.isNotEmpty)
+        ? externalTitle
+        : (anchorText != null && anchorText.isNotEmpty)
+            ? anchorText
+            : altText;
+
+    return <String, dynamic>{
+      'id': id,
+      'title': nodeTitle,
+      'mainPicture': <String, dynamic>{
+        'medium': medImage,
+        'large': largeImage,
+      },
+      'nodeCategory': category,
+    };
+  }
+
+  /// Extract an int query parameter from a URL string.
+  static int? _getQueryParam(String? url, String key) {
+    if (url == null) return null;
+    final uri = Uri.tryParse(url);
+    if (uri == null) return null;
+    final value = uri.queryParameters[key];
+    return value != null ? int.tryParse(value) : null;
   }
 }

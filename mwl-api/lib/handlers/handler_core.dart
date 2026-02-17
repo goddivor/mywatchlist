@@ -32,8 +32,11 @@ class HandlerCore {
       PathMatcher('users/history', _handleUserHistory, ['data']),
       PathMatcher('clubs', _handleClubs, ['data']),
       PathMatcher('schedules', _handleSchedules, ['data']),
+      PathMatcher('stacks/detail', _handleStackDetail, ['data']),
+      PathMatcher('stacks/content', _handleStackContent, ['data']),
       PathMatcher('stacks/*stackType', _handleContentStack),
       PathMatcher('content/featured', _handleContentFeatured, ['data']),
+      PathMatcher('recommendations', _handleRecommendations),
     ];
   }
 
@@ -351,6 +354,40 @@ class HandlerCore {
     return {'url': uri.path, 'data': result, 'fromCache': false};
   }
 
+  /// Interest stack detail (HTML scraping).
+  Future<Map<String, dynamic>> _handleStackDetail(
+      PathMatcher path, Uri uri, Map<String, String> params) async {
+    final id = queryParams<int>(uri, 'id');
+    if (id == null) {
+      return {'error': true, 'message': 'Missing id parameter'};
+    }
+
+    final url = '${Constants.malBaseUrl}/stacks/$id?view_style=seasonal';
+    final result = await HttpConnect.htmlPage(url, HtmlParsers.parseInterestStackDetail);
+    return {'url': uri.path, 'data': result, 'fromCache': false};
+  }
+
+  /// Interest stacks for a specific anime/manga (HTML scraping).
+  ///
+  /// URL: `/{category}/{id}/_/stacks?offset=N`
+  Future<Map<String, dynamic>> _handleStackContent(
+      PathMatcher path, Uri uri, Map<String, String> params) async {
+    final category = queryParams<String>(uri, 'category', 'anime')!;
+    final categoryId = queryParams<int>(uri, 'categoryId');
+    final page = queryParams<int>(uri, 'page', 1)!;
+
+    if (categoryId == null) {
+      return {'error': true, 'message': 'Missing categoryId parameter'};
+    }
+
+    final offset = (page - 1) * 20;
+    final url =
+        '${Constants.malBaseUrl}/$category/$categoryId/_/stacks?offset=$offset';
+    final result = await HttpConnect.htmlPage(
+        url, HtmlParsers.parseInterestStackContent);
+    return {'url': uri.path, 'data': result, 'fromCache': false};
+  }
+
   /// Featured articles for a specific anime/manga (HTML scraping).
   ///
   /// Accepts optional `name` param for the slug (produces the canonical MAL URL
@@ -368,6 +405,24 @@ class HandlerCore {
     final slug = (name != null && name.isNotEmpty) ? '/$name' : '';
     final url = '${Constants.malBaseUrl}/$category/$id$slug/featured';
     final result = await HttpConnect.htmlPage(url, HtmlParsers.parseAnimeFeaturedArticles);
+    return {'url': uri.path, 'data': result, 'fromCache': false};
+  }
+
+  /// User recommendations for a specific anime/manga (HTML scraping).
+  ///
+  /// URL: `/{category}/{id}/_/userrecs`
+  Future<Map<String, dynamic>> _handleRecommendations(
+      PathMatcher path, Uri uri, Map<String, String> params) async {
+    final category = queryParams<String>(uri, 'category', 'anime')!;
+    final categoryId = queryParams<int>(uri, 'id');
+
+    if (categoryId == null) {
+      return {'error': true, 'message': 'Missing id parameter'};
+    }
+
+    final url = '${Constants.malBaseUrl}/$category/$categoryId/_/userrecs';
+    final result =
+        await HttpConnect.htmlPage(url, HtmlParsers.getRecommendations);
     return {'url': uri.path, 'data': result, 'fromCache': false};
   }
 

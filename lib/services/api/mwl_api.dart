@@ -345,6 +345,35 @@ class MwlApi {
     return result as Map<String, dynamic>?;
   }
 
+  /// Fetch interest stack detail.
+  Future<Map<String, dynamic>?> getInterestStackDetail(int id, {bool fromCache = true}) async {
+    final result = await httpGet('stacks/detail?id=$id', fromCache: fromCache);
+    return (result as Map<String, dynamic>?)?['data'] as Map<String, dynamic>?;
+  }
+
+  /// Fetch interest stacks for a specific anime/manga.
+  Future<List<InterestStack>> getInterestStacksForContent({
+    required String category,
+    required int categoryId,
+    int page = 1,
+    bool fromCache = true,
+  }) async {
+    final params = <String, dynamic>{
+      'category': category,
+      'categoryId': categoryId,
+      'page': page,
+    };
+    final qs = _buildQuery(params);
+    final result = await httpGet('stacks/content?$qs', fromCache: fromCache);
+    final data = (result as Map<String, dynamic>?)?['data'];
+    if (data is List) {
+      return data
+          .map((e) => InterestStack.fromJson(Map<String, dynamic>.from(e)))
+          .toList();
+    }
+    return [];
+  }
+
   // ---------------------------------------------------------------------------
   // Typed convenience methods (unwrap handler_core envelope)
   // ---------------------------------------------------------------------------
@@ -460,6 +489,21 @@ class MwlApi {
       fromCache: fromCache,
     );
     return (result as Map<String, dynamic>?)?['data'] as Map<String, dynamic>?;
+  }
+
+  /// Fetch full recommendation data (with user comments) for a specific content.
+  Future<List<Map<String, dynamic>>> getRecommendationData({
+    required int id,
+    required String category,
+    bool fromCache = true,
+  }) async {
+    final result = await httpGet(
+      'recommendations?id=$id&category=$category',
+      fromCache: fromCache,
+    );
+    final data = (result as Map<String, dynamic>?)?['data'];
+    if (data is List) return data.cast<Map<String, dynamic>>();
+    return [];
   }
 
   // ---------------------------------------------------------------------------
