@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_widget_from_html_core/flutter_widget_from_html_core.dart';
+import 'package:mywatchlist/constants/constants.dart';
+import 'package:mywatchlist/screens/MAL/character_screen.dart';
+import 'package:mywatchlist/screens/MAL/contentdetailedscreen.dart';
 import 'package:mywatchlist/widgets/common/image_preview.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -68,6 +71,58 @@ class BbcodeWidget extends StatelessWidget {
         fontFamily: theme.textTheme.bodyMedium?.fontFamily,
       ),
       onTapUrl: (url) async {
+        // Intercept MAL anime/manga/character/person URLs for in-app navigation
+        final animeMatch =
+            RegExp(r'myanimelist\.net/anime/(\d+)').firstMatch(url);
+        if (animeMatch != null) {
+          final id = int.tryParse(animeMatch.group(1)!);
+          if (id != null) {
+            gotoPage(
+              context: context,
+              newPage: ContentDetailedScreen(
+                  node: null, category: 'anime', id: id),
+            );
+            return true;
+          }
+        }
+        final mangaMatch =
+            RegExp(r'myanimelist\.net/manga/(\d+)').firstMatch(url);
+        if (mangaMatch != null) {
+          final id = int.tryParse(mangaMatch.group(1)!);
+          if (id != null) {
+            gotoPage(
+              context: context,
+              newPage: ContentDetailedScreen(
+                  node: null, category: 'manga', id: id),
+            );
+            return true;
+          }
+        }
+        final charMatch =
+            RegExp(r'myanimelist\.net/character/(\d+)').firstMatch(url);
+        if (charMatch != null) {
+          final id = int.tryParse(charMatch.group(1)!);
+          if (id != null) {
+            gotoPage(
+              context: context,
+              newPage: CharacterScreen(id: id, category: 'character'),
+            );
+            return true;
+          }
+        }
+        final personMatch =
+            RegExp(r'myanimelist\.net/people/(\d+)').firstMatch(url);
+        if (personMatch != null) {
+          final id = int.tryParse(personMatch.group(1)!);
+          if (id != null) {
+            gotoPage(
+              context: context,
+              newPage: CharacterScreen(id: id, category: 'person'),
+            );
+            return true;
+          }
+        }
+        // Fallback: launch in browser
         final uri = Uri.tryParse(url);
         if (uri != null && await canLaunchUrl(uri)) {
           await launchUrl(uri, mode: LaunchMode.externalApplication);

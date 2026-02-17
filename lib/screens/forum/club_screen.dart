@@ -6,6 +6,7 @@ import 'package:mywatchlist/screens/forum/club_comments_screen.dart';
 import 'package:mywatchlist/screens/forum/club_forum_screen.dart';
 import 'package:mywatchlist/screens/forum/club_members_screen.dart';
 import 'package:mywatchlist/screens/forum/forum_posts_screen.dart';
+import 'package:mywatchlist/screens/MAL/character_screen.dart';
 import 'package:mywatchlist/screens/MAL/contentdetailedscreen.dart';
 import 'package:mywatchlist/services/api/MAL/mal_clubs_api.dart';
 import 'package:mywatchlist/services/api/MAL/models/club/club_data.dart';
@@ -602,10 +603,12 @@ class _ClubScreenState extends State<ClubScreen> {
                 onTap: () {
                   if (relation.id != null) {
                     if (category == 'character') {
-                      launchUrl(
-                        Uri.parse(
-                            'https://myanimelist.net/character/${relation.id}'),
-                        mode: LaunchMode.externalApplication,
+                      gotoPage(
+                        context: context,
+                        newPage: CharacterScreen(
+                          id: relation.id!,
+                          category: 'character',
+                        ),
                       );
                     } else {
                       gotoPage(

@@ -1,9 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:mywatchlist/constants/constants.dart';
+import 'package:mywatchlist/screens/MAL/character_screen.dart';
 import 'package:mywatchlist/services/api/MAL/scrapper/anime_detailed_html.dart';
 import 'package:mywatchlist/widgets/common/avatar_widget.dart';
 
 //this file will be renomed to content_character_widget.dart
+
+/// Extracts the MAL ID from a URL like `/character/12345/...` or `/people/12345/...`
+int? _extractMalId(String? url) {
+  if (url == null || url.isEmpty) return null;
+  final match = RegExp(r'/(?:character|people)/(\d+)').firstMatch(url);
+  if (match != null) return int.tryParse(match.group(1)!);
+  return null;
+}
+
+/// Determines the category from a URL (`character` or `person`)
+String _extractCategory(String? url) {
+  if (url == null) return 'character';
+  if (url.contains('/people/')) return 'person';
+  return 'character';
+}
 
 class AnimeCharacterWidget extends StatelessWidget {
   final List<CharactersVoiceActors> animeCharacterList;
@@ -77,9 +93,16 @@ class AnimeCharacterWidget extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.start,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                _characterWidget(null, details?.character.image),
+                _characterWidget(
+                  _extractMalId(details?.character.name.url),
+                  details?.character.image,
+                  category: _extractCategory(details?.character.name.url),
+                ),
                 Expanded(child: _centerTextWidegt(details)),
-                _seiyuuWidget(null, details?.voiceActor.image),
+                _seiyuuWidget(
+                  _extractMalId(details?.voiceActor.name.url),
+                  details?.voiceActor.image,
+                ),
               ],
             )),
       ),
@@ -100,9 +123,12 @@ class AnimeCharacterWidget extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.start,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                _characterWidget(null, details?.character.image,
+                _characterWidget(
+                    _extractMalId(details?.character.name.url),
+                    details?.character.image,
                     height: isGrid ? 110.0 : 120.0,
-                    width: isGrid ? 85.0 : 100.0),
+                    width: isGrid ? 85.0 : 100.0,
+                    category: _extractCategory(details?.character.name.url)),
                 Expanded(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 10),
@@ -121,6 +147,7 @@ class AnimeCharacterWidget extends StatelessWidget {
   Widget _buildStaffWidget(CharacterNode staff) {
     final isGrid = type == DisplayType.grid;
     final hasQuestionmark = staff.image.contains('questionmark');
+    final staffId = _extractMalId(staff.name.url);
     return Padding(
       padding: isGrid
           ? const EdgeInsets.fromLTRB(0, 3, 10, 3)
@@ -137,9 +164,10 @@ class AnimeCharacterWidget extends StatelessWidget {
                     ? _assetImageWidget(
                         height: isGrid ? 110.0 : 120.0,
                         width: isGrid ? 85.0 : 100.0)
-                    : _characterWidget(null, staff.image,
+                    : _characterWidget(staffId, staff.image,
                         height: isGrid ? 110.0 : 120.0,
-                        width: isGrid ? 85.0 : 100.0),
+                        width: isGrid ? 85.0 : 100.0,
+                        category: 'person'),
                 Expanded(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 10),
@@ -250,26 +278,26 @@ Widget _seiyuuWidget(
 }) {
   const borderRadius = BorderRadius.only(
       topRight: Radius.circular(8), bottomRight: Radius.circular(8));
-  return Material(
-    color: Colors.transparent,
-    elevation: 4,
-    borderRadius: borderRadius,
-    child: AvatarWidget(
-      userRoundBorderforLoading: false,
-      height: height,
-      width: width,
-      onTap: () {
-        if (id != null) {
-          // gotoPage(
-          //     context: MyApp.navigatorKey.currentContext!,
-          //     newPage: CharacterScreen(
-          //       id: id,
-          //       charaCategory: "seiyuu",
-          //     ));
-        }
-      },
-      radius: borderRadius,
-      url: imageUrl,
+  return Builder(
+    builder: (context) => Material(
+      color: Colors.transparent,
+      elevation: 4,
+      borderRadius: borderRadius,
+      child: AvatarWidget(
+        userRoundBorderforLoading: false,
+        height: height,
+        width: width,
+        onTap: () {
+          if (id != null) {
+            gotoPage(
+              context: context,
+              newPage: CharacterScreen(id: id, category: 'person'),
+            );
+          }
+        },
+        radius: borderRadius,
+        url: imageUrl,
+      ),
     ),
   );
 }
@@ -279,27 +307,31 @@ Widget _characterWidget(
   String? imageUrl, {
   double height = 120.0,
   double width = 100.0,
+  String category = 'character',
 }) {
   const borderRadius = BorderRadius.only(
       topRight: Radius.circular(8), bottomRight: Radius.circular(8));
-  return Material(
-    color: Colors.transparent,
-    elevation: 4,
-    borderRadius: borderRadius,
-    child: AvatarWidget(
-      userRoundBorderforLoading: false,
-      height: height,
-      width: width,
-      onTap: () {
-        // if (id != null) {
-        //   gotoPage(
-        //       context: MyApp.navigatorKey.currentContext!,
-        //       newPage: CharacterScreen(id: id, charaCategory: category));
-        // }
-      },
-      radius: const BorderRadius.only(
-          topLeft: Radius.circular(8), bottomLeft: Radius.circular(8)),
-      url: imageUrl,
+  return Builder(
+    builder: (context) => Material(
+      color: Colors.transparent,
+      elevation: 4,
+      borderRadius: borderRadius,
+      child: AvatarWidget(
+        userRoundBorderforLoading: false,
+        height: height,
+        width: width,
+        onTap: () {
+          if (id != null) {
+            gotoPage(
+              context: context,
+              newPage: CharacterScreen(id: id, category: category),
+            );
+          }
+        },
+        radius: const BorderRadius.only(
+            topLeft: Radius.circular(8), bottomLeft: Radius.circular(8)),
+        url: imageUrl,
+      ),
     ),
   );
 }
