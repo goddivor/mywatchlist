@@ -1,7 +1,6 @@
 // ignore_for_file: deprecated_member_use, unnecessary_null_comparison
 
 import 'package:flutter/material.dart';
-import 'package:mywatchlist/constants/constants.dart';
 import 'package:mywatchlist/widgets/common/custombutton.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 
@@ -146,123 +145,6 @@ class HeaderWidget extends StatelessWidget {
                     : Color(colorVal).withValues(alpha: opacity),
                 fontSize: fontSize,
               ),
-    );
-  }
-}
-
-class IncludeExcludeWidget extends StatelessWidget {
-  final List<String> header;
-  final List<String> include;
-  final List<String> exclude;
-  final Function(List<String>, List<String>)? onPressed;
-  final Color includeBgColor;
-  final Color excludeBgColor;
-  final Color defaultBgColor;
-  final double fontSize;
-  final double driftOffset;
-  final bool shouldAnimate;
-  final double? width, height;
-  final ShapeBorder? shape;
-  final bool formatText;
-  final bool tapToDisable;
-  final Color? selectedColor;
-  final EdgeInsets? listPadding;
-  final EdgeInsets? itemPadding;
-  final EdgeInsets? contentPadding;
-  final ScrollController scrollController = ScrollController();
-  final ItemScrollController itemScrollController = ItemScrollController();
-  IncludeExcludeWidget({super.key, 
-    required this.header,
-    this.onPressed,
-    this.defaultBgColor = Colors.transparent,
-    this.shouldAnimate = true,
-    this.driftOffset = 120.0,
-    this.height = 30.0,
-    this.width,
-    this.shape,
-    required this.include,
-    required this.exclude,
-    this.selectedColor,
-    this.formatText = false,
-    this.listPadding,
-    this.tapToDisable = false,
-    this.itemPadding = const EdgeInsets.symmetric(horizontal: 17),
-    this.contentPadding,
-    this.includeBgColor = Colors.transparent,
-    this.excludeBgColor = Colors.transparent,
-    this.fontSize = 22,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: height,
-      width: width,
-      child: ScrollablePositionedList.builder(
-        initialScrollIndex: 0,
-        itemCount: header.length,
-        scrollDirection: Axis.horizontal,
-        itemScrollController: itemScrollController,
-        padding: listPadding,
-        itemBuilder: (context, index) => headerBodyWidget(
-            header.elementAt(index), index, onPressed,
-            contentPadding: contentPadding,
-            itemPadding: itemPadding,
-            tapToDisable: tapToDisable,
-            selectedColor: selectedColor,
-            formatText: formatText),
-      ),
-    );
-  }
-
-  bool validIndex(int index) {
-    return index != null && index >= 0;
-  }
-
-  Widget headerBodyWidget(String pageName, int index,
-      Function(List<String>, List<String>)? onPressed,
-      {EdgeInsets? contentPadding,
-      bool tapToDisable = false,
-      EdgeInsets? itemPadding,
-      Color? selectedColor,
-      bool formatText = false}) {
-    return Container(
-      padding: contentPadding ?? EdgeInsets.symmetric(horizontal: 10),
-      child: PlainButton(
-        onPressed: () {
-          if (shouldAnimate) {
-            itemScrollController.scrollTo(
-              index: index,
-              duration: const Duration(milliseconds: 500),
-            );
-          }
-          if (exclude.contains(pageName)) {
-            exclude.remove(pageName);
-          } else if (include.contains(pageName)) {
-            include.remove(pageName);
-            exclude.add(pageName);
-          } else {
-            include.add(pageName);
-          }
-          onPressed!(include, exclude);
-        },
-        shape: shape,
-        padding: itemPadding ?? EdgeInsets.symmetric(horizontal: 17),
-        buttonColor: include.contains(pageName)
-            ? includeBgColor
-            : exclude.contains(pageName)
-                ? excludeBgColor
-                : defaultBgColor,
-        child: title(
-            formatText ? pageName.replaceAll("_", " ").capitalize() : pageName,
-            colorVal: (include.contains(pageName) || exclude.contains(pageName))
-                ? selectedColor?.toARGB32()
-                : null,
-            fontSize: fontSize,
-            opacity: (include.contains(pageName) || exclude.contains(pageName))
-                ? 1
-                : 0.7),
-      ),
     );
   }
 }
