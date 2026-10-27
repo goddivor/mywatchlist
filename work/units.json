@@ -1460,6 +1460,7 @@
         "notifications"
       ],
       "owns": [
+        "lib/widgets/loading/**",
         "lib/widgets/MAL/home/**",
         "lib/widgets/MAL/content/**",
         "lib/widgets/MAL/review/**",

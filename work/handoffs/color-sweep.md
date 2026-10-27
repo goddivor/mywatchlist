@@ -34,6 +34,7 @@
 - `notifications` (Airing notifications)
 
 ## Owns (may create or edit ONLY these)
+- `lib/widgets/loading/**`
 - `lib/widgets/MAL/home/**`
 - `lib/widgets/MAL/content/**`
 - `lib/widgets/MAL/review/**`
