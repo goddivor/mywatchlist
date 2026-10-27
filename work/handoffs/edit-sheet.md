@@ -6,6 +6,8 @@
 - `deps-prefs-contract` (Dependencies, Android permissions and the preferences contract)
 
 ## Owns (may create or edit ONLY these)
+- `lib/services/api/MAL/models/my_anime_list_status.dart`
+- `lib/services/api/MAL/models/my_manga_list_status.dart`
 - `lib/widgets/user/contenteditwidget.dart`
 - `lib/widgets/user/edit/**`
 - `lib/user/private_notes/**`

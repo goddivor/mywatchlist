@@ -32,7 +32,7 @@ Never state a version from memory: read it here or in `pubspec.yaml` / `pubspec.
 | json_annotation | ^4.9.0 |
 | flutter_local_notifications | ^20.1.0 |
 | timezone | ^0.10.1 |
-| dynamic_color | ^1.9.0 |
+| dynamic_color | >=1.8.1 <1.9.0 (1.9.0 needs AGP 9, 2.x needs material_color_utilities 0.13) |
 | flex_color_picker | ^3.7.2 |
 | translator_plus | ^1.0.1 |
 | package_info_plus | ^9.0.1 |

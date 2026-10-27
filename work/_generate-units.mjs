@@ -195,7 +195,7 @@ const UNITS = [
   {
     id: "edit-sheet", title: "Edit-entry sheet: fix pre-fill, dates, episodes, private notes", kind: "unit", priority: "P0", group: "user", model: "sonnet", ui: true,
     needs: ["deps-prefs-contract"],
-    owns: ["lib/widgets/user/contenteditwidget.dart", "lib/widgets/user/edit/**", "lib/user/private_notes/**"],
+    owns: ["lib/services/api/MAL/models/my_anime_list_status.dart", "lib/services/api/MAL/models/my_manga_list_status.dart", "lib/widgets/user/contenteditwidget.dart", "lib/widgets/user/edit/**", "lib/user/private_notes/**"],
     dal: ["lib/widgets/user/contenteditwidget.dart", "commits 704b5b5, 7d02a3f, e7eef19, b5f1e8d, ee084b6, 2f6b9da, 3f89382, fe88690, e773650 (private notes)"],
     goal: [
       "Pre-fill everything from the existing entry: start/finish dates, priority, comments, tags, rewatch count (`_loadFromContent` l.104-128 skips them); chapters/volumes are forced to '0' on load (~l.115-122).",
@@ -357,6 +357,7 @@ const UNITS = [
       "Top chips (Categories, Genres, Top anime/manga, Top airing, Popular) are all `() {}` (mal_home_page.dart:44-52) → open the explore/ranking screens; bookmarks and calendar buttons `() {}` (:222-224) → app_routes.",
       "MAL under-maintenance dialog (API exists mal_api.dart:1067).",
       "The avatar switcher (homeappbar.dart) still pushes AccountSwitcherPage as a full slide page: open it as a bottom sheet instead (accounts-ux finding). Sidebar entry point (app-shell finding): a visible button in the home app bar (the account avatar, as in DailyAL) calls `AppRoutes.openSidebar` — the edge swipe alone fights Android gesture navigation. Replace the direct `SettingsPage` push (mal_home_page.dart:228) by `AppRoutes.openSettings`.",
+      "homeappbar.dart tooltips (Search, Bookmarks, Calendar, Settings) are hardcoded English → S (user-list-mal finding).",
       "BottomNavBar (lib/widgets/common/bottomnavbar.dart): honour `startIndex` changes (`didUpdateWidget`) so the shell can switch tab from code, and move its hardcoded tab titles to `S`.",
       "Home sections: user-list section, forum section, custom items (forum boards, user list status, season/year).",
       "News items: drop ClipRRect + Opacity per item (news_widget.dart:54-56), use AppImage (performance.md #7).",
@@ -409,7 +410,7 @@ const UNITS = [
     needs: ["perf-foundation", "app-shell", "user-list-mal"],
     owns: ["lib/main.dart", "lib/services/notifications/**", "lib/screens/settings/notifications_settings.dart", "android/app/src/main/res/drawable/ic_stat_notification.xml", "android/app/src/main/res/drawable-*/ic_stat_notification.png"],
     dal: ["lib/notifservice.dart", "lib/pages/settings/notifsettings.dart", "commits 820a295, 92cc38d"],
-    goal: ["Schedule airing notifications for watching / plan-to-watch lists (flutter_local_notifications + timezone), large image pref, permission request, test notification, clear and reschedule all, reschedule after boot, open the detail screen from a notification (cold and warm start) through the app-shell hook: read the payload of the notification that launched the app in main.dart and pass it to `OpenScreen(notificationPayload:)`; payload format `anime:<id>`, `manga:<id>`, `calendar`, `bookmarks` (documented in lib/utils/app_routes.dart). Fill the notification_service stub."],
+    goal: ["Schedule airing notifications for watching / plan-to-watch lists (flutter_local_notifications + timezone), large image pref, permission request, test notification, clear and reschedule all, reschedule after boot, open the detail screen from a notification (cold and warm start) through the app-shell hook: read the payload of the notification that launched the app in main.dart and pass it to `OpenScreen(notificationPayload:)`; payload format `anime:<id>`, `manga:<id>`, `calendar`, `bookmarks` (documented in lib/utils/app_routes.dart). Fill the notification_service stub. Also call `ListStatusCache.instance.ensureLoaded()` at startup in main.dart so status badges show from the first frame (user-list-mal finding)."],
     dod: ["Test notification shows on the emulator and opens the right anime."],
   },
   {
