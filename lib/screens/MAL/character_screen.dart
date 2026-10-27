@@ -357,7 +357,7 @@ class _CharacterScreenState extends State<CharacterScreen> {
             .get(Uri.parse('${Constants.jikanV4}/characters/$id'));
         if (res.statusCode == 429) {
           complete = false;
-          problem = S.current.Fc_Rate_Limit;
+          problem = S.current.Fch_Rate_Limit;
           break;
         }
         if (res.statusCode == 200) {
@@ -370,7 +370,7 @@ class _CharacterScreenState extends State<CharacterScreen> {
         }
       } on JikanUnavailable {
         complete = false;
-        problem = S.current.Fc_Sort_Failed;
+        problem = S.current.Fch_Sort_Failed;
         break;
       } catch (_) {
         complete = false;
@@ -384,9 +384,9 @@ class _CharacterScreenState extends State<CharacterScreen> {
     if (problem != null) {
       showToast(problem);
     } else if (complete) {
-      showToast(S.current.Fc_Sorting_Done);
+      showToast(S.current.Fch_Sorting_Done);
     } else {
-      showToast(S.current.Fc_Sort_Failed);
+      showToast(S.current.Fch_Sort_Failed);
     }
   }
 
@@ -399,8 +399,8 @@ class _CharacterScreenState extends State<CharacterScreen> {
       context,
       subject: profile.name,
       title: _isCharacter
-          ? S.current.Fc_Share_Character
-          : S.current.Fc_Share_Person,
+          ? S.current.Fch_Share_Character
+          : S.current.Fch_Share_Person,
       fields: personShareFields(
         url: _url,
         name: profile.name,
@@ -419,7 +419,7 @@ class _CharacterScreenState extends State<CharacterScreen> {
     final profile = _profile;
     final title = profile?.name.isNotEmpty == true
         ? profile!.name
-        : (_isCharacter ? S.current.Fc_Character : S.current.Fc_Person);
+        : (_isCharacter ? S.current.Fch_Character : S.current.Fch_Person);
     return Scaffold(
       body: CustomScrollView(
         slivers: [
@@ -459,7 +459,7 @@ class _CharacterScreenState extends State<CharacterScreen> {
         SliverFillRemaining(
           hasScrollBody: false,
           child: SectionMessage.error(
-            message: S.current.Fc_Load_Failed,
+            message: S.current.Fch_Load_Failed,
             height: 240,
             onRetry: _load,
           ),
@@ -477,8 +477,8 @@ class _CharacterScreenState extends State<CharacterScreen> {
           child: SegmentedButton<int>(
             showSelectedIcon: false,
             segments: [
-              ButtonSegment(value: 0, label: Text(S.current.Fc_About)),
-              ButtonSegment(value: 1, label: Text(S.current.Fc_Details)),
+              ButtonSegment(value: 0, label: Text(S.current.Fch_About)),
+              ButtonSegment(value: 1, label: Text(S.current.Fch_Details)),
             ],
             selected: {_tab},
             onSelectionChanged: (s) => setState(() => _tab = s.first),
@@ -497,7 +497,7 @@ class _CharacterScreenState extends State<CharacterScreen> {
         sliver: SliverToBoxAdapter(
           child: profile.about.isEmpty
               ? Text(
-                  S.current.Fc_No_About,
+                  S.current.Fch_No_About,
                   style: style?.copyWith(
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
@@ -572,22 +572,22 @@ class _CharacterScreenState extends State<CharacterScreen> {
   }
 
   String _sectionTitle(_SectionId id) => switch (id) {
-        _SectionId.animeography => S.current.Fc_Animeography,
-        _SectionId.mangaography => S.current.Fc_Mangaography,
-        _SectionId.voiceActors => S.current.Fc_Voice_Actors,
-        _SectionId.voiceRoles => S.current.Fc_Voice_Roles,
-        _SectionId.animeStaff => S.current.Fc_Anime_Staff,
-        _SectionId.publishedManga => S.current.Fc_Published_Manga,
+        _SectionId.animeography => S.current.Fch_Animeography,
+        _SectionId.mangaography => S.current.Fch_Mangaography,
+        _SectionId.voiceActors => S.current.Fch_Voice_Actors,
+        _SectionId.voiceRoles => S.current.Fch_Voice_Roles,
+        _SectionId.animeStaff => S.current.Fch_Anime_Staff,
+        _SectionId.publishedManga => S.current.Fch_Published_Manga,
       };
 
   Widget _sortButton() {
     String label(_VoiceSort s) => switch (s) {
-          _VoiceSort.recent => S.current.Fc_Sort_Recent,
-          _VoiceSort.favorites => S.current.Fc_Sort_Favorites,
-          _VoiceSort.title => S.current.Fc_Sort_Title,
+          _VoiceSort.recent => S.current.Fch_Sort_Recent,
+          _VoiceSort.favorites => S.current.Fch_Sort_Favorites,
+          _VoiceSort.title => S.current.Fch_Sort_Title,
         };
     return PopupMenuButton<_VoiceSort>(
-      tooltip: S.current.Fc_Sort,
+      tooltip: S.current.Fch_Sort,
       icon: const Icon(Icons.sort),
       initialValue: _sort,
       onSelected: _setSort,
@@ -688,7 +688,7 @@ class _Header extends StatelessWidget {
                     Icon(Icons.favorite, size: 20, color: scheme.error),
                     const SizedBox(width: 8),
                     Text(
-                      S.current.Fc_Favorites(profile.favorites!),
+                      S.current.Fch_Favorites(profile.favorites!),
                       style: theme.textTheme.titleMedium,
                     ),
                   ],
@@ -851,7 +851,7 @@ class _SectionHeader extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        S.current.Fc_Sorting_Progress(done, total),
+                        S.current.Fch_Sorting_Progress(done, total),
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: theme.colorScheme.onSurfaceVariant,
                         ),

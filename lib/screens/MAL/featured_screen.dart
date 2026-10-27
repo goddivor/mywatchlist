@@ -76,11 +76,11 @@ class _FeaturedScreenState extends State<FeaturedScreen> {
                 children: [
                   const Icon(Icons.error_outline, size: 48),
                   SB.h10,
-                  Text(S.current.Fc_Article_Failed),
+                  Text(S.current.Fch_Article_Failed),
                   SB.h10,
                   FilledButton.tonal(
                     onPressed: () => setState(() => _articleFuture = _fetchArticle()),
-                    child: Text(S.current.Fc_Retry),
+                    child: Text(S.current.Fch_Retry),
                   ),
                 ],
               ),
@@ -337,7 +337,7 @@ class _FeaturedScreenState extends State<FeaturedScreen> {
     showShareBuilder(
       context,
       subject: title,
-      title: S.current.Fc_Share_Article,
+      title: S.current.Fch_Share_Article,
       fields: [
         ShareField(label: S.current.Url, value: _pageUrl, labelled: false),
         if (title != null && title.isNotEmpty)
