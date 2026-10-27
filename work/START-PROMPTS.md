@@ -128,7 +128,7 @@ Deliver with the PR procedure of the brief.
 ## list-cards-dal
 
 ```text
-Unit list-cards-dal — My List: the same UI as DailyAL for every display type (header, tabs, toolbar, cards).
+Unit list-cards-dal — My List grid display: DailyAL-style grid cards (the rest of MWL's My List stays).
 Read work/handoffs/list-cards-dal.md fully, then the DAL reference files it lists, then the MWL files you own.
 Build exactly the Goal, inside the Owns list. Heavy commands only through tools/heavy.sh; never run flutter build or touch the emulator.
 UI directive applies: compare DAL and MWL, keep the better, improve it.

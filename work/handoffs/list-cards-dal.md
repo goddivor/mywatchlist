@@ -1,4 +1,4 @@
-# Handoff — `list-cards-dal`: My List: the same UI as DailyAL for every display type (header, tabs, toolbar, cards)
+# Handoff — `list-cards-dal`: My List grid display: DailyAL-style grid cards (the rest of MWL's My List stays)
 
 **Kind** unit · **Priority** P0 · **Group** user · **Model** opus
 
@@ -7,35 +7,27 @@
 - `theme-colors` (Theme colours: status bar, coherent accents per theme, colour tokens, contrast)
 
 ## Owns (may create or edit ONLY these)
-- `lib/pages/MAL/mal_user_page.dart`
-- `lib/widgets/user/list/**`
-- `lib/widgets/common/list_sort_filter.dart`
-- `lib/user/list_cache/**`
+- `lib/widgets/user/list/cards/**`
+- `lib/widgets/user/list/list_entry_view.dart`
 - `lib/l10n/units/list-cards-dal/**`
 - `test/units/list-cards-dal/**`
 
 Plus `PROJECT-STATE.md` (rewrite in place, within its cap) and `docs/DECISIONS.md` (append one line per decision). Anything else you need is a FINDING to report, never an edit.
 
 ## Goal
-- OWNER'S EXPLICIT RULE for this screen (overrides the generic 'compare and improve' directive): the My List screen must have THE SAME UI AS DAILYAL, for EVERY display type (grid, list, compact, comfortable, cover only, spacious, custom). Reproduce DailyAL's layout faithfully, in MWL's architecture (BLoC/ChangeNotifier as today, MWL theme colours via colorScheme + status tokens, S strings): read lib/pages/userpage.dart and lib/widgets/user/contentlistwidget.dart in DailyAL and match them screen element by screen element.
-- PRIORITY (owner, after seeing MWL vs DailyAL): what matters most is the RENDERING of each display type — MWL's current rendering is completely different from DailyAL's and the owner finds it frustrating, especially the GRID displays. Start with the grid modes (card proportions, cover ratio, spacing between cards, the score/status bar under the cover, title + genres below, badge placement, corner radius, elevation/border exactly like DailyAL), then list, compact, comfortable, cover-only, spacious. Compare screenshots of both apps mode by mode in your PR body (describe them; the checker takes the real ones).
-- Header like DailyAL: Anime | Manga segmented toggle on the left, action icons on the right (search, bookmarks, calendar, settings as DailyAL places them on this page); status tabs labelled like DailyAL `All (2315)`, `Watching (202)`… (count in parentheses, underline indicator in the accent); a toolbar row with DailyAL's search pill on the left and the refresh + filter pill on the right.
-- Grid card like DailyAL (owner's screenshot): clean rounded cover with no text on the image; directly under it a compact bar — left ★ mean score (or '-'; hide-score tap-to-reveal respected); right a coloured status chip (CW / CMPL / OH / DR / PTW, colour from the theme-colors status tokens) containing the edit pencil; then the title on one line with ellipsis, then the genres in small text on one line; small badges top-right on the cover (e.g. unseen/behind counts) as DailyAL does. List, compact, comfortable, cover-only and spacious modes: copy DailyAL's version of each mode.
-- Keep MWL's working behaviour underneath: tracker-agnostic ListEntryView + UserListAdapter (AniList/Kitsu/Simkl reuse it), status cache, pagination/whole-list rules, edit sheet on pencil / long press, +1/-1 where DailyAL shows it, sort/filter options, custom card layouts (DailyAL's layout is the default).
-- Fluidity: AppImage at card size, no per-card Opacity/ClipRRect/blur, fixed extents where possible; readable chips and text in light, dark and black.
+- OWNER'S DECISION (final): MWL's My List interface is BETTER than DailyAL's — keep MWL's header, status tabs, toolbar, list/compact/other display modes and their icons exactly as they are. ONLY the GRID display types must be improved, using DailyAL's grid card as the model (the owner finds MWL's grid rendering frustrating).
+- Grid card like DailyAL (owner's screenshots): clean rounded cover with NO text or gradient on the image; directly under it a compact bar — left ★ mean score (or '-'; hide-score tap-to-reveal respected); right a coloured status chip (CW / CMPL / OH / DR / PTW, colour from the theme-colors status tokens) containing the edit pencil; then the title on one line with ellipsis; then the genres in small text on one line; small badges top-right on the cover (unseen / behind counts) as DailyAL does. Match DailyAL's card proportions, cover ratio, spacing between cards, corner radius and border/elevation.
+- Keep MWL's behaviour: tap opens the detail, pencil / long press opens the edit sheet, the status cache updates the chip, airing info and priority prefs, the grid column/height settings of the display sheet, custom card layouts (the DailyAL grid card becomes the default grid layout).
+- Fluidity: AppImage at card size, no per-card Opacity/ClipRRect/blur, fixed extents; readable chips and text in light, dark and black.
 
 ## Known bugs to fix in scope
 - none
 
 ## DailyAL reference (read, never copy blindly)
 Checkout: `/home/thinkpad/.cache/mwl-mab/dailyal-108` (DAL `upstream/2026.2.6+108`, read-only).
-- `lib/pages/userpage.dart`
-- `lib/widgets/user/contentlistwidget.dart`
-- `lib/user/contentbuilder.dart`
 - `lib/widgets/home/animecard.dart`
 - `lib/widgets/home/nodebadge.dart`
-- `lib/widgets/listsortfilter.dart`
-- `lib/widgets/user/customizedlist.dart`
+- `lib/widgets/user/contentlistwidget.dart (grid mode)`
 
 Port the behaviour into MWL's architecture: BLoC for app-wide state, Provider/ChangeNotifier user singletons, MWL's service layer (`lib/services/api/**`), `S` strings via your l10n fragment, multi-tracker awareness (never assume the active account is MAL without checking).
 
@@ -54,7 +46,7 @@ Port the behaviour into MWL's architecture: BLoC for app-wide state, Provider/Ch
 - Look at how DAL makes the same screen fluid and do at least as well; the checker compares janky-frame % on a profile build.
 
 ## Definition of Done
-- Checker: side-by-side screenshots of MWL My List vs DailyAL on the owner's account in EVERY display type — same structure element by element.
-- Widget tests per display type (renders score/status/title/genres), hide-score, French labels.
+- Checker: side-by-side screenshots of the MWL grid vs DailyAL's grid on the owner's account; other display modes unchanged.
+- Widget tests: grid card renders score/status/title/genres, hide-score, French labels.
 - `tools/heavy.sh flutter analyze` clean (the gate runs the full `tools/heavy.sh tools/verify.sh`).
 - PR against `dev` with `Closes #<issue>`, gate tail, decisions, findings.

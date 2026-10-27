@@ -520,7 +520,7 @@
     },
     {
       "id": "list-cards-dal",
-      "title": "My List: the same UI as DailyAL for every display type (header, tabs, toolbar, cards)",
+      "title": "My List grid display: DailyAL-style grid cards (the rest of MWL's My List stays)",
       "kind": "unit",
       "entry": "",
       "artifact": "",
@@ -530,10 +530,8 @@
         "theme-colors"
       ],
       "owns": [
-        "lib/pages/MAL/mal_user_page.dart",
-        "lib/widgets/user/list/**",
-        "lib/widgets/common/list_sort_filter.dart",
-        "lib/user/list_cache/**",
+        "lib/widgets/user/list/cards/**",
+        "lib/widgets/user/list/list_entry_view.dart",
         "lib/l10n/units/list-cards-dal/**",
         "test/units/list-cards-dal/**"
       ],
