@@ -16,15 +16,17 @@ Owned by the `theme-colors` unit. Every screen builds on this: **no `Colors.*` a
 
 ## Colour scheme (`AppThemes.colorScheme`)
 
-- Built by Material's colour utilities from the accent, `DynamicSchemeVariant.fidelity`
-  (a pink accent gives a vivid pink primary, `#B80049`, not a pastel), standard contrast
-  (`AppColors.contrastLevel` = 0): tone 40 accents on light surfaces, tone 80 on dark ones,
-  which keeps accent text at 4.5:1 (the test checks it for every preset).
-- The tertiary family is replaced by the accent's calm tone (same hue): Material's default
+- DailyAL's recipe: `ColorScheme.fromSeed(seedColor: accent, brightness: …)` with Material's
+  default variant (tonalSpot) at standard contrast (`AppColors.contrastLevel` = 0). Accents are
+  soft and pastel (a pink accent gives `#8E4957`, not the vivid `#B80049` of the former
+  `fidelity` recipe), tone 40 on light surfaces and tone 80 on dark ones, which keeps accent
+  text at 4.5:1 (the test checks it for every preset). Presets, custom colours and Material You
+  "Auto" all seed this same builder.
+- The tertiary family is the accent's secondary tone (same hue, calmer): Material's default
   hue rotation put teal or orange next to a pink accent.
-- Black mode: `surface` `#000000`, then `#0E0E0E`, `#161616`, `#1F1F1F`, `#2A2A2A` for
-  `surfaceContainerLow` … `surfaceContainerHighest`, so cards, sheets and dialogs stay
-  distinct from the page; `onSurface` white.
+- Black mode (DailyAL's): `surface` `#0C0404`, `onSurface` white, then the dark greys
+  `#161212`, `#1D1919`, `#252121`, `#2E2A2A` for `surfaceContainerLow` …
+  `surfaceContainerHighest`, so cards, sheets and dialogs stay distinct from the page.
 
 | Role | Use it for | Foreground |
 |---|---|---|
@@ -69,25 +71,48 @@ local `Theme` has none). Each `AppColorRole` has four colours:
 - `container`: a tinted area (chip, badge, tile);
 - `onContainer`: text on `container` (≥ 4.5:1).
 
-The hue of each role is fixed (below) and harmonised with the accent
+The score and feedback hues are fixed and harmonised with the accent
 (`Color.harmonizeWith`, at most 15° towards it), then toned by Material's colour utilities for
-light or dark. Values for the default accent (Blue Grey `#607D8B`), `color / onColor /
-container / onContainer`:
+light or dark.
 
-| Token | Light (`color / on / container / onContainer`) | Dark |
+The list statuses use DailyAL's colours (its `userChartDefaultColors`), the same for every
+accent and every tracker: Watching green `#4CAF50`, Completed blue `#2196F3`, On hold orange
+`#FF9800`, Dropped red `#F44336`, Plan to watch / read brown `#795548`. Same hues everywhere,
+one shade darker or lighter only where a pair would be unreadable:
+
+| Status | Chip `container` (white bold text, every mode) | Light `color` (white `onColor`) | Dark and black `color` (black `onColor`) |
+|---|---|---|---|
+| `watching` | `#43A047` green 600 (white 3.30:1; green 500 gives 2.78) | `#388E3C` green 700 | `#4CAF50` green 500 |
+| `completed` | `#2196F3` blue 500 (3.12:1) | `#1E88E5` blue 600 | `#2196F3` blue 500 |
+| `onHold` | `#EF6C00` orange 800 (3.08:1; orange 500 gives 2.16) | `#E65100` orange 900 | `#FF9800` orange 500 |
+| `dropped` | `#F44336` red 500 (3.68:1) | `#F44336` red 500 | `#F44336` red 500 |
+| `planned` | `#795548` brown 500 (6.55:1) | `#795548` brown 500 | `#A1887F` brown 300 (brown 500 is 2.6:1 on a dark page) |
+
+`color` is the shade that keeps 3:1 on the page and on cards (light `color` is one shade
+darker than the chip where the chip shade falls under 3:1 on a light card). Status chip text
+must be bold (it is 3:1, the large or bold text level, not 4.5:1).
+
+Values for the default accent (Blue Grey `#607D8B`), `color / onColor / container /
+onContainer`:
+
+| Token | Light | Dark |
 |---|---|---|
 | `score` | `#725C00` / `#FFFFFF` / `#E7BD00` / `#3E3100` | `#FFDA5E` / `#3C2F00` / `#E7BD00` / `#3E3100` |
-| `watching` | `#00623C` / `#FFFFFF` / `#007E4E` / `#FFFFFF` | `#76DAA1` / `#003920` / `#007E4E` / `#FFFFFF` |
-| `completed` | `#005281` / `#FFFFFF` / `#006BA6` / `#FFFFFF` | `#96CCFF` / `#003353` / `#006BA6` / `#FFFFFF` |
-| `onHold` | `#775A00` / `#FFFFFF` / `#E5B118` / `#392A00` | `#FFCE52` / `#3F2E00` / `#E5B118` / `#392A00` |
-| `dropped` | `#A0003D` / `#FFFFFF` / `#C61F53` / `#FFFFFF` | `#FFB2BD` / `#670024` / `#C61F53` / `#FFFFFF` |
-| `planned` | `#485F6A` / `#FFFFFF` / `#607884` / `#FFFFFF` | `#B1CAD7` / `#1C333E` / `#7C94A0` / `#000000` |
+| `watching` | `#388E3C` / `#FFFFFF` / `#43A047` / `#FFFFFF` | `#4CAF50` / `#000000` / `#43A047` / `#FFFFFF` |
+| `completed` | `#1E88E5` / `#FFFFFF` / `#2196F3` / `#FFFFFF` | `#2196F3` / `#000000` / `#2196F3` / `#FFFFFF` |
+| `onHold` | `#E65100` / `#FFFFFF` / `#EF6C00` / `#FFFFFF` | `#FF9800` / `#000000` / `#EF6C00` / `#FFFFFF` |
+| `dropped` | `#F44336` / `#FFFFFF` / `#F44336` / `#FFFFFF` | `#F44336` / `#000000` / `#F44336` / `#FFFFFF` |
+| `planned` | `#795548` / `#FFFFFF` / `#795548` / `#FFFFFF` | `#A1887F` / `#000000` / `#795548` / `#FFFFFF` |
 | `success` | `#00623C` / `#FFFFFF` / `#007E4E` / `#FFFFFF` | `#76DAA1` / `#003920` / `#007E4E` / `#FFFFFF` |
-| `warning` | `#8C4F00` / `#FFFFFF` / `#D87D00` / `#000000` | `#FFB4A2` / `#621100` / `#F66440` / `#000000` |
+| `warning` | `#AE3111` / `#FFFFFF` / `#F66440` / `#000000` | `#FFB4A2` / `#621100` / `#F66440` / `#000000` |
 | `danger` | `#BA1A1A` / `#FFFFFF` / `#FFDAD6` / `#410002` | `#FFB4AB` / `#690005` / `#93000A` / `#FFDAD6` |
-| `badge` / `onBadge` | `#5C7987` / `#FFFFFF` | `#7895A3` / `#000000` |
-| `shimmerBase` / `shimmerHighlight` | `#E3E2E3` / `#F4F3F4` | `#343536` / `#1A1C1D` |
+| `badge` / `onBadge` | `#BDE9FF` / `#001F2A` | `#004D64` / `#BDE9FF` |
+| `shimmerBase` / `shimmerHighlight` | `#DFE3E7` / `#F0F4F8` | `#303538` / `#171C1F` |
 | `imageScrim` / `onImageScrim` | `#000000` at 60 % / `#FFFFFF` | same |
+
+Stats charts: the default colour of each status slot (`defaultStatusChartColors`,
+lib/widgets/charts/chart_palette.dart) is DailyAL's 500 hue above (`AppColors.watchingBase` …
+`plannedBase`); the user can override each slot in the settings.
 
 | Token | Meaning |
 |---|---|
@@ -136,8 +161,11 @@ colour in dark mode.
 `test/units/theme-colors/contrast_test.dart` checks, for the 19 presets plus white and black
 custom accents, in light, dark and black: every `on*` pair ≥ 4.5:1, `onSurface`,
 `onSurfaceVariant` and `primary` on every surface level ≥ 4.5:1, `outline`, `error` and the
-bottom-bar icons ≥ 3:1, every token pair ≥ 4.5:1, every token `color` on surfaces ≥ 3:1, and
-white text on the image scrim over a white picture ≥ 4.5:1.
+bottom-bar icons ≥ 3:1, every score and feedback token pair ≥ 4.5:1, every list status pair
+(bold chip text) ≥ 3:1, every token `color` on surfaces ≥ 3:1, and white text on the image
+scrim over a white picture ≥ 4.5:1. It also pins the recipe (the scheme equals DailyAL's
+`fromSeed` default), the black page `#0C0404` with increasing grey levels, DailyAL's status
+hues for every tracker's status strings, and the default chart colours.
 A new role or token gets a line there.
 
 ## Bottom bar
