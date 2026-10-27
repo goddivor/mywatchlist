@@ -8,6 +8,7 @@
 - `user-profile-mal` (MAL user profile, stats charts and user pop-up)
 
 ## Owns (may create or edit ONLY these)
+- `lib/utils/app_routes.dart`
 - `lib/screens/search/**`
 - `lib/widgets/MAL/search/**`
 - `lib/l10n/units/search-upgrade/**`
@@ -19,6 +20,7 @@ Plus `PROJECT-STATE.md` (rewrite in place, within its cap) and `docs/DECISIONS.m
 - User result tap → profile (TODO :2227) and 'User found as …' shortcut; search by MAL id; autocomplete with throttle; SearchableSelect for producers/magazines; three-state include/exclude.
 - Move the search/filter UI off lib/widgets/MAL/search/selectbottom.dart (SelectBar, MutiSelectBar, MultiSelectDropdown) onto the shared-kit select widgets (lib/widgets/common/select/select.dart), then delete what becomes unused.
 - `_SeasonalSection._maxYear` hard-coded 2027 (:3643) → current year + 1.
+- Give `AppRoutes.openSearch` an optional category / initial query (lib/utils/app_routes.dart, detail-split finding) so the detail screen can open search on the right category.
 - Expose static entry points (e.g. `GeneralSearchScreen.byGenre/byStudio/byMagazine/byTag/bySeason`) used by more-info and featured units; list them in the PR body.
 - Split the 3719-line file into parts under lib/screens/search/; while splitting, remove the ~12 ClipRRect per result item where a decoration radius suffices and use AppImage (performance.md #7).
 

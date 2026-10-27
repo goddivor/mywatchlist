@@ -21,7 +21,7 @@ Plus `PROJECT-STATE.md` (rewrite in place, within its cap) and `docs/DECISIONS.m
 - App bar menu: share (share builder), open in browser, bookmark toggle (bookmarks unit API), search by genre.
 - More Info modal reachable from the cover info button.
 - Hide-score with tap to reveal; preferred title language from the pref (not a per-screen toggle only); detail background pref; next-episode countdown pref.
-- Customize / reorder / hide sections, persisted in the contract pref.
+- Customize / reorder / hide sections, persisted in the contract pref. Manga default order: keep Stats and Score stats on manga pages (an MWL extra over DailyAL, orchestrator recommendation pending the owner) — change the manga default in the contract only through a finding if it lives outside your files.
 - Redesign the header (UI directive): compare DAL and MWL side by side.
 
 ## Known bugs to fix in scope

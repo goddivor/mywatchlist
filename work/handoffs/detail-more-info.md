@@ -17,6 +17,7 @@
 Plus `PROJECT-STATE.md` (rewrite in place, within its cap) and `docs/DECISIONS.md` (append one line per decision). Anything else you need is a FINDING to report, never an edit.
 
 ## Goal
+- Give MoreInfoWidget a modal mode (DailyAL `isModal`) so the detail screen's More Info dialog does not wrap it in an extra scroll view (detail-split finding).
 - Studio and genre taps are TODO prints (more_info_widget.dart:111, :238) → open the filtered search; add taps for magazine/serialization, authors (→ person page), season, media type. Use the search entry points the search-upgrade unit exposes.
 
 ## Known bugs to fix in scope

@@ -812,6 +812,7 @@
         "user-profile-mal"
       ],
       "owns": [
+        "lib/utils/app_routes.dart",
         "lib/screens/search/**",
         "lib/widgets/MAL/search/**",
         "lib/l10n/units/search-upgrade/**",

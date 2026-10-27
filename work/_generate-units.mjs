@@ -256,7 +256,7 @@ const UNITS = [
       "App bar menu: share (share builder), open in browser, bookmark toggle (bookmarks unit API), search by genre.",
       "More Info modal reachable from the cover info button.",
       "Hide-score with tap to reveal; preferred title language from the pref (not a per-screen toggle only); detail background pref; next-episode countdown pref.",
-      "Customize / reorder / hide sections, persisted in the contract pref.",
+      "Customize / reorder / hide sections, persisted in the contract pref. Manga default order: keep Stats and Score stats on manga pages (an MWL extra over DailyAL, orchestrator recommendation pending the owner) — change the manga default in the contract only through a finding if it lives outside your files.",
       "Redesign the header (UI directive): compare DAL and MWL side by side.",
     ],
     dod: ["All header buttons do something on the emulator."],
@@ -300,7 +300,7 @@ const UNITS = [
     needs: ["detail-split", "search-upgrade"],
     owns: ["lib/widgets/MAL/content/more_info_widget.dart", "lib/widgets/MAL/content/adaptation_widget.dart", "lib/widgets/MAL/content/animestatisticswidget.dart", "lib/widgets/MAL/content/scorestatisticswidget.dart"],
     dal: ["lib/screens/moreinfo.dart", "commits 6f90a5a (author navigation), 024654e (serialization → magazine filter), 399851c"],
-    goal: ["Studio and genre taps are TODO prints (more_info_widget.dart:111, :238) → open the filtered search; add taps for magazine/serialization, authors (→ person page), season, media type. Use the search entry points the search-upgrade unit exposes."],
+    goal: ["Give MoreInfoWidget a modal mode (DailyAL `isModal`) so the detail screen's More Info dialog does not wrap it in an extra scroll view (detail-split finding).", "Studio and genre taps are TODO prints (more_info_widget.dart:111, :238) → open the filtered search; add taps for magazine/serialization, authors (→ person page), season, media type. Use the search entry points the search-upgrade unit exposes."],
     dod: ["Each chip/link in More Info opens a relevant in-app screen."],
   },
 
@@ -335,12 +335,13 @@ const UNITS = [
   {
     id: "search-upgrade", title: "Search: user results, search by id, autocomplete, searchable filters", kind: "screen", priority: "P2", group: "discovery", model: "sonnet", ui: true,
     needs: ["perf-foundation", "shared-kit", "user-profile-mal"],
-    owns: ["lib/screens/search/**", "lib/widgets/MAL/search/**"],
+    owns: ["lib/utils/app_routes.dart", "lib/screens/search/**", "lib/widgets/MAL/search/**"],
     dal: ["lib/screens/generalsearchscreen.dart", "lib/widgets/search/filtermodal.dart", "commits da37082, 6b2aafd, fa2fb68, 3f1f0fd, 158e206 (autocomplete), db3355e (search by id, 3-state)"],
     goal: [
       "User result tap → profile (TODO :2227) and 'User found as …' shortcut; search by MAL id; autocomplete with throttle; SearchableSelect for producers/magazines; three-state include/exclude.",
       "Move the search/filter UI off lib/widgets/MAL/search/selectbottom.dart (SelectBar, MutiSelectBar, MultiSelectDropdown) onto the shared-kit select widgets (lib/widgets/common/select/select.dart), then delete what becomes unused.",
       "`_SeasonalSection._maxYear` hard-coded 2027 (:3643) → current year + 1.",
+      "Give `AppRoutes.openSearch` an optional category / initial query (lib/utils/app_routes.dart, detail-split finding) so the detail screen can open search on the right category.",
       "Expose static entry points (e.g. `GeneralSearchScreen.byGenre/byStudio/byMagazine/byTag/bySeason`) used by more-info and featured units; list them in the PR body.",
       "Split the 3719-line file into parts under lib/screens/search/; while splitting, remove the ~12 ClipRRect per result item where a decoration radius suffices and use AppImage (performance.md #7).",
     ],
