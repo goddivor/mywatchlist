@@ -8,8 +8,7 @@ Cap: 80 lines. Rewrite in place; history lives in git and `docs/DECISIONS.md`.
 
 ## Gate
 - `tools/heavy.sh tools/verify.sh`: pub get, flutter analyze, flutter test, dart analyze mwl-api (machine-wide lock).
-- `gate-fix` made it green: the counter test is gone; `flutter test` runs offline smoke tests in about 10 s.
-- Test layout: `test/smoke/` + `test/helpers/` (`pumpInApp`, `htmlFixture`, `forbidNetwork`), then `test/units/<unit-id>/` per unit.
+- `flutter test` runs offline smoke tests in about 10 s. Layout: `test/smoke/` + `test/helpers/` (`pumpInApp`, `htmlFixture`, `forbidNetwork`), then `test/units/<unit-id>/`.
 - `verify.sh` first runs `tools/l10n/build.sh`: `S` is a build output of `lib/l10n/**` (see CLAUDE.md, Localization).
 
 ## Localization (`l10n-pipeline`)
@@ -47,9 +46,8 @@ Cap: 80 lines. Rewrite in place; history lives in git and `docs/DECISIONS.md`.
 - Typed client methods on `MwlApi` (listed in the backend-parsers PR body, issue #27); HTML parsed off the UI isolate.
 
 ## Fluidity (`perf-foundation`)
-- Baseline home scroll, profile builds: MWL 22-23 % janky frames vs DailyAL 1.6 % (`tools/perf/measure-scroll.sh`, emulator with `-gpu host`).
-- Rules and measurement procedure (incl. Impeller vs Skia A/B): `docs/PERFORMANCE.md`. Foundation: high refresh rate, `AppImage` (decode at displayed size), one shared shimmer ticker, MaterialApp rebuilt only on theme/locale, avatars without fade or blurred shadow, viewer without blur.
-- Screen-level fixes (home tabs, cards, detail listeners, parsing) belong to their units; cards must switch to `AppImage`.
+- Baseline home scroll, profile builds: MWL 22-23 % janky frames vs DailyAL 1.6 % (`tools/perf/measure-scroll.sh`). Rules and procedure: `docs/PERFORMANCE.md`. Foundation: high refresh rate, `AppImage` (decode at displayed size), one shared shimmer ticker, MaterialApp rebuilt only on theme/locale, avatars without fade or blurred shadow, viewer without blur.
+- Screen-level fixes belong to their units; cards must switch to `AppImage`.
 ## Edit sheet (`edit-sheet`)
 - `ContentEditWidget` (same constructor) loads the whole MAL `my_list_status` itself (`MalListEntryService`, `lib/widgets/user/edit/`), so dates, priority, rewatch, tags, comments, chapters and volumes are pre-filled exactly; writes go through `MalApi.save*ListStatus` and both list-status models keep dates as MAL text, so a partial date (`2019-03`, `2019`) survives open, save, reopen (#86); load error / dead session / non-MAL account show a message with retry or sign-in, never a spinner.
 - Auto dates follow `autoAddStartEndDate` and only fill empty dates; the last episode completes with a finish date, the first one fills the start date; add uses `defaultAnime/MangaAddStatus`; airing shows without total get an estimated episode count (picker bar or stepper).
@@ -75,6 +73,9 @@ Cap: 80 lines. Rewrite in place; history lives in git and `docs/DECISIONS.md`.
 - `lib/screens/search/`: `GeneralSearchScreen` (state + parts `search_logic`, `search_bar_part`, `search_results_part`, `search_active_filters`), `SearchService` (all fetching, no widget), `SearchFilters` (immutable, API values: genre/producer/magazine ids), `SearchCatalog` (current MAL genre, producer and magazine tables in `data/`, name to id), `search_tiles`, `search_home_view`, `search_filter_panel` (kit select widgets, searchable producers/magazines, include/exclude genres).
 - Entry points: `GeneralSearchScreen.byQuery/byGenre/byStudio/byMagazine/byTag/bySeason/byRanking/byMangaRanking/bySuggested/byUser`, `AppRoutes.openSearch(query, category, filters)`; the old `filterOutputs:` map still works. User results open the profile (long press: quick sheet); an exact MAL user name shows "User found as"; a numeric query finds the title by id; autocomplete (400 ms) under the field.
 
+## Forum and clubs (`forum-clubs`)
+- Forums tab (`lib/pages/MAL/mal_forum_page.dart`): category cards (sheet of boards with sub-boards), chips for 5 discussion boards (each loads when picked), Clubs tab = `ClubsTab`. Reply opens MAL's form in the in-app browser (`launchWebView`); every user tap = `openForumUser` (quick sheet).
+- Lists use `ForumPagedList` (skeleton, error + Retry, empty, pull to refresh, auto next page); club data comes from `MwlApi` (`MalClubsApi` only maps it to the `ClubData` models); the forum topics HTML fallback parses in `compute`. Shared bits in `lib/widgets/forum/forum_common.dart` (`ForumAvatar` clean circle, `ForumMessage`, `StaffBadge`, `ForumUrls`). Strings `Fc_*`.
 ## Known big gaps (see inventory)
 - No user list / profile for AniList/Kitsu/Simkl (placeholders); no notifications, share, translation.
 - MAL dead session (#71): public MAL reads (seasonal, ranking, details, search, other users' lists, forum) fall back to the client id; `/users/@me`, suggestions and list writes throw `MalSessionExpired`. The UI listens to `MalApi.sessionExpired` (`ValueListenable<bool>`); the visible prompt is still to build (accounts-ux / app-shell); the detail screen shows its own error/retry state.
