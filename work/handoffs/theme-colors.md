@@ -7,6 +7,7 @@
 - `deps-prefs-contract` (Dependencies, Android permissions and the preferences contract)
 
 ## Owns (may create or edit ONLY these)
+- `lib/widgets/charts/chart_palette.dart`
 - `lib/widgets/common/bottomnavbar.dart`
 - `lib/widgets/common/nav_indicator.dart`
 - `test/smoke/nav_indicator_test.dart`

@@ -441,7 +441,7 @@ const UNITS = [
   {
     id: "theme-colors", title: "Theme colours: status bar, coherent accents per theme, colour tokens, contrast", kind: "foundation", priority: "P0", group: "settings", model: "opus", ui: true,
     needs: ["perf-foundation", "deps-prefs-contract"],
-    owns: ["lib/widgets/common/bottomnavbar.dart", "lib/widgets/common/nav_indicator.dart", "test/smoke/nav_indicator_test.dart", "lib/user/theme/**", "lib/screens/settings/theme_settings.dart", "lib/widgets/common/app_colors.dart", "lib/widgets/common/background.dart", "lib/utils/sidebar_bg_manager.dart", "lib/user/userpref.dart", "docs/THEME.md"],
+    owns: ["lib/widgets/charts/chart_palette.dart", "lib/widgets/common/bottomnavbar.dart", "lib/widgets/common/nav_indicator.dart", "test/smoke/nav_indicator_test.dart", "lib/user/theme/**", "lib/screens/settings/theme_settings.dart", "lib/widgets/common/app_colors.dart", "lib/widgets/common/background.dart", "lib/utils/sidebar_bg_manager.dart", "lib/user/userpref.dart", "docs/THEME.md"],
     dal: ["lib/theme/theme.dart", "lib/theme/themedata.dart", "lib/pages/settings/themesettings.dart"],
     goal: [
       "The owner reports colour bugs. Seen on the emulator (Spring theme, light): the status bar clock and icons are WHITE on a near-white pink background (unreadable) — no `systemOverlayStyle` exists anywhere in lib/; the selected tab is dark teal, the card edit button orange, the score star green and the chips grey on a pink theme: the palette is not coherent; many colours are hardcoded (`Colors.*` / `Color(0x…)` in ~25 files: animegridcard, constants, scorestatisticswidget, reviews, featured, entry cards, charts, side_bar…).",
