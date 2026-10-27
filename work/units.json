@@ -519,6 +519,7 @@
         "backend-parsers"
       ],
       "owns": [
+        "test/units/app-shell/app_routes_test.dart",
         "lib/utils/app_routes.dart",
         "lib/pages/MAL/mal_user_profile_page.dart",
         "lib/screens/user_profile/**",

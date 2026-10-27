@@ -224,7 +224,7 @@ const UNITS = [
   {
     id: "user-profile-mal", title: "MAL user profile, stats charts and user pop-up", kind: "screen", priority: "P1", group: "user", model: "sonnet", ui: true,
     needs: ["mal-auth-calls", "app-shell", "shared-kit", "backend-parsers"],
-    owns: ["lib/utils/app_routes.dart", "lib/pages/MAL/mal_user_profile_page.dart", "lib/screens/user_profile/**", "lib/widgets/user/profile/**", "lib/widgets/charts/**", "lib/services/api/MAL/scrapper/user_anime_statistics.dart", "lib/services/api/MAL/scrapper/user_friends.dart", "lib/services/api/MAL/scrapper/user_history.dart", "lib/services/api/MAL/user_anime_statistics.dart", "lib/services/api/MAL/mal_user_prof.dart", "lib/cache/cached_user_profile.dart"],
+    owns: ["test/units/app-shell/app_routes_test.dart", "lib/utils/app_routes.dart", "lib/pages/MAL/mal_user_profile_page.dart", "lib/screens/user_profile/**", "lib/widgets/user/profile/**", "lib/widgets/charts/**", "lib/services/api/MAL/scrapper/user_anime_statistics.dart", "lib/services/api/MAL/scrapper/user_friends.dart", "lib/services/api/MAL/scrapper/user_history.dart", "lib/services/api/MAL/user_anime_statistics.dart", "lib/services/api/MAL/mal_user_prof.dart", "lib/cache/cached_user_profile.dart"],
     dal: ["lib/screens/user_profile.dart", "lib/widgets/user/user_header.dart", "lib/widgets/user/stats_screen.dart", "lib/user/charts/", "lib/widgets/barchart.dart", "lib/pages/userpop.dart", "lib/cache/cacheduserprof.dart", "lib/util/insight_service.dart"],
     goal: [
       "Own profile and any other user's profile: header, about (users/about parser from backend-parsers), favorites, friends, clubs, history, stats with charts (fl_chart; colors from the stats chart pref), insights.",
