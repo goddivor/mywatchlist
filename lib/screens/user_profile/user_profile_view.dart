@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:mywatchlist/constants/constants.dart' show AccountType;
 import 'package:mywatchlist/generated/l10n.dart';
@@ -12,6 +14,7 @@ import 'package:mywatchlist/utils/app_routes.dart';
 import 'package:mywatchlist/utils/web_launcher.dart';
 import 'package:mywatchlist/widgets/common/app_bar_menu.dart';
 import 'package:mywatchlist/widgets/common/share_builder.dart';
+import 'package:mywatchlist/widgets/user/profile/profile_format.dart';
 import 'package:mywatchlist/widgets/user/profile/profile_header.dart';
 import 'package:mywatchlist/widgets/user/profile/profile_states.dart';
 import 'package:mywatchlist/widgets/user/profile/report_user.dart';
@@ -39,56 +42,75 @@ class UserProfileView extends StatefulWidget {
 }
 
 class _UserProfileViewState extends State<UserProfileView> {
-  late Future<UserProfileData> _future;
+  StreamSubscription<UserProfileData>? _sub;
+  UserProfileData? _data;
+  Object? _error;
 
   bool get _isSelf => widget.username == null;
 
   @override
   void initState() {
     super.initState();
-    _future = UserProfileRepository.instance.load(widget.username);
+    _listen();
+  }
+
+  @override
+  void dispose() {
+    _sub?.cancel();
+    super.dispose();
+  }
+
+  /// Shows each value as it comes: the official MAL data first, Jikan merged afterwards.
+  void _listen({bool force = false}) {
+    _sub?.cancel();
+    _sub = UserProfileRepository.instance.watch(widget.username, forceRefresh: force).listen(
+      (data) {
+        if (mounted)
+          setState(() {
+            _data = data;
+            _error = null;
+          });
+      },
+      onError: (Object e) {
+        // A refresh that fails keeps the profile already on screen.
+        if (mounted && _data == null) setState(() => _error = e);
+      },
+    );
   }
 
   void _reload({bool force = false}) {
-    setState(() {
-      _future = UserProfileRepository.instance.load(widget.username, forceRefresh: force);
-    });
+    setState(() => _error = null);
+    _listen(force: force);
   }
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<UserProfileData>(
-      future: _future,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState != ConnectionState.done) {
-          return _Frame(
-            title: widget.username ?? S.of(context).Prof_Title_Own,
-            showBack: widget.showBack,
-            child: ProfileLoading(label: S.of(context).Prof_Loading),
-          );
-        }
-        if (snapshot.hasError) {
-          return _Frame(
-            title: widget.username ?? S.of(context).Prof_Title_Own,
-            showBack: widget.showBack,
-            child: ProfileErrorView(
-              error: snapshot.error!,
-              onRetry: () => _reload(force: true),
-              onSignIn: () async {
-                await AppRoutes.signInAgain(context, AccountType.myanimelist);
-                if (mounted) _reload(force: true);
-              },
-            ),
-          );
-        }
-        return _ProfileBody(
-          key: ValueKey(snapshot.data!.username),
-          data: snapshot.data!,
-          isSelf: _isSelf,
-          showBack: widget.showBack,
-          initialTab: widget.initialTab,
-        );
-      },
+    final data = _data;
+    final error = _error;
+    if (data == null) {
+      final s = S.of(context);
+      return _Frame(
+        title: widget.username ?? s.Prof_Title_Own,
+        showBack: widget.showBack,
+        child: error == null
+            ? ProfileLoading(label: s.Prof_Loading)
+            : ProfileErrorView(
+                error: error,
+                onRetry: () => _reload(force: true),
+                onSignIn: () async {
+                  await AppRoutes.signInAgain(context, AccountType.myanimelist);
+                  if (mounted) _reload(force: true);
+                },
+              ),
+      );
+    }
+    return _ProfileBody(
+      key: ValueKey(data.username.toLowerCase()),
+      data: data,
+      isSelf: _isSelf,
+      showBack: widget.showBack,
+      initialTab: widget.initialTab,
+      onRetryExtras: () => _reload(force: true),
     );
   }
 }
@@ -108,7 +130,6 @@ class _Frame extends StatelessWidget {
         AppBar(
           automaticallyImplyLeading: showBack,
           title: Text(title),
-          backgroundColor: Colors.transparent,
         ),
         Expanded(child: child),
       ],
@@ -128,7 +149,11 @@ class _ProfileBody extends StatefulWidget {
     required this.isSelf,
     required this.showBack,
     required this.initialTab,
+    required this.onRetryExtras,
   });
+
+  /// Asks again for the Jikan part (manga numbers, favorites) when it failed.
+  final VoidCallback onRetryExtras;
 
   @override
   State<_ProfileBody> createState() => _ProfileBodyState();
@@ -136,7 +161,6 @@ class _ProfileBody extends StatefulWidget {
 
 class _ProfileBodyState extends State<_ProfileBody> with SingleTickerProviderStateMixin {
   static const double _tabBarHeight = 48;
-  static const double _headerHeight = 168;
 
   late final TabController _tabs = TabController(
     length: UserProfileTab.values.length,
@@ -162,12 +186,17 @@ class _ProfileBodyState extends State<_ProfileBody> with SingleTickerProviderSta
   Widget _tabBody(UserProfileTab tab) {
     final data = widget.data;
     return switch (tab) {
-      UserProfileTab.stats => StatsSection(data: data, isSelf: widget.isSelf),
+      UserProfileTab.stats =>
+        StatsSection(data: data, isSelf: widget.isSelf, onRetryExtras: widget.onRetryExtras),
       UserProfileTab.friends => FriendsSection(username: data.username),
       UserProfileTab.clubs => ClubsSection(username: data.username),
       UserProfileTab.about => AboutSection(username: data.username, isSelf: widget.isSelf),
-      UserProfileTab.favorites =>
-        FavoritesSection(favorites: data.favorites, username: data.username),
+      UserProfileTab.favorites => FavoritesSection(
+          favorites: data.favorites,
+          username: data.username,
+          extras: data.extras,
+          onRetry: widget.onRetryExtras,
+        ),
       UserProfileTab.history => HistorySection(username: data.username),
     };
   }
@@ -180,10 +209,10 @@ class _ProfileBodyState extends State<_ProfileBody> with SingleTickerProviderSta
     final summary = [
       if (anime.totalEntries > 0)
         '${s.Prof_Anime}: ${s.Prof_Entry_Count(anime.totalEntries)}'
-            '${(anime.meanScore ?? 0) > 0 ? ' · ${anime.meanScore!.toStringAsFixed(2)}' : ''}',
+            '${(anime.meanScore ?? 0) > 0 ? ' · ${profileMean(anime.meanScore)}' : ''}',
       if (manga.totalEntries > 0)
         '${s.Prof_Manga}: ${s.Prof_Entry_Count(manga.totalEntries)}'
-            '${(manga.meanScore ?? 0) > 0 ? ' · ${manga.meanScore!.toStringAsFixed(2)}' : ''}',
+            '${(manga.meanScore ?? 0) > 0 ? ' · ${profileMean(manga.meanScore)}' : ''}',
     ].join('\n');
     showShareBuilder(
       context,
@@ -200,6 +229,7 @@ class _ProfileBodyState extends State<_ProfileBody> with SingleTickerProviderSta
   @override
   Widget build(BuildContext context) {
     final s = S.of(context);
+    final cs = Theme.of(context).colorScheme;
     final data = widget.data;
 
     return NestedScrollView(
@@ -210,8 +240,12 @@ class _ProfileBodyState extends State<_ProfileBody> with SingleTickerProviderSta
             pinned: true,
             automaticallyImplyLeading: widget.showBack,
             forceElevated: innerBoxIsScrolled,
-            expandedHeight: _headerHeight + _tabBarHeight,
-            title: Text(data.username),
+            expandedHeight: kToolbarHeight + ProfileHeader.bandHeight + _tabBarHeight,
+            // Opaque and themed: the title, icons, tabs and status bar (the app bar theme's
+            // overlay style) always sit on the surface they were made for.
+            backgroundColor: cs.surface,
+            foregroundColor: cs.onSurface,
+            title: _CollapsedTitle(data.username),
             actions: [
               AppBarMenu(
                 onShare: _share,
@@ -237,13 +271,10 @@ class _ProfileBodyState extends State<_ProfileBody> with SingleTickerProviderSta
                 ],
               ),
             ],
-            flexibleSpace: FlexibleSpaceBar(
-              collapseMode: CollapseMode.pin,
-              background: ProfileHeader(
-                data: data,
-                isSelf: widget.isSelf,
-                bottomInset: _tabBarHeight,
-              ),
+            flexibleSpace: ProfileHeader(
+              data: data,
+              isSelf: widget.isSelf,
+              bottomInset: _tabBarHeight,
             ),
             bottom: TabBar(
               controller: _tabs,
@@ -262,6 +293,36 @@ class _ProfileBodyState extends State<_ProfileBody> with SingleTickerProviderSta
           for (final tab in UserProfileTab.values) _tabBody(tab),
         ],
       ),
+    );
+  }
+}
+
+/// The user name in the toolbar, shown once the header (which carries the name in large) has
+/// scrolled away. Reads the app bar's extent itself, so only this text repaints while
+/// scrolling; the fade is a text colour alpha, not an opacity layer.
+class _CollapsedTitle extends StatelessWidget {
+  final String username;
+
+  const _CollapsedTitle(this.username);
+
+  @override
+  Widget build(BuildContext context) {
+    final settings = context.dependOnInheritedWidgetOfExactType<FlexibleSpaceBarSettings>();
+    final style = DefaultTextStyle.of(context).style;
+    var visible = 1.0;
+    if (settings != null && settings.maxExtent > settings.minExtent) {
+      final expanded = ((settings.currentExtent - settings.minExtent) /
+              (settings.maxExtent - settings.minExtent))
+          .clamp(0.0, 1.0);
+      // Fully shown in the last third of the collapse.
+      visible = ((1 - expanded) * 3 - 2).clamp(0.0, 1.0);
+    }
+    final color = style.color ?? Theme.of(context).colorScheme.onSurface;
+    return Text(
+      username,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: style.copyWith(color: color.withValues(alpha: color.a * visible)),
     );
   }
 }

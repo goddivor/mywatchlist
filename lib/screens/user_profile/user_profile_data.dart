@@ -37,8 +37,7 @@ class ProfileFavorites {
     this.people = const [],
   });
 
-  bool get isEmpty =>
-      anime.isEmpty && manga.isEmpty && characters.isEmpty && people.isEmpty;
+  bool get isEmpty => anime.isEmpty && manga.isEmpty && characters.isEmpty && people.isEmpty;
 
   static List<ProfileFavorite> _list(Object? raw, {required bool named}) {
     if (raw is! List) return const [];
@@ -46,8 +45,8 @@ class ProfileFavorites {
     for (final row in raw) {
       if (row is! Map) continue;
       final id = (row['mal_id'] as num?)?.toInt() ?? 0;
-      final title = ((named ? row['name'] : row['title']) ?? row['title'] ?? row['name'])
-          as String?;
+      final title =
+          ((named ? row['name'] : row['title']) ?? row['title'] ?? row['name']) as String?;
       if (id == 0 || title == null || title.isEmpty) continue;
       final images = row['images'];
       final jpg = images is Map ? images['jpg'] : null;
@@ -89,6 +88,19 @@ class ProfileFavorites {
       };
 }
 
+/// State of the parts of a profile that only Jikan gives (manga numbers, favorites, and the
+/// whole profile of another user): the official MAL data is shown first, Jikan merges later.
+enum ProfileExtras {
+  /// Jikan answered, or the data comes from the cache.
+  ready,
+
+  /// Jikan is still being asked; manga numbers and favorites may be missing or stale.
+  loading,
+
+  /// Jikan did not answer and there is nothing cached: manga numbers and favorites are missing.
+  unavailable,
+}
+
 /// Everything the profile header and the stats tab need about one MyAnimeList user.
 class UserProfileData {
   final int id;
@@ -106,6 +118,9 @@ class UserProfileData {
   final List<double?> animeDays;
   final ProfileFavorites favorites;
 
+  /// Whether the Jikan part is there (never stored: a cached profile is [ProfileExtras.ready]).
+  final ProfileExtras extras;
+
   const UserProfileData({
     required this.id,
     required this.username,
@@ -118,7 +133,29 @@ class UserProfileData {
     this.manga = const ListStats(),
     this.animeDays = const [],
     this.favorites = const ProfileFavorites(),
+    this.extras = ProfileExtras.ready,
   });
+
+  /// A copy with the Jikan part replaced (manga numbers, favorites) and its state.
+  UserProfileData withExtras(
+    ProfileExtras extras, {
+    ListStats? manga,
+    ProfileFavorites? favorites,
+  }) =>
+      UserProfileData(
+        id: id,
+        username: username,
+        pictureUrl: pictureUrl,
+        gender: gender,
+        location: location,
+        birthday: birthday,
+        joined: joined,
+        anime: anime,
+        manga: manga ?? this.manga,
+        animeDays: animeDays,
+        favorites: favorites ?? this.favorites,
+        extras: extras,
+      );
 
   String get profileUrl => 'https://myanimelist.net/profile/$username';
 
@@ -227,6 +264,79 @@ class UserProfileRepository {
     final data = merge(name, mal: mal, jikan: full);
     await CachedUserProfile.instance.write(name, data.toJson());
     return data;
+  }
+
+  /// Like [load], but never waits for Jikan before showing something: emits the official MAL
+  /// data of the signed-in user (or a cached profile) at once with [ProfileExtras.loading],
+  /// then the profile merged with Jikan when (if) it answers. Jikan has its own 12 s timeout
+  /// and circuit breaker, so the second value comes quickly either way.
+  ///
+  /// A fresh cached profile is emitted alone, without any request (unless [forceRefresh]).
+  /// The stream errors only when nothing at all can be shown.
+  Stream<UserProfileData> watch(
+    String? username, {
+    bool forceRefresh = false,
+  }) async* {
+    final isSelf = username == null;
+    var name = username ?? ownUsername;
+
+    UserProfileData? previous;
+    if (name != null) {
+      final cached = await CachedUserProfile.instance.read(name);
+      if (cached != null) {
+        previous = UserProfileData.fromJson(cached.json);
+        if (!forceRefresh && cached.age < CachedUserProfile.freshFor) {
+          yield previous;
+          return;
+        }
+      }
+    }
+
+    MalUserProf? mal;
+    if (isSelf) {
+      try {
+        mal = await malSelf();
+        if (mal.name.isNotEmpty) name = mal.name;
+      } catch (e) {
+        if (kDebugMode) debugPrint('UserProfileRepository: MAL self failed: $e');
+        if (name == null) rethrow;
+      }
+    }
+    if (name == null) throw const UserProfileUnavailable('');
+
+    // First value: the official data (with the cached Jikan part, if any) or the cached
+    // profile, so the screen never waits for Jikan.
+    final samePerson = previous != null && previous.username.toLowerCase() == name.toLowerCase();
+    final stale = samePerson ? previous : null;
+    final UserProfileData? first;
+    if (mal != null) {
+      first = merge(name, mal: mal).withExtras(
+        ProfileExtras.loading,
+        manga: stale?.manga,
+        favorites: stale?.favorites,
+      );
+    } else {
+      first = stale?.withExtras(ProfileExtras.loading);
+    }
+    if (first != null) yield first;
+
+    Map<String, dynamic>? full;
+    try {
+      full = await jikanFull(name);
+    } catch (e) {
+      if (kDebugMode) debugPrint('UserProfileRepository: Jikan failed for $name: $e');
+    }
+
+    if (full == null) {
+      if (first == null) throw UserProfileUnavailable(name);
+      // Keep what is shown; the Jikan part is either the cached one or missing.
+      yield first.withExtras(stale != null ? ProfileExtras.ready : ProfileExtras.unavailable);
+      return;
+    }
+
+    final data = merge(name, mal: mal, jikan: full);
+    await CachedUserProfile.instance.write(name, data.toJson());
+    yield data;
   }
 
   /// Combines the two sources; the official numbers win where both exist.

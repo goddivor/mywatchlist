@@ -1,0 +1,9 @@
+{
+  "@@locale": "fr_FR",
+  "Pp_No_Value": "–",
+  "Pp_Gender_Male": "Homme",
+  "Pp_Gender_Female": "Femme",
+  "Pp_Gender_Non_Binary": "Non binaire",
+  "Pp_Extras_Loading": "Chargement des statistiques manga et des favoris…",
+  "Pp_Extras_Unavailable": "Statistiques manga et favoris indisponibles pour le moment"
+}
