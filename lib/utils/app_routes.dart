@@ -10,6 +10,7 @@ import 'package:mywatchlist/screens/calendar/calendar_screen.dart';
 import 'package:mywatchlist/screens/home_screen.dart';
 import 'package:mywatchlist/screens/manage_accounts_page.dart';
 import 'package:mywatchlist/screens/search/general_search_screen.dart';
+import 'package:mywatchlist/screens/search/search_filters.dart';
 import 'package:mywatchlist/screens/settings/about_settings.dart';
 import 'package:mywatchlist/screens/settings/accounts_settings.dart';
 import 'package:mywatchlist/screens/settings/anime_manga_settings.dart';
