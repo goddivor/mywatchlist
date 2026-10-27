@@ -39,6 +39,9 @@ Cap: 80 lines. Rewrite in place; history lives in git and `docs/DECISIONS.md`.
 - One `AuthStatus` (base_user.dart, re-exported by user.dart); `needsReLogin` persists across restarts and `clear()` resets it.
 - Strings: `Acc_*` in `lib/l10n/units/accounts-ux/` (en + fr_FR).
 
+## Calendar (`calendar`)
+- `CalendarScreen` (`lib/screens/calendar/`, `AppRoutes.openCalendar`): 7-day strip from today, list-status chips (All, Watching, Plan to Watch, 3-state In list / Not in list; hidden with a hint when the active account is not MAL), episode tiles with countdown, "now" rule, add-to-calendar sheet (device calendar with weekly recurrence, `.ics` save or share). Times follow the timezone pref; the app bar menu changes it. Logic in `lib/widgets/calendar/`: `CalendarCubit` (LiveChart schedule joined with the MAL season for covers, episode totals and list status), `calendar_logic.dart` (zones, week grouping, filters), `calendar_ics.dart` (RFC 5545 builder), `calendar_export.dart`. Read API for other units: `AiringSchedule.instance` (`ensureLoaded()`, `nextEpisode(malId)` gives `AiringEpisode` with episode + UTC time, null when unknown so callers keep their estimate).
+
 ## Backend (mwl-api)
 - `backend-parsers` ported DailyAL's page parsers (`PageParsers`, typed `*Html` models) and routes: `content/characters`, `character|people/*id/pics`, `characters`, `people`, `magazines`, `studios`, `clubs?id=`, `clubs/type`, `search/all`; `reviews`, `users/about` parsed; `schedules` = LiveChart (`source=jikan` for the old proxy).
 - Invalid parameters (unknown season, non-numeric id or year, missing `q`/`id`…) answer 400 via `BadRequest` (#72).
@@ -71,8 +74,5 @@ Cap: 80 lines. Rewrite in place; history lives in git and `docs/DECISIONS.md`.
 
 ## Known big gaps (see inventory)
 - No user list / profile for any tracker; AniList/Kitsu/Simkl tabs are placeholders.
-- No notifications, calendar, bookmarks, relation graph, share, translation.
+- No notifications, bookmarks, relation graph, share, translation.
 - MAL dead session (#71): public MAL reads (seasonal, ranking, details, search, other users' lists, forum) fall back to the client id; `/users/@me`, suggestions and list writes throw `MalSessionExpired`. The UI listens to `MalApi.sessionExpired` (`ValueListenable<bool>`); the visible prompt is still to build (accounts-ux / app-shell); the detail screen shows its own error/retry state.
-
-## Next
-- Board: GitHub Project goddivor #8 "MyWatchList — Roadmap", 38 unit issues synced.
