@@ -28,7 +28,7 @@ Plus `PROJECT-STATE.md` (rewrite in place, within its cap) and `docs/DECISIONS.m
 ## Goal
 - Top chips (Categories, Genres, Top anime/manga, Top airing, Popular) are all `() {}` (mal_home_page.dart:44-52) → open the explore/ranking screens; bookmarks and calendar buttons `() {}` (:222-224) → app_routes.
 - MAL under-maintenance dialog (API exists mal_api.dart:1067).
-- Sidebar entry point (app-shell finding): a visible button in the home app bar (the account avatar, as in DailyAL) calls `AppRoutes.openSidebar` — the edge swipe alone fights Android gesture navigation. Replace the direct `SettingsPage` push (mal_home_page.dart:228) by `AppRoutes.openSettings`.
+- The avatar switcher (homeappbar.dart) still pushes AccountSwitcherPage as a full slide page: open it as a bottom sheet instead (accounts-ux finding). Sidebar entry point (app-shell finding): a visible button in the home app bar (the account avatar, as in DailyAL) calls `AppRoutes.openSidebar` — the edge swipe alone fights Android gesture navigation. Replace the direct `SettingsPage` push (mal_home_page.dart:228) by `AppRoutes.openSettings`.
 - BottomNavBar (lib/widgets/common/bottomnavbar.dart): honour `startIndex` changes (`didUpdateWidget`) so the shell can switch tab from code, and move its hardcoded tab titles to `S`.
 - Home sections: user-list section, forum section, custom items (forum boards, user list status, season/year).
 - News items: drop ClipRRect + Opacity per item (news_widget.dart:54-56), use AppImage (performance.md #7).
