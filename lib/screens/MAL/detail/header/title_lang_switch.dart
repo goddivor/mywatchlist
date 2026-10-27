@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:mywatchlist/constants/constants.dart' show TitleLang;
 import 'package:mywatchlist/generated/l10n.dart';
-import 'package:mywatchlist/widgets/common/custombutton.dart';
 
 /// Three-segment switch (romaji / English / Japanese) on the cover.
-/// The page starts on `Preferences.general.preferredTitle`; a tap only
-/// changes this page.
+/// The page starts on `Preferences.general.preferredTitle` (and follows it
+/// when it changes); a tap only changes this page.
 class TitleLangSwitch extends StatelessWidget {
   final TitleLang value;
   final ValueChanged<TitleLang> onChanged;
@@ -19,38 +18,58 @@ class TitleLangSwitch extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final s = S.current;
+    final scheme = Theme.of(context).colorScheme;
     return Semantics(
-      label: s.Detail_Title_Language,
-      child: SizedBox(
-        height: 25,
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _segment(TitleLang.ro, s.Detail_Title_Romaji,
-                const BorderRadius.horizontal(left: Radius.circular(12))),
-            _segment(TitleLang.en, s.Detail_Title_English,
-                BorderRadius.circular(4.0)),
-            _segment(TitleLang.ja, s.Detail_Title_Japanese,
-                const BorderRadius.horizontal(right: Radius.circular(12))),
-          ],
+      label: s.Dh_Title_Language,
+      container: true,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: Colors.black.withValues(alpha: .45),
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(2),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _segment(scheme, TitleLang.ro, s.Dh_Lang_Romaji, s.Dh_Lang_Romaji_Long),
+              _segment(scheme, TitleLang.en, s.Dh_Lang_English, s.Dh_Lang_English_Long),
+              _segment(scheme, TitleLang.ja, s.Dh_Lang_Japanese, s.Dh_Lang_Japanese_Long),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _segment(TitleLang lang, String label, BorderRadius radius) {
+  Widget _segment(ColorScheme scheme, TitleLang lang, String label, String semantics) {
     final selected = value == lang;
-    return SizedBox(
-      width: 30,
-      child: ShadowButton(
-        padding: EdgeInsets.zero,
-        backgroundColor: selected ? null : Colors.transparent,
-        shape: RoundedRectangleBorder(borderRadius: radius),
-        onPressed: () => onChanged(lang),
-        child: Text(
-          label,
-          overflow: TextOverflow.ellipsis,
-          style: TextStyle(fontSize: 12, color: selected ? null : Colors.white),
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: semantics,
+      excludeSemantics: true,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: selected ? null : () => onChanged(lang),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minWidth: 34, minHeight: 28),
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: selected ? scheme.primary : Colors.transparent,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Center(
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: selected ? scheme.onPrimary : Colors.white,
+                ),
+              ),
+            ),
+          ),
         ),
       ),
     );
