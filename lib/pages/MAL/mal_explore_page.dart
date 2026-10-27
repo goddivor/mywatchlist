@@ -92,7 +92,7 @@ class _MalExplorePageState extends State<MalExplorePage> {
             title: S.current.Recommendations,
             onViewAll: () => AppRoutes.push<void>(
               context,
-              ExploreListScreen<Recommendation>(
+              ExploreListScreen<CommunityRecommendation>(
                 title: S.current.Recommendations,
                 paged: false,
                 itemExtent: 372,
@@ -217,7 +217,7 @@ class _RecommendationsStrip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AsyncSection<List<Recommendation>>(
+    return AsyncSection<List<CommunityRecommendation>>(
       reloadKey: category,
       load: () => ExploreData.recommendations(category),
       isEmpty: (list) => list.isEmpty,

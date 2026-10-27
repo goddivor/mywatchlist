@@ -347,7 +347,7 @@ class SeasonalCard extends StatelessWidget {
 
 /// A recommendation card: the liked title, the suggested one, and the reason.
 class RecommendationCard extends StatelessWidget {
-  final Recommendation item;
+  final CommunityRecommendation item;
   final String category;
   final double width;
 

@@ -86,7 +86,12 @@ class _AsyncSectionState<T> extends State<AsyncSection<T>> {
     if (old.reloadKey != widget.reloadKey) _future = widget.load();
   }
 
-  void _retry() => setState(() => _future = widget.load());
+  void _retry() {
+    final next = widget.load();
+    setState(() {
+      _future = next;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {

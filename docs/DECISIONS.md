@@ -148,3 +148,7 @@ Append-only, one line per decision: `- YYYY-MM-DD [unit] decision — why`. Earl
 - 2026-10-27 [orchestrator, owner away] Notifications project 3 weekly episodes ahead; the daily refresh corrects a hiatus within a day — accepted.
 - 2026-10-27 [orchestrator, owner away] AniList/Kitsu/Simkl get airing notifications by mapping their entries to MAL ids (AniList idMal, Kitsu mappings, Simkl ids.mal), in their tracker units.
 - 2026-10-27 [orchestrator, owner away] The Explore tab uses the same header as Home (avatar → sidebar, search, bookmarks, calendar), wired by home-wiring.
+- 2026-10-27 [explore-seasonal] Explore ranking and genre tiles are flat alpha-colour tiles with an icon, not DailyAL's pictures hosted in its GitHub repo — no dead URLs, nothing to decode while scrolling.
+- 2026-10-27 [explore-seasonal] Global recommendations come from Jikan (`recommendations/{anime|manga}`) because the backend `recommendations` route needs a content id; random picks call Jikan with `useCache: false` and `sfw` from the NSFW preference.
+- 2026-10-27 [explore-seasonal] The seasonal screen downloads a whole season (500 per request, lean fields) and sorts/filters on the device via `ListViewSettings`/`list_query.dart`; with `globalSeasonalFilter` on, one setting (`seasonal_view_v1:all`) serves every season, else one per season.
+- 2026-10-27 [explore-seasonal] The weekly schedule entry links to `AppRoutes.openCalendar` (no season parameter exists there); the Explore community recommendation type is `CommunityRecommendation` to avoid MAL's `Recommendation`.

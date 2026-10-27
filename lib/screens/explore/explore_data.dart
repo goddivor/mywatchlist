@@ -50,7 +50,7 @@ class RecoRef {
 
 /// "If you liked [first], you might like [second]", written by [username].
 @immutable
-class Recommendation {
+class CommunityRecommendation {
   final RecoRef first;
   final RecoRef second;
   final String? username;
@@ -59,7 +59,7 @@ class Recommendation {
   /// ISO date of the recommendation, as Jikan gives it.
   final String? date;
 
-  const Recommendation({
+  const CommunityRecommendation({
     required this.first,
     required this.second,
     this.username,
@@ -68,7 +68,7 @@ class Recommendation {
   });
 
   /// From one element of Jikan's `recommendations/{anime|manga}` list; null when malformed.
-  static Recommendation? fromJikan(Object? json) {
+  static CommunityRecommendation? fromJikan(Object? json) {
     if (json is! Map) return null;
     final entry = json['entry'];
     if (entry is! List || entry.length < 2) return null;
@@ -77,7 +77,7 @@ class Recommendation {
     if (first == null || second == null) return null;
     final user = json['user'];
     final text = json['content'];
-    return Recommendation(
+    return CommunityRecommendation(
       first: first,
       second: second,
       username: user is Map && user['username'] is String ? user['username'] as String : null,
@@ -118,17 +118,17 @@ class ExploreData {
   ExploreData._();
 
   /// Latest recommendations of the whole community (Jikan), 25 at most.
-  static Future<List<Recommendation>> recommendations(String category, {int limit = 25}) {
+  static Future<List<CommunityRecommendation>> recommendations(String category, {int limit = 25}) {
     return ExploreCache.instance.load('reco:$category:$limit', () async {
       final url = Uri.parse('${Constants.jikanV4}/recommendations/$category');
       final response = await JikanClient.instance.get(url);
       if (response.statusCode != 200) throw Exception('recommendations ${response.statusCode}');
       final body = await MwlApi.decodeJson(response.body);
       final data = body is Map ? body['data'] : null;
-      if (data is! List) return const <Recommendation>[];
+      if (data is! List) return const <CommunityRecommendation>[];
       return [
         for (final item in data)
-          if (Recommendation.fromJikan(item) case final r?) r,
+          if (CommunityRecommendation.fromJikan(item) case final r?) r,
       ].take(limit).toList();
     });
   }
