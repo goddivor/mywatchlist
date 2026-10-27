@@ -3,7 +3,7 @@
 **Kind** unit · **Priority** P1 · **Group** release · **Model** sonnet
 
 ## Needs done first
-- `list-cards-dal` (My List cards with DailyAL's layout: clean cover, score + status bar, title and genres below)
+- `list-cards-dal` (My List: the same UI as DailyAL for every display type (header, tabs, toolbar, cards))
 - `detail-resilience` (Detail sections: no endless skeletons, MAL fallbacks when Jikan fails, round avatars without box shadows)
 - `home-wiring` (Home: working chips, bookmarks/calendar buttons, maintenance dialog, user-list and forum sections)
 - `featured-characters` (Featured tags search, character screen sort/dedupe/bookmark/share)
