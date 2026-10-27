@@ -1,0 +1,173 @@
+{
+  "@@locale": "fr_FR",
+  "Sync_Section_Title": "Autres services de suivi",
+  "Sync_Link": "Lier",
+  "Sync_Unlink": "Délier",
+  "Sync_Sync": "Synchroniser",
+  "Sync_Edit": "Modifier",
+  "Sync_Remove": "Retirer",
+  "Sync_Not_Linked": "Non lié",
+  "Sync_Not_On_List": "Absent de votre liste",
+  "Sync_Load_Failed": "Impossible de charger votre entrée {tracker}.",
+  "@Sync_Load_Failed": {
+    "placeholders": {
+      "tracker": {
+        "type": "String"
+      }
+    }
+  },
+  "Sync_Retry": "Réessayer",
+  "Sync_Sign_In_Again": "Reconnectez-vous à {tracker} pour utiliser cette entrée.",
+  "@Sync_Sign_In_Again": {
+    "placeholders": {
+      "tracker": {
+        "type": "String"
+      }
+    }
+  },
+  "Sync_Manga_Unsupported": "{tracker} ne gère pas les mangas.",
+  "@Sync_Manga_Unsupported": {
+    "placeholders": {
+      "tracker": {
+        "type": "String"
+      }
+    }
+  },
+  "Sync_Dialog_Title": "Synchroniser avec {tracker}",
+  "@Sync_Dialog_Title": {
+    "placeholders": {
+      "tracker": {
+        "type": "String"
+      }
+    }
+  },
+  "Sync_Dialog_Hint": "Choisissez le côté qui remplace l’autre. Les champs vides n’effacent jamais rien.",
+  "Sync_Direction": "{source} vers {target}",
+  "@Sync_Direction": {
+    "placeholders": {
+      "source": {
+        "type": "String"
+      },
+      "target": {
+        "type": "String"
+      }
+    }
+  },
+  "Sync_Source_Empty": "Absent de votre liste {tracker}",
+  "@Sync_Source_Empty": {
+    "placeholders": {
+      "tracker": {
+        "type": "String"
+      }
+    }
+  },
+  "Sync_Running": "Synchronisation…",
+  "Sync_Cancel": "Annuler",
+  "Sync_Close": "Fermer",
+  "Sync_Cancelled": "Synchronisation annulée",
+  "Sync_Done_To": "Synchronisé vers {tracker}",
+  "@Sync_Done_To": {
+    "placeholders": {
+      "tracker": {
+        "type": "String"
+      }
+    }
+  },
+  "Sync_Failed": "Synchronisation impossible. Vérifiez votre connexion et réessayez.",
+  "Sync_Mal_Not_Connected": "Connectez-vous à MyAnimeList pour synchroniser.",
+  "Sync_Whole_Points": "MyAnimeList ne garde que les points entiers : {score} devient {rounded}.",
+  "@Sync_Whole_Points": {
+    "placeholders": {
+      "score": {
+        "type": "String"
+      },
+      "rounded": {
+        "type": "String"
+      }
+    }
+  },
+  "Sync_Simkl_Limited": "Simkl ne garde que le statut et la note.",
+  "Sync_Remove_Title": "Retirer de la liste",
+  "Sync_Remove_Message": "Retirer cette entrée de {tracker} ?",
+  "@Sync_Remove_Message": {
+    "placeholders": {
+      "tracker": {
+        "type": "String"
+      }
+    }
+  },
+  "Sync_Removed": "Retiré de {tracker}",
+  "@Sync_Removed": {
+    "placeholders": {
+      "tracker": {
+        "type": "String"
+      }
+    }
+  },
+  "Sync_Remove_Failed": "Impossible de retirer l’entrée.",
+  "Sync_Edit_Title": "Modifier sur {tracker}",
+  "@Sync_Edit_Title": {
+    "placeholders": {
+      "tracker": {
+        "type": "String"
+      }
+    }
+  },
+  "Sync_Field_Status": "Statut",
+  "Sync_Field_Score": "Note",
+  "Sync_Field_Episodes": "Épisodes",
+  "Sync_Field_Chapters": "Chapitres",
+  "Sync_Field_Volumes": "Volumes",
+  "Sync_Field_Start": "Date de début",
+  "Sync_Field_Finish": "Date de fin",
+  "Sync_No_Score": "Aucune note",
+  "Sync_Pick_Date": "Choisir une date",
+  "Sync_Decrease": "Diminuer",
+  "Sync_Increase": "Augmenter",
+  "Sync_Save": "Enregistrer",
+  "Sync_Saved": "Enregistré sur {tracker}",
+  "@Sync_Saved": {
+    "placeholders": {
+      "tracker": {
+        "type": "String"
+      }
+    }
+  },
+  "Sync_Save_Failed": "Enregistrement impossible. Vérifiez votre connexion et réessayez.",
+  "Sync_Summary_Episodes": "Ép. {count}",
+  "@Sync_Summary_Episodes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "Sync_Summary_Chapters": "Chap. {count}",
+  "@Sync_Summary_Chapters": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "Sync_Link_To": "Lier à {tracker}",
+  "@Sync_Link_To": {
+    "placeholders": {
+      "tracker": {
+        "type": "String"
+      }
+    }
+  },
+  "Sync_Search_Hint": "Rechercher sur {tracker}",
+  "@Sync_Search_Hint": {
+    "placeholders": {
+      "tracker": {
+        "type": "String"
+      }
+    }
+  },
+  "Sync_Search_Prompt": "Saisissez votre recherche",
+  "Sync_No_Results": "Aucun résultat",
+  "Sync_Clear": "Effacer",
+  "Sync_Linked_Auto": "Lié automatiquement"
+}

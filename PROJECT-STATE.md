@@ -41,10 +41,6 @@ Cap: 80 lines. Rewrite in place; history lives in git and `docs/DECISIONS.md`.
 - One `AuthStatus` (base_user.dart, re-exported by user.dart); `needsReLogin` persists across restarts and `clear()` resets it.
 - Strings: `Acc_*` in `lib/l10n/units/accounts-ux/` (en + fr_FR).
 
-## Waves (from `node tools/mab/plan-waves.mjs`)
-1-4. gate-fix, auth/l10n/backend, preferences contract, shell/detail/kit/perf/edit/api/versioning (all merged or in review)
-5+. features (user list/profile, detail, discovery, settings, community), then other trackers.
-
 ## Backend (mwl-api)
 - `backend-parsers` ported DailyAL's page parsers (`PageParsers`, typed `*Html` models) and routes: `content/characters`, `character|people/*id/pics`, `characters`, `people`, `magazines`, `studios`, `clubs?id=`, `clubs/type`, `search/all`; `reviews`, `users/about` parsed; `schedules` = LiveChart (`source=jikan` for the old proxy).
 - Invalid parameters (unknown season, non-numeric id or year, missing `q`/`id`…) answer 400 via `BadRequest` (#72).
@@ -69,12 +65,16 @@ Cap: 80 lines. Rewrite in place; history lives in git and `docs/DECISIONS.md`.
 ## Settings preference pages (`settings-prefs-pages`)
 - Tiles in `lib/screens/settings/prefs/` read one contract field (`context.select`), write via the group's `copyWith` event; `Prefs_*` strings (en + fr_FR); "Restore defaults" keeps dub options and card layouts; the card field editor belongs to `user-list-mal`.
 
+## Cross-tracker sync (`sync-dialog`)
+- `CrossTrackerWidget` (same constructor) lists the other signed-in trackers; each card loads on its own (link, then entry, in parallel) and offers Link, Edit, Sync, Unlink, Remove. Links are found automatically by MAL id (AniList `idMal`, Kitsu mappings, Simkl `mal:<id>`); unlinking sticks.
+- Sync dialog (`lib/widgets/user/sync/sync_dialog.dart`): reads both sides when opened, shows what each would copy, runs MAL to tracker or tracker to MAL, Cancel always available (no write starts after a cancel). Empty fields never erase the target.
+- Clients (`tracker_clients.dart`) go through `BaseUser.sendAuthenticated`; AniList scores use `score(format: POINT_10_DECIMAL)` to read and `scoreRaw` to write, Kitsu half points, MAL rounds to whole points. Simkl: anime only, status and score only.
+- Editor sheet (`tracker_entry_editor.dart`) edits the tracker's own entry (status, score, progress, volumes, dates) and creates it when absent. Strings: `Sync_*` in `lib/l10n/units/sync-dialog/` (en + fr_FR).
+
 ## Known big gaps (see inventory)
 - No user list / profile for any tracker; AniList/Kitsu/Simkl tabs are placeholders.
 - No notifications, calendar, bookmarks, relation graph, share, translation.
-- `auth-refresh` built (PR pending): token refresh/retry in `BaseUser`; call sites in `mal_api.dart`, `mal_user.dart`, Anilist/Kitsu/Simkl clients still use raw `http` and must move to `MalConnect.auth*` / `sendAuthenticated` (see PR findings).
 - MAL dead session (#71): public MAL reads (seasonal, ranking, details, search, other users' lists, forum) fall back to the client id; `/users/@me`, suggestions and list writes throw `MalSessionExpired`. The UI listens to `MalApi.sessionExpired` (`ValueListenable<bool>`); the visible prompt is still to build (accounts-ux / app-shell); the detail screen shows its own error/retry state.
 
 ## Next
 - Board: GitHub Project goddivor #8 "MyWatchList — Roadmap", 38 unit issues synced.
-- Wave 2 in progress (`l10n-pipeline` in review). After it merges, every worktree runs `tools/heavy.sh tools/l10n/build.sh` once (generated files leave git).
