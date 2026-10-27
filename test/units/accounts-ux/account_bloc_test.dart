@@ -1,4 +1,3 @@
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mywatchlist/constants/constants.dart';
 import 'package:mywatchlist/user/accounts/account_bloc.dart';
