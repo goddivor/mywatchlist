@@ -43,5 +43,7 @@
         "type": "String"
       }
     }
-  }
+  },
+  "Shell_Back_Again_To_Exit": "Press Back again to exit",
+  "Sidebar_Add_Account": "Add an account"
 }

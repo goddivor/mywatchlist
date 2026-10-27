@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mywatchlist/constants/constants.dart' show AccountType;
@@ -61,6 +62,105 @@ class HomeShell extends InheritedWidget {
   bool updateShouldNotify(HomeShell oldWidget) => false;
 }
 
+/// Width of the swipe zone that opens the sidebar (end drawer): past the system
+/// back-gesture zone of the end edge, so a swipe that starts just inside it still reaches
+/// the drawer. The zone itself belongs to Android: a swipe there is system Back, which
+/// [ShellBackScope] handles, so it never closes the app by accident.
+double sidebarEdgeDragWidth(EdgeInsets systemGestureInsets, TextDirection direction) {
+  final insets = systemGestureInsets;
+  final endInset = direction == TextDirection.ltr ? insets.right : insets.left;
+  return endInset + 24;
+}
+
+/// System Back inside the home shell, in this order: closes the open sidebar, returns to
+/// the home tab from any other tab (DAL behaviour), then on the home tab asks for a second
+/// Back within [exitWindow] before leaving the app.
+///
+/// The scope also keeps Android informed that Flutter handles Back (predictive back): a
+/// Scaffold drawer alone never does, so the system closed the app with the sidebar open.
+class ShellBackScope extends StatefulWidget {
+  /// How long the "press Back again" warning keeps the exit armed.
+  static const Duration exitWindow = Duration(seconds: 2);
+
+  /// Whether the sidebar is open (fed by `Scaffold.onEndDrawerChanged`).
+  final ValueListenable<bool> sidebarOpen;
+  final VoidCallback closeSidebar;
+  final bool onHomeTab;
+  final VoidCallback goHome;
+  final Widget child;
+
+  const ShellBackScope({
+    super.key,
+    required this.sidebarOpen,
+    required this.closeSidebar,
+    required this.onHomeTab,
+    required this.goHome,
+    required this.child,
+  });
+
+  @override
+  State<ShellBackScope> createState() => _ShellBackScopeState();
+}
+
+class _ShellBackScopeState extends State<ShellBackScope> {
+  Timer? _exitArmed;
+
+  @override
+  void didUpdateWidget(ShellBackScope oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!widget.onHomeTab) _disarm();
+  }
+
+  @override
+  void dispose() {
+    _exitArmed?.cancel();
+    super.dispose();
+  }
+
+  void _disarm() {
+    _exitArmed?.cancel();
+    _exitArmed = null;
+  }
+
+  void _onBack() {
+    if (widget.sidebarOpen.value) {
+      widget.closeSidebar();
+    } else if (!widget.onHomeTab) {
+      widget.goHome();
+    } else {
+      final messenger = ScaffoldMessenger.maybeOf(context);
+      messenger
+        ?..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(
+          behavior: SnackBarBehavior.floating,
+          duration: ShellBackScope.exitWindow,
+          content: Text(S.current.Shell_Back_Again_To_Exit),
+        ));
+      setState(() {
+        _exitArmed?.cancel();
+        _exitArmed = Timer(ShellBackScope.exitWindow, () {
+          if (mounted) setState(_disarm);
+        });
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<bool>(
+      valueListenable: widget.sidebarOpen,
+      child: widget.child,
+      builder: (context, sidebarOpen, child) => PopScope(
+        canPop: !sidebarOpen && widget.onHomeTab && _exitArmed != null,
+        onPopInvokedWithResult: (didPop, _) {
+          if (!didPop) _onBack();
+        },
+        child: child!,
+      ),
+    );
+  }
+}
+
 /// The home shell: bottom bar, the five tabs of the active tracker, the sidebar, the
 /// startup page, the notification hook and the "session expired" prompt.
 class HomeScreen extends StatefulWidget {
@@ -78,6 +178,11 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  final ValueNotifier<bool> _sidebarOpen = ValueNotifier<bool>(false);
+
+  /// Bumped when the shell changes tab itself (Back to home): [BottomNavBar] reads its
+  /// index only once, so it is rebuilt to show the new tab.
+  int _navBarGeneration = 0;
 
   late int _pageIndex;
 
@@ -115,6 +220,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void dispose() {
     UserManager.instance.removeListener(_onUsersChanged);
     MalApi.sessionExpired.removeListener(_onUsersChanged);
+    _sidebarOpen.dispose();
     super.dispose();
   }
 
@@ -182,7 +288,28 @@ class _HomeScreenState extends State<HomeScreen> {
     if (_redirectingToLogin) return;
     _redirectingToLogin = true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) Navigator.of(context).pushReplacementNamed('/login');
+      if (!mounted) {
+        _redirectingToLogin = false;
+        return;
+      }
+      // Reset once the login route returns, so a shell still on screen redirects again
+      // (or shows the new account) instead of staying on its loader.
+      Navigator.of(context)
+          .pushReplacementNamed<Object?, Object?>('/login')
+          .whenComplete(_onLoginReturned);
+    });
+  }
+
+  void _onLoginReturned() {
+    _redirectingToLogin = false;
+    if (mounted) setState(() {});
+  }
+
+  void _goHomeTab() {
+    if (_pageIndex == HomeTab.home) return;
+    setState(() {
+      _pageIndex = HomeTab.home;
+      _navBarGeneration++;
     });
   }
 
@@ -239,21 +366,28 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return HomeShell(
       openSidebar: () => _scaffoldKey.currentState?.openEndDrawer(),
-      child: Scaffold(
-        key: _scaffoldKey,
-        endDrawer: const AppSidebar(),
-        // Wider than the 20 dp default so a swipe from the end edge still reaches the
-        // drawer next to Android's gesture-navigation back zone.
-        drawerEdgeDragWidth: 40,
-        bottomNavigationBar: BottomNavBar(
-          startIndex: _pageIndex,
-          onChanged: _onTabSelected,
-        ),
-        body: Stack(
-          children: [
-            _HomeBackground(visible: _pageIndex == HomeTab.home),
-            body,
-          ],
+      child: ShellBackScope(
+        sidebarOpen: _sidebarOpen,
+        closeSidebar: () => _scaffoldKey.currentState?.closeEndDrawer(),
+        onHomeTab: _pageIndex == HomeTab.home,
+        goHome: _goHomeTab,
+        child: Scaffold(
+          key: _scaffoldKey,
+          endDrawer: const AppSidebar(),
+          onEndDrawerChanged: (open) => _sidebarOpen.value = open,
+          drawerEdgeDragWidth: sidebarEdgeDragWidth(
+              MediaQuery.systemGestureInsetsOf(context), Directionality.of(context)),
+          bottomNavigationBar: BottomNavBar(
+            key: ValueKey(_navBarGeneration),
+            startIndex: _pageIndex,
+            onChanged: _onTabSelected,
+          ),
+          body: Stack(
+            children: [
+              _HomeBackground(visible: _pageIndex == HomeTab.home),
+              body,
+            ],
+          ),
         ),
       ),
     );
