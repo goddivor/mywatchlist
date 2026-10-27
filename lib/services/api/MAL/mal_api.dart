@@ -886,9 +886,21 @@ class MalApi {
   /// rankings, seasons, suggestions and lists unless asked. [nsfw] defaults
   /// to the saved preference. Pages (`paging.next`) already carry the
   /// parameter and are left alone.
+  ///
+  /// The user's own lists (`/users/@me/animelist`, `/users/@me/mangalist`)
+  /// always ask for `nsfw=1`, whatever [nsfw] and the preference say: the
+  /// adult entries the user added stay in their list (and match the profile
+  /// counts). The preference filters browse, search, rankings and seasons.
   static String withNsfw(String url, {bool? nsfw}) {
     final uri = Uri.parse(url);
-    if (uri.queryParameters.containsKey('nsfw')) return url;
+    if (_isOwnList(uri)) {
+      final current = uri.queryParameters['nsfw'];
+      if (current == '1' || current == 'true') return url;
+      url = _withoutNsfw(url);
+      nsfw = true;
+    } else if (uri.queryParameters.containsKey('nsfw')) {
+      return url;
+    }
     final value = (nsfw ?? Preferences.general.nsfw) ? '1' : '0';
     final hash = url.indexOf('#');
     final base = hash < 0 ? url : url.substring(0, hash);
@@ -898,6 +910,18 @@ class MalApi {
         : (base.endsWith('?') || base.endsWith('&') ? '' : '&');
     return '$base${separator}nsfw=$value$fragment';
   }
+
+  static final RegExp _ownListPath =
+      RegExp(r'/users/@me/(anime|manga)list/?$');
+
+  /// True for the signed in user's own anime or manga list.
+  static bool _isOwnList(Uri uri) =>
+      _ownListPath.hasMatch(Uri.decodeComponent(uri.path));
+
+  /// [url] without its `nsfw` query parameters, the rest kept as written.
+  static String _withoutNsfw(String url) => url
+      .replaceAll(RegExp(r'(?<=[?&])nsfw=[^&#]*(&|(?=#)|$)'), '')
+      .replaceFirst(RegExp(r'[?&](?=#|$)'), '');
 
   /// Endpoints MAL only answers for the signed in user.
   static bool _needsUser(String url) {
