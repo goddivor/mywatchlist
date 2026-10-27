@@ -8,6 +8,9 @@
 - `bookmarks` (Bookmarks: store, screen, add/remove)
 
 ## Owns (may create or edit ONLY these)
+- `lib/screens/MAL/detail/detail_data.dart`
+- `lib/screens/MAL/detail/detail_screen.dart`
+- `lib/screens/MAL/detail/sections/media_section.dart`
 - `lib/screens/MAL/detail/header/**`
 - `lib/screens/MAL/detail/actions/**`
 - `lib/screens/MAL/detail/detail_sections.dart`
@@ -18,7 +21,8 @@
 Plus `PROJECT-STATE.md` (rewrite in place, within its cap) and `docs/DECISIONS.md` (append one line per decision). Anything else you need is a FINDING to report, never an edit.
 
 ## Goal
-- App bar menu: share (share builder), open in browser, bookmark toggle (bookmarks unit API), search by genre.
+- App bar menu: share (share builder), open in browser, bookmark toggle (`BookmarkButton` / `Bookmarks` from the bookmarks unit), search by genre.
+- Wire the schedule links from detail-synopsis-media (PR #103): add `scheduleLinks` to `DetailData.copyWith`; in detail_screen.dart, after an anime loads, call `ScheduleLinks.forMalId(id)` and copy the result in when mounted; in sections/media_section.dart pass `fallbackImageUrl: data.coverUrl` to `VideosWidget`.
 - More Info modal reachable from the cover info button.
 - Hide-score with tap to reveal; preferred title language from the pref (not a per-screen toggle only); detail background pref; next-episode countdown pref.
 - Customize / reorder / hide sections, persisted in the contract pref. Manga default order: keep Stats and Score stats on manga pages (an MWL extra over DailyAL, orchestrator recommendation pending the owner) — change the manga default in the contract only through a finding if it lives outside your files.

@@ -591,6 +591,9 @@
         "bookmarks"
       ],
       "owns": [
+        "lib/screens/MAL/detail/detail_data.dart",
+        "lib/screens/MAL/detail/detail_screen.dart",
+        "lib/screens/MAL/detail/sections/media_section.dart",
         "lib/screens/MAL/detail/header/**",
         "lib/screens/MAL/detail/actions/**",
         "lib/screens/MAL/detail/detail_sections.dart",

@@ -250,10 +250,11 @@ const UNITS = [
   {
     id: "detail-header", title: "Detail header and actions: share, browser, bookmark, More Info, hide score, custom tabs, countdown", kind: "screen", priority: "P1", group: "detail", model: "sonnet", ui: true,
     needs: ["detail-split", "shared-kit", "bookmarks"],
-    owns: ["lib/screens/MAL/detail/header/**", "lib/screens/MAL/detail/actions/**", "lib/screens/MAL/detail/detail_sections.dart", "lib/screens/MAL/detail/tabs_customizer.dart"],
+    owns: ["lib/screens/MAL/detail/detail_data.dart", "lib/screens/MAL/detail/detail_screen.dart", "lib/screens/MAL/detail/sections/media_section.dart", "lib/screens/MAL/detail/header/**", "lib/screens/MAL/detail/actions/**", "lib/screens/MAL/detail/detail_sections.dart", "lib/screens/MAL/detail/tabs_customizer.dart"],
     dal: ["lib/screens/contentdetailedscreen.dart", "lib/screens/moreinfo.dart", "AnimeMangaPageTabEdit", "CountDownWidget"],
     goal: [
-      "App bar menu: share (share builder), open in browser, bookmark toggle (bookmarks unit API), search by genre.",
+      "App bar menu: share (share builder), open in browser, bookmark toggle (`BookmarkButton` / `Bookmarks` from the bookmarks unit), search by genre.",
+      "Wire the schedule links from detail-synopsis-media (PR #103): add `scheduleLinks` to `DetailData.copyWith`; in detail_screen.dart, after an anime loads, call `ScheduleLinks.forMalId(id)` and copy the result in when mounted; in sections/media_section.dart pass `fallbackImageUrl: data.coverUrl` to `VideosWidget`.",
       "More Info modal reachable from the cover info button.",
       "Hide-score with tap to reveal; preferred title language from the pref (not a per-screen toggle only); detail background pref; next-episode countdown pref.",
       "Customize / reorder / hide sections, persisted in the contract pref. Manga default order: keep Stats and Score stats on manga pages (an MWL extra over DailyAL, orchestrator recommendation pending the owner) — change the manga default in the contract only through a finding if it lives outside your files.",
@@ -488,7 +489,7 @@ const UNITS = [
     owns: ["lib/l10n/units/*/intl_fr_FR.arb", "lib/l10n/intl_fr_FR.arb", "lib/l10n/intl_ar_EG.arb", "lib/l10n/units/l10n-pipeline/**"],
     goal: [
       "The base ARB files are DailyAL's machine-quality translations. Review intl_fr_FR.arb entirely: fix mistranslations (e.g. `About` = « Sur » → « À propos »), untranslated entries (Spanish, German, Indonesian at :595-598), capitalisation (« turc » next to « Portugais », :856), French typography (non-breaking space before : ; ! ?, « » quotes, no em dash). The French must be flawless: follow the redaction-francais rules if available to you.",
-      "Base French fixes seen on the settings hub (batch-2 check): `About` = « Sur » (intl_fr_FR.arb:154) → « À propos »; `Dub_Settings` = « Signaler les doublages inexacts » (:685) → « Doublage ». Add the missing French fragments of merged units that shipped English only (e.g. lib/l10n/units/perf-foundation/: Image_Saved, Image_Save_Failed, Image_Share_Failed, Image_Share_Text) — scan every lib/l10n/units/*/ for keys without intl_fr_FR.",
+      "Base French: `Streaming_Platforms` has a stray trailing comma (« Plateformes de streaming, »). Base French fixes seen on the settings hub (batch-2 check): `About` = « Sur » (intl_fr_FR.arb:154) → « À propos »; `Dub_Settings` = « Signaler les doublages inexacts » (:685) → « Doublage ». Add the missing French fragments of merged units that shipped English only (e.g. lib/l10n/units/perf-foundation/: Image_Saved, Image_Save_Failed, Image_Share_Failed, Image_Share_Text) — scan every lib/l10n/units/*/ for keys without intl_fr_FR.",
       "Add the Arabic translations missing for the l10n-pipeline unit's own strings (language picker: 'Use system language', its description, 'Available languages').",
       "Never rename or remove a key; only values change. Run tools/heavy.sh tools/l10n/build.sh.",
     ],
