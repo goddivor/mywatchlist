@@ -518,7 +518,7 @@
     },
     {
       "id": "list-cards-dal",
-      "title": "My List cards with DailyAL's layout: clean cover, score + status bar, title and genres below",
+      "title": "My List: the same UI as DailyAL for every display type (header, tabs, toolbar, cards)",
       "kind": "unit",
       "entry": "",
       "artifact": "",
@@ -528,9 +528,10 @@
         "theme-colors"
       ],
       "owns": [
-        "lib/widgets/user/list/cards/**",
-        "lib/widgets/user/list/list_entry_view.dart",
-        "lib/widgets/user/list/user_list_view.dart",
+        "lib/pages/MAL/mal_user_page.dart",
+        "lib/widgets/user/list/**",
+        "lib/widgets/common/list_sort_filter.dart",
+        "lib/user/list_cache/**",
         "lib/l10n/units/list-cards-dal/**",
         "test/units/list-cards-dal/**"
       ],
