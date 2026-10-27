@@ -1,4 +1,5 @@
 import 'package:intl/intl.dart';
+import 'package:mywatchlist/services/api/MAL/mal_anime.dart';
 import 'package:mywatchlist/services/api/MAL/models/my_anime_list_status.dart'
     as anime_status;
 import 'package:mywatchlist/services/api/MAL/models/my_manga_list_status.dart'
@@ -65,13 +66,34 @@ class ListEntry {
     );
   }
 
-  /// The entry MAL answered after an anime update.
-  ///
-  /// [sent] is the patch that was sent and [previous] the entry before it:
-  /// MalApi parses dates into `DateTime`, which drops partial dates, so a
-  /// partial date the update did not touch is kept from [previous].
+  /// The entry MAL answered after a list write (`MalApi.saveAnimeListStatus`
+  /// / `saveMangaListStatus`): the whole entry, dates in MAL's own text, so a
+  /// partial date comes back as it is. [previous] only fills what the answer
+  /// lacks (manga counts MAL did not send, an empty status).
+  factory ListEntry.fromListStatus(MyListStatus s,
+      {required bool isAnime, ListEntry? previous}) {
+    return ListEntry(
+      status: s.status.isNotEmpty ? s.status : previous?.status ?? '',
+      score: s.score,
+      progress: isAnime
+          ? s.numEpisodesWatched
+          : s.numChaptersRead ?? previous?.progress ?? 0,
+      volumes: isAnime ? 0 : s.numVolumesRead ?? previous?.volumes ?? 0,
+      isRepeating: isAnime ? s.isRewatching : s.isRereading,
+      timesRepeated: isAnime ? s.numTimesRewatched : s.numTimesReread,
+      repeatValue: isAnime ? s.rewatchValue : s.rereadValue,
+      priority: s.priority,
+      startDate: _date(s.startDate),
+      finishDate: _date(s.finishDate),
+      tags: _tags(s.tags),
+      comments: s.comments,
+    );
+  }
+
+  /// The entry from the `MyAnimeListStatus` reported by
+  /// `ContentEditWidget.onListStatusChange`; [previous] fills missing fields.
   factory ListEntry.fromAnimeStatus(anime_status.MyAnimeListStatus s,
-      {ListEntry? previous, String? sentStart, String? sentFinish}) {
+      {ListEntry? previous}) {
     return ListEntry(
       status: s.status ?? previous?.status ?? '',
       score: s.score ?? previous?.score ?? 0,
@@ -80,16 +102,16 @@ class ListEntry {
       timesRepeated: s.numTimesRewatched ?? previous?.timesRepeated ?? 0,
       repeatValue: s.rewatchValue ?? previous?.repeatValue ?? 0,
       priority: s.priority ?? previous?.priority ?? 0,
-      startDate: _mergeDate(s.startDate, sentStart, previous?.startDate),
-      finishDate: _mergeDate(s.finishDate, sentFinish, previous?.finishDate),
+      startDate: _date(s.startDate),
+      finishDate: _date(s.finishDate),
       tags: s.tags ?? previous?.tags ?? const [],
       comments: s.comments ?? previous?.comments ?? '',
     );
   }
 
-  /// The entry MAL answered after a manga update (see [ListEntry.fromAnimeStatus]).
+  /// Manga counterpart of [ListEntry.fromAnimeStatus].
   factory ListEntry.fromMangaStatus(manga_status.MyMangaListStatus s,
-      {ListEntry? previous, String? sentStart, String? sentFinish}) {
+      {ListEntry? previous}) {
     return ListEntry(
       status: s.status ?? previous?.status ?? '',
       score: s.score ?? previous?.score ?? 0,
@@ -99,21 +121,11 @@ class ListEntry {
       timesRepeated: s.numTimesReread ?? previous?.timesRepeated ?? 0,
       repeatValue: s.rereadValue ?? previous?.repeatValue ?? 0,
       priority: s.priority ?? previous?.priority ?? 0,
-      startDate: _mergeDate(s.startDate, sentStart, previous?.startDate),
-      finishDate: _mergeDate(s.finishDate, sentFinish, previous?.finishDate),
+      startDate: _date(s.startDate),
+      finishDate: _date(s.finishDate),
       tags: s.tags ?? previous?.tags ?? const [],
       comments: s.comments ?? previous?.comments ?? '',
     );
-  }
-
-  static String? _mergeDate(
-      DateTime? answered, String? sent, String? previous) {
-    if (sent != null) return sent;
-    if (answered != null) return formatApiDate(answered);
-    // A partial date (`2024-03`) cannot be parsed into a DateTime: keep it.
-    if (previous != null && DateTime.tryParse(previous) == null)
-      return previous;
-    return null;
   }
 
   static int _int(Object? v) => v is int ? v : (v is num ? v.toInt() : 0);

@@ -1,6 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mywatchlist/services/api/MAL/models/my_anime_list_status.dart';
-import 'package:mywatchlist/services/api/MAL/models/my_manga_list_status.dart';
+import 'package:mywatchlist/services/api/MAL/mal_anime.dart';
 import 'package:mywatchlist/widgets/user/edit/edit_rules.dart';
 import 'package:mywatchlist/widgets/user/edit/list_entry.dart';
 
@@ -42,33 +41,45 @@ void main() {
       expect(EditableContent.fromMalJson(json, isAnime: true).entry, isNull);
     });
 
-    test('an update keeps a partial date it did not touch', () {
+    test('an update answer keeps a partial date as MAL text', () {
       final before =
           EditableContent.fromMalJson(completedAnimeJson(), isAnime: true)
               .entry!;
-      final answer = MyAnimeListStatus.fromJson({
+      final answer = MyListStatus.fromJson({
         'status': 'completed',
         'score': 9,
         'num_episodes_watched': 64,
         'start_date': '2019-01-05',
         'finish_date': '2019-03',
       });
-      final after = ListEntry.fromAnimeStatus(answer, previous: before);
+      final after =
+          ListEntry.fromListStatus(answer, isAnime: true, previous: before);
       expect(after.score, 9);
       expect(after.startDate, '2019-01-05');
       expect(after.finishDate, '2019-03');
     });
 
     test('a manga update maps chapters and volumes', () {
-      final answer = MyMangaListStatus.fromJson({
+      final answer = MyListStatus.fromJson({
         'status': 'reading',
         'num_chapters_read': 113,
         'num_volumes_read': 12,
+        'start_date': '2026-10-27',
       });
-      final e = ListEntry.fromMangaStatus(answer, sentStart: '2026-10-27');
+      final e = ListEntry.fromListStatus(answer, isAnime: false);
       expect(e.progress, 113);
       expect(e.volumes, 12);
       expect(e.startDate, '2026-10-27');
+    });
+
+    test('a manga answer without counts keeps the previous ones', () {
+      const before = ListEntry(status: 'reading', progress: 40, volumes: 4);
+      final answer = MyListStatus.fromJson({'status': 'reading', 'score': 6});
+      final e =
+          ListEntry.fromListStatus(answer, isAnime: false, previous: before);
+      expect(e.progress, 40);
+      expect(e.volumes, 4);
+      expect(e.score, 6);
     });
   });
 

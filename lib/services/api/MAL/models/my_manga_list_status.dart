@@ -1,4 +1,7 @@
-/// Enriched manga list status returned by updateMyMangaListStatus.
+import 'package:mywatchlist/services/api/MAL/mal_anime.dart';
+
+/// Enriched manga list status returned by updateMyMangaListStatus (and built
+/// from saveMangaListStatus' answer by the edit sheet).
 /// Contains all fields the MAL API returns for a manga list entry.
 class MyMangaListStatus {
   final String? status;
@@ -7,8 +10,11 @@ class MyMangaListStatus {
   final int? numChaptersRead;
   final bool? isRereading;
   final DateTime? updatedAt;
-  final DateTime? startDate;
-  final DateTime? finishDate;
+
+  /// MAL's own date text: `YYYY-MM-DD`, or partial `YYYY-MM` / `YYYY`.
+  /// Kept as text: a `DateTime` cannot hold a partial date.
+  final String? startDate;
+  final String? finishDate;
   final int? priority;
   final int? numTimesReread;
   final int? rereadValue;
@@ -42,18 +48,39 @@ class MyMangaListStatus {
       updatedAt: json['updated_at'] != null
           ? DateTime.tryParse(json['updated_at'].toString())
           : null,
-      startDate: json['start_date'] != null
-          ? DateTime.tryParse(json['start_date'].toString())
-          : null,
-      finishDate: json['finish_date'] != null
-          ? DateTime.tryParse(json['finish_date'].toString())
-          : null,
+      startDate: _date(json['start_date']),
+      finishDate: _date(json['finish_date']),
       priority: json['priority'] as int?,
       numTimesReread: json['num_times_reread'] as int?,
       rereadValue: json['reread_value'] as int?,
       tags: (json['tags'] as List<dynamic>?)?.cast<String>(),
       comments: json['comments'] as String?,
     );
+  }
+
+  /// From the entry `MalApi.saveMangaListStatus` returns, so its
+  /// callers keep getting this type.
+  factory MyMangaListStatus.fromListStatus(MyListStatus s) {
+    return MyMangaListStatus(
+      status: s.status.isEmpty ? null : s.status,
+      score: s.score,
+      numVolumesRead: s.numVolumesRead,
+      numChaptersRead: s.numChaptersRead,
+      isRereading: s.isRereading,
+      updatedAt: DateTime.tryParse(s.updatedAt),
+      startDate: s.startDate,
+      finishDate: s.finishDate,
+      priority: s.priority,
+      numTimesReread: s.numTimesReread,
+      rereadValue: s.rereadValue,
+      tags: s.tags,
+      comments: s.comments,
+    );
+  }
+
+  static String? _date(Object? v) {
+    final text = v?.toString().trim();
+    return text == null || text.isEmpty ? null : text;
   }
 
   Map<String, dynamic> toJson() {
@@ -64,8 +91,8 @@ class MyMangaListStatus {
       if (numChaptersRead != null) 'num_chapters_read': numChaptersRead,
       if (isRereading != null) 'is_rereading': isRereading,
       if (updatedAt != null) 'updated_at': updatedAt!.toIso8601String(),
-      if (startDate != null) 'start_date': startDate!.toIso8601String(),
-      if (finishDate != null) 'finish_date': finishDate!.toIso8601String(),
+      if (startDate != null) 'start_date': startDate,
+      if (finishDate != null) 'finish_date': finishDate,
       if (priority != null) 'priority': priority,
       if (numTimesReread != null) 'num_times_reread': numTimesReread,
       if (rereadValue != null) 'reread_value': rereadValue,

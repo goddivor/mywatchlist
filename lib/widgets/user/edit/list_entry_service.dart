@@ -1,7 +1,10 @@
 import 'dart:convert';
 
 import 'package:mywatchlist/constants/constants.dart';
+import 'package:mywatchlist/services/api/MAL/mal_anime.dart';
 import 'package:mywatchlist/services/api/MAL/mal_api.dart';
+import 'package:mywatchlist/services/api/MAL/models/my_anime_list_status.dart';
+import 'package:mywatchlist/services/api/MAL/models/my_manga_list_status.dart';
 import 'package:mywatchlist/services/api/MAL/mal_connect.dart';
 import 'package:mywatchlist/user/accounts/provider/account_manager_singleton.dart';
 import 'package:mywatchlist/widgets/user/edit/edit_rules.dart';
@@ -15,8 +18,9 @@ class EntryLoadFailed implements Exception {
   String toString() => 'EntryLoadFailed: $cause';
 }
 
-/// Result of a list write: the new entry and the raw tracker status, given
-/// as is to `ContentEditWidget.onListStatusChange`.
+/// Result of a list write: the new entry and the tracker status given as is
+/// to `ContentEditWidget.onListStatusChange` (`MyAnimeListStatus` or
+/// `MyMangaListStatus` for MAL, dates kept as MAL text).
 class EntryUpdate {
   final ListEntry entry;
   final Object status;
@@ -83,8 +87,11 @@ class MalListEntryService implements ListEntryService {
       {required bool isAnime,
       required EntryPatch patch,
       ListEntry? previous}) async {
+    // save*ListStatus sends the dates as given and answers the whole entry
+    // with MAL's text dates, so a partial date (`2019-03`, `2019`) survives.
+    final MyListStatus answer;
     if (isAnime) {
-      final status = await MalApi().updateMyAnimeListStatus(
+      answer = await MalApi().saveAnimeListStatus(
         animeId: id,
         status: patch.status,
         score: patch.score,
@@ -98,37 +105,29 @@ class MalListEntryService implements ListEntryService {
         tags: patch.tags,
         comments: patch.comments,
       );
-      if (status == null) throw const EntryLoadFailed('empty answer');
-      return EntryUpdate(
-        ListEntry.fromAnimeStatus(status,
-            previous: previous,
-            sentStart: patch.startDate,
-            sentFinish: patch.finishDate),
-        status,
+    } else {
+      answer = await MalApi().saveMangaListStatus(
+        mangaId: id,
+        status: patch.status,
+        score: patch.score,
+        numChaptersRead: patch.progress,
+        numVolumesRead: patch.volumes,
+        isRereading: patch.isRepeating,
+        numTimesReread: patch.timesRepeated,
+        rereadValue: patch.repeatValue,
+        priority: patch.priority,
+        startDate: patch.startDate,
+        finishDate: patch.finishDate,
+        tags: patch.tags,
+        comments: patch.comments,
       );
     }
-    final status = await MalApi().updateMyMangaListStatus(
-      mangaId: id,
-      status: patch.status,
-      score: patch.score,
-      numChaptersRead: patch.progress,
-      numVolumesRead: patch.volumes,
-      isRereading: patch.isRepeating,
-      numTimesReread: patch.timesRepeated,
-      rereadValue: patch.repeatValue,
-      priority: patch.priority,
-      startDate: patch.startDate,
-      finishDate: patch.finishDate,
-      tags: patch.tags,
-      comments: patch.comments,
-    );
-    if (status == null) throw const EntryLoadFailed('empty answer');
     return EntryUpdate(
-      ListEntry.fromMangaStatus(status,
-          previous: previous,
-          sentStart: patch.startDate,
-          sentFinish: patch.finishDate),
-      status,
+      ListEntry.fromListStatus(answer, isAnime: isAnime, previous: previous),
+      // Callers of onListStatusChange (detail page) expect the typed models.
+      isAnime
+          ? MyAnimeListStatus.fromListStatus(answer)
+          : MyMangaListStatus.fromListStatus(answer),
     );
   }
 
