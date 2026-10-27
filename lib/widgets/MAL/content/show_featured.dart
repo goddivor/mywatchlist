@@ -3,7 +3,9 @@ import 'package:intl/intl.dart';
 import 'package:mywatchlist/constants/constants.dart';
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/screens/MAL/detail/sections/section_states.dart';
+import 'package:mywatchlist/enums.dart' show ForumConstants;
 import 'package:mywatchlist/screens/MAL/featured_screen.dart';
+import 'package:mywatchlist/screens/search/general_search_screen.dart';
 import 'package:mywatchlist/services/api/MAL/scrapper/anime_featured.dart';
 import 'package:mywatchlist/services/api/mwl_api.dart';
 import 'package:mywatchlist/utils/url_formatter.dart';
@@ -241,22 +243,34 @@ class _ShowAnimeFeaturedState extends State<ShowAnimeFeatured>
               runSpacing: 4,
               children: article.tags.take(3).map((tag) {
                 final bool isSpoiler = tag.toLowerCase() == 'spoiler';
-                return Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: isSpoiler
-                        ? theme.colorScheme.errorContainer
-                        : theme.colorScheme.surfaceContainerHighest,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Text(
-                    tag,
-                    style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w500,
-                      color: isSpoiler
-                          ? theme.colorScheme.onErrorContainer
-                          : theme.colorScheme.onSurfaceVariant,
+                final searchKey = _tagKey(tag);
+                return Material(
+                  color: isSpoiler
+                      ? theme.colorScheme.errorContainer
+                      : theme.colorScheme.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(10),
+                  clipBehavior: Clip.antiAlias,
+                  child: InkWell(
+                    // Opens the featured search on this tag; a spoiler marker is a label.
+                    onTap: searchKey == null
+                        ? null
+                        : () => gotoPage(
+                              context: context,
+                              newPage: GeneralSearchScreen.byTag(searchKey),
+                            ),
+                    child: Padding(
+                      padding:
+                          const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      child: Text(
+                        tag,
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w500,
+                          color: isSpoiler
+                              ? theme.colorScheme.onErrorContainer
+                              : theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
                     ),
                   ),
                 );
@@ -353,6 +367,16 @@ class _ShowAnimeFeaturedState extends State<ShowAnimeFeatured>
         },
       ),
     );
+  }
+
+  /// The featured-search key of a tag (matched ignoring case), null when the
+  /// search does not know it (spoiler markers included).
+  String? _tagKey(String tag) {
+    final lower = tag.trim().toLowerCase();
+    for (final key in ForumConstants.tags.keys) {
+      if (key != 'All' && key.toLowerCase() == lower) return key;
+    }
+    return null;
   }
 
   Widget _buildEmptyState() =>
