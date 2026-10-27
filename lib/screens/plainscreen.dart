@@ -1,14 +1,11 @@
 // ignore_for_file: no_leading_underscores_for_local_identifiers
 
 import 'package:flutter/material.dart';
-import 'package:mywatchlist/constants/constants.dart';
+import 'package:mywatchlist/utils/app_routes.dart';
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/widgets/common/custombutton.dart';
 
-void _gotoSearch(BuildContext context) {
-  // gotoPage(context: context, newPage: GeneralSearchScreen(autoFocus: false));
-  gotoPage(context: context, newPage: SizedBox());
-}
+void _gotoSearch(BuildContext context) => AppRoutes.openSearch(context);
 
 class PlainScreen extends StatelessWidget {
   final Widget child;
@@ -29,9 +26,9 @@ IconButton searchIconButton(BuildContext context) =>
     IconButton(onPressed: () => _gotoSearch(context), icon: Icon(Icons.search));
 
 IconButton bookmarkAction(BuildContext context) => IconButton(
-    // onPressed: () => gotoPage(context: context, newPage: BookMarksWidget()),
-    onPressed: () => gotoPage(context: context, newPage: SizedBox()),
-    icon: Icon(Icons.bookmark_outline));
+    tooltip: S.current.Bookmarks,
+    onPressed: () => AppRoutes.openBookmarks(context),
+    icon: const Icon(Icons.bookmark_outline));
 
 class TitlebarScreen extends StatelessWidget {
   final Widget child;
@@ -61,7 +58,7 @@ class TitlebarScreen extends StatelessWidget {
       appBar: useAppbar
           ? AppBar(
               actions: _actions,
-              title: Text(appbarTitle ?? 'DailyAL', style: TextStyle()),
+              title: Text(appbarTitle ?? 'MyWatchList'),
             )
           : null,
       body: child,

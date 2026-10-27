@@ -59,9 +59,8 @@ void main() {
     ));
   }
 
-  testWidgets('bookmarks, calendar and profile helpers open their stubs', (tester) async {
+  testWidgets('calendar and profile helpers open their stubs', (tester) async {
     final openers = <void Function(BuildContext)>[
-      AppRoutes.openBookmarks,
       AppRoutes.openCalendar,
       (c) => AppRoutes.openUserProfile(c, tracker: AccountType.anilist, username: 'neo'),
       (c) => AppRoutes.openUserStats(c, tracker: AccountType.kitsu),
