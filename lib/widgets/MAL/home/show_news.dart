@@ -40,8 +40,8 @@ class _ShowAnimeNewsState extends State<ShowAnimeNews>
   }
 
   Future<void> _onScroll() async {
-    if (_scrollController.position.pixels ==
-            _scrollController.position.maxScrollExtent &&
+    if (_scrollController.position.pixels >=
+            _scrollController.position.maxScrollExtent - 200 &&
         !_isLoadingMore) {
       _isLoadingMore = true;
       await _fetchNews();
@@ -95,7 +95,7 @@ class _ShowAnimeNewsState extends State<ShowAnimeNews>
   Widget _buildNewsCard(AnimeNews news) {
     final theme = Theme.of(context);
     final dateStr = news.date != null
-        ? DateFormat('MMM d, yyyy')
+        ? DateFormat.yMMMd(Localizations.localeOf(context).toString())
             .format(DateTime.parse(news.date!))
         : '';
 
@@ -131,15 +131,12 @@ class _ShowAnimeNewsState extends State<ShowAnimeNews>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Left: Image thumbnail
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: AvatarWidget(
-                    height: 240,
-                    width: 90,
-                    url: news.images?.jpg?.imageUrl,
-                    userRoundBorderforLoading: false,
-                    radius: BorderRadius.circular(12),
-                  ),
+                AvatarWidget(
+                  height: 240,
+                  width: 90,
+                  url: news.images?.jpg?.imageUrl,
+                  userRoundBorderforLoading: false,
+                  radius: BorderRadius.circular(12),
                 ),
                 const SizedBox(width: 12),
                 // Right: Content
@@ -187,8 +184,7 @@ class _ShowAnimeNewsState extends State<ShowAnimeNews>
                             Text(
                               dateStr,
                               style: theme.textTheme.labelSmall?.copyWith(
-                                color: theme.colorScheme.onSurfaceVariant
-                                    .withValues(alpha: 0.6),
+                                color: theme.colorScheme.onSurfaceVariant,
                               ),
                             ),
                         ],
@@ -208,8 +204,7 @@ class _ShowAnimeNewsState extends State<ShowAnimeNews>
                             Text(
                               '${news.comments}',
                               style: theme.textTheme.labelSmall?.copyWith(
-                                color: theme.colorScheme.onSurfaceVariant
-                                    .withValues(alpha: 0.6),
+                                color: theme.colorScheme.onSurfaceVariant,
                               ),
                             ),
                           ],

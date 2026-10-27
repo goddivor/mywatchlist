@@ -7,6 +7,7 @@ import 'package:mywatchlist/screens/explore/explore_sections.dart';
 import 'package:mywatchlist/screens/explore/explore_widgets.dart';
 import 'package:mywatchlist/screens/explore/random_picker.dart';
 import 'package:mywatchlist/utils/app_routes.dart';
+import 'package:mywatchlist/widgets/MAL/home/homeappbar.dart';
 
 /// The Explore tab: random picks, rankings, genres, the current season, and what the MyAnimeList
 /// community is recommending, reviewing, stacking and loving.
@@ -34,23 +35,19 @@ class _MalExplorePageState extends State<MalExplorePage> {
     return CustomScrollView(
       key: PageStorageKey('explore-$category'),
       slivers: [
+        // The same header as the home tab: logo or title, search / bookmarks / calendar /
+        // settings, and the account avatar (sidebar).
         SliverAppBar(
+          automaticallyImplyLeading: false,
           floating: true,
           snap: true,
-          title: Text(S.current.Explore_Title),
-          actions: [
-            IconButton(
-              tooltip: S.current.WeeklyAnime,
-              icon: const Icon(Icons.calendar_month_rounded),
-              onPressed: () => AppRoutes.openCalendar(context),
-            ),
-            IconButton(
-              tooltip: S.current.Search,
-              icon: const Icon(Icons.search_rounded),
-              onPressed: () => AppRoutes.openSearch(context),
-            ),
-            const SizedBox(width: 4),
-          ],
+          titleSpacing: 0,
+          toolbarHeight: kToolbarHeight,
+          title: AppBarHome(
+            title: S.current.Explore_Title,
+            transparent: true,
+            showSettings: true,
+          ),
         ),
         SliverToBoxAdapter(child: _SearchBarTile(onTap: () => AppRoutes.openSearch(context))),
         SliverToBoxAdapter(
