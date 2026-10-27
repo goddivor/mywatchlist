@@ -12,6 +12,7 @@ import 'package:mywatchlist/user/list_cache/list_status_cache.dart';
 import 'package:mywatchlist/user/preferences/preferences.dart';
 import 'package:mywatchlist/widgets/MAL/home/animecardbar.dart';
 import 'package:mywatchlist/widgets/common/app_image.dart';
+import 'package:mywatchlist/widgets/common/dub_icon.dart';
 import 'package:mywatchlist/widgets/common/image_preview.dart';
 import 'package:mywatchlist/widgets/common/score_reveal.dart';
 import 'package:mywatchlist/widgets/user/contenteditwidget.dart';
@@ -405,6 +406,12 @@ class AnimeGridCard extends StatelessWidget {
               : _compactLayer(context, title, null, null),
         if (time != null) _timeCard(time),
         if (!_coverOnly) _badges(context, topInset, compact),
+        if (category == 'anime' && onClose == null)
+          PositionedDirectional(
+            top: topInset,
+            end: 5,
+            child: DubStatusBadge(animeId: node.id, radius: borderRadius),
+          ),
         if (additionalWidget != null && !_coverOnly) additionalWidget!,
         if (onClose != null)
           PositionedDirectional(

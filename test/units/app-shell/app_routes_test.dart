@@ -63,7 +63,7 @@ void main() {
     final openers = <void Function(BuildContext)>[
       (c) => AppRoutes.openUserProfile(c, tracker: AccountType.anilist, username: 'neo'),
       (c) => AppRoutes.openUserStats(c, tracker: AccountType.kitsu),
-      (c) => AppRoutes.openSettingsPage(c, SettingsSection.dub),
+      (c) => AppRoutes.openSettingsPage(c, SettingsSection.storage),
     ];
     for (final open in openers) {
       await tester.pumpWidget(const SizedBox()); // fresh navigator per helper
