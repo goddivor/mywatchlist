@@ -26,7 +26,8 @@ class PrivateNotesStore {
       '$tracker:${category.toLowerCase()}:$id';
 
   /// The note of the entry, or null when it has none.
-  Future<String?> read(int id, String category, {String tracker = 'mal'}) async {
+  Future<String?> read(int id, String category,
+      {String tracker = 'mal'}) async {
     final prefs = await _prefs();
     return prefs.getString(_prefix + entryKey(id, category, tracker: tracker));
   }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/widgets/user/edit/edit_fields.dart';
 import 'package:mywatchlist/widgets/user/edit/edit_rules.dart';
@@ -107,7 +108,12 @@ class DateField extends StatelessWidget {
     if (date == null) return S.current.Edit_Not_Set;
     final full = DateTime.tryParse(date);
     if (full == null) return date;
-    return MaterialLocalizations.of(context).formatMediumDate(full);
+    try {
+      return DateFormat.yMMMd(Localizations.localeOf(context).toString())
+          .format(full);
+    } catch (_) {
+      return date;
+    }
   }
 
   @override
@@ -201,7 +207,8 @@ class TextPreviewTile extends StatelessWidget {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(icon, size: 18, color: theme.colorScheme.onSurfaceVariant),
+                  Icon(icon,
+                      size: 18, color: theme.colorScheme.onSurfaceVariant),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(

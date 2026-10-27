@@ -247,15 +247,15 @@ String decodeMalText(String text) =>
     _unescape.convert(text.replaceAll(_lineBreak, '\n'));
 
 /// Tags as one editable line: decoded and comma separated.
-String tagsToText(List<String> tags) =>
-    tags.map(decodeMalText).map((t) => t.trim()).where((t) => t.isNotEmpty).join(', ');
-
-/// The tags line the user typed, as MAL's comma separated `tags` field.
-String textToTags(String text) => text
-    .split(',')
+String tagsToText(List<String> tags) => tags
+    .map(decodeMalText)
     .map((t) => t.trim())
     .where((t) => t.isNotEmpty)
-    .join(',');
+    .join(', ');
+
+/// The tags line the user typed, as MAL's comma separated `tags` field.
+String textToTags(String text) =>
+    text.split(',').map((t) => t.trim()).where((t) => t.isNotEmpty).join(',');
 
 /// Parses a MAL date, partial ones (`2024-03`, `2024`) included, for the picker.
 DateTime? parseApiDate(String? date) {

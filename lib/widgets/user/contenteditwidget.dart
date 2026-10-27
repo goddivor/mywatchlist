@@ -417,15 +417,15 @@ class _ContentEditWidgetState extends State<ContentEditWidget> {
         height: 52,
         child: FilledButton.icon(
           style: FilledButton.styleFrom(
-            shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14)),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
           ),
           onPressed: busy ? null : _addToList,
           icon: busy
               ? SmallSpinner(color: Theme.of(context).colorScheme.primary)
               : const Icon(Icons.playlist_add),
-          label: Text(S.current.Add_to_List,
-              style: const TextStyle(fontSize: 16)),
+          label:
+              Text(S.current.Add_to_List, style: const TextStyle(fontSize: 16)),
         ),
       ),
     );
@@ -466,7 +466,9 @@ class _ContentEditWidgetState extends State<ContentEditWidget> {
     final scheme = Theme.of(context).colorScheme;
     return Semantics(
       button: true,
-      label: _advanced ? S.current.Edit_Fewer_Options : S.current.Edit_More_Options,
+      label: _advanced
+          ? S.current.Edit_Fewer_Options
+          : S.current.Edit_More_Options,
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: _toggleAdvanced,
@@ -700,14 +702,15 @@ class _ContentEditWidgetState extends State<ContentEditWidget> {
     return Column(
       children: [
         EditRow(
-          label: _isAnime ? S.current.Edit_Rewatching : S.current.Edit_Rereading,
+          label:
+              _isAnime ? S.current.Edit_Rewatching : S.current.Edit_Rereading,
           control: busyFlag
               ? const Padding(
                   padding: EdgeInsets.all(12), child: SmallSpinner())
               : Switch(
                   value: entry.isRepeating,
-                  onChanged: (v) => _send(
-                      EditField.repeating, EntryPatch(isRepeating: v)),
+                  onChanged: (v) =>
+                      _send(EditField.repeating, EntryPatch(isRepeating: v)),
                 ),
         ),
         EditRow(
@@ -832,27 +835,35 @@ class _ContentEditWidgetState extends State<ContentEditWidget> {
     return Padding(
       padding: const EdgeInsets.fromLTRB(4, 4, 4, 8),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          TextButton.icon(
-            style: TextButton.styleFrom(foregroundColor: scheme.error),
-            onPressed: deleting ? null : _delete,
-            icon: deleting
-                ? SmallSpinner(color: scheme.error)
-                : const Icon(Icons.delete_outline),
-            label: Text(S.current.Delete_from_List),
-          ),
-          const Spacer(),
-          TextButton.icon(
-            onPressed: _toggleAdvanced,
-            icon: AnimatedRotation(
-              turns: _advanced ? 0.5 : 0,
-              duration: const Duration(milliseconds: 200),
-              curve: editEaseOut,
-              child: const Icon(Icons.expand_less),
+          Flexible(
+            child: TextButton.icon(
+              style: TextButton.styleFrom(foregroundColor: scheme.error),
+              onPressed: deleting ? null : _delete,
+              icon: deleting
+                  ? SmallSpinner(color: scheme.error)
+                  : const Icon(Icons.delete_outline),
+              label: Text(S.current.Delete_from_List,
+                  overflow: TextOverflow.ellipsis),
             ),
-            label: Text(_advanced
-                ? S.current.Edit_Fewer_Options
-                : S.current.Edit_More_Options),
+          ),
+          Flexible(
+            child: TextButton.icon(
+              onPressed: _toggleAdvanced,
+              icon: AnimatedRotation(
+                turns: _advanced ? 0.5 : 0,
+                duration: const Duration(milliseconds: 200),
+                curve: editEaseOut,
+                child: const Icon(Icons.expand_less),
+              ),
+              label: Text(
+                _advanced
+                    ? S.current.Edit_Fewer_Options
+                    : S.current.Edit_More_Options,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
           ),
         ],
       ),

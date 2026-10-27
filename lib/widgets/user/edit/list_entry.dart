@@ -56,8 +56,7 @@ class ListEntry {
           (isAnime ? json['is_rewatching'] : json['is_rereading']) == true,
       timesRepeated: _int(
           isAnime ? json['num_times_rewatched'] : json['num_times_reread']),
-      repeatValue:
-          _int(isAnime ? json['rewatch_value'] : json['reread_value']),
+      repeatValue: _int(isAnime ? json['rewatch_value'] : json['reread_value']),
       priority: _int(json['priority']),
       startDate: _date(json['start_date']),
       finishDate: _date(json['finish_date']),
@@ -107,11 +106,13 @@ class ListEntry {
     );
   }
 
-  static String? _mergeDate(DateTime? answered, String? sent, String? previous) {
+  static String? _mergeDate(
+      DateTime? answered, String? sent, String? previous) {
     if (sent != null) return sent;
     if (answered != null) return formatApiDate(answered);
     // A partial date (`2024-03`) cannot be parsed into a DateTime: keep it.
-    if (previous != null && DateTime.tryParse(previous) == null) return previous;
+    if (previous != null && DateTime.tryParse(previous) == null)
+      return previous;
     return null;
   }
 
@@ -194,8 +195,7 @@ class EditableContent {
           : null,
       startSeasonYear:
           season is Map && season['year'] is int ? season['year'] as int : null,
-      entry: ListEntry.fromMalJson(
-          mls is Map<String, dynamic> ? mls : null,
+      entry: ListEntry.fromMalJson(mls is Map<String, dynamic> ? mls : null,
           isAnime: isAnime),
     );
   }

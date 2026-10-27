@@ -45,14 +45,16 @@ class _NumberBarState extends State<NumberBar> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _center(animate: false));
+    WidgetsBinding.instance
+        .addPostFrameCallback((_) => _center(animate: false));
   }
 
   @override
   void didUpdateWidget(covariant NumberBar oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.selected != widget.selected) {
-      WidgetsBinding.instance.addPostFrameCallback((_) => _center(animate: true));
+      WidgetsBinding.instance
+          .addPostFrameCallback((_) => _center(animate: true));
     }
   }
 
@@ -67,7 +69,8 @@ class _NumberBarState extends State<NumberBar> {
     if (!mounted || selected == null || !_controller.hasClients) return;
     final index = (selected - widget.first).clamp(0, widget.count - 1);
     final position = _controller.position;
-    final target = (_padding + index * NumberBar.itemExtent -
+    final target = (_padding +
+            index * NumberBar.itemExtent -
             (_viewport - NumberBar.itemExtent) / 2)
         .clamp(position.minScrollExtent, position.maxScrollExtent);
     if (animate) {
@@ -132,9 +135,9 @@ class _NumberBarState extends State<NumberBar> {
                                       ? scheme.onPrimary
                                       : scheme.onSurfaceVariant,
                                 ),
-                                child: widget.labelBuilder
-                                        ?.call(context, value) ??
-                                    Text('$value'),
+                                child:
+                                    widget.labelBuilder?.call(context, value) ??
+                                        Text('$value'),
                               ),
                             ),
                     ),

@@ -117,29 +117,31 @@ class StatusButton extends StatelessWidget {
       context: context,
       showDragHandle: true,
       builder: (ctx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: Text(S.current.Status,
-                  style: Theme.of(ctx).textTheme.titleMedium),
-            ),
-            for (final value in statuses)
-              ListTile(
-                leading: Container(
-                  width: 12,
-                  height: 12,
-                  decoration: BoxDecoration(
-                      color: statusColor(value), shape: BoxShape.circle),
-                ),
-                title: Text(statusLabel(value)),
-                selected: value == status,
-                trailing: value == status ? const Icon(Icons.check) : null,
-                onTap: () => Navigator.pop(ctx, value),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Text(S.current.Status,
+                    style: Theme.of(ctx).textTheme.titleMedium),
               ),
-            const SizedBox(height: 8),
-          ],
+              for (final value in statuses)
+                ListTile(
+                  leading: Container(
+                    width: 12,
+                    height: 12,
+                    decoration: BoxDecoration(
+                        color: statusColor(value), shape: BoxShape.circle),
+                  ),
+                  title: Text(statusLabel(value)),
+                  selected: value == status,
+                  trailing: value == status ? const Icon(Icons.check) : null,
+                  onTap: () => Navigator.pop(ctx, value),
+                ),
+              const SizedBox(height: 8),
+            ],
+          ),
         ),
       ),
     );
@@ -186,19 +188,19 @@ class ProgressStepper extends StatelessWidget {
                 : Semantics(
                     label: semanticLabel,
                     child: TextField(
-                    controller: controller,
-                    keyboardType: TextInputType.number,
-                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                    textAlign: TextAlign.center,
-                    textInputAction: TextInputAction.done,
-                    style: const TextStyle(
-                        fontWeight: FontWeight.w600, fontSize: 16),
-                    decoration: const InputDecoration(
-                      isCollapsed: true,
-                      border: InputBorder.none,
+                      controller: controller,
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                      textAlign: TextAlign.center,
+                      textInputAction: TextInputAction.done,
+                      style: const TextStyle(
+                          fontWeight: FontWeight.w600, fontSize: 16),
+                      decoration: const InputDecoration(
+                        isCollapsed: true,
+                        border: InputBorder.none,
+                      ),
+                      onSubmitted: (v) => onSubmitted(int.tryParse(v) ?? 0),
                     ),
-                    onSubmitted: (v) => onSubmitted(int.tryParse(v) ?? 0),
-                  ),
                   ),
           ),
           IconButton(
