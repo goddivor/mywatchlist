@@ -8,8 +8,7 @@ Cap: 80 lines. Rewrite in place; history lives in git and `docs/DECISIONS.md`.
 
 ## Gate
 - `tools/heavy.sh tools/verify.sh`: pub get, flutter analyze, flutter test, dart analyze mwl-api (machine-wide lock).
-- `gate-fix` made it green: the counter test is gone; `flutter test` runs offline smoke tests in about 10 s.
-- Test layout: `test/smoke/` + `test/helpers/` (`pumpInApp`, `htmlFixture`, `forbidNetwork`), then `test/units/<unit-id>/` per unit.
+- Tests (offline, ~10 s): `test/smoke/` + `test/helpers/` (`pumpInApp`, `htmlFixture`, `forbidNetwork`), then `test/units/<unit-id>/` per unit.
 - `verify.sh` first runs `tools/l10n/build.sh`: `S` is a build output of `lib/l10n/**` (see CLAUDE.md, Localization).
 
 ## Localization (`l10n-pipeline`)
@@ -59,7 +58,6 @@ Cap: 80 lines. Rewrite in place; history lives in git and `docs/DECISIONS.md`.
 - `AppRoutes.openUserProfile/openUserStats` open `UserProfileScreen` (`lib/screens/user_profile/`) for MyAnimeList (and `none`); other trackers keep the placeholder. `AppRoutes.openUserPop` opens the quick sheet (`showUserPopSheet`, `lib/widgets/user/profile/`). Home profile tab: `MalUserProfilePage` (sign-in prompt when MAL is not connected).
 - Data: `UserProfileRepository` (official `/users/@me` for yourself + Jikan `users/{name}/full` for manga numbers and favorites; Jikan alone for others), disk cache `CachedUserProfile` (fresh 1 h, stale 14 days when the network fails).
 - Tabs (lazy, kept alive): Stats, Friends, Clubs, About, Favorites, History under a `NestedScrollView`; charts in `lib/widgets/charts/` (fl_chart bars, colors from the stats chart preference). Insights = whole MAL list fetched and reduced off the UI isolate (`UserInsightsLoader`).
-- Profile background: picked image kept on this device (`ProfileBackgroundStore`), shown on your own profile only (no server to share it).
 ## Settings preference pages (`settings-prefs-pages`)
 - Tiles in `lib/screens/settings/prefs/` read one contract field (`context.select`), write via the group's `copyWith` event; `Prefs_*` strings (en + fr_FR); "Restore defaults" keeps dub options and card layouts; the card field editor belongs to `user-list-mal`.
 ## Cross-tracker sync (`sync-dialog`)
@@ -75,6 +73,9 @@ Cap: 80 lines. Rewrite in place; history lives in git and `docs/DECISIONS.md`.
 - `lib/screens/search/`: `GeneralSearchScreen` (state + parts `search_logic`, `search_bar_part`, `search_results_part`, `search_active_filters`), `SearchService` (all fetching, no widget), `SearchFilters` (immutable, API values: genre/producer/magazine ids), `SearchCatalog` (current MAL genre, producer and magazine tables in `data/`, name to id), `search_tiles`, `search_home_view`, `search_filter_panel` (kit select widgets, searchable producers/magazines, include/exclude genres).
 - Entry points: `GeneralSearchScreen.byQuery/byGenre/byStudio/byMagazine/byTag/bySeason/byRanking/byMangaRanking/bySuggested/byUser`, `AppRoutes.openSearch(query, category, filters)`; the old `filterOutputs:` map still works. User results open the profile (long press: quick sheet); an exact MAL user name shows "User found as"; a numeric query finds the title by id; autocomplete (400 ms) under the field.
 
+## Theme and colours (`theme-colors`, see `docs/THEME.md`)
+- `AppThemes.colorScheme`: one accent family (fidelity, tertiary = same hue), true-black mode with distinct dark-grey levels; component themes use the `on*` roles; transparent system bars, icons per brightness (`appBarTheme.systemOverlayStyle` + `SystemBars`, edge to edge). Accent: 19 presets, custom colours, Material You "Auto".
+- Tokens `AppColors.of(context)` (score, list statuses, success/warning/danger, badge, image scrim, shimmer), AA tested for every preset × light/dark/black. Bottom bar: accent pill, no underline. ~65 files still hardcode colours.
 ## Known big gaps (see inventory)
 - No user list / profile for AniList/Kitsu/Simkl (placeholders); no notifications, share, translation.
 - MAL dead session (#71): public MAL reads (seasonal, ranking, details, search, other users' lists, forum) fall back to the client id; `/users/@me`, suggestions and list writes throw `MalSessionExpired`. The UI listens to `MalApi.sessionExpired` (`ValueListenable<bool>`); the visible prompt is still to build (accounts-ux / app-shell); the detail screen shows its own error/retry state.
