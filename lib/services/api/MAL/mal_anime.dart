@@ -265,8 +265,7 @@ class MalAnime {
         'related_manga': relatedManga!.map((r) => r.toJson()).toList(),
       if (recommendations != null)
         'recommendations': recommendations!.map((r) => r.toJson()).toList(),
-      if (studios != null)
-        'studios': studios!.map((s) => s.toJson()).toList(),
+      if (studios != null) 'studios': studios!.map((s) => s.toJson()).toList(),
       if (statistics != null) 'statistics': statistics!.toJson(),
       if (openingSongs != null)
         'opening_themes': openingSongs!.map((t) => t.toJson()).toList(),
@@ -274,8 +273,7 @@ class MalAnime {
         'ending_themes': endingSongs!.map((t) => t.toJson()).toList(),
       if (numVolumes != null) 'num_volumes': numVolumes,
       if (numChapters != null) 'num_chapters': numChapters,
-      if (authors != null)
-        'authors': authors!.map((a) => a.toJson()).toList(),
+      if (authors != null) 'authors': authors!.map((a) => a.toJson()).toList(),
       if (serialization != null)
         'serialization': serialization!.map((s) => s.toJson()).toList(),
     };
@@ -352,13 +350,62 @@ class MyListStatus {
   final bool isRewatching;
   final String updatedAt;
 
+  /// Manga progress; null when MAL did not send it (anime, or a request
+  /// that did not ask for `num_chapters_read` / `num_volumes_read`).
+  final int? numChaptersRead;
+  final int? numVolumesRead;
+  final bool isRereading;
+
+  /// Dates in MAL's own text form: `YYYY`, `YYYY-MM` or `YYYY-MM-DD`
+  /// (a partial date stays partial). Null when unset.
+  final String? startDate;
+  final String? finishDate;
+  final int priority;
+  final String comments;
+  final List<String> tags;
+  final int numTimesRewatched;
+  final int numTimesReread;
+  final int rewatchValue;
+  final int rereadValue;
+
   MyListStatus({
     required this.status,
     required this.score,
     required this.numEpisodesWatched,
     required this.isRewatching,
     required this.updatedAt,
+    this.numChaptersRead,
+    this.numVolumesRead,
+    this.isRereading = false,
+    this.startDate,
+    this.finishDate,
+    this.priority = 0,
+    this.comments = '',
+    this.tags = const [],
+    this.numTimesRewatched = 0,
+    this.numTimesReread = 0,
+    this.rewatchValue = 0,
+    this.rereadValue = 0,
   });
+
+  static int? _int(dynamic v) => v is num ? v.toInt() : int.tryParse('$v');
+
+  static String? _date(dynamic v) {
+    final text = v?.toString().trim();
+    return text == null || text.isEmpty ? null : text;
+  }
+
+  static List<String> _tags(dynamic v) {
+    if (v is List) return [for (final t in v) t.toString()];
+    if (v is String && v.isNotEmpty) {
+      return v
+          .split(',')
+          .map((t) => t.trim())
+          .where((t) => t.isNotEmpty)
+          .toList();
+    }
+    return const [];
+  }
 
   factory MyListStatus.fromJson(Map<String, dynamic> json) {
     return MyListStatus(
@@ -367,6 +414,18 @@ class MyListStatus {
       numEpisodesWatched: json['num_episodes_watched'] ?? 0,
       isRewatching: json['is_rewatching'] ?? false,
       updatedAt: json['updated_at'] ?? '',
+      numChaptersRead: _int(json['num_chapters_read']),
+      numVolumesRead: _int(json['num_volumes_read']),
+      isRereading: json['is_rereading'] ?? false,
+      startDate: _date(json['start_date']),
+      finishDate: _date(json['finish_date']),
+      priority: _int(json['priority']) ?? 0,
+      comments: json['comments']?.toString() ?? '',
+      tags: _tags(json['tags']),
+      numTimesRewatched: _int(json['num_times_rewatched']) ?? 0,
+      numTimesReread: _int(json['num_times_reread']) ?? 0,
+      rewatchValue: _int(json['rewatch_value']) ?? 0,
+      rereadValue: _int(json['reread_value']) ?? 0,
     );
   }
 
@@ -377,6 +436,18 @@ class MyListStatus {
       'num_episodes_watched': numEpisodesWatched,
       'is_rewatching': isRewatching,
       'updated_at': updatedAt,
+      if (numChaptersRead != null) 'num_chapters_read': numChaptersRead,
+      if (numVolumesRead != null) 'num_volumes_read': numVolumesRead,
+      'is_rereading': isRereading,
+      if (startDate != null) 'start_date': startDate,
+      if (finishDate != null) 'finish_date': finishDate,
+      'priority': priority,
+      'comments': comments,
+      'tags': tags,
+      'num_times_rewatched': numTimesRewatched,
+      'num_times_reread': numTimesReread,
+      'rewatch_value': rewatchValue,
+      'reread_value': rereadValue,
     };
   }
 }
@@ -602,7 +673,8 @@ class MalAuthorNode {
   final String firstName;
   final String lastName;
 
-  MalAuthorNode({required this.id, required this.firstName, required this.lastName});
+  MalAuthorNode(
+      {required this.id, required this.firstName, required this.lastName});
 
   factory MalAuthorNode.fromJson(Map<String, dynamic> json) {
     return MalAuthorNode(
@@ -613,10 +685,10 @@ class MalAuthorNode {
   }
 
   Map<String, dynamic> toJson() => {
-    'id': id,
-    'first_name': firstName,
-    'last_name': lastName,
-  };
+        'id': id,
+        'first_name': firstName,
+        'last_name': lastName,
+      };
 }
 
 class MalAuthor {
@@ -627,15 +699,16 @@ class MalAuthor {
 
   factory MalAuthor.fromJson(Map<String, dynamic> json) {
     return MalAuthor(
-      author: MalAuthorNode.fromJson(json['node'] as Map<String, dynamic>? ?? {}),
+      author:
+          MalAuthorNode.fromJson(json['node'] as Map<String, dynamic>? ?? {}),
       role: json['role'] as String? ?? '',
     );
   }
 
   Map<String, dynamic> toJson() => {
-    'node': author.toJson(),
-    'role': role,
-  };
+        'node': author.toJson(),
+        'role': role,
+      };
 }
 
 class MalSerialization {
@@ -653,8 +726,8 @@ class MalSerialization {
   }
 
   Map<String, dynamic> toJson() => {
-    'node': {'id': id, 'name': name},
-  };
+        'node': {'id': id, 'name': name},
+      };
 }
 
 // This class is used to display a simple data card that can come from both MAL and Jikan
@@ -713,11 +786,9 @@ class Anime {
       endDate: json['aired']['to'] as String?,
       mediaType: json['type'] as String?, // Jikan uses 'type' for mediaType
       status: json['status'] as String?,
-      broadcast: json['broadcast'] != null &&
-              json['broadcast']['day'] != null
+      broadcast: json['broadcast'] != null && json['broadcast']['day'] != null
           ? Broadcast(
-              dayOfTheWeek:
-                  (json['broadcast']['day'] as String).toLowerCase(),
+              dayOfTheWeek: (json['broadcast']['day'] as String).toLowerCase(),
               startTime: json['broadcast']['time'] as String? ?? '',
             )
           : null,
@@ -780,8 +851,7 @@ class Anime {
       'status': status,
       'my_list_status': myListStatus?.toJson(),
       if (broadcast != null) 'broadcast': broadcast!.toJson(),
-      if (genres != null)
-        'genres': genres!.map((g) => {'name': g}).toList(),
+      if (genres != null) 'genres': genres!.map((g) => {'name': g}).toList(),
     };
   }
 }

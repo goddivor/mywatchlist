@@ -30,6 +30,8 @@ Cap: 80 lines. Rewrite in place; history lives in git and `docs/DECISIONS.md`.
 ## Detail screen (`detail-split`)
 - `lib/screens/MAL/detail/`: `detail_screen.dart` (scaffold, loading, scroll/tab sync), `detail_data.dart` (immutable snapshot), `detail_sections.dart` (registry in the `ContentPreferences` tab order), `sections/` (one builder per `TabType`), `header/`, `actions/` (search + empty share/browser/bookmark/menu extension points), `pages/` (full recommendations, all interest stacks). `contentdetailedscreen.dart` re-exports it.
 - Error + retry state when MAL details fail; More Info modal on the cover; preferred title from `Preferences.general`.
+## API layer (`api-prefs`)
+- Jikan: `JikanClient` (throttle, in-flight sharing, 5 min cache, 429 backoff); MAL: `nsfw=` from the pref, timezone pref in airing helpers, `MalApi.isUnderMaintenance()` (60 s cache) for home wiring, full `MyListStatus` + `save*ListStatus` with text dates.
 
 ## Waves (from `node tools/mab/plan-waves.mjs`)
 1. gate-fix

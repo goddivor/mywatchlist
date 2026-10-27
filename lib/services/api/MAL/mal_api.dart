@@ -14,12 +14,14 @@ import 'package:mywatchlist/services/api/MAL/mal_connect.dart';
 import 'package:mywatchlist/services/api/MAL/models/paging.dart';
 import 'package:mywatchlist/services/api/MAL/models/search_result.dart';
 import 'package:mywatchlist/services/api/MAL/models/all_search_result.dart';
-import 'package:mywatchlist/services/api/MAL/models/my_anime_list_status.dart' as mal_status;
-import 'package:mywatchlist/services/api/MAL/models/my_manga_list_status.dart' as manga_status;
+import 'package:mywatchlist/services/api/MAL/models/my_anime_list_status.dart'
+    as mal_status;
+import 'package:mywatchlist/services/api/MAL/models/my_manga_list_status.dart'
+    as manga_status;
 import 'package:mywatchlist/services/api/MAL/scrapper/html_parsers.dart';
 import 'package:mywatchlist/user/accounts/provider/account_manager_singleton.dart';
 import 'package:mywatchlist/user/user_mal_v2.dart';
-import 'package:mywatchlist/user/user_preference.dart';
+import 'package:mywatchlist/user/preferences/preferences.dart';
 
 enum SeasonalAnimeSortOption {
   score,
@@ -78,7 +80,7 @@ class MalApi {
 
   // Get anime details - GET /anime/{anime_id}
   Future<MalAnime> getAnimeDetails(int animeId) async {
-    const fields = Constants.malAnimeFields;
+    final fields = animeDetailFields;
 
     final url = '$animeEndPoint/$animeId?fields=$fields';
 
@@ -93,9 +95,31 @@ class MalApi {
     }
   }
 
+  /// Every field of the user's list entry that MAL can return.
+  /// [Constants] lists only some of them inside `my_list_status{...}`, and
+  /// MAL returns just what is listed there.
+  static const String _animeListStatusFields =
+      'status,score,num_episodes_watched,is_rewatching,updated_at,priority,'
+      'num_times_rewatched,rewatch_value,start_date,finish_date,tags,comments';
+  static const String _mangaListStatusFields =
+      'status,score,num_volumes_read,num_chapters_read,is_rereading,updated_at,'
+      'priority,num_times_reread,reread_value,start_date,finish_date,tags,comments';
+
+  static String _withListStatus(String fields, String listStatus) =>
+      fields.replaceFirst(
+          RegExp(r'my_list_status(\{[^}]*\})?'), 'my_list_status{$listStatus}');
+
+  /// Anime detail fields with the whole list entry.
+  static final String animeDetailFields =
+      _withListStatus(Constants.malAnimeFields, _animeListStatusFields);
+
+  /// Manga detail fields with the whole list entry.
+  static final String mangaDetailFields =
+      _withListStatus(Constants.malMangaFields, _mangaListStatusFields);
+
   // Get manga details - GET /manga/{manga_id}
   Future<MalAnime> getMangaDetails(int mangaId) async {
-    const fields = Constants.malMangaFields;
+    final fields = mangaDetailFields;
 
     final url = '$mangaEndPoint/$mangaId?fields=$fields';
 
@@ -443,8 +467,7 @@ class MalApi {
         ));
 
     if (response.statusCode == 200) {
-      final responseData =
-          json.decode(response.body) as Map<String, dynamic>;
+      final responseData = json.decode(response.body) as Map<String, dynamic>;
       if (kDebugMode) {
         print('List status updated successfully: $responseData');
       }
@@ -507,8 +530,7 @@ class MalApi {
         ));
 
     if (response.statusCode == 200) {
-      final responseData =
-          json.decode(response.body) as Map<String, dynamic>;
+      final responseData = json.decode(response.body) as Map<String, dynamic>;
       if (kDebugMode) {
         print('Manga list status updated successfully: $responseData');
       }
@@ -517,6 +539,92 @@ class MalApi {
       throw Exception(
           'Failed to update manga list status: ${response.statusCode}');
     }
+  }
+
+  /// Updates an anime list entry and returns it with MAL's own text dates
+  /// (`YYYY`, `YYYY-MM`, `YYYY-MM-DD`), which [updateMyAnimeListStatus]'s
+  /// model would turn into a `DateTime` and so lose when partial. Dates are
+  /// sent as given.
+  Future<MyListStatus> saveAnimeListStatus({
+    required int animeId,
+    String? status,
+    bool? isRewatching,
+    int? score,
+    int? numWatchedEpisodes,
+    int? priority,
+    int? numTimesRewatched,
+    int? rewatchValue,
+    String? tags,
+    String? comments,
+    String? startDate,
+    String? finishDate,
+  }) =>
+      _saveListStatus('$animeEndPoint/$animeId/my_list_status', {
+        'status': status,
+        'is_rewatching': isRewatching,
+        'score': score,
+        'num_watched_episodes': numWatchedEpisodes,
+        'priority': priority,
+        'num_times_rewatched': numTimesRewatched,
+        'rewatch_value': rewatchValue,
+        'tags': tags,
+        'comments': comments,
+        'start_date': startDate,
+        'finish_date': finishDate,
+      });
+
+  /// Manga counterpart of [saveAnimeListStatus].
+  Future<MyListStatus> saveMangaListStatus({
+    required int mangaId,
+    String? status,
+    bool? isRereading,
+    int? score,
+    int? numVolumesRead,
+    int? numChaptersRead,
+    int? priority,
+    int? numTimesReread,
+    int? rereadValue,
+    String? tags,
+    String? comments,
+    String? startDate,
+    String? finishDate,
+  }) =>
+      _saveListStatus('$mangaEndPoint/$mangaId/my_list_status', {
+        'status': status,
+        'is_rereading': isRereading,
+        'score': score,
+        'num_volumes_read': numVolumesRead,
+        'num_chapters_read': numChaptersRead,
+        'priority': priority,
+        'num_times_reread': numTimesReread,
+        'reread_value': rereadValue,
+        'tags': tags,
+        'comments': comments,
+        'start_date': startDate,
+        'finish_date': finishDate,
+      });
+
+  /// Form body of a list update: only the fields that were given.
+  @visibleForTesting
+  static Map<String, String> listStatusBody(Map<String, Object?> fields) => {
+        for (final e in fields.entries)
+          if (e.value != null) e.key: e.value.toString(),
+      };
+
+  Future<MyListStatus> _saveListStatus(
+      String url, Map<String, Object?> fields) async {
+    _requireMalAccount('Access token required for updating list status');
+    final body = listStatusBody(fields);
+    final response = await _signedWrite(() => MalConnect.authPut(
+          url,
+          headers: const {'Content-Type': 'application/x-www-form-urlencoded'},
+          body: body,
+        ));
+    if (response.statusCode == 200) {
+      return MyListStatus.fromJson(
+          json.decode(response.body) as Map<String, dynamic>);
+    }
+    throw Exception('Failed to update list status: ${response.statusCode}');
   }
 
   // Delete anime from list - DELETE /anime/{anime_id}/my_list_status
@@ -728,6 +836,7 @@ class MalApi {
   /// suggestions) throws [MalSessionExpired]. Either way [sessionExpired]
   /// turns true.
   static Future<http.Response> signedGet(String url) async {
+    url = withNsfw(url);
     final http.Response response;
     try {
       response = await MalConnect.authGet(url);
@@ -761,8 +870,34 @@ class MalApi {
     }
   }
 
-  static Future<http.Response> _publicGet(String url) =>
-      http.get(Uri.parse(url), headers: publicHeaders);
+  /// HTTP client of the public calls and of the maintenance probe; tests
+  /// replace it, the app leaves it null (default `http` client).
+  @visibleForTesting
+  static http.Client? httpClient;
+
+  static Future<http.Response> _publicGet(String url) {
+    final uri = Uri.parse(withNsfw(url));
+    return httpClient?.get(uri, headers: publicHeaders) ??
+        http.get(uri, headers: publicHeaders);
+  }
+
+  /// Adds the adult content choice (`nsfw=1` or `nsfw=0`) to a MAL API URL
+  /// that does not carry one yet: MAL hides adult entries from search,
+  /// rankings, seasons, suggestions and lists unless asked. [nsfw] defaults
+  /// to the saved preference. Pages (`paging.next`) already carry the
+  /// parameter and are left alone.
+  static String withNsfw(String url, {bool? nsfw}) {
+    final uri = Uri.parse(url);
+    if (uri.queryParameters.containsKey('nsfw')) return url;
+    final value = (nsfw ?? Preferences.general.nsfw) ? '1' : '0';
+    final hash = url.indexOf('#');
+    final base = hash < 0 ? url : url.substring(0, hash);
+    final fragment = hash < 0 ? '' : url.substring(hash);
+    final separator = !base.contains('?')
+        ? '?'
+        : (base.endsWith('?') || base.endsWith('&') ? '' : '&');
+    return '$base${separator}nsfw=$value$fragment';
+  }
 
   /// Endpoints MAL only answers for the signed in user.
   static bool _needsUser(String url) {
@@ -782,8 +917,8 @@ class MalApi {
     final user = UserMalV2.instance;
     final notifier = ValueNotifier<bool>(user.needsReLogin);
     user.addListener(() {
-      notifier.value = user.needsReLogin ||
-          (notifier.value && user.authResponse == null);
+      notifier.value =
+          user.needsReLogin || (notifier.value && user.authResponse == null);
     });
     return notifier;
   }
@@ -816,8 +951,9 @@ class MalApi {
   static String? getFormattedAiringDate(
     Broadcast broadcast, [
     DateFormat? dateFormat,
-    TimezonePref timezonePref = TimezonePref.local,
+    TimezonePref? timezonePref,
   ]) {
+    timezonePref ??= Preferences.content.timezone;
     try {
       final weekday = weekdaysOrderMap[broadcast.dayOfTheWeek];
       if (weekday == null || broadcast.startTime.isEmpty) return null;
@@ -873,9 +1009,9 @@ class MalApi {
   static DateTime getAdjustedTime(
     DateTime airingTime,
     DateTime nowDate, [
-    TimezonePref pref = TimezonePref.local,
+    TimezonePref? pref,
   ]) {
-    switch (pref) {
+    switch (pref ?? Preferences.content.timezone) {
       case TimezonePref.jst:
         return airingTime.add(const Duration(hours: 9));
       case TimezonePref.utc:
@@ -888,9 +1024,8 @@ class MalApi {
   }
 
   /// Get timezone display name based on user preference.
-  static String getTimezoneName(DateTime dateTime,
-      [TimezonePref pref = TimezonePref.local]) {
-    switch (pref) {
+  static String getTimezoneName(DateTime dateTime, [TimezonePref? pref]) {
+    switch (pref ?? Preferences.content.timezone) {
       case TimezonePref.jst:
         return 'JST';
       case TimezonePref.utc:
@@ -931,7 +1066,8 @@ class MalApi {
     currentYear ??= MalApi.getCurrentSeasonYear();
 
     final result = await getAnimeSeasonalResult(
-      seasonType, currentYear,
+      seasonType,
+      currentYear,
       sortType: SortType.AnimeScore,
       limit: 500,
       fields: [
@@ -963,8 +1099,9 @@ class MalApi {
             ),
           );
           if (airingDate != null) {
-            final adjustedDay =
-                airingDate.toLocal().weekday; // 1=Monday, 7=Sunday
+            // Day of the week in the time zone chosen in the preferences
+            final adjustedDay = getAdjustedTime(airingDate, DateTime.now())
+                .weekday; // 1=Monday, 7=Sunday
             schedule[adjustedDay - 1].add(anime);
           } else {
             schedule[weekday - 1].add(anime);
@@ -1053,10 +1190,38 @@ class MalApi {
     );
   }
 
-  /// Check if the MAL API is under maintenance.
-  static Future<bool> isUnderMaintenance() async {
-    return MalConnect.isUnderMaintenance();
+  static bool? _maintenance;
+  static DateTime _maintenanceCheckedAt =
+      DateTime.fromMillisecondsSinceEpoch(0);
+
+  /// True while the MAL API answers 503 (maintenance). The probe is a public
+  /// call with the client id, bounded to 5 s, and its answer is kept for 60 s
+  /// so that several screens can ask without hitting MAL each time. Offline
+  /// or any other failure is not a maintenance. Home wiring calls this.
+  static Future<bool> isUnderMaintenance({bool force = false}) async {
+    final cached = _maintenance;
+    if (!force &&
+        cached != null &&
+        DateTime.now().difference(_maintenanceCheckedAt) <
+            const Duration(seconds: 60)) {
+      return cached;
+    }
+    if (httpClient == null && !await MalConnect.hasConnection()) return false;
+    try {
+      final uri = Uri.parse('$animeEndPoint/1?fields=id');
+      final request = httpClient?.get(uri, headers: publicHeaders) ??
+          http.get(uri, headers: publicHeaders);
+      final response = await request.timeout(const Duration(seconds: 5));
+      _maintenance = response.statusCode == 503;
+      _maintenanceCheckedAt = DateTime.now();
+      return _maintenance!;
+    } catch (e) {
+      return false;
+    }
   }
+
+  @visibleForTesting
+  static void resetMaintenanceCache() => _maintenance = null;
 
   /// Check if the device has network connectivity.
   static Future<bool> hasConnection() async {
