@@ -4,12 +4,12 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:mywatchlist/constants/constants.dart';
 import 'package:mywatchlist/services/api/MAL/mal_anime.dart';
+import 'package:mywatchlist/services/api/MAL/mal_connect.dart';
 import 'package:mywatchlist/services/api/MAL/mal_user_prof.dart';
 import 'package:mywatchlist/services/api/MAL/models/search_result.dart';
 import 'package:mywatchlist/services/api/MAL/models/mal_user_search.dart';
 import 'package:mywatchlist/services/api/MAL/scrapper/html_parsers.dart';
 import 'package:mywatchlist/services/api/Jikan/jikan_api.dart';
-import 'package:mywatchlist/user/user_mal_v2.dart';
 import 'package:html/parser.dart' as htmlParser;
 
 class MalUser {
@@ -23,15 +23,14 @@ class MalUser {
     }
 
     // For own user (@me), use MAL API
-    final accessToken = UserMalV2.instance.authResponse?.accessToken;
     String url = '$userBaseEndPoint/$username';
     if (fields != null && fields.isNotEmpty) {
       url += '?fields=${fields.join(",")}';
     }
-    final response = await http.get(
-      Uri.parse(url),
-      headers: {'Authorization': 'Bearer $accessToken'},
-    );
+    final response = await MalConnect.authGet(url);
+    if (response.statusCode != 200) {
+      throw Exception('Failed to load user info (${response.statusCode})');
+    }
 
     final profileData = json.decode(response.body);
     return MalUserProf.fromJson(profileData);
@@ -70,7 +69,6 @@ class MalUser {
     List<String>? fields,
     String username = "@me",
   }) async {
-    final accessToken = UserMalV2.instance.authResponse?.accessToken;
 
     String fieldsString = (fields != null && fields.isNotEmpty)
         ? fields.join(",")
@@ -81,10 +79,7 @@ class MalUser {
     if (status != null) url += "&status=$status";
     if (sortType != null) url += "&sort=$sortType";
 
-    final response = await http.get(
-      Uri.parse(url),
-      headers: {'Authorization': 'Bearer $accessToken'},
-    );
+    final response = await MalConnect.authGet(url);
 
     if (response.statusCode == 200) {
       return SearchResult.fromJson(json.decode(response.body));
@@ -124,7 +119,6 @@ class MalUser {
     List<String>? fields,
   }) async {
     const limit = 1000;
-    final accessToken = UserMalV2.instance.authResponse?.accessToken;
 
     String fieldsString = (fields != null && fields.isNotEmpty)
         ? fields.join(",")
@@ -134,12 +128,11 @@ class MalUser {
     if (status != null) url += "&status=$status";
     if (sortType != null) url += "&sort=$sortType";
 
-    final headers = {'Authorization': 'Bearer $accessToken'};
     List<Anime> allItems = [];
 
     String? currentUrl = url;
     while (currentUrl != null) {
-      final response = await http.get(Uri.parse(currentUrl), headers: headers);
+      final response = await MalConnect.authGet(currentUrl);
 
       if (response.statusCode != 200) {
         break;
