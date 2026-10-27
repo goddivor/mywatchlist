@@ -1,4 +1,3 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -9,7 +8,10 @@ import 'package:mywatchlist/services/api/MAL/mal_anime.dart';
 import 'package:mywatchlist/services/api/MAL/scrapper/anime_detailed_html.dart';
 import 'package:mywatchlist/services/api/mwl_api.dart';
 import 'package:mywatchlist/widgets/common/avatar_widget.dart';
-import 'package:mywatchlist/widgets/common/image_preview.dart';
+import 'package:mywatchlist/utils/web_launcher.dart';
+import 'package:mywatchlist/widgets/common/app_bar_menu.dart';
+import 'package:mywatchlist/widgets/common/score_reveal.dart';
+import 'package:mywatchlist/widgets/common/share_builder.dart';
 import 'package:mywatchlist/widgets/MAL/content/intereststackwidget.dart';
 import 'package:mywatchlist/widgets/MAL/home/animegridcard.dart';
 import 'package:mywatchlist/widgets/loading/shimmercolor.dart';
@@ -78,7 +80,7 @@ class _InterestStackDetailScreenState extends State<InterestStackDetailScreen> {
   String get _title =>
       _detailedData?['title']?.toString().standardize() ??
       widget.stack.title?.standardize() ??
-      S.current.Interest_Stack;
+      S.current.Social_Stack_Title;
 
   List<Map<String, dynamic>> get _entries =>
       (_detailedData?['items'] as List?)?.cast<Map<String, dynamic>>() ?? [];
@@ -101,9 +103,9 @@ class _InterestStackDetailScreenState extends State<InterestStackDetailScreen> {
   bool get _showTabs => _hasEntries || _hasSimilar || _hasMalStacks;
 
   List<String> get _tabs => [
-        if (_hasEntries) S.current.Entries.standardize() ?? 'Entries',
-        if (_hasSimilar) S.current.Similar,
-        if (_hasMalStacks) 'MAL ${S.current.Interest_Stacks}',
+        if (_hasEntries) S.current.Social_Stack_Tab_Entries,
+        if (_hasSimilar) S.current.Social_Stack_Tab_Similar,
+        if (_hasMalStacks) S.current.Social_Stack_Tab_Mal,
       ];
 
   @override
@@ -207,18 +209,8 @@ class _InterestStackDetailScreenState extends State<InterestStackDetailScreen> {
     );
   }
 
-  Widget _usernameWidget(BuildContext context) {
-    final username = widget.stack.username;
-    if (username == null || username.isEmpty) return SB.z;
-    return Padding(
-      padding: const EdgeInsets.only(top: 2),
-      child: title(
-        'by $username',
-        textOverflow: TextOverflow.fade,
-        textStyle: Theme.of(context).textTheme.bodyMedium,
-      ),
-    );
-  }
+  Widget _usernameWidget(BuildContext context) =>
+      InterestStackAuthor(username: widget.stack.username, align: TextAlign.center);
 
   // --- Stacked images ---
 
@@ -227,35 +219,7 @@ class _InterestStackDetailScreenState extends State<InterestStackDetailScreen> {
     return SizedBox(
       height: 240,
       width: 170,
-      child: _buildStackPictures(context, images),
-    );
-  }
-
-  Widget _buildStackPictures(BuildContext context, List<String> imageList) {
-    if (nullOrEmpty(imageList)) {
-      return cachedImage(BorderRadius.circular(6.0), 'url',
-          useUserImageOnError: false);
-    }
-    return Stack(
-      children: imageList.asMap().entries.map((e) {
-        return Positioned(
-          right: e.key * 20.0,
-          top: e.key * 10.0 + 10.0,
-          bottom: e.key * 10.0 + 10.0,
-          child: InkWell(
-            onTap: () =>
-                zoomInImageList(context, imageList.reversed.toList()),
-            child: Container(
-              decoration: const BoxDecoration(
-                  boxShadow: [BoxShadow(blurRadius: 10.0)]),
-              child: CachedNetworkImage(
-                fit: BoxFit.cover,
-                imageUrl: e.value,
-              ),
-            ),
-          ),
-        );
-      }).toList(),
+      child: InterestStackPictures(images: images),
     );
   }
 
@@ -363,20 +327,54 @@ class _InterestStackDetailScreenState extends State<InterestStackDetailScreen> {
 
   // --- Back button ---
 
+  /// Floating back button and, once the stack is loaded, the share / open-in-browser menu.
   Widget _buildBackButton(BuildContext context) {
-    return Align(
-      alignment: Alignment.topLeft,
+    final scheme = Theme.of(context).colorScheme;
+    final url = _webUrl;
+    final canShare = !_isLoading && _error == null;
+    return SafeArea(
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 18.0, vertical: 40.0),
-        child: FloatingActionButton.small(
-          heroTag: 'back_stack',
-          elevation: 8.0,
-          onPressed: () => Navigator.pop(context),
-          child: const Icon(Icons.arrow_back),
+        padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            FloatingActionButton.small(
+              heroTag: 'back_stack',
+              elevation: 4.0,
+              tooltip: MaterialLocalizations.of(context).backButtonTooltip,
+              onPressed: () => Navigator.pop(context),
+              child: const Icon(Icons.arrow_back),
+            ),
+            if (canShare)
+              Material(
+                color: scheme.primaryContainer,
+                elevation: 4,
+                shape: const CircleBorder(),
+                child: AppBarMenu(
+                  onShare: () => showShareBuilder(
+                    context,
+                    fields: stackShareFields(
+                      url: url,
+                      title: _title,
+                      author: widget.stack.username,
+                      entries: [for (final e in _entries) if (e['title'] is String) e['title'] as String],
+                      description: _description,
+                    ),
+                    subject: _title,
+                    title: S.current.Social_Stack_Title,
+                  ),
+                  onOpenInBrowser: url == null ? null : () => openLink(context, url),
+                ),
+              ),
+          ],
         ),
       ),
     );
   }
+
+  /// The stack page on MyAnimeList (the scraper may give a path or a full address).
+  String? get _webUrl => stackWebUrl(widget.stack.url);
 
   // --- Shell for loading shimmer ---
 
@@ -484,7 +482,7 @@ class _InterestStackDetailScreenState extends State<InterestStackDetailScreen> {
           Icon(Icons.error_outline, size: 48, color: theme.colorScheme.error),
           SB.h15,
           Text(
-            S.current.Couldnt_retreive_Content,
+            S.current.Social_Stack_Failed,
             style: TextStyle(
                 color:
                     theme.colorScheme.onSurface.withValues(alpha: 0.7)),
@@ -498,7 +496,7 @@ class _InterestStackDetailScreenState extends State<InterestStackDetailScreen> {
               });
               _fetchDetail();
             },
-            child: const Text('Retry'),
+            child: Text(S.current.Social_Retry),
           ),
         ],
       ),
@@ -509,8 +507,8 @@ class _InterestStackDetailScreenState extends State<InterestStackDetailScreen> {
     return Center(
       child: Text(
         _detailedData == null
-            ? S.current.Loading_Content
-            : 'No entries found',
+            ? S.current.Social_Stack_Loading
+            : S.current.Social_Stack_No_Entries,
         style: TextStyle(
           color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
         ),
@@ -571,7 +569,7 @@ class _ExpandableDescriptionState extends State<_ExpandableDescription> {
                   ),
                   const SizedBox(width: 4),
                   Text(
-                    _expanded ? 'Show less' : 'Show more',
+                    _expanded ? S.current.Social_Show_Less : S.current.Social_Show_More,
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: theme.colorScheme.primary,
                     ),
@@ -654,7 +652,7 @@ class _SpaciousContentWidget extends StatelessWidget {
     final mediaType = item['mediaType'] as String? ?? '';
     final status = item['status'] as String? ?? '';
     final additionalInfo = item['additionalInfo'] as String? ?? '';
-    final score = item['score'] as double?;
+    final score = (item['score'] as num?)?.toDouble();
     final members = item['members'] as String? ?? '';
     final synopsis = item['synopsis'] as String? ?? '';
     final genres = (item['genres'] as List?)?.cast<Map<String, dynamic>>() ?? [];
@@ -731,10 +729,12 @@ class _SpaciousContentWidget extends StatelessWidget {
                               child: Image.asset('assets/images/star.png'),
                             ),
                             SB.w5,
-                            title(
-                              score?.toStringAsFixed(1) ?? '-',
-                              fontSize: 15,
-                              opacity: 1,
+                            ScoreReveal(
+                              child: title(
+                                score?.toStringAsFixed(1) ?? '-',
+                                fontSize: 15,
+                                opacity: 1,
+                              ),
                             ),
                             SB.w10,
                             if (membersFormatted != null)
@@ -750,6 +750,7 @@ class _SpaciousContentWidget extends StatelessWidget {
                                 height: 35,
                                 width: 35,
                                 child: IconButton.filledTonal(
+                                  tooltip: S.current.Social_Stack_Synopsis,
                                   onPressed: () => _showSynopsis(
                                       context, theme, entryTitle, synopsis),
                                   icon: const Icon(Icons.info_outline, size: 20),
@@ -768,6 +769,7 @@ class _SpaciousContentWidget extends StatelessWidget {
                                 height: 35,
                                 width: 35,
                                 child: IconButton.filledTonal(
+                                  tooltip: S.current.Social_Stack_Edit_Entry,
                                   onPressed: () => showContentEditSheet(
                                     context,
                                     category,
@@ -854,14 +856,14 @@ class _SpaciousContentWidget extends StatelessWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(S.current.Synopsis),
+        title: Text(entryTitle),
         content: SingleChildScrollView(
           child: title(synopsis, opacity: 1),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text(S.current.Close),
+            child: Text(S.current.Social_Close),
           ),
         ],
       ),

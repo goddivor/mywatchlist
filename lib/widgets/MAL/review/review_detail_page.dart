@@ -1,275 +1,202 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
+import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/services/api/Jikan/jikan_anime_review.dart';
-import 'package:mywatchlist/widgets/common/avatar_widget.dart';
+import 'package:mywatchlist/utils/web_launcher.dart';
+import 'package:mywatchlist/widgets/MAL/review/review_item.dart';
+import 'package:mywatchlist/widgets/MAL/review/review_logic.dart';
+import 'package:mywatchlist/widgets/MAL/review/review_reactions.dart';
+import 'package:mywatchlist/widgets/common/share_builder.dart';
 
+/// A whole review: reviewer (tap = quick user sheet), score, tags, reactions, the
+/// selectable text, the date and the progress of the reviewer. Share and "open on
+/// MyAnimeList" sit in the header. The text scrolls inside the page; the page itself never
+/// sits in another scroll view.
 class ReviewDetailPage extends StatelessWidget {
   final AnimeReview review;
+  final String category;
 
-  const ReviewDetailPage({
-    super.key,
-    required this.review,
-  });
+  const ReviewDetailPage({super.key, required this.review, this.category = 'anime'});
+
+  void _share(BuildContext context) {
+    showShareBuilder(
+      context,
+      fields: reviewShareFields(review),
+      subject: review.user?.username,
+      title: S.current.Social_Review_Share,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final score = review.score ?? 0;
-    final Color scoreColor =
-        score >= 8 ? Colors.green : (score >= 5 ? Colors.amber : Colors.red);
-    final dateStr = review.date != null
-        ? DateFormat('EEE, MMM d, yyyy').format(DateTime.parse(review.date!))
-        : '';
+    final locale = Localizations.localeOf(context).toString();
+    final date = formatReviewDate(review.date, locale);
+    final url = review.url;
+    final progress = review.episodesWatched;
+    final reactions = sortedReactions(review.reactions);
 
-    return Container(
-      color: theme.scaffoldBackgroundColor,
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Close button
-          Align(
-            alignment: Alignment.centerRight,
-            child: IconButton(
-              icon: const Icon(Icons.close),
-              onPressed: () => Navigator.of(context).pop(),
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              if (reviewShareFields(review).isNotEmpty)
+                IconButton(
+                  tooltip: S.current.Social_Review_Share,
+                  icon: const Icon(Icons.share_outlined),
+                  onPressed: () => _share(context),
+                ),
+              if (url != null && url.isNotEmpty)
+                IconButton(
+                  tooltip: S.current.Social_Review_Open_Web,
+                  icon: const Icon(Icons.open_in_browser),
+                  onPressed: () => openLink(context, url),
+                ),
+              IconButton(
+                tooltip: S.current.Social_Close,
+                icon: const Icon(Icons.close),
+                onPressed: () => Navigator.of(context).pop(),
+              ),
+            ],
           ),
-
-          // Score + User section
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Left: Score + Tags
-                Column(
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      children: [
-                        Image.asset(
-                          'assets/images/star.png',
-                          height: 26,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          '$score',
-                          style: TextStyle(
-                            fontSize: 28,
-                            fontWeight: FontWeight.bold,
-                            color: scoreColor,
+                    ReviewScoreBadge(score: review.score, size: 28),
+                    const SizedBox(height: 8),
+                    for (final tag in review.tags ?? const <String>[])
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 3),
+                        child: Text(
+                          tag,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.75),
                           ),
                         ),
+                      ),
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 4,
+                      children: [
+                        if (review.isPreliminary == true)
+                          ReviewTag(
+                            text: S.current.Social_Review_Preliminary,
+                            color: theme.colorScheme.primary,
+                            large: true,
+                          ),
+                        if (review.isSpoiler == true)
+                          ReviewTag(
+                            text: S.current.Social_Review_Spoiler,
+                            color: theme.colorScheme.error,
+                            large: true,
+                          ),
                       ],
                     ),
-                    const SizedBox(height: 8),
-                    // Tags from Jikan
-                    if (review.tags != null && review.tags!.isNotEmpty)
-                      ...review.tags!.map(
-                        (tag) => Padding(
-                          padding: const EdgeInsets.only(bottom: 3),
-                          child: Text(
-                            tag,
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: theme.colorScheme.onSurfaceVariant
-                                  .withValues(alpha: 0.6),
-                            ),
-                          ),
-                        ),
-                      ),
-                    // Preliminary / Spoiler tags
-                    if (review.isPreliminary == true)
-                      _buildTag('Preliminary', theme.colorScheme.primary),
-                    if (review.isSpoiler == true)
-                      _buildTag('Spoiler', Colors.red),
                   ],
                 ),
-                // Right: User avatar + name
-                GestureDetector(
-                  onTap: () {
-                    // TODO: Navigate to user profile
-                  },
-                  child: Column(
-                    children: [
-                      AvatarWidget(
-                        height: 48,
-                        width: 48,
-                        url: review.user?.images?.jpg?.imageUrl,
+              ),
+              ReviewerChip(review: review, avatarSize: 52, nameWidth: 96),
+            ],
+          ),
+          if (reactions.isNotEmpty) ...[
+            const SizedBox(height: 14),
+            SizedBox(
+              height: 34,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: reactions.length,
+                separatorBuilder: (_, __) => const SizedBox(width: 8),
+                itemBuilder: (_, i) {
+                  final (kind, count) = reactions[i];
+                  return Tooltip(
+                    message: kind.label,
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: kind.color.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: kind.color.withValues(alpha: 0.2)),
                       ),
-                      const SizedBox(height: 6),
-                      Text(
-                        review.user?.username ?? '?',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          fontWeight: FontWeight.w500,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 10),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(kind.icon, size: 16, color: kind.color),
+                            const SizedBox(width: 5),
+                            Text(
+                              '$count',
+                              style: theme.textTheme.labelMedium?.copyWith(
+                                color: kind.color,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                    ],
-                  ),
-                ),
-              ],
+                    ),
+                  );
+                },
+              ),
             ),
-          ),
-
-          const SizedBox(height: 16),
-
-          // Reactions bar
-          _buildReactionsRow(context),
-
+          ],
           const SizedBox(height: 12),
-
-          // Review text (selectable, scrollable)
           Expanded(
             child: SingleChildScrollView(
-              child: Padding(
-                padding: const EdgeInsets.only(bottom: 20),
-                child: SelectableText(
-                  review.review ?? '',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    height: 1.6,
-                  ),
-                ),
+              padding: const EdgeInsets.only(bottom: 20),
+              child: SelectableText(
+                review.review?.trim() ?? '',
+                style: theme.textTheme.bodyMedium?.copyWith(height: 1.6),
               ),
             ),
           ),
-
-          // Footer: Date + Episodes watched
-          Container(
-            padding: const EdgeInsets.symmetric(vertical: 10),
+          DecoratedBox(
             decoration: BoxDecoration(
               border: Border(
-                top: BorderSide(
-                  color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
-                ),
+                top: BorderSide(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3)),
               ),
             ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                if (dateStr.isNotEmpty)
-                  Text(
-                    dateStr,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 10),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  if (date.isNotEmpty)
+                    Text(
+                      date,
+                      style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                     ),
-                  ),
-                if (review.episodesWatched != null)
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.visibility_outlined,
-                        size: 16,
-                        color: theme.colorScheme.onSurfaceVariant,
+                  if (progress != null)
+                    Flexible(
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.visibility_outlined, size: 16, color: theme.colorScheme.onSurfaceVariant),
+                          const SizedBox(width: 4),
+                          Flexible(
+                            child: Text(
+                              category == 'manga'
+                                  ? S.current.Social_Review_Chapters_Read(progress)
+                                  : S.current.Social_Review_Episodes_Watched(progress),
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: 4),
-                      Text(
-                        '${review.episodesWatched} episodes',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
-                  ),
-              ],
+                    ),
+                ],
+              ),
             ),
           ),
         ],
       ),
     );
   }
-
-  Widget _buildTag(String text, Color color) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 3),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(6),
-          border: Border.all(color: color.withValues(alpha: 0.3)),
-        ),
-        child: Text(
-          text,
-          style: TextStyle(
-            fontSize: 11,
-            color: color,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildReactionsRow(BuildContext context) {
-    final reactions = review.reactions;
-    if (reactions == null) return const SizedBox();
-
-    final theme = Theme.of(context);
-    final reactionList = <_ReactionInfo>[
-      if ((reactions.nice ?? 0) > 0)
-        _ReactionInfo(Icons.thumb_up, 'Nice', reactions.nice!, Colors.blue),
-      if ((reactions.loveIt ?? 0) > 0)
-        _ReactionInfo(
-            Icons.favorite, 'Love it', reactions.loveIt!, Colors.pink),
-      if ((reactions.funny ?? 0) > 0)
-        _ReactionInfo(Icons.mood, 'Funny', reactions.funny!, Colors.orange),
-      if ((reactions.confusing ?? 0) > 0)
-        _ReactionInfo(Icons.help_outline, 'Confusing', reactions.confusing!,
-            Colors.purple),
-      if ((reactions.informative ?? 0) > 0)
-        _ReactionInfo(Icons.psychology, 'Informative', reactions.informative!,
-            Colors.teal),
-      if ((reactions.wellWritten ?? 0) > 0)
-        _ReactionInfo(Icons.description, 'Well-written',
-            reactions.wellWritten!, Colors.deepPurple),
-      if ((reactions.creative ?? 0) > 0)
-        _ReactionInfo(Icons.lightbulb_outline, 'Creative', reactions.creative!,
-            Colors.amber.shade700),
-    ];
-
-    reactionList.sort((a, b) => b.count.compareTo(a.count));
-
-    if (reactionList.isEmpty) return const SizedBox();
-
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        children: reactionList.map((r) {
-          return Container(
-            margin: const EdgeInsets.only(right: 8),
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            decoration: BoxDecoration(
-              color: r.color.withValues(alpha: 0.08),
-              borderRadius: BorderRadius.circular(20),
-              border:
-                  Border.all(color: r.color.withValues(alpha: 0.2)),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(r.icon, size: 16, color: r.color),
-                const SizedBox(width: 5),
-                Text(
-                  '${r.count}',
-                  style: theme.textTheme.labelMedium?.copyWith(
-                    color: r.color,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-          );
-        }).toList(),
-      ),
-    );
-  }
-}
-
-class _ReactionInfo {
-  final IconData icon;
-  final String label;
-  final int count;
-  final Color color;
-  _ReactionInfo(this.icon, this.label, this.count, this.color);
 }

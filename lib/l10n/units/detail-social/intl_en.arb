@@ -1,0 +1,132 @@
+{
+  "@@locale": "en",
+  "Social_Close": "Close",
+  "Social_Retry": "Try again",
+  "Social_Show_More": "Show more",
+  "Social_Show_Less": "Show less",
+  "Social_Open_Profile": "Open the profile of {user}",
+  "@Social_Open_Profile": {
+    "placeholders": {
+      "user": {
+        "type": "String"
+      }
+    }
+  },
+  "Social_Reviews_Empty": "No reviews yet",
+  "Social_Reviews_Empty_Filtered": "No review matches these filters",
+  "Social_Reviews_Failed": "Couldn't load the reviews",
+  "Social_Reviews_Count": "{count, plural, =1{1 review} other{{count} reviews}}",
+  "@Social_Reviews_Count": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "Social_Reviews_Score_Distribution": "Score distribution",
+  "Social_Reviews_Sort": "Sort reviews",
+  "Social_Reviews_Sort_Newest": "Newest first",
+  "Social_Reviews_Sort_Oldest": "Oldest first",
+  "Social_Reviews_Sort_Highest": "Highest score first",
+  "Social_Reviews_Sort_Lowest": "Lowest score first",
+  "Social_Reviews_Filter_Score": "Filter by score",
+  "Social_Reviews_Clear_Filter": "Clear the filter",
+  "Social_Review_Preliminary": "Preliminary",
+  "Social_Review_Spoiler": "Spoiler",
+  "Social_Review_Episodes_Watched": "{count, plural, =1{1 episode watched} other{{count} episodes watched}}",
+  "@Social_Review_Episodes_Watched": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "Social_Review_Chapters_Read": "{count, plural, =1{1 chapter read} other{{count} chapters read}}",
+  "@Social_Review_Chapters_Read": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "Social_Review_Share": "Share this review",
+  "Social_Review_Open_Web": "Open on MyAnimeList",
+  "Social_Review_Reviewer": "Reviewer",
+  "Social_Review_Text": "Review",
+  "Social_Review_Anonymous": "Unknown user",
+  "Social_Reaction_Nice": "Nice",
+  "Social_Reaction_Love_It": "Love it",
+  "Social_Reaction_Funny": "Funny",
+  "Social_Reaction_Confusing": "Confusing",
+  "Social_Reaction_Informative": "Informative",
+  "Social_Reaction_Well_Written": "Well-written",
+  "Social_Reaction_Creative": "Creative",
+  "Social_AI_Summary": "AI summary",
+  "Social_AI_Summary_Hint": "A short verdict with the pros and cons found in the reviews",
+  "Social_AI_Generating": "Reading the reviews…",
+  "Social_AI_Failed": "The summary could not be generated",
+  "Social_AI_Verdict": "Verdict",
+  "Social_AI_Pros": "Pros",
+  "Social_AI_Cons": "Cons",
+  "Social_AI_Disclaimer": "Written by an AI from the user reviews. It can contain mistakes.",
+  "Social_AI_Based_On": "{count, plural, =1{Based on 1 review} other{Based on {count} reviews}}",
+  "@Social_AI_Based_On": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "Social_Stack_By": "by {user}",
+  "@Social_Stack_By": {
+    "placeholders": {
+      "user": {
+        "type": "String"
+      }
+    }
+  },
+  "Social_Stack_Entries": "{count, plural, =1{1 entry} other{{count} entries}}",
+  "@Social_Stack_Entries": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "Social_Stack_Restacks": "{count, plural, =0{No restacks} =1{1 restack} other{{count} restacks}}",
+  "@Social_Stack_Restacks": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "Social_Stack_Title": "Interest stack",
+  "Social_Stack_Tab_Entries": "Entries",
+  "Social_Stack_Tab_Similar": "Similar stacks",
+  "Social_Stack_Tab_Mal": "MyAnimeList stacks",
+  "Social_Stack_Loading": "Loading…",
+  "Social_Stack_No_Entries": "This stack has no entries",
+  "Social_Stack_Failed": "Couldn't load this interest stack",
+  "Social_Stack_Edit_Entry": "Edit my list entry",
+  "Social_Stack_Synopsis": "Read the synopsis",
+  "Social_Stack_Zoom": "View the pictures",
+  "Social_Stack_Share_Author": "Created by",
+  "Social_Stack_Share_Entries": "Entries",
+  "Social_Stack_Share_Description": "Description",
+  "Social_Updates_Empty": "No recent updates from other users",
+  "Social_Updates_Failed": "Couldn't load the updates",
+  "Social_Updates_Episodes": "Episodes",
+  "Social_Updates_Chapters_Short": "Ch.",
+  "Social_Updates_Volumes": "Vol. {read}/{total}",
+  "@Social_Updates_Volumes": {
+    "placeholders": {
+      "read": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  }
+}
