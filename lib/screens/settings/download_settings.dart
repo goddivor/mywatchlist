@@ -2,9 +2,9 @@ import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:mywatchlist/constants/constants.dart';
+import 'package:mywatchlist/generated/l10n.dart';
+import 'package:mywatchlist/widgets/common/image_preview.dart' show getDefaultDownloadPath;
 import 'package:mywatchlist/user/user_preference.dart';
-import 'package:mywatchlist/widgets/common/image_preview.dart';
 
 class DownloadSettings extends StatefulWidget {
   const DownloadSettings({super.key});
@@ -31,9 +31,15 @@ class _DownloadSettingsState extends State<DownloadSettings> {
     if (mounted) setState(() => _loading = false);
   }
 
-  String get _currentPath => _customPath ?? _defaultPath ?? 'Unknown';
+  String get _currentPath => _customPath ?? _defaultPath ?? S.current.Dls_Unknown;
 
   bool get _isCustom => _customPath != null;
+
+  void _say(String message) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(message)));
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -42,7 +48,7 @@ class _DownloadSettingsState extends State<DownloadSettings> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Download Settings'),
+        title: Text(S.current.Dls_Title),
         elevation: 0,
       ),
       body: _loading
@@ -59,7 +65,7 @@ class _DownloadSettingsState extends State<DownloadSettings> {
                           size: 20, color: colorScheme.primary),
                       const SizedBox(width: 8),
                       Text(
-                        'Storage Location',
+                        S.current.Dls_Section_Location,
                         style: theme.textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.bold,
                           color: colorScheme.onSurface,
@@ -69,7 +75,7 @@ class _DownloadSettingsState extends State<DownloadSettings> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Choose where downloaded images will be saved',
+                    S.current.Dls_Section_Location_Desc,
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: colorScheme.onSurfaceVariant,
                     ),
@@ -112,7 +118,7 @@ class _DownloadSettingsState extends State<DownloadSettings> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      'Current Location',
+                                      S.current.Dls_Current,
                                       style:
                                           theme.textTheme.titleSmall?.copyWith(
                                         fontWeight: FontWeight.w600,
@@ -120,7 +126,7 @@ class _DownloadSettingsState extends State<DownloadSettings> {
                                     ),
                                     const SizedBox(height: 2),
                                     Text(
-                                      _isCustom ? 'Custom' : 'Default',
+                                      _isCustom ? S.current.Dls_Custom : S.current.Dls_Default,
                                       style:
                                           theme.textTheme.labelSmall?.copyWith(
                                         color: _isCustom
@@ -177,7 +183,7 @@ class _DownloadSettingsState extends State<DownloadSettings> {
                           size: 20, color: colorScheme.primary),
                       const SizedBox(width: 8),
                       Text(
-                        'Actions',
+                        S.current.Dls_Actions,
                         style: theme.textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.bold,
                           color: colorScheme.onSurface,
@@ -191,8 +197,8 @@ class _DownloadSettingsState extends State<DownloadSettings> {
                   _buildActionTile(
                     context,
                     icon: Icons.folder_open,
-                    title: 'Choose folder',
-                    subtitle: 'Select a custom download folder',
+                    title: S.current.Dls_Choose,
+                    subtitle: S.current.Dls_Choose_Desc,
                     onTap: _pickFolder,
                   ),
 
@@ -201,8 +207,8 @@ class _DownloadSettingsState extends State<DownloadSettings> {
                     _buildActionTile(
                       context,
                       icon: Icons.restore,
-                      title: 'Reset to default',
-                      subtitle: _defaultPath ?? 'System default',
+                      title: S.current.Dls_Reset,
+                      subtitle: _defaultPath ?? S.current.Dls_System_Default,
                       onTap: _resetToDefault,
                     ),
                 ],
@@ -274,19 +280,19 @@ class _DownloadSettingsState extends State<DownloadSettings> {
         if (await dir.exists()) {
           await _userPref.setDownloadPath(selectedDirectory);
           setState(() => _customPath = selectedDirectory);
-          if (mounted) showToast('Download folder updated');
+          if (mounted) _say(S.current.Dls_Updated);
         } else {
-          if (mounted) showToast('Folder does not exist');
+          if (mounted) _say(S.current.Dls_Missing);
         }
       }
     } catch (e) {
-      if (mounted) showToast('Error selecting folder');
+      if (mounted) _say(S.current.Dls_Pick_Failed);
     }
   }
 
   Future<void> _resetToDefault() async {
     await _userPref.setDownloadPath(null);
     setState(() => _customPath = null);
-    showToast('Reset to default folder');
+    if (mounted) _say(S.current.Dls_Reset_Done);
   }
 }
