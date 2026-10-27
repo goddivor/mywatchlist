@@ -1,12 +1,11 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:mywatchlist/constants/constants.dart';
 import 'package:mywatchlist/screens/forum/forum_topics_screen.dart';
 import 'package:mywatchlist/services/api/MAL/models/forum/forum_models.dart';
-import 'package:mywatchlist/widgets/common/avatar_widget.dart';
 
-/// Displays a forum category with expandable boards list.
-class BoardWidget extends StatefulWidget {
+/// A forum category (MyAnimeList, Anime & Manga, General, Archive): a card that opens a sheet
+/// listing its boards, each with its sub-boards underneath.
+class BoardWidget extends StatelessWidget {
   final Forum forum;
   final int forumIndex;
 
@@ -16,24 +15,14 @@ class BoardWidget extends StatefulWidget {
     required this.forumIndex,
   });
 
-  @override
-  State<BoardWidget> createState() => _BoardWidgetState();
-}
-
-class _BoardWidgetState extends State<BoardWidget>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _iconController;
-  bool _isExpanded = false;
-
-  // Images matching the 4 MAL forum categories:
-  // 0=MyAnimeList, 1=Anime & Manga, 2=General, 3=Archive
+  // Pictures of the 4 MAL forum categories (the last one reuses the first).
   static const _forumImages = [
     'assets/images/mal-icon.png',
     'assets/images/anime-icon.png',
     'assets/images/general-icon.png',
   ];
 
-  // Icons per board inside each forum category (matching DailyAL)
+  // Icons per board inside each forum category.
   static const Map<int, List<IconData>> _boardIcons = {
     0: [
       Icons.announcement,
@@ -66,222 +55,138 @@ class _BoardWidgetState extends State<BoardWidget>
     ],
   };
 
-  @override
-  void initState() {
-    super.initState();
-    _iconController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 200),
-    );
-  }
-
-  @override
-  void dispose() {
-    _iconController.dispose();
-    super.dispose();
-  }
-
-  void _toggleExpand() {
-    if (_isExpanded) {
-      Navigator.of(context).pop();
-    } else {
-      _showBoardsModal();
-    }
-  }
-
-  void _showBoardsModal() {
-    _isExpanded = true;
-    _iconController.forward();
-    setState(() {});
-
-    showCupertinoModalPopup(
-      context: context,
-      builder: (_) => _buildBoardsSheet(),
-    ).then((_) {
-      if (mounted) {
-        _isExpanded = false;
-        _iconController.reverse();
-        setState(() {});
-      }
-    });
-  }
-
-  Widget _buildBoardsSheet() {
-    final theme = Theme.of(context);
-    final boards = widget.forum.boards ?? [];
-
-    return Material(
-      color: theme.colorScheme.surface,
-      borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-      child: Container(
-        constraints: BoxConstraints(
-          maxHeight: MediaQuery.of(context).size.height * 0.6,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Handle
-            Container(
-              margin: const EdgeInsets.only(top: 12, bottom: 8),
-              width: 36,
-              height: 4,
-              decoration: BoxDecoration(
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            // Title
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Text(
-                widget.forum.title ?? '',
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-            const Divider(height: 1),
-            // Boards list
-            Flexible(
-              child: ListView.builder(
-                shrinkWrap: true,
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                itemCount: boards.length,
-                itemBuilder: (context, index) {
-                  final board = boards[index];
-                  return _buildBoardTile(board, index);
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildBoardTile(Board board, int boardIndex) {
-    final theme = Theme.of(context);
-    final hasSubBoards =
-        board.subBoards != null && board.subBoards!.isNotEmpty;
-
-    final icons = _boardIcons[widget.forumIndex];
-    final icon = icons != null && boardIndex < icons.length
-        ? icons[boardIndex]
-        : Icons.forum_outlined;
-
-    return ListTile(
-      leading: Icon(
-        icon,
-        color: theme.colorScheme.primary,
-        size: 20,
-      ),
-      title: Text(
-        board.title ?? '',
-        style: theme.textTheme.bodyMedium?.copyWith(
-          fontWeight: FontWeight.w500,
-        ),
-      ),
-      subtitle: board.description != null
-          ? Text(
-              board.description!,
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            )
-          : null,
-      trailing: hasSubBoards
-          ? PopupMenuButton<SubBoard>(
-              icon: Icon(
-                Icons.arrow_drop_down,
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-              onSelected: (subBoard) {
-                Navigator.of(context).pop(); // Close modal
-                _navigateToTopics(
-                  subBoardId: subBoard.id,
-                  title: subBoard.title ?? board.title ?? '',
-                );
-              },
-              itemBuilder: (_) => board.subBoards!
-                  .map((sb) => PopupMenuItem<SubBoard>(
-                        value: sb,
-                        child: Text(sb.title ?? ''),
-                      ))
-                  .toList(),
-            )
-          : Icon(
-              Icons.chevron_right,
-              size: 18,
-              color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
-            ),
-      onTap: () {
-        Navigator.of(context).pop(); // Close modal
-        _navigateToTopics(
-          boardId: board.id,
-          title: board.title ?? '',
-        );
-      },
-    );
-  }
-
-  void _navigateToTopics(
-      {int? boardId, int? subBoardId, required String title}) {
+  void _openTopics(BuildContext context, {int? boardId, int? subBoardId, required String title}) {
     gotoPage(
       context: context,
-      newPage: ForumTopicsScreen(
-        boardId: boardId,
-        subBoardId: subBoardId,
-        title: title,
-      ),
+      newPage: ForumTopicsScreen(boardId: boardId, subBoardId: subBoardId, title: title),
+    );
+  }
+
+  void _showBoards(BuildContext context) {
+    final boards = forum.boards ?? const <Board>[];
+    final icons = _boardIcons[forumIndex];
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      useSafeArea: true,
+      builder: (sheetContext) {
+        final theme = Theme.of(sheetContext);
+        final scheme = theme.colorScheme;
+        void open({int? boardId, int? subBoardId, required String title}) {
+          Navigator.of(sheetContext).pop();
+          _openTopics(context, boardId: boardId, subBoardId: subBoardId, title: title);
+        }
+
+        return ConstrainedBox(
+          constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(sheetContext).height * 0.75),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+                child: Align(
+                  alignment: AlignmentDirectional.centerStart,
+                  child: Text(
+                    forum.title ?? '',
+                    style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ),
+              const Divider(height: 1),
+              Flexible(
+                child: ListView.builder(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  itemCount: boards.length,
+                  itemBuilder: (context, index) {
+                    final board = boards[index];
+                    final icon = icons != null && index < icons.length
+                        ? icons[index]
+                        : Icons.forum_outlined;
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        ListTile(
+                          leading: Icon(icon, color: scheme.primary, size: 22),
+                          title: Text(
+                            board.title ?? '',
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              fontWeight: FontWeight.w600,
+                              color: scheme.onSurface,
+                            ),
+                          ),
+                          subtitle: board.description == null
+                              ? null
+                              : Text(
+                                  board.description!,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: theme.textTheme.bodySmall
+                                      ?.copyWith(color: scheme.onSurfaceVariant),
+                                ),
+                          trailing: Icon(Icons.chevron_right, color: scheme.onSurfaceVariant),
+                          onTap: () => open(boardId: board.id, title: board.title ?? ''),
+                        ),
+                        for (final sub in board.subBoards ?? const <SubBoard>[])
+                          ListTile(
+                            dense: true,
+                            contentPadding: const EdgeInsetsDirectional.only(start: 72, end: 16),
+                            title: Text(
+                              sub.title ?? '',
+                              style: theme.textTheme.bodySmall?.copyWith(color: scheme.onSurface),
+                            ),
+                            onTap: () => open(
+                              subBoardId: sub.id,
+                              title: sub.title ?? board.title ?? '',
+                            ),
+                          ),
+                      ],
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final imageIndex = widget.forumIndex % _forumImages.length;
+    final scheme = theme.colorScheme;
+    final image = _forumImages[forumIndex % _forumImages.length];
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       child: Material(
-        color: theme.colorScheme.surfaceContainerLow,
+        color: scheme.surfaceContainerLow,
         borderRadius: BorderRadius.circular(12),
+        clipBehavior: Clip.antiAlias,
         child: InkWell(
-          onTap: _toggleExpand,
-          borderRadius: BorderRadius.circular(12),
+          onTap: () => _showBoards(context),
           child: Padding(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             child: Row(
               children: [
-                AvatarWidget(
-                  height: 50,
-                  width: 50,
-                  radius: BorderRadius.circular(7),
-                  isNetworkImage: false,
-                  url: _forumImages[imageIndex],
-                  userRoundBorderforLoading: false,
-                  borderWidth: 0,
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Image.asset(image, width: 50, height: 50, cacheWidth: 150, fit: BoxFit.cover),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    widget.forum.title ?? '',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
+                    forum.title ?? '',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: scheme.onSurface,
+                    ),
                   ),
                 ),
-                AnimatedIcon(
-                  icon: AnimatedIcons.menu_close,
-                  progress: _iconController,
-                  size: 18,
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
+                Icon(Icons.expand_less, size: 22, color: scheme.onSurfaceVariant),
               ],
             ),
           ),

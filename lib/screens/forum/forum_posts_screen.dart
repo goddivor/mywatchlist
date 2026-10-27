@@ -1,16 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:intl/intl.dart';
-import 'package:mywatchlist/constants/constants.dart';
+import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/services/api/MAL/mal_forum_api.dart';
 import 'package:mywatchlist/services/api/MAL/models/forum/forum_models.dart';
+import 'package:mywatchlist/utils/web_launcher.dart';
+import 'package:mywatchlist/widgets/common/app_bar_menu.dart';
+import 'package:mywatchlist/widgets/common/share_builder.dart';
+import 'package:mywatchlist/widgets/forum/forum_common.dart';
 import 'package:mywatchlist/widgets/forum/forum_topic_widget.dart';
 import 'package:mywatchlist/widgets/forum/next_previous_row.dart';
 import 'package:mywatchlist/widgets/forum/post_widget.dart';
-import 'package:mywatchlist/widgets/loading/shimmercolor.dart';
 import 'package:scroll_to_index/scroll_to_index.dart';
 import 'package:share_plus/share_plus.dart';
 
+/// The posts of a forum topic, fourteen per page. Long press a post to select it for copying or
+/// sharing; the reply button opens MyAnimeList's reply form in the in-app browser.
 class ForumPostsScreen extends StatefulWidget {
   final ForumTopicsData? topic;
   final bool showAppbar;
@@ -28,16 +32,19 @@ class ForumPostsScreen extends StatefulWidget {
 }
 
 class _ForumPostsScreenState extends State<ForumPostsScreen> {
+  static const _postLimit = 14;
+
   final _forumApi = MalForumApi();
-  final _postLimit = 14;
-  final DateFormat _dateFormat = DateFormat('EEE, MMM d, yyyy');
 
   int _pageIndex = 0;
-  String _sortType = 'Oldest';
+  bool _newestFirst = false;
   bool _enableShare = false;
   Set<ForumTopicPost> _selectedPosts = {};
-  Future<ForumTopicData?>? _topicFuture;
-  late AutoScrollController _scrollController;
+  ForumTopicData? _data;
+  bool _loading = true;
+  bool _failed = false;
+  int _requestId = 0;
+  late final AutoScrollController _scrollController;
 
   ForumTopicsData? get topic => widget.topic;
 
@@ -46,7 +53,7 @@ class _ForumPostsScreenState extends State<ForumPostsScreen> {
     super.initState();
     _scrollController = AutoScrollController(
       viewportBoundaryGetter: () =>
-          Rect.fromLTRB(0, 100, 0, MediaQuery.of(context).padding.bottom),
+          Rect.fromLTRB(0, 100, 0, MediaQuery.paddingOf(context).bottom),
     );
     _fetchTopicData();
   }
@@ -57,10 +64,18 @@ class _ForumPostsScreenState extends State<ForumPostsScreen> {
     super.dispose();
   }
 
-  void _fetchTopicData() {
+  Future<void> _fetchTopicData() async {
+    final id = topic?.id;
+    if (id == null) {
+      setState(() {
+        _loading = false;
+        _failed = true;
+      });
+      return;
+    }
     final totalPosts = topic?.numberOfPosts ?? 0;
     int offset;
-    if (_sortType == 'Newest') {
+    if (_newestFirst) {
       final lastPageIndex =
           ((totalPosts - _postLimit) / _postLimit).ceil().clamp(0, 999);
       offset = (_pageIndex - lastPageIndex).abs() * _postLimit;
@@ -68,74 +83,75 @@ class _ForumPostsScreenState extends State<ForumPostsScreen> {
       offset = _pageIndex * _postLimit;
     }
 
-    _topicFuture = _forumApi.getForumTopicDetail(
-      topic!.id!,
+    final request = ++_requestId;
+    setState(() {
+      _loading = true;
+      _failed = false;
+    });
+    final result = await _forumApi.getForumTopicDetail(
+      id,
       limit: _postLimit,
       offset: offset,
     );
-    if (mounted) setState(() {});
-  }
-
-  void _changePage(int index) {
-    if (_enableShare) return;
-    _scrollController
-        .animateTo(0,
-            curve: Curves.ease, duration: const Duration(milliseconds: 400))
-        .then((_) {
-      setState(() {
-        _pageIndex = index;
-        _fetchTopicData();
-      });
-    });
-  }
-
-  void _changeSortType(String value) {
-    if (_enableShare) return;
+    if (!mounted || request != _requestId) return;
     setState(() {
-      _sortType = value;
-      _pageIndex = 0;
-      _fetchTopicData();
+      _data = result;
+      _loading = false;
+      _failed = result == null;
     });
   }
 
-  int get _totalPages =>
-      ((topic?.numberOfPosts ?? 0) / _postLimit).ceil();
+  Future<void> _changePage(int index) async {
+    if (_enableShare || index == _pageIndex) return;
+    if (_scrollController.hasClients) {
+      await _scrollController.animateTo(
+        0,
+        curve: Curves.ease,
+        duration: const Duration(milliseconds: 250),
+      );
+    }
+    if (!mounted) return;
+    _pageIndex = index;
+    _fetchTopicData();
+  }
+
+  void _changeSort(bool newestFirst) {
+    if (_enableShare || newestFirst == _newestFirst) return;
+    _newestFirst = newestFirst;
+    _pageIndex = 0;
+    _fetchTopicData();
+  }
+
+  void _clearSelection() {
+    setState(() {
+      _selectedPosts = {};
+      _enableShare = false;
+    });
+  }
+
+  int get _totalPages => ((topic?.numberOfPosts ?? 0) / _postLimit).ceil();
 
   bool get _showPages =>
       topic?.numberOfPosts != null && topic!.numberOfPosts! > _postLimit;
 
+  bool get _canReply => topic?.id != null && topic?.isLocked != true;
+
+  String? get _topicUrl => topic?.id == null ? null : ForumUrls.topic(topic!.id!);
+
   @override
   Widget build(BuildContext context) {
-    if (topic == null) {
-      return Scaffold(
-        appBar: widget.showAppbar ? AppBar() : null,
-        body: const Center(child: Text('No topic selected')),
-      );
-    }
-
     return Scaffold(
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // Open MAL forum in browser to post a reply
-          final url =
-              'https://myanimelist.net/forum/?action=message&topic_id=${topic!.id}';
-          // For now just copy the URL
-          Clipboard.setData(ClipboardData(text: url));
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Forum URL copied')),
-          );
-        },
-        child: const Icon(Icons.post_add),
-      ),
+      floatingActionButton: _canReply && !_enableShare
+          ? FloatingActionButton.extended(
+              onPressed: () => launchWebView(ForumUrls.reply(topic!.id!), context: context),
+              icon: const Icon(Icons.reply),
+              label: Text(S.current.Fc_Reply),
+            )
+          : null,
       body: PopScope(
         canPop: !_enableShare,
         onPopInvokedWithResult: (didPop, _) {
-          if (!didPop && _enableShare) {
-            setState(() {
-              _selectedPosts = {};
-              _enableShare = false;
-            });
-          }
+          if (!didPop && _enableShare) _clearSelection();
         },
         child: _buildBody(),
       ),
@@ -143,75 +159,78 @@ class _ForumPostsScreenState extends State<ForumPostsScreen> {
   }
 
   Widget _buildBody() {
-    return FutureBuilder<ForumTopicData?>(
-      future: _topicFuture,
-      builder: (context, snapshot) {
-        final isLoaded = snapshot.hasData &&
-            snapshot.connectionState == ConnectionState.done;
+    final posts = _data?.posts;
+    return CustomScrollView(
+      controller: _scrollController,
+      slivers: [
+        _buildSliverHeader(),
+        if (_loading && posts == null)
+          const SliverToBoxAdapter(child: ForumSkeleton(count: 5, rowHeight: 96, round: true))
+        else if (_failed && posts == null)
+          SliverFillRemaining(
+            hasScrollBody: false,
+            child: ForumMessage.error(onRetry: _fetchTopicData, scrollable: false),
+          )
+        else if (posts == null || posts.isEmpty)
+          SliverFillRemaining(
+            hasScrollBody: false,
+            child: ForumMessage(
+              icon: Icons.forum_outlined,
+              title: S.current.Fc_Posts_Empty,
+              onRetry: _fetchTopicData,
+              scrollable: false,
+            ),
+          )
+        else ...[
+          if (_data?.poll != null)
+            SliverToBoxAdapter(child: _PollCard(poll: _data!.poll!)),
+          PostWidgetBuilder(
+            key: ValueKey('$_pageIndex-$_newestFirst-${_data.hashCode}'),
+            postList: posts,
+            controller: _scrollController,
+            reverse: _newestFirst,
+            offset: _pageIndex * _postLimit,
+            postLimit: _postLimit,
+            clearSelection: !_enableShare,
+            onPostsSelected: (selected) {
+              _selectedPosts = selected;
+              setState(() => _enableShare = selected.isNotEmpty);
+            },
+          ),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 24, 16, 96),
+              child: NextPreviousRow(
+                page: _pageIndex + 1,
+                total: _totalPages,
+                onPrevious: _pageIndex > 0 ? () => _changePage(_pageIndex - 1) : null,
+                onNext: _pageIndex < _totalPages - 1 ? () => _changePage(_pageIndex + 1) : null,
+              ),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
 
-        return CustomScrollView(
-          controller: _scrollController,
-          slivers: [
-            // Header
-            _buildSliverHeader(),
-            // Content
-            if (isLoaded && snapshot.data?.posts != null) ...[
-              // Poll
-              if (snapshot.data?.poll != null)
-                SliverToBoxAdapter(
-                  child: _buildPollWidget(snapshot.data!.poll!),
-                ),
-              SB.lh10,
-              // Posts
-              PostWidgetBuilder(
-                postList: snapshot.data!.posts,
-                controller: _scrollController,
-                reverse: _sortType == 'Newest',
-                offset: _pageIndex * _postLimit,
-                postLimit: _postLimit,
-                clearSelection: !_enableShare,
-                onPostsSelected: (posts) {
-                  _selectedPosts = posts;
-                  setState(() {
-                    _enableShare = posts.isNotEmpty;
-                  });
-                },
-              ),
-              // Pagination
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 30),
-                  child: NextPreviousRow(
-                    onPrevious: _pageIndex > 0
-                        ? () => _changePage(_pageIndex - 1)
-                        : null,
-                    onNext: _pageIndex < _totalPages - 1
-                        ? () => _changePage(_pageIndex + 1)
-                        : null,
-                  ),
-                ),
-              ),
-              SB.lh80,
-            ] else if (!isLoaded) ...[
-              SliverToBoxAdapter(child: _buildLoadingState()),
-            ] else ...[
-              SliverToBoxAdapter(
-                child: SizedBox(
-                  height: 200,
-                  child: Center(
-                    child: Text(
-                      'No posts found',
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ],
-        );
-      },
+  Widget _sortMenu() {
+    if (topic?.numberOfPosts == null) return const SizedBox.shrink();
+    return PopupMenuButton<bool>(
+      tooltip: S.current.Fc_Sort,
+      icon: const Icon(Icons.sort),
+      onSelected: _changeSort,
+      itemBuilder: (_) => [
+        CheckedPopupMenuItem(
+          value: false,
+          checked: !_newestFirst,
+          child: Text(S.current.Fc_Sort_Oldest),
+        ),
+        CheckedPopupMenuItem(
+          value: true,
+          checked: _newestFirst,
+          child: Text(S.current.Fc_Sort_Newest),
+        ),
+      ],
     );
   }
 
@@ -220,42 +239,40 @@ class _ForumPostsScreenState extends State<ForumPostsScreen> {
       return SliverToBoxAdapter(child: _buildInlineHeader());
     }
 
+    final selecting = _selectedPosts.isNotEmpty;
+    final title = topic?.title ?? '';
     return SliverAppBar(
       pinned: true,
-      floating: false,
-      automaticallyImplyLeading: _selectedPosts.isEmpty,
-      title: _selectedPosts.isNotEmpty
-          ? _buildSharePrefix()
+      automaticallyImplyLeading: !selecting,
+      leading: selecting
+          ? IconButton(
+              tooltip: S.current.Fc_Cancel_Selection,
+              onPressed: _clearSelection,
+              icon: const Icon(Icons.close),
+            )
           : null,
-      actions: _selectedPosts.isNotEmpty
+      title: selecting ? Text(S.current.Fc_Selected_Count(_selectedPosts.length)) : null,
+      actions: selecting
           ? _buildShareActions()
           : [
-              if (topic?.numberOfPosts != null)
-                PopupMenuButton<String>(
-                  icon: const Icon(Icons.sort),
-                  onSelected: _changeSortType,
-                  itemBuilder: (_) => ['Oldest', 'Newest']
-                      .map((s) => PopupMenuItem(
-                            value: s,
-                            child: Text(s),
-                          ))
-                      .toList(),
-                ),
-              SB.w10,
+              _sortMenu(),
+              AppBarMenu(
+                onShare: _topicUrl == null
+                    ? null
+                    : () => showShareBuilder(
+                          context,
+                          subject: title,
+                          fields: [
+                            if (title.isNotEmpty)
+                              ShareField(label: S.current.Fc_Field_Title, value: title),
+                            ShareField(label: S.current.Fc_Field_Link, value: _topicUrl!),
+                          ],
+                        ),
+                onOpenInBrowser:
+                    _topicUrl == null ? null : () => launchWebView(_topicUrl!, context: context),
+              ),
             ],
-      expandedHeight: _showPages ? 270 : 230,
-      bottom: _showPages ? _buildPageSelector() : null,
-      flexibleSpace: FlexibleSpaceBar(
-        background: Padding(
-          padding: const EdgeInsets.only(
-              top: 100, left: 15, right: 15, bottom: 20),
-          child: ForumPostHeader(
-            dateFormat: _dateFormat,
-            forumTopic: topic,
-            sizedbox: const SizedBox(height: 40),
-          ),
-        ),
-      ),
+      bottom: _showPages ? _PageSelector(current: _pageIndex, total: _totalPages, onSelected: _changePage) : null,
     );
   }
 
@@ -263,87 +280,25 @@ class _ForumPostsScreenState extends State<ForumPostsScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SizedBox(height: 30),
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 15),
+          padding: const EdgeInsets.fromLTRB(16, 12, 4, 0),
           child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
-                child: ForumPostHeader(
-                  forumTopic: topic,
-                  dateFormat: _dateFormat,
-                  sizedbox: const SizedBox(height: 20),
-                ),
+                child: (topic?.title ?? '').isEmpty
+                    ? const SizedBox.shrink()
+                    : ForumTopicHeader(topic: topic),
               ),
-              if (topic?.numberOfPosts != null)
-                PopupMenuButton<String>(
-                  icon: const Icon(Icons.sort),
-                  onSelected: _changeSortType,
-                  itemBuilder: (_) => ['Oldest', 'Newest']
-                      .map((s) => PopupMenuItem(
-                            value: s,
-                            child: Text(s),
-                          ))
-                      .toList(),
-                ),
+              _sortMenu(),
             ],
           ),
         ),
-        if (_showPages) _buildPageSelector(),
-        const Divider(thickness: 1),
-      ],
-    );
-  }
-
-  PreferredSize _buildPageSelector() {
-    return PreferredSize(
-      preferredSize: const Size.fromHeight(50),
-      child: SizedBox(
-        height: 40,
-        child: ListView.builder(
-          scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          itemCount: _totalPages,
-          itemBuilder: (context, index) {
-            final isSelected = index == _pageIndex;
-            final theme = Theme.of(context);
-            return Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 3),
-              child: ChoiceChip(
-                label: Text('${index + 1}'),
-                selected: isSelected,
-                onSelected: (_) => _changePage(index),
-                labelStyle: TextStyle(
-                  fontSize: 12,
-                  color: isSelected
-                      ? theme.colorScheme.onPrimary
-                      : theme.colorScheme.onSurfaceVariant,
-                ),
-                selectedColor: theme.colorScheme.primary,
-                visualDensity: VisualDensity.compact,
-              ),
-            );
-          },
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSharePrefix() {
-    return Row(
-      children: [
-        IconButton(
-          onPressed: () {
-            setState(() {
-              _selectedPosts = {};
-              _enableShare = false;
-            });
-          },
-          icon: const Icon(Icons.cancel_rounded),
-        ),
-        SB.w10,
-        Text('${_selectedPosts.length} selected'),
+        if (_showPages)
+          SizedBox(
+            height: 48,
+            child: _PageChips(current: _pageIndex, total: _totalPages, onSelected: _changePage),
+          ),
+        const Divider(height: 1),
       ],
     );
   }
@@ -351,30 +306,25 @@ class _ForumPostsScreenState extends State<ForumPostsScreen> {
   List<Widget> _buildShareActions() {
     return [
       IconButton(
+        tooltip: S.current.Fc_Copy,
         onPressed: () {
           Clipboard.setData(ClipboardData(text: _getShareableContent()));
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Copied to clipboard')),
+            SnackBar(content: Text(S.current.Fc_Copied)),
           );
-          setState(() {
-            _selectedPosts = {};
-            _enableShare = false;
-          });
+          _clearSelection();
         },
-        icon: Icon(
-            _selectedPosts.length > 1 ? Icons.copy_all : Icons.copy),
+        icon: Icon(_selectedPosts.length > 1 ? Icons.copy_all : Icons.copy),
       ),
       IconButton(
+        tooltip: S.current.Share,
         onPressed: () async {
-          await Share.share(_getShareableContent());
-          setState(() {
-            _selectedPosts = {};
-            _enableShare = false;
-          });
+          final text = _getShareableContent();
+          _clearSelection();
+          await Share.share(text);
         },
         icon: const Icon(Icons.share),
       ),
-      SB.w10,
     ];
   }
 
@@ -382,115 +332,142 @@ class _ForumPostsScreenState extends State<ForumPostsScreen> {
     if (_selectedPosts.length == 1) {
       return _selectedPosts.first.toString();
     }
-    return 'Posts: ${_selectedPosts.length}\n' +
-        _selectedPosts.map((e) => e.toString()).join('\n---\n');
+    return '${S.current.Fc_Posts_Count(_selectedPosts.length)}\n'
+        '${_selectedPosts.map((e) => e.toString()).join('\n---\n')}';
   }
+}
 
-  Widget _buildPollWidget(ForumTopicPoll poll) {
-    if (poll.question == null) return const SizedBox();
+/// The page numbers of a topic as chips, with the current one filled.
+class _PageChips extends StatelessWidget {
+  const _PageChips({required this.current, required this.total, required this.onSelected});
 
-    final totalVotes = poll.options
-            ?.fold<int>(0, (sum, opt) => sum + (opt.votes ?? 0)) ??
-        1;
+  final int current;
+  final int total;
+  final ValueChanged<int> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return ListView.builder(
+      scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      itemCount: total,
+      itemBuilder: (context, index) {
+        final selected = index == current;
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 3),
+          child: ChoiceChip(
+            label: Text('${index + 1}'),
+            selected: selected,
+            showCheckmark: false,
+            onSelected: (_) => onSelected(index),
+            labelStyle: TextStyle(
+              fontSize: 12,
+              color: selected ? scheme.onPrimary : scheme.onSurface,
+            ),
+            selectedColor: scheme.primary,
+            visualDensity: VisualDensity.compact,
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _PageSelector extends StatelessWidget implements PreferredSizeWidget {
+  const _PageSelector({required this.current, required this.total, required this.onSelected});
+
+  final int current;
+  final int total;
+  final ValueChanged<int> onSelected;
+
+  @override
+  Size get preferredSize => const Size.fromHeight(48);
+
+  @override
+  Widget build(BuildContext context) =>
+      SizedBox(height: 48, child: _PageChips(current: current, total: total, onSelected: onSelected));
+}
+
+/// The poll of a topic: each option with its share of the votes.
+class _PollCard extends StatelessWidget {
+  const _PollCard({required this.poll});
+
+  final ForumTopicPoll poll;
+
+  @override
+  Widget build(BuildContext context) {
+    if (poll.question == null) return const SizedBox.shrink();
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final options = poll.options ?? const <ForumTopicOptions>[];
+    final totalVotes = options.fold<int>(0, (sum, opt) => sum + (opt.votes ?? 0));
     final total = totalVotes == 0 ? 1 : totalVotes;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Card(
         elevation: 0,
+        color: scheme.surfaceContainerLow,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
-          side: BorderSide(
-            color: Theme.of(context).dividerColor.withValues(alpha: 0.3),
-          ),
+          side: BorderSide(color: scheme.outlineVariant),
         ),
         child: ExpansionTile(
+          shape: const Border(),
+          collapsedShape: const Border(),
+          leading: Icon(Icons.poll_outlined, color: scheme.primary),
           title: Text(
-            'Poll: ${poll.question}',
-            style: Theme.of(context)
-                .textTheme
-                .bodyMedium
-                ?.copyWith(fontWeight: FontWeight.w600),
+            poll.question!,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              fontWeight: FontWeight.w600,
+              color: scheme.onSurface,
+            ),
           ),
+          subtitle: Text(
+            [
+              S.current.Fc_Poll,
+              S.current.Fc_Poll_Votes(totalVotes),
+              if (poll.close == true) S.current.Fc_Poll_Closed,
+            ].join(' · '),
+            style: theme.textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
+          ),
+          childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
           children: [
-            if (poll.options != null)
-              ...poll.options!.map((opt) => ListTile(
-                    title: Text(
-                      '${opt.text} (${((opt.votes ?? 0) / total * 100).toStringAsFixed(1)}%)',
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                    trailing: SizedBox(
-                      width: 35,
-                      height: 35,
-                      child: Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          CircularProgressIndicator(
-                            strokeWidth: 2,
-                            value: (opt.votes ?? 0) / total,
-                          ),
-                          Text(
-                            '${opt.votes ?? 0}',
-                            style: Theme.of(context).textTheme.labelSmall,
-                          ),
-                        ],
-                      ),
-                    ),
-                  )),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildLoadingState() {
-    return ShimmerColor(
-      Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-        child: Column(
-          children: List.generate(
-            5,
-            (_) => Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    width: 32,
-                    height: 32,
-                    decoration: const BoxDecoration(
-                      color: Colors.white,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+            for (final option in options)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 6),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
                       children: [
-                        Container(
-                          height: 12,
-                          width: 120,
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(4),
+                        Expanded(
+                          child: Text(
+                            option.text ?? '',
+                            style: theme.textTheme.bodySmall?.copyWith(color: scheme.onSurface),
                           ),
                         ),
-                        const SizedBox(height: 8),
-                        Container(
-                          height: 50,
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(4),
-                          ),
+                        const SizedBox(width: 8),
+                        Text(
+                          '${((option.votes ?? 0) / total * 100).toStringAsFixed(1)}% · ${option.votes ?? 0}',
+                          style: theme.textTheme.labelSmall?.copyWith(color: scheme.onSurfaceVariant),
                         ),
                       ],
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 4),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(4),
+                      child: LinearProgressIndicator(
+                        value: (option.votes ?? 0) / total,
+                        minHeight: 6,
+                        backgroundColor: scheme.surfaceContainerHighest,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ),
+          ],
         ),
       ),
     );

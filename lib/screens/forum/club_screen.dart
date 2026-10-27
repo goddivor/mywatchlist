@@ -1,23 +1,23 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_widget_from_html_core/flutter_widget_from_html_core.dart';
 import 'package:mywatchlist/constants/constants.dart';
+import 'package:mywatchlist/generated/l10n.dart';
+import 'package:mywatchlist/screens/MAL/character_screen.dart';
+import 'package:mywatchlist/screens/MAL/contentdetailedscreen.dart';
 import 'package:mywatchlist/screens/forum/club_comments_screen.dart';
 import 'package:mywatchlist/screens/forum/club_forum_screen.dart';
 import 'package:mywatchlist/screens/forum/club_members_screen.dart';
-import 'package:mywatchlist/screens/forum/forum_posts_screen.dart';
-import 'package:mywatchlist/screens/MAL/character_screen.dart';
-import 'package:mywatchlist/screens/MAL/contentdetailedscreen.dart';
 import 'package:mywatchlist/services/api/MAL/mal_clubs_api.dart';
 import 'package:mywatchlist/services/api/MAL/models/club/club_data.dart';
 import 'package:mywatchlist/services/api/MAL/models/club/club_html.dart';
-import 'package:mywatchlist/services/api/MAL/models/forum/forum_models.dart';
-import 'package:mywatchlist/widgets/common/avatar_widget.dart';
+import 'package:mywatchlist/utils/web_launcher.dart';
+import 'package:mywatchlist/widgets/common/app_bar_menu.dart';
+import 'package:mywatchlist/widgets/common/app_image.dart';
 import 'package:mywatchlist/widgets/common/image_preview.dart';
-import 'package:mywatchlist/widgets/loading/shimmercolor.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:mywatchlist/widgets/common/share_builder.dart';
+import 'package:mywatchlist/widgets/forum/club_tiles.dart';
+import 'package:mywatchlist/widgets/forum/forum_common.dart';
 
-/// Club detail screen matching DailyAL's ClubScreen.
+/// A MyAnimeList club: description, comments, forum, staff, members and what it is about.
 class ClubScreen extends StatefulWidget {
   final ClubHtml clubHtml;
 
@@ -27,12 +27,19 @@ class ClubScreen extends StatefulWidget {
   State<ClubScreen> createState() => _ClubScreenState();
 }
 
+class _Section {
+  final String title;
+  final Widget Function() build;
+
+  const _Section(this.title, this.build);
+}
+
 class _ClubScreenState extends State<ClubScreen> {
   final _clubsApi = MalClubsApi();
   ClubData? _clubData;
-  final Map<String, String> _staffPositionMap = {};
-  List<_VisibleSection> _visibleSections = [];
-  final _regex = RegExp(r'font-size\s*:\s*[^;]+;');
+  bool _loading = true;
+  bool _failed = false;
+  Map<String, String> _staffPositions = const {};
 
   int get _id => widget.clubHtml.id!;
 
@@ -43,635 +50,323 @@ class _ClubScreenState extends State<ClubScreen> {
   }
 
   Future<void> _loadClubData() async {
-    _clubData = await _clubsApi.getClubData(_id);
-    if (_clubData?.details?.staffs != null) {
-      for (final staff in _clubData!.details!.staffs!) {
-        final position = staff.position;
-        final username = staff.user?.username;
-        if (username != null && position != null) {
-          _staffPositionMap[username] =
-              position.replaceAll('(', '').replaceAll(')', '');
-        }
+    setState(() {
+      _loading = true;
+      _failed = false;
+    });
+    final data = await _clubsApi.getClubData(_id);
+    if (!mounted) return;
+    final positions = <String, String>{};
+    for (final staff in data?.details?.staffs ?? const <ClubStaff>[]) {
+      final position = staff.position?.replaceAll('(', '').replaceAll(')', '').trim();
+      final username = staff.user?.username;
+      if (username != null && position != null && position.isNotEmpty) {
+        positions[username] = position;
       }
     }
-    _visibleSections = _buildSections();
-    if (mounted) setState(() {});
+    setState(() {
+      _clubData = data;
+      _staffPositions = positions;
+      _loading = false;
+      _failed = data == null;
+    });
   }
 
-  List<_VisibleSection> _buildSections() {
-    if (_clubData == null) return [];
-    final sections = <_VisibleSection>[];
-
-    // General info
-    if (_clubData!.information != null &&
-        _clubData!.information!.isNotEmpty) {
-      sections.add(_VisibleSection(
-        'General',
-        SingleChildScrollView(
-          padding: const EdgeInsets.only(top: 20, bottom: 40),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: HtmlWidget(
-              (_clubData!.information ?? '').replaceAll(_regex, ''),
-              textStyle: Theme.of(context).textTheme.bodyMedium,
-              customWidgetBuilder: (element) {
-                if (element.localName == 'img') {
-                  final src = element.attributes['src'] ??
-                      element.attributes['data-src'];
-                  if (src != null && src.isNotEmpty) {
-                    return GestureDetector(
-                      onTap: () => zoomInImage(context, src),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 4),
-                        child: CachedNetworkImage(
-                          imageUrl: src,
-                          errorWidget: (_, __, ___) =>
-                              const SizedBox.shrink(),
-                        ),
-                      ),
-                    );
-                  }
-                }
-                return null;
-              },
-            ),
-          ),
-        ),
-      ));
-    }
-
-    // Comments
-    if (_clubData!.comments != null && _clubData!.comments!.isNotEmpty) {
-      sections.add(_VisibleSection('Comments', _buildComments()));
-    }
-
-    // Forum topics
-    if (_clubData!.forumTopics != null &&
-        _clubData!.forumTopics!.isNotEmpty) {
-      sections.add(_VisibleSection('Forums', _buildForumTopics()));
-    }
-
-    // Staff
-    if (_clubData!.details?.staffs != null &&
-        _clubData!.details!.staffs!.isNotEmpty) {
-      sections.add(_VisibleSection('Staff', _buildStaff()));
-    }
-
-    // Members
-    if (_clubData!.members != null && _clubData!.members!.isNotEmpty) {
-      sections.add(_VisibleSection('Members', _buildMembers()));
-    }
-
-    // Relations
-    if (_clubData!.details?.clubRelations?.anime != null &&
-        _clubData!.details!.clubRelations!.anime!.isNotEmpty) {
-      sections.add(_VisibleSection(
-        'Anime',
-        _buildRelations(_clubData!.details!.clubRelations!.anime!, 'anime'),
-      ));
-    }
-    if (_clubData!.details?.clubRelations?.manga != null &&
-        _clubData!.details!.clubRelations!.manga!.isNotEmpty) {
-      sections.add(_VisibleSection(
-        'Manga',
-        _buildRelations(_clubData!.details!.clubRelations!.manga!, 'manga'),
-      ));
-    }
-    if (_clubData!.details?.clubRelations?.character != null &&
-        _clubData!.details!.clubRelations!.character!.isNotEmpty) {
-      sections.add(_VisibleSection(
-        'Character',
-        _buildRelations(
-            _clubData!.details!.clubRelations!.character!, 'character'),
-      ));
-    }
-
-    return sections;
+  String get _clubTitle {
+    final title = _clubData?.title ?? widget.clubHtml.name;
+    return title == null || title.isEmpty ? S.current.Fc_Club_Fallback_Title : title;
   }
 
-  String get _clubTitle =>
-      _clubData?.title ?? widget.clubHtml.name ?? 'Club';
+  String? get _imageUrl => _clubData?.details?.pictureUrl ?? widget.clubHtml.imgUrl;
+
+  List<_Section> _sections() {
+    final data = _clubData;
+    if (data == null) return const [];
+    final relations = data.details?.clubRelations;
+    final staffs = data.details?.staffs ?? const <ClubStaff>[];
+    return [
+      _Section(S.current.Fc_Tab_General, _buildGeneral),
+      if (data.comments?.isNotEmpty ?? false) _Section(S.current.Fc_Tab_Comments, _buildComments),
+      if (data.forumTopics?.isNotEmpty ?? false) _Section(S.current.Fc_Tab_Forums, _buildForumTopics),
+      if (staffs.isNotEmpty) _Section(S.current.Fc_Tab_Staff, _buildStaff),
+      if (data.members?.isNotEmpty ?? false) _Section(S.current.Fc_Tab_Members, _buildMembers),
+      if (relations?.anime?.isNotEmpty ?? false)
+        _Section(S.current.Fc_Tab_Anime, () => _buildRelations(relations!.anime!, 'anime')),
+      if (relations?.manga?.isNotEmpty ?? false)
+        _Section(S.current.Fc_Tab_Manga, () => _buildRelations(relations!.manga!, 'manga')),
+      if (relations?.character?.isNotEmpty ?? false)
+        _Section(S.current.Fc_Tab_Characters, () => _buildRelations(relations!.character!, 'character')),
+    ];
+  }
+
+  void _share() {
+    final members = _clubData?.details?.members;
+    showShareBuilder(
+      context,
+      subject: _clubTitle,
+      fields: [
+        ShareField(label: S.current.Fc_Field_Title, value: _clubTitle),
+        if (members != null)
+          ShareField(label: S.current.Fc_Tab_Members, value: S.current.Fc_Members_Count(members)),
+        ShareField(label: S.current.Fc_Field_Link, value: ForumUrls.club(_id)),
+      ],
+    );
+  }
+
+  Widget _menu() => AppBarMenu(
+        onShare: _share,
+        onOpenInBrowser: () => launchWebView(ForumUrls.club(_id), context: context),
+      );
 
   @override
   Widget build(BuildContext context) {
-    Widget child;
-    if (_visibleSections.isNotEmpty) {
-      child = DefaultTabController(
-        length: _visibleSections.length,
-        child: _nestedScrollView(),
+    if (_failed) {
+      return Scaffold(
+        appBar: AppBar(title: Text(_clubTitle, maxLines: 1, overflow: TextOverflow.ellipsis), actions: [_menu()]),
+        body: ForumMessage.error(onRetry: _loadClubData),
       );
-    } else {
-      child = _nestedScrollView();
     }
 
-    return Scaffold(
-      body: child,
+    final sections = _sections();
+    final scaffold = Scaffold(
       floatingActionButton: _clubData == null
           ? null
-          : FloatingActionButton(
-              onPressed: () {
-                final url =
-                    'https://myanimelist.net/clubs.php?action=join&id=$_id';
-                launchUrl(Uri.parse(url),
-                    mode: LaunchMode.externalApplication);
-              },
-              child: const Icon(Icons.add),
+          : FloatingActionButton.extended(
+              onPressed: () => launchWebView(ForumUrls.joinClub(_id), context: context),
+              icon: const Icon(Icons.group_add_outlined),
+              label: Text(S.current.Fc_Join_Club),
             ),
+      body: NestedScrollView(
+        headerSliverBuilder: (context, innerBoxIsScrolled) => [_appBar(sections)],
+        body: _loading
+            ? const SingleChildScrollView(
+                physics: NeverScrollableScrollPhysics(),
+                child: ForumSkeleton(count: 6, round: true),
+              )
+            : TabBarView(
+                children: [for (final section in sections) _KeepAlive(child: section.build())],
+              ),
+      ),
+    );
+    if (sections.isEmpty) return scaffold;
+    return DefaultTabController(
+      key: ValueKey(sections.length),
+      length: sections.length,
+      child: scaffold,
     );
   }
 
-  NestedScrollView _nestedScrollView() {
-    return NestedScrollView(
-      headerSliverBuilder: (context, innerBoxIsScrolled) => [
-        _appBar(innerBoxIsScrolled),
-      ],
-      body: _clubData == null
-          ? _buildLoadingState()
-          : TabBarView(
-              children: _visibleSections
-                  .map((e) => _KeepAliveWrapper(child: e.child))
-                  .toList(),
-            ),
-    );
-  }
-
-  SliverAppBar _appBar(bool innerBoxIsScrolled) {
+  SliverAppBar _appBar(List<_Section> sections) {
+    final scheme = Theme.of(context).colorScheme;
+    final image = _imageUrl;
     return SliverAppBar(
-      expandedHeight: 240.0,
+      expandedHeight: 220,
       pinned: true,
-      title: innerBoxIsScrolled ? Text(_clubTitle) : null,
-      bottom: _visibleSections.isEmpty
+      actions: [_menu()],
+      bottom: sections.isEmpty
           ? null
           : TabBar(
-              tabs: _visibleSections
-                  .map((e) => Tab(text: e.title))
-                  .toList(),
               isScrollable: true,
               tabAlignment: TabAlignment.start,
+              tabs: [for (final section in sections) Tab(text: section.title)],
             ),
       flexibleSpace: FlexibleSpaceBar(
-        background: _headerWidget(),
+        titlePadding: const EdgeInsetsDirectional.only(start: 56, end: 56, bottom: 62),
+        title: Text(
+          _clubTitle,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(color: scheme.onSurface, fontSize: 18, fontWeight: FontWeight.w600),
+        ),
+        background: Stack(
+          fit: StackFit.expand,
+          children: [
+            if (image != null && image.isNotEmpty)
+              GestureDetector(
+                onTap: () => zoomInImage(context, image),
+                child: AppImage(url: image, errorWidget: (_) => const SizedBox.shrink()),
+              ),
+            // A plain gradient (no blur, no Opacity) keeps the title readable over any picture.
+            DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    scheme.surface.withValues(alpha: 0.55),
+                    scheme.surface.withValues(alpha: 0.92),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _headerWidget() {
-    final imageUrl = _clubData?.details?.pictureUrl ?? widget.clubHtml.imgUrl;
+  Widget _viewAllButton(String label, Widget Function() page) => Padding(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 96),
+        child: OutlinedButton(
+          onPressed: () => gotoPage(context: context, newPage: page()),
+          child: Text(label),
+        ),
+      );
 
-    return Stack(
+  Widget _buildGeneral() {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final details = _clubData?.details;
+    final info = _clubData?.information;
+    final desc = widget.clubHtml.desc;
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
       children: [
-        if (imageUrl != null)
-          Positioned.fill(
-            child: GestureDetector(
-              onTap: () => zoomInImage(context, imageUrl),
-              child: Opacity(
-                opacity: 0.3,
-                child: CachedNetworkImage(
-                  imageUrl: imageUrl,
-                  fit: BoxFit.cover,
-                  errorWidget: (_, __, ___) => const SizedBox(),
-                ),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            if (details?.members != null)
+              ForumStatChip(
+                icon: Icons.people_outline,
+                label: S.current.Fc_Members_Count(details!.members!),
               ),
-            ),
-          ),
-        Padding(
-          padding: const EdgeInsets.only(top: 100),
-          child: Row(
-            children: [
-              const SizedBox(width: 20),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 5),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Expanded(
-                        flex: 2,
-                        child: Text(
-                          _clubTitle,
-                          textAlign: TextAlign.start,
-                          style: Theme.of(context).textTheme.titleLarge,
-                        ),
-                      ),
-                      if (widget.clubHtml.desc != null) ...[
-                        SB.h5,
-                        Expanded(
-                          flex: 4,
-                          child: Text(
-                            widget.clubHtml.desc ?? '',
-                            textAlign: TextAlign.start,
-                            style: Theme.of(context).textTheme.labelSmall,
-                          ),
-                        ),
-                      ],
-                      SB.h15,
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
+            if (details?.category != null && details!.category!.isNotEmpty)
+              ForumStatChip(icon: Icons.category_outlined, label: details.category!),
+            if (details?.created != null && details!.created!.isNotEmpty)
+              ForumStatChip(icon: Icons.event_outlined, label: details.created!),
+          ],
         ),
+        const SizedBox(height: 16),
+        if (info != null && info.isNotEmpty)
+          MalHtmlBody(info, style: theme.textTheme.bodyMedium?.copyWith(color: scheme.onSurface))
+        else
+          Text(
+            desc != null && desc.isNotEmpty ? desc : S.current.Fc_Club_Info_Empty,
+            style: theme.textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
+          ),
       ],
-    );
-  }
-
-  Widget _buildMembers() {
-    final members = _clubData?.members ?? [];
-    return CustomScrollView(
-      slivers: [
-        SB.lh20,
-        SliverList.builder(
-          itemCount: members.length,
-          itemBuilder: (context, index) =>
-              _buildMemberTile(members[index]),
-        ),
-        SB.lh10,
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: OutlinedButton(
-              onPressed: () => _openViewAllMembers(),
-              style: OutlinedButton.styleFrom(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(13),
-                ),
-              ),
-              child: const Text('View All Members'),
-            ),
-          ),
-        ),
-        SB.lh30,
-      ],
-    );
-  }
-
-  void _openViewAllMembers() {
-    gotoPage(
-      context: context,
-      newPage: ClubMembersScreen(
-        clubId: _id,
-        clubTitle: _clubTitle,
-        staffPositionMap: _staffPositionMap,
-      ),
-    );
-  }
-
-  Widget _buildMemberTile(ClubMember member) {
-    final username = member.username ?? '';
-    return Padding(
-      padding: const EdgeInsets.all(4.0),
-      child: Card(
-        child: InkWell(
-          onTap: () {
-            // Open MAL profile
-            launchUrl(
-              Uri.parse('https://myanimelist.net/profile/$username'),
-              mode: LaunchMode.externalApplication,
-            );
-          },
-          child: Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Row(
-              children: [
-                AvatarWidget(
-                  url: member.imageUrl,
-                  height: 55,
-                  width: 55,
-                ),
-                SB.w15,
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(username),
-                    if (_staffPositionMap.containsKey(username)) ...[
-                      SB.h10,
-                      _buildStaffBadge(username),
-                    ],
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStaff() {
-    final staffs = _clubData?.details?.staffs ?? [];
-    return ListView.builder(
-      itemCount: staffs.length,
-      itemBuilder: (context, index) {
-        final staff = staffs[index];
-        final username = staff.user?.username ?? '';
-        return Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Card(
-            child: InkWell(
-              onTap: () {
-                launchUrl(
-                  Uri.parse('https://myanimelist.net/profile/$username'),
-                  mode: LaunchMode.externalApplication,
-                );
-              },
-              child: Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Text(username),
-                    if (_staffPositionMap.containsKey(username))
-                      _buildStaffBadge(username),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildStaffBadge(String username) {
-    return SizedBox(
-      height: 30,
-      child: OutlinedButton(
-        onPressed: () {},
-        style: OutlinedButton.styleFrom(
-          padding: const EdgeInsets.symmetric(horizontal: 5),
-          textStyle: const TextStyle(fontSize: 11),
-        ),
-        child: Text(_staffPositionMap[username]!),
-      ),
-    );
-  }
-
-  int _extractPostCount(String? replies) {
-    if (replies == null) return 0;
-    final match = RegExp(r'\d+').firstMatch(replies);
-    if (match != null) {
-      return (int.tryParse(match.group(0)!) ?? 0) + 1;
-    }
-    return 0;
-  }
-
-  Widget _buildForumTopics() {
-    final topics = _clubData?.forumTopics ?? [];
-    return CustomScrollView(
-      slivers: [
-        SliverPadding(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          sliver: SliverList.builder(
-            itemCount: topics.length,
-            itemBuilder: (context, index) {
-              final topic = topics[index];
-              final postCount = _extractPostCount(topic.replies);
-              return ListTile(
-                title: Text(
-                  topic.title ?? '',
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                subtitle: Text(
-                  [
-                    if (topic.createdBy != null) topic.createdBy,
-                    if (postCount > 0) '$postCount posts',
-                  ].join(' · '),
-                  style: Theme.of(context).textTheme.labelSmall,
-                ),
-                trailing: topic.lastPostTime != null
-                    ? Text(
-                        topic.lastPostTime!,
-                        style: Theme.of(context).textTheme.labelSmall,
-                      )
-                    : null,
-                onTap: () {
-                  if (topic.id != null) {
-                    gotoPage(
-                      context: context,
-                      newPage: ForumPostsScreen(
-                        topic: ForumTopicsData(
-                          id: topic.id,
-                          title: topic.title,
-                          createdBy: ForumUser(name: topic.createdBy),
-                          numberOfPosts: postCount > 0 ? postCount : null,
-                        ),
-                      ),
-                    );
-                  }
-                },
-              );
-            },
-          ),
-        ),
-        SB.lh10,
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: OutlinedButton(
-              onPressed: () => _openViewAllForumTopics(),
-              style: OutlinedButton.styleFrom(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(13),
-                ),
-              ),
-              child: const Text('View All Topics'),
-            ),
-          ),
-        ),
-        SB.lh30,
-      ],
-    );
-  }
-
-  void _openViewAllForumTopics() {
-    gotoPage(
-      context: context,
-      newPage: ClubForumScreen(
-        clubId: _id,
-        clubTitle: _clubTitle,
-      ),
     );
   }
 
   Widget _buildComments() {
-    final comments = _clubData?.comments ?? [];
-    return CustomScrollView(
-      slivers: [
-        SB.lh20,
-        SliverList.builder(
-          itemCount: comments.length,
-          itemBuilder: (context, index) {
-            final comment = comments[index];
-            final username = comment.by?.username ?? '';
-            return Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Column(
-                children: [
-                  Row(
-                    children: [
-                      AvatarWidget(
-                        url: comment.by?.imageUrl,
-                        height: 40,
-                        width: 40,
-                      ),
-                      SB.w10,
-                      Text(
-                        '$username · ${comment.longAgo ?? ''}',
-                        style: Theme.of(context).textTheme.labelSmall,
-                      ),
-                      SB.w10,
-                      const Expanded(child: SizedBox()),
-                      if (_staffPositionMap.containsKey(username))
-                        _buildStaffBadge(username),
-                    ],
-                  ),
-                  SB.h10,
-                  if (comment.content != null)
-                    HtmlWidget(
-                      (comment.content ?? '').replaceAll(_regex, ''),
-                      textStyle: Theme.of(context).textTheme.bodySmall,
-                      customWidgetBuilder: (element) {
-                        if (element.localName == 'img') {
-                          final src = element.attributes['src'] ??
-                              element.attributes['data-src'];
-                          if (src != null && src.isNotEmpty) {
-                            return GestureDetector(
-                              onTap: () => zoomInImage(context, src),
-                              child: CachedNetworkImage(
-                                imageUrl: src,
-                                errorWidget: (_, __, ___) =>
-                                    const SizedBox.shrink(),
-                              ),
-                            );
-                          }
-                        }
-                        return null;
-                      },
-                    ),
-                  const Divider(),
-                ],
-              ),
-            );
-          },
-        ),
-        // View All button
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: OutlinedButton(
-              onPressed: () => _openViewAllComments(),
-              style: OutlinedButton.styleFrom(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(13),
-                ),
-              ),
-              child: const Text('View All Comments'),
+    final comments = _clubData?.comments ?? const <ClubComment>[];
+    return ListView.builder(
+      itemCount: comments.length + 1,
+      itemBuilder: (context, index) {
+        if (index == comments.length) {
+          return _viewAllButton(
+            S.current.Fc_View_All_Comments,
+            () => ClubCommentsScreen(
+              clubId: _id,
+              clubTitle: _clubTitle,
+              staffPositionMap: _staffPositions,
             ),
-          ),
-        ),
-        SB.lh40,
-      ],
+          );
+        }
+        final comment = comments[index];
+        return ClubCommentTile(comment: comment, position: _staffPositions[comment.by?.username]);
+      },
     );
   }
 
-  void _openViewAllComments() {
-    gotoPage(
-      context: context,
-      newPage: ClubCommentsScreen(
-        clubId: _id,
-        clubTitle: _clubTitle,
-        staffPositionMap: _staffPositionMap,
-      ),
+  Widget _buildForumTopics() {
+    final topics = _clubData?.forumTopics ?? const <ClubForumTopic>[];
+    return ListView.builder(
+      padding: const EdgeInsets.only(top: 8),
+      itemCount: topics.length + 1,
+      itemBuilder: (context, index) {
+        if (index == topics.length) {
+          return _viewAllButton(
+            S.current.Fc_View_All_Topics,
+            () => ClubForumScreen(clubId: _id, clubTitle: _clubTitle),
+          );
+        }
+        return ClubTopicTile(topic: topics[index]);
+      },
+    );
+  }
+
+  Widget _buildStaff() {
+    final staffs = _clubData?.details?.staffs ?? const <ClubStaff>[];
+    if (staffs.isEmpty) {
+      return ForumMessage(
+        icon: Icons.badge_outlined,
+        title: S.current.Fc_Staff_Empty,
+        scrollable: false,
+      );
+    }
+    return ListView.builder(
+      padding: const EdgeInsets.only(top: 8, bottom: 96),
+      itemCount: staffs.length,
+      itemBuilder: (context, index) {
+        final staff = staffs[index];
+        final member = staff.user ?? ClubMember();
+        return ClubMemberTile(member: member, position: _staffPositions[member.username]);
+      },
+    );
+  }
+
+  Widget _buildMembers() {
+    final members = _clubData?.members ?? const <ClubMember>[];
+    return ListView.builder(
+      padding: const EdgeInsets.only(top: 8),
+      itemCount: members.length + 1,
+      itemBuilder: (context, index) {
+        if (index == members.length) {
+          return _viewAllButton(
+            S.current.Fc_View_All_Members,
+            () => ClubMembersScreen(
+              clubId: _id,
+              clubTitle: _clubTitle,
+              staffPositionMap: _staffPositions,
+            ),
+          );
+        }
+        final member = members[index];
+        return ClubMemberTile(member: member, position: _staffPositions[member.username]);
+      },
     );
   }
 
   Widget _buildRelations(List<ClubRelation> relations, String category) {
-    return CustomScrollView(
-      slivers: [
-        SB.lh20,
-        SliverList.builder(
-          itemCount: relations.length,
-          itemBuilder: (context, index) {
-            final relation = relations[index];
-            return Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: ListTile(
-                title: Text(relation.title ?? '?'),
-                onTap: () {
-                  if (relation.id != null) {
-                    if (category == 'character') {
-                      gotoPage(
-                        context: context,
-                        newPage: CharacterScreen(
-                          id: relation.id!,
-                          category: 'character',
-                        ),
-                      );
-                    } else {
-                      gotoPage(
-                        context: context,
-                        newPage: ContentDetailedScreen(
-                          node: null,
-                          id: relation.id,
-                          category: category,
-                        ),
-                      );
-                    }
-                  }
-                },
-              ),
-            );
-          },
-        ),
-        SB.lh40,
-      ],
-    );
-  }
-
-  Widget _buildLoadingState() {
-    return ShimmerColor(
-      Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 40),
-        child: Column(
-          children: List.generate(
-            6,
-            (_) => Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              child: Container(
-                height: 50,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-            ),
+    final scheme = Theme.of(context).colorScheme;
+    return ListView.builder(
+      padding: const EdgeInsets.only(top: 8, bottom: 96),
+      itemCount: relations.length,
+      itemBuilder: (context, index) {
+        final relation = relations[index];
+        return ListTile(
+          title: Text(
+            relation.title ?? '?',
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(color: scheme.onSurface),
           ),
-        ),
-      ),
+          trailing: Icon(Icons.chevron_right, color: scheme.onSurfaceVariant),
+          onTap: relation.id == null
+              ? null
+              : () => gotoPage(
+                    context: context,
+                    newPage: category == 'character'
+                        ? CharacterScreen(id: relation.id!, category: 'character')
+                        : ContentDetailedScreen(node: null, id: relation.id, category: category),
+                  ),
+        );
+      },
     );
   }
 }
 
-class _VisibleSection {
-  final String title;
+class _KeepAlive extends StatefulWidget {
   final Widget child;
-
-  _VisibleSection(this.title, this.child);
-}
-
-class _KeepAliveWrapper extends StatefulWidget {
-  final Widget child;
-  const _KeepAliveWrapper({required this.child});
+  const _KeepAlive({required this.child});
 
   @override
-  State<_KeepAliveWrapper> createState() => _KeepAliveWrapperState();
+  State<_KeepAlive> createState() => _KeepAliveState();
 }
 
-class _KeepAliveWrapperState extends State<_KeepAliveWrapper>
-    with AutomaticKeepAliveClientMixin {
+class _KeepAliveState extends State<_KeepAlive> with AutomaticKeepAliveClientMixin {
   @override
   bool get wantKeepAlive => true;
 
