@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mywatchlist/generated/l10n.dart';
+import 'package:mywatchlist/widgets/calendar/airing_schedule.dart';
+import 'package:mywatchlist/widgets/common/app_colors.dart';
 
 /// Status of an entry in a user list, the same for every tracker.
 ///
@@ -43,14 +45,28 @@ enum ListEntryStatus {
           isAnime ? S.current.Edit_Plan_To_Watch : S.current.Edit_Plan_To_Read,
       };
 
-  /// Badge colour, the same hues as MAL's list (readable on light and dark).
-  Color get color => switch (this) {
-        ListEntryStatus.current => const Color(0xFF2DB039),
-        ListEntryStatus.completed => const Color(0xFF26448F),
-        ListEntryStatus.onHold => const Color(0xFFE0A100),
-        ListEntryStatus.dropped => const Color(0xFFA12F31),
-        ListEntryStatus.planned => const Color(0xFF8A8A8A),
+  /// Short code of the status chip of grid cards ("CW", "CMP"… / "EC", "FIN"…).
+  String shortLabel({required bool isAnime}) => switch (this) {
+        ListEntryStatus.current =>
+          isAnime ? S.current.Card_Short_Watching : S.current.Card_Short_Reading,
+        ListEntryStatus.completed => S.current.Card_Short_Completed,
+        ListEntryStatus.onHold => S.current.Card_Short_On_Hold,
+        ListEntryStatus.dropped => S.current.Card_Short_Dropped,
+        ListEntryStatus.planned =>
+          isAnime ? S.current.Card_Short_Plan_Watch : S.current.Card_Short_Plan_Read,
       };
+
+  /// Colour token of the status (theme-colors `AppColors` list statuses).
+  ListStatusTone get tone => switch (this) {
+        ListEntryStatus.current => ListStatusTone.watching,
+        ListEntryStatus.completed => ListStatusTone.completed,
+        ListEntryStatus.onHold => ListStatusTone.onHold,
+        ListEntryStatus.dropped => ListStatusTone.dropped,
+        ListEntryStatus.planned => ListStatusTone.planned,
+      };
+
+  /// The colour role of the status in the current theme (readable in light, dark and black).
+  AppColorRole colors(BuildContext context) => AppColors.of(context).status(tone);
 
   IconData get icon => switch (this) {
         ListEntryStatus.current => Icons.play_circle_outline_rounded,
@@ -236,21 +252,33 @@ class ListEntryView {
 
   bool get isAnime => category == 'anime';
 
-  /// Episodes (or chapters) released so far, estimated from the weekly
-  /// broadcast for an airing anime with a known start date; [total] for a
-  /// finished one; null when unknown.
+  /// Episodes (or chapters) released so far, or null when unknown:
+  /// 1. airing anime: the real schedule ([AiringSchedule.nextEpisode] of
+  ///    [malId], next episode − 1), when it is loaded and lists the anime;
+  /// 2. airing tv/ona anime with a known total and a full start date: one
+  ///    episode per week from the premiere (null when that would exceed the
+  ///    total, i.e. the season had a break);
+  /// 3. finished anime or manga: [total] when known.
   int? releasedCount(DateTime now) {
-    if (releaseState == ReleaseState.finished && total > 0) return total;
+    if (releaseState == ReleaseState.finished) return total > 0 ? total : null;
     if (!isAnime || releaseState != ReleaseState.releasing) return null;
+    final next = AiringSchedule.instance.nextEpisode(malId, now: now);
+    if (next != null) {
+      final aired = next.episode - 1;
+      return aired < 0 ? 0 : aired;
+    }
+    final type = mediaType?.toLowerCase();
+    if (type != null && type != 'tv' && type != 'ona') return null;
+    if (total <= 0) return null;
     final start = DateTime.tryParse(releaseStart ?? '');
     if (start == null || (releaseStart?.length ?? 0) < 10) return null;
     final days = now.difference(start).inDays;
     if (days < 0) return 0;
     final aired = days ~/ 7 + 1;
-    return total > 0 && aired > total ? total : aired;
+    return aired > total ? null : aired;
   }
 
-  /// Released episodes the user has not watched yet (0 when none or unknown).
+  /// Released episodes (chapters) the user has not watched yet (0 when none or unknown).
   int unseenCount(DateTime now) {
     final released = releasedCount(now);
     if (released == null || status == null) return 0;

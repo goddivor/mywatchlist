@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/user/preferences/preferences.dart';
+import 'package:mywatchlist/widgets/calendar/airing_schedule.dart';
+import 'package:mywatchlist/widgets/common/app_colors.dart';
 import 'package:mywatchlist/widgets/common/app_image.dart';
 import 'package:mywatchlist/widgets/common/score_reveal.dart';
 import 'package:mywatchlist/widgets/user/list/list_entry_view.dart';
@@ -146,16 +148,11 @@ class StatusPill extends StatelessWidget {
           ? (entry.isAnime ? S.current.Edit_Rewatching : S.current.Edit_Rereading)
           : status.label(isAnime: entry.isAnime),
       icon: entry.repeating ? Icons.replay_rounded : null,
-      background: status.color.withValues(alpha: 0.16),
-      foreground: _readable(status.color, Theme.of(context).brightness),
+      background: status.colors(context).container,
+      foreground: status.colors(context).onContainer,
     );
   }
 }
-
-/// A brighter hue on dark backgrounds so the label stays readable.
-Color _readable(Color color, Brightness brightness) => brightness == Brightness.dark
-    ? Color.lerp(color, Colors.white, 0.45)!
-    : Color.lerp(color, Colors.black, 0.1)!;
 
 /// "High" / "Medium" priority pill (nothing for low).
 class PriorityPill extends StatelessWidget {
@@ -165,35 +162,146 @@ class PriorityPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (priority <= 0) return const SizedBox.shrink();
-    final color = priority >= 2 ? const Color(0xFFD9363E) : const Color(0xFFE08A00);
+    final tokens = AppColors.of(context);
+    final role = priority >= 2 ? tokens.danger : tokens.warning;
     return EntryPill(
       label: priorityLabel(priority),
       icon: Icons.flag_rounded,
-      background: color.withValues(alpha: 0.16),
-      foreground: _readable(color, Theme.of(context).brightness),
+      background: role.container,
+      foreground: role.onContainer,
     );
   }
 }
 
-/// Unseen episodes pill (aired but not watched).
-class UnseenPill extends StatelessWidget {
-  final int count;
-  const UnseenPill({super.key, required this.count});
+/// The episode badges of a cover, DailyAL's rule: a red "+N" badge for the
+/// released episodes (chapters) the user has not watched yet and, when
+/// [showReleased] is set, a blue badge with the number released so far
+/// (hidden when it equals the red one, i.e. nothing watched yet). Nothing when
+/// caught up or when the released count is unknown.
+///
+/// Cards that already print the progress ("4 / 12 ep.") pass
+/// `showReleased: false`; the others (grid cards, layouts without the progress
+/// field) show both. The released count comes from [ListEntryView.releasedCount]
+/// (calendar schedule first, then the weekly estimate, then the total); for an
+/// airing anime the badge rebuilds when the schedule loads.
+class EntryEpisodeBadges extends StatefulWidget {
+  final ListEntryView entry;
+  final DateTime now;
+  final bool showReleased;
+
+  const EntryEpisodeBadges({
+    super.key,
+    required this.entry,
+    required this.now,
+    this.showReleased = true,
+  });
+
+  @override
+  State<EntryEpisodeBadges> createState() => _EntryEpisodeBadgesState();
+}
+
+class _EntryEpisodeBadgesState extends State<EntryEpisodeBadges> {
+  bool get _usesSchedule =>
+      widget.entry.isAnime &&
+      widget.entry.malId != null &&
+      widget.entry.releaseState == ReleaseState.releasing;
+
+  @override
+  void initState() {
+    super.initState();
+    if (_usesSchedule) requestAiringSchedule();
+  }
 
   @override
   Widget build(BuildContext context) {
-    if (count <= 0) return const SizedBox.shrink();
-    final scheme = Theme.of(context).colorScheme;
+    if (widget.entry.status == null) return const SizedBox.shrink();
+    if (!_usesSchedule) return _badges(context);
+    return ListenableBuilder(
+      listenable: AiringSchedule.instance,
+      builder: (context, _) => _badges(context),
+    );
+  }
+
+  Widget _badges(BuildContext context) {
+    final e = widget.entry;
+    final released = e.releasedCount(widget.now);
+    if (released == null) return const SizedBox.shrink();
+    final unseen = released - e.progress;
+    if (unseen <= 0) return const SizedBox.shrink();
+    final tokens = AppColors.of(context);
+    final showReleased = widget.showReleased && released != unseen;
+    final format = NumberFormat.compact(locale: Intl.getCurrentLocale());
+    final label = e.isAnime
+        ? S.current.UserList_Unseen_Count(unseen)
+        : S.current.Lcd_Unread_Count(unseen);
     return Semantics(
-      label: S.current.UserList_Unseen_Count(count),
+      label: showReleased
+          ? '${e.isAnime ? S.current.Lcd_Aired_Count(released) : S.current.Lcd_Released_Chapters(released)}, $label'
+          : label,
       excludeSemantics: true,
-      child: EntryPill(
-        label: '+${NumberFormat.compact().format(count)}',
-        background: scheme.error,
-        foreground: scheme.onError,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (showReleased) ...[
+            _EpisodeBadge(
+              text: format.format(released),
+              background: tokens.completed.color,
+              foreground: tokens.completed.onColor,
+            ),
+            const SizedBox(width: 3),
+          ],
+          _EpisodeBadge(
+            text: '+${format.format(unseen)}',
+            background: tokens.danger.color,
+            foreground: tokens.danger.onColor,
+          ),
+        ],
       ),
     );
   }
+}
+
+class _EpisodeBadge extends StatelessWidget {
+  final String text;
+  final Color background;
+  final Color foreground;
+
+  const _EpisodeBadge({required this.text, required this.background, required this.foreground});
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: background,
+        borderRadius: const BorderRadius.all(Radius.circular(4)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+        child: Text(
+          text,
+          maxLines: 1,
+          textScaler: MediaQuery.textScalerOf(context).clamp(maxScaleFactor: 1.2),
+          style: TextStyle(fontSize: 10, height: 1.1, fontWeight: FontWeight.w600, color: foreground),
+        ),
+      ),
+    );
+  }
+}
+
+DateTime? _lastScheduleRequest;
+
+/// Asks the calendar's [AiringSchedule] to load (shared request, no-op while
+/// fresh); after a failure it is asked again at most every 5 minutes, so a
+/// scrolling list never hammers the backend.
+void requestAiringSchedule() {
+  final schedule = AiringSchedule.instance;
+  final now = DateTime.now();
+  final last = _lastScheduleRequest;
+  if (!schedule.isLoaded && last != null && now.difference(last) < const Duration(minutes: 5)) {
+    return;
+  }
+  _lastScheduleRequest = now;
+  schedule.ensureLoaded();
 }
 
 /// Star + mean score of every user (hidden behind [ScoreReveal] when the
@@ -203,12 +311,22 @@ class MeanScore extends StatelessWidget {
   final double fontSize;
   final bool showMembers;
 
-  const MeanScore({super.key, required this.entry, this.fontSize = 12, this.showMembers = false});
+  /// Shows "-" when the entry has no mean score instead of nothing (grid bar, as DailyAL).
+  final bool dashWhenUnknown;
+
+  const MeanScore({
+    super.key,
+    required this.entry,
+    this.fontSize = 12,
+    this.showMembers = false,
+    this.dashWhenUnknown = false,
+  });
 
   @override
   Widget build(BuildContext context) {
     final mean = entry.meanScore;
-    if (mean == null || mean <= 0) return const SizedBox.shrink();
+    final known = mean != null && mean > 0;
+    if (!known && !dashWhenUnknown) return const SizedBox.shrink();
     final theme = Theme.of(context);
     final members = entry.members;
     return ScoreReveal(
@@ -216,10 +334,14 @@ class MeanScore extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.star_rounded, size: fontSize + 3, color: const Color(0xFFF5B301)),
+          Icon(Icons.star_rounded, size: fontSize + 3, color: AppColors.of(context).score.color),
           const SizedBox(width: 2),
-          Text(mean.toStringAsFixed(2),
-              style: theme.textTheme.labelMedium?.copyWith(fontSize: fontSize)),
+          Flexible(
+            child: Text(known ? mean.toStringAsFixed(2) : '-',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.labelMedium?.copyWith(fontSize: fontSize)),
+          ),
           if (showMembers && members != null && members > 0) ...[
             const SizedBox(width: 4),
             Text('(${NumberFormat.compact().format(members)})',
@@ -343,7 +465,7 @@ class EntryProgressBar extends StatelessWidget {
       minHeight: height,
       borderRadius: BorderRadius.circular(height),
       backgroundColor: scheme.surfaceContainerHighest,
-      color: entry.status?.color ?? scheme.primary,
+      color: entry.status?.colors(context).color ?? scheme.primary,
     );
   }
 }

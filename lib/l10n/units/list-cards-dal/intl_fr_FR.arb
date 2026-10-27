@@ -1,0 +1,6 @@
+{
+  "@@locale": "fr_FR",
+  "Lcd_Aired_Count": "{count, plural, =1{1 épisode diffusé} other{{count} épisodes diffusés}}",
+  "Lcd_Released_Chapters": "{count, plural, =1{1 chapitre paru} other{{count} chapitres parus}}",
+  "Lcd_Unread_Count": "{count, plural, =1{1 chapitre non lu} other{{count} chapitres non lus}}"
+}
