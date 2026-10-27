@@ -33,7 +33,6 @@ this brief, then your unit's start prompt and handoff. Follow all three strictly
 - Port DailyAL behaviour, never paste its code: BLoC for app-wide state, Provider/ChangeNotifier for the user singletons, no other state management (project convention).
 - UI: MWL's current look is NOT the reference. Compare with DAL, keep the better, improve it. MWL-only flows the owner built (e.g. the account picker) are redesigned too.
 - Fix the bugs listed in your handoff that fall inside your Owns; report the others.
-- Icons: a feature ported from DailyAL uses the SAME icon as DailyAL for each action/element (look it up in the DAL widget); never substitute another icon.
 - User-visible strings go through `S` with keys in YOUR fragment `lib/l10n/units/<UNIT_ID>/` (see CLAUDE.md, Localization). No hardcoded UI text.
 - Multi-tracker: never assume the active account is MAL; guard or adapt per tracker.
 - Commits: `type(scope): description`, imperative, English. No `Co-Authored-By`, no "Generated with", no assistant name anywhere. Never stage `.env*`, `assets/.env`, keys, credentials, `secret*`.

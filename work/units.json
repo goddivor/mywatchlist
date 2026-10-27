@@ -520,7 +520,7 @@
     },
     {
       "id": "list-cards-dal",
-      "title": "My List grid display: DailyAL-style grid cards (the rest of MWL's My List stays)",
+      "title": "My List grid display: a better grid card (inspired by DailyAL's, not a copy)",
       "kind": "unit",
       "entry": "",
       "artifact": "",
