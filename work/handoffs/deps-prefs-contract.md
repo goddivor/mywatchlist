@@ -11,6 +11,11 @@
 - `android/app/src/main/AndroidManifest.xml`
 - `android/app/build.gradle`
 - `android/app/build.gradle.kts`
+- `linux/flutter/generated_plugin_registrant.cc`
+- `linux/flutter/generated_plugins.cmake`
+- `macos/Flutter/GeneratedPluginRegistrant.swift`
+- `windows/flutter/generated_plugin_registrant.cc`
+- `windows/flutter/generated_plugins.cmake`
 - `lib/main.dart`
 - `lib/user/preferences/**`
 - `lib/user/userpref.dart`
