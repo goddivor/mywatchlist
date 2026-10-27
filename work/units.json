@@ -429,6 +429,7 @@
         "app-shell"
       ],
       "owns": [
+        "lib/services/auth/kitsu_auth.dart",
         "lib/user/user.dart",
         "lib/user/base_user.dart",
         "lib/screens/account_switcher_page.dart",
