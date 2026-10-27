@@ -249,6 +249,20 @@ const UNITS = [
     dod: ["Owner's profile and a friend's profile render on the emulator with stats."],
   },
   {
+    id: "profile-polish", title: "Profile screen: readable themed header, chart colours from status tokens, lighter surfaces, no Jikan wait", kind: "unit", priority: "P0", group: "user", model: "opus", ui: true,
+    needs: ["user-profile-mal", "theme-colors"],
+    owns: ["lib/screens/user_profile/**", "lib/widgets/user/profile/**", "lib/widgets/charts/**", "lib/pages/MAL/mal_user_profile_page.dart"],
+    dal: ["lib/screens/user_profile.dart", "lib/widgets/user/user_header.dart", "lib/widgets/user/stats_screen.dart", "lib/user/charts/"],
+    goal: [
+      "Owner's screenshots of his own profile, light Spring theme: 'the rendering / colours are too weird'. Seen: a dark teal gradient header block under a light theme; the app-bar title (username) dark on dark, invisible; tab labels dark grey on the dark header; the status bar barely readable; the 'Anime list' bars use arbitrary hardcoded colours (green, blue, orange, red, brown) unrelated to the theme; grey stat tiles inside grey cards look heavy; 'male' shown raw.",
+      "Header: follow the theme (light header in light mode, dark in dark/black) or, when a profile background image is set, a proper scrim token so the title, tabs, icons and status bar are always readable; compare with DailyAL's profile header and keep the better. Collapsing app bar with an opaque themed background.",
+      "Charts: status bars and score distribution use the theme-colors status tokens (watching/completed/on hold/dropped/plan) and the stats chart colour preference; labels readable; consistent with the list status chips.",
+      "Surfaces: one level of card, no grey-in-grey stacks; spacing and typography consistent with the rest of the app (theme fonts).",
+      "Issue #118 items for this screen: show the MAL `/users/@me` data immediately and merge Jikan when (if) it arrives (never wait minutes); French: gender localised (not raw 'male'), averages with the locale NumberFormat (8,90 in French), media types translated.",
+    ],
+    dod: ["Checker: screenshots of the own profile and a friend's profile in light, dark and black — readable header/title/tabs/status bar, chart colours = status colours.", "Widget tests: header readable (contrast) in light/dark, tokens used, French formatting."],
+  },
+  {
     id: "sync-dialog", title: "Cross-tracker sync: two-way dialog, cancel, lazy load, decimal scores", kind: "unit", priority: "P1", group: "user", model: "sonnet", ui: true,
     needs: ["edit-sheet", "auth-refresh"],
     owns: ["lib/services/tracker_sync_service.dart", "lib/widgets/user/cross_tracker_widget.dart", "lib/widgets/user/tracker_search_sheet.dart", "lib/widgets/user/sync/**"],
@@ -544,7 +558,7 @@ const UNITS = [
   },
   {
     id: "color-sweep", title: "Colour sweep: hardcoded colours of already-merged screens onto the theme tokens", kind: "unit", priority: "P1", group: "release", model: "sonnet", ui: true,
-    needs: ["list-cards-dal", "detail-resilience", "home-wiring", "featured-characters", "dub-info", "detail-more-info", "settings-theme-about-backup", "in-app-update", "forum-clubs", "search-upgrade", "theme-colors", "cards-upgrade", "detail-header", "detail-social", "detail-related-graph", "detail-synopsis-media", "user-list-mal", "user-profile-mal", "edit-sheet", "sync-dialog", "bookmarks", "calendar", "explore-seasonal", "settings-prefs-pages", "accounts-ux", "app-shell", "shared-kit", "notifications"],
+    needs: ["profile-polish", "list-cards-dal", "detail-resilience", "home-wiring", "featured-characters", "dub-info", "detail-more-info", "settings-theme-about-backup", "in-app-update", "forum-clubs", "search-upgrade", "theme-colors", "cards-upgrade", "detail-header", "detail-social", "detail-related-graph", "detail-synopsis-media", "user-list-mal", "user-profile-mal", "edit-sheet", "sync-dialog", "bookmarks", "calendar", "explore-seasonal", "settings-prefs-pages", "accounts-ux", "app-shell", "shared-kit", "notifications"],
     owns: ["lib/widgets/MAL/home/**", "lib/widgets/MAL/content/**", "lib/widgets/MAL/review/**", "lib/widgets/user/**", "lib/widgets/charts/**", "lib/widgets/bookmarks/**", "lib/widgets/calendar/**", "lib/widgets/common/**", "lib/screens/MAL/**", "lib/screens/explore/**", "lib/screens/seasonal/**", "lib/screens/calendar/**", "lib/screens/user_profile/**", "lib/screens/settings/**", "lib/screens/bookmarks_screen.dart", "lib/pages/side_bar.dart", "lib/constants/constants.dart"],
     goal: [
       "Replace every hardcoded `Colors.*` / `Color(0x…)` in the owned screens with `colorScheme` roles or the app_colors tokens (theme-colors), except intrinsic content colours (e.g. a tracker's brand logo) — list those exceptions in the PR body.",

@@ -40,6 +40,7 @@
         "user-list-mal",
         "list-cards-dal",
         "user-profile-mal",
+        "profile-polish",
         "sync-dialog"
       ]
     },
@@ -581,6 +582,34 @@
         "model: sonnet"
       ],
       "status": "✅ done"
+    },
+    {
+      "id": "profile-polish",
+      "title": "Profile screen: readable themed header, chart colours from status tokens, lighter surfaces, no Jikan wait",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P0",
+      "needs": [
+        "user-profile-mal",
+        "theme-colors"
+      ],
+      "owns": [
+        "lib/screens/user_profile/**",
+        "lib/widgets/user/profile/**",
+        "lib/widgets/charts/**",
+        "lib/pages/MAL/mal_user_profile_page.dart",
+        "lib/l10n/units/profile-polish/**",
+        "test/units/profile-polish/**"
+      ],
+      "group": "user",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "⬜ todo"
     },
     {
       "id": "sync-dialog",
@@ -1401,6 +1430,7 @@
       "artifact": "",
       "priority": "P1",
       "needs": [
+        "profile-polish",
         "list-cards-dal",
         "detail-resilience",
         "home-wiring",

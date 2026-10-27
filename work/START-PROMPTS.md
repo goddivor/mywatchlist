@@ -145,6 +145,16 @@ UI directive applies: compare DAL and MWL, keep the better, improve it.
 Deliver with the PR procedure of the brief.
 ```
 
+## profile-polish
+
+```text
+Unit profile-polish — Profile screen: readable themed header, chart colours from status tokens, lighter surfaces, no Jikan wait.
+Read work/handoffs/profile-polish.md fully, then the DAL reference files it lists, then the MWL files you own.
+Build exactly the Goal, inside the Owns list. Heavy commands only through tools/heavy.sh; never run flutter build or touch the emulator.
+UI directive applies: compare DAL and MWL, keep the better, improve it.
+Deliver with the PR procedure of the brief.
+```
+
 ## sync-dialog
 
 ```text
