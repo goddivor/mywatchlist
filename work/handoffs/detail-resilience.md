@@ -8,6 +8,8 @@
 - `cards-upgrade` (Anime cards: quick edit, status badges, score reveal, real airing progress)
 
 ## Owns (may create or edit ONLY these)
+- `lib/screens/MAL/detail/actions/more_info_modal.dart`
+- `lib/widgets/MAL/content/more_info_widget.dart`
 - `lib/screens/MAL/detail/sections/**`
 - `lib/screens/MAL/detail/pages/**`
 - `lib/widgets/MAL/content/scorestatisticswidget.dart`
