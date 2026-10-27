@@ -86,13 +86,14 @@ class ListStatusCache extends ChangeNotifier {
   Future<void>? _loading;
   bool _loaded = false;
   Timer? _saveTimer;
+  bool _disposed = false;
 
   /// True once the saved statuses are in memory.
   bool get isLoaded => _loaded;
 
   /// Loads the saved statuses once; later calls return the same future.
-  /// Called by the list pages; call it early (e.g. at startup) so cards
-  /// have badges from the first frame.
+  /// The first read ([entryOf], [statusOf], [watch]) starts it; call it early
+  /// (e.g. at startup) so cards have badges from the first frame.
   Future<void> ensureLoaded() => _loading ??= _load();
 
   Future<void> _load() async {
@@ -116,6 +117,7 @@ class ListStatusCache extends ChangeNotifier {
       debugPrint('ListStatusCache load: $e');
     }
     _loaded = true;
+    if (_disposed) return;
     for (final entry in _watchers.entries) {
       entry.value.value = _lookup(entry.key);
     }
@@ -140,6 +142,7 @@ class ListStatusCache extends ChangeNotifier {
   CachedListStatus? entryOf(int? id,
       {String category = 'anime', AccountType tracker = AccountType.myanimelist}) {
     if (id == null) return null;
+    if (!_loaded) ensureLoaded();
     return _items[_bucket(tracker, category)]?[id];
   }
 
@@ -152,6 +155,7 @@ class ListStatusCache extends ChangeNotifier {
   /// notifier per watched id, shared by every caller.
   ValueListenable<CachedListStatus?> watch(int id,
       {String category = 'anime', AccountType tracker = AccountType.myanimelist}) {
+    if (!_loaded) ensureLoaded();
     final key = _watchKey(tracker, category, id);
     return _watchers.putIfAbsent(
         key, () => ValueNotifier(entryOf(id, category: category, tracker: tracker)));
@@ -321,6 +325,7 @@ class ListStatusCache extends ChangeNotifier {
 
   @override
   void dispose() {
+    _disposed = true;
     _saveTimer?.cancel();
     for (final w in _watchers.values) {
       w.dispose();
