@@ -95,27 +95,13 @@ class MalApi {
     }
   }
 
-  /// Every field of the user's list entry that MAL can return.
-  /// [Constants] lists only some of them inside `my_list_status{...}`, and
-  /// MAL returns just what is listed there.
-  static const String _animeListStatusFields =
-      'status,score,num_episodes_watched,is_rewatching,updated_at,priority,'
-      'num_times_rewatched,rewatch_value,start_date,finish_date,tags,comments';
-  static const String _mangaListStatusFields =
-      'status,score,num_volumes_read,num_chapters_read,is_rereading,updated_at,'
-      'priority,num_times_reread,reread_value,start_date,finish_date,tags,comments';
+  /// Anime detail fields; [Constants.malAnimeFields] already asks for the
+  /// whole list entry (`my_list_status{...}`).
+  static const String animeDetailFields = Constants.malAnimeFields;
 
-  static String _withListStatus(String fields, String listStatus) =>
-      fields.replaceFirst(
-          RegExp(r'my_list_status(\{[^}]*\})?'), 'my_list_status{$listStatus}');
-
-  /// Anime detail fields with the whole list entry.
-  static final String animeDetailFields =
-      _withListStatus(Constants.malAnimeFields, _animeListStatusFields);
-
-  /// Manga detail fields with the whole list entry.
-  static final String mangaDetailFields =
-      _withListStatus(Constants.malMangaFields, _mangaListStatusFields);
+  /// Manga detail fields; [Constants.malMangaFields] already asks for the
+  /// whole list entry.
+  static const String mangaDetailFields = Constants.malMangaFields;
 
   // Get manga details - GET /manga/{manga_id}
   Future<MalAnime> getMangaDetails(int mangaId) async {
