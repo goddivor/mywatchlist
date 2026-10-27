@@ -750,7 +750,7 @@
       "notes": [
         "model: sonnet"
       ],
-      "status": "⬜ todo"
+      "status": "✅ done"
     },
     {
       "id": "calendar",
@@ -931,7 +931,7 @@
       "notes": [
         "model: sonnet"
       ],
-      "status": "⬜ todo"
+      "status": "✅ done"
     },
     {
       "id": "settings-theme-about-backup",
