@@ -3,6 +3,7 @@
 **Kind** screen · **Priority** P1 · **Group** discovery · **Model** sonnet
 
 ## Needs done first
+- `theme-colors` (Theme colours: status bar, coherent accents per theme, colour tokens, contrast)
 - `perf-foundation` (Fluidity foundation: 120 Hz, image decoding, shimmers, root rebuilds)
 - `bookmarks` (Bookmarks: store, screen, add/remove)
 - `calendar` (Anime calendar, weekly schedule, .ics export, add to device calendar)

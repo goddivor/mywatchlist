@@ -365,7 +365,7 @@ const UNITS = [
   },
   {
     id: "home-wiring", title: "Home: working chips, bookmarks/calendar buttons, maintenance dialog, user-list and forum sections", kind: "screen", priority: "P1", group: "discovery", model: "sonnet", ui: true,
-    needs: ["perf-foundation", "bookmarks", "calendar", "explore-seasonal", "user-list-mal"],
+    needs: ["theme-colors", "perf-foundation", "bookmarks", "calendar", "explore-seasonal", "user-list-mal"],
     owns: ["lib/pages/MAL/mal_explore_page.dart", "lib/widgets/common/bottomnavbar.dart", "lib/pages/MAL/mal_home_page.dart", "lib/widgets/MAL/home/homeappbar.dart", "lib/widgets/MAL/home/accordion.dart", "lib/widgets/MAL/home/section_header.dart", "lib/widgets/MAL/home/news_widget.dart", "lib/widgets/MAL/home/show_news.dart", "lib/widgets/home/**", "lib/user/MAL/**", "lib/screens/settings/mal_home_settings.dart"],
     dal: ["lib/pages/homepage.dart", "lib/widgets/homeappbar.dart", "lib/widgets/home/feature_first.dart", "lib/util/homepageutils.dart", "lib/pages/settings/homepagesettings.dart"],
     goal: [
@@ -410,7 +410,7 @@ const UNITS = [
   {
     id: "theme-colors", title: "Theme colours: status bar, coherent accents per theme, colour tokens, contrast", kind: "foundation", priority: "P0", group: "settings", model: "opus", ui: true,
     needs: ["perf-foundation", "deps-prefs-contract"],
-    owns: ["lib/user/theme/**", "lib/screens/settings/theme_settings.dart", "lib/widgets/common/app_colors.dart", "lib/widgets/common/background.dart", "lib/utils/sidebar_bg_manager.dart", "lib/user/userpref.dart", "docs/THEME.md"],
+    owns: ["lib/widgets/common/bottomnavbar.dart", "lib/widgets/common/nav_indicator.dart", "test/smoke/nav_indicator_test.dart", "lib/user/theme/**", "lib/screens/settings/theme_settings.dart", "lib/widgets/common/app_colors.dart", "lib/widgets/common/background.dart", "lib/utils/sidebar_bg_manager.dart", "lib/user/userpref.dart", "docs/THEME.md"],
     dal: ["lib/theme/theme.dart", "lib/theme/themedata.dart", "lib/pages/settings/themesettings.dart"],
     goal: [
       "The owner reports colour bugs. Seen on the emulator (Spring theme, light): the status bar clock and icons are WHITE on a near-white pink background (unreadable) — no `systemOverlayStyle` exists anywhere in lib/; the selected tab is dark teal, the card edit button orange, the score star green and the chips grey on a pink theme: the palette is not coherent; many colours are hardcoded (`Colors.*` / `Color(0x…)` in ~25 files: animegridcard, constants, scorestatisticswidget, reviews, featured, entry cards, charts, side_bar…).",
@@ -420,6 +420,7 @@ const UNITS = [
       "Issue #110 item 2: lib/widgets/common/background.dart ignores `forceBg` and decodes the full image — honour it and decode at screen size (AppImage/SizedDecodeImage).",
       "Owner's words: buttons and coloured areas whose colour makes the text unreadable, and dark mode, must be handled properly everywhere. So: every filled/tonal/outlined button, chip, badge, FAB, snackbar, dialog, bottom sheet, nav bar and app bar gets its foreground from the matching `on*` role (onPrimary, onPrimaryContainer, onSurfaceVariant…), never a fixed white/black; text on images always sits on the scrim token; verify AA contrast (4.5:1 text, 3:1 large text/icons) for every accent preset × light/dark/black with a unit test that computes the contrast ratios of the ColorScheme roles you generate.",
       "Dark and black modes: real dark surfaces (no light cards or white sheets left in dark), elevated surfaces distinguishable, images and shimmers adapted, the status bar and navigation bar icons light; black mode = true black backgrounds with readable dark-grey surfaces.",
+      "Bottom navigation bar (owner request, screenshot): REMOVE the small underline bar that appears under the active icon; the active tab keeps only its rounded tinted background (pill) and the accent-coloured icon. Inactive icons readable in every theme. Update test/smoke/nav_indicator_test.dart accordingly.",
       "Compare with DailyAL's theme (lib/theme/): keep what is better.",
     ],
     bugs: ["white status bar icons on light themes", "incoherent accent colours", "hardcoded colours", "Background ignores forceBg"],

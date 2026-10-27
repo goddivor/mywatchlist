@@ -889,6 +889,7 @@
       "artifact": "",
       "priority": "P1",
       "needs": [
+        "theme-colors",
         "perf-foundation",
         "bookmarks",
         "calendar",
@@ -988,6 +989,9 @@
         "deps-prefs-contract"
       ],
       "owns": [
+        "lib/widgets/common/bottomnavbar.dart",
+        "lib/widgets/common/nav_indicator.dart",
+        "test/smoke/nav_indicator_test.dart",
         "lib/user/theme/**",
         "lib/screens/settings/theme_settings.dart",
         "lib/widgets/common/app_colors.dart",

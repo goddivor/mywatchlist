@@ -7,6 +7,9 @@
 - `deps-prefs-contract` (Dependencies, Android permissions and the preferences contract)
 
 ## Owns (may create or edit ONLY these)
+- `lib/widgets/common/bottomnavbar.dart`
+- `lib/widgets/common/nav_indicator.dart`
+- `test/smoke/nav_indicator_test.dart`
 - `lib/user/theme/**`
 - `lib/screens/settings/theme_settings.dart`
 - `lib/widgets/common/app_colors.dart`
@@ -27,6 +30,7 @@ Plus `PROJECT-STATE.md` (rewrite in place, within its cap) and `docs/DECISIONS.m
 - Issue #110 item 2: lib/widgets/common/background.dart ignores `forceBg` and decodes the full image — honour it and decode at screen size (AppImage/SizedDecodeImage).
 - Owner's words: buttons and coloured areas whose colour makes the text unreadable, and dark mode, must be handled properly everywhere. So: every filled/tonal/outlined button, chip, badge, FAB, snackbar, dialog, bottom sheet, nav bar and app bar gets its foreground from the matching `on*` role (onPrimary, onPrimaryContainer, onSurfaceVariant…), never a fixed white/black; text on images always sits on the scrim token; verify AA contrast (4.5:1 text, 3:1 large text/icons) for every accent preset × light/dark/black with a unit test that computes the contrast ratios of the ColorScheme roles you generate.
 - Dark and black modes: real dark surfaces (no light cards or white sheets left in dark), elevated surfaces distinguishable, images and shimmers adapted, the status bar and navigation bar icons light; black mode = true black backgrounds with readable dark-grey surfaces.
+- Bottom navigation bar (owner request, screenshot): REMOVE the small underline bar that appears under the active icon; the active tab keeps only its rounded tinted background (pill) and the accent-coloured icon. Inactive icons readable in every theme. Update test/smoke/nav_indicator_test.dart accordingly.
 - Compare with DailyAL's theme (lib/theme/): keep what is better.
 
 ## Known bugs to fix in scope
