@@ -297,8 +297,22 @@ const UNITS = [
     dod: ["Every user name in these widgets opens `AppRoutes.openUserPop` (quick user sheet with a link to the full profile)."],
   },
   {
+    id: "detail-resilience", title: "Detail sections: no endless skeletons, MAL fallbacks when Jikan fails, round avatars without box shadows", kind: "unit", priority: "P0", group: "detail", model: "opus", ui: true,
+    needs: ["detail-header", "detail-social", "cards-upgrade"],
+    owns: ["lib/screens/MAL/detail/sections/**", "lib/screens/MAL/detail/pages/**", "lib/widgets/MAL/content/scorestatisticswidget.dart", "lib/widgets/MAL/content/animestatisticswidget.dart", "lib/widgets/MAL/content/userupdate_widget.dart", "lib/widgets/MAL/content/show_forum.dart", "lib/widgets/MAL/content/show_reviews.dart", "lib/widgets/MAL/content/show_featured.dart", "lib/widgets/MAL/content/intereststackwidget.dart", "lib/widgets/MAL/home/animecharacterwidget.dart", "lib/screens/MAL/characters_staff_screen.dart", "lib/services/api/Jikan/**"],
+    goal: [
+      "Owner's screenshots of an anime detail page (Shuiro no Kamen): Score Stats shows grey placeholder bars forever, User Updates shows skeleton cards forever, Forums and Reviews show 'Failed to load'. Jikan (api.jikan.moe) is unreachable from the owner's network (the checker saw a 134 s timeout). The page must still be useful.",
+      "Every Jikan call gets a timeout (e.g. 12 s) in lib/services/api/Jikan/jikan_client.dart (issue #118 item). Every detail section has exactly one of: content, a translated empty state, or a translated error with Retry — never an endless skeleton.",
+      "Fallback sources when Jikan fails: statistics and score distribution from the official MAL API fields where available and/or the mwl-api MAL page parsers (backend-parsers: stats/reviews/forum parsers through MwlApi); forum topics from the MAL forum API (lib/services/api/MAL/mal_forum_api.dart, read only) or the mwl-api forum parser; reviews from the mwl-api `reviews` route; user updates from the mwl-api if a parser exists, else a clean empty/error state. Document which source each section uses in the PR body.",
+      "Owner: 'I only want the circular image — why is there always a weird rectangular shadow behind it?' Staff and character avatars (and the placeholder avatar) must be a clean circle with NO rectangular BoxShadow / Material elevation / grey box behind; same clean treatment for interest-stack posters (intereststackwidget.dart:165 has a blurRadius 10 shadow) and characters_staff_screen.dart:557 elevation. Use AppImage + ClipOval/CircleAvatar, theme colours only.",
+      "Score Stats empty bars: when there is no data, show the empty state instead of grey bars; when there is data, bars use the theme accent with readable labels (colour rule).",
+    ],
+    bugs: ["endless skeletons on Jikan failure", "no Jikan timeout", "rectangular shadow behind round avatars", "heavy shadow on stack posters"],
+    dod: ["Widget tests with a failing fake Jikan: each section ends in content (fallback) or an error/empty state within the timeout.", "Checker: the Shuiro no Kamen page with Jikan unreachable shows fallbacks or clean states; avatars are clean circles in light/dark."],
+  },
+  {
     id: "detail-more-info", title: "More-info links: studios, magazines, authors, genres, season, media type", kind: "unit", priority: "P2", group: "detail", model: "sonnet", ui: true,
-    needs: ["detail-split", "search-upgrade"],
+    needs: ["detail-resilience", "detail-split", "search-upgrade"],
     owns: ["lib/widgets/MAL/content/more_info_widget.dart", "lib/widgets/MAL/content/adaptation_widget.dart", "lib/widgets/MAL/content/animestatisticswidget.dart", "lib/widgets/MAL/content/scorestatisticswidget.dart"],
     dal: ["lib/screens/moreinfo.dart", "commits 6f90a5a (author navigation), 024654e (serialization → magazine filter), 399851c"],
     goal: ["animestatisticswidget.dart:23-25 hardcodes English status labels (Watching, On Hold…): use the shared status maps of lib/enums.dart (fix #84).", "Give MoreInfoWidget a modal mode (DailyAL `isModal`) so the detail screen's More Info dialog does not wrap it in an extra scroll view (detail-split finding).", "Studio and genre taps are TODO prints (more_info_widget.dart:111, :238) → open the filtered search; add taps for magazine/serialization, authors (→ person page), season, media type. Use the search entry points the search-upgrade unit exposes."],
@@ -460,7 +474,7 @@ const UNITS = [
   },
   {
     id: "featured-characters", title: "Featured tags search, character screen sort/dedupe/bookmark/share", kind: "screen", priority: "P2", group: "community", model: "sonnet", ui: true,
-    needs: ["search-upgrade", "bookmarks", "detail-synopsis-media"],
+    needs: ["detail-resilience", "search-upgrade", "bookmarks", "detail-synopsis-media"],
     owns: ["lib/screens/MAL/featured_screen.dart", "lib/widgets/MAL/content/show_featured.dart", "lib/widgets/MAL/content/show_forum.dart", "lib/widgets/MAL/content/show_news.dart", "lib/screens/MAL/character_screen.dart", "lib/screens/MAL/characters_staff_screen.dart"],
     dal: ["lib/screens/featurescreen.dart", "lib/widgets/featured/tagswidget.dart", "lib/screens/characterscreen.dart", "commits 01d7daf, bf06d05"],
     goal: ["Featured tags tap → tag search (featured_screen.dart:281 `onTap: null`); character/person: sort voice roles by favorites (with rate-limit toast), dedupe, bookmark FAB, share, bio translation (translator widget).", "Character screen: CustomScrollView + slivers instead of an eager Column in SingleChildScrollView (:251-256); parse off the UI isolate (:129) — performance.md #9, #12."],

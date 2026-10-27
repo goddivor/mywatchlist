@@ -3,6 +3,7 @@
 **Kind** unit · **Priority** P2 · **Group** detail · **Model** sonnet
 
 ## Needs done first
+- `detail-resilience` (Detail sections: no endless skeletons, MAL fallbacks when Jikan fails, round avatars without box shadows)
 - `detail-split` (Split the 1852-line detail screen into sections with seams)
 - `search-upgrade` (Search: user results, search by id, autocomplete, searchable filters)
 

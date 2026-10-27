@@ -3,6 +3,7 @@
 **Kind** screen · **Priority** P2 · **Group** community · **Model** sonnet
 
 ## Needs done first
+- `detail-resilience` (Detail sections: no endless skeletons, MAL fallbacks when Jikan fails, round avatars without box shadows)
 - `search-upgrade` (Search: user results, search by id, autocomplete, searchable filters)
 - `bookmarks` (Bookmarks: store, screen, add/remove)
 - `detail-synopsis-media` (Synopsis translation, streaming links, videos fallback)

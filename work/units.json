@@ -26,6 +26,7 @@
         "detail-related-graph",
         "detail-synopsis-media",
         "detail-social",
+        "detail-resilience",
         "detail-more-info"
       ]
     },
@@ -698,6 +699,43 @@
       "status": "⬜ todo"
     },
     {
+      "id": "detail-resilience",
+      "title": "Detail sections: no endless skeletons, MAL fallbacks when Jikan fails, round avatars without box shadows",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P0",
+      "needs": [
+        "detail-header",
+        "detail-social",
+        "cards-upgrade"
+      ],
+      "owns": [
+        "lib/screens/MAL/detail/sections/**",
+        "lib/screens/MAL/detail/pages/**",
+        "lib/widgets/MAL/content/scorestatisticswidget.dart",
+        "lib/widgets/MAL/content/animestatisticswidget.dart",
+        "lib/widgets/MAL/content/userupdate_widget.dart",
+        "lib/widgets/MAL/content/show_forum.dart",
+        "lib/widgets/MAL/content/show_reviews.dart",
+        "lib/widgets/MAL/content/show_featured.dart",
+        "lib/widgets/MAL/content/intereststackwidget.dart",
+        "lib/widgets/MAL/home/animecharacterwidget.dart",
+        "lib/screens/MAL/characters_staff_screen.dart",
+        "lib/services/api/Jikan/**",
+        "lib/l10n/units/detail-resilience/**",
+        "test/units/detail-resilience/**"
+      ],
+      "group": "detail",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "⬜ todo"
+    },
+    {
       "id": "detail-more-info",
       "title": "More-info links: studios, magazines, authors, genres, season, media type",
       "kind": "unit",
@@ -705,6 +743,7 @@
       "artifact": "",
       "priority": "P2",
       "needs": [
+        "detail-resilience",
         "detail-split",
         "search-upgrade"
       ],
@@ -1123,6 +1162,7 @@
       "artifact": "",
       "priority": "P2",
       "needs": [
+        "detail-resilience",
         "search-upgrade",
         "bookmarks",
         "detail-synopsis-media"
