@@ -117,6 +117,10 @@ flutter_icons:
   android: true
   ios: true
   image_path: "assets/images/mwl-black-bg.png"
+  # The Android adaptive icon (layers + XML in the mipmap-* folders) is built by
+  # tools/icon/extract.sh: flutter_launcher_icons would write its layers into
+  # drawable-*, which this unit does not own. This block keeps the legacy
+  # ic_launcher.png (Android < 8) and the square iOS icon.
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
