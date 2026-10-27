@@ -2,12 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mwl_commons/mwl_commons.dart' show ContentStatsHtml, ScoreVotesHtml, StatusCountsHtml;
 import 'package:mywatchlist/generated/l10n.dart';
-import 'package:mywatchlist/screens/MAL/detail/detail_data.dart';
 import 'package:mywatchlist/screens/MAL/detail/sections/content_stats_source.dart';
-import 'package:mywatchlist/screens/MAL/detail/sections/stats_section.dart';
 import 'package:mywatchlist/services/api/Jikan/jikan_anime_statistics.dart';
 import 'package:mywatchlist/services/api/MAL/mal_anime.dart';
-import 'package:mywatchlist/widgets/MAL/content/animestatisticswidget.dart';
 import 'package:mywatchlist/widgets/MAL/content/scorestatisticswidget.dart';
 
 import '../../helpers/no_network.dart';
@@ -115,58 +112,7 @@ void main() {
     });
   });
 
-  group('Stats section without MAL API statistics', () {
-    testWidgets('status counts from MAL stats page when Jikan is down', (tester) async {
-      ContentStatsSource.jikan = _jikanDown;
-      ContentStatsSource.mal = (id, category) async => _malPage();
-      final data = DetailData(
-        id: 11,
-        category: 'anime',
-        content: MalAnime(id: 11, title: 'T'),
-        state: DetailLoadState.loaded,
-      );
-      final section = statsSection(data);
-      expect(section, isNotNull);
-      await pumpInApp(tester, SizedBox(width: 400, child: section!.child));
-      await _settle(tester);
-      final widget = tester.widget<AnimeStatisticsWidget>(find.byType(AnimeStatisticsWidget));
-      expect(widget.stats.status.completed, 300);
-      expect(widget.stats.numListUsers, 500);
-    });
-
-    testWidgets('no source answers: an error with Retry, then the counts after Retry', (tester) async {
-      ContentStatsSource.jikan = _jikanDown;
-      var calls = 0;
-      ContentStatsSource.mal = (id, category) async => ++calls == 1 ? null : _malPage();
-      final data = DetailData(id: 12, category: 'anime', content: MalAnime(id: 12, title: 'T'));
-      await pumpInApp(tester, SizedBox(width: 400, child: statsSection(data)!.child));
-      await _settle(tester);
-      expect(find.text(S.current.Res_Section_Failed), findsOneWidget);
-      await tester.tap(find.text(S.current.Res_Retry));
-      await _settle(tester);
-      expect(tester.takeException(), isNull);
-      expect(find.byType(AnimeStatisticsWidget), findsOneWidget);
-    });
-
-    test('MAL API statistics present: the section draws them, no extra load', () {
-      ContentStatsSource.jikan = (id, category) async => fail('loaded');
-      final data = DetailData(
-        id: 13,
-        category: 'anime',
-        content: MalAnime(
-          id: 13,
-          title: 'T',
-          statistics: Statistics(
-            status: const Status(watching: 1, completed: 2, onHold: 0, dropped: 0, planToWatch: 3),
-            numListUsers: 6,
-          ),
-        ),
-      );
-      expect(statsSection(data)!.child, isA<AnimeStatisticsWidget>());
-    });
-  });
-
-  test('both sections share one running load', () async {
+  test('concurrent loads of one title share one request', () async {
     var jikanCalls = 0;
     ContentStatsSource.jikan = (id, category) async {
       jikanCalls++;

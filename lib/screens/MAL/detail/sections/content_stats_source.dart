@@ -2,7 +2,6 @@ import 'package:flutter/foundation.dart';
 import 'package:mwl_commons/mwl_commons.dart' show ContentStatsHtml;
 import 'package:mywatchlist/services/api/Jikan/jikan_anime_statistics.dart';
 import 'package:mywatchlist/services/api/Jikan/jikan_api.dart';
-import 'package:mywatchlist/services/api/MAL/mal_anime.dart';
 import 'package:mywatchlist/services/api/mwl_api.dart';
 
 /// Where the statistics of a title came from.
@@ -23,24 +22,6 @@ class ContentStats {
     ..sort((a, b) => a.score!.compareTo(b.score!));
 
   int get totalVotes => sortedScores.fold<int>(0, (sum, s) => sum + (s.votes ?? 0));
-
-  /// The status counts as the MAL API model the Stats section draws, or null
-  /// when the source gave none.
-  Statistics? get statusStatistics {
-    final counts = [stats.watching, stats.completed, stats.onHold, stats.dropped, stats.planToWatch];
-    final sum = counts.fold<int>(0, (a, b) => a + (b ?? 0));
-    if (sum == 0) return null;
-    return Statistics(
-      status: Status(
-        watching: stats.watching ?? 0,
-        completed: stats.completed ?? 0,
-        onHold: stats.onHold ?? 0,
-        dropped: stats.dropped ?? 0,
-        planToWatch: stats.planToWatch ?? 0,
-      ),
-      numListUsers: (stats.total ?? 0) > 0 ? stats.total! : sum,
-    );
-  }
 
   /// MAL's stats page mapped to the Jikan model, so both sources draw the same bars.
   factory ContentStats.fromMal(ContentStatsHtml html) => ContentStats(
@@ -63,8 +44,7 @@ class ContentStats {
 /// Loads [ContentStats]: Jikan first (its client times out after 12 s and then
 /// skips Jikan for 30 s), then MAL's stats page through the mwl-api
 /// (`MwlApi.getContentStats`, null after 15 s). Throws when neither answered,
-/// so the caller shows MAL's score figures. A running load is shared by the
-/// Score Stats and Stats sections.
+/// so the caller shows MAL's score figures. A running load is shared.
 class ContentStatsSource {
   ContentStatsSource._();
 
