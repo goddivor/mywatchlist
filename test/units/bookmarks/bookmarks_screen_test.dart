@@ -7,7 +7,7 @@ import 'package:mywatchlist/screens/bookmarks_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 Future<void> _pump(WidgetTester tester, Locale locale) async {
-  await S.load(locale);
+  await tester.runAsync(() => S.load(locale));
   await tester.pumpWidget(MaterialApp(
     locale: locale,
     localizationsDelegates: const [
@@ -34,10 +34,12 @@ void main() {
   });
 
   testWidgets('lists bookmarks and filters by kind', (tester) async {
-    await Bookmarks.toggle(
-        tracker: 'myanimelist', kind: BookmarkKind.anime, id: 1, title: 'Alpha');
-    await Bookmarks.toggle(
-        tracker: 'myanimelist', kind: BookmarkKind.manga, id: 2, title: 'Beta');
+    await tester.runAsync(() async {
+      await Bookmarks.toggle(
+          tracker: 'myanimelist', kind: BookmarkKind.anime, id: 1, title: 'Alpha');
+      await Bookmarks.toggle(
+          tracker: 'myanimelist', kind: BookmarkKind.manga, id: 2, title: 'Beta');
+    });
     await _pump(tester, const Locale('en'));
     expect(find.text('Alpha'), findsOneWidget);
     expect(find.text('Beta'), findsOneWidget);
