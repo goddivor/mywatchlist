@@ -39,6 +39,12 @@ class CustomEntryCard extends StatelessWidget {
 
   bool get _editing => onFieldTap != null;
 
+  /// The layout prints the watched count ("4 / 12 ep." or the watched field).
+  bool get _showsProgress => (fields ?? props.fields).any((f) =>
+      !f.hidden &&
+      (f.type == CustomizableFieldType.edit_and_watched_button ||
+          f.type == CustomizableFieldType.watched_eps));
+
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
@@ -143,7 +149,8 @@ class CustomEntryCard extends StatelessWidget {
         return Text(_shortCountdown(airing.nextAiring(now).difference(now.toUtc())),
             style: theme.textTheme.labelMedium?.copyWith(color: theme.colorScheme.primary));
       case CustomizableFieldType.un_seen_episodes:
-        return UnseenPill(count: entry.unseenCount(now));
+        // Both badges unless the layout already prints the progress (DailyAL's rule).
+        return EntryEpisodeBadges(entry: entry, now: now, showReleased: !_showsProgress);
       case CustomizableFieldType.watched_eps:
         return Text('${entry.progress}', style: theme.textTheme.labelLarge);
       case CustomizableFieldType.total_eps:

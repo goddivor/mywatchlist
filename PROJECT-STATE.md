@@ -7,8 +7,7 @@ Cap: 80 lines. Rewrite in place; history lives in git and `docs/DECISIONS.md`.
 - Work is split into 38 units (`work/INDEX.md`), built in parallel with the multi-agent-build tooling (`tools/mab/`, `tools/mab.config`), coordinated on GitHub (goddivor/mywatchlist, base `dev`, `master` owner-only).
 
 ## Gate
-- `tools/heavy.sh tools/verify.sh`: pub get, flutter analyze, flutter test, dart analyze mwl-api (machine-wide lock) (green since `gate-fix`; `flutter test` = offline smoke tests, about 10 s).
-- Test layout: `test/smoke/` + `test/helpers/` (`pumpInApp`, `htmlFixture`, `forbidNetwork`), then `test/units/<unit-id>/` per unit. `verify.sh` first runs `tools/l10n/build.sh` (`S` is a build output, see CLAUDE.md).
+- `tools/heavy.sh tools/verify.sh`: pub get, flutter analyze, flutter test, dart analyze mwl-api (machine-wide lock) (green since `gate-fix`; `flutter test` = offline smoke tests, about 10 s). Test layout: `test/smoke/` + `test/helpers/` (`pumpInApp`, `htmlFixture`, `forbidNetwork`), then `test/units/<unit-id>/` per unit. `verify.sh` first runs `tools/l10n/build.sh` (`S` is a build output, see CLAUDE.md).
 - Localization (`l10n-pipeline`): base ARBs (DailyAL, 11 locales) frozen in `lib/l10n/`; each unit adds keys in `lib/l10n/units/<unit-id>/`; `tools/l10n/build.sh` merges, validates, generates `lib/generated/l10n.dart` + `intl/` (git-ignored).
 
 ## Preferences contract and dependencies (`deps-prefs-contract`)
@@ -47,6 +46,8 @@ Cap: 80 lines. Rewrite in place; history lives in git and `docs/DECISIONS.md`.
 - Baseline home scroll, profile builds: MWL 22-23 % janky frames vs DailyAL 1.6 % (`tools/perf/measure-scroll.sh`, emulator with `-gpu host`).
 - Rules and measurement procedure (incl. Impeller vs Skia A/B): `docs/PERFORMANCE.md`. Foundation: high refresh rate, `AppImage` (decode at displayed size), one shared shimmer ticker, MaterialApp rebuilt only on theme/locale, avatars without fade or blurred shadow, viewer without blur.
 - Screen-level fixes (home tabs, cards, detail listeners, parsing) belong to their units; cards must switch to `AppImage`.
+## My List grid (`list-cards-dal`)
+- `EntryGridCard` (`lib/widgets/user/list/cards/`, also the seasonal grid) = DailyAL's grid card: comfortable (clean cover, `GridCardBar` ★ mean + status chip with pencil, one-line title and genres in a fixed text block), compact (title on a static scrim, `GridEditButton`), cover only; `EntryEpisodeBadges` (blue released + red "+N"; red only where the card prints the progress); `ListEntryView.releasedCount` = `AiringSchedule` first, then weekly estimate, then total; status colours from `AppColors` via `ListEntryStatus.colors(context)`.
 ## Edit sheet (`edit-sheet`)
 - `ContentEditWidget` (same constructor) loads the whole MAL `my_list_status` itself (`MalListEntryService`, `lib/widgets/user/edit/`), so dates, priority, rewatch, tags, comments, chapters and volumes are pre-filled exactly; writes go through `MalApi.save*ListStatus` and both list-status models keep dates as MAL text, so a partial date (`2019-03`, `2019`) survives open, save, reopen (#86); load error / dead session / non-MAL account show a message with retry or sign-in, never a spinner.
 - Auto dates follow `autoAddStartEndDate` and only fill empty dates; the last episode completes with a finish date, the first one fills the start date; add uses `defaultAnime/MangaAddStatus`; airing shows without total get an estimated episode count (picker bar or stepper).
@@ -72,8 +73,7 @@ Cap: 80 lines. Rewrite in place; history lives in git and `docs/DECISIONS.md`.
 - Entry points: `GeneralSearchScreen.byQuery/byGenre/byStudio/byMagazine/byTag/bySeason/byRanking/byMangaRanking/bySuggested/byUser`, `AppRoutes.openSearch(query, category, filters)`; the old `filterOutputs:` map still works. User results open the profile (long press: quick sheet); an exact MAL user name shows "User found as"; a numeric query finds the title by id; autocomplete (400 ms) under the field.
 
 ## Release (`versioning-ci`)
-- Tag `yyyy.m.n` (e.g. 2026.10.1) triggers `.github/workflows/release.yml` (also manual with a version): `tools/release/version.sh` validates and writes `yyyy.m.n+code` into the runner's pubspec, `.env` from secrets (empty placeholder otherwise), `tools/l10n/build.sh`, build_runner, analyze, JDK 21, split + universal APK, `.sha1` files, notes from `tools/release/changelog.sh`. Unsigned-secret fallback: throwaway keystore.
-- Pubspec still reads `1.0.0+1`: the owner changes it to the first `yyyy.m.n+code` line.
+- Tag `yyyy.m.n` (e.g. 2026.10.1) triggers `.github/workflows/release.yml` (also manual with a version): `tools/release/version.sh` validates and writes `yyyy.m.n+code` into the runner's pubspec, `.env` from secrets (empty placeholder otherwise), `tools/l10n/build.sh`, build_runner, analyze, JDK 21, split + universal APK, `.sha1` files, notes from `tools/release/changelog.sh`. Unsigned-secret fallback: throwaway keystore. Pubspec still reads `1.0.0+1` (owner sets the first `yyyy.m.n+code`).
 
 ## Known big gaps (see inventory)
 - No user list / profile for AniList/Kitsu/Simkl (placeholders); no notifications, share, translation.
