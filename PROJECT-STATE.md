@@ -9,7 +9,8 @@ Cap: 80 lines. Rewrite in place; history lives in git and `docs/DECISIONS.md`.
 
 ## Gate
 - `tools/heavy.sh tools/verify.sh`: pub get, flutter analyze, flutter test, dart analyze mwl-api (machine-wide lock).
-- On `dev` today: analyze green, **flutter test red** (default counter test) → fixed by unit `gate-fix` first.
+- `gate-fix` made it green: the counter test is gone; `flutter test` runs offline smoke tests in about 10 s.
+- Test layout: `test/smoke/` + `test/helpers/` (`pumpInApp`, `htmlFixture`, `forbidNetwork`), then `test/units/<unit-id>/` per unit.
 
 ## Waves (from `node tools/mab/plan-waves.mjs`)
 1. gate-fix
@@ -24,8 +25,8 @@ Cap: 80 lines. Rewrite in place; history lives in git and `docs/DECISIONS.md`.
 ## Known big gaps (see inventory)
 - No user list / profile for any tracker; AniList/Kitsu/Simkl tabs are placeholders.
 - No notifications, calendar, bookmarks, relation graph, share, translation.
-- Language picker broken; MAL token never refreshed; release manifest lacks INTERNET.
+- Language picker broken; MAL token never refreshed.
 
 ## Next
 - Board: GitHub Project goddivor #8 "MyWatchList — Roadmap", 38 unit issues synced.
-- Launch wave 1 (`gate-fix`), then wave 2 once it merges.
+- Wave 1 (`gate-fix`) in review; launch wave 2 once it merges.

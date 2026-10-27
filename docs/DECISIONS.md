@@ -11,3 +11,6 @@ Append-only, one line per decision: `- YYYY-MM-DD [unit] decision — why`. Earl
 - 2026-10-27 [orchestrator] Cross-unit navigation goes through `lib/utils/app_routes.dart` (owned by `app-shell`), so feature units link to each other without editing each other's files.
 - 2026-10-27 [orchestrator] DAL features target MAL first; AniList/Kitsu/Simkl pages are separate later units reusing tracker-agnostic widgets. Linux tray, Windows MSIX and tablet-only polish are out of scope for now.
 - 2026-10-27 [orchestrator] Tests: `test/smoke/` + `test/helpers/` owned by `gate-fix`, then `test/units/<unit-id>/` per unit; no test hits the network.
+- 2026-10-27 [gate-fix] Tests are offline by construction: `test/helpers/no_network.dart` installs an `HttpOverrides` that throws `NetworkAccessInTest` on any connection, applied to `test/smoke/` by its `flutter_test_config.dart`; unit tests call `forbidNetwork()` (or add their own folder config) — "no test hits the network" is enforced, not just asked.
+- 2026-10-27 [gate-fix] Shared test helpers live in `test/helpers/` (`pumpInApp` for small widgets in a bare `MaterialApp`, `htmlFixture` for offline scraper parsing); unit tests import them instead of redefining fakes.
+- 2026-10-27 [gate-fix] INTERNET permission is declared in the main Android manifest, not only in the debug one, so release APKs reach the trackers.
