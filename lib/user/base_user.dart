@@ -40,6 +40,7 @@ abstract class BaseUser<T> with ChangeNotifier {
     authResponse = response;
     status = AuthStatus.AUTHENTICATED;
     needsReLogin = false;
+    secureStorage.delete(key: _needsReLoginKey).catchError((_) {});
     _saveAuthResponse();
     notifyListeners();
   }
@@ -133,8 +134,15 @@ abstract class BaseUser<T> with ChangeNotifier {
     status = AuthStatus.UNAUTHENTICATED;
     needsReLogin = true;
     secureStorage.delete(key: authResponseKey).catchError((_) {});
+    // Remembered across restarts: the "sign in again" prompt must not vanish with the app.
+    secureStorage
+        .write(key: _needsReLoginKey, value: '1')
+        .catchError((_) {});
     notifyListeners();
   }
+
+  /// Secure-storage key of the persisted [needsReLogin] flag.
+  String get _needsReLoginKey => '${authResponseKey}_needs_relogin';
 
   /// Sends the refresh request. Form encoded by default (MAL, AniList);
   /// Kitsu overrides it with a JSON body.
@@ -322,6 +330,12 @@ abstract class BaseUser<T> with ChangeNotifier {
       profileImage = await secureStorage.read(key: profileImageKey);
       status = AuthStatus.AUTHENTICATED;
       notifyListeners();
+    } else if (await secureStorage.read(key: _needsReLoginKey) != null) {
+      // The session died in a previous run: keep the identity, ask to sign in again.
+      username = await secureStorage.read(key: usernameKey);
+      profileImage = await secureStorage.read(key: profileImageKey);
+      needsReLogin = true;
+      notifyListeners();
     }
   }
 
@@ -331,6 +345,7 @@ abstract class BaseUser<T> with ChangeNotifier {
     username = null;
     profileImage = null;
     status = AuthStatus.UNAUTHENTICATED;
+    needsReLogin = false;
     _clearPreferences();
     notifyListeners();
   }
@@ -340,6 +355,7 @@ abstract class BaseUser<T> with ChangeNotifier {
     await secureStorage.delete(key: authResponseKey);
     await secureStorage.delete(key: usernameKey);
     await secureStorage.delete(key: profileImageKey);
+    await secureStorage.delete(key: _needsReLoginKey);
   }
 
   /// Notify listeners of account change

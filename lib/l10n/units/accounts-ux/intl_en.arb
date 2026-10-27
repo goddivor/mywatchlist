@@ -1,0 +1,83 @@
+{
+  "@@locale": "en",
+  "Acc_Desc_Mal": "The biggest anime and manga community and database",
+  "Acc_Desc_Anilist": "Track and share anime and manga with a modern look",
+  "Acc_Desc_Kitsu": "Discover anime and follow your progress",
+  "Acc_Desc_Simkl": "Track anime, shows and movies in one place",
+  "Acc_Intro": "The active account decides which tracker the home, your list and your profile show. Tap an account to switch to it.",
+  "Acc_Switch_Title": "Switch account",
+  "Acc_Your_Accounts": "Your accounts",
+  "Acc_Add_Account": "Add an account",
+  "Acc_Connect_Tracker": "Connect a tracker",
+  "Acc_Active": "Active",
+  "Acc_Connected": "Connected",
+  "Acc_Session_Expired": "Session expired",
+  "Acc_Connecting": "Waiting for the sign in…",
+  "Acc_Connect": "Connect",
+  "Acc_Sign_In_Again": "Sign in again",
+  "Acc_Sign_Out": "Sign out",
+  "Acc_Sign_Out_Title": "Sign out of {tracker}?",
+  "@Acc_Sign_Out_Title": {
+    "placeholders": {
+      "tracker": {
+        "type": "String"
+      }
+    }
+  },
+  "Acc_Sign_Out_Body": "Your list stays on {tracker}. You can connect again at any time.",
+  "@Acc_Sign_Out_Body": {
+    "placeholders": {
+      "tracker": {
+        "type": "String"
+      }
+    }
+  },
+  "Acc_Signed_Out": "Signed out of {tracker}",
+  "@Acc_Signed_Out": {
+    "placeholders": {
+      "tracker": {
+        "type": "String"
+      }
+    }
+  },
+  "Acc_Switched_To": "Switched to {tracker}",
+  "@Acc_Switched_To": {
+    "placeholders": {
+      "tracker": {
+        "type": "String"
+      }
+    }
+  },
+  "Acc_Connect_Failed": "Could not start the {tracker} sign in. Check your connection and try again.",
+  "@Acc_Connect_Failed": {
+    "placeholders": {
+      "tracker": {
+        "type": "String"
+      }
+    }
+  },
+  "Acc_Menu_Tooltip": "Account options",
+  "Acc_Added": "{tracker} connected",
+  "@Acc_Added": {
+    "placeholders": {
+      "tracker": {
+        "type": "String"
+      }
+    }
+  },
+  "Acc_Add_Title": "Add an account",
+  "Acc_Add_Subtitle": "Connect another tracker. It becomes your active account right away.",
+  "Acc_Welcome_Title": "Connect your tracker",
+  "Acc_Welcome_Subtitle": "Sign in to the service where you follow your anime and manga. You can connect several and switch between them in one tap.",
+  "Acc_Onboarding_Title": "Connect your accounts",
+  "Acc_Onboarding_Subtitle": "Connect the services you use. You can add more later in Settings.",
+  "Acc_Kitsu_Title": "Sign in to Kitsu",
+  "Acc_Kitsu_Hint": "Your password goes straight to Kitsu and is not saved on this device.",
+  "Acc_Kitsu_Username": "Email or username",
+  "Acc_Kitsu_Password": "Password",
+  "Acc_Kitsu_Wrong": "Wrong email, username or password.",
+  "Acc_Kitsu_Network": "Could not reach Kitsu. Check your connection.",
+  "Acc_Show_Password": "Show password",
+  "Acc_Hide_Password": "Hide password",
+  "Acc_Field_Required": "This field is required"
+}
