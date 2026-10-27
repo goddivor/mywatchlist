@@ -567,6 +567,18 @@ const UNITS = [
     dod: ["`grep -rnE \"Colors\\.|Color\\(0x\" lib/<owned>` only shows the documented exceptions.", "Checker: screenshots in light/dark/black of each touched screen."],
   },
   {
+    id: "app-icon", title: "Circular adaptive launcher icon like DailyAL", kind: "unit", priority: "P0", group: "release", model: "sonnet",
+    needs: ["deps-prefs-contract"],
+    owns: ["pubspec.yaml", "android/app/src/main/res/mipmap-*/**", "android/app/src/main/res/mipmap-anydpi-v26/**", "android/app/src/main/res/values/ic_launcher_background.xml", "assets/images/app_icon/**", "ios/Runner/Assets.xcassets/AppIcon.appiconset/**", "tools/icon/**"],
+    dal: ["android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml (adaptive icon: background + foreground + monochrome)", "android/app/src/main/res/mipmap-*/ic_launcher_foreground.png"],
+    goal: [
+      "Owner: 'why is the icon not circular like DailyAL's? fix it'. Today MWL ships no adaptive icon (no mipmap-anydpi-v26/ic_launcher.xml): Android puts the square dark mwl-black-bg.png logo inside its own teal circle. DailyAL ships an adaptive icon: a full dark circle with the white logo centred.",
+      "Build an adaptive icon: foreground = only the white 'mwL' letters on a TRANSPARENT background, extracted from assets/images/mwl-black-bg.png (1024×1024) — e.g. with ImageMagick in a script kept in tools/icon/ (threshold the near-white pixels to an alpha mask, keep anti-aliasing), scaled to sit inside the 66 % safe zone; background = the logo's dark navy gradient (sample its colours) as a colour or a background PNG; monochrome = the letters only (Android 13 themed icons). Keep the legacy square/round mipmaps for old Android, generated from the same layers so they also look circular on round launchers.",
+      "Prefer flutter_launcher_icons (already a dev dependency, config `flutter_icons:` in pubspec.yaml): set adaptive_icon_background / adaptive_icon_foreground / adaptive_icon_monochrome and regenerate with `tools/heavy.sh dart run flutter_launcher_icons`; commit the generated res files. iOS keeps a square icon (iOS masks it itself).",
+    ],
+    dod: ["mipmap-anydpi-v26/ic_launcher.xml (+ ic_launcher_round.xml) exist with background/foreground/monochrome.", "Checker: launcher screenshot on the emulator next to DailyAL — a full dark circle with the white mwL letters, no square inside."],
+  },
+  {
     id: "in-app-update", title: "In-app update: check GitHub releases, download and install APK", kind: "unit", priority: "P2", group: "release", model: "sonnet", ui: true,
     needs: ["settings-theme-about-backup", "versioning-ci"],
     owns: ["lib/services/updater/**", "lib/screens/settings/about_settings.dart", "android/app/src/main/res/xml/updater_paths.xml"],

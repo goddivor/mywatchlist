@@ -97,6 +97,7 @@
         "versioning-ci",
         "l10n-quality",
         "color-sweep",
+        "app-icon",
         "in-app-update",
         "deep-links"
       ]
@@ -1480,6 +1481,36 @@
         "lib/constants/constants.dart",
         "lib/l10n/units/color-sweep/**",
         "test/units/color-sweep/**"
+      ],
+      "group": "release",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: sonnet"
+      ],
+      "status": "⬜ todo"
+    },
+    {
+      "id": "app-icon",
+      "title": "Circular adaptive launcher icon like DailyAL",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P0",
+      "needs": [
+        "deps-prefs-contract"
+      ],
+      "owns": [
+        "pubspec.yaml",
+        "android/app/src/main/res/mipmap-*/**",
+        "android/app/src/main/res/mipmap-anydpi-v26/**",
+        "android/app/src/main/res/values/ic_launcher_background.xml",
+        "assets/images/app_icon/**",
+        "ios/Runner/Assets.xcassets/AppIcon.appiconset/**",
+        "tools/icon/**",
+        "lib/l10n/units/app-icon/**",
+        "test/units/app-icon/**"
       ],
       "group": "release",
       "dropped": null,
