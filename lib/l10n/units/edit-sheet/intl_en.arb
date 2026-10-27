@@ -15,9 +15,21 @@
   "Edit_Chapters_Read": "Chapters",
   "Edit_Volumes_Read": "Volumes",
   "Edit_Of_Total": "of {total}",
-  "@Edit_Of_Total": { "placeholders": { "total": { "type": "int" } } },
+  "@Edit_Of_Total": {
+    "placeholders": {
+      "total": {
+        "type": "int"
+      }
+    }
+  },
   "Edit_Aired_Estimate": "about {count} aired",
-  "@Edit_Aired_Estimate": { "placeholders": { "count": { "type": "int" } } },
+  "@Edit_Aired_Estimate": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "Edit_Pick_From_List": "Pick from a list",
   "Edit_Type_Number": "Type a number",
   "Edit_Decrease": "Decrease",
@@ -40,7 +52,5 @@
   "Edit_Tags": "Tags",
   "Edit_Tags_Empty": "No tags yet",
   "Edit_Tags_Hint": "Separate tags with commas",
-  "Edit_Save": "Save",
-  "Edit_Pick_Date": "Pick a date",
-  "Edit_Private_Note_Saved": "Saved on this device"
+  "Edit_Save": "Save"
 }

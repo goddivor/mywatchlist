@@ -38,7 +38,5 @@
   "Edit_Tags": "Étiquettes",
   "Edit_Tags_Empty": "Aucune étiquette pour l’instant",
   "Edit_Tags_Hint": "Séparez les étiquettes par des virgules",
-  "Edit_Save": "Enregistrer",
-  "Edit_Pick_Date": "Choisir une date",
-  "Edit_Private_Note_Saved": "Enregistrée sur cet appareil"
+  "Edit_Save": "Enregistrer"
 }
