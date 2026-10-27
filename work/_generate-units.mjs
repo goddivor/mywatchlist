@@ -180,11 +180,12 @@ const UNITS = [
   {
     id: "accounts-ux", title: "Redesign the account picker, account switcher and account management", kind: "screen", priority: "P1", group: "user", model: "sonnet", ui: true,
     needs: ["app-shell"],
-    owns: ["lib/screens/account_switcher_page.dart", "lib/screens/manage_accounts_page.dart", "lib/screens/onboarding_trackers.dart", "lib/pages/login_page.dart", "lib/screens/settings/accounts_settings.dart", "lib/user/trackers/**", "lib/widgets/common/acc_widget.dart", "lib/widgets/common/signin_widget.dart", "lib/widgets/common/logout_dialog.dart", "lib/widgets/Kitsu/kitsu_login_dialog.dart", "lib/user/accounts/**"],
+    owns: ["lib/user/user.dart", "lib/user/base_user.dart", "lib/screens/account_switcher_page.dart", "lib/screens/manage_accounts_page.dart", "lib/screens/onboarding_trackers.dart", "lib/pages/login_page.dart", "lib/screens/settings/accounts_settings.dart", "lib/user/trackers/**", "lib/widgets/common/acc_widget.dart", "lib/widgets/common/signin_widget.dart", "lib/widgets/common/logout_dialog.dart", "lib/widgets/Kitsu/kitsu_login_dialog.dart", "lib/user/accounts/**"],
     dal: ["lib/pages/settings/accounts_settings.dart", "lib/widgets/user/signinpage.dart"],
     goal: [
       "The owner says the current flow (select an account, then press Continue, for every app) is badly done. Redesign the whole account experience: first-run tracker connection, switching the active account (one tap, no Continue step), adding/removing accounts, re-login when a token is dead.",
       "Session expiry UX: show a clear 'sign in again' prompt for any tracker in `UserManager.trackersNeedingReLogin` / `needsReLogin` (from auth-refresh), and keep AccountManager / AccountBloc informed when a session dies (lib/user/accounts/**).",
+      "Two `AuthStatus` enums exist (lib/user/user.dart and lib/user/base_user.dart) and comparisons across them are always false: keep one, migrate every use (app-shell finding). Replace the hardcoded English of logout_dialog.dart.",
       "Fill the Accounts settings page stub (login/logout per tracker, active account, connected services).",
       "Tracker logos via AppImage instead of Image.network (onboarding_trackers.dart:192).",
       "This is an MWL-only flow (DAL has one MAL account): design it from scratch for 4 trackers; look at DAL only for the sign-in visuals.",
@@ -223,12 +224,12 @@ const UNITS = [
   {
     id: "user-profile-mal", title: "MAL user profile, stats charts and user pop-up", kind: "screen", priority: "P1", group: "user", model: "sonnet", ui: true,
     needs: ["mal-auth-calls", "app-shell", "shared-kit", "backend-parsers"],
-    owns: ["lib/pages/MAL/mal_user_profile_page.dart", "lib/screens/user_profile/**", "lib/widgets/user/profile/**", "lib/widgets/charts/**", "lib/services/api/MAL/scrapper/user_anime_statistics.dart", "lib/services/api/MAL/scrapper/user_friends.dart", "lib/services/api/MAL/scrapper/user_history.dart", "lib/services/api/MAL/user_anime_statistics.dart", "lib/services/api/MAL/mal_user_prof.dart", "lib/cache/cached_user_profile.dart"],
+    owns: ["lib/utils/app_routes.dart", "lib/pages/MAL/mal_user_profile_page.dart", "lib/screens/user_profile/**", "lib/widgets/user/profile/**", "lib/widgets/charts/**", "lib/services/api/MAL/scrapper/user_anime_statistics.dart", "lib/services/api/MAL/scrapper/user_friends.dart", "lib/services/api/MAL/scrapper/user_history.dart", "lib/services/api/MAL/user_anime_statistics.dart", "lib/services/api/MAL/mal_user_prof.dart", "lib/cache/cached_user_profile.dart"],
     dal: ["lib/screens/user_profile.dart", "lib/widgets/user/user_header.dart", "lib/widgets/user/stats_screen.dart", "lib/user/charts/", "lib/widgets/barchart.dart", "lib/pages/userpop.dart", "lib/cache/cacheduserprof.dart", "lib/util/insight_service.dart"],
     goal: [
       "Own profile and any other user's profile: header, about (users/about parser from backend-parsers), favorites, friends, clubs, history, stats with charts (fl_chart; colors from the stats chart pref), insights.",
       "User pop-up sheet (profile header, set/remove profile background, report user).",
-      "Make `openUserProfile` from `lib/utils/app_routes.dart` land here — that file is app-shell's: if its stub cannot reach your screen without an edit, report it as a finding (the orchestrator queues the one-line change).",
+      "Point `openUserProfile` and `openUserStats` in lib/utils/app_routes.dart at your real screens (one-line changes; app-shell merged, you own the file now).",
     ],
     dod: ["Owner's profile and a friend's profile render on the emulator with stats."],
   },
@@ -348,11 +349,13 @@ const UNITS = [
   {
     id: "home-wiring", title: "Home: working chips, bookmarks/calendar buttons, maintenance dialog, user-list and forum sections", kind: "screen", priority: "P1", group: "discovery", model: "sonnet", ui: true,
     needs: ["perf-foundation", "bookmarks", "calendar", "explore-seasonal", "user-list-mal"],
-    owns: ["lib/pages/MAL/mal_home_page.dart", "lib/widgets/MAL/home/homeappbar.dart", "lib/widgets/MAL/home/accordion.dart", "lib/widgets/MAL/home/section_header.dart", "lib/widgets/MAL/home/news_widget.dart", "lib/widgets/MAL/home/show_news.dart", "lib/widgets/home/**", "lib/user/MAL/**", "lib/screens/settings/mal_home_settings.dart"],
+    owns: ["lib/widgets/common/bottomnavbar.dart", "lib/pages/MAL/mal_home_page.dart", "lib/widgets/MAL/home/homeappbar.dart", "lib/widgets/MAL/home/accordion.dart", "lib/widgets/MAL/home/section_header.dart", "lib/widgets/MAL/home/news_widget.dart", "lib/widgets/MAL/home/show_news.dart", "lib/widgets/home/**", "lib/user/MAL/**", "lib/screens/settings/mal_home_settings.dart"],
     dal: ["lib/pages/homepage.dart", "lib/widgets/homeappbar.dart", "lib/widgets/home/feature_first.dart", "lib/util/homepageutils.dart", "lib/pages/settings/homepagesettings.dart"],
     goal: [
       "Top chips (Categories, Genres, Top anime/manga, Top airing, Popular) are all `() {}` (mal_home_page.dart:44-52) → open the explore/ranking screens; bookmarks and calendar buttons `() {}` (:222-224) → app_routes.",
       "MAL under-maintenance dialog (API exists mal_api.dart:1067).",
+      "Sidebar entry point (app-shell finding): a visible button in the home app bar (the account avatar, as in DailyAL) calls `AppRoutes.openSidebar` — the edge swipe alone fights Android gesture navigation. Replace the direct `SettingsPage` push (mal_home_page.dart:228) by `AppRoutes.openSettings`.",
+      "BottomNavBar (lib/widgets/common/bottomnavbar.dart): honour `startIndex` changes (`didUpdateWidget`) so the shell can switch tab from code, and move its hardcoded tab titles to `S`.",
       "Home sections: user-list section, forum section, custom items (forum boards, user list status, season/year).",
       "News items: drop ClipRRect + Opacity per item (news_widget.dart:54-56), use AppImage (performance.md #7).",
       "First-run feature showcase (tile size, preferred title, startup page).",
@@ -392,7 +395,7 @@ const UNITS = [
     dal: ["lib/pages/settings/themesettings.dart", "lib/pages/settings/about.dart", "lib/pages/settings/backup_restore.dart", "lib/cache/cachemanager.dart"],
     goal: [
       "Theme: Material You 'Auto' accent (dynamic_color) and custom color picker (flex_color_picker).",
-      "About: version (package_info_plus), changelog, licences, links to goddivor/mywatchlist.",
+      "About: version (package_info_plus), changelog, licences, links to goddivor/mywatchlist, and the feedback entry (report a bug / open an issue on goddivor/mywatchlist) — the owner chose to move Help & Feedback here instead of a separate settings page.",
       "Backup & restore UI (JSON export/import) wiring the existing cachemanager methods (:127, :145) + private notes + bookmarks export/import.",
       "Clear app storage / caches.",
       "Move the background image path out of the legacy `UserMal.instance.pref.bgImagePath` (lib/utils/sidebar_bg_manager.dart:240-247) into the preferences contract / ThemeBloc, then delete the reduced lib/user/userpref.dart (deps-prefs-contract finding; lib/user/user.dart is done — report if `UserMal.pref` must go).",
@@ -401,10 +404,10 @@ const UNITS = [
   },
   {
     id: "notifications", title: "Airing notifications", kind: "unit", priority: "P1", group: "settings", model: "sonnet", ui: true,
-    needs: ["app-shell", "user-list-mal"],
-    owns: ["lib/services/notifications/**", "lib/screens/settings/notifications_settings.dart", "android/app/src/main/res/drawable/ic_stat_notification.xml", "android/app/src/main/res/drawable-*/ic_stat_notification.png"],
+    needs: ["perf-foundation", "app-shell", "user-list-mal"],
+    owns: ["lib/main.dart", "lib/services/notifications/**", "lib/screens/settings/notifications_settings.dart", "android/app/src/main/res/drawable/ic_stat_notification.xml", "android/app/src/main/res/drawable-*/ic_stat_notification.png"],
     dal: ["lib/notifservice.dart", "lib/pages/settings/notifsettings.dart", "commits 820a295, 92cc38d"],
-    goal: ["Schedule airing notifications for watching / plan-to-watch lists (flutter_local_notifications + timezone), large image pref, permission request, test notification, clear and reschedule all, reschedule after boot, open the detail screen from a notification (cold and warm start) through the app-shell hook. Fill the notification_service stub."],
+    goal: ["Schedule airing notifications for watching / plan-to-watch lists (flutter_local_notifications + timezone), large image pref, permission request, test notification, clear and reschedule all, reschedule after boot, open the detail screen from a notification (cold and warm start) through the app-shell hook: read the payload of the notification that launched the app in main.dart and pass it to `OpenScreen(notificationPayload:)`; payload format `anime:<id>`, `manga:<id>`, `calendar`, `bookmarks` (documented in lib/utils/app_routes.dart). Fill the notification_service stub."],
     dod: ["Test notification shows on the emulator and opens the right anime."],
   },
   {
@@ -430,7 +433,7 @@ const UNITS = [
     needs: ["mal-auth-calls", "user-profile-mal", "shared-kit"],
     owns: ["lib/screens/forum/**", "lib/widgets/forum/**", "lib/pages/MAL/mal_forum_page.dart", "lib/services/api/MAL/mal_clubs_api.dart", "lib/services/api/MAL/mal_forum_api.dart"],
     dal: ["lib/screens/forumposts.dart", "lib/screens/forumtopicsscreen.dart", "lib/pages/forumpage.dart", "lib/screens/clubscreen.dart"],
-    goal: ["Reply FAB only copies the URL (forum_posts_screen.dart:117-126) → open a webview to post (DAL); post avatar → profile (post_widget.dart:346); club members/staff → in-app profile instead of browser; replace the club scraping in mal_clubs_api.dart by the backend methods `MwlApi.getClubPage/getClubMembers/getClubForumTopics/getClubComments` (backend-parsers finding); HTML parsing off the UI isolate in mal_clubs_api.dart (:20, :34, :61) and the forum API (performance.md #9); share/browser menus; redesign per UI directive."],
+    goal: ["MalForumPage:206 pushes SettingsPage directly → `AppRoutes.openSettings` (app-shell finding); Reply FAB only copies the URL (forum_posts_screen.dart:117-126) → open a webview to post (DAL); post avatar → profile (post_widget.dart:346); club members/staff → in-app profile instead of browser; replace the club scraping in mal_clubs_api.dart by the backend methods `MwlApi.getClubPage/getClubMembers/getClubForumTopics/getClubComments` (backend-parsers finding); HTML parsing off the UI isolate in mal_clubs_api.dart (:20, :34, :61) and the forum API (performance.md #9); share/browser menus; redesign per UI directive."],
     bugs: ["reply FAB", "avatar tap"],
     dod: ["Reply opens the MAL post form in-app on the emulator."],
   },

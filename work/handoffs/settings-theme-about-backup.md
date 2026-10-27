@@ -24,7 +24,7 @@ Plus `PROJECT-STATE.md` (rewrite in place, within its cap) and `docs/DECISIONS.m
 
 ## Goal
 - Theme: Material You 'Auto' accent (dynamic_color) and custom color picker (flex_color_picker).
-- About: version (package_info_plus), changelog, licences, links to goddivor/mywatchlist.
+- About: version (package_info_plus), changelog, licences, links to goddivor/mywatchlist, and the feedback entry (report a bug / open an issue on goddivor/mywatchlist) — the owner chose to move Help & Feedback here instead of a separate settings page.
 - Backup & restore UI (JSON export/import) wiring the existing cachemanager methods (:127, :145) + private notes + bookmarks export/import.
 - Clear app storage / caches.
 - Move the background image path out of the legacy `UserMal.instance.pref.bgImagePath` (lib/utils/sidebar_bg_manager.dart:240-247) into the preferences contract / ThemeBloc, then delete the reduced lib/user/userpref.dart (deps-prefs-contract finding; lib/user/user.dart is done — report if `UserMal.pref` must go).

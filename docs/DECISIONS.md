@@ -50,3 +50,7 @@ Append-only, one line per decision: `- YYYY-MM-DD [unit] decision — why`. Earl
 - 2026-10-27 [perf-foundation] Every shimmer shares one `ShimmerClock` ticker and only repaints through its render object; the clock runs only while an attached shimmer in an enabled `TickerMode` exists; the `shimmer` package is no longer used by `lib/widgets/loading/`.
 - 2026-10-27 [perf-foundation] Impeller stays on, explicitly (`EnableImpeller=true` in the manifest), until the checker's A/B in `docs/PERFORMANCE.md` shows Skia (DailyAL's choice) is smoother on our gestures.
 - 2026-10-27 [perf-foundation] Route transitions of `page_transitions.dart` last 250 ms with `Cubic(0.23, 1, 0.32, 1)` and the slide carries no fade (no offscreen layer over the whole page).
+- 2026-10-27 [owner] The sidebar opens from a visible button: the account avatar in the home app bar (as in DailyAL); the edge swipe stays as a secondary gesture.
+- 2026-10-27 [owner] A user who never picked a language gets the device language (not English).
+- 2026-10-27 [owner] Help & Feedback leaves the settings hub; feedback (report a bug / open an issue) lives on the About page.
+- 2026-10-27 [owner] AniList: no early warning before token expiry; when refresh fails the account goes to "sign in again" with a clear message.

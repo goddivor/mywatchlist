@@ -6,6 +6,8 @@
 - `app-shell` (App shell seams: settings hub, sidebar, home shell, startup)
 
 ## Owns (may create or edit ONLY these)
+- `lib/user/user.dart`
+- `lib/user/base_user.dart`
 - `lib/screens/account_switcher_page.dart`
 - `lib/screens/manage_accounts_page.dart`
 - `lib/screens/onboarding_trackers.dart`
@@ -25,6 +27,7 @@ Plus `PROJECT-STATE.md` (rewrite in place, within its cap) and `docs/DECISIONS.m
 ## Goal
 - The owner says the current flow (select an account, then press Continue, for every app) is badly done. Redesign the whole account experience: first-run tracker connection, switching the active account (one tap, no Continue step), adding/removing accounts, re-login when a token is dead.
 - Session expiry UX: show a clear 'sign in again' prompt for any tracker in `UserManager.trackersNeedingReLogin` / `needsReLogin` (from auth-refresh), and keep AccountManager / AccountBloc informed when a session dies (lib/user/accounts/**).
+- Two `AuthStatus` enums exist (lib/user/user.dart and lib/user/base_user.dart) and comparisons across them are always false: keep one, migrate every use (app-shell finding). Replace the hardcoded English of logout_dialog.dart.
 - Fill the Accounts settings page stub (login/logout per tracker, active account, connected services).
 - Tracker logos via AppImage instead of Image.network (onboarding_trackers.dart:192).
 - This is an MWL-only flow (DAL has one MAL account): design it from scratch for 4 trackers; look at DAL only for the sign-in visuals.

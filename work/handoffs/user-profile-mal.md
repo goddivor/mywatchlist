@@ -9,6 +9,7 @@
 - `backend-parsers` (mwl-api: port DAL's missing routes and HTML parsers)
 
 ## Owns (may create or edit ONLY these)
+- `lib/utils/app_routes.dart`
 - `lib/pages/MAL/mal_user_profile_page.dart`
 - `lib/screens/user_profile/**`
 - `lib/widgets/user/profile/**`
@@ -27,7 +28,7 @@ Plus `PROJECT-STATE.md` (rewrite in place, within its cap) and `docs/DECISIONS.m
 ## Goal
 - Own profile and any other user's profile: header, about (users/about parser from backend-parsers), favorites, friends, clubs, history, stats with charts (fl_chart; colors from the stats chart pref), insights.
 - User pop-up sheet (profile header, set/remove profile background, report user).
-- Make `openUserProfile` from `lib/utils/app_routes.dart` land here — that file is app-shell's: if its stub cannot reach your screen without an edit, report it as a finding (the orchestrator queues the one-line change).
+- Point `openUserProfile` and `openUserStats` in lib/utils/app_routes.dart at your real screens (one-line changes; app-shell merged, you own the file now).
 
 ## Known bugs to fix in scope
 - none

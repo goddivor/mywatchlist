@@ -3,10 +3,12 @@
 **Kind** unit · **Priority** P1 · **Group** settings · **Model** sonnet
 
 ## Needs done first
+- `perf-foundation` (Fluidity foundation: 120 Hz, image decoding, shimmers, root rebuilds)
 - `app-shell` (App shell seams: settings hub, sidebar, home shell, startup)
 - `user-list-mal` (MAL user anime/manga list (status tabs, sort/filter, view modes, status cache))
 
 ## Owns (may create or edit ONLY these)
+- `lib/main.dart`
 - `lib/services/notifications/**`
 - `lib/screens/settings/notifications_settings.dart`
 - `android/app/src/main/res/drawable/ic_stat_notification.xml`
@@ -17,7 +19,7 @@
 Plus `PROJECT-STATE.md` (rewrite in place, within its cap) and `docs/DECISIONS.md` (append one line per decision). Anything else you need is a FINDING to report, never an edit.
 
 ## Goal
-- Schedule airing notifications for watching / plan-to-watch lists (flutter_local_notifications + timezone), large image pref, permission request, test notification, clear and reschedule all, reschedule after boot, open the detail screen from a notification (cold and warm start) through the app-shell hook. Fill the notification_service stub.
+- Schedule airing notifications for watching / plan-to-watch lists (flutter_local_notifications + timezone), large image pref, permission request, test notification, clear and reschedule all, reschedule after boot, open the detail screen from a notification (cold and warm start) through the app-shell hook: read the payload of the notification that launched the app in main.dart and pass it to `OpenScreen(notificationPayload:)`; payload format `anime:<id>`, `manga:<id>`, `calendar`, `bookmarks` (documented in lib/utils/app_routes.dart). Fill the notification_service stub.
 
 ## Known bugs to fix in scope
 - none
