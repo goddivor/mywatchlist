@@ -4,7 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:mywatchlist/constants/constants.dart';
 import 'package:mywatchlist/services/api/MAL/mal_anime.dart';
-import 'package:mywatchlist/services/api/MAL/mal_connect.dart';
+import 'package:mywatchlist/services/api/MAL/mal_api.dart';
 import 'package:mywatchlist/services/api/MAL/mal_user_prof.dart';
 import 'package:mywatchlist/services/api/MAL/models/search_result.dart';
 import 'package:mywatchlist/services/api/MAL/models/mal_user_search.dart';
@@ -27,7 +27,7 @@ class MalUser {
     if (fields != null && fields.isNotEmpty) {
       url += '?fields=${fields.join(",")}';
     }
-    final response = await MalConnect.authGet(url);
+    final response = await MalApi.signedGet(url);
     if (response.statusCode != 200) {
       throw Exception('Failed to load user info (${response.statusCode})');
     }
@@ -79,7 +79,7 @@ class MalUser {
     if (status != null) url += "&status=$status";
     if (sortType != null) url += "&sort=$sortType";
 
-    final response = await MalConnect.authGet(url);
+    final response = await MalApi.signedGet(url);
 
     if (response.statusCode == 200) {
       return SearchResult.fromJson(json.decode(response.body));
@@ -132,7 +132,7 @@ class MalUser {
 
     String? currentUrl = url;
     while (currentUrl != null) {
-      final response = await MalConnect.authGet(currentUrl);
+      final response = await MalApi.signedGet(currentUrl);
 
       if (response.statusCode != 200) {
         break;

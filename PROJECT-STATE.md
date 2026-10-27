@@ -41,6 +41,7 @@ Cap: 80 lines. Rewrite in place; history lives in git and `docs/DECISIONS.md`.
 - No user list / profile for any tracker; AniList/Kitsu/Simkl tabs are placeholders.
 - No notifications, calendar, bookmarks, relation graph, share, translation.
 - `auth-refresh` built (PR pending): token refresh/retry in `BaseUser`; call sites in `mal_api.dart`, `mal_user.dart`, Anilist/Kitsu/Simkl clients still use raw `http` and must move to `MalConnect.auth*` / `sendAuthenticated` (see PR findings).
+- MAL dead session (#71): public MAL reads (seasonal, ranking, details, search, other users' lists, forum) fall back to the client id; `/users/@me`, suggestions and list writes throw `MalSessionExpired`. The UI listens to `MalApi.sessionExpired` (`ValueListenable<bool>`); the visible prompt is still to build (accounts-ux / app-shell), and `contentdetailedscreen.dart` still swallows errors.
 
 ## Next
 - Board: GitHub Project goddivor #8 "MyWatchList — Roadmap", 38 unit issues synced.
