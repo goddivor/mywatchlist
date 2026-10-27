@@ -1,11 +1,14 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:mywatchlist/constants/constants.dart' show AccountType, showToast;
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/screens/user_profile/user_profile_data.dart';
 import 'package:mywatchlist/utils/app_routes.dart';
 import 'package:mywatchlist/utils/web_launcher.dart';
+import 'package:mywatchlist/widgets/common/app_colors.dart';
 import 'package:mywatchlist/widgets/user/profile/profile_background.dart';
+import 'package:mywatchlist/widgets/user/profile/profile_format.dart';
 import 'package:mywatchlist/widgets/user/profile/profile_header.dart';
 import 'package:mywatchlist/widgets/user/profile/profile_states.dart';
 import 'package:mywatchlist/widgets/user/profile/report_user.dart';
@@ -33,7 +36,9 @@ class UserPopSheet extends StatefulWidget {
 }
 
 class _UserPopSheetState extends State<UserPopSheet> {
-  late Future<UserProfileData> _future;
+  StreamSubscription<UserProfileData>? _sub;
+  UserProfileData? _data;
+  Object? _error;
   bool _busy = false;
 
   bool get _isSelf => widget.username == null;
@@ -41,12 +46,32 @@ class _UserPopSheetState extends State<UserPopSheet> {
   @override
   void initState() {
     super.initState();
-    _future = UserProfileRepository.instance.load(widget.username);
+    _listen();
   }
 
-  void _retry() => setState(() {
-        _future = UserProfileRepository.instance.load(widget.username, forceRefresh: true);
-      });
+  @override
+  void dispose() {
+    _sub?.cancel();
+    super.dispose();
+  }
+
+  /// The official MAL data shows at once; Jikan's part merges when it answers.
+  void _listen({bool force = false}) {
+    _sub?.cancel();
+    _sub = UserProfileRepository.instance.watch(widget.username, forceRefresh: force).listen(
+      (data) {
+        if (mounted) setState(() => (_data, _error) = (data, null));
+      },
+      onError: (Object e) {
+        if (mounted && _data == null) setState(() => _error = e);
+      },
+    );
+  }
+
+  void _retry() {
+    setState(() => _error = null);
+    _listen(force: true);
+  }
 
   Future<void> _setBackground(UserProfileData data) async {
     setState(() => _busy = true);
@@ -95,39 +120,40 @@ class _UserPopSheetState extends State<UserPopSheet> {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<UserProfileData>(
-      future: _future,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState != ConnectionState.done) {
-          return SizedBox(
-            height: 260,
-            child: ProfileLoading(label: S.of(context).Prof_Loading),
-          );
-        }
-        if (snapshot.hasError) {
-          return SizedBox(
-            height: 300,
-            child: ProfileErrorView(error: snapshot.error!, onRetry: _retry),
-          );
-        }
-        return _content(context, snapshot.data!);
-      },
+    final data = _data;
+    final error = _error;
+    if (data != null) return _content(context, data);
+    if (error != null) {
+      return SizedBox(
+        height: 300,
+        child: ProfileErrorView(error: error, onRetry: _retry),
+      );
+    }
+    return SizedBox(
+      height: 260,
+      child: ProfileLoading(label: S.of(context).Prof_Loading),
     );
   }
 
   Widget _content(BuildContext context, UserProfileData data) {
     final s = S.of(context);
     final theme = Theme.of(context);
-    final number = NumberFormat.decimalPattern();
     final hasBackground = _isSelf && ProfileBackgroundStore.instance.cached(data.username) != null;
 
-    final tiles = <(String, String)>[
+    final tokens = AppColors.of(context);
+    final mangaPending = data.manga.isEmpty && data.extras != ProfileExtras.ready;
+    final tiles = <(String, String, Color?)>[
       (
         s.Prof_Mean_Score,
-        (data.anime.meanScore ?? 0) > 0 ? data.anime.meanScore!.toStringAsFixed(2) : '—',
+        profileMean(data.anime.meanScore),
+        (data.anime.meanScore ?? 0) > 0 ? tokens.score.color : null,
       ),
-      ('${s.Prof_Anime} · ${s.Prof_Entries_Label}', number.format(data.anime.totalEntries)),
-      ('${s.Prof_Manga} · ${s.Prof_Entries_Label}', number.format(data.manga.totalEntries)),
+      ('${s.Prof_Anime} · ${s.Prof_Entries_Label}', profileNumber(data.anime.totalEntries), null),
+      (
+        '${s.Prof_Manga} · ${s.Prof_Entries_Label}',
+        mangaPending ? s.Pp_No_Value : profileNumber(data.manga.totalEntries),
+        null,
+      ),
     ];
 
     return SingleChildScrollView(
@@ -146,33 +172,28 @@ class _UserPopSheetState extends State<UserPopSheet> {
                 for (var i = 0; i < tiles.length; i++) ...[
                   if (i > 0) const SizedBox(width: 10),
                   Expanded(
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.55),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              tiles[i].$1,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: theme.textTheme.labelSmall?.copyWith(
-                                color: theme.colorScheme.onSurfaceVariant,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              tiles[i].$2,
-                              style: theme.textTheme.titleMedium
-                                  ?.copyWith(fontWeight: FontWeight.w700),
-                            ),
-                          ],
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          tiles[i].$2,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            color: tiles[i].$3 ?? theme.colorScheme.onSurface,
+                          ),
                         ),
-                      ),
+                        const SizedBox(height: 2),
+                        Text(
+                          tiles[i].$1,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.labelMedium?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],

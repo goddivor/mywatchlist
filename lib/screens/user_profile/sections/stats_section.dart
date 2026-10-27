@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:intl/intl.dart';
 import 'package:mywatchlist/constants/constants.dart' show AccountType, gotoPage;
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/screens/MAL/character_screen.dart';
@@ -16,7 +15,10 @@ import 'package:mywatchlist/widgets/charts/chart_palette.dart';
 import 'package:mywatchlist/widgets/charts/ranked_bar_list.dart';
 import 'package:mywatchlist/widgets/charts/score_stack_chart.dart';
 import 'package:mywatchlist/widgets/charts/status_bar_chart.dart';
+import 'package:mywatchlist/widgets/common/app_colors.dart';
 import 'package:mywatchlist/widgets/common/app_image.dart';
+import 'package:mywatchlist/widgets/user/profile/profile_format.dart';
+import 'package:mywatchlist/widgets/user/profile/profile_states.dart';
 import 'package:mywatchlist/widgets/user/profile/profile_header.dart';
 
 /// The Stats tab: key numbers, the list status chart, and (loaded in the background) the
@@ -25,7 +27,10 @@ class StatsSection extends StatefulWidget {
   final UserProfileData data;
   final bool isSelf;
 
-  const StatsSection({super.key, required this.data, required this.isSelf});
+  /// Asks Jikan again when the manga numbers could not be loaded.
+  final VoidCallback? onRetryExtras;
+
+  const StatsSection({super.key, required this.data, required this.isSelf, this.onRetryExtras});
 
   @override
   State<StatsSection> createState() => _StatsSectionState();
@@ -51,9 +56,13 @@ class _StatsSectionState extends State<StatsSection> with AutomaticKeepAliveClie
     final s = S.of(context);
     final manga = _category == 'manga';
     final stats = manga ? widget.data.manga : widget.data.anime;
-    final colors = statusChartColors(
+    final colors = themedStatusChartColors(
+      AppColors.of(context),
       context.select((PreferencesBloc bloc) => bloc.state.general.statsChartColors),
     );
+    // Manga numbers come from Jikan only: say they are coming (or failed) instead of "empty".
+    final extras = widget.data.extras;
+    final waitingForJikan = manga && stats.isEmpty && extras != ProfileExtras.ready;
 
     return ProfileTabScroll(
       storageKey: 'stats_${widget.data.username}',
@@ -73,7 +82,21 @@ class _StatsSectionState extends State<StatsSection> with AutomaticKeepAliveClie
           ),
         ),
         SliverToBoxAdapter(child: _SummaryCard(data: widget.data, stats: stats, manga: manga)),
-        if (stats.isEmpty)
+        if (waitingForJikan)
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: extras == ProfileExtras.loading
+                  ? ProfileLoading(label: s.Pp_Extras_Loading)
+                  : ProfileMessage(
+                      icon: Icons.cloud_off_outlined,
+                      title: s.Pp_Extras_Unavailable,
+                      actionLabel: widget.onRetryExtras == null ? null : s.Prof_Retry,
+                      onAction: widget.onRetryExtras,
+                    ),
+            ),
+          )
+        else if (stats.isEmpty)
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.all(24),
@@ -160,14 +183,7 @@ class _StatsSectionState extends State<StatsSection> with AutomaticKeepAliveClie
   static const _mal = AccountType.myanimelist;
 }
 
-String _number(num value, {int digits = 0}) {
-  final format = digits == 0
-      ? NumberFormat.decimalPattern()
-      : (NumberFormat.decimalPattern()
-        ..minimumFractionDigits = digits
-        ..maximumFractionDigits = digits);
-  return format.format(value);
-}
+String _number(num value, {int digits = 0}) => profileNumber(value, digits: digits);
 
 List<String> statusLabels(String category, S s) => [
       category == 'manga' ? s.Prof_Status_Reading : s.Prof_Status_Watching,
@@ -177,6 +193,8 @@ List<String> statusLabels(String category, S s) => [
       category == 'manga' ? s.Prof_Status_Plan_Read : s.Prof_Status_Plan_Watch,
     ];
 
+/// The key numbers on one flat card (no tile inside the card): value in large, label under
+/// it, the mean score with the score colour; then the user's details.
 class _SummaryCard extends StatelessWidget {
   final UserProfileData data;
   final ListStats stats;
@@ -188,19 +206,24 @@ class _SummaryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final s = S.of(context);
     final theme = Theme.of(context);
-    final tiles = <(String, String)>[
+    final cs = theme.colorScheme;
+    final tokens = AppColors.of(context);
+    final hasMean = (stats.meanScore ?? 0) > 0;
+    final tiles = <(String, String, Color?)>[
+      (s.Prof_Mean_Score, profileMean(stats.meanScore), hasMean ? tokens.score.color : null),
+      (s.Prof_Entries_Label, _number(stats.totalEntries), null),
       (
-        s.Prof_Mean_Score,
-        (stats.meanScore ?? 0) > 0 ? _number(stats.meanScore!, digits: 2) : '—',
+        s.Prof_Days_Label,
+        stats.days == null ? s.Pp_No_Value : _number(stats.days!, digits: 1),
+        null,
       ),
-      (s.Prof_Entries_Label, _number(stats.totalEntries)),
-      (s.Prof_Days_Label, stats.days == null ? '—' : _number(stats.days!, digits: 1)),
-      (manga ? s.Prof_Chapters_Label : s.Prof_Episodes_Label, _number(stats.progress)),
-      if (manga) (s.Prof_Volumes_Label, _number(stats.volumes)),
+      (manga ? s.Prof_Chapters_Label : s.Prof_Episodes_Label, _number(stats.progress), null),
+      if (manga) (s.Prof_Volumes_Label, _number(stats.volumes), null),
     ];
     final birthday = formatProfileDate(data.birthday);
     final info = <(IconData, String, String)>[
-      if (data.gender != null) (Icons.person_outline, s.Prof_Gender, data.gender!),
+      if (data.gender != null)
+        (Icons.person_outline, s.Prof_Gender, profileGenderLabel(data.gender!)),
       if (data.location != null) (Icons.place_outlined, s.Prof_Location, data.location!),
       if (birthday != null) (Icons.cake_outlined, s.Prof_Birthday, birthday),
     ];
@@ -208,48 +231,44 @@ class _SummaryCard extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       child: Padding(
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             LayoutBuilder(
               builder: (context, constraints) {
-                const gap = 10.0;
-                final columns = constraints.maxWidth >= 520 ? tiles.length : 2;
+                const gap = 12.0;
+                final columns = constraints.maxWidth >= 520 ? tiles.length : 3;
                 final width = (constraints.maxWidth - gap * (columns - 1)) / columns;
                 return Wrap(
                   spacing: gap,
-                  runSpacing: gap,
+                  runSpacing: 14,
                   children: [
-                    for (final (label, value) in tiles)
+                    for (final (label, value, color) in tiles)
                       SizedBox(
                         width: width,
-                        child: DecoratedBox(
-                          decoration: BoxDecoration(
-                            color: theme.colorScheme.surfaceContainerHighest
-                                .withValues(alpha: 0.55),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  label,
-                                  style: theme.textTheme.labelSmall?.copyWith(
-                                    color: theme.colorScheme.onSurfaceVariant,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  value,
-                                  style: theme.textTheme.titleLarge
-                                      ?.copyWith(fontWeight: FontWeight.w700),
-                                ),
-                              ],
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              value,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.textTheme.titleLarge?.copyWith(
+                                fontWeight: FontWeight.w700,
+                                color: color ?? cs.onSurface,
+                              ),
                             ),
-                          ),
+                            const SizedBox(height: 2),
+                            Text(
+                              label,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.textTheme.labelMedium?.copyWith(
+                                color: cs.onSurfaceVariant,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                   ],
@@ -257,18 +276,21 @@ class _SummaryCard extends StatelessWidget {
               },
             ),
             if (info.isNotEmpty) ...[
-              const SizedBox(height: 12),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                child: Divider(height: 1, color: cs.outlineVariant),
+              ),
               Wrap(
                 spacing: 16,
-                runSpacing: 6,
+                runSpacing: 8,
                 children: [
                   for (final (icon, label, value) in info)
-                    Tooltip(
-                      message: label,
+                    Semantics(
+                      label: label,
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(icon, size: 18, color: theme.colorScheme.onSurfaceVariant),
+                          Icon(icon, size: 18, color: cs.onSurfaceVariant),
                           const SizedBox(width: 6),
                           Flexible(child: Text(value, style: theme.textTheme.bodyMedium)),
                         ],
@@ -515,7 +537,7 @@ class _DistributionCardState extends State<_DistributionCard> {
               items: [
                 for (final item in items)
                   RankedBarItem(
-                    label: _pretty(item.name),
+                    label: _label(item.name),
                     count: item.count,
                     mean: item.mean,
                     onTap: onTap == null ? null : () => onTap(item),
@@ -538,16 +560,12 @@ class _DistributionCardState extends State<_DistributionCard> {
     );
   }
 
-  /// MAL media types and sources are snake_case ("light_novel"); make them readable.
-  static String _pretty(String name) {
-    if (!name.contains('_')) {
-      return name.length <= 3 ? name.toUpperCase() : _capitalize(name);
-    }
-    return name.split('_').map(_capitalize).join(' ');
-  }
-
-  static String _capitalize(String word) =>
-      word.isEmpty ? word : '${word[0].toUpperCase()}${word.substring(1)}';
+  /// MAL media types and sources are API values ("light_novel"): show them translated.
+  String _label(String name) => switch (widget.kind) {
+        InsightKind.mediaType => profileMediaTypeLabel(name),
+        InsightKind.source => profileSourceLabel(name),
+        _ => name,
+      };
 }
 
 class _AboveMeanShelf extends StatelessWidget {
@@ -605,7 +623,7 @@ class _AboveMeanShelf extends StatelessWidget {
                         Text(
                           s.Prof_Score_Compare(
                             '${entry.score}',
-                            entry.mean.toStringAsFixed(2),
+                            _number(entry.mean, digits: 2),
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,

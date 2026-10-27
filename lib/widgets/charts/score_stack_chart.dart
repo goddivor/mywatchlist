@@ -1,5 +1,6 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 /// Number of entries per score (1 to 10), each bar stacked by list status.
 ///
@@ -26,6 +27,8 @@ class ScoreStackChart extends StatelessWidget {
     final totals = [for (final s in scores) scoreByStatus[s]!.fold<int>(0, (a, b) => a + b)];
     final maxY = totals.fold<int>(0, (a, b) => a > b ? a : b);
     final grandTotal = totals.fold<int>(0, (a, b) => a + b);
+    final percent = NumberFormat.decimalPercentPattern(decimalDigits: 1);
+    final number = NumberFormat.decimalPattern();
 
     return SizedBox(
       height: height,
@@ -44,9 +47,9 @@ class ScoreStackChart extends StatelessWidget {
                 final counts = scoreByStatus[scores[groupIndex]]!;
                 final lines = <String>[
                   for (var i = 0; i < counts.length; i++)
-                    if (counts[i] > 0) '${labels[i]}: ${counts[i]}',
+                    if (counts[i] > 0) '${labels[i]}: ${number.format(counts[i])}',
                   if (grandTotal > 0 && totals[groupIndex] > 0)
-                    '${(totals[groupIndex] / grandTotal * 100).toStringAsFixed(1)}%',
+                    percent.format(totals[groupIndex] / grandTotal),
                 ];
                 return BarTooltipItem(
                   lines.isEmpty ? '${scores[groupIndex]}' : lines.join('\n'),
@@ -71,7 +74,11 @@ class ScoreStackChart extends StatelessWidget {
                   return SideTitleWidget(
                     meta: meta,
                     space: 6,
-                    child: Text('${scores[i]}', style: theme.textTheme.labelSmall),
+                    child: Text(
+                      '${scores[i]}',
+                      style: theme.textTheme.labelMedium
+                          ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                    ),
                   );
                 },
               ),

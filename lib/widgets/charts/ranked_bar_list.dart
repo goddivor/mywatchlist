@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:mywatchlist/generated/l10n.dart';
 
 /// One row of a [RankedBarList].
@@ -76,6 +77,11 @@ class _Row extends StatelessWidget {
 
   const _Row({required this.item, required this.maxCount, required this.color});
 
+  /// Two decimals with the locale's separator (8,90 in French).
+  static NumberFormat get _mean => NumberFormat.decimalPattern()
+    ..minimumFractionDigits = 2
+    ..maximumFractionDigits = 2;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -97,13 +103,13 @@ class _Row extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               Text(
-                S.current.Prof_Dist_Mean(item.mean.toStringAsFixed(2)),
+                S.current.Prof_Dist_Mean(_mean.format(item.mean)),
                 style: theme.textTheme.labelSmall?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
               ),
               const SizedBox(width: 8),
-              Text('${item.count}', style: theme.textTheme.labelLarge),
+              Text(NumberFormat.decimalPattern().format(item.count), style: theme.textTheme.labelLarge),
               if (item.onTap != null)
                 Icon(Icons.chevron_right, size: 18, color: theme.colorScheme.onSurfaceVariant),
             ],
@@ -115,7 +121,7 @@ class _Row extends StatelessWidget {
               value: fraction.clamp(0.0, 1.0),
               minHeight: 6,
               color: color,
-              backgroundColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.6),
+              backgroundColor: color.withValues(alpha: 0.12),
             ),
           ),
         ],

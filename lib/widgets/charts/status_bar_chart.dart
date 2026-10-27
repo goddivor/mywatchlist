@@ -1,7 +1,6 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:mywatchlist/widgets/charts/chart_palette.dart';
 
 /// One bar per list status. The tooltip (touch or long press) gives the share of the total.
 ///
@@ -32,8 +31,12 @@ class StatusBarChart extends StatelessWidget {
     String format(double v) => formatValue?.call(v) ?? compact.format(v);
     final total = values.fold<double>(0, (a, b) => a + b);
     final maxY = values.fold<double>(0, (a, b) => a > b ? a : b);
-    final labelStyle = theme.textTheme.labelSmall;
-    final background = theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5);
+    final labelStyle = theme.textTheme.labelMedium?.copyWith(
+      color: theme.colorScheme.onSurface,
+      fontWeight: FontWeight.w600,
+    );
+    // A faint track of the bar's own colour: no grey block inside the card.
+    Color track(Color c) => c.withValues(alpha: 0.12);
 
     return SizedBox(
       height: height,
@@ -73,10 +76,7 @@ class StatusBarChart extends StatelessWidget {
                   return SideTitleWidget(
                     meta: meta,
                     space: 6,
-                    child: Text(
-                      format(values[i]),
-                      style: labelStyle?.copyWith(fontWeight: FontWeight.w600),
-                    ),
+                    child: Text(format(values[i]), style: labelStyle),
                   );
                 },
               ),
@@ -91,15 +91,12 @@ class StatusBarChart extends StatelessWidget {
                     toY: values[i],
                     width: 26,
                     borderRadius: const BorderRadius.vertical(top: Radius.circular(6)),
-                    gradient: LinearGradient(
-                      begin: Alignment.bottomCenter,
-                      end: Alignment.topCenter,
-                      colors: [colors[i], lighten(colors[i])],
-                    ),
+                    // Solid status colour, the same as the list status marks.
+                    color: colors[i],
                     backDrawRodData: BackgroundBarChartRodData(
                       show: true,
                       toY: maxY == 0 ? 1 : maxY * 1.05,
-                      color: background,
+                      color: track(colors[i]),
                     ),
                   ),
                 ],

@@ -9,25 +9,40 @@ import 'package:mywatchlist/widgets/common/app_image.dart';
 import 'package:mywatchlist/widgets/user/profile/profile_states.dart';
 
 /// Favorite anime, manga, characters and people: one horizontal shelf per non-empty list.
-/// The data comes with the profile, so this tab never waits.
+/// The data comes with the profile (Jikan part): while Jikan is still being asked the tab
+/// says so, and when it failed it offers Retry instead of claiming "no favorites".
 class FavoritesSection extends StatelessWidget {
   final ProfileFavorites favorites;
   final String username;
+  final ProfileExtras extras;
+  final VoidCallback? onRetry;
 
-  const FavoritesSection({super.key, required this.favorites, required this.username});
+  const FavoritesSection({
+    super.key,
+    required this.favorites,
+    required this.username,
+    this.extras = ProfileExtras.ready,
+    this.onRetry,
+  });
 
   @override
   Widget build(BuildContext context) {
     final s = S.of(context);
     if (favorites.isEmpty) {
+      final Widget state = switch (extras) {
+        ProfileExtras.loading => ProfileLoading(label: s.Pp_Extras_Loading),
+        ProfileExtras.unavailable => ProfileMessage(
+            icon: Icons.cloud_off_outlined,
+            title: s.Pp_Extras_Unavailable,
+            actionLabel: onRetry == null ? null : s.Prof_Retry,
+            onAction: onRetry,
+          ),
+        ProfileExtras.ready =>
+          ProfileMessage(icon: Icons.favorite_border, title: s.Prof_Fav_Empty),
+      };
       return ProfileTabScroll(
         storageKey: 'favorites_$username',
-        slivers: [
-          SliverFillRemaining(
-            hasScrollBody: false,
-            child: ProfileMessage(icon: Icons.favorite_border, title: s.Prof_Fav_Empty),
-          ),
-        ],
+        slivers: [SliverFillRemaining(hasScrollBody: false, child: state)],
       );
     }
     final shelves = <(String, List<ProfileFavorite>, void Function(BuildContext, ProfileFavorite))>[
