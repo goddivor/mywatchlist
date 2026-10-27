@@ -174,3 +174,4 @@ Append-only, one line per decision: `- YYYY-MM-DD [unit] decision — why`. Earl
 - 2026-10-27 [owner] A feature ported from DailyAL uses the same icons as DailyAL (e.g. My List: search pill, refresh, filter icons) — rule in every UI handoff and the builder/fix briefs.
 - 2026-10-27 [owner] Correction: MWL's My List interface stays (header, tabs, toolbar, icons, non-grid modes); only the grid display is redone with DailyAL's grid card. Supersedes the earlier "same UI as DailyAL for every display type" line.
 - 2026-10-27 [owner] Cancelled: the "same icons as DailyAL" rule and every attempt to reproduce DailyAL exactly. Back to the original UI directive (compare with DailyAL, keep the better, improve). The My List grid is improved with DailyAL as inspiration, not copied.
+- 2026-10-27 [owner] Final: the My List GRID display must have the same visual as DailyAL's grid; the rest of My List stays MWL's; the icon rule stays cancelled.

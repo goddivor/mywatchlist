@@ -222,17 +222,17 @@ const UNITS = [
     dod: ["The owner's real MAL list loads on the emulator, all statuses, sort and filters work.", "Status cache survives restart."],
   },
   {
-    id: "list-cards-dal", title: "My List grid display: a better grid card (inspired by DailyAL's, not a copy)", kind: "unit", priority: "P0", group: "user", model: "opus", ui: true,
+    id: "list-cards-dal", title: "My List grid display: the same visual as DailyAL's grid (the rest of MWL's My List stays)", kind: "unit", priority: "P0", group: "user", model: "opus", ui: true,
     needs: ["user-list-mal", "theme-colors"],
     owns: ["lib/widgets/user/list/cards/**", "lib/widgets/user/list/list_entry_view.dart"],
     dal: ["lib/widgets/home/animecard.dart", "lib/widgets/home/nodebadge.dart", "lib/widgets/user/contentlistwidget.dart (grid mode)"],
     goal: [
-      "OWNER'S DECISION: MWL's My List interface is better than DailyAL's — keep MWL's header, tabs, toolbar, icons and non-grid display modes. Only the GRID display types must be IMPROVED (the owner finds the current grid rendering frustrating). Do NOT copy DailyAL exactly: use DailyAL's grid card as inspiration and make the best grid card for MWL (UI directive: compare, keep the better, improve).",
-      "Direction the owner liked in DailyAL's grid: a clean cover without text or heavy gradient over the image, the essential info (score, list status with an edit action) in a compact bar under the cover, then the title and the genres; readable status chips coloured from the theme-colors status tokens. Choose proportions, spacing and badges that look best in MWL's design.",
-      "Keep MWL's behaviour: tap opens the detail, pencil / long press opens the edit sheet, the status cache updates the chip, airing info and priority prefs, the grid column/height settings, custom card layouts (the new grid card becomes the default grid layout).",
-      "Fluidity: AppImage at card size, no per-card Opacity/ClipRRect/blur, fixed extents; readable text and chips in light, dark and black.",
+      "OWNER'S FINAL DECISION: keep MWL's My List interface (header, tabs, toolbar, icons, list/compact/other non-grid modes) exactly as it is. The GRID display types must have THE SAME VISUAL AS DAILYAL'S GRID — this screen element only; everything else in the app follows the normal UI directive.",
+      "Reproduce DailyAL's grid card (read lib/widgets/home/animecard.dart and the grid branch of lib/widgets/user/contentlistwidget.dart): clean rounded cover with no text or gradient on the image; directly under it a compact bar — left ★ mean score (or '-'; hide-score tap-to-reveal respected); right a coloured status chip (CW / CMPL / OH / DR / PTW) containing the edit pencil; then the title on one line with ellipsis; then the genres in small text on one line; small badges top-right on the cover (unseen / behind counts). Same card proportions, cover ratio, spacing between cards, corner radius and border/elevation as DailyAL. Status chip colours come from the theme-colors status tokens so they stay readable in light, dark and black.",
+      "Keep MWL's behaviour: tap opens the detail, pencil / long press opens the edit sheet, the status cache updates the chip, airing info and priority prefs, the grid column/height settings, custom card layouts (the DailyAL grid card becomes the default grid layout).",
+      "Fluidity: AppImage at card size, no per-card Opacity/ClipRRect/blur, fixed extents.",
     ],
-    dod: ["Checker: screenshots of the new grid in light/dark/black on the owner's account; other display modes unchanged.", "Widget tests: grid card renders score/status/title/genres, hide-score, French labels."],
+    dod: ["Checker: side-by-side screenshots of MWL's grid vs DailyAL's grid on the owner's account — same visual; other display modes unchanged.", "Widget tests: grid card renders score/status/title/genres, hide-score, French labels."],
   },
   {
     id: "user-profile-mal", title: "MAL user profile, stats charts and user pop-up", kind: "screen", priority: "P1", group: "user", model: "sonnet", ui: true,
