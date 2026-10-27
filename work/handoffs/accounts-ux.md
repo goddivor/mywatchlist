@@ -6,6 +6,7 @@
 - `app-shell` (App shell seams: settings hub, sidebar, home shell, startup)
 
 ## Owns (may create or edit ONLY these)
+- `lib/services/auth/kitsu_auth.dart`
 - `lib/user/user.dart`
 - `lib/user/base_user.dart`
 - `lib/screens/account_switcher_page.dart`

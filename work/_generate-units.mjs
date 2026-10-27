@@ -180,7 +180,7 @@ const UNITS = [
   {
     id: "accounts-ux", title: "Redesign the account picker, account switcher and account management", kind: "screen", priority: "P1", group: "user", model: "sonnet", ui: true,
     needs: ["app-shell"],
-    owns: ["lib/user/user.dart", "lib/user/base_user.dart", "lib/screens/account_switcher_page.dart", "lib/screens/manage_accounts_page.dart", "lib/screens/onboarding_trackers.dart", "lib/pages/login_page.dart", "lib/screens/settings/accounts_settings.dart", "lib/user/trackers/**", "lib/widgets/common/acc_widget.dart", "lib/widgets/common/signin_widget.dart", "lib/widgets/common/logout_dialog.dart", "lib/widgets/Kitsu/kitsu_login_dialog.dart", "lib/user/accounts/**"],
+    owns: ["lib/services/auth/kitsu_auth.dart", "lib/user/user.dart", "lib/user/base_user.dart", "lib/screens/account_switcher_page.dart", "lib/screens/manage_accounts_page.dart", "lib/screens/onboarding_trackers.dart", "lib/pages/login_page.dart", "lib/screens/settings/accounts_settings.dart", "lib/user/trackers/**", "lib/widgets/common/acc_widget.dart", "lib/widgets/common/signin_widget.dart", "lib/widgets/common/logout_dialog.dart", "lib/widgets/Kitsu/kitsu_login_dialog.dart", "lib/user/accounts/**"],
     dal: ["lib/pages/settings/accounts_settings.dart", "lib/widgets/user/signinpage.dart"],
     goal: [
       "The owner says the current flow (select an account, then press Continue, for every app) is badly done. Redesign the whole account experience: first-run tracker connection, switching the active account (one tap, no Continue step), adding/removing accounts, re-login when a token is dead.",
@@ -300,7 +300,7 @@ const UNITS = [
     needs: ["detail-split", "search-upgrade"],
     owns: ["lib/widgets/MAL/content/more_info_widget.dart", "lib/widgets/MAL/content/adaptation_widget.dart", "lib/widgets/MAL/content/animestatisticswidget.dart", "lib/widgets/MAL/content/scorestatisticswidget.dart"],
     dal: ["lib/screens/moreinfo.dart", "commits 6f90a5a (author navigation), 024654e (serialization → magazine filter), 399851c"],
-    goal: ["Give MoreInfoWidget a modal mode (DailyAL `isModal`) so the detail screen's More Info dialog does not wrap it in an extra scroll view (detail-split finding).", "Studio and genre taps are TODO prints (more_info_widget.dart:111, :238) → open the filtered search; add taps for magazine/serialization, authors (→ person page), season, media type. Use the search entry points the search-upgrade unit exposes."],
+    goal: ["animestatisticswidget.dart:23-25 hardcodes English status labels (Watching, On Hold…): use the shared status maps of lib/enums.dart (fix #84).", "Give MoreInfoWidget a modal mode (DailyAL `isModal`) so the detail screen's More Info dialog does not wrap it in an extra scroll view (detail-split finding).", "Studio and genre taps are TODO prints (more_info_widget.dart:111, :238) → open the filtered search; add taps for magazine/serialization, authors (→ person page), season, media type. Use the search entry points the search-upgrade unit exposes."],
     dod: ["Each chip/link in More Info opens a relevant in-app screen."],
   },
 
