@@ -134,7 +134,7 @@ class UserManager with ChangeNotifier {
   /// Each tracker is handled on its own: one failure never blocks the others.
   Future<void> refreshExpiringTokens() async {
     await Future.wait(
-      [mal, anilist, kitsu, simkl].map((BaseUser user) async {
+      <BaseUser>[mal, anilist, kitsu, simkl].map((user) async {
         try {
           if (user.status == AuthStatus.AUTHENTICATED) {
             await user.ensureFreshToken();
