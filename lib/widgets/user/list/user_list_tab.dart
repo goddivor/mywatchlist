@@ -10,6 +10,38 @@ import 'package:mywatchlist/widgets/user/list/cards/entry_parts.dart';
 import 'package:mywatchlist/widgets/user/list/user_list_adapter.dart';
 import 'package:mywatchlist/widgets/user/list/user_list_controller.dart';
 
+/// Gaps of the My List grid, DailyAL's: its grid rows put each card in an
+/// equal share of the width with a padding on both sides (5 for the
+/// comfortable card, 6 for the compact and cover-only cards) and end on a
+/// 7 dp bottom padding, the compact and cover-only cards adding 4 on top.
+/// So the gap between columns is twice the side padding, the screen edge
+/// keeps one side padding, and the gap between rows is 7 (11 when compact).
+/// List displays keep their own spacing and never read these.
+typedef ListGridGaps = ({double column, double row, double edge});
+
+ListGridGaps listGridGaps(DisplaySubType subType) => switch (subType) {
+      DisplaySubType.compact || DisplaySubType.cover_only_grid => (column: 12, row: 11, edge: 6),
+      _ => (column: 10, row: 7, edge: 5),
+    };
+
+/// Padding around the grid: DailyAL's edge on both sides, [top] above.
+EdgeInsets listGridPadding(DisplaySubType subType, {double top = 0}) {
+  final edge = listGridGaps(subType).edge;
+  return EdgeInsets.fromLTRB(edge, top, edge, 0);
+}
+
+/// Fixed-extent grid delegate: every cell is [ListDisplay.gridHeight] tall,
+/// with DailyAL's gaps between columns and rows.
+SliverGridDelegateWithFixedCrossAxisCount listGridDelegate(ListDisplay display) {
+  final gaps = listGridGaps(display.subType);
+  return SliverGridDelegateWithFixedCrossAxisCount(
+    crossAxisCount: display.gridColumns,
+    mainAxisExtent: display.gridHeight,
+    crossAxisSpacing: gaps.column,
+    mainAxisSpacing: gaps.row,
+  );
+}
+
 /// The scrollable body of one status tab: lazy slivers, pull to refresh,
 /// next page near the end, and loading / empty / error states.
 class UserListTab extends StatefulWidget {
@@ -104,14 +136,9 @@ class _UserListTabState extends State<UserListTab> with AutomaticKeepAliveClient
     final Widget list;
     if (display.isGrid) {
       list = SliverPadding(
-        padding: const EdgeInsets.fromLTRB(10, 4, 10, 0),
+        padding: listGridPadding(display.subType, top: 4),
         sliver: SliverGrid.builder(
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: display.gridColumns,
-            mainAxisExtent: display.gridHeight,
-            crossAxisSpacing: 8,
-            mainAxisSpacing: 10,
-          ),
+          gridDelegate: listGridDelegate(display),
           itemCount: entries.length,
           itemBuilder: (context, i) => EntryGridCard(
             key: ValueKey(entries[i].id),
@@ -273,13 +300,8 @@ class _Skeleton extends StatelessWidget {
         GridView.builder(
           primary: false,
           physics: const NeverScrollableScrollPhysics(),
-          padding: const EdgeInsets.fromLTRB(10, 8, 10, 0),
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: display.gridColumns,
-            mainAxisExtent: display.gridHeight,
-            crossAxisSpacing: 8,
-            mainAxisSpacing: 10,
-          ),
+          padding: listGridPadding(display.subType, top: 8),
+          gridDelegate: listGridDelegate(display),
           itemCount: display.gridColumns * 4,
           itemBuilder: (_, __) => box(null, display.gridHeight, 10),
         ),
