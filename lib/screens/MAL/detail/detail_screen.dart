@@ -25,6 +25,7 @@ import 'package:mywatchlist/services/api/mwl_api.dart';
 import 'package:mywatchlist/user/preferences/preferences.dart';
 import 'package:mywatchlist/user/user_manager.dart';
 import 'package:mywatchlist/user/user_preference.dart';
+import 'package:mywatchlist/widgets/MAL/content/media_platforms.dart' show ScheduleLinks;
 import 'package:mywatchlist/widgets/MAL/content/synopsis_widget.dart';
 import 'package:mywatchlist/widgets/common/slivers.dart';
 import 'package:mywatchlist/widgets/loading/shimmercolor.dart';
@@ -124,7 +125,10 @@ class _ContentDetailedScreenState extends State<ContentDetailedScreen>
   void _load() {
     _loadMal();
     _loadHtml();
-    if (_data.isAnime) _loadVideos();
+    if (_data.isAnime) {
+      _loadVideos();
+      _loadScheduleLinks();
+    }
   }
 
   void _retry() {
@@ -167,6 +171,13 @@ class _ContentDetailedScreenState extends State<ContentDetailedScreen>
     } catch (e) {
       debugPrint('Error loading HTML details for $_id: $e');
     }
+  }
+
+  Future<void> _loadScheduleLinks() async {
+    final links = await ScheduleLinks.forMalId(_id);
+    if (!mounted || links == null) return;
+    _data = _data.copyWith(scheduleLinks: links);
+    _refreshSections();
   }
 
   Future<void> _loadVideos() async {

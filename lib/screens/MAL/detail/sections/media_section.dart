@@ -21,6 +21,7 @@ Widget _mediaBody(DetailData data) {
   );
   final videos = VideosWidget(
     videos: data.videos,
+    fallbackImageUrl: data.coverUrl,
     horizPadding: detailHorizPadding,
     endingSongs: data.content?.endingSongs,
     openingSongs: data.content?.openingSongs,
