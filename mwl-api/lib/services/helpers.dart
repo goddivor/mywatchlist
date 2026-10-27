@@ -18,6 +18,18 @@ Response errorResponse([String message = 'Internal Server Error']) {
   );
 }
 
+/// Build a 400 JSON response for a missing or invalid parameter.
+Response badRequestResponse(String message) {
+  return Response.badRequest(
+    body: jsonEncode(badRequestBody(message)),
+    headers: {'Content-Type': 'application/json; charset=utf-8'},
+  );
+}
+
+/// Error body of a 400 answer, shared by the HTTP and in-process entry points.
+Map<String, dynamic> badRequestBody(String message) =>
+    {'error': true, 'status': 400, 'message': message};
+
 /// Extract a query parameter from a URI, with optional default value.
 T? queryParams<T>(Uri uri, String key, [T? defaultValue]) {
   final value = uri.queryParameters[key];

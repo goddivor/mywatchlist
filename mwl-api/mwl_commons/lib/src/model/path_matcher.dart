@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'bad_request.dart';
+
 /// Matches URL paths with wildcard support for routing.
 ///
 /// Patterns like `anime/*id` match `anime/12345` and extract `12345` as a param.
@@ -43,16 +45,36 @@ class PathMatcher {
   }
 
   /// Extract a single wildcard parameter by index.
+  ///
+  /// With `T == int`, a non-numeric segment throws [BadRequest] (answered
+  /// 400) instead of a cast error.
   T pathParam<T>(String url, [int at = 0]) {
+    if (T == int) return intPathParam(url, at) as T;
+    return _param(url, at) as T;
+  }
+
+  /// The wildcard parameter at [at] as an int; throws [BadRequest] when the
+  /// segment is not a number.
+  int intPathParam(String url, [int at = 0]) {
+    final raw = _param(url, at);
+    final value = int.tryParse(raw);
+    if (value == null) {
+      throw BadRequest('Invalid ${_paramName(at)} path parameter: "$raw"');
+    }
+    return value;
+  }
+
+  String _param(String url, int at) {
     final params = pathParams(url);
     if (at >= params.length) {
       throw ArgumentError('Path param index $at out of range (${params.length})');
     }
-    if (T == int) {
-      return int.tryParse(params[at]) as T;
-    }
-    return params[at] as T;
+    return params[at];
   }
+
+  /// Name of the wildcard at [at] in the pattern (`*id` → `id`).
+  String _paramName(int at) =>
+      _splitPaths.where((p) => p.startsWith('*')).elementAt(at).substring(1);
 
   List<String> get _splitPaths => path.split('/');
   int get _splitPathLength => _splitPaths.length;
