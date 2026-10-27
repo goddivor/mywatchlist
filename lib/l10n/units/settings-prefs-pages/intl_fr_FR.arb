@@ -1,0 +1,183 @@
+{
+  "@@locale": "fr_FR",
+  "Prefs_Reset_Menu": "Rétablir les valeurs par défaut",
+  "Prefs_Reset_Title": "Rétablir les valeurs par défaut ?",
+  "Prefs_Reset_Body": "Toutes les options de cette page reviennent à leur valeur initiale. Vos comptes, votre thème et votre langue ne sont pas modifiés.",
+  "Prefs_Reset_Confirm": "Rétablir",
+  "Prefs_Cancel": "Annuler",
+  "Prefs_Reset_Done": "Valeurs par défaut rétablies",
+  "Prefs_Sec_Display": "Affichage",
+  "Prefs_Sec_Content": "Contenu",
+  "Prefs_Sec_Lists": "Listes",
+  "Prefs_Sec_App": "Application",
+  "Prefs_Sec_Titles_Time": "Titres et heure",
+  "Prefs_Sec_Detail_Page": "Fiches d’anime et de manga",
+  "Prefs_Sec_Adding": "Ajout à votre liste",
+  "Prefs_Sec_Sections": "Sections de la fiche",
+  "Prefs_Sec_List_Opening": "À l’ouverture de la liste",
+  "Prefs_Sec_Cards": "Mises en page de cartes",
+  "Prefs_Title_Lang": "Langue des titres",
+  "Prefs_Title_Lang_Desc": "Titre affiché pour chaque anime et manga",
+  "Prefs_Title_Romaji": "Romaji",
+  "Prefs_Title_English": "Anglais",
+  "Prefs_Title_Japanese": "Japonais",
+  "Prefs_Startup": "Page de démarrage",
+  "Prefs_Startup_Desc": "Écran affiché à l’ouverture de l’application. L’accueil est utilisé si le compte actif ne le propose pas.",
+  "Prefs_Startup_Home": "Accueil",
+  "Prefs_Startup_Explore": "Explorer",
+  "Prefs_Startup_List": "Ma liste",
+  "Prefs_Startup_Forums": "Forums",
+  "Prefs_Startup_Profile": "Profil",
+  "Prefs_Startup_Calendar": "Calendrier",
+  "Prefs_Startup_Search": "Recherche",
+  "Prefs_Display_Default": "Affichage par défaut",
+  "Prefs_Display_Default_Desc": "Disposition des pages de recherche et de liste tant que vous n’en choisissez pas une autre",
+  "Prefs_Display_List": "Liste",
+  "Prefs_Display_Grid": "Grille",
+  "Prefs_Display_Horizontal": "Liste horizontale",
+  "Prefs_Nsfw": "Contenu pour adultes",
+  "Prefs_Nsfw_Desc": "Inclut les titres pour adultes (NSFW) dans les recherches, classements et saisons de MyAnimeList. Les pages issues de Jikan ou du web ne sont pas filtrées.",
+  "Prefs_Content_Card": "Carte autour du contenu",
+  "Prefs_Content_Card_Desc": "Affiche une carte derrière chaque élément de la liste confortable",
+  "Prefs_Youtube": "Lecteur YouTube intégré",
+  "Prefs_Youtube_Desc": "Lit les bandes-annonces dans l’application au lieu d’ouvrir YouTube",
+  "Prefs_Keep_Pages": "Garder les pages en mémoire",
+  "Prefs_Keep_Pages_Desc": "L’accueil, les forums et le profil restent tels que vous les avez laissés quand vous changez d’onglet. Utilise plus de mémoire.",
+  "Prefs_Priority": "Afficher la priorité",
+  "Prefs_Priority_Desc": "Affiche la priorité (basse, moyenne ou haute) de chaque entrée de votre liste",
+  "Prefs_Auto_Translate": "Traduire les synopsis",
+  "Prefs_Auto_Translate_Desc": "Traduit automatiquement les synopsis dans la langue de l’application",
+  "Prefs_Last_Quote": "Dernière citation seulement",
+  "Prefs_Last_Quote_Desc": "N’affiche que la dernière citation d’un message du forum",
+  "Prefs_Auto_Dates": "Dates automatiques",
+  "Prefs_Auto_Dates_Desc": "Renseigne la date de début au lancement d’une entrée et la date de fin quand elle est terminée. Les dates déjà saisies sont conservées.",
+  "Prefs_Airing_Info": "Diffusion dans les listes",
+  "Prefs_Airing_Info_Desc": "Affiche le prochain épisode et son compte à rebours pour les animes en cours de diffusion",
+  "Prefs_Details_Expanded": "Sections dépliées par défaut",
+  "Prefs_Details_Expanded_Desc": "Les sections d’une fiche d’anime ou de manga s’ouvrent dépliées",
+  "Prefs_Link_Type": "Liens affichés en premier",
+  "Prefs_Link_Type_Desc": "Groupe de liens ouvert en premier dans la section « Disponible sur »",
+  "Prefs_Link_Resources": "Ressources",
+  "Prefs_Link_Available_At": "Disponible sur",
+  "Prefs_Link_Streaming": "Streaming",
+  "Prefs_Link_Other_Lists": "Autres listes",
+  "Prefs_Stats_Title": "Couleurs du graphique de statistiques",
+  "Prefs_Stats_Desc": "Choisissez une couleur pour chaque statut. Les statuts laissés en automatique suivent le thème.",
+  "Prefs_Color_Theme": "Couleur du thème",
+  "Prefs_Color_Custom": "Couleur personnalisée",
+  "Prefs_Color_Clear": "Utiliser la couleur du thème",
+  "Prefs_Color_Pick": "Choisir une couleur",
+  "Prefs_Picker_Main": "Principales",
+  "Prefs_Picker_Wheel": "Roue",
+  "Prefs_Status_Watching": "En cours",
+  "Prefs_Status_Reading": "En cours de lecture",
+  "Prefs_Status_Completed": "Terminé",
+  "Prefs_Status_On_Hold": "En pause",
+  "Prefs_Status_Dropped": "Abandonné",
+  "Prefs_Status_Plan_Watch": "À regarder",
+  "Prefs_Status_Plan_Read": "À lire",
+  "Prefs_Status_All": "Tous",
+  "Prefs_Anime": "Anime",
+  "Prefs_Manga": "Manga",
+  "Prefs_Countdown": "Compte à rebours du prochain épisode",
+  "Prefs_Countdown_Desc": "Affiche le prochain épisode et son compte à rebours sur les fiches d’anime",
+  "Prefs_Detail_Bg": "Jaquette en arrière-plan",
+  "Prefs_Detail_Bg_Desc": "Utilise la jaquette comme arrière-plan des fiches d’anime et de manga",
+  "Prefs_Private_Notes": "Notes privées",
+  "Prefs_Private_Notes_Desc": "Affiche le champ de notes privées quand vous modifiez une entrée",
+  "Prefs_Hide_Score": "Masquer les notes",
+  "Prefs_Hide_Score_Desc": "Les notes restent masquées partout. Touchez-en une pour la révéler un instant.",
+  "Prefs_Global_Seasonal": "Même filtre pour toutes les saisons",
+  "Prefs_Global_Seasonal_Desc": "Applique les filtres des saisons à toutes les saisons et années",
+  "Prefs_Timezone": "Fuseau horaire de diffusion",
+  "Prefs_Timezone_Desc": "Fuseau utilisé pour afficher les heures de diffusion",
+  "Prefs_Timezone_Jst": "JST (Japon)",
+  "Prefs_Timezone_Utc": "UTC",
+  "Prefs_Timezone_Local": "Heure locale",
+  "Prefs_Add_Anime": "Statut des animes ajoutés",
+  "Prefs_Add_Anime_Desc": "Statut donné à un anime que vous ajoutez à votre liste depuis sa fiche",
+  "Prefs_Add_Manga": "Statut des mangas ajoutés",
+  "Prefs_Add_Manga_Desc": "Statut donné à un manga que vous ajoutez à votre liste depuis sa fiche",
+  "Prefs_Tabs_Hint": "Faites glisser une section pour la déplacer, touchez l’œil pour l’afficher ou la masquer.",
+  "Prefs_Tabs_Count": "{visible, plural, =0{Aucune section affichée sur {total}} =1{1 section affichée sur {total}} other{{visible} sections affichées sur {total}}}",
+  "@Prefs_Tabs_Count": {
+    "placeholders": {
+      "visible": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "Prefs_Tabs_Reset": "Rétablir l’ordre par défaut",
+  "Prefs_Tabs_Show": "Afficher {name}",
+  "@Prefs_Tabs_Show": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "Prefs_Tabs_Hide": "Masquer {name}",
+  "@Prefs_Tabs_Hide": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "Prefs_Tabs_Drag": "Faire glisser pour réordonner",
+  "Prefs_List_Category": "Liste par défaut",
+  "Prefs_List_Category_Desc": "Catégorie affichée à l’ouverture de la liste. Sans choix, la dernière utilisée est rouverte.",
+  "Prefs_List_Last_Used": "Dernière utilisée",
+  "Prefs_List_Anime_Tab": "Onglet de statut des animes",
+  "Prefs_List_Anime_Tab_Desc": "Onglet de statut ouvert en premier dans votre liste d’animes",
+  "Prefs_List_Manga_Tab": "Onglet de statut des mangas",
+  "Prefs_List_Manga_Tab_Desc": "Onglet de statut ouvert en premier dans votre liste de mangas",
+  "Prefs_Cards_Desc": "Mises en page de cartes enregistrées pour la vue en liste de vos animes et mangas.",
+  "Prefs_Cards_Empty": "Aucune mise en page personnalisée pour l’instant. Les affichages intégrés sont utilisés.",
+  "Prefs_Cards_New": "Nouvelle mise en page",
+  "Prefs_Cards_Default_Name": "Mise en page {number}",
+  "@Prefs_Cards_Default_Name": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "Prefs_Cards_Name": "Nom de la mise en page",
+  "Prefs_Cards_Save": "Enregistrer",
+  "Prefs_Cards_Rename": "Renommer",
+  "Prefs_Cards_Duplicate": "Dupliquer",
+  "Prefs_Cards_Delete": "Supprimer",
+  "Prefs_Cards_Delete_Title": "Supprimer « {name} » ?",
+  "@Prefs_Cards_Delete_Title": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "Prefs_Cards_Delete_Body": "Cette mise en page sera retirée de vos préférences.",
+  "Prefs_Cards_Copy_Suffix": "{name} (copie)",
+  "@Prefs_Cards_Copy_Suffix": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "Prefs_Cards_Summary": "{count, plural, =0{Aucun champ affiché} =1{1 champ affiché} other{{count} champs affichés}}, {height} px de haut",
+  "@Prefs_Cards_Summary": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "height": {
+        "type": "int"
+      }
+    }
+  },
+  "Prefs_Cards_Actions": "Actions de la mise en page"
+}

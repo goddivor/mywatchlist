@@ -1,0 +1,183 @@
+{
+  "@@locale": "en",
+  "Prefs_Reset_Menu": "Restore defaults",
+  "Prefs_Reset_Title": "Restore defaults?",
+  "Prefs_Reset_Body": "Every option on this page goes back to its initial value. Your accounts, theme and language are not affected.",
+  "Prefs_Reset_Confirm": "Restore",
+  "Prefs_Cancel": "Cancel",
+  "Prefs_Reset_Done": "Defaults restored",
+  "Prefs_Sec_Display": "Display",
+  "Prefs_Sec_Content": "Content",
+  "Prefs_Sec_Lists": "Lists",
+  "Prefs_Sec_App": "Application",
+  "Prefs_Sec_Titles_Time": "Titles and time",
+  "Prefs_Sec_Detail_Page": "Anime and manga pages",
+  "Prefs_Sec_Adding": "Adding to your list",
+  "Prefs_Sec_Sections": "Page sections",
+  "Prefs_Sec_List_Opening": "When the list opens",
+  "Prefs_Sec_Cards": "Custom card layouts",
+  "Prefs_Title_Lang": "Title language",
+  "Prefs_Title_Lang_Desc": "Title shown for every anime and manga",
+  "Prefs_Title_Romaji": "Romaji",
+  "Prefs_Title_English": "English",
+  "Prefs_Title_Japanese": "Japanese",
+  "Prefs_Startup": "Start page",
+  "Prefs_Startup_Desc": "Screen shown when the app opens. Home is used when the active account does not offer it.",
+  "Prefs_Startup_Home": "Home",
+  "Prefs_Startup_Explore": "Explore",
+  "Prefs_Startup_List": "My list",
+  "Prefs_Startup_Forums": "Forums",
+  "Prefs_Startup_Profile": "Profile",
+  "Prefs_Startup_Calendar": "Calendar",
+  "Prefs_Startup_Search": "Search",
+  "Prefs_Display_Default": "Default view",
+  "Prefs_Display_Default_Desc": "Layout of search and list pages until you pick another one",
+  "Prefs_Display_List": "List",
+  "Prefs_Display_Grid": "Grid",
+  "Prefs_Display_Horizontal": "Horizontal list",
+  "Prefs_Nsfw": "Adult content",
+  "Prefs_Nsfw_Desc": "Include adult (NSFW) titles in MyAnimeList searches, rankings and seasons. Pages loaded from Jikan or the web are not filtered.",
+  "Prefs_Content_Card": "Card around content",
+  "Prefs_Content_Card_Desc": "Draw a card behind each item of the comfortable list view",
+  "Prefs_Youtube": "Built-in YouTube player",
+  "Prefs_Youtube_Desc": "Play trailers inside the app instead of opening YouTube",
+  "Prefs_Keep_Pages": "Keep pages in memory",
+  "Prefs_Keep_Pages_Desc": "Home, forums and profile stay as you left them when you switch tabs. Uses more memory.",
+  "Prefs_Priority": "Show priority",
+  "Prefs_Priority_Desc": "Show the priority (low, medium or high) of each entry of your list",
+  "Prefs_Auto_Translate": "Translate synopses",
+  "Prefs_Auto_Translate_Desc": "Automatically translate synopses into the app language",
+  "Prefs_Last_Quote": "Only the last quote",
+  "Prefs_Last_Quote_Desc": "Show only the last quote of a forum post",
+  "Prefs_Auto_Dates": "Automatic dates",
+  "Prefs_Auto_Dates_Desc": "Fill the start date when an entry starts and the finish date when it is completed. Dates you already set are kept.",
+  "Prefs_Airing_Info": "Airing info in lists",
+  "Prefs_Airing_Info_Desc": "Show the next episode and its countdown for anime still airing",
+  "Prefs_Details_Expanded": "Open sections expanded",
+  "Prefs_Details_Expanded_Desc": "Sections of an anime or manga page start open",
+  "Prefs_Link_Type": "Links shown first",
+  "Prefs_Link_Type_Desc": "Group of links opened first in the “Available at” section",
+  "Prefs_Link_Resources": "Resources",
+  "Prefs_Link_Available_At": "Available at",
+  "Prefs_Link_Streaming": "Streaming",
+  "Prefs_Link_Other_Lists": "Other lists",
+  "Prefs_Stats_Title": "Statistics chart colors",
+  "Prefs_Stats_Desc": "Choose a color for each list status. Statuses left on automatic follow the theme.",
+  "Prefs_Color_Theme": "Theme color",
+  "Prefs_Color_Custom": "Custom color",
+  "Prefs_Color_Clear": "Use the theme color",
+  "Prefs_Color_Pick": "Choose a color",
+  "Prefs_Picker_Main": "Main",
+  "Prefs_Picker_Wheel": "Wheel",
+  "Prefs_Status_Watching": "Watching",
+  "Prefs_Status_Reading": "Reading",
+  "Prefs_Status_Completed": "Completed",
+  "Prefs_Status_On_Hold": "On hold",
+  "Prefs_Status_Dropped": "Dropped",
+  "Prefs_Status_Plan_Watch": "Plan to watch",
+  "Prefs_Status_Plan_Read": "Plan to read",
+  "Prefs_Status_All": "All",
+  "Prefs_Anime": "Anime",
+  "Prefs_Manga": "Manga",
+  "Prefs_Countdown": "Next episode countdown",
+  "Prefs_Countdown_Desc": "Show the next episode and its countdown on anime pages",
+  "Prefs_Detail_Bg": "Cover as background",
+  "Prefs_Detail_Bg_Desc": "Use the cover as the background of anime and manga pages",
+  "Prefs_Private_Notes": "Private notes",
+  "Prefs_Private_Notes_Desc": "Show the private notes field when you edit an entry",
+  "Prefs_Hide_Score": "Hide scores",
+  "Prefs_Hide_Score_Desc": "Scores stay hidden everywhere. Tap one to reveal it for a moment.",
+  "Prefs_Global_Seasonal": "Same filter for every season",
+  "Prefs_Global_Seasonal_Desc": "Apply the seasonal filters to every season and year",
+  "Prefs_Timezone": "Broadcast time zone",
+  "Prefs_Timezone_Desc": "Time zone used to display airing times",
+  "Prefs_Timezone_Jst": "JST (Japan)",
+  "Prefs_Timezone_Utc": "UTC",
+  "Prefs_Timezone_Local": "Local time",
+  "Prefs_Add_Anime": "Status for added anime",
+  "Prefs_Add_Anime_Desc": "Status given to an anime you add to your list from its page",
+  "Prefs_Add_Manga": "Status for added manga",
+  "Prefs_Add_Manga_Desc": "Status given to a manga you add to your list from its page",
+  "Prefs_Tabs_Hint": "Drag a section to reorder it, tap the eye to show or hide it.",
+  "Prefs_Tabs_Count": "{visible} of {total} sections shown",
+  "@Prefs_Tabs_Count": {
+    "placeholders": {
+      "visible": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "Prefs_Tabs_Reset": "Restore the default order",
+  "Prefs_Tabs_Show": "Show {name}",
+  "@Prefs_Tabs_Show": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "Prefs_Tabs_Hide": "Hide {name}",
+  "@Prefs_Tabs_Hide": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "Prefs_Tabs_Drag": "Drag to reorder",
+  "Prefs_List_Category": "Default list",
+  "Prefs_List_Category_Desc": "Category the list opens on. Without a choice, the last one you used is reopened.",
+  "Prefs_List_Last_Used": "Last used",
+  "Prefs_List_Anime_Tab": "Anime status tab",
+  "Prefs_List_Anime_Tab_Desc": "Status tab opened first in your anime list",
+  "Prefs_List_Manga_Tab": "Manga status tab",
+  "Prefs_List_Manga_Tab_Desc": "Status tab opened first in your manga list",
+  "Prefs_Cards_Desc": "Saved card layouts for the list view of your anime and manga.",
+  "Prefs_Cards_Empty": "No custom layout yet. The built-in views are used.",
+  "Prefs_Cards_New": "New layout",
+  "Prefs_Cards_Default_Name": "Layout {number}",
+  "@Prefs_Cards_Default_Name": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "Prefs_Cards_Name": "Layout name",
+  "Prefs_Cards_Save": "Save",
+  "Prefs_Cards_Rename": "Rename",
+  "Prefs_Cards_Duplicate": "Duplicate",
+  "Prefs_Cards_Delete": "Delete",
+  "Prefs_Cards_Delete_Title": "Delete “{name}”?",
+  "@Prefs_Cards_Delete_Title": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "Prefs_Cards_Delete_Body": "This layout will be removed from your preferences.",
+  "Prefs_Cards_Copy_Suffix": "{name} (copy)",
+  "@Prefs_Cards_Copy_Suffix": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "Prefs_Cards_Summary": "{count, plural, =0{No field shown} =1{1 field shown} other{{count} fields shown}}, {height} px high",
+  "@Prefs_Cards_Summary": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "height": {
+        "type": "int"
+      }
+    }
+  },
+  "Prefs_Cards_Actions": "Layout actions"
+}

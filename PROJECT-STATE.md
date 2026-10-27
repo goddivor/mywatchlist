@@ -41,10 +41,7 @@ Cap: 80 lines. Rewrite in place; history lives in git and `docs/DECISIONS.md`.
 - Strings: `Acc_*` in `lib/l10n/units/accounts-ux/` (en + fr_FR).
 
 ## Waves (from `node tools/mab/plan-waves.mjs`)
-1. gate-fix
-2. auth-refresh, backend-parsers, l10n-pipeline
-3. deps-prefs-contract
-4. app-shell, detail-split, shared-kit, perf-foundation, edit-sheet, api-prefs, versioning-ci
+1-4. gate-fix, auth/l10n/backend, preferences contract, shell/detail/kit/perf/edit/api/versioning (all merged or in review)
 5+. features (user list/profile, detail, discovery, settings, community), then other trackers.
 
 ## Backend (mwl-api)
@@ -67,6 +64,9 @@ Cap: 80 lines. Rewrite in place; history lives in git and `docs/DECISIONS.md`.
 - Data: `UserProfileRepository` (official `/users/@me` for yourself + Jikan `users/{name}/full` for manga numbers and favorites; Jikan alone for others), disk cache `CachedUserProfile` (fresh 1 h, stale 14 days when the network fails).
 - Tabs (lazy, kept alive): Stats, Friends, Clubs, About, Favorites, History under a `NestedScrollView`; charts in `lib/widgets/charts/` (fl_chart bars, colors from the stats chart preference). Insights = whole MAL list fetched and reduced off the UI isolate (`UserInsightsLoader`).
 - Profile background: picked image kept on this device (`ProfileBackgroundStore`), shown on your own profile only (no server to share it).
+
+## Settings preference pages (`settings-prefs-pages`)
+- Tiles in `lib/screens/settings/prefs/` read one contract field (`context.select`), write via the group's `copyWith` event; `Prefs_*` strings (en + fr_FR); "Restore defaults" keeps dub options and card layouts; the card field editor belongs to `user-list-mal`.
 
 ## Known big gaps (see inventory)
 - No user list / profile for any tracker; AniList/Kitsu/Simkl tabs are placeholders.
