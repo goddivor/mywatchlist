@@ -1,30 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:mywatchlist/pages/side_bar.dart';
 
-/// Helper class to build custom sidebar implementations
+/// Builds the app sidebar with extra entries, for a screen that needs its own shortcuts
+/// (they are listed after the "My space" group).
 class SidebarBuilder {
-  /// Build a sidebar with additional menu items
+  /// The sidebar with [menuItems] appended to its destinations.
   static Widget buildWithItems({
     required BuildContext context,
-    VoidCallback? onClose,
     required List<SidebarMenuItem> menuItems,
   }) {
-    // Use the base AppSidebar but inject custom items
-    return _ExtendedSidebar(
-      onClose: onClose,
-      menuItems: menuItems,
-    );
+    return AppSidebar(extraItems: menuItems);
   }
 }
 
-/// Menu item data for sidebar
+/// One extra destination of the sidebar.
 class SidebarMenuItem {
   final IconData icon;
   final String title;
   final VoidCallback onTap;
   final Widget? trailing;
   final bool isActive;
-  final bool showDividerAfter;
 
   const SidebarMenuItem({
     required this.icon,
@@ -32,30 +27,5 @@ class SidebarMenuItem {
     required this.onTap,
     this.trailing,
     this.isActive = false,
-    this.showDividerAfter = false,
   });
 }
-
-/// Extended sidebar with custom menu items
-class _ExtendedSidebar extends StatefulWidget {
-  final VoidCallback? onClose;
-  final List<SidebarMenuItem> menuItems;
-
-  const _ExtendedSidebar({
-    required this.menuItems,
-    this.onClose,
-  });
-
-  @override
-  _ExtendedSidebarState createState() => _ExtendedSidebarState();
-}
-
-class _ExtendedSidebarState extends State<_ExtendedSidebar> {
-  @override
-  Widget build(BuildContext context) {
-    return AppSidebar(
-      onClose: widget.onClose,
-    );
-  }
-}
-

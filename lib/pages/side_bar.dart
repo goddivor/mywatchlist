@@ -1,601 +1,496 @@
 import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'dart:async';
-import 'package:mywatchlist/constants/constants.dart';
-import 'package:mywatchlist/widgets/loading/shimmercolor.dart';
-import 'package:mywatchlist/screens/settings/settings_page.dart';
+import 'package:mywatchlist/constants/constants.dart' show AccountType;
+import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/user/accounts/account_bloc.dart';
-import 'package:mywatchlist/user/accounts/models/account.dart';
-import 'package:mywatchlist/user/user_preference.dart';
-import 'package:mywatchlist/widgets/common/avatar_widget.dart';
+import 'package:mywatchlist/user/base_user.dart' show AuthStatus;
+import 'package:mywatchlist/user/user_manager.dart';
+import 'package:mywatchlist/utils/app_routes.dart';
 import 'package:mywatchlist/utils/sidebar_bg_manager.dart';
+import 'package:mywatchlist/utils/sidebar_extension.dart';
+import 'package:mywatchlist/widgets/common/avatar_widget.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
+export 'package:mywatchlist/utils/sidebar_extension.dart' show SidebarMenuItem;
+
+/// The app sidebar (DAL `AppSideBar`), shown as the home shell's end drawer.
+///
+/// Header with the active account (avatar, name, tracker, custom background), then the
+/// user's destinations (profile, stats, bookmarks, calendar), the app destinations
+/// (settings, about) and sign in / sign out. Every entry closes the drawer first.
 class AppSidebar extends StatefulWidget {
-  final VoidCallback? onClose;
+  /// Extra destinations listed after "My space" (see `SidebarBuilder`).
+  final List<SidebarMenuItem> extraItems;
 
-  const AppSidebar({
-    super.key,
-    this.onClose,
-  });
+  const AppSidebar({super.key, this.extraItems = const []});
 
   @override
   State<AppSidebar> createState() => _AppSidebarState();
 }
 
-class _AppSidebarState extends State<AppSidebar>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _animationController;
-  late Animation<double> _slideAnimation;
+class _AppSidebarState extends State<AppSidebar> {
+  static Future<String?>? _versionFuture;
+
+  final SidebarBackgroundManager _bgManager = SidebarBackgroundManager.instance;
   String? _backgroundImagePath;
   bool _isLoadingImage = false;
-  final UserPreference userPref = UserPreference();
-  final SidebarBackgroundManager _bgManager = SidebarBackgroundManager.instance;
 
   @override
   void initState() {
     super.initState();
-
-    // Initialize animations
-    _animationController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 300),
-    );
-
-    _slideAnimation = CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeOutCubic,
-    );
-
-    _animationController.forward();
-
-    // Load background image path from preferences
+    _versionFuture ??= PackageInfo.fromPlatform()
+        .then<String?>((info) => info.version)
+        .catchError((Object _) => null);
     _loadBackgroundImage();
-  }
-
-  @override
-  void dispose() {
-    _animationController.dispose();
-    super.dispose();
   }
 
   Future<void> _loadBackgroundImage() async {
     try {
       final path = await _bgManager.getCurrentBackgroundImagePath();
-      if (mounted && path != null) {
-        setState(() {
-          _backgroundImagePath = path;
-        });
-      }
+      if (mounted && path != null) setState(() => _backgroundImagePath = path);
     } catch (e) {
-      debugPrint('Error loading background image: $e');
+      debugPrint('Sidebar background not loaded: $e');
     }
   }
 
-  Future<void> _pickAndSaveBackgroundImage() async {
-    setState(() {
-      _isLoadingImage = true;
-    });
-
+  Future<void> _pickBackgroundImage() async {
+    setState(() => _isLoadingImage = true);
     try {
       final path = await _bgManager.setNewBackgroundImage(context: context);
-
       if (mounted) {
         setState(() {
-          _backgroundImagePath = path;
+          _backgroundImagePath = path ?? _backgroundImagePath;
           _isLoadingImage = false;
         });
       }
     } catch (e) {
-      debugPrint('Error picking image: $e');
-      if (mounted) {
-        setState(() {
-          _isLoadingImage = false;
-        });
-      }
+      debugPrint('Sidebar background not picked: $e');
+      if (mounted) setState(() => _isLoadingImage = false);
     }
   }
 
   Future<void> _removeBackgroundImage() async {
     try {
       final success = await _bgManager.removeBackgroundImage(context: context);
-
-      if (success && mounted) {
-        setState(() {
-          _backgroundImagePath = null;
-        });
-      }
+      if (success && mounted) setState(() => _backgroundImagePath = null);
     } catch (e) {
-      debugPrint('Error removing background image: $e');
+      debugPrint('Sidebar background not removed: $e');
     }
   }
 
-  void _showBackgroundImageOptions() {
-    final theme = Theme.of(context);
+  /// Context that survives the drawer closing: the hosting scaffold's, else ours.
+  BuildContext get _hostContext => Scaffold.maybeOf(context)?.context ?? context;
 
-    showModalBottomSheet(
+  /// Closes the drawer (when shown as one) and runs [action] with a stable context.
+  void _go(void Function(BuildContext host) action) {
+    final host = _hostContext;
+    final scaffold = Scaffold.maybeOf(context);
+    if (scaffold != null && scaffold.isEndDrawerOpen) {
+      scaffold.closeEndDrawer();
+    } else if (scaffold != null && scaffold.isDrawerOpen) {
+      scaffold.closeDrawer();
+    }
+    action(host);
+  }
+
+  Future<void> _confirmLogout(AccountType tracker) async {
+    final host = _hostContext;
+    final confirmed = await showDialog<bool>(
       context: context,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: theme.colorScheme.surface,
-          borderRadius: const BorderRadius.only(
-            topLeft: Radius.circular(24),
-            topRight: Radius.circular(24),
+      builder: (dialogContext) => AlertDialog(
+        icon: const Icon(Icons.logout),
+        title: Text(S.current.Logout_Confirmation),
+        content: Text(S.current.Do_you_wish_to_logout),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: Text(S.current.Cancel),
           ),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 40,
-              height: 4,
-              margin: const EdgeInsets.only(bottom: 20),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            Text(
-              'Sidebar Background',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: theme.colorScheme.onSurface,
-              ),
-            ),
-            const SizedBox(height: 20),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text(S.current.Logout),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted || !host.mounted) return;
+    final accountBloc = host.read<AccountBloc>();
+    _go((_) {});
+    await UserManager.instance.signOut(tracker);
+    // The home shell sends the user to the login screen once no account is selected.
+    accountBloc.add(RemoveAccountEvent(tracker));
+  }
 
-            // Change background option
-            ListTile(
-              leading: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.primary.withValues(alpha: 0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.image,
-                  color: theme.colorScheme.primary,
+  void _showBackgroundOptions() {
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) {
+        final colors = Theme.of(sheetContext).colorScheme;
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Text(
+                  S.current.Sidebar_Background_Title,
+                  style: Theme.of(sheetContext).textTheme.titleMedium,
                 ),
               ),
-              title: const Text('Change background image'),
-              onTap: () {
-                Navigator.pop(context);
-                _pickAndSaveBackgroundImage();
-              },
-            ),
-
-            // Remove background option (only if there's a background)
-            if (_backgroundImagePath != null)
               ListTile(
-                leading: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.error.withValues(alpha: 0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    Icons.delete,
-                    color: theme.colorScheme.error,
-                  ),
-                ),
-                title: const Text('Remove background image'),
+                leading: Icon(Icons.image_outlined, color: colors.primary),
+                title: Text(S.current.Sidebar_Background_Change),
                 onTap: () {
-                  Navigator.pop(context);
-                  _removeBackgroundImage();
+                  Navigator.pop(sheetContext);
+                  _pickBackgroundImage();
                 },
               ),
-
-            const SizedBox(height: 10),
-
-            // Cancel button
-            GestureDetector(
-              onTap: () => Navigator.pop(context),
-              child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 15),
-                alignment: Alignment.center,
-                child: Text(
-                  'Cancel',
-                  style: TextStyle(
-                    color: theme.colorScheme.primary,
-                    fontWeight: FontWeight.w600,
-                  ),
+              if (_backgroundImagePath != null)
+                ListTile(
+                  leading: Icon(Icons.delete_outline, color: colors.error),
+                  title: Text(S.current.Sidebar_Background_Remove),
+                  onTap: () {
+                    Navigator.pop(sheetContext);
+                    _removeBackgroundImage();
+                  },
                 ),
-              ),
-            ),
-          ],
-        ),
-      ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        );
+      },
     );
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final size = MediaQuery.of(context).size;
-    final sidebarWidth = size.width * 0.85;
-
-    return AnimatedBuilder(
-      animation: _slideAnimation,
-      builder: (context, child) {
-        return Transform.translate(
-          offset: Offset((1 - _slideAnimation.value) * sidebarWidth, 0),
-          child: child,
-        );
-      },
-      child: Container(
-        width: sidebarWidth,
-        height: size.height,
-        decoration: BoxDecoration(
-          color: theme.colorScheme.surface,
-          borderRadius: const BorderRadius.only(
-            topLeft: Radius.circular(0),
-            bottomLeft: Radius.circular(0),
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.1),
-              blurRadius: 10,
-              offset: const Offset(-5, 0),
-            ),
-          ],
-        ),
-        child: Column(
-          children: [
-            // User header with background image
-            _buildSidebarHeader(theme),
-
-            // Menu items
-            Expanded(
-              child: ListView(
-                padding: EdgeInsets.zero,
-                children: [
-                  // Settings
-                  _buildMenuItem(
-                    icon: Icons.settings,
-                    title: 'Settings',
-                    onTap: () {
-                      // Close sidebar
-                      if (widget.onClose != null) {
-                        widget.onClose!();
-                      }
-                      // Navigator.pop(context);
-
-                      // Navigate to settings
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (context) => const SettingsPage(),
-                        ),
-                      );
-                    },
-                  ),
-
-                  // About
-                  _buildMenuItem(
-                    icon: Icons.info_outline,
-                    title: 'About',
-                    onTap: () {
-                      // Navigate to about
-                      if (widget.onClose != null) {
-                        widget.onClose!();
-                      }
-                      Navigator.pop(context);
-                      // Add your navigation logic here
-                    },
-                  ),
-
-                  // Divider
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 20, vertical: 10),
-                    child: Divider(
-                      color: theme.colorScheme.onSurface.withValues(alpha: 0.1),
-                    ),
-                  ),
-
-                  // Add more menu items here
-                ],
+    return Drawer(
+      width: (MediaQuery.sizeOf(context).width * 0.85).clamp(0.0, 360.0),
+      backgroundColor: theme.colorScheme.surfaceContainerLow,
+      child: ListenableBuilder(
+        listenable: UserManager.instance,
+        builder: (context, _) {
+          final accountState = context.watch<AccountBloc>().state;
+          final tracker = accountState is AccountLoaded
+              ? accountState.selectedAccountType
+              : AccountType.none;
+          final user = UserManager.instance.getUserByTracker(tracker);
+          final signedIn = user?.status == AuthStatus.AUTHENTICATED;
+          final needsReLogin = user?.needsReLogin ?? false;
+          return ListView(
+            padding: EdgeInsets.zero,
+            children: [
+              _buildHeader(theme, accountState, tracker),
+              if (needsReLogin)
+                _SessionExpiredCard(
+                  tracker: tracker,
+                  onSignIn: () =>
+                      _go((host) => AppRoutes.signInAgain(host, tracker)),
+                ),
+              _GroupLabel(S.current.Sidebar_Section_Profile),
+              if (signedIn) ...[
+                _SidebarTile(
+                  icon: Icons.person_outline,
+                  title: S.current.Profile,
+                  onTap: () => _go((host) => AppRoutes.openUserProfile(host,
+                      tracker: tracker, username: user?.username)),
+                ),
+                _SidebarTile(
+                  icon: Icons.bar_chart_rounded,
+                  title: S.current.Stats,
+                  onTap: () => _go((host) => AppRoutes.openUserStats(host,
+                      tracker: tracker, username: user?.username)),
+                ),
+              ],
+              _SidebarTile(
+                icon: Icons.bookmark_outline,
+                title: S.current.Bookmarks,
+                onTap: () => _go(AppRoutes.openBookmarks),
               ),
-            ),
-
-            // Bottom section with app version
-            Container(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                children: [
-                  Text(
-                    'Version 1.0.0',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    '© 2025 MyWatchList',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
-                    ),
-                  ),
-                ],
+              _SidebarTile(
+                icon: Icons.calendar_month_outlined,
+                title: S.current.AnimeCalendar,
+                onTap: () => _go(AppRoutes.openCalendar),
               ),
-            ),
-          ],
-        ),
+              for (final item in widget.extraItems)
+                _SidebarTile(
+                  icon: item.icon,
+                  title: item.title,
+                  selected: item.isActive,
+                  trailing: item.trailing,
+                  onTap: () => _go((_) => item.onTap()),
+                ),
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 28, vertical: 8),
+                child: Divider(height: 1),
+              ),
+              _GroupLabel(S.current.Sidebar_Section_App),
+              _SidebarTile(
+                icon: Icons.settings_outlined,
+                title: S.current.Settings,
+                onTap: () => _go(AppRoutes.openSettings),
+              ),
+              _SidebarTile(
+                icon: Icons.info_outline,
+                title: S.current.About,
+                onTap: () => _go(AppRoutes.openAbout),
+              ),
+              if (signedIn)
+                _SidebarTile(
+                  icon: Icons.logout,
+                  title: S.current.Logout,
+                  destructive: true,
+                  onTap: () => _confirmLogout(tracker),
+                )
+              else
+                _SidebarTile(
+                  icon: Icons.login,
+                  title: S.current.Log_In,
+                  onTap: () => _go(AppRoutes.openLogin),
+                ),
+              _buildFooter(theme),
+            ],
+          );
+        },
       ),
     );
   }
 
-  Widget _buildSidebarHeader(ThemeData theme) {
-    return BlocBuilder<AccountBloc, AccountState>(
-      builder: (context, state) {
-        String? profileImageUrl;
-        String username = 'Guest';
-        AccountType currentAccountType = AccountType.none;
-
-        if (state is AccountLoaded) {
-          currentAccountType = state.selectedAccountType;
-          profileImageUrl = state.profileImageUrl;
-
-          // Get username from accounts list
-          final selectedAccount = state.availableAccounts.firstWhere(
-            (account) => account.typeAcc == currentAccountType,
-            orElse: () => Account(
-              name: 'Guest',
-              typeAcc: AccountType.none,
-              imageUrl:
-                  'https://cdn-icons-png.flaticon.com/512/4140/4140037.png',
-            ),
+  Widget _buildFooter(ThemeData theme) {
+    final style = theme.textTheme.bodySmall
+        ?.copyWith(color: theme.colorScheme.onSurfaceVariant);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(28, 16, 28, 24),
+      child: FutureBuilder<String?>(
+        future: _versionFuture,
+        builder: (context, snapshot) {
+          final version = snapshot.data;
+          return Text(
+            version == null
+                ? 'MyWatchList'
+                : 'MyWatchList · ${S.current.Sidebar_Version(version)}',
+            style: style,
           );
-
-          username = selectedAccount.name;
-        }
-
-        return Stack(
-          children: [
-            // Background image or gradient
-            Container(
-              height: 200,
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: theme.colorScheme.surfaceContainerHighest,
-                image: _backgroundImagePath != null
-                    ? DecorationImage(
-                        image: FileImage(File(_backgroundImagePath!)),
-                        fit: BoxFit.cover,
-                      )
-                    : null,
-              ),
-              child: _backgroundImagePath == null
-                  ? Container(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [
-                            theme.colorScheme.primary,
-                            theme.colorScheme.primary.withValues(alpha: 0.7),
-                          ],
-                        ),
-                      ),
-                    )
-                  : null,
-            ),
-
-            // Overlay for better text visibility
-            Container(
-              height: 200,
-              width: double.infinity,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.black.withValues(alpha: 0.1),
-                    Colors.black.withValues(alpha: 0.5),
-                  ],
-                ),
-              ),
-            ),
-
-            // User info
-            Positioned(
-              bottom: 20,
-              left: 20,
-              right: 20,
-              child: Row(
-                children: [
-                  // Avatar
-                  Hero(
-                    tag: 'sidebar_avatar',
-                    child: AvatarWidget(
-                      url: profileImageUrl,
-                      height: 60,
-                      width: 60,
-                      borderColor: Colors.white,
-                      borderWidth: 2,
-                    ),
-                  ),
-
-                  const SizedBox(width: 15),
-
-                  // Username
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          username,
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        Text(
-                          currentAccountType != AccountType.none
-                              ? currentAccountType.toString().split('.').last
-                              : 'Not connected',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.white.withValues(alpha: 0.8),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            // Background image edit button
-            Positioned(
-              top: 20,
-              right: 20,
-              child: Row(
-                children: [
-                  // Edit button
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.5),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: IconButton(
-                      icon: const Icon(
-                        Icons.edit,
-                        color: Colors.white,
-                        size: 20,
-                      ),
-                      onPressed: _showBackgroundImageOptions,
-                      tooltip: 'Change background',
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            // Close sidebar button
-            Positioned(
-              top: 20,
-              left: 20,
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.5),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: IconButton(
-                  icon: const Icon(
-                    Icons.close,
-                    color: Colors.white,
-                    size: 20,
-                  ),
-                  onPressed: () {
-                    Navigator.pop(context);
-                    if (widget.onClose != null) {
-                      widget.onClose!();
-                    }
-                  },
-                  tooltip: 'Close sidebar',
-                ),
-              ),
-            ),
-
-            // Loading indicator (when changing background)
-            if (_isLoadingImage)
-              Container(
-                height: 200,
-                width: double.infinity,
-                color: Colors.black.withValues(alpha: 0.5),
-                child: Center(
-                  child: ShimmerColor(
-                    Container(
-                      width: 40,
-                      height: 40,
-                      decoration: const BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-          ],
-        );
-      },
+        },
+      ),
     );
   }
 
-  Widget _buildMenuItem({
-    required IconData icon,
-    required String title,
-    VoidCallback? onTap,
-    Widget? trailing,
-    bool isActive = false,
-  }) {
-    final theme = Theme.of(context);
+  Widget _buildHeader(
+      ThemeData theme, AccountState state, AccountType tracker) {
+    final colors = theme.colorScheme;
+    String? avatarUrl;
+    var name = S.current.Sidebar_Guest;
+    if (state is AccountLoaded && tracker != AccountType.none) {
+      avatarUrl = state.profileImageUrl;
+      for (final account in state.availableAccounts) {
+        if (account.typeAcc == tracker) name = account.name;
+      }
+    }
+    final trackerLabel = tracker == AccountType.none
+        ? S.current.Sidebar_Not_Connected
+        : AppRoutes.trackerLabel(tracker);
+    final topInset = MediaQuery.paddingOf(context).top;
+    final dpr = MediaQuery.devicePixelRatioOf(context);
+    final bgPath = _backgroundImagePath;
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      child: Material(
-        color: Colors.transparent,
-        borderRadius: BorderRadius.circular(12),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(12),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              color: isActive
-                  ? theme.colorScheme.primary.withValues(alpha: 0.1)
-                  : Colors.transparent,
-              borderRadius: BorderRadius.circular(12),
+    return SizedBox(
+      height: 176 + topInset,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          if (bgPath != null)
+            Image(
+              // Decoded at the drawer's size, never at the photo's full resolution.
+              image: ResizeImage(FileImage(File(bgPath)),
+                  width: (360 * dpr).round()),
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => ColoredBox(color: colors.primary),
+            )
+          else
+            DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: AlignmentDirectional.topStart,
+                  end: AlignmentDirectional.bottomEnd,
+                  colors: [colors.primary, colors.tertiary],
+                ),
+              ),
             ),
+          // Scrim so the name stays readable on any picture (alpha gradient, no blur).
+          const DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [Color(0x14000000), Color(0x99000000)],
+              ),
+            ),
+          ),
+          PositionedDirectional(
+            top: topInset + 8,
+            end: 8,
+            child: IconButton.filledTonal(
+              tooltip: S.current.Sidebar_Background_Edit,
+              icon: _isLoadingImage
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.wallpaper, size: 20),
+              onPressed: _isLoadingImage ? null : _showBackgroundOptions,
+            ),
+          ),
+          PositionedDirectional(
+            start: 20,
+            end: 20,
+            bottom: 18,
             child: Row(
               children: [
-                // Icon
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: isActive
-                        ? theme.colorScheme.primary.withValues(alpha: 0.2)
-                        : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    icon,
-                    size: 20,
-                    color: isActive
-                        ? theme.colorScheme.primary
-                        : theme.colorScheme.onSurface,
-                  ),
+                AvatarWidget(
+                  url: avatarUrl,
+                  height: 56,
+                  width: 56,
+                  borderColor: Colors.white,
+                  borderWidth: 2,
                 ),
-
-                const SizedBox(width: 16),
-
-                // Title
+                const SizedBox(width: 14),
                 Expanded(
-                  child: Text(
-                    title,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight:
-                          isActive ? FontWeight.bold : FontWeight.normal,
-                      color: isActive
-                          ? theme.colorScheme.primary
-                          : theme.colorScheme.onSurface,
-                    ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.titleLarge?.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        trackerLabel,
+                        style: theme.textTheme.bodyMedium
+                            ?.copyWith(color: Colors.white.withValues(alpha: 0.85)),
+                      ),
+                    ],
                   ),
                 ),
-
-                // Trailing widget
-                if (trailing != null) trailing,
               ],
             ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _GroupLabel extends StatelessWidget {
+  final String text;
+  const _GroupLabel(this.text);
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsetsDirectional.fromSTEB(28, 16, 16, 6),
+      child: Text(
+        text,
+        style: theme.textTheme.labelLarge?.copyWith(
+          color: theme.colorScheme.primary,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
+}
+
+class _SidebarTile extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final VoidCallback onTap;
+  final Widget? trailing;
+  final bool selected;
+  final bool destructive;
+
+  const _SidebarTile({
+    required this.icon,
+    required this.title,
+    required this.onTap,
+    this.trailing,
+    this.selected = false,
+    this.destructive = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final color = destructive ? colors.error : null;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 1),
+      child: ListTile(
+        onTap: onTap,
+        selected: selected,
+        selectedTileColor: colors.secondaryContainer,
+        shape: const StadiumBorder(),
+        iconColor: color ?? colors.onSurfaceVariant,
+        textColor: color,
+        leading: Icon(icon),
+        title: Text(title, style: const TextStyle(fontWeight: FontWeight.w500)),
+        trailing: trailing,
+      ),
+    );
+  }
+}
+
+class _SessionExpiredCard extends StatelessWidget {
+  final AccountType tracker;
+  final VoidCallback onSignIn;
+  const _SessionExpiredCard({required this.tracker, required this.onSignIn});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+      child: Material(
+        color: colors.errorContainer,
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsetsDirectional.fromSTEB(16, 12, 8, 8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.error_outline, color: colors.onErrorContainer),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      S.current.Shell_Session_Expired(
+                          AppRoutes.trackerLabel(tracker)),
+                      style: theme.textTheme.bodyMedium
+                          ?.copyWith(color: colors.onErrorContainer),
+                    ),
+                  ),
+                ],
+              ),
+              Align(
+                alignment: AlignmentDirectional.centerEnd,
+                child: TextButton(
+                  onPressed: onSignIn,
+                  child: Text(S.current.Shell_Sign_In_Again),
+                ),
+              ),
+            ],
           ),
         ),
       ),
