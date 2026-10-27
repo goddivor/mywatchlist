@@ -1,0 +1,193 @@
+{
+  "@@locale": "fr_FR",
+  "Prof_Tab_Stats": "Statistiques",
+  "Prof_Tab_Friends": "Amis",
+  "Prof_Tab_Clubs": "Clubs",
+  "Prof_Tab_About": "À propos",
+  "Prof_Tab_Favorites": "Favoris",
+  "Prof_Tab_History": "Historique",
+  "Prof_Title_Own": "Mon profil",
+  "Prof_Anime": "Anime",
+  "Prof_Manga": "Manga",
+  "Prof_Joined": "Inscrit le {date}",
+  "@Prof_Joined": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "Prof_Loading": "Chargement du profil…",
+  "Prof_Retry": "Réessayer",
+  "Prof_Error_Title": "Impossible de charger ce profil",
+  "Prof_Error_Body": "Vérifiez votre connexion et réessayez.",
+  "Prof_Not_Found_Body": "Ce profil n’existe pas ou est privé.",
+  "Prof_Session_Expired_Body": "Votre session MyAnimeList a expiré. Reconnectez-vous pour voir votre profil.",
+  "Prof_Sign_In": "Se connecter",
+  "Prof_Sign_In_Title": "Connectez-vous pour voir votre profil",
+  "Prof_Sign_In_Body": "Connectez votre compte MyAnimeList pour voir vos statistiques, vos amis, vos favoris et votre historique.",
+  "Prof_Unknown": "Inconnu",
+  "Prof_Gender": "Genre",
+  "Prof_Location": "Localisation",
+  "Prof_Birthday": "Anniversaire",
+  "Prof_Mean_Score": "Note moyenne",
+  "Prof_Entries_Label": "Entrées",
+  "Prof_Days_Label": "Jours",
+  "Prof_Episodes_Label": "Épisodes",
+  "Prof_Chapters_Label": "Chapitres",
+  "Prof_Volumes_Label": "Volumes",
+  "Prof_Entry_Count": "{count, plural, =1{1 entrée} other{{count} entrées}}",
+  "@Prof_Entry_Count": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "Prof_Chart_Anime_Title": "Liste d’anime",
+  "Prof_Chart_Manga_Title": "Liste de manga",
+  "Prof_Chart_By_Entries": "Entrées",
+  "Prof_Chart_By_Days": "Jours",
+  "Prof_Status_Watching": "En cours de visionnage",
+  "Prof_Status_Reading": "En cours de lecture",
+  "Prof_Status_Completed": "Terminé",
+  "Prof_Status_On_Hold": "En pause",
+  "Prof_Status_Dropped": "Abandonné",
+  "Prof_Status_Plan_Watch": "À regarder",
+  "Prof_Status_Plan_Read": "À lire",
+  "Prof_Days_Count": "{days} jours",
+  "@Prof_Days_Count": {
+    "placeholders": {
+      "days": {
+        "type": "String"
+      }
+    }
+  },
+  "Prof_Show_Details": "Afficher le détail",
+  "Prof_Hide_Details": "Masquer le détail",
+  "Prof_Score_Dist": "Répartition des notes",
+  "Prof_Unrated_Count": "{count, plural, =1{1 entrée sans note} other{{count} entrées sans note}}",
+  "@Prof_Unrated_Count": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "Prof_Dist_Genres": "Genres",
+  "Prof_Dist_Media": "Types de média",
+  "Prof_Dist_Sources": "Œuvres sources",
+  "Prof_Dist_Studios": "Studios",
+  "Prof_Dist_Authors": "Auteurs",
+  "Prof_Dist_Scored_Only": "Basé uniquement sur les entrées notées",
+  "Prof_Dist_Sort_Count": "Plus d’entrées",
+  "Prof_Dist_Sort_Mean": "Meilleure note moyenne",
+  "Prof_Dist_All": "Tous",
+  "Prof_Dist_Show_All": "Tout afficher ({count})",
+  "@Prof_Dist_Show_All": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "Prof_Dist_Show_Less": "Afficher moins",
+  "Prof_Dist_Mean": "moyenne {score}",
+  "@Prof_Dist_Mean": {
+    "placeholders": {
+      "score": {
+        "type": "String"
+      }
+    }
+  },
+  "Prof_Dist_Empty": "Pas encore assez de données pour ce graphique.",
+  "Prof_Insights_Loading": "Lecture de la liste…",
+  "Prof_Insights_Error": "La liste est privée ou n’a pas pu être chargée.",
+  "Prof_Above_Mean": "Mieux notés que par la communauté",
+  "Prof_Score_Compare": "Note {score} · moyenne {mean}",
+  "@Prof_Score_Compare": {
+    "placeholders": {
+      "score": {
+        "type": "String"
+      },
+      "mean": {
+        "type": "String"
+      }
+    }
+  },
+  "Prof_Friends_Count": "{count, plural, =1{1 ami} other{{count} amis}}",
+  "@Prof_Friends_Count": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "Prof_Friends_Empty": "Aucun ami pour l’instant.",
+  "Prof_Last_Seen": "Dernière connexion {when}",
+  "@Prof_Last_Seen": {
+    "placeholders": {
+      "when": {
+        "type": "String"
+      }
+    }
+  },
+  "Prof_Friends_Since": "Amis depuis le {date}",
+  "@Prof_Friends_Since": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "Prof_Load_More": "Charger la suite",
+  "Prof_Clubs_Count": "{count, plural, =1{1 club} other{{count} clubs}}",
+  "@Prof_Clubs_Count": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "Prof_Clubs_Empty": "Membre d’aucun club pour l’instant.",
+  "Prof_Club_Open_Failed": "Impossible d’ouvrir ce club.",
+  "Prof_About_Empty": "Rien n’est écrit ici pour l’instant.",
+  "Prof_About_Empty_Self": "Vous n’avez pas encore rédigé de section « À propos ».",
+  "Prof_About_Edit": "Modifier sur MyAnimeList",
+  "Prof_About_Edit_Hint": "Les modifications faites sur MyAnimeList peuvent mettre quelques minutes à apparaître ici.",
+  "Prof_Fav_Empty": "Aucun favori pour l’instant.",
+  "Prof_Fav_Anime": "Anime",
+  "Prof_Fav_Manga": "Manga",
+  "Prof_Fav_Characters": "Personnages",
+  "Prof_Fav_People": "Personnalités",
+  "Prof_History_Empty": "Aucune activité récente.",
+  "Prof_History_All": "Tout",
+  "Prof_History_Items": "{count, plural, =1{1 élément} other{{count} éléments}}",
+  "@Prof_History_Items": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "Prof_Today": "Aujourd’hui",
+  "Prof_Yesterday": "Hier",
+  "Prof_Share_Link": "Lien du profil",
+  "Prof_Share_Name": "Nom d’utilisateur",
+  "Prof_Share_Stats": "Résumé des statistiques",
+  "Prof_Edit_Profile": "Modifier le profil",
+  "Prof_Open_Full": "Ouvrir le profil complet",
+  "Prof_Report_Title": "Signaler cet utilisateur",
+  "Prof_Report_Action": "Signaler l’utilisateur",
+  "Prof_Report_Body": "Cela ouvre la page de signalement de MyAnimeList dans votre navigateur.",
+  "Prof_Report_Confirm": "Signaler",
+  "Prof_Cancel": "Annuler",
+  "Prof_Close": "Fermer",
+  "Prof_Bg_Set": "Définir l’arrière-plan",
+  "Prof_Bg_Remove": "Retirer l’arrière-plan",
+  "Prof_Bg_Remove_Confirm": "Retirer l’image d’arrière-plan ?",
+  "Prof_Bg_Set_Done": "Arrière-plan du profil mis à jour.",
+  "Prof_Bg_Removed": "Arrière-plan du profil retiré.",
+  "Prof_Bg_Error": "Impossible de modifier l’arrière-plan.",
+  "Prof_Bg_Local_Note": "L’arrière-plan est enregistré uniquement sur cet appareil."
+}

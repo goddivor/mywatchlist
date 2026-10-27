@@ -62,6 +62,12 @@ Cap: 80 lines. Rewrite in place; history lives in git and `docs/DECISIONS.md`.
 - Auto dates follow `autoAddStartEndDate` and only fill empty dates; the last episode completes with a finish date, the first one fills the start date; add uses `defaultAnime/MangaAddStatus`; airing shows without total get an estimated episode count (picker bar or stepper).
 - Private notes: `PrivateNotesStore` (`lib/user/private_notes/`, SharedPreferences `private_note_v1:<tracker>:<category>:<id>`), `export()`/`import()` for the backup unit; shown when `showPrivateNotes` is on.
 
+## MAL user profile (`user-profile-mal`)
+- `AppRoutes.openUserProfile/openUserStats` open `UserProfileScreen` (`lib/screens/user_profile/`) for MyAnimeList (and `none`); other trackers keep the placeholder. `AppRoutes.openUserPop` opens the quick sheet (`showUserPopSheet`, `lib/widgets/user/profile/`). Home profile tab: `MalUserProfilePage` (sign-in prompt when MAL is not connected).
+- Data: `UserProfileRepository` (official `/users/@me` for yourself + Jikan `users/{name}/full` for manga numbers and favorites; Jikan alone for others), disk cache `CachedUserProfile` (fresh 1 h, stale 14 days when the network fails).
+- Tabs (lazy, kept alive): Stats, Friends, Clubs, About, Favorites, History under a `NestedScrollView`; charts in `lib/widgets/charts/` (fl_chart bars, colors from the stats chart preference). Insights = whole MAL list fetched and reduced off the UI isolate (`UserInsightsLoader`).
+- Profile background: picked image kept on this device (`ProfileBackgroundStore`), shown on your own profile only (no server to share it).
+
 ## Known big gaps (see inventory)
 - No user list / profile for any tracker; AniList/Kitsu/Simkl tabs are placeholders.
 - No notifications, calendar, bookmarks, relation graph, share, translation.

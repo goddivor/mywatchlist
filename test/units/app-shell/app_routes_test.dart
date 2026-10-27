@@ -64,7 +64,7 @@ void main() {
       AppRoutes.openBookmarks,
       AppRoutes.openCalendar,
       (c) => AppRoutes.openUserProfile(c, tracker: AccountType.anilist, username: 'neo'),
-      (c) => AppRoutes.openUserStats(c, tracker: AccountType.myanimelist),
+      (c) => AppRoutes.openUserStats(c, tracker: AccountType.kitsu),
       (c) => AppRoutes.openSettingsPage(c, SettingsSection.dub),
     ];
     for (final open in openers) {
