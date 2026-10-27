@@ -1,14 +1,15 @@
 import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
-import 'dart:ui';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:mywatchlist/constants/constants.dart';
+import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/user/user_preference.dart';
 import 'package:mywatchlist/utils/file_service.dart';
 import 'package:mywatchlist/utils/streamutils.dart';
+import 'package:mywatchlist/widgets/common/app_image.dart';
 import 'package:mywatchlist/widgets/common/custombutton.dart';
 import 'package:mywatchlist/widgets/loading/shimmercolor.dart';
 import 'package:path/path.dart' as p;
@@ -16,6 +17,26 @@ import 'package:path_provider/path_provider.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:photo_view/photo_view_gallery.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
+
+/// Static scrim behind the image viewer. A BackdropFilter blur here re-blurred the whole screen
+/// on every frame of a pinch or a swipe; a flat dark layer costs nothing (docs/PERFORMANCE.md).
+const Color _viewerScrim = Color(0xB3000000);
+
+/// Provider for the viewer: cached on disk, decoded no larger than twice the screen (enough
+/// detail to zoom, never a 4000 px banner decoded at full size).
+ImageProvider _viewerImage(BuildContext context, String url) {
+  // Avatars with a bundled picture open the viewer too.
+  if (!url.startsWith('http')) return AssetImage(url);
+  final media = MediaQuery.of(context);
+  return AppImage.provider(
+    url,
+    logicalWidth: media.size.width * 2,
+    logicalHeight: media.size.height * 2,
+    devicePixelRatio: media.devicePixelRatio,
+    fit: BoxFit.contain,
+  );
+}
 
 void zoomInImage(BuildContext context, String url, [bool showButtons = true]) {
   showDialog(
@@ -24,12 +45,12 @@ void zoomInImage(BuildContext context, String url, [bool showButtons = true]) {
         return SizedBox(
           height: MediaQuery.of(context).size.height,
           width: MediaQuery.of(context).size.width,
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+          child: ColoredBox(
+            color: _viewerScrim,
             child: Stack(
               children: [
                 PhotoView(
-                  imageProvider: Image.network(url).image,
+                  imageProvider: _viewerImage(context, url),
                   backgroundDecoration: const BoxDecoration(
                     color: Colors.transparent,
                   ),
@@ -60,25 +81,32 @@ Widget imageButtons(String url, BuildContext context,
           children: [
             const SizedBox(width: 10),
             IconButton(
+              tooltip: S.current.Close,
               icon: const Icon(Icons.close),
               onPressed: () => Navigator.pop(context),
             ),
             const SizedBox(width: 10),
             if (showButtons) ...[
               IconButton(
+                tooltip: S.current.Share,
                 icon: const Icon(Icons.share),
                 onPressed: () => shareImage(url),
               ),
               const SizedBox(width: 10),
               IconButton(
+                tooltip: S.current.Save,
                 icon: const Icon(Icons.save_alt),
                 onPressed: () => saveImage(url),
               ),
               const SizedBox(width: 10),
               IconButton(
-                  icon: const Icon(Icons.open_in_new), onPressed: () => {}
-                  // launchURLWithConfirmation(url, context: context), //will be back soon
-                  ),
+                tooltip: S.current.Open_In_Browser,
+                icon: const Icon(Icons.open_in_new),
+                onPressed: () => launchUrl(
+                  Uri.parse(url),
+                  mode: LaunchMode.externalApplication,
+                ),
+              ),
               const SizedBox(width: 10),
             ],
           ],
@@ -105,9 +133,9 @@ Future<void> saveImageBytes(Uint8List bytes) async {
     var newPath = '$path/$fileName';
     File file = File(newPath);
     await file.writeAsBytes(bytes);
-    showToast('Image saved');
+    showToast(S.current.Image_Saved);
   } catch (e) {
-    showToast('Error saving image');
+    showToast(S.current.Image_Save_Failed);
   }
 }
 
@@ -118,9 +146,9 @@ void saveImage(String url) async {
     var fileName = _getFileName(url);
     var destPath = '${await _getSavePath()}/$fileName';
     await file.copy(destPath);
-    showToast('Image saved');
+    showToast(S.current.Image_Saved);
   } catch (e) {
-    showToast('Error saving image');
+    showToast(S.current.Image_Save_Failed);
   }
 }
 
@@ -129,9 +157,9 @@ void shareImage(String url) async {
   try {
     var path = await downloadImage(url);
     XFile file = XFile(path);
-    Share.shareXFiles([file], text: 'Image from MyWatchList');
+    Share.shareXFiles([file], text: S.current.Image_Share_Text);
   } catch (e) {
-    showToast('Error sharing image');
+    showToast(S.current.Image_Share_Failed);
   }
 }
 
@@ -219,8 +247,8 @@ void zoomInImageList(BuildContext context, List<String> urlList,
         return SizedBox(
             height: MediaQuery.of(context).size.height,
             width: MediaQuery.of(context).size.width,
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+            child: ColoredBox(
+              color: _viewerScrim,
               child: Stack(
                 children: [
                   PhotoViewGallery.builder(
@@ -229,7 +257,7 @@ void zoomInImageList(BuildContext context, List<String> urlList,
                     builder: (BuildContext context, int i) {
                       var url = urlList[i];
                       return PhotoViewGalleryPageOptions(
-                        imageProvider: Image.network(url).image,
+                        imageProvider: _viewerImage(context, url),
                         initialScale: PhotoViewComputedScale.contained * 0.8,
                       );
                     },
