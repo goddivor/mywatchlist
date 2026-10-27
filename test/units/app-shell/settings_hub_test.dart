@@ -4,9 +4,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/pages/settings/coming_soon_page.dart';
 import 'package:mywatchlist/screens/open_screen.dart';
+import 'package:mywatchlist/screens/settings/about_settings.dart';
 import 'package:mywatchlist/screens/settings/settings_page.dart';
 import 'package:mywatchlist/user/language/language_bloc.dart';
 import 'package:mywatchlist/utils/app_routes.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 Future<void> _pump(WidgetTester tester, Widget home, {Locale? locale}) {
@@ -43,7 +45,14 @@ void main() {
     expect(find.byType(Switch), findsOneWidget);
   });
 
-  testWidgets('a stub tile opens its coming-soon page', (tester) async {
+  testWidgets('a settings tile opens a real page, not a stub', (tester) async {
+    PackageInfo.setMockInitialValues(
+      appName: 'MyWatchList',
+      packageName: 'app.mywatchlist',
+      version: '2026.10.1',
+      buildNumber: '1',
+      buildSignature: '',
+    );
     await _pump(tester, const SettingsPage());
     await tester.pumpAndSettle();
     final about = find.text(SettingsSection.about.title);
@@ -51,7 +60,8 @@ void main() {
         scrollable: find.byType(Scrollable).first);
     await tester.tap(about);
     await tester.pumpAndSettle();
-    expect(find.byType(ComingSoonPage), findsOneWidget);
+    expect(find.byType(AboutSettingsPage), findsOneWidget);
+    expect(find.byType(ComingSoonPage), findsNothing);
   });
 
   testWidgets('the hub is translated', (tester) async {
