@@ -14,6 +14,8 @@ import 'package:mywatchlist/screens/MAL/detail/detail_fab.dart';
 import 'package:mywatchlist/screens/MAL/detail/detail_sections.dart';
 import 'package:mywatchlist/screens/MAL/detail/header/detail_header.dart';
 import 'package:mywatchlist/screens/MAL/detail/header/detail_title.dart';
+import 'package:mywatchlist/screens/MAL/detail/header/header_background.dart' show contentPref;
+import 'package:mywatchlist/screens/MAL/detail/header/next_episode.dart';
 import 'package:mywatchlist/screens/MAL/detail/section_frame.dart';
 import 'package:mywatchlist/screens/search/search_history.dart';
 import 'package:mywatchlist/services/api/Jikan/jikan_api.dart';
@@ -23,6 +25,7 @@ import 'package:mywatchlist/services/api/mwl_api.dart';
 import 'package:mywatchlist/user/preferences/preferences.dart';
 import 'package:mywatchlist/user/user_manager.dart';
 import 'package:mywatchlist/user/user_preference.dart';
+import 'package:mywatchlist/widgets/MAL/content/media_platforms.dart' show ScheduleLinks;
 import 'package:mywatchlist/widgets/MAL/content/synopsis_widget.dart';
 import 'package:mywatchlist/widgets/common/slivers.dart';
 import 'package:mywatchlist/widgets/loading/shimmercolor.dart';
@@ -66,6 +69,7 @@ class _ContentDetailedScreenState extends State<ContentDetailedScreen>
   final Map<TabType, GlobalKey> _sectionKeys = {};
 
   StreamSubscription<List<TabType>>? _tabPrefSub;
+  StreamSubscription<TitleLang>? _titlePrefSub;
   bool _tabSyncScheduled = false;
   double _lastSyncOffset = double.negativeInfinity;
 
@@ -93,6 +97,13 @@ class _ContentDetailedScreenState extends State<ContentDetailedScreen>
         .map((s) => s.content.visibleTabs(manga: _data.isManga))
         .distinct(listEquals)
         .listen((_) => _refreshSections());
+    // The page follows the preferred title language when it changes.
+    _titlePrefSub = Preferences.bloc?.stream
+        .map((s) => s.general.preferredTitle)
+        .distinct()
+        .listen((lang) {
+      if (mounted) setState(() => _titleLang = lang);
+    });
     _recordVisit(widget.node);
     _loadCrossTrackerPref();
     _load();
@@ -102,6 +113,7 @@ class _ContentDetailedScreenState extends State<ContentDetailedScreen>
   void dispose() {
     _scroll.removeListener(_onScroll);
     _tabPrefSub?.cancel();
+    _titlePrefSub?.cancel();
     _scroll.dispose();
     _tabController.dispose();
     _scrollingUp.dispose();
@@ -113,7 +125,10 @@ class _ContentDetailedScreenState extends State<ContentDetailedScreen>
   void _load() {
     _loadMal();
     _loadHtml();
-    if (_data.isAnime) _loadVideos();
+    if (_data.isAnime) {
+      _loadVideos();
+      _loadScheduleLinks();
+    }
   }
 
   void _retry() {
@@ -135,6 +150,7 @@ class _ContentDetailedScreenState extends State<ContentDetailedScreen>
         score: content.mean ?? 0.0,
         members: content.numListUsers ?? 0,
       ));
+      _loadNextEpisode(content.status);
     } catch (e) {
       debugPrint('Error loading MAL details for $_id: $e');
       if (!mounted) return;
@@ -157,6 +173,13 @@ class _ContentDetailedScreenState extends State<ContentDetailedScreen>
     }
   }
 
+  Future<void> _loadScheduleLinks() async {
+    final links = await ScheduleLinks.forMalId(_id);
+    if (!mounted || links == null) return;
+    _data = _data.copyWith(scheduleLinks: links);
+    _refreshSections();
+  }
+
   Future<void> _loadVideos() async {
     try {
       final videos = await JikanApi().getAnimeVideos(_id);
@@ -166,6 +189,16 @@ class _ContentDetailedScreenState extends State<ContentDetailedScreen>
     } catch (e) {
       debugPrint('Error loading Jikan videos for $_id: $e');
     }
+  }
+
+  /// Countdown of an airing anime (LiveChart schedule); once per page.
+  Future<void> _loadNextEpisode(String? status) async {
+    if (!_data.isAnime || status != 'currently_airing' || _data.nextEpisode != null) {
+      return;
+    }
+    final next = await NextEpisodes.forMalId(_id);
+    if (!mounted || next == null) return;
+    setState(() => _data = _data.copyWith(nextEpisode: next));
   }
 
   void _recordVisit(Anime? anime) {
@@ -314,10 +347,15 @@ class _ContentDetailedScreenState extends State<ContentDetailedScreen>
 
   SliverAppBar _appBar(BuildContext context) {
     final theme = Theme.of(context);
+    final countdown = contentPref(context, (c) => c.showCountdownOnDetail);
     return SliverAppBar(
       pinned: true,
-      expandedHeight: 460,
-      toolbarHeight: 40.0,
+      expandedHeight: DetailHeader.extentFor(
+        _data,
+        topInset: MediaQuery.paddingOf(context).top,
+        countdown: countdown,
+      ),
+      toolbarHeight: DetailHeader.toolbarHeight,
       title: ValueListenableBuilder<bool>(
         valueListenable: _scrollingUp,
         builder: (context, up, _) =>
@@ -348,7 +386,7 @@ class _ContentDetailedScreenState extends State<ContentDetailedScreen>
   PreferredSizeWidget _tabBar() {
     if (!_data.hasContent) {
       return PreferredSize(
-        preferredSize: const Size(double.infinity, 40),
+        preferredSize: const Size(double.infinity, DetailHeader.tabBarHeight),
         child: _data.state == DetailLoadState.failed
             ? const SizedBox.shrink()
             : const ShimmerColor(SizedBox.shrink()),

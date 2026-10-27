@@ -26,9 +26,9 @@ Cap: 80 lines. Rewrite in place; history lives in git and `docs/DECISIONS.md`.
 - Home shell: sidebar = end drawer (`AppRoutes.openSidebar` from any tab), startup page pref, only the current tab built unless `keepPagesInMemory` (then lazily kept), "session expired" snackbar for any tracker, notification payload `anime:<id>|manga:<id>|calendar|bookmarks`.
 - Back in the shell (`ShellBackScope`, #92): closes the sidebar, then returns to the home tab, then on the home tab asks for a second Back within 2 s before leaving; the sidebar swipe zone is the system back-gesture inset + 24 dp. Signed-in users get "Add an account" in the sidebar (login page in add mode, #88).
 
-## Detail screen (`detail-split`)
-- `lib/screens/MAL/detail/`: `detail_screen.dart` (scaffold, loading, scroll/tab sync), `detail_data.dart` (immutable snapshot), `detail_sections.dart` (registry in the `ContentPreferences` tab order), `sections/` (one builder per `TabType`), `header/`, `actions/` (search + empty share/browser/bookmark/menu extension points), `pages/` (full recommendations, all interest stacks). `contentdetailedscreen.dart` re-exports it.
-- Error + retry state when MAL details fail; More Info modal on the cover; preferred title from `Preferences.general`.
+## Detail screen (`detail-split`, `detail-header`)
+- `lib/screens/MAL/detail/`: `detail_screen.dart`, `detail_data.dart` (immutable snapshot, incl. schedule links and next episode), `detail_sections.dart` (registry in the `ContentPreferences` order, `Dh_Tab_*` labels), `sections/`, `header/`, `actions/`, `tabs_customizer.dart`, `pages/`. `contentdetailedscreen.dart` re-exports it.
+- Header (`header/`): fixed extent, 2-line title (long press copies), cover + title language switch + More Info, `ScoreReveal` score, LiveChart countdown chip (pref `showCountdownOnDetail`), faded background (pref `showDetailBackground`). App bar: search, bookmark, overflow (share, browser, More Info, search by genre, customize sections). `Dh_*` strings en + fr_FR.
 ## API layer (`api-prefs`)
 - Jikan: `JikanClient` (throttle, in-flight sharing, 5 min cache, 429 backoff); MAL: `nsfw=` from the pref (the user's own `/users/@me/animelist|mangalist` always `nsfw=1`, #97), timezone pref in airing helpers, `MalApi.isUnderMaintenance()` (60 s cache) for home wiring, full `MyListStatus` + `save*ListStatus` with text dates.
 

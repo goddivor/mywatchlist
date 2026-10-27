@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:mywatchlist/constants/constants.dart';
+import 'package:mywatchlist/screens/MAL/detail/header/next_episode.dart';
 import 'package:mywatchlist/services/api/Jikan/jikan_anime_videos.dart';
 import 'package:mywatchlist/services/api/MAL/mal_anime.dart';
 import 'package:mywatchlist/services/api/MAL/scrapper/anime_detailed_html.dart';
@@ -34,9 +35,11 @@ class DetailData {
   /// Jikan videos (anime only).
   final AnimeVideos? videos;
 
-  /// Related links of the airing schedule. Never filled yet: the
-  /// `detail-synopsis-media` unit wires it (`_scheduleData` bug).
+  /// Related links of the airing schedule (`ScheduleLinks.forMalId`).
   final RelatedLinks? scheduleLinks;
+
+  /// Next episode of an airing anime (LiveChart), for the header countdown.
+  final NextEpisode? nextEpisode;
 
   final DetailLoadState state;
 
@@ -52,6 +55,7 @@ class DetailData {
     this.html,
     this.videos,
     this.scheduleLinks,
+    this.nextEpisode,
     this.state = DetailLoadState.loading,
     this.error,
   });
@@ -60,6 +64,8 @@ class DetailData {
     MalAnime? content,
     Map<String, dynamic>? html,
     AnimeVideos? videos,
+    RelatedLinks? scheduleLinks,
+    NextEpisode? nextEpisode,
     DetailLoadState? state,
     Object? error,
   }) {
@@ -71,7 +77,8 @@ class DetailData {
       content: content ?? this.content,
       html: html ?? this.html,
       videos: videos ?? this.videos,
-      scheduleLinks: scheduleLinks,
+      scheduleLinks: scheduleLinks ?? this.scheduleLinks,
+      nextEpisode: nextEpisode ?? this.nextEpisode,
       state: state ?? this.state,
       error: error,
     );

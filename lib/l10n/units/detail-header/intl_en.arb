@@ -1,0 +1,120 @@
+{
+  "@@locale": "en",
+  "Dh_More_Info": "More info",
+  "Dh_Search_Genre": "Search by genre",
+  "Dh_No_Genres": "This title has no genre to search for.",
+  "Dh_Customize": "Customize sections",
+  "Dh_Customize_Hint": "Drag to reorder, use the switch to show or hide a section.",
+  "Dh_Customize_Count": "{shown} of {total} sections shown",
+  "@Dh_Customize_Count": {
+    "placeholders": {
+      "shown": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "Dh_Customize_Reset": "Restore default order",
+  "Dh_Done": "Done",
+  "Dh_Share_Anime": "Share anime",
+  "Dh_Share_Manga": "Share manga",
+  "Dh_Users": "users",
+  "Dh_Aired": "Aired",
+  "Dh_Serialization": "Serialization",
+  "Dh_Popularity": "Popularity",
+  "Dh_Studios": "Studios",
+  "Dh_Authors": "Authors",
+  "Dh_Members": "Members",
+  "Dh_Rank": "Rank",
+  "Dh_Episodes": "({count} eps)",
+  "@Dh_Episodes": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "Dh_Volumes": "({count} vols)",
+  "@Dh_Volumes": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "Dh_Winter": "Winter",
+  "Dh_Spring": "Spring",
+  "Dh_Summer": "Summer",
+  "Dh_Fall": "Fall",
+  "Dh_Title_Language": "Title language",
+  "Dh_Lang_Romaji": "RO",
+  "Dh_Lang_English": "EN",
+  "Dh_Lang_Japanese": "JA",
+  "Dh_Lang_Romaji_Long": "Romaji title",
+  "Dh_Lang_English_Long": "English title",
+  "Dh_Lang_Japanese_Long": "Japanese title",
+  "Dh_Next_Episode": "Next episode",
+  "Dh_Episode_Short": "Ep. {number}",
+  "@Dh_Episode_Short": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "Dh_Time_Days": "{count}d",
+  "@Dh_Time_Days": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "Dh_Time_Hours": "{count}h",
+  "@Dh_Time_Hours": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "Dh_Time_Minutes": "{count}m",
+  "@Dh_Time_Minutes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "Dh_Time_Seconds": "{count}s",
+  "@Dh_Time_Seconds": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "Dh_Title_Copied": "Title copied",
+  "Dh_Tab_Synopsis": "Synopsis",
+  "Dh_Tab_Media": "Media",
+  "Dh_Tab_Related": "Related",
+  "Dh_Tab_Adaptations": "Adaptations",
+  "Dh_Tab_Reviews": "Reviews",
+  "Dh_Tab_Recommendations": "Recommendations",
+  "Dh_Tab_Interest_Stacks": "Interest Stacks",
+  "Dh_Tab_Characters": "Characters",
+  "Dh_Tab_Staff": "Staff",
+  "Dh_Tab_Forums": "Forums",
+  "Dh_Tab_Pictures": "Pictures",
+  "Dh_Tab_Related_Anime": "Related Anime",
+  "Dh_Tab_News": "News",
+  "Dh_Tab_Featured_Articles": "Featured Articles",
+  "Dh_Tab_User_Updates": "User Updates",
+  "Dh_Tab_Stats": "Stats",
+  "Dh_Tab_Score_Stats": "Score Stats",
+  "Dh_Tab_More_Info": "More Info",
+  "Dh_Close": "Close",
+  "Dh_More_Information": "More information"
+}

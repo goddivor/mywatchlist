@@ -11,7 +11,7 @@ Future<void> showMoreInfoModal(BuildContext context, DetailData data) {
   return showDialog<void>(
     context: context,
     builder: (context) => AlertDialog(
-      title: Text(S.current.More_Information),
+      title: Text(S.current.Dh_More_Information),
       insetPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 24),
       contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 5),
       content: SizedBox(
@@ -28,7 +28,7 @@ Future<void> showMoreInfoModal(BuildContext context, DetailData data) {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: Text(S.current.Close),
+          child: Text(S.current.Dh_Close),
         ),
       ],
     ),
