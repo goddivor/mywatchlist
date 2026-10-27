@@ -1,0 +1,67 @@
+{
+  "@@locale": "en",
+  "Explore_Title": "Explore",
+  "Explore_Search_Hint": "Search anime, manga, characters and more",
+  "Explore_Anime": "Anime",
+  "Explore_Manga": "Manga",
+  "Explore_Rankings": "Rankings",
+  "Explore_Picking_From": "Picking from your \"{list}\" list…",
+  "Explore_Nothing_In_List": "Nothing in your \"{list}\" list yet",
+  "Explore_Sign_In_To_Pick": "Sign in with MyAnimeList to pick from your lists",
+  "Explore_Section_Failed": "Couldn't load this section",
+  "Explore_Section_Empty": "Nothing to show right now",
+  "Explore_Try_Again": "Try again",
+  "Explore_Genre_Themes": "Themes",
+  "Explore_Genre_Demographics": "Demographics",
+  "Explore_Genre_Explicit": "Explicit genres",
+  "Explore_Reco_By": "by {user}",
+  "Explore_Stack_Entries": "{count} entries",
+  "Explore_Season_Winter": "Winter",
+  "Explore_Season_Spring": "Spring",
+  "Explore_Season_Summer": "Summer",
+  "Explore_Season_Fall": "Fall",
+  "Seasonal_Failed": "Couldn't load this season",
+  "Seasonal_Empty": "No anime found for this season",
+  "Seasonal_Count": "{count} anime",
+  "Seasonal_Clear_Filters": "Clear filters",
+  "Seasonal_No_Match": "No anime matches these filters",
+  "Seasonal_Previous": "Previous season",
+  "Seasonal_Next": "Next season",
+  "Seasonal_Season": "Season",
+  "Seasonal_Year": "Year",
+  "@Explore_Picking_From": {
+    "placeholders": {
+      "list": {
+        "type": "String"
+      }
+    }
+  },
+  "@Explore_Nothing_In_List": {
+    "placeholders": {
+      "list": {
+        "type": "String"
+      }
+    }
+  },
+  "@Explore_Reco_By": {
+    "placeholders": {
+      "user": {
+        "type": "String"
+      }
+    }
+  },
+  "@Explore_Stack_Entries": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@Seasonal_Count": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
+}

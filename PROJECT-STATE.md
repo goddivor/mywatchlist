@@ -72,7 +72,9 @@ Cap: 80 lines. Rewrite in place; history lives in git and `docs/DECISIONS.md`.
 - Clients (`tracker_clients.dart`) go through `BaseUser.sendAuthenticated`; AniList scores use `score(format: POINT_10_DECIMAL)` to read and `scoreRaw` to write, Kitsu half points, MAL rounds to whole points. Simkl: anime only, status and score only.
 - Editor sheet (`tracker_entry_editor.dart`) edits the tracker's own entry (status, score, progress, volumes, dates) and creates it when absent. Strings: `Sync_*` in `lib/l10n/units/sync-dialog/` (en + fr_FR).
 
+## Explore and seasonal (`explore-seasonal`)
+- Explore tab (`lib/pages/MAL/mal_explore_page.dart`, parts in `lib/screens/explore/`): search bar, Anime/Manga switch, random picks, rankings and genre tiles, season card, then Jikan recommendations, reviews, interest stacks, top characters and voice actors; each section loads when it scrolls near, cached 10 min (`ExploreCache`); "View all" pages (`ExploreListScreen`). Seasonal screen (`lib/screens/seasonal/`): whole season fetched once, sorted/filtered on the device with the shared sheet and list cards; shared view when the global seasonal filter pref is on. `lib/cache/top_characters.dart` serves the character screen's favorites. Strings `Explore_*`, `Seasonal_*`.
+
 ## Known big gaps (see inventory)
-- No user list / profile for any tracker; AniList/Kitsu/Simkl tabs are placeholders.
-- No notifications, bookmarks, relation graph, share, translation.
+- No user list / profile for AniList/Kitsu/Simkl (placeholders); no notifications, relation graph, share, translation.
 - MAL dead session (#71): public MAL reads (seasonal, ranking, details, search, other users' lists, forum) fall back to the client id; `/users/@me`, suggestions and list writes throw `MalSessionExpired`. The UI listens to `MalApi.sessionExpired` (`ValueListenable<bool>`); the visible prompt is still to build (accounts-ux / app-shell); the detail screen shows its own error/retry state.
