@@ -27,6 +27,10 @@ Cap: 80 lines. Rewrite in place; history lives in git and `docs/DECISIONS.md`.
 - Stubs (`ComingSoonPage`): 9 settings pages, bookmarks, calendar, user profile/stats; their units replace the body.
 - Home shell: sidebar = end drawer (`AppRoutes.openSidebar` from any tab), startup page pref, only the current tab built unless `keepPagesInMemory` (then lazily kept), "session expired" snackbar for any tracker, notification payload `anime:<id>|manga:<id>|calendar|bookmarks`.
 
+## Detail screen (`detail-split`)
+- `lib/screens/MAL/detail/`: `detail_screen.dart` (scaffold, loading, scroll/tab sync), `detail_data.dart` (immutable snapshot), `detail_sections.dart` (registry in the `ContentPreferences` tab order), `sections/` (one builder per `TabType`), `header/`, `actions/` (search + empty share/browser/bookmark/menu extension points), `pages/` (full recommendations, all interest stacks). `contentdetailedscreen.dart` re-exports it.
+- Error + retry state when MAL details fail; More Info modal on the cover; preferred title from `Preferences.general`.
+
 ## Waves (from `node tools/mab/plan-waves.mjs`)
 1. gate-fix
 2. auth-refresh, backend-parsers, l10n-pipeline
@@ -48,7 +52,7 @@ Cap: 80 lines. Rewrite in place; history lives in git and `docs/DECISIONS.md`.
 - No user list / profile for any tracker; AniList/Kitsu/Simkl tabs are placeholders.
 - No notifications, calendar, bookmarks, relation graph, share, translation.
 - `auth-refresh` built (PR pending): token refresh/retry in `BaseUser`; call sites in `mal_api.dart`, `mal_user.dart`, Anilist/Kitsu/Simkl clients still use raw `http` and must move to `MalConnect.auth*` / `sendAuthenticated` (see PR findings).
-- MAL dead session (#71): public MAL reads (seasonal, ranking, details, search, other users' lists, forum) fall back to the client id; `/users/@me`, suggestions and list writes throw `MalSessionExpired`. The UI listens to `MalApi.sessionExpired` (`ValueListenable<bool>`); the visible prompt is still to build (accounts-ux / app-shell), and `contentdetailedscreen.dart` still swallows errors.
+- MAL dead session (#71): public MAL reads (seasonal, ranking, details, search, other users' lists, forum) fall back to the client id; `/users/@me`, suggestions and list writes throw `MalSessionExpired`. The UI listens to `MalApi.sessionExpired` (`ValueListenable<bool>`); the visible prompt is still to build (accounts-ux / app-shell); the detail screen shows its own error/retry state.
 
 ## Next
 - Board: GitHub Project goddivor #8 "MyWatchList — Roadmap", 38 unit issues synced.
