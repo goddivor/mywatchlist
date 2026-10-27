@@ -33,6 +33,13 @@ Cap: 80 lines. Rewrite in place; history lives in git and `docs/DECISIONS.md`.
 ## API layer (`api-prefs`)
 - Jikan: `JikanClient` (throttle, in-flight sharing, 5 min cache, 429 backoff); MAL: `nsfw=` from the pref, timezone pref in airing helpers, `MalApi.isUnderMaintenance()` (60 s cache) for home wiring, full `MyListStatus` + `save*ListStatus` with text dates.
 
+## Accounts (`accounts-ux`)
+- No picker, no "Continue": `AccountBloc` follows `UserManager` (sign in, sign out, dead session) and owns the active account; the first tracker that connects becomes active, signing out of the active one activates the next, `resolveSelection` (`account_selection.dart`) is the pure rule.
+- One list everywhere: `AccountsPanel` of `TrackerTile`s (connected = radio, tap switches; expired = "Sign in again"; connecting = Cancel; disconnected = Connect). Used by Settings > Accounts (`ManageAccountsPage` is the same page), the avatar switcher (tap switches and closes), `LoginPage` (first run opens the home by itself; add mode switches to the new account and closes) and the intro page.
+- `TrackerActions` (connect, cancel, sign out, switch) is the only caller of the auth classes; Kitsu has its own translated dialog with inline errors.
+- One `AuthStatus` (base_user.dart, re-exported by user.dart); `needsReLogin` persists across restarts and `clear()` resets it.
+- Strings: `Acc_*` in `lib/l10n/units/accounts-ux/` (en + fr_FR).
+
 ## Waves (from `node tools/mab/plan-waves.mjs`)
 1. gate-fix
 2. auth-refresh, backend-parsers, l10n-pipeline
