@@ -1,15 +1,20 @@
 import 'package:auto_size_text/auto_size_text.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_widget_from_html_core/flutter_widget_from_html_core.dart';
 import 'package:mywatchlist/constants/constants.dart';
+import 'package:mywatchlist/enums.dart' show ForumConstants;
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/screens/MAL/contentdetailedscreen.dart';
 import 'package:mywatchlist/screens/forum/forum_posts_screen.dart';
+import 'package:mywatchlist/screens/search/general_search_screen.dart';
 import 'package:mywatchlist/services/api/MAL/models/featured/featured_article.dart';
 import 'package:mywatchlist/services/api/MAL/models/forum/forum_models.dart';
 import 'package:mywatchlist/services/api/MAL/scrapper/mal_scrapper.dart';
+import 'package:mywatchlist/utils/web_launcher.dart';
+import 'package:mywatchlist/widgets/common/app_bar_menu.dart';
+import 'package:mywatchlist/widgets/common/app_image.dart';
 import 'package:mywatchlist/widgets/common/background.dart';
+import 'package:mywatchlist/widgets/common/share_builder.dart';
 import 'package:mywatchlist/widgets/common/image_preview.dart';
 import 'package:mywatchlist/widgets/loading/shimmercolor.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -71,7 +76,12 @@ class _FeaturedScreenState extends State<FeaturedScreen> {
                 children: [
                   const Icon(Icons.error_outline, size: 48),
                   SB.h10,
-                  Text(S.current.No_Content),
+                  Text(S.current.Fc_Article_Failed),
+                  SB.h10,
+                  FilledButton.tonal(
+                    onPressed: () => setState(() => _articleFuture = _fetchArticle()),
+                    child: Text(S.current.Fc_Retry),
+                  ),
                 ],
               ),
             ),
@@ -95,6 +105,13 @@ class _FeaturedScreenState extends State<FeaturedScreen> {
                   title: innerBoxIsScrolled
                       ? Text(widget.featureTitle ?? '')
                       : null,
+                  actions: [
+                    if (article != null)
+                      AppBarMenu(
+                        onShare: () => _share(article),
+                        onOpenInBrowser: () => openLink(context, _pageUrl),
+                      ),
+                  ],
                   bottom: TabBar(
                     isScrollable: true,
                     tabAlignment: TabAlignment.start,
@@ -186,7 +203,7 @@ class _FeaturedScreenState extends State<FeaturedScreen> {
                     width: 250,
                     height: 22,
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: Theme.of(context).colorScheme.onSurface,
                       borderRadius: BorderRadius.circular(8),
                     ),
                   ),
@@ -195,7 +212,7 @@ class _FeaturedScreenState extends State<FeaturedScreen> {
                     width: 180,
                     height: 14,
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: Theme.of(context).colorScheme.onSurface,
                       borderRadius: BorderRadius.circular(6),
                     ),
                   ),
@@ -204,7 +221,7 @@ class _FeaturedScreenState extends State<FeaturedScreen> {
                     width: 100,
                     height: 14,
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: Theme.of(context).colorScheme.onSurface,
                       borderRadius: BorderRadius.circular(6),
                     ),
                   ),
@@ -218,7 +235,7 @@ class _FeaturedScreenState extends State<FeaturedScreen> {
                           width: 60,
                           height: 26,
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: Theme.of(context).colorScheme.onSurface,
                             borderRadius: BorderRadius.circular(12),
                           ),
                         ),
@@ -247,7 +264,7 @@ class _FeaturedScreenState extends State<FeaturedScreen> {
               width: double.infinity,
               height: 16,
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: Theme.of(context).colorScheme.onSurface,
                 borderRadius: BorderRadius.circular(8),
               ),
             ),
@@ -262,41 +279,70 @@ class _FeaturedScreenState extends State<FeaturedScreen> {
   // ---------------------------------------------------------------------------
 
   Widget _tagsWidget(List<String> tags) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 8.0),
-      child: SizedBox(
-        height: 34,
-        child: ListView(
-          shrinkWrap: true,
-          scrollDirection: Axis.horizontal,
-          padding: EdgeInsets.zero,
-          children: tags
-              .map<Widget>(
-                (tag) => Padding(
-                  padding: const EdgeInsets.only(right: 4.0),
-                  child: Card(
-                    margin: EdgeInsets.zero,
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(12),
-                      onTap: null,
-                      child: Container(
-                        height: 20,
-                        padding: const EdgeInsets.all(8.0),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          tag,
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
+    final theme = Theme.of(context);
+    return SizedBox(
+      height: 36,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: EdgeInsets.zero,
+        itemCount: tags.length,
+        separatorBuilder: (_, __) => SB.w5,
+        itemBuilder: (context, index) {
+          final tag = tags[index];
+          final key = _searchKey(tag);
+          return ActionChip(
+            label: Text(tag, style: theme.textTheme.bodySmall),
+            visualDensity: VisualDensity.compact,
+            // A spoiler marker (or a tag the search does not know) is a label only.
+            onPressed: key == null
+                ? null
+                : () => gotoPage(
+                      context: context,
+                      newPage: GeneralSearchScreen.byTag(
+                        key,
+                        news: widget.category == 'news',
                       ),
                     ),
-                  ),
-                ),
-              )
-              .toList(),
-        ),
+          );
+        },
       ),
+    );
+  }
+
+  /// The search key of a tag shown on the page (matched ignoring case), or
+  /// null when it cannot be searched: spoiler markers, and for featured
+  /// articles tags outside the featured list (as DailyAL).
+  String? _searchKey(String tag) {
+    final lower = tag.trim().toLowerCase();
+    if (lower.isEmpty || lower == 'spoiler') return null;
+    for (final key in ForumConstants.tags.keys) {
+      if (key.toLowerCase() == lower) return key == 'All' ? null : key;
+    }
+    if (widget.category == 'news') {
+      for (final group in ForumConstants.newsTags.values) {
+        for (final key in group.keys) {
+          if (key.toLowerCase() == lower) return key == 'All' ? null : key;
+        }
+      }
+      return tag.trim();
+    }
+    return null;
+  }
+
+  String get _pageUrl => 'https://myanimelist.net/'
+      '${widget.category == 'news' ? 'news' : 'featured'}/${widget.id}';
+
+  void _share(FeaturedArticle article) {
+    final title = article.title ?? widget.featureTitle;
+    showShareBuilder(
+      context,
+      subject: title,
+      title: S.current.Fc_Share_Article,
+      fields: [
+        ShareField(label: S.current.Url, value: _pageUrl, labelled: false),
+        if (title != null && title.isNotEmpty)
+          ShareField(label: S.current.Title, value: title),
+      ],
     );
   }
 
@@ -391,9 +437,11 @@ class _FeaturedScreenState extends State<FeaturedScreen> {
                 onTap: () => zoomInImage(context, src),
                 child: Padding(
                   padding: const EdgeInsets.symmetric(vertical: 8),
-                  child: Image.network(
-                    src,
-                    errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                  child: AppImage(
+                    url: src,
+                    width: MediaQuery.sizeOf(context).width - 30,
+                    fit: BoxFit.fitWidth,
+                    errorWidget: (_) => const SizedBox.shrink(),
                   ),
                 ),
               );
@@ -446,22 +494,14 @@ class _FeaturedScreenState extends State<FeaturedScreen> {
             if (article.imageUrl != null && article.imageUrl!.isNotEmpty)
               ClipRRect(
                 borderRadius: BorderRadius.circular(8),
-                child: CachedNetworkImage(
-                  imageUrl: article.imageUrl!,
+                child: AppImage(
+                  url: article.imageUrl!,
                   width: 80,
                   height: 80,
                   fit: BoxFit.cover,
-                  placeholder: (_, __) => ShimmerColor(
-                    Container(
-                      width: 80,
-                      height: 80,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                  ),
-                  errorWidget: (_, __, ___) => Container(
+                  placeholderColor:
+                      Theme.of(context).colorScheme.surfaceContainerHighest,
+                  errorWidget: (_) => Container(
                     width: 80,
                     height: 80,
                     color: Theme.of(context).colorScheme.surfaceContainerHighest,
