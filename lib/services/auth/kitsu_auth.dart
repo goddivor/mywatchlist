@@ -8,61 +8,77 @@ import 'package:mywatchlist/user/base_user.dart';
 import 'package:http/http.dart' as http;
 
 class KitsuAuth {
+  /// [client] replaces the default HTTP client (tests use a fake one).
+  KitsuAuth({http.Client? client}) : _client = client;
+
+  final http.Client? _client;
+
   static const String _baseUrl = "https://kitsu.io/api";
-  // static const String _baseUrledge = "https://kitsu.io/api/edge"; // Old base URL for edge API, might be useful later
   static const String _tokenEndpoint = "/oauth/token";
-  // static const String _userEndpoint = "/users?filter[self]=true"; // Endpoint for fetching user details, commented for now
 
-  /// Initiates Kitsu sign-in for user login
-  /// Calls [onComplete] after successful login
-  Future<void> signInWithKitsu(
-      BuildContext context, String username, String password,
+  /// Signs in to Kitsu with a username (or email) and a password.
+  ///
+  /// The status is "in progress" only while the request runs: it ends
+  /// authenticated on success, unauthenticated on any failure (listeners are
+  /// notified of the outcome). Returns true when signed in; a network or parsing
+  /// failure is rethrown after the status is reset, so the caller can tell
+  /// "wrong credentials" (false) from "could not reach Kitsu" (throws).
+  /// [onComplete] runs after a successful sign in. [context] is unused.
+  Future<bool> signInWithKitsu(
+      BuildContext? context, String username, String password,
       {Function? onComplete}) async {
-    UserKitsuV2.instance.setStatus(AuthStatus
-        .INPROGRESS); // Set user status to in-progress during authentication
-    final url = Uri.parse(
-        _baseUrl + _tokenEndpoint); // Construct the token endpoint URL
-    final response = await http.post(
-      url,
-      headers: {
-        'Content-Type': 'application/json', // Specify content type as JSON
-        'Accept': 'application/json', // Accept JSON response
-      },
-      body: jsonEncode({
-        'grant_type': 'password', // OAuth2 grant type
-        'username': username, // User's username
-        'password': password, // User's password
-      }),
-    );
+    final user = UserKitsuV2.instance;
+    user.setStatus(AuthStatus.INPROGRESS);
 
-    if (response.statusCode == 200) {
-      final Map<String, dynamic> responseData =
-          json.decode(response.body); // Decode JSON response
-      KitsuAuthResponse authResponse = KitsuAuthResponse.fromJson(
-          responseData); // Parse response into KitsuAuthResponse
-      UserKitsuV2.instance.setAuthResponse(
-          authResponse); // Save authentication response to user instance
+    final KitsuAuthResponse authResponse;
+    try {
+      final body = jsonEncode({
+        'grant_type': 'password',
+        'username': username,
+        'password': password,
+      });
+      const headers = {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      };
+      final url = Uri.parse(_baseUrl + _tokenEndpoint);
+      final client = _client;
+      final response = client != null
+          ? await client.post(url, headers: headers, body: body)
+          : await http.post(url, headers: headers, body: body);
 
-      // Fetch user profile data
-      try {
-        final userProfile = await KitsuUser().getUserInfo();
-        UserKitsuV2.instance.setUserInfo(userProfile.name, userProfile.avatar);
-      } catch (e) {
-        print('Failed to fetch Kitsu user profile: $e');
+      if (response.statusCode != 200) {
+        debugPrint('Kitsu sign in refused: HTTP ${response.statusCode}');
+        _fail(user);
+        return false;
       }
-
-      if (onComplete != null) {
-        onComplete(); // Call onComplete callback if provided
-      }
-    } else {
-      // showStatusCodeToast(response.statusCode); // Uncomment to show status code toast for debugging
-      // throw 'Failed to get token access'; // Uncomment to throw an error for failed authentication
+      final Map<String, dynamic> responseData = json.decode(response.body);
+      authResponse = KitsuAuthResponse.fromJson(responseData);
+    } catch (_) {
+      _fail(user);
+      rethrow;
     }
+
+    user.setAuthResponse(authResponse);
+
+    try {
+      final userProfile = await KitsuUser().getUserInfo();
+      user.setUserInfo(userProfile.name, userProfile.avatar);
+    } catch (e) {
+      debugPrint('Failed to fetch Kitsu user profile: $e');
+    }
+
+    if (onComplete != null) onComplete();
+    return true;
+  }
+
+  static void _fail(UserKitsuV2 user) {
+    user.setStatus(AuthStatus.UNAUTHENTICATED);
+    user.notifyAccountChange();
   }
 
   /// Clears stored Kitsu credentials to sign out user
   Future<void> signout() async {
-    UserKitsuV2.instance.clear(); // Clear user data on sign out
-    // showToast("Log out"); // Uncomment to show a toast message on logout
+    UserKitsuV2.instance.clear();
   }
 }
