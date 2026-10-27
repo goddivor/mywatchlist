@@ -1,10 +1,15 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:mywatchlist/constants/constants.dart';
+import 'package:mywatchlist/constants/constants.dart' hide myAnimeStatusMap;
+import 'package:mywatchlist/enums.dart';
+import 'package:mywatchlist/generated/l10n.dart';
+import 'package:mywatchlist/screens/seasonal/season_utils.dart';
+import 'package:mywatchlist/services/api/MAL/mal_api.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 
 
+/// Kinds of home section. New kinds are only ever appended: the saved JSON stores the index.
 enum SectionType {
   news,
   seasonNow,
@@ -20,6 +25,8 @@ enum SectionType {
   topManga,
   topMangaPopular,
   features,
+  userList,
+  forum,
 }
 
 class HomeSectionPreference {
@@ -29,13 +36,47 @@ class HomeSectionPreference {
   String? customTitle;
   int cacheDurationHours;
 
+  /// [SectionType.userList]: `anime` or `manga`.
+  String userCategory;
+
+  /// [SectionType.userList]: the MAL status key (`watching`, `completed`…), null for all.
+  String? userStatus;
+
+  /// [SectionType.forum]: board and sub-board ids (MAL), null for the recent topics of the forum.
+  int? boardId;
+  int? subboardId;
+
+  /// [SectionType.seasonNow]: a fixed season, null for the current one.
+  SeasonType? season;
+  int? year;
+
   HomeSectionPreference({
     required this.type,
     this.enabled = true,
     this.itemCount = 15,
     this.customTitle,
     this.cacheDurationHours = 2,
+    this.userCategory = 'anime',
+    this.userStatus,
+    this.boardId,
+    this.subboardId,
+    this.season,
+    this.year,
   });
+
+  HomeSectionPreference copy() => HomeSectionPreference(
+        type: type,
+        enabled: enabled,
+        itemCount: itemCount,
+        customTitle: customTitle,
+        cacheDurationHours: cacheDurationHours,
+        userCategory: userCategory,
+        userStatus: userStatus,
+        boardId: boardId,
+        subboardId: subboardId,
+        season: season,
+        year: year,
+      );
 
   // Convert to JSON for storage
   Map<String, dynamic> toJson() {
@@ -45,58 +86,90 @@ class HomeSectionPreference {
       'itemCount': itemCount,
       'customTitle': customTitle,
       'cacheDurationHours': cacheDurationHours,
+      'userCategory': userCategory,
+      'userStatus': userStatus,
+      'boardId': boardId,
+      'subboardId': subboardId,
+      'season': season?.name,
+      'year': year,
     };
   }
 
-  // Create from JSON when loading
-  factory HomeSectionPreference.fromJson(Map<String, dynamic> json) {
+  // Create from JSON when loading (tolerant: a missing or odd field takes its default)
+  static HomeSectionPreference? tryFromJson(Map<String, dynamic> json) {
+    final typeIndex = json['type'];
+    if (typeIndex is! int || typeIndex < 0 || typeIndex >= SectionType.values.length) {
+      return null;
+    }
+    final seasonName = json['season'];
     return HomeSectionPreference(
-      type: SectionType.values[json['type'] as int],
-      enabled: json['enabled'] as bool,
-      itemCount: json['itemCount'] as int,
+      type: SectionType.values[typeIndex],
+      enabled: json['enabled'] as bool? ?? true,
+      itemCount: json['itemCount'] as int? ?? 15,
       customTitle: json['customTitle'] as String?,
       cacheDurationHours: json['cacheDurationHours'] as int? ?? 2,
+      userCategory: json['userCategory'] == 'manga' ? 'manga' : 'anime',
+      userStatus: json['userStatus'] as String?,
+      boardId: json['boardId'] as int?,
+      subboardId: json['subboardId'] as int?,
+      season: SeasonType.values.where((s) => s.name == seasonName).firstOrNull,
+      year: json['year'] as int?,
     );
   }
 
-  String getDefaultTitle(String seasonName, int seasonYear) {
+  /// The season a [SectionType.seasonNow] section shows.
+  SeasonType get effectiveSeason => season ?? MalApi.getSeasonType();
+  int get effectiveYear => year ?? MalApi.getCurrentSeasonYear();
+
+  /// The title of the section in the app language (read at each build, so a language change
+  /// applies at once).
+  String getDefaultTitle() {
+    final s = S.current;
     switch (type) {
       case SectionType.news:
-        return 'Anime News';
+        return s.Hw_Sec_News;
       case SectionType.seasonNow:
-        return '$seasonName $seasonYear Anime';
+        return s.Hw_Sec_Season(seasonLabel(effectiveSeason), '$effectiveYear');
       case SectionType.suggested:
-        return 'Suggested For You';
+        return s.Hw_Sec_Suggested;
       case SectionType.upcoming:
-        return 'Top Upcoming Anime';
+        return s.Hw_Sec_Upcoming;
       case SectionType.topScore:
-        return 'Top Anime by Score';
+        return s.Hw_Sec_Top_Score;
       case SectionType.topFavorites:
-        return 'All-time Anime Favorites';
+        return s.Hw_Sec_Favorites;
       case SectionType.topPopular:
-        return 'Most Popular Anime';
+        return s.Hw_Sec_Popular;
       case SectionType.topAnimeAiring:
-        return 'Top Airing Anime';
+        return s.Hw_Sec_Airing;
       case SectionType.topAnimeTV:
-        return 'Top Anime TV Series';
+        return s.Hw_Sec_Tv;
       case SectionType.topAnimeMovie:
-        return 'Top Anime Movies';
+        return s.Hw_Sec_Movie;
       case SectionType.topAnimeSpecial:
-        return 'Top Anime Specials';
+        return s.Hw_Sec_Special;
       case SectionType.topManga:
-        return 'Top Manga';
+        return s.Hw_Sec_Top_Manga;
       case SectionType.topMangaPopular:
-        return 'Most Popular Manga';
+        return s.Hw_Sec_Popular_Manga;
       case SectionType.features:
-        return 'Anime Features';
+        return s.Hw_Sec_Features;
+      case SectionType.userList:
+        final list = userCategory == 'manga' ? s.Hw_Sec_List_Manga : s.Hw_Sec_List_Anime;
+        final labels = userCategory == 'manga' ? myMangaStatusMap : myAnimeStatusMap;
+        final status = userStatus == null ? null : labels[userStatus];
+        return status == null ? list : s.Hw_Sec_List_Status(list, status);
+      case SectionType.forum:
+        final board = boardId == null ? null : ForumConstants.boards[boardId];
+        return board == null ? s.Hw_Sec_Forum : s.Hw_Sec_Forum_Board(board);
     }
   }
 
-  String getDisplayTitle(String seasonName, int seasonYear) {
+  String getDisplayTitle() {
     if (customTitle != null && customTitle!.isNotEmpty) {
       return customTitle!;
     }
-    return getDefaultTitle(seasonName, seasonYear);
+    return getDefaultTitle();
   }
 
   IconData getIcon() {
@@ -129,6 +202,10 @@ class HomeSectionPreference {
         return Icons.auto_stories;
       case SectionType.features:
         return Icons.featured_play_list;
+      case SectionType.userList:
+        return Icons.video_library_outlined;
+      case SectionType.forum:
+        return Icons.forum_outlined;
     }
   }
 }
@@ -167,11 +244,14 @@ class MalHomePreferences {
   // Create from JSON when loading
   factory MalHomePreferences.fromJson(Map<String, dynamic> json) {
     return MalHomePreferences(
-      sections: (json['sections'] as List)
-          .map((section) =>
-              HomeSectionPreference.fromJson(section as Map<String, dynamic>))
-          .toList(),
-      tileSize: HomePageTileSize.values[json['tileSize'] as int],
+      sections: [
+        for (final section in json['sections'] as List)
+          if (section is Map<String, dynamic>)
+            if (HomeSectionPreference.tryFromJson(section) case final parsed?) parsed,
+      ],
+      tileSize: HomePageTileSize.values
+              .elementAtOrNull(json['tileSize'] as int? ?? -1) ??
+          HomePageTileSize.l,
     );
   }
 
@@ -182,7 +262,6 @@ class MalHomePreferences {
       // Convert to JSON string properly
       final jsonString = jsonEncode(toJson());
       await prefs.setString('mal_home_preferences', jsonString);
-      debugPrint('Saved preferences: $jsonString');
     } catch (e) {
       debugPrint('Error saving MAL home preferences: $e');
       // Rethrow to handle in UI
@@ -197,7 +276,6 @@ class MalHomePreferences {
       final jsonString = prefs.getString('mal_home_preferences');
 
       if (jsonString != null) {
-        debugPrint('Loading preferences: $jsonString');
         // Parse JSON string to Map
         final Map<String, dynamic> jsonMap = jsonDecode(jsonString);
         return MalHomePreferences.fromJson(jsonMap);

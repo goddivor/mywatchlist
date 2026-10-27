@@ -1,13 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mywatchlist/constants/constants.dart';
-import 'package:mywatchlist/screens/account_switcher_page.dart';
+import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/user/accounts/account_bloc.dart';
-import 'package:mywatchlist/user/accounts/models/account.dart';
-import 'package:mywatchlist/utils/page_transitions.dart';
+import 'package:mywatchlist/user/trackers/models/tracker_model.dart';
+import 'package:mywatchlist/utils/app_routes.dart';
 import 'package:mywatchlist/widgets/common/avatar_widget.dart';
+import 'package:mywatchlist/widgets/home/account_switcher_sheet.dart';
 
-class AppBarHome extends StatefulWidget implements PreferredSizeWidget {
+/// The header of the home tabs: logo (or [titleWidget]), the shortcut buttons and the account
+/// avatar.
+///
+/// Every button works without a callback: search, bookmarks, calendar and settings open their
+/// screen through [AppRoutes]; pass an `on…Tap` only to do something else. The avatar opens the
+/// sidebar of the home shell; a long press (or the small switch badge) opens the account
+/// switcher as a bottom sheet.
+class AppBarHome extends StatelessWidget implements PreferredSizeWidget {
+  /// Called after another account became active from the switcher sheet.
   final VoidCallback? onUiChange;
   final Widget? titleWidget;
   final String? title;
@@ -42,122 +52,36 @@ class AppBarHome extends StatefulWidget implements PreferredSizeWidget {
   });
 
   @override
-  State<AppBarHome> createState() => _AppBarHomeState();
-
-  @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight + 8);
-}
-
-class _AppBarHomeState extends State<AppBarHome> with TickerProviderStateMixin {
-  late AnimationController _animationController;
-  late Animation<double> _fadeAnimation;
-
-  @override
-  void initState() {
-    super.initState();
-
-    _animationController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 500),
-    );
-
-    _fadeAnimation = CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeOut,
-    );
-
-    _animationController.forward();
-  }
-
-  @override
-  void dispose() {
-    _animationController.dispose();
-    super.dispose();
-  }
-
-  // Get color based on account type
-  Color _getAccountColor(AccountType type) {
-    switch (type) {
-      case AccountType.myanimelist:
-        return const Color(0xFF2E51A2); // MyAnimeList blue
-      case AccountType.anilist:
-        return const Color(0xFF02A9FF); // Anilist blue
-      case AccountType.kitsu:
-        return const Color(0xFFEF5D5D); // Kitsu red
-      case AccountType.simkl:
-        return const Color(0xFF343C42); // Simkl dark gray
-      default:
-        return Colors.grey; // Default color for no account
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<AccountBloc, AccountState>(
-      builder: (context, state) {
-        String? profileImageUrl;
-        AccountType currentAccountType = AccountType.none;
-        List<Account> accounts = [];
-
-        if (state is AccountLoaded) {
-          currentAccountType = state.selectedAccountType;
-          profileImageUrl = state.profileImageUrl;
-          accounts = state.availableAccounts;
-        }
-
-        return _buildAppBar(
-            context, profileImageUrl, currentAccountType, accounts);
-      },
-    );
-  }
-
-  Widget _buildAppBar(BuildContext context, String? profileImageUrl,
-      AccountType currentAccountType, List<Account> accounts) {
     final theme = Theme.of(context);
-    final effectiveColor = _getAccountColor(currentAccountType);
-
-    return Container(
+    return DecoratedBox(
       decoration: BoxDecoration(
-        color: widget.transparent
+        color: transparent
             ? Colors.transparent
-            : widget.backgroundColor ?? theme.scaffoldBackgroundColor,
-        boxShadow: widget.transparent
-            ? null
-            : [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.04),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
+            : backgroundColor ?? theme.scaffoldBackgroundColor,
       ),
       child: SafeArea(
-        child: FadeTransition(
-          opacity: _fadeAnimation,
-          child: Container(
-            height: kToolbarHeight,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+        bottom: false,
+        child: SizedBox(
+          height: kToolbarHeight,
+          child: Padding(
+            padding: const EdgeInsetsDirectional.symmetric(horizontal: 16),
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                // App logo or title
-                _buildTitle(theme),
-
-                // Actions
-                Row(
-                  children: [
-                    // Action buttons
-                    _buildActionButtons(theme),
-
-                    // Space between actions and avatar
-                    const SizedBox(width: 12),
-
-                    // User avatar
-                    if (widget.showAvatar)
-                      _buildAvatar(profileImageUrl, currentAccountType,
-                          accounts, effectiveColor),
-                  ],
+                Expanded(
+                  child: Align(
+                    alignment: AlignmentDirectional.centerStart,
+                    child: _buildTitle(context, theme),
+                  ),
                 ),
+                _buildActionButtons(context, theme),
+                if (showAvatar) ...[
+                  const SizedBox(width: 12),
+                  _AccountAvatar(onUiChange: onUiChange),
+                ],
               ],
             ),
           ),
@@ -166,11 +90,11 @@ class _AppBarHomeState extends State<AppBarHome> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildTitle(ThemeData theme) {
-    if (widget.titleWidget != null) {
-      return widget.titleWidget!;
+  Widget _buildTitle(BuildContext context, ThemeData theme) {
+    if (titleWidget != null) return titleWidget!;
+    if (title != null) {
+      return Text(title!, style: theme.textTheme.titleLarge, maxLines: 1, overflow: TextOverflow.ellipsis);
     }
-
     return CircleAvatar(
       radius: 18,
       backgroundImage: const AssetImage('assets/images/mwl-black-bg.png'),
@@ -178,134 +102,147 @@ class _AppBarHomeState extends State<AppBarHome> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildActionButtons(ThemeData theme) {
-    final iconColor = theme.colorScheme.onSurface;
-    final hasAnyButton = widget.showSearch ||
-        widget.showBookmarks ||
-        widget.showCalendar ||
-        widget.showSettings;
-
-    if (!hasAnyButton) return const SizedBox.shrink();
-
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 200),
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+  Widget _buildActionButtons(BuildContext context, ThemeData theme) {
+    if (!(showSearch || showBookmarks || showCalendar || showSettings)) {
+      return const SizedBox.shrink();
+    }
+    final s = S.current;
+    return DecoratedBox(
       decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+        color: theme.colorScheme.surfaceContainerHigh.withValues(alpha: 0.85),
         borderRadius: BorderRadius.circular(24),
       ),
-      child: Row(
-        children: [
-          if (widget.showSearch)
-            _buildIconButton(
-              icon: Icons.search_rounded,
-              tooltip: 'Search',
-              onTap: widget.onSearchTap ?? () {},
-              iconColor: iconColor,
-              theme: theme,
-            ),
-          if (widget.showBookmarks)
-            _buildIconButton(
-              icon: Icons.bookmark_outline_rounded,
-              tooltip: 'Bookmarks',
-              onTap: widget.onBookmarksTap ?? () {},
-              iconColor: iconColor,
-              theme: theme,
-            ),
-          if (widget.showCalendar)
-            _buildIconButton(
-              icon: Icons.calendar_today_outlined,
-              tooltip: 'Calendar',
-              onTap: widget.onCalendarTap ?? () {},
-              iconColor: iconColor,
-              theme: theme,
-            ),
-          if (widget.showSettings)
-            _buildIconButton(
-              icon: Icons.settings_outlined,
-              tooltip: 'Settings',
-              onTap: widget.onSettingsTap ?? () {},
-              iconColor: iconColor,
-              theme: theme,
-            ),
-        ],
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 2),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (showSearch)
+              _BarButton(
+                icon: Icons.search_rounded,
+                tooltip: s.Hw_Search,
+                onTap: onSearchTap ?? () => AppRoutes.openSearch(context),
+              ),
+            if (showBookmarks)
+              _BarButton(
+                icon: Icons.bookmark_outline_rounded,
+                tooltip: s.Hw_Bookmarks,
+                onTap: onBookmarksTap ?? () => AppRoutes.openBookmarks(context),
+              ),
+            if (showCalendar)
+              _BarButton(
+                icon: Icons.calendar_today_outlined,
+                tooltip: s.Hw_Calendar,
+                onTap: onCalendarTap ?? () => AppRoutes.openCalendar(context),
+              ),
+            if (showSettings)
+              _BarButton(
+                icon: Icons.settings_outlined,
+                tooltip: s.Hw_Settings,
+                onTap: onSettingsTap ?? () => AppRoutes.openSettings(context),
+              ),
+          ],
+        ),
       ),
     );
   }
+}
 
-  Widget _buildIconButton({
-    required IconData icon,
-    required String tooltip,
-    required VoidCallback onTap,
-    required Color iconColor,
-    required ThemeData theme,
-  }) {
-    return Tooltip(
-      message: tooltip,
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(20),
-          child: Container(
-            padding: const EdgeInsets.all(8),
-            child: Icon(
-              icon,
-              size: 20,
-              color: iconColor,
+class _BarButton extends StatelessWidget {
+  final IconData icon;
+  final String tooltip;
+  final VoidCallback onTap;
+
+  const _BarButton({required this.icon, required this.tooltip, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      icon: Icon(icon, size: 20),
+      tooltip: tooltip,
+      onPressed: onTap,
+      color: Theme.of(context).colorScheme.onSurface,
+      visualDensity: VisualDensity.compact,
+      constraints: const BoxConstraints.tightFor(width: 40, height: 40),
+      padding: EdgeInsets.zero,
+    );
+  }
+}
+
+/// The account avatar: a tap opens the sidebar, a long press the account switcher sheet. The
+/// ring takes the colour of the active tracker; the badge shows that the account can be switched.
+class _AccountAvatar extends StatelessWidget {
+  final VoidCallback? onUiChange;
+
+  const _AccountAvatar({this.onUiChange});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return BlocSelector<AccountBloc, AccountState, ({AccountType type, String? image})>(
+      selector: (state) => state is AccountLoaded
+          ? (type: state.selectedAccountType, image: state.profileImageUrl)
+          : (type: AccountType.none, image: null),
+      builder: (context, account) {
+        final ring = TrackerInfo.of(account.type)?.color ?? scheme.outline;
+        void openSwitcher() => showAccountSwitcherSheet(context, onSwitched: onUiChange);
+        return Semantics(
+          button: true,
+          label: S.current.Hw_Menu_Tooltip,
+          onTap: () => AppRoutes.openSidebar(context),
+          onLongPress: openSwitcher,
+          customSemanticsActions: {
+            CustomSemanticsAction(label: S.current.Hw_Switch_Account): openSwitcher,
+          },
+          child: Tooltip(
+            message: S.current.Hw_Account_Tooltip,
+            excludeFromSemantics: true,
+            child: SizedBox(
+              width: 42,
+              height: 42,
+              child: Stack(
+                clipBehavior: Clip.none,
+                alignment: Alignment.center,
+                children: [
+                  ExcludeSemantics(
+                    child: AvatarWidget(
+                      url: account.image,
+                      isNetworkImage: account.image != null,
+                      height: 36,
+                      width: 36,
+                      borderColor: ring,
+                      borderWidth: 2,
+                      onTap: () => AppRoutes.openSidebar(context),
+                      onLongPress: openSwitcher,
+                    ),
+                  ),
+                  PositionedDirectional(
+                    end: -2,
+                    bottom: -2,
+                    child: ExcludeSemantics(
+                      child: GestureDetector(
+                        onTap: openSwitcher,
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            color: scheme.surfaceContainerHighest,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: scheme.surface, width: 1.5),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(2),
+                            child: Icon(Icons.swap_horiz_rounded,
+                                size: 12, color: scheme.onSurface),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildAvatar(
-    String? profileImageUrl,
-    AccountType currentAccountType,
-    List<Account> accounts,
-    Color effectiveColor,
-  ) {
-    // Generate a placeholder URL if profileImageUrl is null
-    final imageUrl = profileImageUrl ??
-        'https://cdn-icons-png.flaticon.com/512/4140/4140037.png';
-
-    return Container(
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        boxShadow: [
-          BoxShadow(
-            color: effectiveColor.withValues(alpha: 0.2),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: AvatarWidget(
-        url: imageUrl,
-        height: 36,
-        width: 36,
-        borderColor: effectiveColor,
-        borderWidth: 2,
-        onTap: () => _showAccountSelectionModal(
-          context,
-          currentAccountType,
-          accounts,
-        ),
-      ),
-    );
-  }
-
-  void _showAccountSelectionModal(BuildContext context,
-      AccountType currentAccountType, List<Account> accounts) {
-    Navigator.push(
-      context,
-      SlidePageRoute(
-        direction: SlideDirection.left,
-        page: AccountSwitcherPage(
-          onUiChange: widget.onUiChange,
-        ),
-      ),
+        );
+      },
     );
   }
 }
