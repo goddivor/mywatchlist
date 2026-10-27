@@ -14,6 +14,7 @@ import 'package:mywatchlist/services/auth/retry_policy.dart';
 import 'package:mywatchlist/user/accounts/provider/account_manager_singleton.dart';
 import 'package:mywatchlist/user/user_mal_v2.dart';
 import 'package:mywatchlist/widgets/user/edit/edit_rules.dart';
+import 'package:mywatchlist/widgets/user/edit/list_entry.dart';
 import 'package:mywatchlist/widgets/user/edit/list_entry_service.dart';
 
 import 'fixtures.dart';
@@ -208,6 +209,12 @@ void main() {
       final reopened = await service.load(2, isAnime: false);
       expect(reopened.entry!.startDate, '2020-06');
       expect(reopened.entry!.finishDate, '2021');
+
+      // The user list rebuilds its row from the reported status.
+      final row = ListEntry.fromMangaStatus(status, previous: opened.entry);
+      expect(row.progress, 113);
+      expect(row.startDate, '2020-06');
+      expect(row.finishDate, '2021');
     });
 
     test('a date set in the sheet is sent and kept as text', () async {

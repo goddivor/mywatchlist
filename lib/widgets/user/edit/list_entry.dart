@@ -1,5 +1,9 @@
 import 'package:intl/intl.dart';
 import 'package:mywatchlist/services/api/MAL/mal_anime.dart';
+import 'package:mywatchlist/services/api/MAL/models/my_anime_list_status.dart'
+    as anime_status;
+import 'package:mywatchlist/services/api/MAL/models/my_manga_list_status.dart'
+    as manga_status;
 
 /// The user's list entry for one anime or manga, as the edit sheet shows it.
 ///
@@ -83,6 +87,44 @@ class ListEntry {
       finishDate: _date(s.finishDate),
       tags: _tags(s.tags),
       comments: s.comments,
+    );
+  }
+
+  /// The entry from the `MyAnimeListStatus` reported by
+  /// `ContentEditWidget.onListStatusChange`; [previous] fills missing fields.
+  factory ListEntry.fromAnimeStatus(anime_status.MyAnimeListStatus s,
+      {ListEntry? previous}) {
+    return ListEntry(
+      status: s.status ?? previous?.status ?? '',
+      score: s.score ?? previous?.score ?? 0,
+      progress: s.numEpisodesWatched ?? previous?.progress ?? 0,
+      isRepeating: s.isRewatching ?? previous?.isRepeating ?? false,
+      timesRepeated: s.numTimesRewatched ?? previous?.timesRepeated ?? 0,
+      repeatValue: s.rewatchValue ?? previous?.repeatValue ?? 0,
+      priority: s.priority ?? previous?.priority ?? 0,
+      startDate: _date(s.startDate),
+      finishDate: _date(s.finishDate),
+      tags: s.tags ?? previous?.tags ?? const [],
+      comments: s.comments ?? previous?.comments ?? '',
+    );
+  }
+
+  /// Manga counterpart of [ListEntry.fromAnimeStatus].
+  factory ListEntry.fromMangaStatus(manga_status.MyMangaListStatus s,
+      {ListEntry? previous}) {
+    return ListEntry(
+      status: s.status ?? previous?.status ?? '',
+      score: s.score ?? previous?.score ?? 0,
+      progress: s.numChaptersRead ?? previous?.progress ?? 0,
+      volumes: s.numVolumesRead ?? previous?.volumes ?? 0,
+      isRepeating: s.isRereading ?? previous?.isRepeating ?? false,
+      timesRepeated: s.numTimesReread ?? previous?.timesRepeated ?? 0,
+      repeatValue: s.rereadValue ?? previous?.repeatValue ?? 0,
+      priority: s.priority ?? previous?.priority ?? 0,
+      startDate: _date(s.startDate),
+      finishDate: _date(s.finishDate),
+      tags: s.tags ?? previous?.tags ?? const [],
+      comments: s.comments ?? previous?.comments ?? '',
     );
   }
 
