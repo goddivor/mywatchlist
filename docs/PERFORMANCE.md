@@ -40,7 +40,7 @@ Every UI unit follows the rules below; the checker measures each one on a profil
 | 7, 11 | `lib/widgets/common/avatar_widget.dart` | Avatars through `AppImage`, no fade, plain border instead of a blurred shadow. |
 | 8 | `lib/widgets/loading/shimmercolor.dart` | One shared shimmer ticker, stopped when nothing shimmers or the shimmer is in a disabled `TickerMode`. |
 | 10, 14 | `lib/widgets/common/image_preview.dart` | Static scrim instead of `BackdropFilter`; viewer images cached and decoded at most at twice the screen size. |
-| 13 | `android/app/src/main/AndroidManifest.xml` | Explicit `EnableImpeller` switch (see below). |
+| 13 | `android/app/src/main/AndroidManifest.xml` | Explicit `EnableImpeller` switch, set to Skia (see below). |
 | 15 | `lib/utils/page_transitions.dart` | 250 ms transitions, no fade layered over the slide. |
 
 `maxDiskWidth` (resized copy on disk) is off by default: flutter_cache_manager decodes the file a
@@ -79,11 +79,26 @@ gesture, or within a few points while the screen-level units (`app-shell`, `card
 
 ## Impeller vs Skia (A/B)
 
-Flutter uses Impeller by default; DailyAL ships with Skia (`EnableImpeller=false`). MWL keeps
-Impeller (`android:value="true"`) until a measurement says otherwise.
+Flutter uses Impeller by default; DailyAL ships with Skia (`EnableImpeller=false`). MWL ships
+with Skia too (`android:value="false"`) since the batch-2 A/B below (#91).
 
-1. Measure MWL as above with `android:value="true"` (two runs of steps 3 and 4).
-2. Set `io.flutter.embedding.android.EnableImpeller` to `false` in
+Batch-2 measurement (checker, emulator 60 Hz, `-gpu host`, home scroll, profile build,
+`tools/perf/measure-scroll.sh`), janky frames per run:
+
+| Build | Janky frames |
+|---|---|
+| MWL, Impeller (`EnableImpeller=true`) | 28.6, 30.2, 14.3, 25.4, 39.7 % |
+| MWL, Skia (`EnableImpeller=false`) | 1.6, 2.4, 4.0 % |
+| DailyAL (forces Skia) | 3.2, 1.6 % |
+
+Decision: Skia, as DailyAL does (`docs/DECISIONS.md`). Still to confirm on the owner's physical
+phone (Xiaomi 21061119BI, Android 13) before a release, with the procedure below: the emulator's
+GPU translation can favour one backend.
+
+To re-run the A/B:
+
+1. Measure MWL as above with the shipped value (two runs of steps 3 and 4).
+2. Flip `io.flutter.embedding.android.EnableImpeller` (`true` = Impeller) in
    `android/app/src/main/AndroidManifest.xml`, rebuild the profile APK, reinstall, measure again
    on the same gestures. `adb logcat | grep -i impeller` confirms which backend started.
 3. Keep the backend with the lower janky % on both gestures (if they split, the home scroll wins)
