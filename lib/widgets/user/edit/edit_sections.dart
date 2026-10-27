@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:mywatchlist/generated/l10n.dart';
+import 'package:mywatchlist/widgets/loading/shimmercolor.dart';
 import 'package:mywatchlist/widgets/user/edit/edit_fields.dart';
 import 'package:mywatchlist/widgets/user/edit/edit_rules.dart';
 import 'package:mywatchlist/widgets/user/edit/number_bar.dart';
@@ -316,17 +317,61 @@ class _TextEditorDialogState extends State<_TextEditorDialog> {
   }
 }
 
-/// Centred message with an optional retry (load error, expired session…).
+/// Shape of the editor while the entry loads (shared shimmer, no spinner).
+class EditSkeleton extends StatelessWidget {
+  const EditSkeleton({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final color = Theme.of(context).colorScheme.surfaceContainerHighest;
+    Widget box(double height, {double? width, double radius = 14}) => Container(
+          height: height,
+          width: width,
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(radius),
+          ),
+        );
+    return ShimmerColor(
+      Padding(
+        padding: const EdgeInsets.fromLTRB(12, 24, 12, 16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Expanded(child: box(48)),
+                const SizedBox(width: 12),
+                Expanded(child: box(48)),
+              ],
+            ),
+            const SizedBox(height: 16),
+            box(14, width: 120, radius: 7),
+            const SizedBox(height: 10),
+            box(44, radius: 22),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Centred message with an optional main action and retry (load error,
+/// expired session…).
 class EditMessageView extends StatelessWidget {
   final IconData icon;
   final String message;
   final VoidCallback? onRetry;
+  final String? actionLabel;
+  final VoidCallback? onAction;
 
   const EditMessageView({
     super.key,
     required this.icon,
     required this.message,
     this.onRetry,
+    this.actionLabel,
+    this.onAction,
   });
 
   @override
@@ -341,14 +386,22 @@ class EditMessageView extends StatelessWidget {
           const SizedBox(height: 12),
           Text(message,
               textAlign: TextAlign.center, style: theme.textTheme.bodyMedium),
-          if (onRetry != null) ...[
-            const SizedBox(height: 12),
-            FilledButton.tonalIcon(
-              onPressed: onRetry,
-              icon: const Icon(Icons.refresh),
-              label: Text(S.current.Edit_Retry),
-            ),
-          ],
+          if (onRetry != null || onAction != null) const SizedBox(height: 12),
+          Wrap(
+            alignment: WrapAlignment.center,
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              if (onAction != null && actionLabel != null)
+                FilledButton(onPressed: onAction, child: Text(actionLabel!)),
+              if (onRetry != null)
+                FilledButton.tonalIcon(
+                  onPressed: onRetry,
+                  icon: const Icon(Icons.refresh),
+                  label: Text(S.current.Edit_Retry),
+                ),
+            ],
+          ),
         ],
       ),
     );

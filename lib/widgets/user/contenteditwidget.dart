@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:mywatchlist/constants/constants.dart' show showToast;
+import 'package:mywatchlist/constants/constants.dart'
+    show AccountType, showToast;
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/services/api/MAL/mal_anime.dart';
 import 'package:mywatchlist/services/api/MAL/mal_connect.dart';
 import 'package:mywatchlist/user/preferences/preferences.dart';
 import 'package:mywatchlist/user/private_notes/private_notes_store.dart';
+import 'package:mywatchlist/utils/app_routes.dart';
 import 'package:mywatchlist/widgets/user/edit/edit_fields.dart';
 import 'package:mywatchlist/widgets/user/edit/edit_labels.dart';
 import 'package:mywatchlist/widgets/user/edit/edit_rules.dart';
@@ -375,22 +377,28 @@ class _ContentEditWidgetState extends State<ContentEditWidget> {
   Widget _body() {
     switch (_phase) {
       case _Phase.loading:
-        return const SizedBox(
-          key: ValueKey('edit-loading'),
-          height: 120,
-          child: Center(child: CircularProgressIndicator()),
-        );
+        return const EditSkeleton(key: ValueKey('edit-loading'));
       case _Phase.notEditable:
         return EditMessageView(
           key: const ValueKey('edit-not-editable'),
           icon: Icons.switch_account_outlined,
           message: S.current.Edit_Mal_Only,
+          actionLabel: S.current.Settings_Accounts_Manage,
+          onAction: () async {
+            await AppRoutes.openManageAccounts(context);
+            if (mounted) _load();
+          },
         );
       case _Phase.sessionExpired:
         return EditMessageView(
           key: const ValueKey('edit-session-expired'),
           icon: Icons.lock_clock_outlined,
           message: S.current.Edit_Session_Expired,
+          actionLabel: S.current.Shell_Sign_In_Again,
+          onAction: () async {
+            await AppRoutes.signInAgain(context, AccountType.myanimelist);
+            if (mounted) _load();
+          },
           onRetry: _load,
         );
       case _Phase.failed:
