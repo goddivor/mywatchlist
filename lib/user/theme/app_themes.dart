@@ -61,58 +61,54 @@ class AppThemes {
   /// Default font family
   static const String defaultFontFamily = 'Poppins';
 
-  /// True-black mode surfaces: black page, dark greys for the elevated levels so cards,
-  /// sheets and dialogs stay distinguishable from the page.
-  static const Color _black = Color(0xFF000000);
-  static const Color _blackLow = Color(0xFF0E0E0E);
-  static const Color _blackMid = Color(0xFF161616);
-  static const Color _blackHigh = Color(0xFF1F1F1F);
-  static const Color _blackHighest = Color(0xFF2A2A2A);
+  /// Black mode surfaces (DailyAL's black): a near-black page (`#0C0404`), then dark greys
+  /// for the elevated levels so cards, sheets and dialogs stay distinguishable from the page.
+  static const Color blackSurface = Color(0xFF0C0404);
+  static const Color _blackLow = Color(0xFF161212);
+  static const Color _blackMid = Color(0xFF1D1919);
+  static const Color _blackHigh = Color(0xFF252121);
+  static const Color _blackHighest = Color(0xFF2E2A2A);
 
-  /// The colour scheme of one accent: every role (primary, secondary, tertiary, containers,
-  /// surfaces, outline) belongs to the accent's family, with AA contrast for text.
+  /// The colour scheme of one accent, DailyAL's recipe: `ColorScheme.fromSeed` with
+  /// Material's default variant (tonalSpot), which gives soft, pastel accents (tone 40 on light
+  /// surfaces, tone 80 on dark ones, so accent text keeps 4.5:1) and surfaces tinted by the
+  /// accent.
   ///
-  /// - `fidelity` keeps the primary close to the chosen colour (a pink theme looks pink).
-  /// - The tertiary family is the accent's calmer tone (same hue), not Material's default
-  ///   hue rotation, so no foreign colour (teal on pink…) appears in chips, FABs or tabs.
-  /// - [AppColors.contrastLevel] makes accent text on surfaces readable (4.5:1).
+  /// The tertiary family is the accent's secondary tone (same hue, calmer) instead of
+  /// Material's default hue rotation, so no foreign colour (teal on pink…) appears in chips,
+  /// FABs or tabs.
   static ColorScheme colorScheme({
     required Color seedColor,
     required Brightness brightness,
     bool isBlack = false,
   }) {
-    final vivid = ColorScheme.fromSeed(
-      seedColor: seedColor,
-      brightness: brightness,
-      dynamicSchemeVariant: DynamicSchemeVariant.fidelity,
-      contrastLevel: AppColors.contrastLevel,
-    );
-    final calm = ColorScheme.fromSeed(
+    final base = ColorScheme.fromSeed(
       seedColor: seedColor,
       brightness: brightness,
       contrastLevel: AppColors.contrastLevel,
     );
-    final scheme = vivid.copyWith(
-      tertiary: calm.primary,
-      onTertiary: calm.onPrimary,
-      tertiaryContainer: calm.primaryContainer,
-      onTertiaryContainer: calm.onPrimaryContainer,
-      tertiaryFixed: calm.primaryFixed,
-      tertiaryFixedDim: calm.primaryFixedDim,
-      onTertiaryFixed: calm.onPrimaryFixed,
-      onTertiaryFixedVariant: calm.onPrimaryFixedVariant,
+    final scheme = base.copyWith(
+      tertiary: base.secondary,
+      onTertiary: base.onSecondary,
+      tertiaryContainer: base.secondaryContainer,
+      onTertiaryContainer: base.onSecondaryContainer,
+      tertiaryFixed: base.secondaryFixed,
+      tertiaryFixedDim: base.secondaryFixedDim,
+      onTertiaryFixed: base.onSecondaryFixed,
+      onTertiaryFixedVariant: base.onSecondaryFixedVariant,
     );
     if (!isBlack || brightness != Brightness.dark) return scheme;
+    const white = Color(0xFFFFFFFF);
     return scheme.copyWith(
-      surface: _black,
-      surfaceDim: _black,
+      surface: blackSurface,
+      surfaceDim: blackSurface,
       surfaceBright: _blackHighest,
-      surfaceContainerLowest: _black,
+      surfaceContainerLowest: blackSurface,
       surfaceContainerLow: _blackLow,
       surfaceContainer: _blackMid,
       surfaceContainerHigh: _blackHigh,
       surfaceContainerHighest: _blackHighest,
-      onSurface: const Color(0xFFFFFFFF),
+      onSurface: white,
       surfaceTint: Colors.transparent,
     );
   }
