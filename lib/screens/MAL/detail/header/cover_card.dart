@@ -1,10 +1,10 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:mywatchlist/constants/constants.dart'
     show TitleLang, loadingError, loadingInner;
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/screens/MAL/detail/detail_data.dart';
 import 'package:mywatchlist/screens/MAL/detail/header/title_lang_switch.dart';
+import 'package:mywatchlist/widgets/common/app_image.dart';
 import 'package:mywatchlist/widgets/common/custombutton.dart';
 import 'package:mywatchlist/widgets/common/image_preview.dart';
 
@@ -35,13 +35,11 @@ class DetailCoverCard extends StatelessWidget {
           InkWell(
             onTap: () => zoomInImageList(context, urls),
             borderRadius: BorderRadius.circular(6),
-            child: CachedNetworkImage(
-              imageUrl: urls.first,
-              // Decode at the displayed size, not the full picture.
-              memCacheHeight:
-                  (height * MediaQuery.devicePixelRatioOf(context)).round(),
-              placeholder: (context, url) => loadingInner(),
-              errorWidget: (context, url, error) => loadingError(),
+            child: AppImage(
+              url: urls.first,
+              height: height,
+              placeholder: (context) => loadingInner(),
+              errorWidget: (context) => loadingError(),
               imageBuilder: (context, imageProvider) => Ink(
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(6),

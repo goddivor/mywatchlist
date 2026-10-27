@@ -8,10 +8,9 @@
 library;
 
 import 'package:flutter/material.dart';
-import 'package:mywatchlist/constants/constants.dart' show gotoPage;
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/screens/MAL/detail/detail_data.dart';
-import 'package:mywatchlist/screens/search/general_search_screen.dart';
+import 'package:mywatchlist/utils/app_routes.dart';
 
 List<Widget> buildDetailActions(BuildContext context, DetailData data) {
   return [
@@ -25,17 +24,11 @@ List<Widget> buildDetailActions(BuildContext context, DetailData data) {
   ];
 }
 
-/// Opens the search screen on this category (DAL opens the general search).
+/// Opens the general search (as DAL), through the shared routes.
 Widget searchAction(BuildContext context, DetailData data) {
   return IconButton(
     tooltip: S.current.Search,
-    onPressed: () => gotoPage(
-      context: context,
-      newPage: GeneralSearchScreen(
-        category: data.category,
-        showBackButton: true,
-      ),
-    ),
+    onPressed: () => AppRoutes.openSearch(context),
     icon: const Icon(Icons.search),
   );
 }
