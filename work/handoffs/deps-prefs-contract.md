@@ -6,6 +6,9 @@
 - `l10n-pipeline` (Restore the localization pipeline (ARB sources, per-unit fragments, working language picker))
 
 ## Owns (may create or edit ONLY these)
+- `android/build.gradle`
+- `android/build.gradle.kts`
+- `docs/PERFORMANCE.md`
 - `pubspec.yaml`
 - `pubspec.lock`
 - `android/app/src/main/AndroidManifest.xml`
