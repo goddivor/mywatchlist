@@ -1,0 +1,8 @@
+{
+  "@@locale": "fr_FR",
+  "Language_Use_System": "Utiliser la langue du système",
+  "Language_Use_System_Desc": "Suit la langue de l’appareil. L’anglais est utilisé si l’application ne la prend pas en charge.",
+  "Language_Available": "Langues disponibles",
+  "Language_Intro_Desc": "Choisissez la langue de l’interface. Vous pourrez la modifier plus tard dans les paramètres.",
+  "Language_Changed_To": "Langue définie : {language}"
+}

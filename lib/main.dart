@@ -1,4 +1,4 @@
-// ignore_for_file: library_private_types_in_public_api, depend_on_referenced_packages
+// ignore_for_file: library_private_types_in_public_api
 
 import 'dart:async';
 
@@ -20,7 +20,8 @@ import 'package:mywatchlist/user/MAL/mal_home_preferences_bloc.dart';
 import 'package:mywatchlist/user/accounts/account_bloc.dart';
 import 'package:mywatchlist/user/accounts/provider/account_manager_singleton.dart';
 import 'package:mywatchlist/user/language/language_bloc.dart';
-import 'package:mywatchlist/user/language/language_event.dart';
+import 'package:mywatchlist/user/language/language_state.dart';
+import 'package:mywatchlist/user/language/supported_languages.dart';
 import 'package:mywatchlist/user/requests/requests_bloc.dart';
 import 'package:mywatchlist/user/theme/theme_bloc.dart';
 import 'package:mywatchlist/user/theme/theme_event.dart';
@@ -59,12 +60,13 @@ void main() async {
   // Initialize Blocs for state management
   final accountBloc = AccountBloc();
   final themeBloc = ThemeBloc(prefs: sharedPreferences);
+  // Starts from the saved language; its strings are loaded before the first frame.
   final languageBloc = LanguageBloc(prefs: sharedPreferences);
+  await languageBloc.applyCurrent();
 
   // Trigger initial loading of data in Blocs
   accountBloc.add(LoadAccountEvent());
   themeBloc.add(ThemeLoadStarted());
-  languageBloc.add(LanguageLoadStarted());
 
   // Update account singleton on account changes
   accountBloc.stream.listen((state) {
@@ -88,9 +90,10 @@ void main() async {
         ],
         child: MultiBlocProvider(
           providers: [
-            BlocProvider(create: (context) => AccountBloc()..add(LoadAccountEvent())),
-            BlocProvider(create: (context) => themeBloc),
-            BlocProvider(create: (context) => languageBloc),
+            // The instances created above: the AccountManagerSingleton listener watches this one.
+            BlocProvider.value(value: accountBloc),
+            BlocProvider.value(value: themeBloc),
+            BlocProvider.value(value: languageBloc),
             BlocProvider(
               create: (context) => RequestsBloc(
                 malScraper: malScraper,
@@ -188,19 +191,28 @@ class _MyWatchListAppState extends State<MyWatchListApp> {
 
   @override
   Widget build(BuildContext context) {
-    // Rebuild UI when theme changes
-    return BlocBuilder<ThemeBloc, ThemeState>(
+    // Rebuild UI when theme or language changes
+    return BlocConsumer<LanguageBloc, LanguageState>(
+      listenWhen: (previous, current) => previous != current,
+      // Many widgets read S.current (no inherited dependency): rebuild the whole tree once the
+      // new strings are loaded, keeping every route and its state.
+      listener: (context, _) =>
+          WidgetsBinding.instance.addPostFrameCallback((_) => _rebuildAll(context)),
+      builder: (context, languageState) => BlocBuilder<ThemeBloc, ThemeState>(
       builder: (context, themeState) {
         return MaterialApp(
           debugShowCheckedModeBanner: false,
           title: 'MyWatchList',
-          localizationsDelegates: [
+          localizationsDelegates: const [
             S.delegate,
             GlobalMaterialLocalizations.delegate,
             GlobalWidgetsLocalizations.delegate,
             GlobalCupertinoLocalizations.delegate,
           ],
-          locale: Locale.fromSubtags(languageCode: "en_US"),
+          // null = follow the device; Arabic switches the whole app to right-to-left.
+          locale: languageState.appLocale,
+          localeListResolutionCallback: (deviceLocales, supported) =>
+              localeFromCode(SupportedLanguages.resolveSystem(deviceLocales ?? const [])),
           supportedLocales: S.delegate.supportedLocales,
           theme: themeState.lightThemeData, // Light theme
           darkTheme: themeState.darkThemeData, // Dark theme
@@ -211,7 +223,18 @@ class _MyWatchListAppState extends State<MyWatchListApp> {
           },
         );
       },
+      ),
     );
+  }
+
+  static void _rebuildAll(BuildContext context) {
+    if (!context.mounted) return;
+    void rebuild(Element element) {
+      element.markNeedsBuild();
+      element.visitChildren(rebuild);
+    }
+
+    (context as Element).visitChildren(rebuild);
   }
 }
 

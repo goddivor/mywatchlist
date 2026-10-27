@@ -30,6 +30,9 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  # Material/Widgets/Cupertino translations and RTL for the S locales (main.dart).
+  flutter_localizations:
+    sdk: flutter
   shared_preferences: ^2.5.1
   smooth_page_indicator: ^1.2.0+3
   provider: ^6.1.2

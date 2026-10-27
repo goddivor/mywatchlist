@@ -11,6 +11,11 @@ Cap: 80 lines. Rewrite in place; history lives in git and `docs/DECISIONS.md`.
 - `tools/heavy.sh tools/verify.sh`: pub get, flutter analyze, flutter test, dart analyze mwl-api (machine-wide lock).
 - `gate-fix` made it green: the counter test is gone; `flutter test` runs offline smoke tests in about 10 s.
 - Test layout: `test/smoke/` + `test/helpers/` (`pumpInApp`, `htmlFixture`, `forbidNetwork`), then `test/units/<unit-id>/` per unit.
+- `verify.sh` first runs `tools/l10n/build.sh`: `S` is a build output of `lib/l10n/**` (see CLAUDE.md, Localization).
+
+## Localization (`l10n-pipeline`)
+- Base ARBs (DailyAL, 11 locales) frozen in `lib/l10n/`; each unit adds keys in `lib/l10n/units/<unit-id>/`; `tools/l10n/build.sh` merges, validates, generates `lib/generated/l10n.dart` + `intl/` (git-ignored).
+- Language picker fixed: 11 locales + "follow the device", applied immediately and at startup, Arabic RTL.
 
 ## Waves (from `node tools/mab/plan-waves.mjs`)
 1. gate-fix
@@ -29,9 +34,8 @@ Cap: 80 lines. Rewrite in place; history lives in git and `docs/DECISIONS.md`.
 ## Known big gaps (see inventory)
 - No user list / profile for any tracker; AniList/Kitsu/Simkl tabs are placeholders.
 - No notifications, calendar, bookmarks, relation graph, share, translation.
-- Language picker broken.
 - `auth-refresh` built (PR pending): token refresh/retry in `BaseUser`; call sites in `mal_api.dart`, `mal_user.dart`, Anilist/Kitsu/Simkl clients still use raw `http` and must move to `MalConnect.auth*` / `sendAuthenticated` (see PR findings).
 
 ## Next
 - Board: GitHub Project goddivor #8 "MyWatchList — Roadmap", 38 unit issues synced.
-- Wave 1 (`gate-fix`) in review; launch wave 2 once it merges.
+- Wave 2 in progress (`l10n-pipeline` in review). After it merges, every worktree runs `tools/heavy.sh tools/l10n/build.sh` once (generated files leave git).

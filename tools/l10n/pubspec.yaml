@@ -1,0 +1,13 @@
+name: mwl_l10n_tool
+description: Merges MyWatchList ARB sources (base + per-unit fragments) and generates the S class.
+publish_to: 'none'
+
+# A separate package on purpose: intl_utils (and its analyzer/dart_style pins) never enter the
+# app's dependency graph. Run it through tools/l10n/build.sh, never directly.
+environment:
+  sdk: ^3.6.1
+
+dependencies:
+  # Same generator as DailyAL (its pubspec.lock pins intl_utils 2.8.13).
+  intl_utils: ^2.8.13
+  path: ^1.9.0
