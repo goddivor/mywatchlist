@@ -18,8 +18,6 @@ import 'package:mywatchlist/widgets/MAL/home/animegridcard.dart';
 import 'package:mywatchlist/widgets/common/select/select.dart' show SelectOption, labelOf;
 import 'package:mywatchlist/widgets/MAL/search/filtermodal.dart';
 
-export 'package:mywatchlist/screens/search/search_filters.dart' show SearchCategory, SearchFilters;
-export 'package:mywatchlist/widgets/MAL/search/filtermodal.dart' show FilterOption, FilterType;
 part 'search_active_filters.dart';
 part 'search_bar_part.dart';
 part 'search_logic.dart';

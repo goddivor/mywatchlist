@@ -1,7 +1,6 @@
 // ignore_for_file: deprecated_member_use, unnecessary_null_comparison
 
 import 'package:flutter/material.dart';
-import 'package:mywatchlist/constants/constants.dart';
 import 'package:mywatchlist/widgets/common/custombutton.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 
