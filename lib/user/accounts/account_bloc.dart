@@ -6,6 +6,7 @@ import 'package:mywatchlist/user/accounts/account_selection.dart';
 import 'package:mywatchlist/user/accounts/account_status.dart';
 import 'package:mywatchlist/user/accounts/models/account.dart';
 import 'package:mywatchlist/user/accounts/provider/account_manager_singleton.dart';
+import 'package:mywatchlist/user/list_cache/list_status_cache.dart';
 import 'package:mywatchlist/user/user_manager.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -83,9 +84,12 @@ class AccountBloc extends Bloc<AccountEvent, AccountState> {
   static const String selectedKey = 'selected_account_type';
 
   final UserManager _users;
+  final ListStatusCache? _listCache;
 
-  AccountBloc({UserManager? users})
+  /// [listCache] defaults to [ListStatusCache.instance] (read when needed).
+  AccountBloc({UserManager? users, ListStatusCache? listCache})
       : _users = users ?? UserManager.instance,
+        _listCache = listCache,
         super(AccountInitial()) {
     on<LoadAccountEvent>(_onLoadAccount);
     on<ChangeAccountEvent>(_onChangeAccount);
@@ -166,8 +170,13 @@ class AccountBloc extends Bloc<AccountEvent, AccountState> {
     if (selected != current) await _persist(selected);
   }
 
+  ListStatusCache get _cache => _listCache ?? ListStatusCache.instance;
+
+  /// A signed-out tracker: its list status cache goes too, so no card keeps the
+  /// previous account's badges (#97).
   Future<void> _onRemoveAccount(
       RemoveAccountEvent event, Emitter<AccountState> emit) async {
+    final clearing = _cache.clear(tracker: event.accountTypeToRemove);
     final current = _selected;
     final selected = resolveSelection(
       current: current == event.accountTypeToRemove ? AccountType.none : current,
@@ -182,11 +191,14 @@ class AccountBloc extends Bloc<AccountEvent, AccountState> {
     );
     _publish(emit, selected);
     if (selected != current) await _persist(selected);
+    await clearing;
   }
 
   Future<void> _onLogout(LogoutEvent event, Emitter<AccountState> emit) async {
+    final clearing = _cache.clear();
     _publish(emit, AccountType.none);
     await _persist(AccountType.none);
+    await clearing;
   }
 
   /// Emits the state for [selected] and pushes it to the other holders of the selection
