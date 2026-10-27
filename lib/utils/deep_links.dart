@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
 import 'package:mywatchlist/enums.dart' show SeasonType;
-import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/main.dart' show appNavigatorKey;
 import 'package:mywatchlist/screens/MAL/character_screen.dart';
 import 'package:mywatchlist/screens/MAL/contentdetailedscreen.dart';
@@ -18,7 +17,6 @@ import 'package:mywatchlist/services/api/MAL/models/club/club_html.dart';
 import 'package:mywatchlist/services/api/MAL/models/forum/forum_topics_data.dart';
 import 'package:mywatchlist/utils/app_routes.dart';
 import 'package:mywatchlist/utils/web_launcher.dart';
-import 'package:mywatchlist/constants/constants.dart' show showToast;
 
 /// Opens myanimelist.net links inside the app.
 ///
@@ -27,7 +25,8 @@ import 'package:mywatchlist/constants/constants.dart' show showToast;
 ///   app (synopsis, forum post, review...) opens its screen directly, without the "leave the
 ///   app?" dialog;
 /// - listens to links the system hands to the app (`https://myanimelist.net/...` through the
-///   Android intent filters) and routes them the same way.
+///   Android intent filters) and routes them the same way; a link with no in-app screen opens in
+///   the browser tab.
 ///
 /// [screenForLink] is the pure mapping from a parsed link to a screen.
 abstract final class DeepLinks {
@@ -81,12 +80,15 @@ abstract final class DeepLinks {
     _lastHandled = uri;
     _lastHandledAt = now;
     final screen = screenForLink(link);
-    final context = await _navigatorContext();
-    if (context == null) return;
     if (screen == null) {
-      showToast('${S.current.Couldn_Launch} $uri');
+      // No in-app page (forum home, stacks, rankings...): the page opens in the browser tab, which
+      // does not go through the intent filters, so it cannot bounce back to the app.
+      final context = appNavigatorKey.currentContext;
+      await launchWebView(uri.toString(), context: context != null && context.mounted ? context : null);
       return;
     }
+    final context = await _navigatorContext();
+    if (context == null) return;
     await AppRoutes.push<void>(context, screen);
   }
 
