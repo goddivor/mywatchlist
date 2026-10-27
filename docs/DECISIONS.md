@@ -180,3 +180,4 @@ Append-only, one line per decision: `- YYYY-MM-DD [unit] decision — why`. Earl
 - 2026-10-27 [orchestrator] Edge-to-edge stays on for every Android version (Android 15+ forces it anyway); the checker watches for content under the navigation bar.
 - 2026-10-27 [owner] Accent tone: DailyAL's pastel (ColorScheme.fromSeed default variant), not the vivid recipe; list status colours = DailyAL's (green watching, blue completed, orange on hold, red dropped, brown plan), same hues, a darker shade only where text would be unreadable.
 - 2026-10-27 [owner] The 56 dp circular cast/staff rows in the detail page are fine.
+- 2026-10-27 [orchestrator] Every merge and every push to dev goes through tools/.mab/serial.sh (one flock queue): two background jobs raced (a push during the #128 gate made #128 conflict).
