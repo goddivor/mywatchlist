@@ -1,5 +1,5 @@
 import 'package:flutter/foundation.dart';
-import 'package:http/http.dart' as http;
+import 'package:mywatchlist/services/api/Jikan/jikan_client.dart';
 import 'dart:convert';
 import 'package:mywatchlist/constants/constants.dart';
 import 'package:mywatchlist/services/api/Jikan/jikan_anime.dart';
@@ -219,8 +219,8 @@ class JikanApi {
   Future<List<Anime>> getSeasonNow(
       {String filter = 'tv', int limit = 25}) async {
     const String baseUrl = Constants.jikanSeasonGetNow;
-    final response =
-        await http.get(Uri.parse('$baseUrl?filter=$filter&limit=$limit'));
+    final response = await JikanClient.instance
+        .get(Uri.parse('$baseUrl?filter=$filter&limit=$limit'));
 
     if (response.statusCode == 200) {
       var data = json.decode(response.body)['data'] as List<dynamic>;
@@ -233,8 +233,8 @@ class JikanApi {
   Future<List<Anime>> getSeasonUpcoming(
       {String filter = 'tv', int limit = 25}) async {
     const String baseUrl = Constants.jikanSeasonUpcoming;
-    final response =
-        await http.get(Uri.parse('$baseUrl?filter=$filter&limit=$limit'));
+    final response = await JikanClient.instance
+        .get(Uri.parse('$baseUrl?filter=$filter&limit=$limit'));
 
     if (response.statusCode == 200) {
       var data = json.decode(response.body)['data'] as List<dynamic>;
@@ -247,7 +247,7 @@ class JikanApi {
   Future<List<Anime>> getTopAnime(
       {String type = 'tv', required String filter, int limit = 25}) async {
     const String baseUrl = Constants.jikanTopAnime;
-    final response = await http
+    final response = await JikanClient.instance
         .get(Uri.parse('$baseUrl?type=$type&filter=$filter&limit=$limit'));
 
     if (response.statusCode == 200) {
@@ -263,7 +263,7 @@ class JikanApi {
       String filter = 'favorite',
       int limit = 25}) async {
     const String baseUrl = Constants.jikanTopManga;
-    final response = await http
+    final response = await JikanClient.instance
         .get(Uri.parse('$baseUrl?type=$type&filter=$filter&limit=$limit'));
 
     if (response.statusCode == 200) {
@@ -275,7 +275,8 @@ class JikanApi {
   }
 
   Future<JikanAnime> getAnimeFullById(int malId) async {
-    final response = await http.get(Uri.parse('$_baseUrl/$malId/full'));
+    final response =
+        await JikanClient.instance.get(Uri.parse('$_baseUrl/$malId/full'));
 
     if (response.statusCode == 200) {
       var data = json.decode(response.body)['data'] as Map<String, dynamic>;
@@ -287,7 +288,7 @@ class JikanApi {
 
   Future<List<AnimeCharacter>> getAnimeCharacters(int animeId) async {
     final url = Uri.parse('$_baseUrl/$animeId/characters');
-    final response = await http.get(url);
+    final response = await JikanClient.instance.get(url);
 
     if (response.statusCode == 200) {
       final jsonData = jsonDecode(response.body);
@@ -300,7 +301,7 @@ class JikanApi {
 
   Future<List<AnimeStaff>> getAnimeStaff(int animeId) async {
     final url = Uri.parse('$_baseUrl/$animeId/staff');
-    final response = await http.get(url);
+    final response = await JikanClient.instance.get(url);
 
     if (response.statusCode == 200) {
       final jsonData = jsonDecode(response.body);
@@ -314,7 +315,7 @@ class JikanApi {
   Future<AnimeEpisodesResponse> getAnimeEpisodes(int animeId,
       {int page = 1}) async {
     final url = Uri.parse('$_baseUrl/$animeId/episodes?page=$page');
-    final response = await http.get(url);
+    final response = await JikanClient.instance.get(url);
 
     if (response.statusCode == 200) {
       final jsonData = jsonDecode(response.body);
@@ -324,10 +325,11 @@ class JikanApi {
     }
   }
 
-  Future<AnimeNewsResponse> getAnimeNews(int animeId, {int page = 1, String category = "anime"}) async {
+  Future<AnimeNewsResponse> getAnimeNews(int animeId,
+      {int page = 1, String category = "anime"}) async {
     final base = category == "manga" ? '$_jikanv4/manga' : _baseUrl;
     final url = Uri.parse('$base/$animeId/news?page=$page');
-    final response = await http.get(url);
+    final response = await JikanClient.instance.get(url);
 
     if (response.statusCode == 200) {
       final jsonData = jsonDecode(response.body);
@@ -337,12 +339,12 @@ class JikanApi {
     }
   }
 
-  Future<AnimeForumResponse> getAnimeForum(
-      int animeId, AnimeForumFilter filter, {String category = "anime"}) async {
+  Future<AnimeForumResponse> getAnimeForum(int animeId, AnimeForumFilter filter,
+      {String category = "anime"}) async {
     final filterValue = getAnimeForumFilterValue(filter);
     final base = category == "manga" ? '$_jikanv4/manga' : _baseUrl;
     final url = Uri.parse('$base/$animeId/forum?filter=$filterValue');
-    final response = await http.get(url);
+    final response = await JikanClient.instance.get(url);
 
     if (response.statusCode == 200) {
       final jsonData = jsonDecode(response.body);
@@ -354,7 +356,7 @@ class JikanApi {
 
   Future<AnimeVideos> getAnimeVideos(int animeId) async {
     final url = Uri.parse('$_baseUrl/$animeId/videos');
-    final response = await http.get(url);
+    final response = await JikanClient.instance.get(url);
 
     if (response.statusCode == 200) {
       final jsonData = jsonDecode(response.body);
@@ -365,10 +367,11 @@ class JikanApi {
     }
   }
 
-  Future<AnimePicturesResponse> getAnimePictures(int animeId, {String category = "anime"}) async {
+  Future<AnimePicturesResponse> getAnimePictures(int animeId,
+      {String category = "anime"}) async {
     final base = category == "manga" ? '$_jikanv4/manga' : _baseUrl;
     final url = Uri.parse('$base/$animeId/pictures');
-    final response = await http.get(url);
+    final response = await JikanClient.instance.get(url);
 
     if (response.statusCode == 200) {
       final jsonData = jsonDecode(response.body);
@@ -378,10 +381,11 @@ class JikanApi {
     }
   }
 
-  static Future<AnimeStatistics> getAnimeStatistics(int animeId, {String category = "anime"}) async {
+  static Future<AnimeStatistics> getAnimeStatistics(int animeId,
+      {String category = "anime"}) async {
     final base = category == "manga" ? '$_jikanv4/manga' : _baseUrl;
     final url = Uri.parse('$base/$animeId/statistics');
-    final response = await http.get(url);
+    final response = await JikanClient.instance.get(url);
 
     if (response.statusCode == 200) {
       final jsonData = jsonDecode(response.body);
@@ -395,7 +399,7 @@ class JikanApi {
       {int page = 1, String category = "anime"}) async {
     final base = category == "manga" ? '$_jikanv4/manga' : _baseUrl;
     final url = Uri.parse('$base/$animeId/userupdates?page=$page');
-    final response = await http.get(url);
+    final response = await JikanClient.instance.get(url);
 
     if (response.statusCode == 200) {
       final jsonData = jsonDecode(response.body);
@@ -406,7 +410,10 @@ class JikanApi {
   }
 
   Future<AnimeReviewsResponse> getAnimeReviews(int animeId,
-      {int page = 1, bool? preliminary, bool? spoilers, String category = "anime"}) async {
+      {int page = 1,
+      bool? preliminary,
+      bool? spoilers,
+      String category = "anime"}) async {
     final queryParameters = {
       'page': page.toString(),
       if (preliminary != null) 'preliminary': preliminary.toString(),
@@ -416,7 +423,7 @@ class JikanApi {
     final base = category == "manga" ? '$_jikanv4/manga' : _baseUrl;
     final url = Uri.parse('$base/$animeId/reviews')
         .replace(queryParameters: queryParameters);
-    final response = await http.get(url);
+    final response = await JikanClient.instance.get(url);
 
     if (response.statusCode == 200) {
       final jsonData = jsonDecode(response.body);
@@ -470,7 +477,7 @@ class JikanApi {
     };
 
     final url = Uri.parse(_baseUrl).replace(queryParameters: queryParameters);
-    final response = await http.get(url);
+    final response = await JikanClient.instance.get(url);
 
     if (response.statusCode == 200) {
       final jsonData = jsonDecode(response.body);
@@ -490,7 +497,7 @@ class JikanApi {
 
     final url = Uri.parse('$_jikanv4/genres/${category.value}')
         .replace(queryParameters: queryParameters);
-    final response = await http.get(url);
+    final response = await JikanClient.instance.get(url);
 
     if (response.statusCode == 200) {
       final jsonData = jsonDecode(response.body);
@@ -502,7 +509,7 @@ class JikanApi {
 
   Future<CharacterFull> getCharacterFullById(int id) async {
     final url = Uri.parse('$_jikanv4/characters/$id/full');
-    final response = await http.get(url);
+    final response = await JikanClient.instance.get(url);
 
     if (response.statusCode == 200) {
       final jsonData = jsonDecode(response.body);
@@ -514,7 +521,7 @@ class JikanApi {
 
   Future<PersonFull> getPersonFullById(int id) async {
     final url = Uri.parse('$_jikanv4/people/$id/full');
-    final response = await http.get(url);
+    final response = await JikanClient.instance.get(url);
 
     if (response.statusCode == 200) {
       final jsonData = jsonDecode(response.body);
@@ -526,7 +533,7 @@ class JikanApi {
 
   Future<ProducerFull> getProducerFullById(int id) async {
     final url = Uri.parse('$_jikanv4/producers/$id/full');
-    final response = await http.get(url);
+    final response = await JikanClient.instance.get(url);
 
     if (response.statusCode == 200) {
       final jsonData = jsonDecode(response.body);
@@ -555,7 +562,7 @@ class JikanApi {
 
     final url = Uri.parse('$_jikanv4/producers')
         .replace(queryParameters: queryParameters);
-    final response = await http.get(url);
+    final response = await JikanClient.instance.get(url);
 
     if (response.statusCode == 200) {
       final jsonData = jsonDecode(response.body);
@@ -610,7 +617,7 @@ class JikanApi {
 
     final url =
         Uri.parse('$_jikanv4/manga').replace(queryParameters: queryParameters);
-    final response = await http.get(url);
+    final response = await JikanClient.instance.get(url);
 
     if (response.statusCode == 200) {
       final jsonData = jsonDecode(response.body);
@@ -624,7 +631,7 @@ class JikanApi {
 
   Future<JikanAnime> getMangaFullById(int id) async {
     final url = Uri.parse('$_jikanv4/manga/$id/full');
-    final response = await http.get(url);
+    final response = await JikanClient.instance.get(url);
 
     if (response.statusCode == 200) {
       final jsonData = jsonDecode(response.body);
@@ -636,7 +643,7 @@ class JikanApi {
 
   Future<List<Map<String, dynamic>>> getMangaCharacters(int id) async {
     final url = Uri.parse('$_jikanv4/manga/$id/characters');
-    final response = await http.get(url);
+    final response = await JikanClient.instance.get(url);
 
     if (response.statusCode == 200) {
       final jsonData = jsonDecode(response.body);
@@ -660,8 +667,7 @@ class JikanApi {
 
   /// Use [getAnimeReviews] with `category: "manga"` instead.
   @Deprecated('Use getAnimeReviews(id, category: "manga") instead')
-  Future<AnimeReviewsResponse> getMangaReviews(int id,
-      {int page = 1}) async {
+  Future<AnimeReviewsResponse> getMangaReviews(int id, {int page = 1}) async {
     return getAnimeReviews(id, page: page, category: "manga");
   }
 
@@ -677,7 +683,7 @@ class JikanApi {
 
     final url = Uri.parse('$_jikanv4/seasons/$year/$season')
         .replace(queryParameters: queryParameters);
-    final response = await http.get(url);
+    final response = await JikanClient.instance.get(url);
 
     if (response.statusCode == 200) {
       final jsonData = jsonDecode(response.body);
@@ -691,7 +697,7 @@ class JikanApi {
 
   Future<Map<String, dynamic>> getSeasonsList() async {
     final url = Uri.parse('$_jikanv4/seasons');
-    final response = await http.get(url);
+    final response = await JikanClient.instance.get(url);
 
     if (response.statusCode == 200) {
       final jsonData = jsonDecode(response.body);
@@ -711,7 +717,7 @@ class JikanApi {
 
     final url = Uri.parse('$_jikanv4/schedules')
         .replace(queryParameters: queryParameters);
-    final response = await http.get(url);
+    final response = await JikanClient.instance.get(url);
 
     if (response.statusCode == 200) {
       final jsonData = jsonDecode(response.body);
@@ -744,7 +750,7 @@ class JikanApi {
 
     final url = Uri.parse('$_jikanv4/characters')
         .replace(queryParameters: queryParameters);
-    final response = await http.get(url);
+    final response = await JikanClient.instance.get(url);
 
     if (response.statusCode == 200) {
       final jsonData = jsonDecode(response.body);
@@ -773,9 +779,9 @@ class JikanApi {
       if (letter != null) 'letter': letter,
     };
 
-    final url = Uri.parse('$_jikanv4/people')
-        .replace(queryParameters: queryParameters);
-    final response = await http.get(url);
+    final url =
+        Uri.parse('$_jikanv4/people').replace(queryParameters: queryParameters);
+    final response = await JikanClient.instance.get(url);
 
     if (response.statusCode == 200) {
       final jsonData = jsonDecode(response.body);
@@ -791,7 +797,7 @@ class JikanApi {
 
   Future<JikanAnime> getRandomAnime() async {
     final url = Uri.parse('$_jikanv4/random/anime');
-    final response = await http.get(url);
+    final response = await JikanClient.instance.get(url);
 
     if (response.statusCode == 200) {
       final jsonData = jsonDecode(response.body);
@@ -803,7 +809,7 @@ class JikanApi {
 
   Future<JikanAnime> getRandomManga() async {
     final url = Uri.parse('$_jikanv4/random/manga');
-    final response = await http.get(url);
+    final response = await JikanClient.instance.get(url);
 
     if (response.statusCode == 200) {
       final jsonData = jsonDecode(response.body);
@@ -817,7 +823,7 @@ class JikanApi {
 
   Future<Map<String, dynamic>> getUserFullProfile(String username) async {
     final url = Uri.parse('$_jikanv4/users/$username/full');
-    final response = await http.get(url);
+    final response = await JikanClient.instance.get(url);
 
     if (response.statusCode == 200) {
       final jsonData = jsonDecode(response.body);
