@@ -106,6 +106,28 @@
                 <!-- Simkl OAuth callback -->
                 <data android:scheme="com.teen.mywatchlist" android:host="simkl-callback" />
             </intent-filter>
+            <!-- myanimelist.net pages open in the app (lib/utils/deep_links.dart). Not verified:
+                 MyAnimeList serves no assetlinks for this app, so on Android 12+ the user enables
+                 "Open by default" once. -->
+            <intent-filter android:autoVerify="false">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" />
+                <data android:host="myanimelist.net" />
+                <data android:host="www.myanimelist.net" />
+                <data android:host="m.myanimelist.net" />
+                <data android:pathPrefix="/anime" />
+                <data android:pathPrefix="/manga" />
+                <data android:pathPrefix="/character" />
+                <data android:pathPrefix="/people" />
+                <data android:pathPrefix="/profile" />
+                <data android:pathPrefix="/forum" />
+                <data android:pathPrefix="/clubs.php" />
+                <data android:pathPrefix="/featured" />
+                <data android:pathPrefix="/news" />
+            </intent-filter>
+
             <!-- Deep linking -->
             <meta-data
                 android:name="flutter_deeplinking_enabled"

@@ -23,6 +23,7 @@ import 'package:app_links/app_links.dart';
 import 'package:mywatchlist/user/MAL/mal_home_preferences_bloc.dart';
 import 'package:mywatchlist/user/list_cache/list_status_cache.dart';
 import 'package:mywatchlist/utils/app_routes.dart';
+import 'package:mywatchlist/utils/deep_links.dart';
 import 'package:mywatchlist/user/accounts/account_bloc.dart';
 import 'package:mywatchlist/user/accounts/provider/account_manager_singleton.dart';
 import 'package:mywatchlist/user/language/language_bloc.dart';
@@ -176,6 +177,8 @@ class _MyWatchListAppState extends State<MyWatchListApp> {
       // Refresh the airing reminders (at most once a day) once the first frame is out of the way.
       Future<void>.delayed(const Duration(seconds: 5), NotificationService.instance.refreshIfDue);
     });
+    // myanimelist.net links (tapped in the app or handed by the system) open their screen.
+    unawaited(DeepLinks.start());
     // Listen for deep links (OAuth callbacks from multiple trackers)
     final appLinks = AppLinks();
     _sub = appLinks.uriLinkStream.listen((Uri? uri) {
