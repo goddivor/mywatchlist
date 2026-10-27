@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:mywatchlist/generated/l10n.dart';
 
+/// The title row of a home section. With [onTap] the whole row opens the full list ("View all").
 class SectionHeader extends StatelessWidget {
   final String title;
   final VoidCallback? onTap;
@@ -12,24 +14,37 @@ class SectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
+    final theme = Theme.of(context);
+    final row = Padding(
       padding: const EdgeInsets.symmetric(horizontal: 15.0, vertical: 8.0),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Expanded(
-            child: Text(
-              title,
-              style: Theme.of(context).textTheme.titleLarge,
+            child: Semantics(
+              header: true,
+              child: Text(
+                title,
+                style: theme.textTheme.titleLarge,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
           ),
           if (onTap != null)
-            IconButton(
-              icon: const Icon(Icons.arrow_forward),
-              onPressed: onTap,
+            Padding(
+              padding: const EdgeInsetsDirectional.only(start: 8),
+              child: Icon(
+                Icons.arrow_forward_rounded,
+                size: 22,
+                color: theme.colorScheme.onSurfaceVariant,
+                semanticLabel: S.current.Hw_View_All,
+                textDirection: Directionality.of(context),
+              ),
             ),
         ],
       ),
     );
+    if (onTap == null) return row;
+    return InkWell(onTap: onTap, child: row);
   }
 }

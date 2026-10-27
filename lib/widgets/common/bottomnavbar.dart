@@ -35,11 +35,11 @@ class BottomNavBar extends StatefulWidget {
 
   /// Accessible names of the tabs, in the same order.
   static List<String> labels() => [
-        S.current.Home,
-        S.current.Theme_Nav_Forum,
-        S.current.Theme_Nav_List,
-        S.current.Profile,
-        S.current.Explore,
+        S.current.Hw_Tab_Home,
+        S.current.Hw_Tab_Forum,
+        S.current.Hw_Tab_List,
+        S.current.Hw_Tab_Profile,
+        S.current.Hw_Tab_Explore,
       ];
 
   @override
@@ -48,6 +48,17 @@ class BottomNavBar extends StatefulWidget {
 
 class _BottomNavBarState extends State<BottomNavBar> {
   late int pageIndex = widget.startIndex ?? 0;
+
+  /// The shell can change tab from code (Back to home, a notification, the startup page):
+  /// follow [BottomNavBar.startIndex] when it changes.
+  @override
+  void didUpdateWidget(covariant BottomNavBar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final index = widget.startIndex;
+    if (index != null && index != oldWidget.startIndex && index != pageIndex) {
+      pageIndex = index;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
