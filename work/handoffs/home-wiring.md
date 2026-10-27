@@ -1,0 +1,54 @@
+# Handoff — `home-wiring`: Home: working chips, bookmarks/calendar buttons, maintenance dialog, user-list and forum sections
+
+**Kind** screen · **Priority** P1 · **Group** discovery · **Model** sonnet
+
+## Needs done first
+- `bookmarks` (Bookmarks: store, screen, add/remove)
+- `calendar` (Anime calendar, weekly schedule, .ics export, add to device calendar)
+- `explore-seasonal` (Explore page and seasonal screen)
+- `user-list-mal` (MAL user anime/manga list (status tabs, sort/filter, view modes, status cache))
+
+## Owns (may create or edit ONLY these)
+- `lib/pages/MAL/mal_home_page.dart`
+- `lib/widgets/MAL/home/homeappbar.dart`
+- `lib/widgets/MAL/home/accordion.dart`
+- `lib/widgets/MAL/home/section_header.dart`
+- `lib/widgets/MAL/home/news_widget.dart`
+- `lib/widgets/MAL/home/show_news.dart`
+- `lib/widgets/home/**`
+- `lib/user/MAL/**`
+- `lib/screens/settings/mal_home_settings.dart`
+- `lib/l10n/units/home-wiring/**`
+- `test/units/home-wiring/**`
+
+Plus `PROJECT-STATE.md` (rewrite in place, within its cap) and `docs/DECISIONS.md` (append one line per decision). Anything else you need is a FINDING to report, never an edit.
+
+## Goal
+- Top chips (Categories, Genres, Top anime/manga, Top airing, Popular) are all `() {}` (mal_home_page.dart:44-52) → open the explore/ranking screens; bookmarks and calendar buttons `() {}` (:222-224) → app_routes.
+- MAL under-maintenance dialog (API exists mal_api.dart:1067).
+- Home sections: user-list section, forum section, custom items (forum boards, user list status, season/year).
+- First-run feature showcase (tile size, preferred title, startup page).
+
+## Known bugs to fix in scope
+- dead chips
+- dead bookmarks/calendar buttons
+
+## DailyAL reference (read, never copy blindly)
+Checkout: `/home/thinkpad/.cache/mwl-mab/dailyal-108` (DAL `upstream/2026.2.6+108`, read-only).
+- `lib/pages/homepage.dart`
+- `lib/widgets/homeappbar.dart`
+- `lib/widgets/home/feature_first.dart`
+- `lib/util/homepageutils.dart`
+- `lib/pages/settings/homepagesettings.dart`
+
+Port the behaviour into MWL's architecture: BLoC for app-wide state, Provider/ChangeNotifier user singletons, MWL's service layer (`lib/services/api/**`), `S` strings via your l10n fragment, multi-tracker awareness (never assume the active account is MAL without checking).
+
+## Inventory
+`work/inventory/*.md` lists, per feature, what MWL has and the bugs found on 2026-10-27.
+
+**UI directive (owner's rule).** MWL's current UI is NOT the reference: the owner wrote it early and calls parts of it badly done. For every screen you touch, read the DAL equivalent's UI code, keep whichever is better (often DAL's), and improve it (hierarchy, spacing, empty/loading/error states, no dead buttons). Stay consistent with the theme system in `lib/user/theme/` (accent color, fonts, dark/black modes). Describe the before/after in the PR body.
+
+## Definition of Done
+- No dead button on the MAL home on the emulator.
+- `tools/heavy.sh flutter analyze` clean (the gate runs the full `tools/heavy.sh tools/verify.sh`).
+- PR against `dev` with `Closes #<issue>`, gate tail, decisions, findings.

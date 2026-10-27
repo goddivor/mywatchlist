@@ -1,0 +1,55 @@
+# Handoff — `user-profile-mal`: MAL user profile, stats charts and user pop-up
+
+**Kind** screen · **Priority** P1 · **Group** user · **Model** sonnet
+
+## Needs done first
+- `app-shell` (App shell seams: settings hub, sidebar, home shell, startup)
+- `shared-kit` (Shared UI kit: share builder, app bar menu, select widgets, score reveal, web launcher)
+- `backend-parsers` (mwl-api: port DAL's missing routes and HTML parsers)
+
+## Owns (may create or edit ONLY these)
+- `lib/pages/MAL/mal_user_profile_page.dart`
+- `lib/screens/user_profile/**`
+- `lib/widgets/user/profile/**`
+- `lib/widgets/charts/**`
+- `lib/services/api/MAL/scrapper/user_anime_statistics.dart`
+- `lib/services/api/MAL/scrapper/user_friends.dart`
+- `lib/services/api/MAL/scrapper/user_history.dart`
+- `lib/services/api/MAL/user_anime_statistics.dart`
+- `lib/services/api/MAL/mal_user_prof.dart`
+- `lib/cache/cached_user_profile.dart`
+- `lib/l10n/units/user-profile-mal/**`
+- `test/units/user-profile-mal/**`
+
+Plus `PROJECT-STATE.md` (rewrite in place, within its cap) and `docs/DECISIONS.md` (append one line per decision). Anything else you need is a FINDING to report, never an edit.
+
+## Goal
+- Own profile and any other user's profile: header, about (users/about parser from backend-parsers), favorites, friends, clubs, history, stats with charts (fl_chart; colors from the stats chart pref), insights.
+- User pop-up sheet (profile header, set/remove profile background, report user).
+- Make `openUserProfile` from `lib/utils/app_routes.dart` land here — that file is app-shell's: if its stub cannot reach your screen without an edit, report it as a finding (the orchestrator queues the one-line change).
+
+## Known bugs to fix in scope
+- none
+
+## DailyAL reference (read, never copy blindly)
+Checkout: `/home/thinkpad/.cache/mwl-mab/dailyal-108` (DAL `upstream/2026.2.6+108`, read-only).
+- `lib/screens/user_profile.dart`
+- `lib/widgets/user/user_header.dart`
+- `lib/widgets/user/stats_screen.dart`
+- `lib/user/charts/`
+- `lib/widgets/barchart.dart`
+- `lib/pages/userpop.dart`
+- `lib/cache/cacheduserprof.dart`
+- `lib/util/insight_service.dart`
+
+Port the behaviour into MWL's architecture: BLoC for app-wide state, Provider/ChangeNotifier user singletons, MWL's service layer (`lib/services/api/**`), `S` strings via your l10n fragment, multi-tracker awareness (never assume the active account is MAL without checking).
+
+## Inventory
+`work/inventory/*.md` lists, per feature, what MWL has and the bugs found on 2026-10-27.
+
+**UI directive (owner's rule).** MWL's current UI is NOT the reference: the owner wrote it early and calls parts of it badly done. For every screen you touch, read the DAL equivalent's UI code, keep whichever is better (often DAL's), and improve it (hierarchy, spacing, empty/loading/error states, no dead buttons). Stay consistent with the theme system in `lib/user/theme/` (accent color, fonts, dark/black modes). Describe the before/after in the PR body.
+
+## Definition of Done
+- Owner's profile and a friend's profile render on the emulator with stats.
+- `tools/heavy.sh flutter analyze` clean (the gate runs the full `tools/heavy.sh tools/verify.sh`).
+- PR against `dev` with `Closes #<issue>`, gate tail, decisions, findings.

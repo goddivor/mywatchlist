@@ -1,0 +1,13 @@
+# Decisions
+
+Append-only, one line per decision: `- YYYY-MM-DD [unit] decision — why`. Earlier lines bind later units.
+
+- 2026-10-27 [orchestrator] Port reference is DailyAL `upstream/2026.2.6+108` (JICA98, 2026-05-02), not the older local `psycho` branch — it holds 45 more commits (AniList sync, hide scores, status cache).
+- 2026-10-27 [orchestrator] Port behaviour, never copy code: BLoC for app-wide state, Provider/ChangeNotifier user singletons, MWL service layer, multi-tracker awareness — project convention, no other state management.
+- 2026-10-27 [orchestrator] MWL's current UI is not the reference: each screen takes the better of DAL and MWL and improves it; MWL-only flows (account picker) are redesigned too — owner's rule.
+- 2026-10-27 [orchestrator] Builders never run `flutter build` nor touch the emulator; heavy commands go through `tools/heavy.sh` (one machine-wide flock); APK build and emulator checks belong to the checker — owner's rule on machine load.
+- 2026-10-27 [orchestrator] Strings are added per unit in `lib/l10n/units/<unit-id>/` (shape fixed by `l10n-pipeline`) so parallel units never share a string file.
+- 2026-10-27 [orchestrator] New dependencies and new preferences are shared shapes owned by `deps-prefs-contract`; a unit needing another one reports a finding.
+- 2026-10-27 [orchestrator] Cross-unit navigation goes through `lib/utils/app_routes.dart` (owned by `app-shell`), so feature units link to each other without editing each other's files.
+- 2026-10-27 [orchestrator] DAL features target MAL first; AniList/Kitsu/Simkl pages are separate later units reusing tracker-agnostic widgets. Linux tray, Windows MSIX and tablet-only polish are out of scope for now.
+- 2026-10-27 [orchestrator] Tests: `test/smoke/` + `test/helpers/` owned by `gate-fix`, then `test/units/<unit-id>/` per unit; no test hits the network.

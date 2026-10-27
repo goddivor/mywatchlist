@@ -1,0 +1,52 @@
+# Handoff — `shared-kit`: Shared UI kit: share builder, app bar menu, select widgets, score reveal, web launcher
+
+**Kind** kit · **Priority** P0 · **Group** foundation · **Model** opus
+
+## Needs done first
+- `deps-prefs-contract` (Dependencies, Android permissions and the preferences contract)
+
+## Owns (may create or edit ONLY these)
+- `lib/widgets/common/share_builder.dart`
+- `lib/widgets/common/app_bar_menu.dart`
+- `lib/widgets/common/score_reveal.dart`
+- `lib/widgets/common/select/**`
+- `lib/widgets/common/adaptive_layout.dart`
+- `lib/utils/web_launcher.dart`
+- `lib/constants/constants.dart`
+- `lib/l10n/units/shared-kit/**`
+- `test/units/shared-kit/**`
+
+Plus `PROJECT-STATE.md` (rewrite in place, within its cap) and `docs/DECISIONS.md` (append one line per decision). Anything else you need is a FINDING to report, never an edit.
+
+## Goal
+- Share builder (choose fields: title, URL, synopsis…; copy or share) usable by any screen.
+- App bar overflow menu widget with Share / Open in browser / Bookmark slots (callbacks, no feature logic).
+- Select widgets missing from MWL: SelectButton, SelectSheet, SelectDate, ThreeStateSelectBar, SearchableSelect (long lists), showTopSheet.
+- Score reveal widget honoring the hide-score preference (tap/eye to reveal one score).
+- Web launcher: custom tabs / in-app webview instead of the deprecated `launch()`; restore internal MAL URI handling commented out around constants.dart:1148-1152 (route to in-app screens via app_routes when the app-shell unit has merged, else leave a TODO and report).
+- Adaptive layout helper (phone / tablet breakpoints) for later tablet work.
+
+## Known bugs to fix in scope
+- none
+
+## DailyAL reference (read, never copy blindly)
+Checkout: `/home/thinkpad/.cache/mwl-mab/dailyal-108` (DAL `upstream/2026.2.6+108`, read-only).
+- `lib/widgets/common/share_builder.dart`
+- `lib/widgets/customappbar.dart`
+- `lib/widgets/selectbottom.dart`
+- `lib/widgets/selecttopper.dart`
+- `lib/widgets/home/nodebadge.dart (_CardScoreRevealWidget)`
+- `lib/widgets/web/c_webview.dart`
+- `lib/widgets/common/adaptive_layout.dart`
+
+Port the behaviour into MWL's architecture: BLoC for app-wide state, Provider/ChangeNotifier user singletons, MWL's service layer (`lib/services/api/**`), `S` strings via your l10n fragment, multi-tracker awareness (never assume the active account is MAL without checking).
+
+## Inventory
+`work/inventory/*.md` lists, per feature, what MWL has and the bugs found on 2026-10-27.
+
+**UI directive (owner's rule).** MWL's current UI is NOT the reference: the owner wrote it early and calls parts of it badly done. For every screen you touch, read the DAL equivalent's UI code, keep whichever is better (often DAL's), and improve it (hierarchy, spacing, empty/loading/error states, no dead buttons). Stay consistent with the theme system in `lib/user/theme/` (accent color, fonts, dark/black modes). Describe the before/after in the PR body.
+
+## Definition of Done
+- Each widget has a widget test under test/units/shared-kit/ and a usage example in the PR body.
+- `tools/heavy.sh flutter analyze` clean (the gate runs the full `tools/heavy.sh tools/verify.sh`).
+- PR against `dev` with `Closes #<issue>`, gate tail, decisions, findings.
