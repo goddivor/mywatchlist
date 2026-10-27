@@ -1,0 +1,13 @@
+{
+  "@@locale": "fr_FR",
+  "Detail_Load_Error": "Impossible de charger ce titre",
+  "Detail_Load_Error_Hint": "Vérifiez votre connexion, puis réessayez.",
+  "Detail_Session_Expired": "Votre session MyAnimeList a expiré. Reconnectez-vous pour voir le statut de votre liste.",
+  "Detail_Retry": "Réessayer",
+  "Detail_Episode_Count": "({count} ép.)",
+  "Detail_Volume_Count": "({count} vol.)",
+  "Detail_Title_Romaji": "TI",
+  "Detail_Title_English": "EN",
+  "Detail_Title_Japanese": "JA",
+  "Detail_Title_Language": "Langue du titre"
+}

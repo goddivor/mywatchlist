@@ -1,0 +1,15 @@
+{
+  "@@locale": "en",
+  "Detail_Load_Error": "Couldn't load this title",
+  "Detail_Load_Error_Hint": "Check your connection and try again.",
+  "Detail_Session_Expired": "Your MyAnimeList session has expired. Sign in again to see your list status.",
+  "Detail_Retry": "Retry",
+  "Detail_Episode_Count": "({count} eps)",
+  "@Detail_Episode_Count": { "placeholders": { "count": { "type": "String" } } },
+  "Detail_Volume_Count": "({count} vols)",
+  "@Detail_Volume_Count": { "placeholders": { "count": { "type": "String" } } },
+  "Detail_Title_Romaji": "TI",
+  "Detail_Title_English": "EN",
+  "Detail_Title_Japanese": "JA",
+  "Detail_Title_Language": "Title language"
+}
