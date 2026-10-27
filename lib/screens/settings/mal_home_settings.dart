@@ -3,10 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mywatchlist/cache/cachemanager.dart';
-import 'package:mywatchlist/constants/constants.dart';
+import 'package:mywatchlist/constants/constants.dart' hide myAnimeStatusMap;
 import 'package:mywatchlist/enums.dart';
+import 'package:mywatchlist/generated/l10n.dart';
+import 'package:mywatchlist/screens/seasonal/season_utils.dart';
 import 'package:mywatchlist/services/api/MAL/mal_api.dart';
 import 'package:mywatchlist/user/MAL/mal_home_preferences_bloc.dart';
+import 'package:mywatchlist/widgets/home/home_sections.dart' show HomeSectionCache;
 import 'package:mywatchlist/user/MAL/mal_home_page_preferences.dart';
 import 'package:mywatchlist/widgets/common/custombutton.dart';
 
@@ -19,10 +22,6 @@ class HomeSettingsPage extends StatefulWidget {
 
 class _HomeSettingsPageState extends State<HomeSettingsPage> {
   final ScrollController _scrollController = ScrollController();
-  final SeasonType currentSeason = MalApi.getSeasonType();
-  String get currentSeasonName => MalApi.getSeasonName(currentSeason);
-  int get currentSeasonYear => MalApi.getCurrentSeasonYear();
-
   late MalHomePreferences _preferences;
 
   @override
@@ -42,15 +41,7 @@ class _HomeSettingsPageState extends State<HomeSettingsPage> {
         context.read<HomePreferencesBloc>().state.preferences;
 
     _preferences = MalHomePreferences(
-      sections: currentPreferences.sections
-          .map((section) => HomeSectionPreference(
-                type: section.type,
-                enabled: section.enabled,
-                itemCount: section.itemCount,
-                customTitle: section.customTitle,
-                cacheDurationHours: section.cacheDurationHours,
-              ))
-          .toList(),
+      sections: [for (final section in currentPreferences.sections) section.copy()],
       tileSize: currentPreferences.tileSize,
     );
   }
@@ -65,13 +56,12 @@ class _HomeSettingsPageState extends State<HomeSettingsPage> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Reset to Default?'),
-        content: const Text(
-            'This will reset all home page customizations to default settings. This action cannot be undone.'),
+        title: Text(S.current.Hw_Set_Reset_Title),
+        content: Text(S.current.Hw_Set_Reset_Body),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text(S.current.Hw_Set_Cancel),
           ),
           TextButton(
             onPressed: () {
@@ -84,14 +74,14 @@ class _HomeSettingsPageState extends State<HomeSettingsPage> {
               // Close the settings page after reset
               Navigator.of(context).pop();
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Settings reset to default'),
+                SnackBar(
+                  content: Text(S.current.Hw_Set_Reset_Done),
                   behavior: SnackBarBehavior.floating,
                 ),
               );
             },
             child: Text(
-              'Reset',
+              S.current.Hw_Set_Reset_Action,
               style: TextStyle(
                 color: Theme.of(context).colorScheme.error,
               ),
@@ -133,8 +123,6 @@ class _HomeSettingsPageState extends State<HomeSettingsPage> {
         curve: Curves.decelerate,
         child: _SectionEditDialog(
           section: section,
-          seasonName: currentSeasonName,
-          seasonYear: currentSeasonYear,
           canDelete: section != null && _preferences.sections.length > 3,
           onSave: (result) {
             setState(() {
@@ -163,18 +151,17 @@ class _HomeSettingsPageState extends State<HomeSettingsPage> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Clear Homepage Cache?'),
-        content: const Text(
-            'This will clear all cached homepage data. Fresh data will be fetched on next load.'),
+        title: Text(S.current.Hw_Set_Clear_Title),
+        content: Text(S.current.Hw_Set_Clear_Body),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: Text(S.current.Hw_Set_Cancel),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
             child: Text(
-              'Clear',
+              S.current.Hw_Set_Clear_Action,
               style: TextStyle(
                 color: Theme.of(context).colorScheme.error,
               ),
@@ -186,10 +173,11 @@ class _HomeSettingsPageState extends State<HomeSettingsPage> {
 
     if (confirmed == true && mounted) {
       await CacheManager.instance.clearHomepageCache();
+      HomeSectionCache.clear();
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Homepage cache cleared'),
-          backgroundColor: Theme.of(context).colorScheme.primary,
+          content: Text(S.current.Hw_Set_Cleared),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -214,80 +202,71 @@ class _HomeSettingsPageState extends State<HomeSettingsPage> {
     }, builder: (context, state) {
       return Scaffold(
         appBar: AppBar(
-          title: const Text('Home Page Settings'),
+          title: Text(S.current.Hw_Set_Title),
           elevation: 0,
           actions: [
             // Clear cache button
             IconButton(
               icon: const Icon(Icons.delete_sweep_outlined),
-              tooltip: 'Clear Cache',
+              tooltip: S.current.Hw_Set_Clear_Cache,
               onPressed: _clearCache,
             ),
             // Reset button
             IconButton(
               icon: const Icon(Icons.restore),
-              tooltip: 'Reset to Default',
+              tooltip: S.current.Hw_Set_Reset,
               onPressed: _resetPreferences,
             ),
           ],
         ),
-        body: ListView(
-                controller: _scrollController,
-                padding: const EdgeInsets.only(bottom: 32),
-                children: [
-                  _buildTileSizeSection(theme),
-
-                  const Divider(height: 32),
-
-                  _buildSectionsHeader(theme),
-
-                  // Add Item button
-                  if (_preferences.sections.length < 40)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 8),
-                      child: BorderButton(
-                        onPressed: () => _showSectionEditDialog(),
-                        borderColor: theme.colorScheme.primary.withValues(alpha: 0.5),
-                        borderRadius: 12,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.add,
-                                size: 20,
-                                color: theme.colorScheme.primary),
-                            const SizedBox(width: 8),
-                            Text(
-                              'Add an Item',
-                              style: TextStyle(
-                                color: theme.colorScheme.primary,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
+        body: CustomScrollView(
+          controller: _scrollController,
+          slivers: [
+            SliverToBoxAdapter(child: _buildTileSizeSection(theme)),
+            const SliverToBoxAdapter(child: Divider(height: 32)),
+            SliverToBoxAdapter(child: _buildSectionsHeader(theme)),
+            if (_preferences.sections.length < 40)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: BorderButton(
+                    onPressed: () => _showSectionEditDialog(),
+                    borderColor: theme.colorScheme.primary.withValues(alpha: 0.5),
+                    borderRadius: 12,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.add, size: 20, color: theme.colorScheme.primary),
+                        const SizedBox(width: 8),
+                        Text(
+                          S.current.Hw_Set_Add,
+                          style: TextStyle(
+                            color: theme.colorScheme.primary,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
-                      ),
+                      ],
                     ),
-
-                  // Reorderable list of sections
-                  ReorderableListView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: _preferences.sections.length,
-                    onReorder: _reorderSections,
-                    itemBuilder: (context, index) {
-                      final section = _preferences.sections[index];
-                      return _buildSectionTile(
-                        theme,
-                        section,
-                        index,
-                        key: ValueKey('${section.type}_$index'),
-                      );
-                    },
                   ),
-                ],
+                ),
               ),
+            SliverReorderableList(
+              itemCount: _preferences.sections.length,
+              onReorder: _reorderSections,
+              itemBuilder: (context, index) {
+                final section = _preferences.sections[index];
+                return _buildSectionTile(
+                  theme,
+                  section,
+                  index,
+                  key: ObjectKey(section),
+                );
+              },
+            ),
+            const SliverToBoxAdapter(child: SizedBox(height: 32)),
+          ],
+        ),
       );
     });
   }
@@ -297,14 +276,14 @@ class _HomeSettingsPageState extends State<HomeSettingsPage> {
       title: Row(
         children: [
           Text(
-            'Anime/Manga tile size',
+            S.current.Hw_Set_Tile_Size,
             style: theme.textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.bold,
             ),
           ),
           const SizedBox(width: 8),
           Tooltip(
-            message: 'Sets the size of anime and manga cards on the home page (XS, S, M, L, XL)',
+            message: S.current.Hw_Set_Tile_Info,
             child: Icon(
               Icons.info_outline,
               size: 18,
@@ -337,14 +316,14 @@ class _HomeSettingsPageState extends State<HomeSettingsPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Home Page Sections',
+            S.current.Hw_Set_Sections,
             style: theme.textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.bold,
             ),
           ),
           const SizedBox(height: 8),
           Text(
-            'Customize the content shown on your home page. Drag to reorder sections, toggle to show/hide, and set the number of items to display.',
+            S.current.Hw_Set_Sections_Desc,
             style: theme.textTheme.bodySmall?.copyWith(
               color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
             ),
@@ -374,7 +353,7 @@ class _HomeSettingsPageState extends State<HomeSettingsPage> {
             const SizedBox(width: 12),
             Expanded(
               child: Text(
-                section.getDisplayTitle(currentSeasonName, currentSeasonYear),
+                section.getDisplayTitle(),
                 style: theme.textTheme.titleMedium,
               ),
             ),
@@ -383,7 +362,7 @@ class _HomeSettingsPageState extends State<HomeSettingsPage> {
                   color: theme.colorScheme.onSurface.withValues(alpha: 0.6)),
               onPressed: () => _showSectionEditDialog(
                   section: section, index: index),
-              tooltip: 'Edit section',
+              tooltip: S.current.Hw_Set_Edit_Section,
             ),
             Switch(
               value: section.enabled,
@@ -406,16 +385,12 @@ class _HomeSettingsPageState extends State<HomeSettingsPage> {
 
 class _SectionEditDialog extends StatefulWidget {
   final HomeSectionPreference? section;
-  final String seasonName;
-  final int seasonYear;
   final bool canDelete;
   final void Function(HomeSectionPreference) onSave;
   final VoidCallback? onDelete;
 
   const _SectionEditDialog({
     this.section,
-    required this.seasonName,
-    required this.seasonYear,
     required this.canDelete,
     required this.onSave,
     this.onDelete,
@@ -430,16 +405,28 @@ class _SectionEditDialogState extends State<_SectionEditDialog> {
   late TextEditingController _titleController;
   late int _itemCount;
   late int _cacheDurationHours;
+  late String _userCategory;
+  String? _userStatus;
+  int? _boardId;
+  int? _subboardId;
+  SeasonType? _season;
+  int? _year;
   bool get _isEditing => widget.section != null;
 
   @override
   void initState() {
     super.initState();
-    _type = widget.section?.type ?? SectionType.seasonNow;
-    _titleController =
-        TextEditingController(text: widget.section?.customTitle ?? '');
-    _itemCount = widget.section?.itemCount ?? 15;
-    _cacheDurationHours = widget.section?.cacheDurationHours ?? 2;
+    final section = widget.section;
+    _type = section?.type ?? SectionType.seasonNow;
+    _titleController = TextEditingController(text: section?.customTitle ?? '');
+    _itemCount = section?.itemCount ?? 15;
+    _cacheDurationHours = section?.cacheDurationHours ?? 2;
+    _userCategory = section?.userCategory ?? 'anime';
+    _userStatus = section?.userStatus;
+    _boardId = section?.boardId;
+    _subboardId = section?.subboardId;
+    _season = section?.season;
+    _year = section?.year;
   }
 
   @override
@@ -448,33 +435,202 @@ class _SectionEditDialogState extends State<_SectionEditDialog> {
     super.dispose();
   }
 
+  /// The section as the dialog currently describes it.
+  HomeSectionPreference _draft({String? customTitle}) => HomeSectionPreference(
+        type: _type,
+        enabled: widget.section?.enabled ?? true,
+        itemCount: _itemCount,
+        customTitle: customTitle,
+        cacheDurationHours: _cacheDurationHours,
+        userCategory: _userCategory,
+        userStatus: _type == SectionType.userList ? _userStatus : null,
+        boardId: _type == SectionType.forum ? _boardId : null,
+        subboardId: _type == SectionType.forum ? _subboardId : null,
+        season: _type == SectionType.seasonNow ? _season : null,
+        year: _type == SectionType.seasonNow && _season != null ? _year : null,
+      );
+
   void _save() {
     final title = _titleController.text.trim();
-    final result = HomeSectionPreference(
-      type: _type,
-      enabled: widget.section?.enabled ?? true,
-      itemCount: _itemCount,
-      customTitle: title.isEmpty ? null : title,
-      cacheDurationHours: _cacheDurationHours,
-    );
-    widget.onSave(result);
+    widget.onSave(_draft(customTitle: title.isEmpty ? null : title));
     Navigator.pop(context);
   }
 
   void _reset() {
-    if (widget.section != null) {
-      setState(() {
-        _type = widget.section!.type;
-        _titleController.text = widget.section!.customTitle ?? '';
-        _itemCount = widget.section!.itemCount;
-        _cacheDurationHours = widget.section!.cacheDurationHours;
-      });
+    final section = widget.section;
+    if (section == null) return;
+    setState(() {
+      _type = section.type;
+      _titleController.text = section.customTitle ?? '';
+      _itemCount = section.itemCount;
+      _cacheDurationHours = section.cacheDurationHours;
+      _userCategory = section.userCategory;
+      _userStatus = section.userStatus;
+      _boardId = section.boardId;
+      _subboardId = section.subboardId;
+      _season = section.season;
+      _year = section.year;
+    });
+  }
+
+  Widget _field(ThemeData theme, String label, Widget child) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: theme.textTheme.bodySmall),
+          const SizedBox(height: 6),
+          child,
+        ],
+      ),
+    );
+  }
+
+  Widget _dropdown<T>({
+    required ThemeData theme,
+    required T value,
+    required List<DropdownMenuItem<T>> items,
+    required ValueChanged<T?> onChanged,
+  }) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: theme.colorScheme.outline.withValues(alpha: 0.5)),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<T>(
+          value: value,
+          isExpanded: true,
+          items: items,
+          onChanged: onChanged,
+        ),
+      ),
+    );
+  }
+
+  /// The fields that only exist for some kinds of section.
+  List<Widget> _typeFields(ThemeData theme) {
+    final s = S.current;
+    switch (_type) {
+      case SectionType.seasonNow:
+        final lastYear = lastSeasonYear();
+        final selectedYear = (_year ?? MalApi.getCurrentSeasonYear()).clamp(1970, lastYear);
+        return [
+          _field(
+            theme,
+            s.Hw_Set_Season,
+            _dropdown<SeasonType?>(
+              theme: theme,
+              value: _season,
+              items: [
+                DropdownMenuItem(value: null, child: Text(s.Hw_Set_Season_Auto)),
+                for (final season in SeasonType.values)
+                  DropdownMenuItem(value: season, child: Text(seasonLabel(season))),
+              ],
+              onChanged: (value) => setState(() {
+                _season = value;
+                _year = value == null ? null : (_year ?? MalApi.getCurrentSeasonYear());
+              }),
+            ),
+          ),
+          if (_season != null)
+            _field(
+              theme,
+              s.Hw_Set_Year,
+              _dropdown<int>(
+                theme: theme,
+                value: selectedYear,
+                items: [
+                  for (var year = lastYear; year >= 1970; year--)
+                    DropdownMenuItem(value: year, child: Text('$year')),
+                ],
+                onChanged: (value) => setState(() => _year = value),
+              ),
+            ),
+        ];
+      case SectionType.userList:
+        final statuses = _userCategory == 'manga' ? myMangaStatusMap : myAnimeStatusMap;
+        return [
+          _field(
+            theme,
+            s.Hw_Set_List_Category,
+            SegmentedButton<String>(
+              showSelectedIcon: false,
+              segments: [
+                ButtonSegment(value: 'anime', label: Text(s.Hw_Genres_Anime)),
+                ButtonSegment(value: 'manga', label: Text(s.Hw_Genres_Manga)),
+              ],
+              selected: {_userCategory},
+              onSelectionChanged: (selection) => setState(() {
+                _userCategory = selection.first;
+                _userStatus = null;
+              }),
+            ),
+          ),
+          _field(
+            theme,
+            s.Hw_Set_List_Status,
+            _dropdown<String?>(
+              theme: theme,
+              value: statuses.containsKey(_userStatus) ? _userStatus : null,
+              items: [
+                DropdownMenuItem(value: null, child: Text(s.Hw_Set_Any)),
+                for (final entry in statuses.entries)
+                  DropdownMenuItem(value: entry.key, child: Text(entry.value)),
+              ],
+              onChanged: (value) => setState(() => _userStatus = value),
+            ),
+          ),
+        ];
+      case SectionType.forum:
+        return [
+          _field(
+            theme,
+            s.Hw_Set_Forum_Board,
+            _dropdown<int?>(
+              theme: theme,
+              value: ForumConstants.boards.containsKey(_boardId) ? _boardId : null,
+              items: [
+                DropdownMenuItem(value: null, child: Text(s.Hw_Set_Any)),
+                for (final entry in ForumConstants.boards.entries)
+                  DropdownMenuItem(
+                    value: entry.key,
+                    child: Text(entry.value, overflow: TextOverflow.ellipsis),
+                  ),
+              ],
+              onChanged: (value) => setState(() => _boardId = value),
+            ),
+          ),
+          _field(
+            theme,
+            s.Hw_Set_Forum_Sub,
+            _dropdown<int?>(
+              theme: theme,
+              value: ForumConstants.subBoards.containsKey(_subboardId) ? _subboardId : null,
+              items: [
+                DropdownMenuItem(value: null, child: Text(s.Hw_Set_Any)),
+                for (final entry in ForumConstants.subBoards.entries)
+                  DropdownMenuItem(
+                    value: entry.key,
+                    child: Text(entry.value, overflow: TextOverflow.ellipsis),
+                  ),
+              ],
+              onChanged: (value) => setState(() => _subboardId = value),
+            ),
+          ),
+        ];
+      default:
+        return const [];
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final s = S.current;
 
     return Center(
       child: Material(
@@ -493,77 +649,58 @@ class _SectionEditDialogState extends State<_SectionEditDialog> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  _isEditing ? 'Edit Section' : 'Add Section',
+                  _isEditing ? s.Hw_Set_Edit_Section : s.Hw_Set_Add_Section,
                   style: theme.textTheme.titleLarge,
                 ),
                 const SizedBox(height: 20),
-
-                // Section type dropdown
-                Text('Section Type', style: theme.textTheme.bodySmall),
-                const SizedBox(height: 6),
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: theme.colorScheme.outline.withValues(alpha: 0.5),
-                    ),
-                  ),
-                  child: DropdownButtonHideUnderline(
-                    child: DropdownButton<SectionType>(
-                      value: _type,
-                      isExpanded: true,
-                      items: SectionType.values.map((type) {
-                        final temp = HomeSectionPreference(type: type);
-                        return DropdownMenuItem(
+                _field(
+                  theme,
+                  s.Hw_Set_Section_Type,
+                  _dropdown<SectionType>(
+                    theme: theme,
+                    value: _type,
+                    items: [
+                      for (final type in SectionType.values)
+                        DropdownMenuItem(
                           value: type,
                           child: Row(
                             children: [
-                              Icon(temp.getIcon(), size: 20,
-                                  color: theme.colorScheme.primary),
+                              Icon(HomeSectionPreference(type: type).getIcon(),
+                                  size: 20, color: theme.colorScheme.primary),
                               const SizedBox(width: 10),
-                              Text(temp.getDefaultTitle(
-                                  widget.seasonName, widget.seasonYear)),
+                              Expanded(
+                                child: Text(
+                                  HomeSectionPreference(type: type).getDefaultTitle(),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
                             ],
                           ),
-                        );
-                      }).toList(),
-                      onChanged: (value) {
-                        if (value != null) {
-                          setState(() => _type = value);
-                        }
-                      },
+                        ),
+                    ],
+                    onChanged: (value) {
+                      if (value != null) setState(() => _type = value);
+                    },
+                  ),
+                ),
+                ..._typeFields(theme),
+                _field(
+                  theme,
+                  s.Hw_Set_Custom_Title,
+                  TextFormField(
+                    controller: _titleController,
+                    decoration: InputDecoration(
+                      hintText: _draft().getDefaultTitle(),
+                      isDense: true,
+                      contentPadding:
+                          const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                     ),
                   ),
                 ),
-                const SizedBox(height: 16),
-
-                // Custom title
-                Text('Custom Title', style: theme.textTheme.bodySmall),
-                const SizedBox(height: 6),
-                TextFormField(
-                  controller: _titleController,
-                  decoration: InputDecoration(
-                    hintText: HomeSectionPreference(type: _type).getDefaultTitle(
-                        widget.seasonName, widget.seasonYear),
-                    hintStyle: TextStyle(
-                      color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
-                    ),
-                    isDense: true,
-                    contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 10),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                // Item count slider
                 Row(
                   children: [
-                    Text('Items: ', style: theme.textTheme.bodySmall),
+                    Text('${s.Hw_Set_Items}: ', style: theme.textTheme.bodySmall),
                     Text('$_itemCount',
                         style: TextStyle(
                           color: theme.colorScheme.primary,
@@ -576,22 +713,17 @@ class _SectionEditDialogState extends State<_SectionEditDialog> {
                   min: 5,
                   max: 30,
                   divisions: 5,
-                  activeColor: theme.colorScheme.primary,
-                  onChanged: (value) {
-                    setState(() => _itemCount = value.toInt());
-                  },
+                  label: '$_itemCount',
+                  onChanged: (value) => setState(() => _itemCount = value.toInt()),
                 ),
                 const SizedBox(height: 8),
-
-                // Cache duration dropdown
                 Row(
                   children: [
-                    Icon(Icons.cached, size: 16,
-                        color: theme.colorScheme.onSurface.withValues(alpha: 0.7)),
+                    Icon(Icons.cached, size: 16, color: theme.colorScheme.onSurfaceVariant),
                     const SizedBox(width: 6),
-                    Text('Cache refresh: ',
-                        style: theme.textTheme.bodySmall),
-                    const Spacer(),
+                    Expanded(
+                      child: Text(s.Hw_Set_Cache, style: theme.textTheme.bodySmall),
+                    ),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12),
                       decoration: BoxDecoration(
@@ -604,18 +736,12 @@ class _SectionEditDialogState extends State<_SectionEditDialog> {
                         child: DropdownButton<int>(
                           value: _cacheDurationHours,
                           isDense: true,
-                          items: const [
-                            DropdownMenuItem(value: 1, child: Text('1h')),
-                            DropdownMenuItem(value: 2, child: Text('2h')),
-                            DropdownMenuItem(value: 4, child: Text('4h')),
-                            DropdownMenuItem(value: 8, child: Text('8h')),
-                            DropdownMenuItem(value: 12, child: Text('12h')),
-                            DropdownMenuItem(value: 24, child: Text('24h')),
+                          items: [
+                            for (final hours in const [1, 2, 4, 8, 12, 24])
+                              DropdownMenuItem(value: hours, child: Text(s.Hw_Set_Hours(hours))),
                           ],
                           onChanged: (value) {
-                            if (value != null) {
-                              setState(() => _cacheDurationHours = value);
-                            }
+                            if (value != null) setState(() => _cacheDurationHours = value);
                           },
                         ),
                       ),
@@ -623,11 +749,9 @@ class _SectionEditDialogState extends State<_SectionEditDialog> {
                   ],
                 ),
                 const SizedBox(height: 24),
-
-                // Action buttons
                 Row(
                   children: [
-                    // Delete button (only when editing and min 3 sections)
+                    // Delete is offered when editing and at least 3 sections remain.
                     if (_isEditing && widget.canDelete)
                       TextButton.icon(
                         onPressed: () {
@@ -636,26 +760,14 @@ class _SectionEditDialogState extends State<_SectionEditDialog> {
                         },
                         icon: Icon(Icons.delete_outline,
                             color: theme.colorScheme.error, size: 20),
-                        label: Text('Delete',
+                        label: Text(s.Hw_Set_Delete,
                             style: TextStyle(color: theme.colorScheme.error)),
                       ),
                     const Spacer(),
-                    // Reset button (only when editing)
                     if (_isEditing)
-                      TextButton(
-                        onPressed: _reset,
-                        child: const Text('Reset'),
-                      ),
+                      TextButton(onPressed: _reset, child: Text(s.Hw_Set_Reset_Section)),
                     const SizedBox(width: 8),
-                    // Save button
-                    ElevatedButton(
-                      onPressed: _save,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: theme.colorScheme.primary,
-                        foregroundColor: theme.colorScheme.onPrimary,
-                      ),
-                      child: const Text('Save'),
-                    ),
+                    FilledButton(onPressed: _save, child: Text(s.Hw_Set_Save)),
                   ],
                 ),
               ],
@@ -665,18 +777,4 @@ class _SectionEditDialogState extends State<_SectionEditDialog> {
       ),
     );
   }
-}
-
-class TileSize {
-  final double contentHeight;
-  final double contentWidth;
-  final double containerHeight;
-  final double loadingContainerHeight;
-
-  const TileSize({
-    required this.contentHeight,
-    required this.contentWidth,
-    required this.containerHeight,
-    required this.loadingContainerHeight,
-  });
 }
