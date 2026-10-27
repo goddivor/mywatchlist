@@ -339,6 +339,7 @@ const UNITS = [
     dal: ["lib/screens/generalsearchscreen.dart", "lib/widgets/search/filtermodal.dart", "commits da37082, 6b2aafd, fa2fb68, 3f1f0fd, 158e206 (autocomplete), db3355e (search by id, 3-state)"],
     goal: [
       "User result tap → profile (TODO :2227) and 'User found as …' shortcut; search by MAL id; autocomplete with throttle; SearchableSelect for producers/magazines; three-state include/exclude.",
+      "Move the search/filter UI off lib/widgets/MAL/search/selectbottom.dart (SelectBar, MutiSelectBar, MultiSelectDropdown) onto the shared-kit select widgets (lib/widgets/common/select/select.dart), then delete what becomes unused.",
       "`_SeasonalSection._maxYear` hard-coded 2027 (:3643) → current year + 1.",
       "Expose static entry points (e.g. `GeneralSearchScreen.byGenre/byStudio/byMagazine/byTag/bySeason`) used by more-info and featured units; list them in the PR body.",
       "Split the 3719-line file into parts under lib/screens/search/; while splitting, remove the ~12 ClipRRect per result item where a decoration radius suffices and use AppImage (performance.md #7).",
@@ -503,7 +504,7 @@ const UNITS = [
     needs: ["app-shell", "deps-prefs-contract"],
     owns: ["lib/utils/deep_links.dart"],
     dal: ["lib/util/pathutils.dart", "android/app/src/main/AndroidManifest.xml (intent filters)", "main.dart onGenerateRoute"],
-    goal: ["Map myanimelist.net anime/manga/character/people/profile/forum URLs to in-app screens via app_routes. The intent filters go in the manifest (contract's file): report the exact XML as a finding."],
+    goal: ["Register `WebLauncher.internalLinkHandler` (shared-kit, lib/utils/web_launcher.dart) from lib/utils/deep_links.dart at startup so in-app MAL links (anime, manga, character, people, forum, profile) open their screen instead of a browser tab; handled MAL links open directly, without a confirmation dialog (owner default). Map myanimelist.net anime/manga/character/people/profile/forum URLs to in-app screens via app_routes. The intent filters go in the manifest (contract's file): report the exact XML as a finding."],
     dod: ["`adb shell am start -d https://myanimelist.net/anime/1` opens Cowboy Bebop in the app."],
   },
 ];

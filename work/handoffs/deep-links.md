@@ -14,7 +14,7 @@
 Plus `PROJECT-STATE.md` (rewrite in place, within its cap) and `docs/DECISIONS.md` (append one line per decision). Anything else you need is a FINDING to report, never an edit.
 
 ## Goal
-- Map myanimelist.net anime/manga/character/people/profile/forum URLs to in-app screens via app_routes. The intent filters go in the manifest (contract's file): report the exact XML as a finding.
+- Register `WebLauncher.internalLinkHandler` (shared-kit, lib/utils/web_launcher.dart) from lib/utils/deep_links.dart at startup so in-app MAL links (anime, manga, character, people, forum, profile) open their screen instead of a browser tab; handled MAL links open directly, without a confirmation dialog (owner default). Map myanimelist.net anime/manga/character/people/profile/forum URLs to in-app screens via app_routes. The intent filters go in the manifest (contract's file): report the exact XML as a finding.
 
 ## Known bugs to fix in scope
 - none

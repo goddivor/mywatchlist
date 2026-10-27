@@ -17,6 +17,7 @@ Plus `PROJECT-STATE.md` (rewrite in place, within its cap) and `docs/DECISIONS.m
 
 ## Goal
 - User result tap → profile (TODO :2227) and 'User found as …' shortcut; search by MAL id; autocomplete with throttle; SearchableSelect for producers/magazines; three-state include/exclude.
+- Move the search/filter UI off lib/widgets/MAL/search/selectbottom.dart (SelectBar, MutiSelectBar, MultiSelectDropdown) onto the shared-kit select widgets (lib/widgets/common/select/select.dart), then delete what becomes unused.
 - `_SeasonalSection._maxYear` hard-coded 2027 (:3643) → current year + 1.
 - Expose static entry points (e.g. `GeneralSearchScreen.byGenre/byStudio/byMagazine/byTag/bySeason`) used by more-info and featured units; list them in the PR body.
 - Split the 3719-line file into parts under lib/screens/search/; while splitting, remove the ~12 ClipRRect per result item where a decoration radius suffices and use AppImage (performance.md #7).
