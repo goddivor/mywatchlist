@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mwl_commons/mwl_commons.dart' show LiveChartEpisode;
 import 'package:mwl_commons/src/model/html/anime_detailed_html.dart';
 import 'package:mywatchlist/constants/constants.dart';
+import 'package:mywatchlist/generated/l10n.dart';
+import 'package:mywatchlist/services/api/mwl_api.dart';
+import 'package:mywatchlist/user/preferences/preferences.dart';
 import 'package:mywatchlist/widgets/common/avatar_widget.dart';
 import 'package:mywatchlist/widgets/common/custombutton.dart';
 
@@ -32,6 +37,71 @@ class RelatedLinks {
     this.anisearch,
     this.kitsu,
   });
+
+  bool get isEmpty =>
+      anilist == null && animePlanet == null && anisearch == null && kitsu == null;
+
+  /// Reads the link kinds LiveChart gives for an episode (`anilist`,
+  /// `animeplanet`, `anisearch`, `kitsu`; other kinds are ignored). Null when
+  /// none of the four is present.
+  static RelatedLinks? fromLiveChart(Map<String, String> links) {
+    String? pick(String kind) {
+      for (final entry in links.entries) {
+        final key = entry.key.toLowerCase().replaceAll(RegExp('[^a-z]'), '');
+        if (key == kind && entry.value.isNotEmpty) return entry.value;
+      }
+      return null;
+    }
+
+    final result = RelatedLinks(
+      anilist: pick('anilist'),
+      animePlanet: pick('animeplanet'),
+      anisearch: pick('anisearch'),
+      kitsu: pick('kitsu'),
+    );
+    return result.isEmpty ? null : result;
+  }
+}
+
+/// Related links of the airing schedule (LiveChart, through the backend),
+/// found by MyAnimeList id. The season is fetched once per session and shared
+/// by every detail page.
+///
+/// ```dart
+/// final links = await ScheduleLinks.forMalId(anime.id); // null when not airing
+/// ```
+abstract final class ScheduleLinks {
+  static Future<Map<int, RelatedLinks>>? _season;
+
+  /// The schedule source; tests replace it.
+  @visibleForTesting
+  static Future<List<LiveChartEpisode>> Function() source =
+      () => MwlApi.i.getLiveChartSchedule();
+
+  /// Links of [malId], or null when it is not on the schedule or the request
+  /// failed (a failure is retried on the next call).
+  static Future<RelatedLinks?> forMalId(int malId) async {
+    try {
+      final season = await (_season ??= _load());
+      return season[malId];
+    } catch (_) {
+      _season = null;
+      return null;
+    }
+  }
+
+  static Future<Map<int, RelatedLinks>> _load() async {
+    final map = <int, RelatedLinks>{};
+    for (final episode in await source()) {
+      final id = episode.malId;
+      final links = RelatedLinks.fromLiveChart(episode.relatedLinks);
+      if (id != null && links != null) map[id] = links;
+    }
+    return map;
+  }
+
+  @visibleForTesting
+  static void reset() => _season = null;
 }
 
 class AddtionalMediaPlatforms extends StatefulWidget {
@@ -51,79 +121,88 @@ class AddtionalMediaPlatforms extends StatefulWidget {
 
 class _AddtionalMediaPlatformsState extends State<AddtionalMediaPlatforms> {
   late Map<LinkType, List<AnimeLink>> categorizedLinks;
-  late List<AnimeLink> displayedLinks;
-  LinkType preferredLinkType =
-      LinkType.streaming; // You can make this configurable
 
   @override
   void initState() {
     super.initState();
+    _categorize();
+  }
 
+  @override
+  void didUpdateWidget(AddtionalMediaPlatforms old) {
+    super.didUpdateWidget(old);
+    if (old.links != widget.links || old.relatedLinks != widget.relatedLinks) {
+      _categorize();
+    }
+  }
+
+  void _categorize() {
     categorizedLinks = [
       ...widget.links,
       ..._adaptRelatedLinks(widget.relatedLinks),
     ].fold<Map<LinkType, List<AnimeLink>>>(
         {}, (map, e) => map..putIfAbsent(e.linkType, () => []).add(e));
-    _setDisplayedLinks();
   }
 
-  void _setDisplayedLinks() {
-    displayedLinks = categorizedLinks[preferredLinkType] ??
+  List<AnimeLink> _displayed(LinkType preferred) {
+    final links = categorizedLinks[preferred] ??
         categorizedLinks[LinkType.streaming] ??
         categorizedLinks[LinkType.availableAt] ??
         categorizedLinks[LinkType.resources] ??
         categorizedLinks[LinkType.otherLists] ??
-        [];
+        const <AnimeLink>[];
+    return links.where((e) => e.url.isNotEmpty && e.name.isNotEmpty).toList();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    final preferred = context.select<PreferencesBloc?, LinkType>((bloc) =>
+        (bloc?.state ?? Preferences.current).general.preferredLinkType);
+    final displayed = _displayed(preferred);
+    return SizedBox(
       height: 45,
-      child: Material(
-        color: Colors.transparent,
-        elevation: 0,
-        child: Row(
-          children: [
-            Expanded(
-              child: ListView(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 25),
-                children: displayedLinks
-                    .where((e) => e.url.isNotEmpty && e.name.isNotEmpty)
-                    .map((e) => Padding(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 7, vertical: 7),
-                          child: _buildLinkImage(context: context, link: e),
-                        ))
-                    .toList(),
+      child: Row(
+        children: [
+          Expanded(
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 25),
+              itemCount: displayed.length,
+              itemBuilder: (context, i) => Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 7),
+                child: _buildLinkImage(context: context, link: displayed[i]),
               ),
             ),
-            const SizedBox(width: 20),
-            SizedBox(
-              height: 40,
-              width: 40,
-              child: ShadowButton(
-                onPressed: () async {
-                  await showModalBottomSheet(
-                      context: context,
-                      builder: (context) => DetailedLinks(
-                            categorizedLinks: categorizedLinks,
-                          ),
-                      shape: const RoundedRectangleBorder(
-                          borderRadius:
-                              BorderRadius.vertical(top: Radius.circular(20))));
-                  _setDisplayedLinks();
-                  if (mounted) setState(() {});
-                },
-                padding: EdgeInsets.zero,
-                backgroundColor: Colors.transparent,
+          ),
+          const SizedBox(width: 20),
+          SizedBox(
+            height: 40,
+            width: 40,
+            child: ShadowButton(
+              onPressed: () => showModalBottomSheet<void>(
+                context: context,
+                isScrollControlled: true,
+                showDragHandle: true,
+                constraints: BoxConstraints(
+                  maxHeight: MediaQuery.sizeOf(context).height * 0.8,
+                ),
+                builder: (context) => DetailedLinks(
+                  categorizedLinks: categorizedLinks,
+                  preferred: preferred,
+                ),
+                shape: const RoundedRectangleBorder(
+                    borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+              ),
+              padding: EdgeInsets.zero,
+              backgroundColor: Colors.transparent,
+              child: Tooltip(
+                message: S.current.moreLinks,
                 child: const Icon(Icons.more, size: 20.0),
               ),
             ),
-            const SizedBox(width: 20),
-          ],
-        ),
+          ),
+          const SizedBox(width: 20),
+        ],
       ),
     );
   }
@@ -210,12 +289,16 @@ void _onLinkTap(BuildContext context, AnimeLink link) {
   return launchURLWithConfirmation(link.url, context: context);
 }
 
+/// Bottom sheet listing every link by category. The checkbox of a category
+/// saves it as the `preferredLinkType` preference (the one shown on the page).
 class DetailedLinks extends StatefulWidget {
   final Map<LinkType, List<AnimeLink>> categorizedLinks;
+  final LinkType preferred;
 
   const DetailedLinks({
     super.key,
     required this.categorizedLinks,
+    this.preferred = LinkType.streaming,
   });
 
   @override
@@ -223,100 +306,86 @@ class DetailedLinks extends StatefulWidget {
 }
 
 class _DetailedLinksState extends State<DetailedLinks> {
-  final _linkTitleMap = {
-    LinkType.resources: 'Resources',
-    LinkType.availableAt: 'Available At',
-    LinkType.streaming: 'Streaming Platforms',
-    LinkType.otherLists: 'Other Lists',
-  };
-  late List<MapEntry<LinkType, String>> _sortedEntries;
-  LinkType preferredLinkType =
-      LinkType.streaming; // You can make this configurable
+  late LinkType _preferred = widget.preferred;
 
-  @override
-  void initState() {
-    super.initState();
-    _sortedEntries = _linkTitleMap.entries.toList()
-      ..sort((a, b) => a.key == preferredLinkType
-          ? -1
-          : b.key == preferredLinkType
-              ? 1
-              : 0);
+  String _titleOf(LinkType type) => switch (type) {
+        LinkType.resources => S.current.Resources,
+        LinkType.availableAt => S.current.Available_At,
+        LinkType.streaming => S.current.Links_Streaming,
+        LinkType.otherLists => S.current.Other_Lists,
+      };
+
+  void _prefer(LinkType type) {
+    setState(() => _preferred = type);
+    Preferences.bloc?.add(GeneralPreferencesChanged(
+        (p) => p.copyWith(preferredLinkType: type)));
   }
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: 700.0,
-      child: Material(
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 30),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                child: Row(
-                  children: [
-                    Text('More Links',
-                        style: Theme.of(context).textTheme.titleLarge),
-                    const Spacer(),
-                    IconButton(
-                      onPressed: () => Navigator.pop(context),
-                      icon: const Icon(Icons.close),
-                    )
-                  ],
-                ),
-              ),
-              const SizedBox(height: 20),
-              for (int i = 0; i < _sortedEntries.length; i++)
-                if (!nullOrEmpty(
-                    widget.categorizedLinks[_sortedEntries[i].key]))
-                  ..._linkContent(_sortedEntries[i].key),
-              const SizedBox(height: 60),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  List<Widget> _linkContent(LinkType type) {
-    final header = Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20.0),
-      child: Row(
+    final types = LinkType.values
+        .where((t) => !nullOrEmpty(widget.categorizedLinks[t]))
+        .toList()
+      ..sort((a, b) => a == _preferred
+          ? -1
+          : b == _preferred
+              ? 1
+              : 0);
+    return SafeArea(
+      child: ListView(
+        shrinkWrap: true,
+        padding: const EdgeInsets.only(bottom: 24),
         children: [
-          Text(_linkTitleMap[type] ?? 'UNKNOWN',
-              style: Theme.of(context).textTheme.titleMedium),
-          const Spacer(),
-          Checkbox(
-            value: type == preferredLinkType,
-            onChanged: (value) {
-              if (value == true) {
-                preferredLinkType = type;
-                setState(() {});
-              }
-            },
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 0, 8, 8),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(S.current.moreLinks,
+                      style: Theme.of(context).textTheme.titleLarge),
+                ),
+                IconButton(
+                  tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
+                  onPressed: () => Navigator.pop(context),
+                  icon: const Icon(Icons.close),
+                ),
+              ],
+            ),
           ),
+          for (final type in types) ...[
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(_titleOf(type),
+                        style: Theme.of(context).textTheme.titleMedium),
+                  ),
+                  Tooltip(
+                    message: S.current.Links_Set_Preferred,
+                    child: Checkbox(
+                      value: type == _preferred,
+                      onChanged: (value) {
+                        if (value == true) _prefer(type);
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(
+              height: 105,
+              child: ListView.builder(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                scrollDirection: Axis.horizontal,
+                itemCount: widget.categorizedLinks[type]!.length,
+                itemBuilder: (context, i) =>
+                    _buildCard(widget.categorizedLinks[type]![i]),
+              ),
+            ),
+            const SizedBox(height: 12),
+          ],
         ],
-      ),
-    );
-
-    return [
-      header,
-      const SizedBox(height: 10),
-      _buildLinkCards(widget.categorizedLinks[type] ?? []),
-    ];
-  }
-
-  Widget _buildLinkCards(List<AnimeLink> streaming) {
-    return SizedBox(
-      height: 105.0,
-      child: ListView.builder(
-        padding: const EdgeInsets.symmetric(horizontal: 20.0),
-        scrollDirection: Axis.horizontal,
-        itemCount: streaming.length,
-        itemBuilder: (context, index) => _buildCard(streaming[index]),
       ),
     );
   }
@@ -332,17 +401,14 @@ class _DetailedLinksState extends State<DetailedLinks> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const SizedBox(height: 5),
-              _buildLinkImage(
-                context: context,
-                link: link,
-                size: 45.0,
-              ),
+              _buildLinkImage(context: context, link: link, size: 45.0),
               const SizedBox(height: 10),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 5.0),
                 child: Text(
                   link.name,
                   textAlign: TextAlign.center,
+                  maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.labelSmall,
                 ),
