@@ -38,6 +38,7 @@
         "accounts-ux",
         "edit-sheet",
         "user-list-mal",
+        "list-cards-dal",
         "user-profile-mal",
         "sync-dialog"
       ]
@@ -514,6 +515,33 @@
         "model: opus"
       ],
       "status": "✅ done"
+    },
+    {
+      "id": "list-cards-dal",
+      "title": "My List cards with DailyAL's layout: clean cover, score + status bar, title and genres below",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P0",
+      "needs": [
+        "user-list-mal",
+        "theme-colors"
+      ],
+      "owns": [
+        "lib/widgets/user/list/cards/**",
+        "lib/widgets/user/list/list_entry_view.dart",
+        "lib/widgets/user/list/user_list_view.dart",
+        "lib/l10n/units/list-cards-dal/**",
+        "test/units/list-cards-dal/**"
+      ],
+      "group": "user",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "⬜ todo"
     },
     {
       "id": "user-profile-mal",
@@ -1372,6 +1400,7 @@
       "artifact": "",
       "priority": "P1",
       "needs": [
+        "list-cards-dal",
         "detail-resilience",
         "home-wiring",
         "featured-characters",

@@ -222,6 +222,19 @@ const UNITS = [
     dod: ["The owner's real MAL list loads on the emulator, all statuses, sort and filters work.", "Status cache survives restart."],
   },
   {
+    id: "list-cards-dal", title: "My List cards with DailyAL's layout: clean cover, score + status bar, title and genres below", kind: "unit", priority: "P0", group: "user", model: "opus", ui: true,
+    needs: ["user-list-mal", "theme-colors"],
+    owns: ["lib/widgets/user/list/cards/**", "lib/widgets/user/list/list_entry_view.dart", "lib/widgets/user/list/user_list_view.dart"],
+    dal: ["lib/widgets/home/animecard.dart", "lib/widgets/home/nodebadge.dart", "lib/widgets/user/contentlistwidget.dart"],
+    goal: [
+      "Owner's request with screenshots: the My List grid cards must look like DailyAL's (he prefers them). Today MWL overlays the title and 'x / y ep.' on the cover with a gradient. DailyAL's grid card: a clean cover with rounded corners (no text on the image); directly under it a compact bar — left: ★ mean score (or '-' when none, respecting hide-score with tap-to-reveal); right: a coloured status chip (CW / CMPL / OH / DR / PTW, colour from the theme-colors status tokens) with the edit pencil inside the chip; then the title on 1 line with ellipsis, then the genres in small text on 1 line; optional small badges top-right on the cover (e.g. episodes behind / unseen count) as DailyAL does.",
+      "Apply the same structure to the list (row) mode: thumbnail, title, genres, score + status chip + pencil, progress.",
+      "Keep everything that already works: tap opens the detail, pencil / long press opens the edit sheet, the status cache updates the chip, airing info and priority prefs, custom card layouts (the default layout becomes the DailyAL one).",
+      "Fluidity: AppImage at card size, no per-card Opacity/ClipRRect/blur, fixed extents where possible; colours only from colorScheme / status tokens; readable chip text in light, dark and black.",
+    ],
+    dod: ["Checker: side-by-side screenshots of MWL My List and DailyAL's list on the same account — same card structure, at least as clean.", "Widget tests: card renders score/status/title/genres; hide-score; French labels."],
+  },
+  {
     id: "user-profile-mal", title: "MAL user profile, stats charts and user pop-up", kind: "screen", priority: "P1", group: "user", model: "sonnet", ui: true,
     needs: ["mal-auth-calls", "app-shell", "shared-kit", "backend-parsers"],
     owns: ["test/units/app-shell/app_routes_test.dart", "lib/utils/app_routes.dart", "lib/pages/MAL/mal_user_profile_page.dart", "lib/screens/user_profile/**", "lib/widgets/user/profile/**", "lib/widgets/charts/**", "lib/services/api/MAL/scrapper/user_anime_statistics.dart", "lib/services/api/MAL/scrapper/user_friends.dart", "lib/services/api/MAL/scrapper/user_history.dart", "lib/services/api/MAL/user_anime_statistics.dart", "lib/services/api/MAL/mal_user_prof.dart", "lib/cache/cached_user_profile.dart"],
@@ -529,7 +542,7 @@ const UNITS = [
   },
   {
     id: "color-sweep", title: "Colour sweep: hardcoded colours of already-merged screens onto the theme tokens", kind: "unit", priority: "P1", group: "release", model: "sonnet", ui: true,
-    needs: ["detail-resilience", "home-wiring", "featured-characters", "dub-info", "detail-more-info", "settings-theme-about-backup", "in-app-update", "forum-clubs", "search-upgrade", "theme-colors", "cards-upgrade", "detail-header", "detail-social", "detail-related-graph", "detail-synopsis-media", "user-list-mal", "user-profile-mal", "edit-sheet", "sync-dialog", "bookmarks", "calendar", "explore-seasonal", "settings-prefs-pages", "accounts-ux", "app-shell", "shared-kit", "notifications"],
+    needs: ["list-cards-dal", "detail-resilience", "home-wiring", "featured-characters", "dub-info", "detail-more-info", "settings-theme-about-backup", "in-app-update", "forum-clubs", "search-upgrade", "theme-colors", "cards-upgrade", "detail-header", "detail-social", "detail-related-graph", "detail-synopsis-media", "user-list-mal", "user-profile-mal", "edit-sheet", "sync-dialog", "bookmarks", "calendar", "explore-seasonal", "settings-prefs-pages", "accounts-ux", "app-shell", "shared-kit", "notifications"],
     owns: ["lib/widgets/MAL/home/**", "lib/widgets/MAL/content/**", "lib/widgets/MAL/review/**", "lib/widgets/user/**", "lib/widgets/charts/**", "lib/widgets/bookmarks/**", "lib/widgets/calendar/**", "lib/widgets/common/**", "lib/screens/MAL/**", "lib/screens/explore/**", "lib/screens/seasonal/**", "lib/screens/calendar/**", "lib/screens/user_profile/**", "lib/screens/settings/**", "lib/screens/bookmarks_screen.dart", "lib/pages/side_bar.dart", "lib/constants/constants.dart"],
     goal: [
       "Replace every hardcoded `Colors.*` / `Color(0x…)` in the owned screens with `colorScheme` roles or the app_colors tokens (theme-colors), except intrinsic content colours (e.g. a tracker's brand logo) — list those exceptions in the PR body.",
