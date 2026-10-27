@@ -5,14 +5,6 @@ import 'package:flutter/services.dart';
 
 enum FilterType { select, date, multiple, equal, single_list }
 
-class FilterRange {
-  final double? maxValue;
-  final double? minValue;
-  double? startValue;
-  double? endValue;
-  FilterRange({this.maxValue, this.minValue, this.endValue, this.startValue});
-}
-
 class FilterOption {
   final FilterType? type;
   final String? fieldName;
