@@ -98,12 +98,13 @@ const UNITS = [
   {
     id: "deps-prefs-contract", title: "Dependencies, Android permissions and the preferences contract", kind: "contract", priority: "P0", group: "foundation", model: "opus",
     needs: ["l10n-pipeline"],
-    owns: ["pubspec.yaml", "pubspec.lock", "android/app/src/main/AndroidManifest.xml", "android/app/build.gradle", "android/app/build.gradle.kts", "lib/main.dart", "lib/user/preferences/**", "lib/user/userpref.dart", "lib/user/user_preference.dart", "lib/user/anime_manga_pref.dart", "lib/user/anime_manga_pref.g.dart", "lib/user/anime_manga_tab_pref.dart", "lib/user/anime_manga_tab_pref.g.dart", "lib/user/list_pref.dart", "lib/services/notifications/notification_service.dart"],
+    owns: ["pubspec.yaml", "pubspec.lock", "android/app/src/main/AndroidManifest.xml", "android/app/build.gradle", "android/app/build.gradle.kts", "lib/main.dart", "lib/user/preferences/**", "lib/user/userpref.dart", "lib/user/user_preference.dart", "lib/user/anime_manga_pref.dart", "lib/user/anime_manga_pref.g.dart", "lib/user/anime_manga_tab_pref.dart", "lib/user/anime_manga_tab_pref.g.dart", "lib/user/list_pref.dart", "lib/user/user.dart", "lib/services/notifications/notification_service.dart"],
     dal: ["lib/user/userpref.dart", "lib/user/anime_manga_pref.dart", "lib/user/anime_manga_tab_pref.dart", "lib/user/list_pref.dart", "lib/user/hompagepref.dart", "lib/notifservice.dart (NotifPref)", "pubspec.yaml", "android/app/src/main/AndroidManifest.xml"],
     goal: [
       "Add, in ONE pass, every dependency the queued units need (check pins against pub.dev; record them in docs/STACK.md is not yours — list them in the PR body): flutter_local_notifications, timezone, dynamic_color, flex_color_picker, translator_plus, package_info_plus, device_info_plus, add_2_calendar, open_filex, flutter_displaymode, graphview, fl_chart, share_plus (if absent), path_provider (if absent), file_picker (if absent), build_runner (dev). Move json_serializable to dev_dependencies.",
       "Manifest: POST_NOTIFICATIONS, SCHEDULE_EXACT_ALARM/USE_EXACT_ALARM, RECEIVE_BOOT_COMPLETED + the flutter_local_notifications receivers, calendar permissions, REQUEST_INSTALL_PACKAGES + a FileProvider for the in-app updater. Keep the OAuth intent filters.",
       "PREFERENCES CONTRACT (shared shape every later unit reads): a `PreferencesBloc` (BLoC, per project convention) in `lib/user/preferences/` holding typed, persisted models for ALL DAL preferences: user prefs (preferred title EN/JA/Romaji, startup page, NSFW, show anime/manga card, allow YouTube player, keep pages in memory, show priority, auto-translate synopsis, only last quote, auto start/end date, airing info in list, stats chart colors, preferred link type), anime/manga prefs (countdown on detail, detail background, show private notes, hide score, global seasonal filter, timezone, default add-to-list status anime/manga, detail tab order/visibility), list prefs (default list tab, card view props), notification prefs (enabled lists, large image). Events to update each field; a getter API that non-widget code can call.",
+      "Remove dead language code left by l10n-pipeline: `getLanguage`/`setLanguage` (key `language`) in lib/user/user_preference.dart, `UserMal.setLocale`/`runPostInitialization` in lib/user/user.dart (a third language setting nobody calls); drop the unused third-party `flutter_localization` from pubspec.yaml (keep the SDK `flutter_localizations`).",
       "Remove the duplicates (TimezonePref declared twice, the unused models replaced by the contract), keeping existing saved values readable (migrate keys).",
       "Create the stub `lib/services/notifications/notification_service.dart` with a no-op `init()` called from main.dart; the notifications unit fills it.",
     ],
@@ -425,7 +426,7 @@ const UNITS = [
     needs: ["mal-auth-calls", "user-profile-mal", "shared-kit"],
     owns: ["lib/screens/forum/**", "lib/widgets/forum/**", "lib/pages/MAL/mal_forum_page.dart", "lib/services/api/MAL/mal_clubs_api.dart", "lib/services/api/MAL/mal_forum_api.dart"],
     dal: ["lib/screens/forumposts.dart", "lib/screens/forumtopicsscreen.dart", "lib/pages/forumpage.dart", "lib/screens/clubscreen.dart"],
-    goal: ["Reply FAB only copies the URL (forum_posts_screen.dart:117-126) → open a webview to post (DAL); post avatar → profile (post_widget.dart:346); club members/staff → in-app profile instead of browser; HTML parsing off the UI isolate in mal_clubs_api.dart (:20, :34, :61) and the forum API (performance.md #9); share/browser menus; redesign per UI directive."],
+    goal: ["Reply FAB only copies the URL (forum_posts_screen.dart:117-126) → open a webview to post (DAL); post avatar → profile (post_widget.dart:346); club members/staff → in-app profile instead of browser; replace the club scraping in mal_clubs_api.dart by the backend methods `MwlApi.getClubPage/getClubMembers/getClubForumTopics/getClubComments` (backend-parsers finding); HTML parsing off the UI isolate in mal_clubs_api.dart (:20, :34, :61) and the forum API (performance.md #9); share/browser menus; redesign per UI directive."],
     bugs: ["reply FAB", "avatar tap"],
     dod: ["Reply opens the MAL post form in-app on the emulator."],
   },
@@ -468,7 +469,7 @@ const UNITS = [
     needs: ["deps-prefs-contract"],
     owns: [".github/**", "analysis_options.yaml", "tools/release/**"],
     dal: [".github/workflows/", "update_gradle.sh", "pubspec.yaml version"],
-    goal: ["Version scheme yyyy.m.n+code (DAL style) — pubspec is the contract's file: put the version bump script in tools/release/ and report the one-line pubspec change as a finding; release workflow: run tools/l10n/build.sh instead of `flutter gen-l10n`, build_runner from dev deps, APK split + universal, sha1."],
+    goal: ["Version scheme yyyy.m.n+code (DAL style) — pubspec is the contract's file: put the version bump script in tools/release/ and report the one-line pubspec change as a finding; release workflow: run tools/l10n/build.sh instead of `flutter gen-l10n` (generated l10n files are no longer in git), create an empty placeholder `assets/.env` before analyze when the secrets are absent, build_runner from dev deps, APK split + universal, sha1."],
     dod: ["Workflow YAML validated with `actionlint` if available, else reviewed line by line in the PR body."],
   },
   {

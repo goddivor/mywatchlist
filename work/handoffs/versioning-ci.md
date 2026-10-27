@@ -15,7 +15,7 @@
 Plus `PROJECT-STATE.md` (rewrite in place, within its cap) and `docs/DECISIONS.md` (append one line per decision). Anything else you need is a FINDING to report, never an edit.
 
 ## Goal
-- Version scheme yyyy.m.n+code (DAL style) — pubspec is the contract's file: put the version bump script in tools/release/ and report the one-line pubspec change as a finding; release workflow: run tools/l10n/build.sh instead of `flutter gen-l10n`, build_runner from dev deps, APK split + universal, sha1.
+- Version scheme yyyy.m.n+code (DAL style) — pubspec is the contract's file: put the version bump script in tools/release/ and report the one-line pubspec change as a finding; release workflow: run tools/l10n/build.sh instead of `flutter gen-l10n` (generated l10n files are no longer in git), create an empty placeholder `assets/.env` before analyze when the secrets are absent, build_runner from dev deps, APK split + universal, sha1.
 
 ## Known bugs to fix in scope
 - none

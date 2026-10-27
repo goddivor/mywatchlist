@@ -267,6 +267,7 @@
         "lib/user/anime_manga_tab_pref.dart",
         "lib/user/anime_manga_tab_pref.g.dart",
         "lib/user/list_pref.dart",
+        "lib/user/user.dart",
         "lib/services/notifications/notification_service.dart",
         "lib/l10n/units/deps-prefs-contract/**",
         "test/units/deps-prefs-contract/**"

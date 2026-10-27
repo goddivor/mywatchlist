@@ -31,6 +31,8 @@ Never state a version from memory: read it here or in `pubspec.yaml` / `pubspec.
 | intl | ^0.20.2 |
 | json_annotation / json_serializable | ^4.9.0 / ^6.9.3 |
 
+- Localization generator: intl_utils 2.8.14, pinned in `tools/l10n/pubspec.lock` (its own package, outside the app's dependencies; run through `tools/l10n/build.sh`).
+
 New dependencies are added only by the `deps-prefs-contract` unit, which updates this table.
 
 ## Backend
