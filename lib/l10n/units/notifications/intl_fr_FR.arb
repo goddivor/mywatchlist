@@ -1,0 +1,76 @@
+{
+  "@@locale": "fr_FR",
+  "Notif_Episode_Title": "L'épisode {episode} de {title} est sorti",
+  "@Notif_Episode_Title": {
+    "placeholders": {
+      "episode": {
+        "type": "int"
+      },
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "Notif_New_Episode_Title": "{title} a un nouvel épisode",
+  "@Notif_New_Episode_Title": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "Notif_Body_Watching": "Mettez votre liste à jour dès que vous l'avez vu.",
+  "Notif_Body_Plan": "Un anime de votre liste « À regarder » est en cours de diffusion. Jetez-y un œil.",
+  "Notif_Channel_Watching": "Liste « En cours »",
+  "Notif_Channel_Watching_Desc": "Nouveaux épisodes des animes que vous regardez",
+  "Notif_Channel_Plan": "Liste « À regarder »",
+  "Notif_Channel_Plan_Desc": "Animes en cours de diffusion de votre liste « À regarder »",
+  "Notif_Test_Body": "Ceci est une notification de test. Touchez-la pour ouvrir l'anime.",
+  "Notif_Master_Title": "Rappels de diffusion",
+  "Notif_Master_Desc": "Recevoir une notification à la sortie d'un épisode de vos animes",
+  "Notif_Status_Scheduled": "{count, plural, one{1 rappel programmé} other{{count} rappels programmés}}",
+  "@Notif_Status_Scheduled": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "Notif_Status_Next": "Prochain : {date}",
+  "@Notif_Status_Next": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "Notif_Status_Empty": "Aucun rappel pour le moment. Ajoutez à votre liste « En cours » ou « À regarder » un anime diffusé cette saison.",
+  "Notif_Status_Working": "Préparation de vos rappels",
+  "Notif_Status_Failed": "Vos listes n'ont pas pu être lues. Les rappels déjà programmés ont été conservés.",
+  "Notif_Status_Off": "Les rappels sont désactivés",
+  "Notif_Needs_Mal": "Les rappels suivent vos listes MyAnimeList. Connectez un compte MyAnimeList pour les recevoir.",
+  "Notif_Needs_Mal_Action": "Comptes",
+  "Notif_Unsupported": "Les rappels de diffusion ne sont disponibles que sur Android.",
+  "Notif_Blocked": "Les notifications sont bloquées pour cette application. Autorisez-les dans les paramètres du système.",
+  "Notif_Blocked_Action": "Ouvrir les paramètres",
+  "Notif_Exact_Alarm": "Autorisez les alarmes exactes pour que les rappels arrivent à l'heure. Sans elles, ils peuvent avoir quelques minutes de retard.",
+  "Notif_Exact_Alarm_Action": "Autoriser",
+  "Notif_Denied": "Les notifications n'ont pas été autorisées, les rappels restent donc désactivés.",
+  "Notif_Sec_Notify": "Me notifier pour",
+  "Notif_Watching_Title": "Liste « En cours »",
+  "Notif_Watching_Desc": "Chaque nouvel épisode d'un anime que vous regardez",
+  "Notif_Plan_Title": "Liste « À regarder »",
+  "Notif_Plan_Desc": "Chaque nouvel épisode d'un anime en cours de diffusion que vous prévoyez de regarder",
+  "Notif_Sec_Look": "Apparence",
+  "Notif_Large_Image_Title": "Grande jaquette",
+  "Notif_Large_Image_Desc": "Afficher la jaquette en grand plutôt qu'une petite icône",
+  "Notif_Sec_Tools": "Outils",
+  "Notif_Test_Title_Action": "Envoyer une notification de test",
+  "Notif_Test_Action_Desc": "Elle apparaît dans 2 secondes. Touchez-la pour vérifier qu'elle ouvre l'anime.",
+  "Notif_Test_Sent": "Notification de test envoyée. Elle apparaît dans 2 secondes.",
+  "Notif_Test_Failed": "La notification de test n'a pas pu être envoyée. Vérifiez que les notifications sont autorisées.",
+  "Notif_Reschedule_Title": "Tout effacer et reprogrammer",
+  "Notif_Reschedule_Desc": "Reconstruire les rappels à partir de vos listes actuelles et du calendrier de diffusion",
+  "Notif_Reschedule_Done": "Rappels reprogrammés",
+  "Notif_Footer": "Les rappels sont planifiés à partir de vos listes et du calendrier de diffusion à l'ouverture de l'application, au plus une fois par jour. Android les conserve et les rétablit après un redémarrage."
+}

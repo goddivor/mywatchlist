@@ -1,20 +1,510 @@
-/// Airing notifications (flutter_local_notifications + timezone).
-///
-/// Stub created by `deps-prefs-contract` so `main.dart` already calls [init]; the
-/// `notifications` unit fills it (plugin initialization, channels, scheduling from
-/// `Preferences.notifications`, permission requests, open-from-notification).
-class NotificationService {
-  NotificationService._();
+import 'dart:async';
+import 'dart:io';
 
-  static final NotificationService instance = NotificationService._();
+import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
+import 'package:mywatchlist/constants/constants.dart' show AccountType;
+import 'package:mywatchlist/generated/l10n.dart';
+import 'package:mywatchlist/services/api/MAL/mal_api.dart';
+import 'package:mywatchlist/user/preferences/preferences.dart';
+import 'package:mywatchlist/user/user_manager.dart';
+import 'package:mywatchlist/widgets/calendar/airing_schedule.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import 'notification_backend.dart';
+import 'notification_models.dart';
+import 'notification_planner.dart';
+
+export 'notification_backend.dart' show NotificationPermissions;
+export 'notification_models.dart';
+
+/// Loads the airing anime of the user's lists (watching and plan to watch).
+typedef CandidateLoader = Future<List<AiringCandidate>> Function();
+
+/// Downloads a cover and returns its local path, or null.
+typedef CoverFetcher = Future<String?> Function(String url, int malId);
+
+/// Airing times, loaded on demand.
+typedef EpisodeSource = Future<List<AiringEpisode>> Function();
+
+/// What the last scheduling run did, for the settings page.
+@immutable
+class NotificationSummary {
+  const NotificationSummary({
+    this.running = false,
+    this.scheduled = 0,
+    this.next,
+    this.updatedAt,
+    this.failed = false,
+    this.needsMal = false,
+  });
+
+  final bool running;
+
+  /// Notifications handed to Android by the last run.
+  final int scheduled;
+
+  /// The earliest scheduled notification.
+  final DateTime? next;
+  final DateTime? updatedAt;
+
+  /// The last run could not read the lists or the schedule (the previous alarms stay).
+  final bool failed;
+
+  /// No MyAnimeList account: the lists the notifications read are not available.
+  final bool needsMal;
+
+  NotificationSummary copyWith({bool? running}) => NotificationSummary(
+        running: running ?? this.running,
+        scheduled: scheduled,
+        next: next,
+        updatedAt: updatedAt,
+        failed: failed,
+        needsMal: needsMal,
+      );
+
+  @override
+  bool operator ==(Object other) =>
+      other is NotificationSummary &&
+      other.running == running &&
+      other.scheduled == scheduled &&
+      other.next == next &&
+      other.updatedAt == updatedAt &&
+      other.failed == failed &&
+      other.needsMal == needsMal;
+
+  @override
+  int get hashCode => Object.hash(running, scheduled, next, updatedAt, failed, needsMal);
+}
+
+/// Airing notifications: which episodes of the watching and plan-to-watch lists to remind,
+/// scheduled with the system alarm so they fire while the app is closed.
+///
+/// The plugin keeps and restores the alarms itself (boot and app update receivers in the
+/// manifest); the app refreshes them at most once a day when it starts, and right away when
+/// the notification preferences change.
+class NotificationService {
+  NotificationService({
+    NotificationBackend? backend,
+    CandidateLoader? loadCandidates,
+    EpisodeSource? loadEpisodes,
+    CoverFetcher? fetchCover,
+    NotificationTexts? texts,
+    NotificationPreferences Function()? readPrefs,
+    DateTime Function()? clock,
+    this.refreshEvery = const Duration(days: 1),
+    this.debounce = const Duration(seconds: 2),
+  })  : _backend = backend ?? PluginNotificationBackend(),
+        _loadCandidates = loadCandidates ?? _loadMalCandidates,
+        _loadEpisodes = loadEpisodes ?? _loadScheduleEpisodes,
+        _fetchCover = fetchCover ?? _downloadCover,
+        _texts = texts ?? const _SNotificationTexts(),
+        _readPrefs = readPrefs ?? (() => Preferences.current.notifications),
+        _clock = clock ?? DateTime.now;
+
+  static NotificationService instance = NotificationService();
+
+  /// Last scheduling run (shared pref, milliseconds since epoch).
+  static const String lastRunKey = 'notifications_last_run_v1';
+
+  /// Pause between a preference change and the reschedule it triggers.
+  final Duration debounce;
+
+  /// Minimum time between two automatic runs.
+  final Duration refreshEvery;
+
+  final NotificationBackend _backend;
+  final CandidateLoader _loadCandidates;
+  final EpisodeSource _loadEpisodes;
+  final CoverFetcher _fetchCover;
+  final NotificationTexts _texts;
+  final NotificationPreferences Function() _readPrefs;
+  final DateTime Function() _clock;
+
+  final ValueNotifier<NotificationSummary> summary =
+      ValueNotifier(const NotificationSummary());
+
+  /// Opens a tapped notification (set by the app once its navigator exists).
+  void Function(String payload)? onOpen;
 
   bool _initialized = false;
+  String? _launchPayload;
+  String? _pendingTap;
+  Future<void>? _running;
+  bool _runAgain = false;
+  bool _runAgainForced = false;
+  Timer? _debounceTimer;
+  StreamSubscription<AppPreferences>? _prefsSub;
 
   bool get isInitialized => _initialized;
+
+  /// True where scheduled notifications exist (Android).
+  bool get isSupported => _backend.isSupported;
 
   /// Called once by `main` before `runApp`. Must stay cheap and must never throw: a
   /// notification failure cannot block the app start.
   Future<void> init() async {
+    if (_initialized) return;
     _initialized = true;
+    try {
+      await _backend.init(_handleTap);
+      _launchPayload = await _backend.launchPayload();
+    } catch (e) {
+      debugPrint('Notifications init: $e');
+    }
   }
+
+  /// The payload of the notification that launched the app, once: a Phoenix restart or a
+  /// rebuilt root must not open it a second time.
+  String? takeLaunchPayload() {
+    final payload = _launchPayload;
+    _launchPayload = null;
+    return payload;
+  }
+
+  void _handleTap(String? payload) {
+    if (payload == null || payload.isEmpty) return;
+    final open = onOpen;
+    if (open == null) {
+      _pendingTap = payload;
+      return;
+    }
+    open(payload);
+  }
+
+  /// Delivers a tap that arrived before [onOpen] was set.
+  void flushPendingTap() {
+    final payload = _pendingTap;
+    final open = onOpen;
+    if (payload == null || open == null) return;
+    _pendingTap = null;
+    open(payload);
+  }
+
+  /// Follows the preference store: any change of the notification group reschedules
+  /// (debounced) or cancels everything when turned off.
+  void bindPreferences(Stream<AppPreferences> changes) {
+    _prefsSub?.cancel();
+    AppPreferences? last;
+    _prefsSub = changes.listen((state) {
+      final before = last?.notifications;
+      last = state;
+      if (before == null || before == state.notifications) return;
+      requestReschedule();
+    });
+  }
+
+  /// Schedules a forced run shortly, merging bursts of changes.
+  void requestReschedule() {
+    _debounceTimer?.cancel();
+    _debounceTimer = Timer(debounce, () => scheduleAll(force: true));
+  }
+
+  /// Startup refresh: runs when notifications are on and the last run is old enough.
+  Future<void> refreshIfDue() => scheduleAll();
+
+  Future<NotificationPermissions> permissions() async {
+    try {
+      return await _backend.permissions();
+    } catch (e) {
+      debugPrint('Notifications permissions: $e');
+      return const NotificationPermissions();
+    }
+  }
+
+  /// Asks Android for the permissions (the system dialog / settings screen).
+  Future<NotificationPermissions> requestPermissions() async {
+    try {
+      return await _backend.requestPermissions();
+    } catch (e) {
+      debugPrint('Notifications request: $e');
+      return const NotificationPermissions();
+    }
+  }
+
+  /// Cancels everything and schedules again from the current lists and schedule.
+  /// [force] skips the once-a-day limit. Calls made while a run is going share it and queue
+  /// one more run, so the last preference change always wins. Never throws.
+  Future<void> scheduleAll({bool force = false}) {
+    final running = _running;
+    if (running != null) {
+      _runAgain = true;
+      _runAgainForced = _runAgainForced || force;
+      return running;
+    }
+    return _running = _run(force).whenComplete(() {
+      _running = null;
+      if (_runAgain) {
+        final forced = _runAgainForced;
+        _runAgain = false;
+        _runAgainForced = false;
+        scheduleAll(force: forced);
+      }
+    });
+  }
+
+  Future<void> _run(bool force) async {
+    if (!isSupported) return;
+    try {
+      final prefs = _readPrefs();
+      if (!prefs.enabled) {
+        await _backend.cancelAll();
+        summary.value = const NotificationSummary();
+        return;
+      }
+      final now = _clock();
+      if (!force && !await _isDue(now)) {
+        if (summary.value.updatedAt == null) await _refreshPending();
+        return;
+      }
+      summary.value = summary.value.copyWith(running: true);
+      final allowed = await _backend.permissions();
+      if (!allowed.notifications) {
+        summary.value = const NotificationSummary();
+        return;
+      }
+
+      final List<AiringCandidate> candidates;
+      final List<AiringEpisode> episodes;
+      try {
+        candidates = await _loadCandidates();
+        episodes = await _loadEpisodes();
+      } on _NeedsMal {
+        summary.value = const NotificationSummary(needsMal: true);
+        return;
+      } catch (e) {
+        debugPrint('Notifications: lists unavailable ($e)');
+        summary.value = NotificationSummary(
+          scheduled: summary.value.scheduled,
+          next: summary.value.next,
+          updatedAt: summary.value.updatedAt,
+          failed: true,
+        );
+        return;
+      }
+
+      final planned = NotificationPlanner.plan(
+        candidates: candidates,
+        schedule: episodes,
+        prefs: prefs,
+        texts: _texts,
+        now: now,
+      );
+      final covers = await _covers(planned);
+      await _backend.cancelAll();
+      var count = 0;
+      for (final n in planned) {
+        try {
+          await _backend.schedule(n, _lookOf(n, covers[n.malId], prefs.largeImage));
+          count++;
+        } catch (e) {
+          debugPrint('Notifications: could not schedule ${n.id} ($e)');
+        }
+      }
+      await _saveLastRun(now);
+      summary.value = NotificationSummary(
+        scheduled: count,
+        next: planned.isEmpty ? null : planned.first.at,
+        updatedAt: now,
+      );
+    } catch (e) {
+      debugPrint('Notifications: $e');
+      summary.value = summary.value.copyWith(running: false);
+    }
+  }
+
+  Future<void> _refreshPending() async {
+    try {
+      summary.value = NotificationSummary(scheduled: await _backend.pendingCount());
+    } catch (_) {}
+  }
+
+  Future<bool> _isDue(DateTime now) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final last = prefs.getInt(lastRunKey);
+      if (last == null) return true;
+      return now.difference(DateTime.fromMillisecondsSinceEpoch(last)) >= refreshEvery;
+    } catch (_) {
+      return true;
+    }
+  }
+
+  Future<void> _saveLastRun(DateTime now) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setInt(lastRunKey, now.millisecondsSinceEpoch);
+    } catch (_) {}
+  }
+
+  NotificationLook _lookOf(PlannedNotification n, String? cover, bool bigPicture) {
+    final watching = n.kind == NotificationKind.watching;
+    return NotificationLook(
+      channelName: watching ? _texts.watchingChannel : _texts.planToWatchChannel,
+      channelDescription:
+          watching ? _texts.watchingChannelDescription : _texts.planToWatchChannelDescription,
+      imagePath: cover,
+      bigPicture: bigPicture,
+    );
+  }
+
+  /// Covers of the planned anime, four downloads at a time; an anime without a cover just
+  /// gets a plain notification.
+  Future<Map<int?, String?>> _covers(List<PlannedNotification> planned) async {
+    final urls = <int, String>{};
+    for (final n in planned) {
+      final id = n.malId;
+      if (id != null && n.imageUrl != null && n.imageUrl!.isNotEmpty) urls[id] = n.imageUrl!;
+    }
+    final result = <int?, String?>{};
+    final queue = urls.entries.toList();
+    Future<void> worker() async {
+      while (queue.isNotEmpty) {
+        final entry = queue.removeLast();
+        try {
+          result[entry.key] = await _fetchCover(entry.value, entry.key);
+        } catch (_) {}
+      }
+    }
+
+    await Future.wait([for (var i = 0; i < 4; i++) worker()]);
+    return result;
+  }
+
+  /// Removes every scheduled notification and schedules them again.
+  Future<void> clearAndReschedule() => scheduleAll(force: true);
+
+  /// Shows a notification in two seconds (the settings "test" button). [candidate] is the
+  /// anime it opens; the default is a well known series so the tap can be checked anywhere.
+  Future<bool> sendTest({AiringCandidate? candidate, Duration delay = const Duration(seconds: 2)}) async {
+    if (!isSupported) return false;
+    try {
+      final allowed = await _backend.permissions();
+      if (!allowed.notifications) return false;
+      final anime = candidate ?? _sampleCandidate;
+      final prefs = _readPrefs();
+      final at = _clock().toUtc().add(delay);
+      final n = PlannedNotification(
+        id: testId,
+        kind: NotificationKind.watching,
+        at: at,
+        title: _texts.episodeTitle(anime.title, 1),
+        body: _texts.testBody,
+        payload: animePayload(anime.malId),
+        malId: anime.malId,
+        episode: 1,
+        imageUrl: anime.imageUrl,
+      );
+      String? cover;
+      if (anime.imageUrl != null) {
+        cover = await _fetchCover(anime.imageUrl!, anime.malId).catchError((_) => null);
+      }
+      await _backend.schedule(n, _lookOf(n, cover, prefs.largeImage));
+      return true;
+    } catch (e) {
+      debugPrint('Notifications test: $e');
+      return false;
+    }
+  }
+
+  /// Id of the test notification (a real one is `malId * 8 + slot`, never 1).
+  static const int testId = 1;
+
+  static const AiringCandidate _sampleCandidate = AiringCandidate(
+    malId: 21,
+    title: 'One Piece',
+    status: 'watching',
+    imageUrl: 'https://cdn.myanimelist.net/images/anime/1244/138851l.jpg',
+  );
+
+  void dispose() {
+    _debounceTimer?.cancel();
+    _prefsSub?.cancel();
+  }
+
+  // ---- defaults ----
+
+  static Future<List<AiringEpisode>> _loadScheduleEpisodes() async {
+    await AiringSchedule.instance.ensureLoaded();
+    return AiringSchedule.instance.episodes;
+  }
+
+  /// The user's MAL watching and plan-to-watch lists. Other trackers have no equivalent
+  /// here: the schedule is keyed by MAL id, so without a MAL account nothing is scheduled.
+  static Future<List<AiringCandidate>> _loadMalCandidates() async {
+    if (!UserManager.instance.isAuthenticated(AccountType.myanimelist)) throw const _NeedsMal();
+    const fields = ['status', 'num_episodes', 'broadcast', 'main_picture'];
+    final api = MalApi();
+    final lists = await Future.wait([
+      api.getUserAnimeList(status: AnimeListStatus.watching, fields: fields),
+      api.getUserAnimeList(status: AnimeListStatus.planToWatch, fields: fields),
+    ]);
+    return [
+      for (var i = 0; i < lists.length; i++)
+        for (final a in lists[i])
+          if (a.status != 'finished_airing')
+            AiringCandidate(
+              malId: a.id,
+              title: a.title,
+              status: i == 0 ? 'watching' : 'plan_to_watch',
+              imageUrl: a.imageUrl.isEmpty ? null : a.imageUrl,
+              numEpisodes: a.numEpisodes,
+              airingStatus: a.status,
+              broadcastDay: a.broadcast?.dayOfTheWeek,
+              broadcastTime: a.broadcast?.startTime,
+            ),
+    ];
+  }
+
+  static Future<String?> _downloadCover(String url, int malId) async {
+    try {
+      final dir = Directory('${(await getTemporaryDirectory()).path}/notification_covers');
+      await dir.create(recursive: true);
+      final file = File('${dir.path}/$malId.jpg');
+      if (await file.exists() && await file.length() > 0) return file.path;
+      final response = await http.get(Uri.parse(url)).timeout(const Duration(seconds: 10));
+      if (response.statusCode != 200 || response.bodyBytes.isEmpty) return null;
+      await file.writeAsBytes(response.bodyBytes);
+      return file.path;
+    } catch (_) {
+      return null;
+    }
+  }
+}
+
+class _NeedsMal implements Exception {
+  const _NeedsMal();
+}
+
+/// The strings of the notifications, read from `S` when a run starts (current language).
+class _SNotificationTexts implements NotificationTexts {
+  const _SNotificationTexts();
+
+  @override
+  String episodeTitle(String anime, int episode) => S.current.Notif_Episode_Title(episode, anime);
+
+  @override
+  String newEpisodeTitle(String anime) => S.current.Notif_New_Episode_Title(anime);
+
+  @override
+  String get watchingBody => S.current.Notif_Body_Watching;
+
+  @override
+  String get planToWatchBody => S.current.Notif_Body_Plan;
+
+  @override
+  String get watchingChannel => S.current.Notif_Channel_Watching;
+
+  @override
+  String get watchingChannelDescription => S.current.Notif_Channel_Watching_Desc;
+
+  @override
+  String get planToWatchChannel => S.current.Notif_Channel_Plan;
+
+  @override
+  String get planToWatchChannelDescription => S.current.Notif_Channel_Plan_Desc;
+
+  @override
+  String get testBody => S.current.Notif_Test_Body;
 }

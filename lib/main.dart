@@ -21,6 +21,8 @@ import 'package:mywatchlist/services/notifications/notification_service.dart';
 import 'package:mywatchlist/user/user_manager.dart';
 import 'package:app_links/app_links.dart';
 import 'package:mywatchlist/user/MAL/mal_home_preferences_bloc.dart';
+import 'package:mywatchlist/user/list_cache/list_status_cache.dart';
+import 'package:mywatchlist/utils/app_routes.dart';
 import 'package:mywatchlist/user/accounts/account_bloc.dart';
 import 'package:mywatchlist/user/accounts/provider/account_manager_singleton.dart';
 import 'package:mywatchlist/user/language/language_bloc.dart';
@@ -42,6 +44,9 @@ late UserManager userManager;
 /// Initial index for home navigation
 final int homeIndex = 0;
 
+/// Navigator of the app: lets a tapped notification open a screen from outside the widget tree.
+final GlobalKey<NavigatorState> appNavigatorKey = GlobalKey<NavigatorState>();
+
 /// Application entry point
 /// Initializes services, preferences and runs the app
 void main() async {
@@ -62,8 +67,13 @@ void main() async {
   await preferencesStore.migrateLegacy();
   final preferencesBloc = PreferencesBloc(store: preferencesStore);
 
-  // Airing notifications (filled by the notifications unit; never throws).
+  // Airing notifications: plugin start and the notification that launched the app (never
+  // throws), then follow the notification preferences to reschedule when they change.
   await NotificationService.instance.init();
+  NotificationService.instance.bindPreferences(preferencesBloc.stream);
+
+  // Saved list statuses in memory before the first frame, so cards show their badges at once.
+  await ListStatusCache.instance.ensureLoaded();
 
   // Initialize UserManager (POO architecture with BaseUser inheritance)
   userManager = UserManager.instance;
@@ -151,9 +161,21 @@ class MyWatchListApp extends StatefulWidget {
 class _MyWatchListAppState extends State<MyWatchListApp> {
   StreamSubscription? _sub;
 
+  /// Payload of the notification that launched the app, taken once so a Phoenix restart or a
+  /// rebuilt root does not open it again.
+  String? _launchPayload;
+
   @override
   void initState() {
     super.initState();
+    _launchPayload = NotificationService.instance.takeLaunchPayload();
+    // A notification tapped while the app runs opens its screen on the app navigator.
+    NotificationService.instance.onOpen = _openNotification;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      NotificationService.instance.flushPendingTap();
+      // Refresh the airing reminders (at most once a day) once the first frame is out of the way.
+      Future<void>.delayed(const Duration(seconds: 5), NotificationService.instance.refreshIfDue);
+    });
     // Listen for deep links (OAuth callbacks from multiple trackers)
     final appLinks = AppLinks();
     _sub = appLinks.uriLinkStream.listen((Uri? uri) {
@@ -161,6 +183,12 @@ class _MyWatchListAppState extends State<MyWatchListApp> {
         _handleOAuthCallback(uri);
       }
     });
+  }
+
+  void _openNotification(String payload) {
+    final context = appNavigatorKey.currentContext;
+    if (context == null) return;
+    AppRoutes.openFromNotification(context, payload);
   }
 
   /// Route OAuth callbacks to the appropriate tracker auth handler
@@ -216,6 +244,9 @@ class _MyWatchListAppState extends State<MyWatchListApp> {
   @override
   void dispose() {
     _sub?.cancel(); // Cancel deep link subscription
+    if (NotificationService.instance.onOpen == _openNotification) {
+      NotificationService.instance.onOpen = null;
+    }
     super.dispose();
   }
 
@@ -236,6 +267,7 @@ class _MyWatchListAppState extends State<MyWatchListApp> {
       buildWhen: _themeChanged,
       builder: (context, themeState) {
         return MaterialApp(
+          navigatorKey: appNavigatorKey,
           debugShowCheckedModeBanner: false,
           title: 'MyWatchList',
           localizationsDelegates: const [
@@ -252,7 +284,7 @@ class _MyWatchListAppState extends State<MyWatchListApp> {
           theme: themeState.lightThemeData, // Light theme
           darkTheme: themeState.darkThemeData, // Dark theme
           themeMode: themeState.themeMode, // Theme mode (light/dark/system)
-          home: const OpenScreen(),
+          home: OpenScreen(notificationPayload: _launchPayload),
           routes: {
             '/login': (context) => const LoginPage(),
           },
