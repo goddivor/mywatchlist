@@ -22,15 +22,24 @@ class HandlerCore {
       PathMatcher('manga/*id', _handleManga, ['api']),
       PathMatcher('news', _handleNews, ['data']),
       PathMatcher('featured', _handleFeatured, ['data']),
-      PathMatcher('reviews', _handleReviews),
+      PathMatcher('reviews', _handleReviews, ['data']),
+      PathMatcher('content/characters', _handleAllCharacters, ['data']),
       PathMatcher('character/*id', _handleCharacterInfo, ['data']),
+      PathMatcher('character/*id/pics', _handleCharacterPics, ['data']),
+      PathMatcher('characters', _handleCharacterHome, ['data']),
       PathMatcher('people/*id', _handlePeopleInfo, ['data']),
+      PathMatcher('people/*id/pics', _handlePeoplePics, ['data']),
+      PathMatcher('people', _handlePeopleHome, ['data']),
+      PathMatcher('magazines', _handleMagazines, ['data']),
+      PathMatcher('studios', _handleStudios, ['data']),
+      PathMatcher('search/all', _handleSearchAll, ['data']),
       PathMatcher('genres', _handleGenres, ['data']),
       PathMatcher('users/search', _handleUserSearch, ['data']),
       PathMatcher('users/about', _handleUserAbout, ['data']),
       PathMatcher('users/friends', _handleUserFriends, ['data']),
       PathMatcher('users/history', _handleUserHistory, ['data']),
       PathMatcher('clubs', _handleClubs, ['data']),
+      PathMatcher('clubs/type', _handleClubViewAll, ['data']),
       PathMatcher('schedules', _handleSchedules, ['data']),
       PathMatcher('stacks/detail', _handleStackDetail, ['data']),
       PathMatcher('stacks/content', _handleStackContent, ['data']),
@@ -203,21 +212,103 @@ class HandlerCore {
     return {'url': uri.path, 'data': result, 'fromCache': false};
   }
 
-  /// Reviews (HTML scraping — kept as raw text since reviews use inline widget parser).
+  /// Reviews (HTML scraping), parsed into `ReviewHtml` items.
+  ///
+  /// With `id`: reviews of that anime/manga, most voted first; without:
+  /// MAL's latest reviews of the `category`.
   Future<Map<String, dynamic>> _handleReviews(
       PathMatcher path, Uri uri, Map<String, String> params) async {
     final id = queryParams<int>(uri, 'id');
-    final category = queryParams<String>(uri, 'category', 'anime')!;
+    final category = _category(uri);
     final page = queryParams<int>(uri, 'page', 1)!;
 
-    String url;
-    if (id != null) {
-      url = '${Constants.malBaseUrl}/$category/$id/reviews?p=$page';
-    } else {
-      url = '${Constants.malBaseUrl}/reviews.php?t=$category&p=$page';
-    }
+    final url = id != null
+        ? '${Constants.malBaseUrl}/$category/$id/_/reviews?sort=mostvoted&p=$page'
+        : '${Constants.malBaseUrl}/reviews.php?t=$category&p=$page';
 
-    final result = await HttpConnect.htmlPage(url, (doc) => {'raw': doc.body?.text ?? ''});
+    final result = await HttpConnect.htmlPage(url, PageParsers.getReviews);
+    return {'url': uri.path, 'data': result, 'fromCache': false};
+  }
+
+  /// Every character (with voice actors) and staff member of a content.
+  Future<Map<String, dynamic>> _handleAllCharacters(
+      PathMatcher path, Uri uri, Map<String, String> params) async {
+    final id = queryParams<int>(uri, 'id');
+    if (id == null) return _missing('id');
+    final category = _category(uri);
+    final result = await HttpConnect.htmlPage(
+      '${Constants.malBaseUrl}/$category/$id/_/characters',
+      (doc) => PageParsers.parseCharacterAllPage(doc, category),
+    );
+    return {'url': uri.path, 'data': result, 'fromCache': false};
+  }
+
+  Future<Map<String, dynamic>> _handleCharacterPics(
+          PathMatcher path, Uri uri, Map<String, String> params) =>
+      _handlePics('character', path, uri);
+
+  Future<Map<String, dynamic>> _handlePeoplePics(
+          PathMatcher path, Uri uri, Map<String, String> params) =>
+      _handlePics('people', path, uri);
+
+  /// Full-size picture URLs of a character or a person.
+  Future<Map<String, dynamic>> _handlePics(
+      String type, PathMatcher path, Uri uri) async {
+    final id = int.tryParse(path.pathParam<String>(uri.path.substring(1)));
+    if (id == null) return _missing('id');
+    final result = await HttpConnect.htmlPage(
+      '${Constants.malBaseUrl}/$type/$id/_/pics',
+      PageParsers.parsePicturesPage,
+    );
+    return {'url': uri.path, 'data': result, 'fromCache': false};
+  }
+
+  Future<Map<String, dynamic>> _handleCharacterHome(
+          PathMatcher path, Uri uri, Map<String, String> params) =>
+      _handleRanking('character', uri);
+
+  Future<Map<String, dynamic>> _handlePeopleHome(
+          PathMatcher path, Uri uri, Map<String, String> params) =>
+      _handleRanking('people', uri);
+
+  /// Top characters / top people by favorites, 50 per page.
+  Future<Map<String, dynamic>> _handleRanking(String type, Uri uri) async {
+    final page = queryParams<int>(uri, 'page', 1)!;
+    final offset = (page < 1 ? 0 : page - 1) * 50;
+    final result = await HttpConnect.htmlPage(
+      '${Constants.malBaseUrl}/$type.php?limit=$offset',
+      (doc) => PageParsers.parseCharacterPeopleHome(doc, type),
+    );
+    return {'url': uri.path, 'data': result, 'fromCache': false};
+  }
+
+  Future<Map<String, dynamic>> _handleMagazines(
+          PathMatcher path, Uri uri, Map<String, String> params) =>
+      _handleProducers('manga', uri);
+
+  Future<Map<String, dynamic>> _handleStudios(
+          PathMatcher path, Uri uri, Map<String, String> params) =>
+      _handleProducers('anime', uri);
+
+  /// Studios (anime) or magazines (manga): `{ "<id>": "<name>" }`.
+  Future<Map<String, dynamic>> _handleProducers(
+      String category, Uri uri) async {
+    final result = await HttpConnect.htmlPage(
+      '${Constants.malBaseUrl}/$category.php',
+      (doc) => PageParsers.parseMagazines(doc, category),
+    );
+    return {'url': uri.path, 'data': result, 'fromCache': false};
+  }
+
+  /// MAL "all" search, grouped by category.
+  Future<Map<String, dynamic>> _handleSearchAll(
+      PathMatcher path, Uri uri, Map<String, String> params) async {
+    final query = queryParams<String>(uri, 'q', '')!;
+    if (query.trim().isEmpty) return _missing('q');
+    final result = await HttpConnect.htmlPage(
+      '${Constants.malBaseUrl}/search/all?q=${Uri.encodeQueryComponent(query)}&cat=all',
+      PageParsers.allSearchResultFromHtml,
+    );
     return {'url': uri.path, 'data': result, 'fromCache': false};
   }
 
@@ -265,13 +356,14 @@ class HandlerCore {
     return {'url': uri.path, 'data': result, 'fromCache': false};
   }
 
-  /// User about/bio (HTML scraping — kept as raw, complex profile parsing).
+  /// User "about me" (HTML scraping), parsed into `UserAboutHtml`.
   Future<Map<String, dynamic>> _handleUserAbout(
       PathMatcher path, Uri uri, Map<String, String> params) async {
     final username = queryParams<String>(uri, 'username', '')!;
+    if (username.isEmpty) return _missing('username');
     final result = await HttpConnect.htmlPage(
-      '${Constants.malBaseUrl}/profile/$username',
-      (doc) => {'raw': doc.body?.text ?? ''},
+      '${Constants.malBaseUrl}/profile/${Uri.encodeComponent(username)}',
+      PageParsers.parseUserAboutPage,
     );
     return {'url': uri.path, 'data': result, 'fromCache': false};
   }
@@ -301,8 +393,20 @@ class HandlerCore {
   }
 
   /// Clubs (HTML scraping).
+  ///
+  /// With `id`: that club's page (`ClubPageHtml`). Without: the club list,
+  /// or a club search when `q` is given (MWL behaviour, kept).
   Future<Map<String, dynamic>> _handleClubs(
       PathMatcher path, Uri uri, Map<String, String> params) async {
+    final id = queryParams<int>(uri, 'id');
+    if (id != null) {
+      final result = await HttpConnect.htmlPage(
+        '${Constants.malBaseUrl}/clubs.php?cid=$id',
+        PageParsers.parseClubPage,
+      );
+      return {'url': uri.path, 'data': result, 'fromCache': false};
+    }
+
     final query = queryParams<String>(uri, 'q');
     final page = queryParams<int>(uri, 'page', 1)!;
 
@@ -317,22 +421,55 @@ class HandlerCore {
     return {'url': uri.path, 'data': result, 'fromCache': false};
   }
 
+  /// "See all" pages of a club: `type` is `members`, `forum` or `comments`,
+  /// `offset` the MAL `show` offset (36, 50 and 20 items per page).
+  Future<Map<String, dynamic>> _handleClubViewAll(
+      PathMatcher path, Uri uri, Map<String, String> params) async {
+    final type = queryParams<String>(uri, 'type');
+    final id = queryParams<int>(uri, 'id');
+    if (id == null) return _missing('id');
+    if (!const ['members', 'forum', 'comments'].contains(type)) {
+      return _missing('type');
+    }
+    final offset = queryParams<int>(uri, 'offset', 0)!;
+    final url = type == 'forum'
+        ? '${Constants.malBaseUrl}/forum/?clubid=$id&show=$offset'
+        : '${Constants.malBaseUrl}/clubs.php?action=view&t=$type&id=$id&show=$offset';
+    final result = await HttpConnect.htmlPage(
+      url,
+      (doc) => PageParsers.parseClubPageViewAll(doc, type!),
+    );
+    return {'url': uri.path, 'data': result, 'fromCache': false};
+  }
+
   /// Anime schedules.
+  ///
+  /// Default source is LiveChart.me (DailyAL behaviour): `season`
+  /// (`winter|spring|summer|fall`, current one by default), `year` and
+  /// `type` (`all`, `tv`, …) give a list of `LiveChartEpisode`.
+  /// `source=jikan` keeps the former Jikan `/schedules` proxy.
   Future<Map<String, dynamic>> _handleSchedules(
       PathMatcher path, Uri uri, Map<String, String> params) async {
-    final season = queryParams<String>(uri, 'season');
-    final year = queryParams<int>(uri, 'year');
+    final source = queryParams<String>(uri, 'source', 'livechart')!;
     final type = queryParams<String>(uri, 'type');
 
-    String url = '${Constants.jikanV4}schedules';
-    if (type != null && type.isNotEmpty && type != 'all') {
-      url += '?filter=$type';
-    }
-    if (season != null && year != null) {
-      url += url.contains('?') ? '&sfw=true' : '?sfw=true';
+    if (source == 'jikan') {
+      String url = '${Constants.jikanV4}schedules';
+      if (type != null && type.isNotEmpty && type != 'all') {
+        url += '?filter=$type';
+      }
+      final result = await HttpConnect.retryGetChecked(url, {});
+      return {'url': uri.path, 'data': result, 'fromCache': false};
     }
 
-    final result = await HttpConnect.retryGetChecked(url, {});
+    final current = currentSeason(DateTime.now());
+    final year = queryParams<int>(uri, 'year', current.year)!;
+    var season = queryParams<String>(uri, 'season', current.season)!;
+    if (!seasons.contains(season)) season = current.season;
+    final result = await HttpConnect.htmlPage(
+      'https://www.livechart.me/$season-$year/${type ?? 'all'}',
+      PageParsers.parseLiveChartSchedule,
+    );
     return {'url': uri.path, 'data': result, 'fromCache': false};
   }
 
@@ -430,6 +567,15 @@ class HandlerCore {
   // HTML scraping helpers
   // ---------------------------------------------------------------------------
 
+  /// `category` query parameter restricted to `anime` or `manga`.
+  String _category(Uri uri) =>
+      queryParams<String>(uri, 'category', 'anime') == 'manga'
+          ? 'manga'
+          : 'anime';
+
+  Map<String, dynamic> _missing(String param) =>
+      {'error': true, 'message': 'Missing or invalid $param parameter'};
+
   Future<Map<String, dynamic>?> _getHtmlContent(String category, int id) async {
     try {
       final type = category == 'manga' ? ContentType.manga : ContentType.anime;
@@ -442,4 +588,19 @@ class HandlerCore {
       return null;
     }
   }
+}
+
+/// LiveChart season names, in calendar order.
+const seasons = ['winter', 'spring', 'summer', 'fall'];
+
+/// Current anime season of [date], LiveChart style: a season starts on the
+/// 28th of the month before its first month (so 28 Dec is next year's
+/// winter). Ported from DailyAL `_getSeason`.
+({String season, int year}) currentSeason(DateTime date) {
+  final month = date.month;
+  final day = date.day;
+  if (month == 12 && day >= 28) return (season: 'winter', year: date.year + 1);
+  final shifted = day >= 28 && month % 3 == 0 ? month + 1 : month;
+  final index = ((shifted - 1) ~/ 3) % 4;
+  return (season: seasons[index], year: date.year);
 }

@@ -117,10 +117,42 @@ class MwlApi {
 
     final response = await MalConnect.retryGet(url, {});
     if (response.statusCode == 200 && response.body.isNotEmpty) {
-      return jsonDecode(response.body);
+      return decodeJson(response.body);
     }
     return null;
   }
+
+  /// Bodies above this size are decoded on a background isolate.
+  static const int isolateDecodeThreshold = 32 * 1024;
+
+  /// Decode a JSON body, off the UI isolate when it is large
+  /// (`compute` runs inline on web).
+  static Future<dynamic> decodeJson(String body) {
+    if (body.length < isolateDecodeThreshold) {
+      return Future.value(jsonDecode(body));
+    }
+    return compute(jsonDecode, body);
+  }
+
+  /// `data` field of a backend envelope.
+  Future<dynamic> _getData(String endpoint, {bool fromCache = true}) async {
+    final result = await httpGet(endpoint, fromCache: fromCache);
+    return result is Map ? result['data'] : null;
+  }
+
+  static List<T> _listOf<T>(
+    dynamic data,
+    T Function(Map<String, dynamic>) fromJson,
+  ) {
+    if (data is! List) return <T>[];
+    return data
+        .whereType<Map>()
+        .map((e) => fromJson(Map<String, dynamic>.from(e)))
+        .toList();
+  }
+
+  static Map<String, dynamic>? _mapOf(dynamic data) =>
+      data is Map ? Map<String, dynamic>.from(data) : null;
 
   /// GET request to the Rust API (MWL API URL).
   Future<dynamic> _apiGet(String endpoint) async {
@@ -137,7 +169,7 @@ class MwlApi {
       ).timeout(const Duration(seconds: 15));
 
       if (response.statusCode == 200 && response.body.isNotEmpty) {
-        return jsonDecode(response.body);
+        return await decodeJson(response.body);
       }
     } catch (e) {
       if (kDebugMode) {
@@ -213,7 +245,8 @@ class MwlApi {
     return result as Map<String, dynamic>?;
   }
 
-  /// Fetch reviews.
+  /// Fetch reviews (raw envelope; `data` is a list of [ReviewHtml] JSON).
+  /// Prefer the typed [getReviewList].
   Future<Map<String, dynamic>?> getReviews({
     int? id,
     String category = 'anime',
@@ -258,7 +291,8 @@ class MwlApi {
     return result as Map<String, dynamic>?;
   }
 
-  /// Fetch user about/bio.
+  /// Fetch user about/bio (raw envelope; `data` is [UserAboutHtml] JSON).
+  /// Prefer the typed [getUserAboutHtml].
   Future<Map<String, dynamic>?> getUserAbout(
     String username, {
     bool fromCache = true,
@@ -311,7 +345,10 @@ class MwlApi {
     return result as Map<String, dynamic>?;
   }
 
-  /// Fetch anime schedules.
+  /// Fetch anime schedules from Jikan (raw envelope).
+  ///
+  /// The backend's default source is now LiveChart: use
+  /// [getLiveChartSchedule] for DailyAL's episode countdowns.
   Future<Map<String, dynamic>?> getSchedules({
     String? season,
     int? year,
@@ -319,6 +356,7 @@ class MwlApi {
     bool fromCache = true,
   }) async {
     final params = <String, dynamic>{
+      'source': 'jikan',
       'type': type,
       if (season != null) 'season': season,
       if (year != null) 'year': year,
@@ -507,6 +545,171 @@ class MwlApi {
   }
 
   // ---------------------------------------------------------------------------
+  // DailyAL page routes (typed)
+  // ---------------------------------------------------------------------------
+
+  /// Every character (with voice actors) and the staff of an anime or manga
+  /// (`category` is `anime` or `manga`). Null when the page failed.
+  Future<ContentCharactersHtml?> getContentCharacters(
+    int id, {
+    String category = 'anime',
+    bool fromCache = true,
+  }) async {
+    final data = _mapOf(await _getData(
+      'content/characters?${_buildQuery({'id': id, 'category': category})}',
+      fromCache: fromCache,
+    ));
+    return data == null ? null : ContentCharactersHtml.fromJson(data);
+  }
+
+  /// Full-size picture URLs of a character.
+  Future<List<String>> getCharacterPictures(int id,
+          {bool fromCache = true}) =>
+      _pictures('character/$id/pics', fromCache);
+
+  /// Full-size picture URLs of a person.
+  Future<List<String>> getPeoplePictures(int id, {bool fromCache = true}) =>
+      _pictures('people/$id/pics', fromCache);
+
+  Future<List<String>> _pictures(String endpoint, bool fromCache) async {
+    final data = await _getData(endpoint, fromCache: fromCache);
+    return data is List ? data.whereType<String>().toList() : <String>[];
+  }
+
+  /// Top characters by favorites, 50 per page (page starts at 1).
+  Future<List<RankedPersonHtml>> getTopCharacters({
+    int page = 1,
+    bool fromCache = true,
+  }) async =>
+      _listOf(await _getData('characters?page=$page', fromCache: fromCache),
+          RankedPersonHtml.fromJson);
+
+  /// Top people by favorites, 50 per page (page starts at 1).
+  Future<List<RankedPersonHtml>> getTopPeople({
+    int page = 1,
+    bool fromCache = true,
+  }) async =>
+      _listOf(await _getData('people?page=$page', fromCache: fromCache),
+          RankedPersonHtml.fromJson);
+
+  /// Manga magazines: MAL id to name, most entries first.
+  Future<Map<int, String>> getMagazines({bool fromCache = true}) =>
+      _producers('magazines', fromCache);
+
+  /// Anime studios and producers: MAL id to name, most entries first.
+  Future<Map<int, String>> getStudios({bool fromCache = true}) =>
+      _producers('studios', fromCache);
+
+  Future<Map<int, String>> _producers(String endpoint, bool fromCache) async {
+    final data = await _getData(endpoint, fromCache: fromCache);
+    final result = <int, String>{};
+    if (data is Map) {
+      data.forEach((key, value) {
+        final id = int.tryParse('$key');
+        if (id != null && value is String) result[id] = value;
+      });
+    }
+    return result;
+  }
+
+  /// A club page (information, members, pictures, topics, comments, staff,
+  /// relations). Null when the page failed.
+  Future<ClubPageHtml?> getClubPage(int id, {bool fromCache = true}) async {
+    final data = _mapOf(await _getData('clubs?id=$id', fromCache: fromCache));
+    return data == null ? null : ClubPageHtml.fromJson(data);
+  }
+
+  /// Club members, 36 per page ([offset] is MAL's `show` offset).
+  Future<List<MalUserRef>> getClubMembers(
+    int id, {
+    int offset = 0,
+    bool fromCache = true,
+  }) async =>
+      _listOf(await _clubViewAll(id, 'members', offset, fromCache),
+          MalUserRef.fromJson);
+
+  /// Club forum topics, 50 per page ([offset] is MAL's `show` offset).
+  Future<List<ForumTopicHtml>> getClubForumTopics(
+    int id, {
+    int offset = 0,
+    bool fromCache = true,
+  }) async =>
+      _listOf(await _clubViewAll(id, 'forum', offset, fromCache),
+          ForumTopicHtml.fromJson);
+
+  /// Club comments, newest first, 20 per page ([offset] is MAL's `show`
+  /// offset).
+  Future<List<ClubCommentHtml>> getClubComments(
+    int id, {
+    int offset = 0,
+    bool fromCache = true,
+  }) async =>
+      _listOf(await _clubViewAll(id, 'comments', offset, fromCache),
+          ClubCommentHtml.fromJson);
+
+  Future<dynamic> _clubViewAll(
+          int id, String type, int offset, bool fromCache) =>
+      _getData(
+        'clubs/type?${_buildQuery({'id': id, 'type': type, 'offset': offset})}',
+        fromCache: fromCache,
+      );
+
+  /// Reviews: of one anime/manga when [id] is given (most voted first),
+  /// else MAL's latest reviews of [category].
+  Future<List<ReviewHtml>> getReviewList({
+    int? id,
+    String category = 'anime',
+    int page = 1,
+    bool fromCache = true,
+  }) async {
+    final result = await getReviews(
+        id: id, category: category, page: page, fromCache: fromCache);
+    return _listOf(result?['data'], ReviewHtml.fromJson);
+  }
+
+  /// "About me" of a MAL profile. Null when the page failed.
+  Future<UserAboutHtml?> getUserAboutHtml(
+    String username, {
+    bool fromCache = true,
+  }) async {
+    final result = await getUserAbout(
+      Uri.encodeQueryComponent(username),
+      fromCache: fromCache,
+    );
+    final data = _mapOf(result?['data']);
+    return data == null ? null : UserAboutHtml.fromJson(data);
+  }
+
+  /// Upcoming episodes of a season from LiveChart.me.
+  ///
+  /// [season] is `winter`, `spring`, `summer` or `fall`; [season] and
+  /// [year] default to the current season; [type] is LiveChart's filter
+  /// (`all`, `tv`, `movies`, `ovas`, …).
+  Future<List<LiveChartEpisode>> getLiveChartSchedule({
+    String? season,
+    int? year,
+    String type = 'all',
+    bool fromCache = true,
+  }) async {
+    final qs = _buildQuery({'season': season, 'year': year, 'type': type});
+    return _listOf(await _getData('schedules?$qs', fromCache: fromCache),
+        LiveChartEpisode.fromJson);
+  }
+
+  /// MAL "all" search, grouped by category (every category key present).
+  /// Null when the page failed.
+  Future<SearchAllResult?> searchAll(
+    String query, {
+    bool fromCache = true,
+  }) async {
+    final data = _mapOf(await _getData(
+      'search/all?${_buildQuery({'q': query})}',
+      fromCache: fromCache,
+    ));
+    return data == null ? null : SearchAllResult.fromJson(data);
+  }
+
+  // ---------------------------------------------------------------------------
   // Rust API endpoints
   // ---------------------------------------------------------------------------
 
@@ -540,7 +743,7 @@ class MwlApi {
       ).timeout(const Duration(seconds: 30));
 
       if (response.statusCode == 200 && response.body.isNotEmpty) {
-        return jsonDecode(response.body) as Map<String, dynamic>;
+        return await decodeJson(response.body) as Map<String, dynamic>;
       }
     } catch (e) {
       if (kDebugMode) {
