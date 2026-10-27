@@ -260,6 +260,8 @@
         "l10n-pipeline"
       ],
       "owns": [
+        "lib/utils/deep_links.dart",
+        "test/units/deep-links/**",
         "android/build.gradle",
         "android/build.gradle.kts",
         "docs/PERFORMANCE.md",

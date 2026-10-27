@@ -6,6 +6,8 @@
 - `l10n-pipeline` (Restore the localization pipeline (ARB sources, per-unit fragments, working language picker))
 
 ## Owns (may create or edit ONLY these)
+- `lib/utils/deep_links.dart`
+- `test/units/deep-links/**`
 - `android/build.gradle`
 - `android/build.gradle.kts`
 - `docs/PERFORMANCE.md`
