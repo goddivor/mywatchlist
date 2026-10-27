@@ -9,6 +9,16 @@ rootProject.buildDir = "../build"
 subprojects {
     project.buildDir = "${rootProject.buildDir}/${project.name}"
 }
+// Plugin modules compile against the app's SDK (36): add_2_calendar still declares android-33
+// while the androidx versions it pulls in need compileSdk 34 or more.
+// Registered before evaluationDependsOn so it runs ahead of AGP's own afterEvaluate hook.
+subprojects {
+    afterEvaluate { project ->
+        if (project.plugins.hasPlugin("com.android.library")) {
+            project.android.compileSdk = 36
+        }
+    }
+}
 subprojects {
     project.evaluationDependsOn(":app")
 }
