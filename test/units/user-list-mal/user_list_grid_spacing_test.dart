@@ -32,6 +32,10 @@ Future<UserListTabController> _pumpTab(
     settings: ListViewSettings(sortKey: ListSortKeys.updated, display: display),
     cache: cache,
   );
+  tester.view
+    ..physicalSize = const Size(_width, 1600)
+    ..devicePixelRatio = 1;
+  addTearDown(tester.view.reset);
   await tester.pumpWidget(MaterialApp(
     localizationsDelegates: const [
       S.delegate,
@@ -40,23 +44,20 @@ Future<UserListTabController> _pumpTab(
       GlobalCupertinoLocalizations.delegate,
     ],
     supportedLocales: S.delegate.supportedLocales,
-    home: MediaQuery(
-      data: const MediaQueryData(size: Size(_width, 1600)),
-      child: Scaffold(
-        body: UserListTab(
-          controller: controller,
-          adapter: adapter,
-          display: display,
-          cardProfile: null,
-          actions: EntryActions(
-            onOpen: (_) {},
-            onEdit: (_) {},
-            onStep: null,
-            canStep: (_) => false,
-            busy: ValueNotifier(const <int>{}),
-          ),
-          style: const EntryCardStyle(),
+    home: Scaffold(
+      body: UserListTab(
+        controller: controller,
+        adapter: adapter,
+        display: display,
+        cardProfile: null,
+        actions: EntryActions(
+          onOpen: (_) {},
+          onEdit: (_) {},
+          onStep: null,
+          canStep: (_) => false,
+          busy: ValueNotifier(const <int>{}),
         ),
+        style: const EntryCardStyle(),
       ),
     ),
   ));
