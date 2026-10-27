@@ -1,0 +1,193 @@
+{
+  "@@locale": "en",
+  "Prof_Tab_Stats": "Stats",
+  "Prof_Tab_Friends": "Friends",
+  "Prof_Tab_Clubs": "Clubs",
+  "Prof_Tab_About": "About",
+  "Prof_Tab_Favorites": "Favorites",
+  "Prof_Tab_History": "History",
+  "Prof_Title_Own": "My profile",
+  "Prof_Anime": "Anime",
+  "Prof_Manga": "Manga",
+  "Prof_Joined": "Joined {date}",
+  "@Prof_Joined": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "Prof_Loading": "Loading profile…",
+  "Prof_Retry": "Retry",
+  "Prof_Error_Title": "Couldn’t load this profile",
+  "Prof_Error_Body": "Check your connection and try again.",
+  "Prof_Not_Found_Body": "This profile doesn’t exist or is private.",
+  "Prof_Session_Expired_Body": "Your MyAnimeList session expired. Sign in again to see your profile.",
+  "Prof_Sign_In": "Sign in",
+  "Prof_Sign_In_Title": "Sign in to see your profile",
+  "Prof_Sign_In_Body": "Connect your MyAnimeList account to see your stats, friends, favorites and history.",
+  "Prof_Unknown": "Unknown",
+  "Prof_Gender": "Gender",
+  "Prof_Location": "Location",
+  "Prof_Birthday": "Birthday",
+  "Prof_Mean_Score": "Mean score",
+  "Prof_Entries_Label": "Entries",
+  "Prof_Days_Label": "Days",
+  "Prof_Episodes_Label": "Episodes",
+  "Prof_Chapters_Label": "Chapters",
+  "Prof_Volumes_Label": "Volumes",
+  "Prof_Entry_Count": "{count, plural, =1{1 entry} other{{count} entries}}",
+  "@Prof_Entry_Count": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "Prof_Chart_Anime_Title": "Anime list",
+  "Prof_Chart_Manga_Title": "Manga list",
+  "Prof_Chart_By_Entries": "Entries",
+  "Prof_Chart_By_Days": "Days",
+  "Prof_Status_Watching": "Watching",
+  "Prof_Status_Reading": "Reading",
+  "Prof_Status_Completed": "Completed",
+  "Prof_Status_On_Hold": "On hold",
+  "Prof_Status_Dropped": "Dropped",
+  "Prof_Status_Plan_Watch": "Plan to watch",
+  "Prof_Status_Plan_Read": "Plan to read",
+  "Prof_Days_Count": "{days} days",
+  "@Prof_Days_Count": {
+    "placeholders": {
+      "days": {
+        "type": "String"
+      }
+    }
+  },
+  "Prof_Show_Details": "Show details",
+  "Prof_Hide_Details": "Hide details",
+  "Prof_Score_Dist": "Score distribution",
+  "Prof_Unrated_Count": "{count, plural, =1{1 unrated entry} other{{count} unrated entries}}",
+  "@Prof_Unrated_Count": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "Prof_Dist_Genres": "Genres",
+  "Prof_Dist_Media": "Media types",
+  "Prof_Dist_Sources": "Source material",
+  "Prof_Dist_Studios": "Studios",
+  "Prof_Dist_Authors": "Authors",
+  "Prof_Dist_Scored_Only": "Based on scored entries only",
+  "Prof_Dist_Sort_Count": "Most entries",
+  "Prof_Dist_Sort_Mean": "Best mean score",
+  "Prof_Dist_All": "All",
+  "Prof_Dist_Show_All": "Show all ({count})",
+  "@Prof_Dist_Show_All": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "Prof_Dist_Show_Less": "Show less",
+  "Prof_Dist_Mean": "mean {score}",
+  "@Prof_Dist_Mean": {
+    "placeholders": {
+      "score": {
+        "type": "String"
+      }
+    }
+  },
+  "Prof_Dist_Empty": "Not enough data for this chart yet.",
+  "Prof_Insights_Loading": "Reading the list…",
+  "Prof_Insights_Error": "The list is private or couldn’t be loaded.",
+  "Prof_Above_Mean": "Rated above the community",
+  "Prof_Score_Compare": "Score {score} · mean {mean}",
+  "@Prof_Score_Compare": {
+    "placeholders": {
+      "score": {
+        "type": "String"
+      },
+      "mean": {
+        "type": "String"
+      }
+    }
+  },
+  "Prof_Friends_Count": "{count, plural, =1{1 friend} other{{count} friends}}",
+  "@Prof_Friends_Count": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "Prof_Friends_Empty": "No friends yet.",
+  "Prof_Last_Seen": "Last seen {when}",
+  "@Prof_Last_Seen": {
+    "placeholders": {
+      "when": {
+        "type": "String"
+      }
+    }
+  },
+  "Prof_Friends_Since": "Friends since {date}",
+  "@Prof_Friends_Since": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "Prof_Load_More": "Load more",
+  "Prof_Clubs_Count": "{count, plural, =1{1 club} other{{count} clubs}}",
+  "@Prof_Clubs_Count": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "Prof_Clubs_Empty": "Not a member of any club yet.",
+  "Prof_Club_Open_Failed": "Couldn’t open this club.",
+  "Prof_About_Empty": "Nothing written here yet.",
+  "Prof_About_Empty_Self": "You haven’t written an about section yet.",
+  "Prof_About_Edit": "Edit on MyAnimeList",
+  "Prof_About_Edit_Hint": "Changes made on MyAnimeList can take a few minutes to show up here.",
+  "Prof_Fav_Empty": "No favorites yet.",
+  "Prof_Fav_Anime": "Anime",
+  "Prof_Fav_Manga": "Manga",
+  "Prof_Fav_Characters": "Characters",
+  "Prof_Fav_People": "People",
+  "Prof_History_Empty": "No recent activity.",
+  "Prof_History_All": "All",
+  "Prof_History_Items": "{count, plural, =1{1 item} other{{count} items}}",
+  "@Prof_History_Items": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "Prof_Today": "Today",
+  "Prof_Yesterday": "Yesterday",
+  "Prof_Share_Link": "Profile link",
+  "Prof_Share_Name": "Username",
+  "Prof_Share_Stats": "Stats summary",
+  "Prof_Edit_Profile": "Edit profile",
+  "Prof_Open_Full": "Open full profile",
+  "Prof_Report_Title": "Report this user",
+  "Prof_Report_Action": "Report user",
+  "Prof_Report_Body": "This opens MyAnimeList’s report page in your browser.",
+  "Prof_Report_Confirm": "Report",
+  "Prof_Cancel": "Cancel",
+  "Prof_Close": "Close",
+  "Prof_Bg_Set": "Set background",
+  "Prof_Bg_Remove": "Remove background",
+  "Prof_Bg_Remove_Confirm": "Remove the background image?",
+  "Prof_Bg_Set_Done": "Profile background updated.",
+  "Prof_Bg_Removed": "Profile background removed.",
+  "Prof_Bg_Error": "Couldn’t update the background.",
+  "Prof_Bg_Local_Note": "The background is saved on this device only."
+}

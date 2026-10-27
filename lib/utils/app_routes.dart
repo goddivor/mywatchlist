@@ -24,9 +24,11 @@ import 'package:mywatchlist/screens/settings/settings_page.dart';
 import 'package:mywatchlist/screens/settings/storage_settings.dart';
 import 'package:mywatchlist/screens/settings/theme_settings.dart';
 import 'package:mywatchlist/screens/settings/user_prefs_settings.dart';
+import 'package:mywatchlist/screens/user_profile/user_profile_screen.dart';
 import 'package:mywatchlist/services/auth/anilist_auth_v2.dart';
 import 'package:mywatchlist/services/auth/mal_auth_v2.dart';
 import 'package:mywatchlist/services/auth/simkl_auth_v2.dart';
+import 'package:mywatchlist/widgets/user/profile/user_pop_sheet.dart';
 
 export 'package:mywatchlist/pages/settings/settings_section.dart';
 
@@ -100,8 +102,13 @@ abstract final class AppRoutes {
         GeneralSearchScreen(searchQuery: query, showBackButton: true),
       );
 
+  /// Whether [tracker] has a real profile screen (MyAnimeList; no tracker selected falls back
+  /// to MyAnimeList, as the home shell does). The others open a placeholder page until
+  /// their profile unit lands.
+  static bool _hasProfileScreen(AccountType tracker) =>
+      tracker == AccountType.myanimelist || tracker == AccountType.none;
+
   /// Opens the profile of [username] on [tracker]; null [username] = the signed-in user.
-  /// Stub page until the profile units land (they replace [_UserProfileStub] here).
   static Future<void> openUserProfile(
     BuildContext context, {
     required AccountType tracker,
@@ -109,16 +116,18 @@ abstract final class AppRoutes {
   }) =>
       push<void>(
         context,
-        _UserProfileStub(
-          title: S.current.Profile,
-          icon: Icons.person_outline,
-          tracker: tracker,
-          username: username,
-        ),
+        _hasProfileScreen(tracker)
+            ? UserProfileScreen(username: username)
+            : _UserProfileStub(
+                title: S.current.Profile,
+                icon: Icons.person_outline,
+                tracker: tracker,
+                username: username,
+              ),
       );
 
-  /// Opens the list statistics of [username] on [tracker]; null [username] = the signed-in
-  /// user. Stub page until the profile/stats unit lands.
+  /// Opens the list statistics of [username] on [tracker] (the profile, on its Stats tab);
+  /// null [username] = the signed-in user.
   static Future<void> openUserStats(
     BuildContext context, {
     required AccountType tracker,
@@ -126,13 +135,28 @@ abstract final class AppRoutes {
   }) =>
       push<void>(
         context,
-        _UserProfileStub(
-          title: S.current.Stats,
-          icon: Icons.bar_chart_rounded,
-          tracker: tracker,
-          username: username,
-        ),
+        _hasProfileScreen(tracker)
+            ? UserProfileScreen(username: username, initialTab: UserProfileTab.stats)
+            : _UserProfileStub(
+                title: S.current.Stats,
+                icon: Icons.bar_chart_rounded,
+                tracker: tracker,
+                username: username,
+              ),
       );
+
+  /// Opens the quick profile sheet (header, main numbers, actions) of a MyAnimeList user;
+  /// null [username] = the signed-in user. Other trackers open their full profile page.
+  static Future<void> openUserPop(
+    BuildContext context, {
+    required AccountType tracker,
+    String? username,
+  }) {
+    if (!_hasProfileScreen(tracker)) {
+      return openUserProfile(context, tracker: tracker, username: username);
+    }
+    return showUserPopSheet(context, username: username);
+  }
 
   /// Opens the anime or manga detail screen of MAL id [id] ([category] = `anime` | `manga`).
   static Future<void> openContent(BuildContext context,
