@@ -7,6 +7,7 @@
 - `shared-kit` (Shared UI kit: share builder, app bar menu, select widgets, score reveal, web launcher)
 
 ## Owns (may create or edit ONLY these)
+- `test/units/app-shell/app_routes_test.dart`
 - `lib/cache/bookmarks.dart`
 - `lib/screens/bookmarks_screen.dart`
 - `lib/widgets/bookmarks/**`

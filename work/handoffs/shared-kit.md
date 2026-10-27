@@ -6,6 +6,7 @@
 - `deps-prefs-contract` (Dependencies, Android permissions and the preferences contract)
 
 ## Owns (may create or edit ONLY these)
+- `lib/enums.dart`
 - `lib/widgets/common/share_builder.dart`
 - `lib/widgets/common/app_bar_menu.dart`
 - `lib/widgets/common/score_reveal.dart`

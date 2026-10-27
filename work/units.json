@@ -367,6 +367,7 @@
         "deps-prefs-contract"
       ],
       "owns": [
+        "lib/enums.dart",
         "lib/widgets/common/share_builder.dart",
         "lib/widgets/common/app_bar_menu.dart",
         "lib/widgets/common/score_reveal.dart",
@@ -728,6 +729,7 @@
         "shared-kit"
       ],
       "owns": [
+        "test/units/app-shell/app_routes_test.dart",
         "lib/cache/bookmarks.dart",
         "lib/screens/bookmarks_screen.dart",
         "lib/widgets/bookmarks/**",

@@ -145,7 +145,7 @@ const UNITS = [
   {
     id: "shared-kit", title: "Shared UI kit: share builder, app bar menu, select widgets, score reveal, web launcher", kind: "kit", priority: "P0", group: "foundation", model: "opus", ui: true,
     needs: ["deps-prefs-contract"],
-    owns: ["lib/widgets/common/share_builder.dart", "lib/widgets/common/app_bar_menu.dart", "lib/widgets/common/score_reveal.dart", "lib/widgets/common/select/**", "lib/widgets/common/adaptive_layout.dart", "lib/utils/web_launcher.dart", "lib/constants/constants.dart"],
+    owns: ["lib/enums.dart", "lib/widgets/common/share_builder.dart", "lib/widgets/common/app_bar_menu.dart", "lib/widgets/common/score_reveal.dart", "lib/widgets/common/select/**", "lib/widgets/common/adaptive_layout.dart", "lib/utils/web_launcher.dart", "lib/constants/constants.dart"],
     dal: ["lib/widgets/common/share_builder.dart", "lib/widgets/customappbar.dart", "lib/widgets/selectbottom.dart", "lib/widgets/selecttopper.dart", "lib/widgets/home/nodebadge.dart (_CardScoreRevealWidget)", "lib/widgets/web/c_webview.dart", "lib/widgets/common/adaptive_layout.dart"],
     goal: [
       "Share builder (choose fields: title, URL, synopsis…; copy or share) usable by any screen.",
@@ -308,7 +308,7 @@ const UNITS = [
   {
     id: "bookmarks", title: "Bookmarks: store, screen, add/remove", kind: "unit", priority: "P1", group: "discovery", model: "sonnet", ui: true,
     needs: ["app-shell", "shared-kit"],
-    owns: ["lib/cache/bookmarks.dart", "lib/screens/bookmarks_screen.dart", "lib/widgets/bookmarks/**", "lib/screens/plainscreen.dart"],
+    owns: ["test/units/app-shell/app_routes_test.dart", "lib/cache/bookmarks.dart", "lib/screens/bookmarks_screen.dart", "lib/widgets/bookmarks/**", "lib/screens/plainscreen.dart"],
     dal: ["lib/cache/book_marks.dart", "lib/widgets/home/bookmarks_widget.dart", "BookmarkTag"],
     goal: ["Bookmark any anime/manga/character/person/forum topic; bookmarks screen (fills app-shell's stub) with tags/filters; fix plainscreen.dart:31-34 pushing an empty SizedBox; expose `Bookmarks.toggle/isBookmarked` for other units; include bookmarks in `export()/import()` for backup."],
     dod: ["Bookmark from detail (after detail-header) and from the sidebar entry on the emulator."],
