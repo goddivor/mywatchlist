@@ -1,66 +1,82 @@
 import 'package:flutter/material.dart';
-import 'package:mywatchlist/widgets/loading/shimmercolor.dart';
+import 'package:mywatchlist/generated/l10n.dart';
+import 'package:mywatchlist/services/auth/kitsu_auth.dart';
+import 'package:mywatchlist/user/base_user.dart';
+import 'package:mywatchlist/user/user_kitsu_v2.dart';
+import 'package:mywatchlist/user/trackers/models/tracker_model.dart';
 
+/// Kitsu has no web sign in: it takes a username (or email) and a password. The dialog runs
+/// the sign in itself, so the caller gets a yes/no and every failure has a visible reason.
 class KitsuLoginDialog extends StatefulWidget {
-  final void Function(String username, String password) onLogin;
+  /// Prefilled when an account signs in again.
+  final String? initialUsername;
 
-  const KitsuLoginDialog({
-    super.key,
-    required this.onLogin,
-  });
+  const KitsuLoginDialog({super.key, this.initialUsername});
+
+  /// Opens the dialog; true when the user is signed in to Kitsu afterwards.
+  static Future<bool> show(BuildContext context, {String? initialUsername}) async {
+    final signedIn = await showDialog<bool>(
+      context: context,
+      builder: (_) => KitsuLoginDialog(initialUsername: initialUsername),
+    );
+    return signedIn ?? false;
+  }
 
   @override
   State<KitsuLoginDialog> createState() => _KitsuLoginDialogState();
 }
 
-class _KitsuLoginDialogState extends State<KitsuLoginDialog>
-    with SingleTickerProviderStateMixin {
-  final TextEditingController _usernameController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
+class _KitsuLoginDialogState extends State<KitsuLoginDialog> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
-  bool _obscurePassword = true;
-  bool _isLoading = false;
-  late AnimationController _animationController;
-  late Animation<double> _fadeAnimation;
+  late final TextEditingController _username =
+      TextEditingController(text: widget.initialUsername);
+  final TextEditingController _password = TextEditingController();
+  final FocusNode _passwordFocus = FocusNode();
 
-  @override
-  void initState() {
-    super.initState();
-    _animationController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 400),
-    );
-
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _animationController,
-        curve: Curves.easeOut,
-      ),
-    );
-
-    _animationController.forward();
-  }
+  bool _obscure = true;
+  bool _busy = false;
+  String? _error;
 
   @override
   void dispose() {
-    _usernameController.dispose();
-    _passwordController.dispose();
-    _animationController.dispose();
+    _username.dispose();
+    _password.dispose();
+    _passwordFocus.dispose();
     super.dispose();
   }
 
-  void _submitForm() {
-    if (_formKey.currentState!.validate()) {
+  Future<void> _submit() async {
+    if (_busy || !(_formKey.currentState?.validate() ?? false)) return;
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    final user = UserKitsuV2.instance;
+    String? error;
+    try {
+      await KitsuAuth().signInWithKitsu(
+        context,
+        _username.text.trim(),
+        _password.text,
+      );
+      if (user.status != AuthStatus.AUTHENTICATED) {
+        error = S.current.Acc_Kitsu_Wrong;
+      }
+    } catch (_) {
+      error = S.current.Acc_Kitsu_Network;
+    }
+    if (error != null) {
+      // The sign in leaves the status "in progress" when it fails: free the button.
+      user.setStatus(AuthStatus.UNAUTHENTICATED);
+      user.notifyAccountChange();
+    }
+    if (!mounted) return;
+    if (error == null) {
+      Navigator.of(context).pop(true);
+    } else {
       setState(() {
-        _isLoading = true;
-      });
-
-      // Simulate a small delay for animation
-      Future.delayed(const Duration(milliseconds: 300), () {
-        if (mounted) {
-          widget.onLogin(_usernameController.text, _passwordController.text);
-          Navigator.of(context).pop();
-        }
+        _busy = false;
+        _error = error;
       });
     }
   }
@@ -68,275 +84,110 @@ class _KitsuLoginDialogState extends State<KitsuLoginDialog>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-
-    return Dialog(
-      backgroundColor: Colors.transparent,
-      elevation: 0,
-      insetPadding: const EdgeInsets.symmetric(horizontal: 24),
-      child: FadeTransition(
-        opacity: _fadeAnimation,
-        child: Container(
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: isDark
-                ? theme.colorScheme.surface
-                : theme.colorScheme.surface,
-            borderRadius: BorderRadius.circular(24),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.2),
-                blurRadius: 20,
-                offset: const Offset(0, 10),
-              ),
-            ],
-          ),
+    final colors = theme.colorScheme;
+    return AlertDialog(
+      icon: ClipOval(
+        child: Image.asset(
+          TrackerInfo.kitsu.logoAsset,
+          width: 48,
+          height: 48,
+          cacheWidth: 144,
+        ),
+      ),
+      title: Text(S.current.Acc_Kitsu_Title),
+      content: SingleChildScrollView(
+        child: Form(
+          key: _formKey,
           child: Column(
             mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header with logo
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  CircleAvatar(
-                    radius: 25,
-                    backgroundColor: isDark ? Colors.black26 : Colors.white,
-                    child: Padding(
-                      padding: const EdgeInsets.all(8),
-                      child: Image.asset(
-                        'assets/images/kitsu-icon.png',
-                        fit: BoxFit.contain,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Kitsu Login',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: theme.colorScheme.onSurface,
-                        ),
-                      ),
-                      Text(
-                        'Enter your credentials',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+              Text(
+                S.current.Acc_Kitsu_Hint,
+                style: theme.textTheme.bodyMedium
+                    ?.copyWith(color: colors.onSurfaceVariant),
               ),
-
-              const SizedBox(height: 24),
-
-              // Form
-              Form(
-                key: _formKey,
-                child: Column(
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _username,
+                enabled: !_busy,
+                autofocus: widget.initialUsername == null,
+                keyboardType: TextInputType.emailAddress,
+                textInputAction: TextInputAction.next,
+                autofillHints: const [AutofillHints.username],
+                onFieldSubmitted: (_) => _passwordFocus.requestFocus(),
+                decoration: InputDecoration(
+                  labelText: S.current.Acc_Kitsu_Username,
+                  prefixIcon: const Icon(Icons.person_outline_rounded),
+                  border: const OutlineInputBorder(),
+                ),
+                validator: _required,
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _password,
+                focusNode: _passwordFocus,
+                enabled: !_busy,
+                obscureText: _obscure,
+                textInputAction: TextInputAction.done,
+                autofillHints: const [AutofillHints.password],
+                onFieldSubmitted: (_) => _submit(),
+                decoration: InputDecoration(
+                  labelText: S.current.Acc_Kitsu_Password,
+                  prefixIcon: const Icon(Icons.lock_outline_rounded),
+                  border: const OutlineInputBorder(),
+                  suffixIcon: IconButton(
+                    tooltip: _obscure
+                        ? S.current.Acc_Show_Password
+                        : S.current.Acc_Hide_Password,
+                    icon: Icon(_obscure
+                        ? Icons.visibility_outlined
+                        : Icons.visibility_off_outlined),
+                    onPressed: () => setState(() => _obscure = !_obscure),
+                  ),
+                ),
+                validator: _required,
+              ),
+              if (_error != null) ...[
+                const SizedBox(height: 12),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Username/Email field
-                    TextFormField(
-                      controller: _usernameController,
-                      decoration: InputDecoration(
-                        labelText: 'Email or Username',
-                        hintText: 'Enter your Kitsu email or username',
-                        prefixIcon: Icon(
-                          Icons.person_outline_rounded,
-                          color: theme.colorScheme.primary,
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(
-                            color: theme.colorScheme.outline,
-                          ),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(
-                            color: theme.colorScheme.outline.withValues(alpha: 0.5),
-                          ),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(
-                            color: theme.colorScheme.primary,
-                            width: 2,
-                          ),
-                        ),
+                    Icon(Icons.error_outline, size: 18, color: colors.error),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        _error!,
+                        style: theme.textTheme.bodyMedium
+                            ?.copyWith(color: colors.error),
                       ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter your email or username';
-                        }
-                        return null;
-                      },
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    // Password field
-                    TextFormField(
-                      controller: _passwordController,
-                      obscureText: _obscurePassword,
-                      decoration: InputDecoration(
-                        labelText: 'Password',
-                        hintText: 'Enter your Kitsu password',
-                        prefixIcon: Icon(
-                          Icons.lock_outline_rounded,
-                          color: theme.colorScheme.primary,
-                        ),
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            _obscurePassword
-                                ? Icons.visibility_outlined
-                                : Icons.visibility_off_outlined,
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                          onPressed: () {
-                            setState(() {
-                              _obscurePassword = !_obscurePassword;
-                            });
-                          },
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(
-                            color: theme.colorScheme.outline,
-                          ),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(
-                            color: theme.colorScheme.outline.withValues(alpha: 0.5),
-                          ),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(
-                            color: theme.colorScheme.primary,
-                            width: 2,
-                          ),
-                        ),
-                      ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter your password';
-                        }
-                        return null;
-                      },
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    // Create account link
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        TextButton(
-                          onPressed: () {
-                            // Open Kitsu signup page in browser
-                            // You would typically use url_launcher package here
-                          },
-                          style: TextButton.styleFrom(
-                            padding: EdgeInsets.zero,
-                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                          ),
-                          child: Text(
-                            "Don't have an account? Create one",
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: theme.colorScheme.primary,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-
-                    const SizedBox(height: 24),
-
-                    // Action buttons
-                    Row(
-                      children: [
-                        // Cancel button
-                        Expanded(
-                          child: OutlinedButton(
-                            onPressed: _isLoading
-                                ? null
-                                : () => Navigator.of(context).pop(),
-                            style: OutlinedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 14),
-                              side: BorderSide(
-                                color: theme.colorScheme.primary,
-                                width: 1.5,
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                            child: Text(
-                              'Cancel',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w500,
-                                color: _isLoading
-                                    ? theme.colorScheme.onSurface
-                                        .withValues(alpha: 0.38)
-                                    : theme.colorScheme.primary,
-                              ),
-                            ),
-                          ),
-                        ),
-
-                        const SizedBox(width: 16),
-
-                        // Login button
-                        Expanded(
-                          child: ElevatedButton(
-                            onPressed: _isLoading ? null : _submitForm,
-                            style: ElevatedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 14),
-                              backgroundColor: theme.colorScheme.primary,
-                              foregroundColor: theme.colorScheme.onPrimary,
-                              elevation: 0,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                            child: _isLoading
-                                ? ShimmerColor(
-                                    Container(
-                                      height: 20,
-                                      width: 60,
-                                      decoration: BoxDecoration(
-                                        color: Colors.white,
-                                        borderRadius: BorderRadius.circular(4),
-                                      ),
-                                    ),
-                                  )
-                                : const Text(
-                                    'Login',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                          ),
-                        ),
-                      ],
                     ),
                   ],
                 ),
-              ),
+              ],
             ],
           ),
         ),
       ),
+      actions: [
+        TextButton(
+          onPressed: _busy ? null : () => Navigator.of(context).pop(false),
+          child: Text(S.current.Cancel),
+        ),
+        FilledButton(
+          onPressed: _busy ? null : _submit,
+          child: _busy
+              ? SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: const CircularProgressIndicator(strokeWidth: 2),
+                )
+              : Text(S.current.Log_In),
+        ),
+      ],
     );
   }
+
+  String? _required(String? value) =>
+      (value == null || value.trim().isEmpty) ? S.current.Acc_Field_Required : null;
 }
