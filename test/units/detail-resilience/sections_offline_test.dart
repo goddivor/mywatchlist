@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:mywatchlist/generated/l10n.dart';
+import 'package:mywatchlist/screens/MAL/detail/sections/content_stats_source.dart';
 import 'package:mywatchlist/screens/MAL/detail/sections/section_states.dart';
 import 'package:mywatchlist/services/api/Jikan/jikan_anime_forum.dart';
 import 'package:mywatchlist/services/api/Jikan/jikan_anime_review.dart';
@@ -48,15 +49,20 @@ void main() {
     await S.load(const Locale('en'));
   });
 
-  setUp(() => original = JikanClient.instance);
+  setUp(() {
+    original = JikanClient.instance;
+    // MAL's stats page (mwl-api) down too, unless a test says otherwise.
+    ContentStatsSource.mal = (id, category) async => null;
+  });
 
   tearDown(() {
     JikanClient.instance = original;
     JikanFallbacks.reset();
+    ContentStatsSource.reset();
   });
 
   group('Score stats', () {
-    testWidgets('Jikan down: MAL figures, a note and Retry, no grey bars', (tester) async {
+    testWidgets('Jikan and MAL stats page down: MAL figures, a note and Retry, no grey bars', (tester) async {
       JikanClient.instance = _deadJikan();
       final mal = MalAnime.fromJson({
         'id': 1,

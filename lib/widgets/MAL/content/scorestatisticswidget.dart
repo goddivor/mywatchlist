@@ -3,13 +3,14 @@ import 'package:intl/intl.dart';
 import 'package:mywatchlist/constants/constants.dart' show loadingGraph;
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/screens/MAL/detail/sections/section_states.dart';
+import 'package:mywatchlist/screens/MAL/detail/sections/content_stats_source.dart';
 import 'package:mywatchlist/services/api/Jikan/jikan_anime_statistics.dart';
-import 'package:mywatchlist/services/api/Jikan/jikan_api.dart';
 import 'package:mywatchlist/services/api/MAL/mal_anime.dart';
 
-/// Score distribution of a title (1 to 10), from Jikan `statistics`.
+/// Score distribution of a title (1 to 10): Jikan `statistics`, else MAL's
+/// stats page through the mwl-api ([ContentStatsSource]).
 ///
-/// MAL's official API has no distribution, so when Jikan fails the section
+/// MAL's official API has no distribution, so when both fail the section
 /// shows the score figures MAL does give ([mal]: mean, scored by, rank,
 /// popularity, members) with a note and a Retry. No votes at all shows an
 /// empty state, never grey bars.
@@ -35,12 +36,13 @@ class ScoreStatisticsWidget extends StatefulWidget {
 
 class _ScoreStatisticsWidgetState extends State<ScoreStatisticsWidget>
     with AutomaticKeepAliveClientMixin {
-  late Future<AnimeStatistics> _future = _fetch();
+  late Future<ContentStats> _future = _fetch();
 
-  Future<AnimeStatistics> _fetch() =>
-      JikanApi.getAnimeStatistics(widget.id, category: widget.category);
+  Future<ContentStats> _fetch() => ContentStatsSource.load(widget.id, widget.category);
 
-  void _retry() => setState(() => _future = _fetch());
+  void _retry() => setState(() {
+        _future = _fetch();
+      });
 
   @override
   bool get wantKeepAlive => true;
@@ -48,7 +50,7 @@ class _ScoreStatisticsWidgetState extends State<ScoreStatisticsWidget>
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    return FutureBuilder<AnimeStatistics>(
+    return FutureBuilder<ContentStats>(
       future: _future,
       builder: (context, snapshot) {
         if (snapshot.hasError) {
@@ -58,18 +60,18 @@ class _ScoreStatisticsWidgetState extends State<ScoreStatisticsWidget>
             onRetry: _retry,
           );
         }
-        if (snapshot.connectionState != ConnectionState.done) {
+        final data = snapshot.data;
+        if (snapshot.connectionState != ConnectionState.done || data == null) {
           return SizedBox(height: 230, child: loadingGraph(context));
         }
-        final scores = (snapshot.data?.scores ?? const <ScoreStatistics>[])
-            .where((s) => s.score != null)
-            .toList()
-          ..sort((a, b) => a.score!.compareTo(b.score!));
-        final total = scores.fold<int>(0, (sum, s) => sum + (s.votes ?? 0));
-        if (total == 0) {
+        if (data.totalVotes == 0) {
           return SectionMessage(icon: Icons.bar_chart, message: S.current.Res_Score_Empty);
         }
-        return ScoreBars(scores: scores, horizPadding: widget.horizPadding);
+        return ScoreBars(
+          scores: data.sortedScores,
+          horizPadding: widget.horizPadding,
+          fromMyAnimeList: data.source == StatsSource.myAnimeList,
+        );
       },
     );
   }
@@ -81,7 +83,15 @@ class ScoreBars extends StatelessWidget {
   final List<ScoreStatistics> scores;
   final double horizPadding;
 
-  const ScoreBars({super.key, required this.scores, required this.horizPadding});
+  /// The figures come from MAL's stats page (Jikan failed): says so under the bars.
+  final bool fromMyAnimeList;
+
+  const ScoreBars({
+    super.key,
+    required this.scores,
+    required this.horizPadding,
+    this.fromMyAnimeList = false,
+  });
 
   static const double _maxBarHeight = 150;
 
@@ -125,6 +135,10 @@ class ScoreBars extends StatelessWidget {
             S.current.Res_Score_Total_Votes(compact.format(total)),
             style: theme.textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
           ),
+          if (fromMyAnimeList) ...[
+            const SizedBox(height: 4),
+            Text(S.current.Res_Source_Mal, style: small),
+          ],
         ],
       ),
     );
