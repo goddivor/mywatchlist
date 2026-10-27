@@ -92,9 +92,10 @@ class AppColors extends ThemeExtension<AppColors> {
     required this.shimmerHighlight,
   });
 
-  /// Contrast level given to Material's colour utilities for the app theme and the tokens.
-  /// 0.5 ("medium") makes accent text on surfaces reach AA 4.5:1 (at 0 it is only 3:1).
-  static const double contrastLevel = 0.5;
+  /// Contrast level given to Material's colour utilities for the app theme and the tokens
+  /// (0 = Material's standard: tone 40 accents on light surfaces, tone 80 on dark ones, which
+  /// keeps accent text at 4.5:1; "medium" 0.5 turned a pink accent into maroon).
+  static const double contrastLevel = 0.0;
 
   /// Base hues, before harmonisation with the accent.
   static const Color scoreBase = Color(0xFFFFB300);

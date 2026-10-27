@@ -9,7 +9,7 @@ class NavItemContainer extends StatelessWidget {
   /// Accent used for the ripple.
   final Color activeColor;
 
-  /// Pill colour of the active tab (the theme's `secondaryContainer` in the bottom bar).
+  /// Pill colour of the active tab (`BottomNavBar.pillColor`); `secondaryContainer` if null.
   final Color? pillColor;
   final VoidCallback onTap;
   final double borderRadius;

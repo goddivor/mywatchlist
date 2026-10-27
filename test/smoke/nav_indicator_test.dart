@@ -31,7 +31,8 @@ void main() {
     await pumpInApp(tester, BottomNavBar(startIndex: 0, onChanged: changes.add));
     await tester.pumpAndSettle();
 
-    final cs = Theme.of(tester.element(find.byType(BottomNavBar))).colorScheme;
+    final pill = BottomNavBar.pillColor(
+        Theme.of(tester.element(find.byType(BottomNavBar))).colorScheme);
     List<Color?> pills() => tester
         .widgetList<AnimatedContainer>(find.descendant(
           of: find.byType(NavItemContainer),
@@ -42,15 +43,15 @@ void main() {
 
     expect(find.byType(NavItemContainer), findsNWidgets(5));
     // Only the active tab is filled; nothing else is drawn under the icons.
-    expect(pills().where((c) => c == cs.secondaryContainer).length, 1);
-    expect(pills().first, cs.secondaryContainer);
+    expect(pills().where((c) => c == pill).length, 1);
+    expect(pills().first, pill);
     final column = find.descendant(of: find.byType(NavItemContainer), matching: find.byType(Column));
     expect(column, findsNothing);
 
     await tester.tap(find.byType(NavItemContainer).at(2));
     await tester.pumpAndSettle();
     expect(changes, [2]);
-    expect(pills()[2], cs.secondaryContainer);
-    expect(pills().where((c) => c == cs.secondaryContainer).length, 1);
+    expect(pills()[2], pill);
+    expect(pills().where((c) => c == pill).length, 1);
   });
 }

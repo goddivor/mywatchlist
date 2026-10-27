@@ -3,7 +3,7 @@ import 'package:line_icons/line_icon.dart';
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/widgets/common/nav_indicator.dart';
 
-/// The home shell's bottom bar: five tabs, the active one in a rounded tinted pill with the
+/// The home shell's bottom bar: five tabs, the active one in a rounded accent-tinted pill with the
 /// accent icon (no underline bar). Line icons, as DailyAL.
 class BottomNavBar extends StatefulWidget {
   final int? startIndex;
@@ -27,6 +27,11 @@ class BottomNavBar extends StatefulWidget {
   ];
 
   static const double iconSize = 24.0;
+
+  /// The active tab's pill: the accent at 12 % over the bar, so the accent icon on it keeps
+  /// 3:1 even for vivid accents (a `secondaryContainer` pill did not for red or pink).
+  static Color pillColor(ColorScheme cs) =>
+      Color.alphaBlend(cs.primary.withValues(alpha: 0.12), cs.surfaceContainer);
 
   /// Accessible names of the tabs, in the same order.
   static List<String> labels() => [
@@ -53,7 +58,6 @@ class _BottomNavBarState extends State<BottomNavBar> {
       decoration: BoxDecoration(
         color: cs.surfaceContainer,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-        border: Border(top: BorderSide(color: cs.outlineVariant.withValues(alpha: 0.5))),
       ),
       child: SafeArea(
         top: false,
@@ -73,7 +77,7 @@ class _BottomNavBarState extends State<BottomNavBar> {
                     child: NavItemContainer(
                       isSelected: selected,
                       activeColor: cs.primary,
-                      pillColor: cs.secondaryContainer,
+                      pillColor: BottomNavBar.pillColor(cs),
                       onTap: () => _onPageChange(index),
                       child: AnimatedScale(
                         scale: selected ? 1.1 : 1.0,
