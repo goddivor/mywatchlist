@@ -13,7 +13,6 @@ import 'package:mywatchlist/widgets/common/custombutton.dart';
 import 'package:mywatchlist/widgets/loading/shimmercolor.dart';
 import 'package:mywatchlist/widgets/common/slivers.dart';
 import 'package:scroll_to_index/scroll_to_index.dart';
-import 'package:shimmer/shimmer.dart';
 import 'package:mywatchlist/utils/web_launcher.dart';
 
 enum AccountType {
@@ -624,13 +623,10 @@ Center _logoImage([double? height = 50.0, double? width = 50.0]) {
 }
 
 Widget loadingText(BuildContext context) {
-  final shimmerColors = ShimmerColors.fromContext(context);
   return Padding(
     padding: const EdgeInsets.fromLTRB(15, 5, 15, 60),
-    child: Shimmer.fromColors(
-        baseColor: shimmerColors.baseColor,
-        highlightColor: shimmerColors.highlightColor,
-        child: Column(
+    child: ShimmerColor(
+        Column(
           mainAxisAlignment: MainAxisAlignment.start,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -946,13 +942,10 @@ enum TabType {
 }
 
 Widget loadingGraph(BuildContext context) {
-  final shimmerColors = ShimmerColors.fromContext(context);
   return Padding(
     padding: const EdgeInsets.all(15),
-    child: Shimmer.fromColors(
-      baseColor: shimmerColors.baseColor,
-      highlightColor: shimmerColors.highlightColor,
-      child: Row(
+    child: ShimmerColor(
+      Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: List.generate(5, (index) {
