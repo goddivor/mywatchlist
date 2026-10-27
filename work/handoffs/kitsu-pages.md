@@ -17,7 +17,7 @@
 Plus `PROJECT-STATE.md` (rewrite in place, within its cap) and `docs/DECISIONS.md` (append one line per decision). Anything else you need is a FINDING to report, never an edit.
 
 ## Goal
-- Same as anilist-pages for Kitsu (JSON:API).
+- Same as anilist-pages for Kitsu (JSON:API). Authenticated calls go through `user.sendAuthenticated` (auth-refresh) instead of hand-built Bearer headers.
 
 ## Known bugs to fix in scope
 - none

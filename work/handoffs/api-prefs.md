@@ -8,6 +8,7 @@
 
 ## Owns (may create or edit ONLY these)
 - `lib/services/api/MAL/mal_api.dart`
+- `lib/services/api/MAL/mal_user.dart`
 - `lib/services/api/Jikan/**`
 - `lib/services/api/MAL/mal_anime.dart`
 - `lib/l10n/units/api-prefs/**`
@@ -16,6 +17,7 @@
 Plus `PROJECT-STATE.md` (rewrite in place, within its cap) and `docs/DECISIONS.md` (append one line per decision). Anything else you need is a FINDING to report, never an edit.
 
 ## Goal
+- Move every authenticated MAL call off raw `http.*` + hand-built Bearer header onto the refreshing path from auth-refresh (`MalConnect.authGet/authPut/authDelete`, which throw `MalSessionExpired`): mal_api.dart ~l.494-620, 798, 925 and mal_user.dart l.33, 86, 137 (auth-refresh finding).
 - Send `nsfw=` from the pref; use the timezone pref (mal_api.dart:827, :884); handle Jikan 429 with backoff + caching; expose a `isUnderMaintenance()` helper for home-wiring.
 
 ## Known bugs to fix in scope

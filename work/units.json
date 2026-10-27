@@ -398,6 +398,7 @@
         "lib/widgets/common/signin_widget.dart",
         "lib/widgets/common/logout_dialog.dart",
         "lib/widgets/Kitsu/kitsu_login_dialog.dart",
+        "lib/user/accounts/**",
         "lib/l10n/units/accounts-ux/**",
         "test/units/accounts-ux/**"
       ],
@@ -976,6 +977,7 @@
       ],
       "owns": [
         "lib/services/api/MAL/mal_api.dart",
+        "lib/services/api/MAL/mal_user.dart",
         "lib/services/api/Jikan/**",
         "lib/services/api/MAL/mal_anime.dart",
         "lib/l10n/units/api-prefs/**",

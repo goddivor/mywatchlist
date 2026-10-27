@@ -164,10 +164,11 @@ const UNITS = [
   {
     id: "accounts-ux", title: "Redesign the account picker, account switcher and account management", kind: "screen", priority: "P1", group: "user", model: "sonnet", ui: true,
     needs: ["app-shell"],
-    owns: ["lib/screens/account_switcher_page.dart", "lib/screens/manage_accounts_page.dart", "lib/screens/onboarding_trackers.dart", "lib/pages/login_page.dart", "lib/screens/settings/accounts_settings.dart", "lib/user/trackers/**", "lib/widgets/common/acc_widget.dart", "lib/widgets/common/signin_widget.dart", "lib/widgets/common/logout_dialog.dart", "lib/widgets/Kitsu/kitsu_login_dialog.dart"],
+    owns: ["lib/screens/account_switcher_page.dart", "lib/screens/manage_accounts_page.dart", "lib/screens/onboarding_trackers.dart", "lib/pages/login_page.dart", "lib/screens/settings/accounts_settings.dart", "lib/user/trackers/**", "lib/widgets/common/acc_widget.dart", "lib/widgets/common/signin_widget.dart", "lib/widgets/common/logout_dialog.dart", "lib/widgets/Kitsu/kitsu_login_dialog.dart", "lib/user/accounts/**"],
     dal: ["lib/pages/settings/accounts_settings.dart", "lib/widgets/user/signinpage.dart"],
     goal: [
       "The owner says the current flow (select an account, then press Continue, for every app) is badly done. Redesign the whole account experience: first-run tracker connection, switching the active account (one tap, no Continue step), adding/removing accounts, re-login when a token is dead.",
+      "Session expiry UX: show a clear 'sign in again' prompt for any tracker in `UserManager.trackersNeedingReLogin` / `needsReLogin` (from auth-refresh), and keep AccountManager / AccountBloc informed when a session dies (lib/user/accounts/**).",
       "Fill the Accounts settings page stub (login/logout per tracker, active account, connected services).",
       "Tracker logos via AppImage instead of Image.network (onboarding_trackers.dart:192).",
       "This is an MWL-only flow (DAL has one MAL account): design it from scratch for 4 trackers; look at DAL only for the sign-in visuals.",
@@ -399,9 +400,9 @@ const UNITS = [
   {
     id: "api-prefs", title: "API layer: NSFW, timezone, Jikan rate limits, MAL maintenance", kind: "unit", priority: "P1", group: "settings", model: "sonnet",
     needs: ["deps-prefs-contract", "auth-refresh"],
-    owns: ["lib/services/api/MAL/mal_api.dart", "lib/services/api/Jikan/**", "lib/services/api/MAL/mal_anime.dart"],
+    owns: ["lib/services/api/MAL/mal_api.dart", "lib/services/api/MAL/mal_user.dart", "lib/services/api/Jikan/**", "lib/services/api/MAL/mal_anime.dart"],
     dal: ["lib/api/malapi.dart", "commit 1d1f930 (rate limit)"],
-    goal: ["Send `nsfw=` from the pref; use the timezone pref (mal_api.dart:827, :884); handle Jikan 429 with backoff + caching; expose a `isUnderMaintenance()` helper for home-wiring."],
+    goal: ["Move every authenticated MAL call off raw `http.*` + hand-built Bearer header onto the refreshing path from auth-refresh (`MalConnect.authGet/authPut/authDelete`, which throw `MalSessionExpired`): mal_api.dart ~l.494-620, 798, 925 and mal_user.dart l.33, 86, 137 (auth-refresh finding).", "Send `nsfw=` from the pref; use the timezone pref (mal_api.dart:827, :884); handle Jikan 429 with backoff + caching; expose a `isUnderMaintenance()` helper for home-wiring."],
     dod: ["Rapid navigation on the emulator no longer produces Jikan 429 errors."],
   },
 
@@ -430,21 +431,21 @@ const UNITS = [
     id: "anilist-pages", title: "AniList: home, explore, user list, profile (replace placeholders)", kind: "screen", priority: "P2", group: "trackers", model: "sonnet", ui: true,
     needs: ["user-list-mal", "user-profile-mal", "home-wiring"],
     owns: ["lib/pages/Anilist/**", "lib/services/api/Anilist/**", "lib/widgets/Anilist/**"],
-    goal: ["Replace the 5 AniList placeholder pages with real ones reusing the tracker-agnostic list/profile widgets; AniList GraphQL for lists, profile, trending/seasonal; home sections honoring HomePreferencesBloc."],
+    goal: ["Replace the 5 AniList placeholder pages with real ones reusing the tracker-agnostic list/profile widgets; AniList GraphQL for lists Authenticated calls go through `user.sendAuthenticated` (auth-refresh) instead of hand-built Bearer headers., profile, trending/seasonal; home sections honoring HomePreferencesBloc."],
     dod: ["Owner's AniList list and profile render on the emulator."],
   },
   {
     id: "kitsu-pages", title: "Kitsu: home, explore, user list, profile (replace placeholders)", kind: "screen", priority: "P2", group: "trackers", model: "sonnet", ui: true,
     needs: ["user-list-mal", "user-profile-mal", "home-wiring"],
     owns: ["lib/pages/Kitsu/**", "lib/services/api/Kitsu/**", "lib/widgets/Kitsu/kitsu_*.dart"],
-    goal: ["Same as anilist-pages for Kitsu (JSON:API)."],
+    goal: ["Same as anilist-pages for Kitsu (JSON:API). Authenticated calls go through `user.sendAuthenticated` (auth-refresh) instead of hand-built Bearer headers."],
     dod: ["Owner's Kitsu list renders on the emulator."],
   },
   {
     id: "simkl-pages", title: "Simkl: home, explore, user list, profile (replace placeholders)", kind: "screen", priority: "P2", group: "trackers", model: "sonnet", ui: true,
     needs: ["user-list-mal", "user-profile-mal", "home-wiring"],
     owns: ["lib/pages/Simkl/**", "lib/services/api/SimKl/**", "lib/widgets/Simkl/**"],
-    goal: ["Same as anilist-pages for Simkl."],
+    goal: ["Same as anilist-pages for Simkl. Authenticated calls go through `user.sendAuthenticated` (auth-refresh) instead of hand-built Bearer headers."],
     dod: ["Owner's Simkl list renders on the emulator."],
   },
 
