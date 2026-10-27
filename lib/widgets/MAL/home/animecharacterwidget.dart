@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mywatchlist/constants/constants.dart';
+import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/screens/MAL/character_screen.dart';
 import 'package:mywatchlist/services/api/MAL/scrapper/anime_detailed_html.dart';
 import 'package:mywatchlist/widgets/common/avatar_widget.dart';
@@ -133,7 +134,7 @@ class AnimeCharacterWidget extends StatelessWidget {
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 10),
                     child: _buildNameAndRole(
-                      details?.character.name.name ?? "?",
+                      details?.character.name.name ?? S.current.Card_Unknown,
                       details?.character.role ?? "",
                     ),
                   ),
@@ -193,12 +194,12 @@ class AnimeCharacterWidget extends StatelessWidget {
         children: [
           Flexible(
             child: _buildNameAndRole(
-                chara?.character.name.name ?? "?", chara?.character.role ?? ""),
+                chara?.character.name.name ?? S.current.Card_Unknown, chara?.character.role ?? ""),
           ),
           const SizedBox(height: 10),
           Flexible(
             child: _buildSeiyuuNameAndRole(
-                chara?.voiceActor.name.name ?? 'Unknown',
+                chara?.voiceActor.name.name ?? S.current.Card_Unknown,
                 chara?.voiceActor.role ?? ''),
           ),
         ],
@@ -240,35 +241,94 @@ Widget _buildGridView(
   final int itemsPerPage = 3,
   final double itemHeight = 140.0,
 ]) {
-  final pageController =
-      PageController(initialPage: 0, viewportFraction: viewportFraction);
-  final noOfPages = (length / itemsPerPage).ceilToDouble().toInt();
-  final lastPage = noOfPages - 1;
-  final itemsOnSinglePage = noOfPages == 1 ? length : itemsPerPage;
-  return SizedBox(
-    height: itemsOnSinglePage * itemHeight,
-    child: PageView.builder(
-      itemCount: noOfPages,
-      controller: pageController,
-      clipBehavior: Clip.none,
-      itemBuilder: ((context, pageIndex) {
-        return ListView.builder(
-          itemCount: pageIndex == lastPage
-              ? (length % itemsPerPage == 0 ? itemsPerPage : length % itemsPerPage)
-              : itemsPerPage,
-          scrollDirection: Axis.vertical,
-          padding: EdgeInsets.zero,
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemBuilder: (_, i) => SizedBox(
-            height: itemHeight,
-            child: itemBuilder(i, pageIndex),
-          ),
-        );
-      }),
-    ),
+  return _CharacterPages(
+    length: length,
+    itemBuilder: itemBuilder,
+    viewportFraction: viewportFraction,
+    itemsPerPage: itemsPerPage,
+    itemHeight: itemHeight,
   );
 }
+
+/// Pages of [itemsPerPage] rows. The page controller lives in the state (it
+/// used to be created on every build and never disposed) and each page is a
+/// plain column of at most [itemsPerPage] rows.
+class _CharacterPages extends StatefulWidget {
+  final int length;
+  final Widget Function(int, int) itemBuilder;
+  final double viewportFraction;
+  final int itemsPerPage;
+  final double itemHeight;
+
+  const _CharacterPages({
+    required this.length,
+    required this.itemBuilder,
+    required this.viewportFraction,
+    required this.itemsPerPage,
+    required this.itemHeight,
+  });
+
+  @override
+  State<_CharacterPages> createState() => _CharacterPagesState();
+}
+
+class _CharacterPagesState extends State<_CharacterPages> {
+  late PageController _controller = _newController();
+
+  PageController _newController() =>
+      PageController(viewportFraction: widget.viewportFraction);
+
+  @override
+  void didUpdateWidget(_CharacterPages old) {
+    super.didUpdateWidget(old);
+    if (old.viewportFraction != widget.viewportFraction) {
+      _controller.dispose();
+      _controller = _newController();
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final length = widget.length;
+    final perPage = widget.itemsPerPage;
+    final noOfPages = (length / perPage).ceil();
+    final lastPage = noOfPages - 1;
+    final itemsOnSinglePage = noOfPages == 1 ? length : perPage;
+    return SizedBox(
+      height: itemsOnSinglePage * widget.itemHeight,
+      child: PageView.builder(
+        itemCount: noOfPages,
+        controller: _controller,
+        clipBehavior: Clip.none,
+        itemBuilder: (context, pageIndex) {
+          final rows = pageIndex == lastPage
+              ? (length % perPage == 0 ? perPage : length % perPage)
+              : perPage;
+          return Column(
+            children: [
+              for (var i = 0; i < rows; i++)
+                SizedBox(
+                  height: widget.itemHeight,
+                  child: widget.itemBuilder(i, pageIndex),
+                ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+const BorderRadiusDirectional _startRadius = BorderRadiusDirectional.only(
+    topStart: Radius.circular(8), bottomStart: Radius.circular(8));
+const BorderRadiusDirectional _endRadius = BorderRadiusDirectional.only(
+    topEnd: Radius.circular(8), bottomEnd: Radius.circular(8));
 
 Widget _seiyuuWidget(
   int? id,
@@ -276,28 +336,21 @@ Widget _seiyuuWidget(
   double height = 120.0,
   double width = 100.0,
 }) {
-  const borderRadius = BorderRadius.only(
-      topRight: Radius.circular(8), bottomRight: Radius.circular(8));
   return Builder(
-    builder: (context) => Material(
-      color: Colors.transparent,
-      elevation: 4,
-      borderRadius: borderRadius,
-      child: AvatarWidget(
-        userRoundBorderforLoading: false,
-        height: height,
-        width: width,
-        onTap: () {
-          if (id != null) {
-            gotoPage(
-              context: context,
-              newPage: CharacterScreen(id: id, category: 'person'),
-            );
-          }
-        },
-        radius: borderRadius,
-        url: imageUrl,
-      ),
+    builder: (context) => AvatarWidget(
+      userRoundBorderforLoading: false,
+      height: height,
+      width: width,
+      onTap: () {
+        if (id != null) {
+          gotoPage(
+            context: context,
+            newPage: CharacterScreen(id: id, category: 'person'),
+          );
+        }
+      },
+      radius: _endRadius.resolve(Directionality.of(context)),
+      url: imageUrl,
     ),
   );
 }
@@ -309,29 +362,21 @@ Widget _characterWidget(
   double width = 100.0,
   String category = 'character',
 }) {
-  const borderRadius = BorderRadius.only(
-      topRight: Radius.circular(8), bottomRight: Radius.circular(8));
   return Builder(
-    builder: (context) => Material(
-      color: Colors.transparent,
-      elevation: 4,
-      borderRadius: borderRadius,
-      child: AvatarWidget(
-        userRoundBorderforLoading: false,
-        height: height,
-        width: width,
-        onTap: () {
-          if (id != null) {
-            gotoPage(
-              context: context,
-              newPage: CharacterScreen(id: id, category: category),
-            );
-          }
-        },
-        radius: const BorderRadius.only(
-            topLeft: Radius.circular(8), bottomLeft: Radius.circular(8)),
-        url: imageUrl,
-      ),
+    builder: (context) => AvatarWidget(
+      userRoundBorderforLoading: false,
+      height: height,
+      width: width,
+      onTap: () {
+        if (id != null) {
+          gotoPage(
+            context: context,
+            newPage: CharacterScreen(id: id, category: category),
+          );
+        }
+      },
+      radius: _startRadius.resolve(Directionality.of(context)),
+      url: imageUrl,
     ),
   );
 }
@@ -340,19 +385,15 @@ Widget _assetImageWidget({
   double height = 120.0,
   double width = 100.0,
 }) {
-  const borderRadius = BorderRadius.only(
-      topLeft: Radius.circular(8), bottomLeft: Radius.circular(8));
-  return Material(
-    color: Colors.transparent,
-    elevation: 4,
-    borderRadius: borderRadius,
-    child: ClipRRect(
-      borderRadius: borderRadius,
+  return Builder(
+    builder: (context) => ClipRRect(
+      borderRadius: _startRadius.resolve(Directionality.of(context)),
       child: Image.asset(
         'assets/images/user_dal.png',
         height: height,
         width: width,
         fit: BoxFit.cover,
+        cacheWidth: 200,
       ),
     ),
   );

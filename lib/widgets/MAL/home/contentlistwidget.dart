@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:mywatchlist/constants/constants.dart';
-import 'package:mywatchlist/services/api/MAL/mal_anime.dart';
-import 'package:mywatchlist/widgets/MAL/home/animegridcard.dart';
+import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/screens/MAL/contentdetailedscreen.dart';
+import 'package:mywatchlist/services/api/MAL/mal_anime.dart';
+import 'package:mywatchlist/utils/app_routes.dart';
+import 'package:mywatchlist/widgets/MAL/home/animegridcard.dart';
 
+/// A horizontal row of [AnimeGridCard]s (home sections, related and
+/// recommended titles). Lazy, with a fixed item extent so scrolling never
+/// measures the cards; a tap opens the detail screen with the card's node.
 class ContentListWidget extends StatelessWidget {
   final String category;
   final List<Anime> items;
@@ -13,6 +18,8 @@ class ContentListWidget extends StatelessWidget {
   final bool showTime;
   final EdgeInsetsGeometry? padding;
   final bool showCardBar;
+
+  /// Adds a trailing "View all" tile that calls this.
   final VoidCallback? onViewAll;
   final DisplaySubType displaySubType;
 
@@ -30,109 +37,93 @@ class ContentListWidget extends StatelessWidget {
     this.displaySubType = DisplaySubType.compact,
   });
 
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final double effectiveHeight = height ?? 220;
-    final double effectiveWidth = tileWidth ?? 120;
-    final double effectiveContentHeight = tileHeight ?? 160;
-
-    return Container(
-      height: effectiveHeight,
-      padding: padding ?? const EdgeInsets.all(8.0),
-      child: items.isEmpty
-          ? _buildEmptyState(theme)
-          : ListView.builder(
-              scrollDirection: Axis.horizontal,
-              itemCount: items.length,
-              physics: const BouncingScrollPhysics(),
-              padding: const EdgeInsets.symmetric(horizontal: 4),
-              itemBuilder: (context, index) {
-                final item = items[index];
-                return _buildAnimeCard(
-                  context,
-                  item,
-                  effectiveWidth,
-                  effectiveContentHeight,
-                  showCardBar,
-                  displaySubType,
-                  showTime,
-                );
-              },
-            ),
-    );
-  }
-
   static const _mangaMediaTypes = {
     'manga', 'light_novel', 'one_shot', 'doujinshi', 'manhwa', 'manhua', 'novel'
   };
 
   String _categoryForItem(Anime anime) {
-    if (anime.mediaType != null && _mangaMediaTypes.contains(anime.mediaType)) {
-      return 'manga';
-    }
-    if (anime.mediaType != null) return 'anime';
+    final type = anime.mediaType;
+    if (type != null && _mangaMediaTypes.contains(type)) return 'manga';
+    if (type != null) return 'anime';
     return category;
   }
 
-  Widget _buildAnimeCard(
-    BuildContext context,
-    Anime anime,
-    double width,
-    double height,
-    bool showCardBar,
-    DisplaySubType displaySubType,
-    bool showTime,
-  ) {
-    final itemCategory = _categoryForItem(anime);
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 5),
-      child: GestureDetector(
-        onTap: () {
-          Navigator.push(
-            context,
-            PageRouteBuilder(
-              pageBuilder: (context, animation, secondaryAnimation) =>
-                  ContentDetailedScreen(node: anime, category: itemCategory),
-              transitionsBuilder:
-                  (context, animation, secondaryAnimation, child) {
-                var begin = const Offset(1.0, 0.0);
-                var end = Offset.zero;
-                var curve = Curves.easeOutCubic;
-                var tween = Tween(begin: begin, end: end).chain(
-                  CurveTween(curve: curve),
-                );
-                return SlideTransition(
-                  position: animation.drive(tween),
-                  child: child,
-                );
-              },
+  /// Width a card takes in the row: its own width plus the paddings the card
+  /// and the row add around it.
+  double _extent(double cardWidth) {
+    final compact = displaySubType == DisplaySubType.compact ||
+        displaySubType == DisplaySubType.cover_only_grid;
+    return cardWidth + 10 + (compact ? 12 : 10);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final double effectiveHeight = height ?? 220;
+    final double effectiveWidth = tileWidth ?? 120;
+    final double effectiveContentHeight = tileHeight ?? 160;
+
+    if (items.isEmpty) {
+      return Container(
+        height: effectiveHeight,
+        padding: padding ?? const EdgeInsets.all(8.0),
+        child: _EmptyRow(category: category),
+      );
+    }
+
+    final extent = _extent(effectiveWidth);
+    final count = items.length + (onViewAll == null ? 0 : 1);
+    return Container(
+      height: effectiveHeight,
+      padding: padding ?? const EdgeInsets.all(8.0),
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        itemCount: count,
+        itemExtent: extent,
+        physics: const BouncingScrollPhysics(),
+        padding: const EdgeInsets.symmetric(horizontal: 4),
+        itemBuilder: (context, index) {
+          if (index == items.length) {
+            return _ViewAll(onPressed: onViewAll!);
+          }
+          final item = items[index];
+          final itemCategory = _categoryForItem(item);
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 5),
+            child: AnimeGridCard(
+              key: ValueKey('$itemCategory:${item.id}'),
+              node: item,
+              category: itemCategory,
+              showMemberCount: true,
+              showCardBar: showCardBar,
+              width: effectiveWidth,
+              height: effectiveContentHeight,
+              gridHeight: effectiveContentHeight,
+              displaySubType: displaySubType,
+              showTime: showTime,
+              onTap: () => AppRoutes.push(
+                context,
+                ContentDetailedScreen(node: item, category: itemCategory),
+              ),
             ),
           );
         },
-        child: AnimeGridCard(
-          node: anime,
-          showMemberCount: true,
-          showCardBar: showCardBar,
-          width: width,
-          height: height,
-          gridHeight: height,
-          displaySubType: displaySubType,
-          showTime: showTime,
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => ContentDetailedScreen(node: anime, category: itemCategory),
-              ),
-            );
-          },
-        ),
       ),
     );
   }
+}
 
-  Widget _buildEmptyState(ThemeData theme) {
+class _EmptyRow extends StatelessWidget {
+  final String category;
+  const _EmptyRow({required this.category});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final text = switch (category) {
+      'anime' => S.current.Card_Empty_Anime,
+      'manga' => S.current.Card_Empty_Manga,
+      _ => S.current.Card_Empty,
+    };
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -144,12 +135,28 @@ class ContentListWidget extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Text(
-            'No $category available',
+            text,
             style: theme.textTheme.bodyMedium?.copyWith(
               color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _ViewAll extends StatelessWidget {
+  final VoidCallback onPressed;
+  const _ViewAll({required this.onPressed});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: TextButton.icon(
+        onPressed: onPressed,
+        icon: const Icon(Icons.arrow_forward),
+        label: Text(S.current.Card_View_All),
       ),
     );
   }

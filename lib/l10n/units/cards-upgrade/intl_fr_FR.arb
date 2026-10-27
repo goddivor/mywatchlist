@@ -1,0 +1,85 @@
+{
+  "@@locale": "fr_FR",
+  "Card_Status_Watching": "En cours",
+  "Card_Status_Reading": "En cours de lecture",
+  "Card_Status_Completed": "Terminé",
+  "Card_Status_On_Hold": "En pause",
+  "Card_Status_Dropped": "Abandonné",
+  "Card_Status_Plan_Watch": "À regarder",
+  "Card_Status_Plan_Read": "À lire",
+  "Card_Short_Watching": "EC",
+  "Card_Short_Reading": "EC",
+  "Card_Short_Completed": "FIN",
+  "Card_Short_On_Hold": "PAU",
+  "Card_Short_Dropped": "ABD",
+  "Card_Short_Plan_Watch": "PRÉ",
+  "Card_Short_Plan_Read": "PRÉ",
+  "Card_Edit": "Modifier mon entrée de liste",
+  "Card_Edit_Status": "{status}, modifier mon entrée de liste",
+  "@Card_Edit_Status": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "Card_Remove": "Retirer",
+  "Card_No_Image": "Pas d’image",
+  "Card_Score": "Note {score}",
+  "@Card_Score": {
+    "placeholders": {
+      "score": {
+        "type": "String"
+      }
+    }
+  },
+  "Card_Members_Count": "{count, plural, =0{Aucun membre} =1{1 membre} other{{count} membres}}",
+  "@Card_Members_Count": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "Card_Favorites_Count": "{count, plural, =0{Aucun favori} =1{1 favori} other{{count} favoris}}",
+  "@Card_Favorites_Count": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "Card_Recommendations_Count": "{count, plural, =0{Aucune recommandation} =1{1 recommandation} other{{count} recommandations}}",
+  "@Card_Recommendations_Count": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "Card_Progress": "{watched} sur {total} vus",
+  "@Card_Progress": {
+    "placeholders": {
+      "watched": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "Card_Aired": "{aired} diffusés",
+  "@Card_Aired": {
+    "placeholders": {
+      "aired": {
+        "type": "int"
+      }
+    }
+  },
+  "Card_Adult_Hidden": "Contenu pour adultes masqué",
+  "Card_Empty_Anime": "Aucun anime disponible",
+  "Card_Empty_Manga": "Aucun manga disponible",
+  "Card_Empty": "Rien à afficher",
+  "Card_View_All": "Tout voir",
+  "Card_Unknown": "Inconnu"
+}

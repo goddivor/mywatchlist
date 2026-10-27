@@ -5,7 +5,6 @@ Cap: 80 lines. Rewrite in place; history lives in git and `docs/DECISIONS.md`.
 ## Where we are (2026-10-27)
 - Porting every DailyAL feature (ref `upstream/2026.2.6+108`) into MWL, adapted to BLoC + multi-tracker, redesigning weak UI and fixing bugs on the way.
 - Work is split into 38 units (`work/INDEX.md`), built in parallel with the multi-agent-build tooling (`tools/mab/`, `tools/mab.config`), coordinated on GitHub (goddivor/mywatchlist, base `dev`, `master` owner-only).
-- Inventory of what MWL has vs DAL, with the bugs found: `work/inventory/*.md`.
 
 ## Gate
 - `tools/heavy.sh tools/verify.sh`: pub get, flutter analyze, flutter test, dart analyze mwl-api (machine-wide lock).
@@ -15,7 +14,6 @@ Cap: 80 lines. Rewrite in place; history lives in git and `docs/DECISIONS.md`.
 
 ## Localization (`l10n-pipeline`)
 - Base ARBs (DailyAL, 11 locales) frozen in `lib/l10n/`; each unit adds keys in `lib/l10n/units/<unit-id>/`; `tools/l10n/build.sh` merges, validates, generates `lib/generated/l10n.dart` + `intl/` (git-ignored).
-- Language picker fixed: 11 locales + "follow the device", applied immediately and at startup, Arabic RTL.
 
 ## Preferences contract and dependencies (`deps-prefs-contract`)
 - `lib/user/preferences/` (barrel `preferences.dart`): `PreferencesBloc` (state `AppPreferences` = `general`, `content`, `list`, `notifications`), one event per group with a `copyWith` updater, `PreferencesReset`, `PreferencesReloaded`; non-widget read `Preferences.current` / `Preferences.general`…; stored as one JSON per group (`prefs_*_v1`), legacy `timezone_pref` migrated.
