@@ -271,6 +271,7 @@ class _Skeleton extends StatelessWidget {
     if (display.isGrid) {
       return ShimmerColor(
         GridView.builder(
+          primary: false,
           physics: const NeverScrollableScrollPhysics(),
           padding: const EdgeInsets.fromLTRB(10, 8, 10, 0),
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
@@ -290,6 +291,7 @@ class _Skeleton extends StatelessWidget {
         : display.subType);
     return ShimmerColor(
       ListView.builder(
+        primary: false,
         physics: const NeverScrollableScrollPhysics(),
         itemExtent: extent,
         itemCount: 10,

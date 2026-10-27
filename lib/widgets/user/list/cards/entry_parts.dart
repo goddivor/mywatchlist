@@ -337,17 +337,13 @@ class EntryProgressBar extends StatelessWidget {
     final ratio = progressRatio(entry);
     if (ratio == null || entry.status == null) return SizedBox(height: height);
     final scheme = Theme.of(context).colorScheme;
-    return ClipRRect(
+    // Rounded by the indicator itself: no clip layer per row.
+    return LinearProgressIndicator(
+      value: ratio,
+      minHeight: height,
       borderRadius: BorderRadius.circular(height),
-      child: SizedBox(
-        height: height,
-        child: LinearProgressIndicator(
-          value: ratio,
-          minHeight: height,
-          backgroundColor: scheme.surfaceContainerHighest,
-          color: entry.status?.color ?? scheme.primary,
-        ),
-      ),
+      backgroundColor: scheme.surfaceContainerHighest,
+      color: entry.status?.color ?? scheme.primary,
     );
   }
 }
