@@ -15,7 +15,12 @@ import 'package:http/http.dart' as http;
 /// - on a `429`, waits (`Retry-After`, else an exponential backoff), pauses the
 ///   whole queue for that time and retries up to [maxRetries] times. When Jikan
 ///   keeps refusing, the last `429` response is returned for the caller to
-///   report.
+///   report;
+/// - gives up on a request after [requestTimeout] (Jikan is unreachable from
+///   some networks and the socket can hang for minutes), throwing
+///   [JikanUnavailable]; after such a failure every request fails at once for
+///   [unreachableCooldown], so a detail page does not wait once per section.
+///   [resetReachability] (a Retry button) ends that pause early.
 class JikanClient {
   JikanClient({
     http.Client? client,
@@ -25,14 +30,17 @@ class JikanClient {
     this.maxRetries = 3,
     this.baseBackoff = const Duration(seconds: 1),
     this.maxBackoff = const Duration(seconds: 8),
+    this.requestTimeout = const Duration(seconds: 12),
+    this.unreachableCooldown = const Duration(seconds: 30),
     DateTime Function()? now,
     Future<void> Function(Duration)? delay,
   })  : _client = client,
         _now = now ?? DateTime.now,
         _delay = delay ?? Future<void>.delayed;
 
-  /// The client used by the app.
-  static final JikanClient instance = JikanClient();
+  /// The client used by the app (tests may replace it with one built on a
+  /// fake `http.Client`).
+  static JikanClient instance = JikanClient();
 
   final http.Client? _client;
   final Duration minInterval;
@@ -41,10 +49,17 @@ class JikanClient {
   final int maxRetries;
   final Duration baseBackoff;
   final Duration maxBackoff;
+
+  /// Longest wait for one answer.
+  final Duration requestTimeout;
+
+  /// How long requests fail fast after a timeout or a network error.
+  final Duration unreachableCooldown;
   final DateTime Function() _now;
   final Future<void> Function(Duration) _delay;
 
   DateTime _nextSlot = DateTime.fromMillisecondsSinceEpoch(0);
+  DateTime? _unreachableUntil;
   final Map<String, Future<http.Response>> _inFlight = {};
   final LinkedHashMap<String, _CacheEntry> _cache = LinkedHashMap();
 
@@ -76,17 +91,41 @@ class JikanClient {
   /// Forget every stored answer.
   void clearCache() => _cache.clear();
 
+  /// True while requests fail fast after Jikan did not answer.
+  bool get isUnreachable {
+    final until = _unreachableUntil;
+    return until != null && _now().isBefore(until);
+  }
+
+  /// Let the next request reach the network again (used by Retry buttons).
+  void resetReachability() => _unreachableUntil = null;
+
+  void _throwIfUnreachable(Uri url) {
+    if (isUnreachable) throw JikanUnavailable(url, 'unreachable, skipped');
+  }
+
+  void _markUnreachable() =>
+      _unreachableUntil = _now().add(unreachableCooldown);
+
   Future<http.Response> _fetch(Uri url, String key) async {
     var attempt = 0;
     while (true) {
+      _throwIfUnreachable(url);
       await _waitForSlot();
+      _throwIfUnreachable(url);
       final http.Response response;
       final client = _client;
-      if (client != null) {
-        response = await client.get(url);
-      } else {
-        response = await http.get(url);
+      try {
+        final request = client != null ? client.get(url) : http.get(url);
+        response = await request.timeout(requestTimeout);
+      } on TimeoutException {
+        _markUnreachable();
+        throw JikanUnavailable(url, 'no answer after ${requestTimeout.inSeconds} s');
+      } on http.ClientException catch (e) {
+        _markUnreachable();
+        throw JikanUnavailable(url, e.message);
       }
+      _unreachableUntil = null;
       if (response.statusCode == 429 && attempt < maxRetries) {
         final wait = retryDelay(response, attempt);
         debugPrint('Jikan 429 for $url, retrying in ${wait.inMilliseconds} ms');
@@ -131,6 +170,17 @@ class JikanClient {
       _cache.remove(_cache.keys.first);
     }
   }
+}
+
+/// Jikan did not answer in time, the network failed, or a recent failure
+/// made the client skip the request.
+class JikanUnavailable implements Exception {
+  final Uri url;
+  final String reason;
+  const JikanUnavailable(this.url, this.reason);
+
+  @override
+  String toString() => 'JikanUnavailable($url): $reason';
 }
 
 class _CacheEntry {

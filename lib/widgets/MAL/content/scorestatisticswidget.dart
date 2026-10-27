@@ -1,189 +1,256 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:mywatchlist/constants/constants.dart';
+import 'package:mywatchlist/constants/constants.dart' show loadingGraph;
+import 'package:mywatchlist/generated/l10n.dart';
+import 'package:mywatchlist/screens/MAL/detail/sections/section_states.dart';
 import 'package:mywatchlist/services/api/Jikan/jikan_anime_statistics.dart';
 import 'package:mywatchlist/services/api/Jikan/jikan_api.dart';
-import 'package:mywatchlist/utils/custumfuture.dart';
+import 'package:mywatchlist/services/api/MAL/mal_anime.dart';
 
+/// Score distribution of a title (1 to 10), from Jikan `statistics`.
+///
+/// MAL's official API has no distribution, so when Jikan fails the section
+/// shows the score figures MAL does give ([mal]: mean, scored by, rank,
+/// popularity, members) with a note and a Retry. No votes at all shows an
+/// empty state, never grey bars.
 class ScoreStatisticsWidget extends StatefulWidget {
   final int id;
-  final VoidCallback? onPageChange;
   final String category;
   final double horizPadding;
-  const ScoreStatisticsWidget(
-      {super.key,
-      required this.id,
-      required this.category,
-      this.onPageChange,
-      required this.horizPadding});
+
+  /// MAL details of the title, for the fallback figures.
+  final MalAnime? mal;
+
+  const ScoreStatisticsWidget({
+    super.key,
+    required this.id,
+    required this.category,
+    required this.horizPadding,
+    this.mal,
+  });
 
   @override
-  // ignore: library_private_types_in_public_api
-  _ScoreStatisticsWidgetState createState() => _ScoreStatisticsWidgetState();
+  State<ScoreStatisticsWidget> createState() => _ScoreStatisticsWidgetState();
 }
 
 class _ScoreStatisticsWidgetState extends State<ScoreStatisticsWidget>
     with AutomaticKeepAliveClientMixin {
-  late dynamic animestatsFuture;
-  List<double> statList = [];
-  List<double> statListHeight = [];
-  List<String> statName = [];
-  NumberFormat statFormat = NumberFormat.compact();
+  late Future<AnimeStatistics> _future = _fetch();
+
+  Future<AnimeStatistics> _fetch() =>
+      JikanApi.getAnimeStatistics(widget.id, category: widget.category);
+
+  void _retry() => setState(() => _future = _fetch());
+
   @override
-  void initState() {
-    super.initState();
-    animestatsFuture = JikanApi.getAnimeStatistics(widget.id, category: widget.category);
-  }
+  bool get wantKeepAlive => true;
 
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    return CFutureBuilder<dynamic>(
-      future: animestatsFuture,
-      done: (s) => _scoreStatsWidget(s.data.scores),
-      loadingChild: loadingGraph(context),
+    return FutureBuilder<AnimeStatistics>(
+      future: _future,
+      builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return _MalScoreFallback(
+            mal: widget.mal,
+            horizPadding: widget.horizPadding,
+            onRetry: _retry,
+          );
+        }
+        if (snapshot.connectionState != ConnectionState.done) {
+          return SizedBox(height: 230, child: loadingGraph(context));
+        }
+        final scores = (snapshot.data?.scores ?? const <ScoreStatistics>[])
+            .where((s) => s.score != null)
+            .toList()
+          ..sort((a, b) => a.score!.compareTo(b.score!));
+        final total = scores.fold<int>(0, (sum, s) => sum + (s.votes ?? 0));
+        if (total == 0) {
+          return SectionMessage(icon: Icons.bar_chart, message: S.current.Res_Score_Empty);
+        }
+        return ScoreBars(scores: scores, horizPadding: widget.horizPadding);
+      },
     );
   }
+}
 
-  Widget _scoreStatsWidget(List<ScoreStatistics?> scoreList) {
-    // Si la liste est vide ou null, retourne un placeholder
-    if (scoreList.isEmpty) return showNoContent();
+/// Ten bars (one per score) sized to the widest one, in the theme accent;
+/// percent above, score and vote count below. Fits the width, no scrolling.
+class ScoreBars extends StatelessWidget {
+  final List<ScoreStatistics> scores;
+  final double horizPadding;
 
-    // Remplir les données en fonction de scoreList
-    for (var scoreStat in scoreList) {
-      if (scoreStat != null) {
-        statName
-            .add(scoreStat.score.toString()); // Utiliser 'score' pour le nom
-        statList.add(scoreStat.votes?.toDouble() ??
-            0.0); // Utiliser 'votes' pour la hauteur
-      }
-    }
+  const ScoreBars({super.key, required this.scores, required this.horizPadding});
 
-    // Calculer la hauteur des barres
-    double maxVotes =
-        statList.isNotEmpty ? statList.reduce((a, b) => a > b ? a : b) : 1;
-    var multiplier = 100 / (maxVotes > 0 ? maxVotes : 1);
+  static const double _maxBarHeight = 150;
 
-    statListHeight = statList.map((votes) => votes * multiplier).toList();
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final locale = Localizations.localeOf(context).toString();
+    final compact = NumberFormat.compact(locale: locale);
+    final percentFormat = NumberFormat.decimalPercentPattern(locale: locale, decimalDigits: 1);
+    final maxVotes = scores.fold<int>(1, (m, s) => (s.votes ?? 0) > m ? s.votes! : m);
+    final total = scores.fold<int>(0, (sum, s) => sum + (s.votes ?? 0));
+    final small = theme.textTheme.labelSmall?.copyWith(color: scheme.onSurfaceVariant);
 
-    // Construction du widget graphique
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        const SizedBox(
-          height: 14,
-          width: double.infinity,
-        ),
-        SizedBox(
-          height: 260,
-          child: SingleChildScrollView(
-            scrollDirection:
-                Axis.horizontal, // Permettre le défilement horizontal
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: horizPadding + 10),
+      child: Column(
+        children: [
+          SizedBox(
+            height: _maxBarHeight + 64,
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.start,
               crossAxisAlignment: CrossAxisAlignment.end,
-              children: List.generate(
-                  statList.length, (i) => _buildStatBar(i, scoreList)),
+              children: [
+                for (final s in scores)
+                  Expanded(
+                    child: _bar(
+                      context,
+                      s,
+                      maxVotes: maxVotes,
+                      total: total,
+                      compact: compact,
+                      percentFormat: percentFormat,
+                      small: small,
+                    ),
+                  ),
+              ],
             ),
           ),
-        ),
-        const SizedBox(
-          height: 20,
-        ),
-        Text(
-          "Total Votes: ${statFormat.format(statList.reduce((a, b) => a + b))}",
-          overflow: TextOverflow.ellipsis,
-          style: Theme.of(context).textTheme.bodyLarge,
-        ),
-      ],
+          const SizedBox(height: 14),
+          Text(
+            S.current.Res_Score_Total_Votes(compact.format(total)),
+            style: theme.textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
+          ),
+        ],
+      ),
     );
   }
 
-  Column _buildStatBar(int i, List<ScoreStatistics?> scoreList) {
-    final scoreStat = scoreList[i];
-
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.end,
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Text(
-          "${scoreStat?.percentage?.toStringAsFixed(1) ?? '0'}%", // Afficher le pourcentage
-          overflow: TextOverflow.ellipsis,
-          style: Theme.of(context).textTheme.labelSmall,
-        ),
-        const SizedBox(
-          height: 10,
-        ),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 300),
-            height: statListHeight[i] * 1.75,
-            width: 20,
+  Widget _bar(
+    BuildContext context,
+    ScoreStatistics s, {
+    required int maxVotes,
+    required int total,
+    required NumberFormat compact,
+    required NumberFormat percentFormat,
+    required TextStyle? small,
+  }) {
+    final scheme = Theme.of(context).colorScheme;
+    final votes = s.votes ?? 0;
+    final ratio = total == 0 ? 0.0 : votes / total;
+    final percent = percentFormat.format(s.percentage != null ? s.percentage! / 100 : ratio);
+    final height = (votes / maxVotes * _maxBarHeight).clamp(2.0, _maxBarHeight);
+    return Semantics(
+      label: S.current.Res_Score_Votes_Semantics('${s.score}', compact.format(votes), percent),
+      excludeSemantics: true,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          FittedBox(fit: BoxFit.scaleDown, child: Text(percent, style: small, maxLines: 1)),
+          const SizedBox(height: 4),
+          Container(
+            height: height,
+            width: 18,
             decoration: BoxDecoration(
-              color: Color(getColorForScore(i)), // Choisir une couleur adaptée
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(12),
-                topRight: Radius.circular(12),
-              ),
+              // Stronger accent for the most voted score, softer for the rest.
+              color: votes == maxVotes ? scheme.primary : scheme.primary.withValues(alpha: 0.55),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
             ),
           ),
-        ),
-        const SizedBox(
-          height: 10,
-        ),
-        Text(
-          statName[i], // Afficher le score
-          overflow: TextOverflow.ellipsis,
-          style: Theme.of(context).textTheme.labelSmall,
-        ),
-        const SizedBox(
-          height: 10,
-        ),
-        Text(
-          statFormat.format(statList[i]), // Afficher le nombre de votes
-          overflow: TextOverflow.ellipsis,
-          style: Theme.of(context).textTheme.labelMedium,
-        )
-      ],
+          const SizedBox(height: 6),
+          Text(
+            '${s.score}',
+            style: Theme.of(context).textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w600),
+          ),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(compact.format(votes), style: small, maxLines: 1),
+          ),
+        ],
+      ),
     );
   }
+}
 
-  int getColorForScore(int score) {
-    switch (score) {
-      case 0:
-        return Colors.red.toARGB32(); // Score 0
-      case 1:
-        return Colors.redAccent.toARGB32(); // Score 1
-      case 2:
-        return Colors.orange.toARGB32(); // Score 2
-      case 3:
-        return Colors.orangeAccent.toARGB32(); // Score 3
-      case 4:
-        return Colors.yellow.toARGB32(); // Score 4
-      case 5:
-        return Colors.lightGreen.toARGB32(); // Score 5
-      case 6:
-        return Colors.green.toARGB32(); // Score 6
-      case 7:
-        return Colors.greenAccent.toARGB32(); // Score 7
-      case 8:
-        return Colors.lightBlue.toARGB32(); // Score 8
-      case 9:
-        return Colors.blue.toARGB32(); // Score 9
-      case 10:
-        return Colors.blueAccent.toARGB32(); // Score 10
-      default:
-        return Colors.grey.toARGB32(); // Should not reach here
+/// What MAL gives about the score when Jikan cannot be reached.
+class _MalScoreFallback extends StatelessWidget {
+  final MalAnime? mal;
+  final double horizPadding;
+  final VoidCallback onRetry;
+
+  const _MalScoreFallback({required this.mal, required this.horizPadding, required this.onRetry});
+
+  @override
+  Widget build(BuildContext context) {
+    final m = mal;
+    final locale = Localizations.localeOf(context).toString();
+    final number = NumberFormat.decimalPattern(locale);
+    final mean = m?.mean;
+    final figures = <(String, String)>[
+      if (mean != null && mean > 0)
+        (S.current.Res_Mean_Score, NumberFormat('0.00', locale).format(mean)),
+      if ((m?.numScoringUsers ?? 0) > 0) (S.current.Res_Scored_By, number.format(m!.numScoringUsers)),
+      if ((m?.rank ?? 0) > 0) (S.current.Res_Ranked, '#${number.format(m!.rank)}'),
+      if ((m?.popularity ?? 0) > 0) (S.current.Res_Popularity, '#${number.format(m!.popularity)}'),
+      if ((m?.numListUsers ?? 0) > 0) (S.current.Res_Members, number.format(m!.numListUsers)),
+    ];
+    if (figures.isEmpty) {
+      return SectionMessage.error(message: S.current.Res_Score_Unavailable, onRetry: onRetry);
     }
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: horizPadding + 10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final (label, value) in figures)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: scheme.surfaceContainerHigh,
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        value,
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          color: scheme.onSurface,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      Text(
+                        label,
+                        style: theme.textTheme.labelSmall?.copyWith(color: scheme.onSurfaceVariant),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(
+            S.current.Res_Source_Mal,
+            style: theme.textTheme.labelSmall?.copyWith(color: scheme.onSurfaceVariant),
+          ),
+          SectionMessage.error(
+            height: 120,
+            message: S.current.Res_Score_Unavailable,
+            onRetry: onRetry,
+          ),
+        ],
+      ),
+    );
   }
-
-  @override
-  void dispose() {
-    super.dispose();
-  }
-
-  @override
-  bool get wantKeepAlive => true;
 }
