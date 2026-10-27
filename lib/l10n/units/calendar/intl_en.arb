@@ -1,0 +1,141 @@
+{
+  "@@locale": "en",
+  "Cal_Title": "Anime calendar",
+  "Cal_Today": "Today",
+  "Cal_Refresh": "Refresh",
+  "Cal_Retry": "Try again",
+  "Cal_Timezone": "Time zone",
+  "Cal_Error_Title": "The schedule could not be loaded",
+  "Cal_Error_Desc": "Check your connection and try again.",
+  "Cal_Empty_Day": "Nothing airs on this day",
+  "Cal_Empty_Filtered": "No episode matches this filter",
+  "Cal_Empty_Filtered_Desc": "Episodes on other days may match: try another day or clear the filter.",
+  "Cal_Clear_Filter": "Show all",
+  "Cal_Empty_Schedule": "No airing schedule available",
+  "Cal_Empty_Schedule_Desc": "The schedule of the current season is empty for now.",
+  "Cal_Episode_Short": "Ep {number}",
+  "@Cal_Episode_Short": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "Cal_Episode_Of_Total": "Ep {number} of {total}",
+  "@Cal_Episode_Of_Total": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "Cal_Aired": "Aired",
+  "Cal_In_Days_Hours": "in {days} d {hours} h",
+  "@Cal_In_Days_Hours": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      },
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
+  "Cal_In_Hours_Minutes": "in {hours} h {minutes} min",
+  "@Cal_In_Hours_Minutes": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "Cal_In_Minutes_Seconds": "in {minutes} min {seconds} s",
+  "@Cal_In_Minutes_Seconds": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      },
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "Cal_Next_Show": "Next: {title} at {time}",
+  "@Cal_Next_Show": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "Cal_Week_Count": "{count, plural, =0{No episode this week} one{{count} episode this week} other{{count} episodes this week}}",
+  "@Cal_Week_Count": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "Cal_Connect_Hint": "Connect MyAnimeList to highlight the anime on your list.",
+  "Cal_Add_Title": "Add to calendar",
+  "Cal_Add_Device": "Add to my calendar",
+  "Cal_Save_Ics": "Save .ics",
+  "Cal_Share_Ics": "Share .ics",
+  "Cal_Recurring": "Repeat every week",
+  "Cal_Recurring_Desc": "Adds {count} weekly events, up to the last episode.",
+  "@Cal_Recurring_Desc": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "Cal_Recurring_Unknown": "The number of episodes is not known yet, so only this episode is added.",
+  "Cal_Event_Added": "Event added to your calendar",
+  "Cal_Event_Error": "The event could not be added to your calendar",
+  "Cal_Ics_Saved": "File saved to the Downloads folder",
+  "Cal_Ics_Error": "The file could not be saved",
+  "Cal_Event_Title": "Ep {number} - {title}",
+  "@Cal_Event_Title": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      },
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "Cal_Event_Series_Title": "{title} - episode release reminder",
+  "@Cal_Event_Series_Title": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "Cal_Event_Description": "{title} - episode {number}\nAir date: {date}",
+  "@Cal_Event_Description": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      },
+      "number": {
+        "type": "int"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "Cal_Event_Links": "Links"
+}
