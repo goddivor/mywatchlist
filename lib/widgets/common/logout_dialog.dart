@@ -1,92 +1,45 @@
-import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:flutter/material.dart';
+import 'package:mywatchlist/generated/l10n.dart';
 
+/// Asks before signing out of [trackerName]. Resolves to true only on the "Sign out" button
+/// (back, a tap outside and "Cancel" all resolve to false).
+Future<bool> confirmLogout(BuildContext context,
+    {required String trackerName}) async {
+  final confirmed = await showDialog<bool>(
+    context: context,
+    builder: (_) => LogoutDialog(trackerName: trackerName),
+  );
+  return confirmed ?? false;
+}
+
+/// The sign-out confirmation: what happens, then Cancel / Sign out (the destructive action
+/// is the filled, error-colored button).
 class LogoutDialog extends StatelessWidget {
   final String trackerName;
-  final VoidCallback onConfirm;
 
-  const LogoutDialog(
-      {super.key, required this.trackerName, required this.onConfirm});
+  const LogoutDialog({super.key, required this.trackerName});
 
   @override
   Widget build(BuildContext context) {
-    return Dialog(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20.0),
-      ),
-      backgroundColor:
-          Colors.brown, // Vous pouvez changer la couleur selon vos besoins
-      child: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'Log out from $trackerName?',
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 20),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                TextButton(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
-                  style: TextButton.styleFrom(
-                    backgroundColor: Colors.red,
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 24, vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20.0),
-                    ),
-                  ),
-                  child: const Text(
-                    'Cancel',
-                    style: TextStyle(color: Colors.white),
-                  ),
-                ),
-                TextButton(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                    onConfirm();
-                  },
-                  style: TextButton.styleFrom(
-                    backgroundColor: Colors.red,
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 24, vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20.0),
-                    ),
-                  ),
-                  child: const Text(
-                    'Log out',
-                    style: TextStyle(color: Colors.white),
-                  ),
-                ),
-              ],
-            ),
-          ],
+    final colors = Theme.of(context).colorScheme;
+    return AlertDialog(
+      icon: const Icon(Icons.logout_rounded),
+      title: Text(S.current.Acc_Sign_Out_Title(trackerName)),
+      content: Text(S.current.Acc_Sign_Out_Body(trackerName)),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(false),
+          child: Text(S.current.Cancel),
         ),
-      ),
+        FilledButton(
+          style: FilledButton.styleFrom(
+            backgroundColor: colors.error,
+            foregroundColor: colors.onError,
+          ),
+          onPressed: () => Navigator.of(context).pop(true),
+          child: Text(S.current.Acc_Sign_Out),
+        ),
+      ],
     );
   }
-}
-
-Future<void> awesomeLogoutDialog(BuildContext context,
-    final String trackerName, final VoidCallback onConfirm) {
-  return AwesomeDialog(
-    context: context,
-    dialogType: DialogType.warning,
-    animType: AnimType.topSlide,
-    // showCloseIcon: true,
-    title: "Warning",
-    desc: "Are you sure you want to log out from $trackerName",
-    btnCancelOnPress: () => {},
-    btnOkOnPress: onConfirm,
-  ).show();
 }

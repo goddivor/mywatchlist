@@ -1,29 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:mywatchlist/generated/l10n.dart';
-import 'package:mywatchlist/pages/settings/coming_soon_page.dart';
-import 'package:mywatchlist/pages/settings/settings_section.dart';
-import 'package:mywatchlist/screens/manage_accounts_page.dart';
+import 'package:mywatchlist/user/accounts/widgets/accounts_panel.dart';
 
-/// Settings page for the connected trackers (connect, switch, sign out, sign in again).
-///
-/// Stub created by the app shell: until the accounts unit fills it, it links to the
-/// existing tracker manager so the hub never loses access to account management.
+/// Settings > Accounts: every tracker in one list. Tap a connected account to make it the
+/// active one (the home, your list and your profile follow it), connect or sign in again
+/// with one button, sign out from the row menu.
 class AccountsSettingsPage extends StatelessWidget {
   const AccountsSettingsPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    const section = SettingsSection.accounts;
-    return ComingSoonPage(
-      title: section.title,
-      icon: section.icon,
-      subtitle: section.description,
-      action: FilledButton.tonalIcon(
-        onPressed: () => Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => const ManageAccountsPage()),
+    final theme = Theme.of(context);
+    return Scaffold(
+      appBar: AppBar(title: Text(S.current.Settings_Accounts)),
+      body: SafeArea(
+        child: AccountsPanel(
+          header: Padding(
+            padding: const EdgeInsets.fromLTRB(4, 4, 4, 4),
+            child: Text(
+              S.current.Acc_Intro,
+              style: theme.textTheme.bodyMedium
+                  ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+            ),
+          ),
         ),
-        icon: const Icon(Icons.link),
-        label: Text(S.current.Settings_Accounts_Manage),
       ),
     );
   }

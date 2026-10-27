@@ -1,0 +1,83 @@
+{
+  "@@locale": "fr_FR",
+  "Acc_Desc_Mal": "La plus grande communauté et base de données d’anime et de manga",
+  "Acc_Desc_Anilist": "Suivez et partagez vos anime et manga dans une interface moderne",
+  "Acc_Desc_Kitsu": "Découvrez des anime et suivez votre progression",
+  "Acc_Desc_Simkl": "Suivez anime, séries et films au même endroit",
+  "Acc_Intro": "Le compte actif détermine le tracker affiché par l’accueil, votre liste et votre profil. Touchez un compte pour l’activer.",
+  "Acc_Switch_Title": "Changer de compte",
+  "Acc_Your_Accounts": "Vos comptes",
+  "Acc_Add_Account": "Ajouter un compte",
+  "Acc_Connect_Tracker": "Connecter un tracker",
+  "Acc_Active": "Actif",
+  "Acc_Connected": "Connecté",
+  "Acc_Session_Expired": "Session expirée",
+  "Acc_Connecting": "En attente de la connexion…",
+  "Acc_Connect": "Connecter",
+  "Acc_Sign_In_Again": "Se reconnecter",
+  "Acc_Sign_Out": "Se déconnecter",
+  "Acc_Sign_Out_Title": "Se déconnecter de {tracker} ?",
+  "@Acc_Sign_Out_Title": {
+    "placeholders": {
+      "tracker": {
+        "type": "String"
+      }
+    }
+  },
+  "Acc_Sign_Out_Body": "Votre liste reste sur {tracker}. Vous pourrez vous reconnecter à tout moment.",
+  "@Acc_Sign_Out_Body": {
+    "placeholders": {
+      "tracker": {
+        "type": "String"
+      }
+    }
+  },
+  "Acc_Signed_Out": "Déconnecté de {tracker}",
+  "@Acc_Signed_Out": {
+    "placeholders": {
+      "tracker": {
+        "type": "String"
+      }
+    }
+  },
+  "Acc_Switched_To": "Compte {tracker} activé",
+  "@Acc_Switched_To": {
+    "placeholders": {
+      "tracker": {
+        "type": "String"
+      }
+    }
+  },
+  "Acc_Connect_Failed": "Impossible de lancer la connexion à {tracker}. Vérifiez votre connexion et réessayez.",
+  "@Acc_Connect_Failed": {
+    "placeholders": {
+      "tracker": {
+        "type": "String"
+      }
+    }
+  },
+  "Acc_Menu_Tooltip": "Options du compte",
+  "Acc_Added": "{tracker} connecté",
+  "@Acc_Added": {
+    "placeholders": {
+      "tracker": {
+        "type": "String"
+      }
+    }
+  },
+  "Acc_Add_Title": "Ajouter un compte",
+  "Acc_Add_Subtitle": "Connectez un autre tracker. Il devient aussitôt votre compte actif.",
+  "Acc_Welcome_Title": "Connectez votre tracker",
+  "Acc_Welcome_Subtitle": "Connectez-vous au service où vous suivez vos anime et vos manga. Vous pouvez en connecter plusieurs et passer de l’un à l’autre d’une seule touche.",
+  "Acc_Onboarding_Title": "Connectez vos comptes",
+  "Acc_Onboarding_Subtitle": "Connectez les services que vous utilisez. Vous pourrez en ajouter d’autres plus tard dans les réglages.",
+  "Acc_Kitsu_Title": "Connexion à Kitsu",
+  "Acc_Kitsu_Hint": "Votre mot de passe est envoyé directement à Kitsu et n’est pas enregistré sur cet appareil.",
+  "Acc_Kitsu_Username": "E-mail ou nom d’utilisateur",
+  "Acc_Kitsu_Password": "Mot de passe",
+  "Acc_Kitsu_Wrong": "E-mail, nom d’utilisateur ou mot de passe incorrect.",
+  "Acc_Kitsu_Network": "Impossible de joindre Kitsu. Vérifiez votre connexion.",
+  "Acc_Show_Password": "Afficher le mot de passe",
+  "Acc_Hide_Password": "Masquer le mot de passe",
+  "Acc_Field_Required": "Ce champ est obligatoire"
+}

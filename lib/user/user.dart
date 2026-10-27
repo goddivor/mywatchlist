@@ -9,9 +9,12 @@ import 'package:mywatchlist/services/auth/kitsu_authresp.dart';
 import 'package:mywatchlist/services/auth/mal_authresp.dart';
 import 'package:mywatchlist/services/auth/simkl_authresp.dart';
 import 'package:mywatchlist/user/accounts/account_manager.dart';
+import 'package:mywatchlist/user/base_user.dart' show AuthStatus;
 import 'package:mywatchlist/user/userpref.dart';
 
-enum AuthStatus { UNAUTHENTICATED, AUTHENTICATED, INPROGRESS }
+// One AuthStatus for the whole app (base_user.dart): a second enum of the same name made
+// every comparison across the two files false.
+export 'package:mywatchlist/user/base_user.dart' show AuthStatus;
 
 //This class is used to save mal user info
 class UserMal with ChangeNotifier {
