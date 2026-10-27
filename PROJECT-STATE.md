@@ -22,6 +22,11 @@ Cap: 80 lines. Rewrite in place; history lives in git and `docs/DECISIONS.md`.
 - Language stays in `LanguageBloc`, theme/font/background in `ThemeBloc`, home layout in `HomePreferencesBloc`; `UserPreference` keeps MWL-only device settings.
 - Every dependency of the queued units is in `pubspec.yaml` (pins listed in the PR closing issue #29); manifest has notification, exact alarm, boot, calendar and install-packages permissions, the notification receivers and a FileProvider. `NotificationService.init()` is a no-op stub called from `main`.
 
+## App shell (`app-shell`)
+- Cross-unit navigation: `lib/utils/app_routes.dart` (`AppRoutes.openSettings/openSettingsPage(SettingsSection)/openAbout/openBookmarks/openCalendar/openSearch/openUserProfile/openUserStats/openContent/openLogin/openManageAccounts/openSidebar/signInAgain/openFromNotification`); `SettingsSection` (title, description, icon) in `lib/pages/settings/settings_section.dart`.
+- Stubs (`ComingSoonPage`): 9 settings pages, bookmarks, calendar, user profile/stats; their units replace the body.
+- Home shell: sidebar = end drawer (`AppRoutes.openSidebar` from any tab), startup page pref, only the current tab built unless `keepPagesInMemory` (then lazily kept), "session expired" snackbar for any tracker, notification payload `anime:<id>|manga:<id>|calendar|bookmarks`.
+
 ## Waves (from `node tools/mab/plan-waves.mjs`)
 1. gate-fix
 2. auth-refresh, backend-parsers, l10n-pipeline
