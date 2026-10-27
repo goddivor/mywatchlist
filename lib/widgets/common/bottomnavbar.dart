@@ -1,12 +1,12 @@
-// ignore_for_file: prefer_typing_uninitialized_variables, library_private_types_in_public_api, deprecated_member_use
-
-
 import 'package:flutter/material.dart';
 import 'package:line_icons/line_icon.dart';
+import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/widgets/common/nav_indicator.dart';
 
+/// The home shell's bottom bar: five tabs, the active one in a rounded tinted pill with the
+/// accent icon (no underline bar). Line icons, as DailyAL.
 class BottomNavBar extends StatefulWidget {
-  final startIndex;
+  final int? startIndex;
   final ValueChanged<int>? onChanged;
   final bool forceBackground;
 
@@ -17,158 +17,81 @@ class BottomNavBar extends StatefulWidget {
     this.forceBackground = false,
   });
 
+  /// Tab icons, in `HomeTab` order (home, forum, list, profile, explore).
+  static const List<Widget> icons = [
+    LineIcon.home(size: iconSize),
+    LineIcon.comments(size: iconSize),
+    LineIcon.list(size: iconSize),
+    LineIcon.user(size: iconSize),
+    LineIcon.globe(size: iconSize),
+  ];
+
+  static const double iconSize = 24.0;
+
+  /// Accessible names of the tabs, in the same order.
+  static List<String> labels() => [
+        S.current.Home,
+        S.current.Theme_Nav_Forum,
+        S.current.Theme_Nav_List,
+        S.current.Profile,
+        S.current.Explore,
+      ];
+
   @override
-  _BottomNavBarState createState() => _BottomNavBarState();
+  State<BottomNavBar> createState() => _BottomNavBarState();
 }
 
-class _BottomNavBarState extends State<BottomNavBar>
-    with SingleTickerProviderStateMixin {
-  int pageIndex = 0;
-  double iconSize = 24.0;
-  late AnimationController _animationController;
-  late Animation<double> _animation;
-
-  // Utilisation de LineIcon selon votre demande
-  final Map<int, Widget> lineIconMap = {
-    0: const LineIcon.home(size: 24),
-    1: const LineIcon.comments(size: 24),
-    2: const LineIcon.list(size: 24),
-    3: const LineIcon.user(size: 24),
-    4: const LineIcon.globe(size: 24),
-  };
-
-  // Titres des pages pour l'accessibilité et les tooltips
-  final Map<int, String> pageTitles = {
-    0: 'Home',
-    1: 'Forum',
-    2: 'My List',
-    3: 'Profile',
-    4: 'Explore',
-  };
-
-  @override
-  void initState() {
-    super.initState();
-    pageIndex = widget.startIndex ?? 0;
-
-    _animationController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 300),
-    );
-
-    _animation = CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeOutBack,
-    );
-
-    _animationController.forward();
-  }
-
-  @override
-  void dispose() {
-    _animationController.dispose();
-    super.dispose();
-  }
+class _BottomNavBarState extends State<BottomNavBar> {
+  late int pageIndex = widget.startIndex ?? 0;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    final cs = Theme.of(context).colorScheme;
+    final labels = BottomNavBar.labels();
 
-    // Créer un effet d'élévation subtil
-    return Container(
+    return DecoratedBox(
       decoration: BoxDecoration(
-        color: Colors.transparent,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, -5),
-          ),
-        ],
+        color: cs.surfaceContainer,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        border: Border(top: BorderSide(color: cs.outlineVariant.withValues(alpha: 0.5))),
       ),
-      // Barre de navigation arrondie dans les coins supérieurs
-      child: ClipRRect(
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(20),
-          topRight: Radius.circular(20),
-        ),
-        child: FadeTransition(
-          opacity: _animation,
-          child: Container(
-            decoration: BoxDecoration(
-              color: isDark
-                  ? theme.colorScheme.surface
-                  : theme.colorScheme.surface,
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(20),
-                topRight: Radius.circular(20),
-              ),
-            ),
-            child: SafeArea(
-              top: false,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: List.generate(
-                    lineIconMap.length,
-                    (index) => _buildNavItem(index, theme),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildNavItem(int index, ThemeData theme) {
-    final bool isSelected = pageIndex == index;
-    final Color activeColor = theme.colorScheme.primary;
-    final Color inactiveColor = theme.colorScheme.onSurface.withValues(alpha: 0.5);
-
-    return Expanded(
-      child: Tooltip(
-        message: pageTitles[index] ?? 'Tab $index',
-        child: NavItemContainer(
-          isSelected: isSelected,
-          activeColor: activeColor,
-          backgroundColor: theme.colorScheme.surface,
-          onTap: () => _onPageChange(index),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Icône avec coloration adaptative
-              AnimatedDefaultTextStyle(
-                duration: const Duration(milliseconds: 200),
-                style: TextStyle(
-                  color: isSelected ? activeColor : inactiveColor,
-                  fontSize: iconSize,
-                ),
-                child: AnimatedScale(
-                  scale: isSelected ? 1.2 : 1.0,
-                  duration: const Duration(milliseconds: 200),
-                  curve: Curves.easeOutBack,
-                  child: IconTheme(
-                    data: IconThemeData(
-                      color: isSelected ? activeColor : inactiveColor,
-                      size: iconSize,
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+          child: Row(
+            children: List.generate(BottomNavBar.icons.length, (index) {
+              final selected = pageIndex == index;
+              return Expanded(
+                child: Tooltip(
+                  message: labels[index],
+                  child: Semantics(
+                    selected: selected,
+                    button: true,
+                    label: labels[index],
+                    excludeSemantics: true,
+                    child: NavItemContainer(
+                      isSelected: selected,
+                      activeColor: cs.primary,
+                      pillColor: cs.secondaryContainer,
+                      onTap: () => _onPageChange(index),
+                      child: AnimatedScale(
+                        scale: selected ? 1.1 : 1.0,
+                        duration: const Duration(milliseconds: 200),
+                        curve: const Cubic(0.23, 1, 0.32, 1),
+                        child: IconTheme(
+                          data: IconThemeData(
+                            color: selected ? cs.primary : cs.onSurfaceVariant,
+                            size: BottomNavBar.iconSize,
+                          ),
+                          child: BottomNavBar.icons[index],
+                        ),
+                      ),
                     ),
-                    child: lineIconMap[index] ?? const Icon(Icons.circle),
                   ),
                 ),
-              ),
-
-              // Indicateur
-              NavIndicator(
-                isActive: isSelected,
-                color: activeColor,
-                width: 24,
-                height: 3,
-              ),
-            ],
+              );
+            }),
           ),
         ),
       ),
@@ -176,15 +99,8 @@ class _BottomNavBarState extends State<BottomNavBar>
   }
 
   void _onPageChange(int index) {
-    if (pageIndex != index) {
-      setState(() {
-        pageIndex = index;
-      });
-      widget.onChanged?.call(index);
-
-      // Animation pour l'élément sélectionné
-      _animationController.reset();
-      _animationController.forward();
-    }
+    if (pageIndex == index) return;
+    setState(() => pageIndex = index);
+    widget.onChanged?.call(index);
   }
 }
