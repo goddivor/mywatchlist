@@ -4,7 +4,7 @@ Cap: 80 lines. Rewrite in place; history lives in git and `docs/DECISIONS.md`.
 
 ## Where we are (2026-10-27)
 - Porting every DailyAL feature (ref `upstream/2026.2.6+108`) into MWL, adapted to BLoC + multi-tracker, redesigning weak UI and fixing bugs on the way.
-- Work is split into 38 units (`work/INDEX.md`), built in parallel with the multi-agent-build tooling (`tools/mab/`, `tools/mab.config`), coordinated on GitHub (goddivor/mywatchlist, base `dev`, `master` owner-only).
+- Work is split into 38 units (`work/INDEX.md`), built in parallel with the multi-agent-build tooling (`tools/mab/`, `tools/mab.config`), coordinated on GitHub (goddivor/mywatchlist, base `dev`, `master` owner-only). Board: GitHub Project goddivor #8 "MyWatchList — Roadmap".
 
 ## Gate
 - `tools/heavy.sh tools/verify.sh`: pub get, flutter analyze, flutter test, dart analyze mwl-api (machine-wide lock).
@@ -29,6 +29,7 @@ Cap: 80 lines. Rewrite in place; history lives in git and `docs/DECISIONS.md`.
 ## Detail screen (`detail-split`, `detail-header`)
 - `lib/screens/MAL/detail/`: `detail_screen.dart`, `detail_data.dart` (immutable snapshot, incl. schedule links and next episode), `detail_sections.dart` (registry in the `ContentPreferences` order, `Dh_Tab_*` labels), `sections/`, `header/`, `actions/`, `tabs_customizer.dart`, `pages/`. `contentdetailedscreen.dart` re-exports it.
 - Header (`header/`): fixed extent, 2-line title (long press copies), cover + title language switch + More Info, `ScoreReveal` score, LiveChart countdown chip (pref `showCountdownOnDetail`), faded background (pref `showDetailBackground`). App bar: search, bookmark, overflow (share, browser, More Info, search by genre, customize sections). `Dh_*` strings en + fr_FR.
+- Social (`detail-social`) reviews (`show_reviews.dart`, `lib/widgets/MAL/review/`): AI summary sheet (`ReviewSummaryEntry`, `MwlApi.getReviewsSummary`, only when the `aireviews` flag is on, English text machine-translated), share builder, score distribution, filters; a reviewer, stack author or list-update user opens `AppRoutes.openUserPop` (`openMalUser`). Stacks gain share and open in browser. Strings: `Social_*` (en + fr_FR).
 ## API layer (`api-prefs`)
 - Jikan: `JikanClient` (throttle, in-flight sharing, 5 min cache, 429 backoff); MAL: `nsfw=` from the pref (the user's own `/users/@me/animelist|mangalist` always `nsfw=1`, #97), timezone pref in airing helpers, `MalApi.isUnderMaintenance()` (60 s cache) for home wiring, full `MyListStatus` + `save*ListStatus` with text dates.
 
