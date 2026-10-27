@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:intl/intl.dart';
+import 'package:mywatchlist/enums.dart' as enums show myAnimeStatusMap;
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/services/api/MAL/mal_anime.dart';
 import 'package:mywatchlist/widgets/common/custombutton.dart';
@@ -133,10 +134,10 @@ class Constants {
   static const String jikanTopManga = "https://api.jikan.moe/v4/top/manga";
 
   static const String malAnimeFields =
-      'id,title,main_picture,alternative_titles,ending_themes,opening_themes,start_date,end_date,synopsis,mean,rank,popularity,num_list_users,num_scoring_users,nsfw,created_at,updated_at,media_type,status,genres,my_list_status{is_rewatching,is_rereading,num_times_rewatched,num_times_reread,priority,rewatch_value,reread_value,start_date,finish_date,tags,comments},num_episodes,start_season,broadcast,source,average_episode_duration,rating,pictures,background,related_anime{my_list_status,mean,num_list_users,media_type},related_manga{my_list_status,mean,num_list_users,media_type},recommendations{my_list_status,mean,num_list_users,media_type},studios,statistics';
+      'id,title,main_picture,alternative_titles,ending_themes,opening_themes,start_date,end_date,synopsis,mean,rank,popularity,num_list_users,num_scoring_users,nsfw,created_at,updated_at,media_type,status,genres,my_list_status{status,score,num_episodes_watched,is_rewatching,updated_at,priority,num_times_rewatched,rewatch_value,start_date,finish_date,tags,comments},num_episodes,start_season,broadcast,source,average_episode_duration,rating,pictures,background,related_anime{my_list_status,mean,num_list_users,media_type},related_manga{my_list_status,mean,num_list_users,media_type},recommendations{my_list_status,mean,num_list_users,media_type},studios,statistics';
 
   static const String malMangaFields =
-      'id,title,main_picture,alternative_titles,start_date,end_date,synopsis,mean,rank,popularity,num_list_users,num_scoring_users,nsfw,created_at,updated_at,media_type,status,genres,my_list_status{is_rereading,num_times_reread,priority,reread_value,start_date,finish_date,tags,comments},num_volumes,num_chapters,authors{first_name,last_name},pictures,background,related_anime{my_list_status,mean,num_list_users,media_type},related_manga{my_list_status,mean,num_list_users,media_type},recommendations{my_list_status,mean,num_list_users,media_type},serialization{name}';
+      'id,title,main_picture,alternative_titles,start_date,end_date,synopsis,mean,rank,popularity,num_list_users,num_scoring_users,nsfw,created_at,updated_at,media_type,status,genres,my_list_status{status,score,num_volumes_read,num_chapters_read,is_rereading,updated_at,priority,num_times_reread,reread_value,start_date,finish_date,tags,comments},num_volumes,num_chapters,authors{first_name,last_name},pictures,background,related_anime{my_list_status,mean,num_list_users,media_type},related_manga{my_list_status,mean,num_list_users,media_type},recommendations{my_list_status,mean,num_list_users,media_type},serialization{name}';
 
   static const String malDefaultAnimeListFields =
       'id,title,main_picture,alternative_titles,start_date,end_date,synopsis,mean,rank,popularity,num_list_users,num_scoring_users,nsfw,created_at,updated_at,media_type,status,genres,my_list_status,num_episodes,start_season,broadcast,source,average_episode_duration,rating,pictures,background,related_anime,related_manga,recommendations,studios,statistics';
@@ -1004,13 +1005,8 @@ Color getAnimeStatusColor(String? status) {
   }
 }
 
-Map<String, String> myAnimeStatusMap = {
-  "watching": "Watching",
-  "completed": "Completed",
-  "on_hold": "On Hold",
-  "dropped": "Dropped",
-  "plan_to_watch": "Plan to Watch"
-};
+/// Same as `myAnimeStatusMap` in `enums.dart` (labels translated at each read).
+Map<String, String> get myAnimeStatusMap => enums.myAnimeStatusMap;
 
 Map<String, int> myAnimeStatusIntMap = {
   "watching": 0,
@@ -1151,7 +1147,9 @@ Future<bool> showConfirmationDialog({
   required BuildContext context,
   List<Widget>? addtionalActions,
 }) async {
-  return await showDialog(
+  // A tap outside or back closes the dialog without an answer (null): that
+  // is a "no".
+  final answer = await showDialog<bool>(
     context: context,
     builder: (context) => AlertDialog(
       title: title(alertTitle, opacity: 1, fontSize: 14),
@@ -1164,6 +1162,7 @@ Future<bool> showConfirmationDialog({
             ],
     ),
   );
+  return answer ?? false;
 }
 
 // DateTime extension for calculating next weekday dates

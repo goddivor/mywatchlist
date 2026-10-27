@@ -19,8 +19,9 @@ import 'package:url_launcher/url_launcher.dart' as launcher;
 /// - [parseMalLink]: recognizes a MyAnimeList URL (or a bare MAL path).
 abstract final class WebLauncher {
   /// Routes a MyAnimeList link to an in-app screen and returns true when it
-  /// did. Registered once by the app shell (`lib/utils/app_routes.dart`); while
-  /// null, MAL links open in the browser like any other link.
+  /// did. Registered once at startup by the deep-links unit
+  /// (`lib/utils/deep_links.dart`); while null, MAL links open in the browser
+  /// like any other link.
   static InternalLinkHandler? internalLinkHandler;
 
   /// Opens [uri] outside Flutter. Tests replace it; the default is

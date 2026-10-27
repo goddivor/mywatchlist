@@ -1,6 +1,8 @@
 
 // ignore_for_file: constant_identifier_names
 
+import 'dart:collection';
+
 import 'package:mywatchlist/generated/l10n.dart';
 
 /// Previous/Next Page
@@ -360,41 +362,56 @@ class MyStatus {
   static final String planToRead = "plan_to_read";
 }
 
-Map<String, String> myAnimeStatusMap = {
-  "watching": "Watching",
-  "completed": "Completed",
-  "on_hold": "On Hold",
-  "dropped": "Dropped",
-  "plan_to_watch": "Plan to Watch"
+/// A read-only map whose labels are read from `S` at each access: a language
+/// change applies at the next read, while the keys (the API values) are known
+/// without any loaded locale.
+class _LabelMap<K> extends UnmodifiableMapBase<K, String> {
+  _LabelMap(this._labels);
+
+  final Map<K, String Function()> _labels;
+
+  @override
+  String? operator [](Object? key) => _labels[key]?.call();
+
+  @override
+  Iterable<K> get keys => _labels.keys;
+}
+
+final Map<String, String Function()> _animeStatusLabels = {
+  MyStatus.watching: () => S.current.Kit_Status_Watching,
+  MyStatus.completed: () => S.current.Kit_Status_Completed,
+  MyStatus.onHold: () => S.current.Kit_Status_On_Hold,
+  MyStatus.dropped: () => S.current.Kit_Status_Dropped,
+  MyStatus.planToWatch: () => S.current.Kit_Status_Plan_To_Watch,
 };
 
-const allAnimeStatusMap = {
-  "all": "All",
-  "watching": "Watching",
-  "completed": "Completed",
-  "on_hold": "On Hold",
-  "dropped": "Dropped",
-  "plan_to_watch": "Plan to Watch"
+final Map<String, String Function()> _mangaStatusLabels = {
+  MyStatus.reading: () => S.current.Kit_Status_Reading,
+  MyStatus.completed: () => S.current.Kit_Status_Completed,
+  MyStatus.onHold: () => S.current.Kit_Status_On_Hold,
+  MyStatus.dropped: () => S.current.Kit_Status_Dropped,
+  MyStatus.planToRead: () => S.current.Kit_Status_Plan_To_Read,
 };
 
-Map<String, String> myMangaStatusMap = {
-  "reading": "Reading",
-  "completed": "Completed",
-  "on_hold": "On Hold",
-  "dropped": "Dropped",
-  "plan_to_read": "Plan to Read"
-};
+String _allLabel() => S.current.Kit_Status_All;
 
-const allMangaStatusMap = {
-  "all": "All",
-  "reading": "Reading",
-  "completed": "Completed",
-  "on_hold": "On Hold",
-  "dropped": "Dropped",
-  "plan_to_read": "Plan to Read"
-};
+/// Anime list statuses (API value -> translated label), in picker order.
+final Map<String, String> myAnimeStatusMap = _LabelMap(_animeStatusLabels);
 
-final combinedStatusMap = {...allAnimeStatusMap, ...allMangaStatusMap};
+/// [myAnimeStatusMap] preceded by "all".
+final Map<String, String> allAnimeStatusMap =
+    _LabelMap({"all": _allLabel, ..._animeStatusLabels});
+
+/// Manga list statuses (API value -> translated label), in picker order.
+final Map<String, String> myMangaStatusMap = _LabelMap(_mangaStatusLabels);
+
+/// [myMangaStatusMap] preceded by "all".
+final Map<String, String> allMangaStatusMap =
+    _LabelMap({"all": _allLabel, ..._mangaStatusLabels});
+
+/// Every anime and manga list status.
+final Map<String, String> combinedStatusMap =
+    _LabelMap({"all": _allLabel, ..._animeStatusLabels, ..._mangaStatusLabels});
 
 enum SortOrder {
   Ascending,
@@ -511,19 +528,21 @@ List<String> searchTypes = [
 /// <option value="3">(3) Very Bad</option>
 /// <option value="2">(2) Horrible</option>
 /// <option value="1">(1) Appalling</option>
-Map<int, String> myStarMap = {
-  0: S.current.SelectARating,
-  1: S.current.Appalling,
-  2: S.current.Horrible,
-  3: S.current.Very_Bad,
-  4: S.current.Bad,
-  5: S.current.Average,
-  6: S.current.Fine,
-  7: S.current.Good,
-  8: S.current.Very_Good,
-  9: S.current.Great,
-  10: S.current.Masterpiece,
-};
+/// MAL score labels (0 = no score), translated at each read like
+/// [myAnimeStatusMap].
+final Map<int, String> myStarMap = _LabelMap({
+  0: () => S.current.Kit_Score_Select,
+  1: () => S.current.Kit_Score_1,
+  2: () => S.current.Kit_Score_2,
+  3: () => S.current.Kit_Score_3,
+  4: () => S.current.Kit_Score_4,
+  5: () => S.current.Kit_Score_5,
+  6: () => S.current.Kit_Score_6,
+  7: () => S.current.Kit_Score_7,
+  8: () => S.current.Kit_Score_8,
+  9: () => S.current.Kit_Score_9,
+  10: () => S.current.Kit_Score_10,
+});
 
 class Mal {
   static Map<String, List<String>> genreTypeMap = {

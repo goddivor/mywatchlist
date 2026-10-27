@@ -42,7 +42,11 @@ void main() {
       expect(find.text('Select'), findsOneWidget);
       await tester.tap(find.text('Select'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Title').last);
+      // Tap the option itself: in menu mode the label sits under the menu
+      // item's pointer handling, so tapping the text misses it.
+      await tester.tap(mode == SelectMode.menu
+          ? find.byWidgetPredicate((w) => w is CheckedPopupMenuItem<String> && w.value == 'title')
+          : find.text('Title').last);
       await tester.pumpAndSettle();
       expect(find.text('Title'), findsOneWidget);
       expect(find.text('Select'), findsNothing);
