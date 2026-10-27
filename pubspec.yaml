@@ -87,7 +87,7 @@ dependencies:
   # Flutter 3.35.6 / Dart 3.9.2: newer majors need Dart 3.10+).
   flutter_local_notifications: ^20.1.0 # notifications
   timezone: ^0.10.1 # notifications (scheduled), airing times
-  dynamic_color: ^1.9.0 # theme (Material You colours)
+  dynamic_color: ">=1.8.1 <1.9.0" # theme (Material You colours); 1.9+ needs AGP 9, 2.x a newer material_color_utilities
   flex_color_picker: ^3.7.2 # theme, stats chart colours
   translator_plus: ^1.0.1 # synopsis auto-translation
   package_info_plus: ^9.0.1 # about page, in-app updater
