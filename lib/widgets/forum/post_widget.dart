@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:mywatchlist/constants/constants.dart';
 import 'package:mywatchlist/services/api/MAL/models/forum/forum_models.dart';
-import 'package:mywatchlist/widgets/common/avatar_widget.dart';
+import 'package:mywatchlist/generated/l10n.dart';
+import 'package:mywatchlist/utils/web_launcher.dart';
 import 'package:mywatchlist/widgets/forum/bbcode_widget.dart';
+import 'package:mywatchlist/widgets/forum/forum_common.dart';
 import 'package:scroll_to_index/scroll_to_index.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 /// Builds a SliverList of forum posts with scroll-to-index support.
 class PostWidgetBuilder extends StatefulWidget {
@@ -246,49 +247,43 @@ class _PostWidgetState extends State<PostWidget>
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 300),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: widget.isSelected
-              ? () => widget.onUnSelected(widget.post)
-              : widget.isShareStarted
-                  ? () => widget.onSelected(widget.post)
-                  : null,
-          onLongPress:
-              widget.isSelected ? null : () => widget.onSelected(widget.post),
-          borderRadius: BorderRadius.circular(16),
+    final scheme = Theme.of(context).colorScheme;
+    return Material(
+      type: widget.isSelected ? MaterialType.canvas : MaterialType.transparency,
+      color: widget.isSelected ? scheme.primaryContainer.withValues(alpha: 0.35) : null,
+      child: InkWell(
+        onTap: widget.isSelected
+            ? () => widget.onUnSelected(widget.post)
+            : widget.isShareStarted
+                ? () => widget.onSelected(widget.post)
+                : null,
+        onLongPress:
+            widget.isSelected ? null : () => widget.onSelected(widget.post),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(12, 10, 4, 6),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    _forumUserLeading(),
-                    Row(
-                      children: [
-                        const SizedBox(width: 10),
-                        _buildPopupMenu(),
-                      ],
-                    ),
-                  ],
-                ),
+              Row(
+                children: [
+                  Expanded(child: _forumUserLeading()),
+                  _buildPopupMenu(),
+                ],
               ),
               // Quotes
               Padding(
-                padding: const EdgeInsets.only(left: 46),
+                padding: const EdgeInsets.only(left: 48, right: 8),
                 child: _buildQuoteWidgets(),
               ),
               // Post body
               Padding(
-                padding: const EdgeInsets.only(left: 46),
-                child: ClipRRect(
-                  child: BbcodeWidget(body: body),
-                ),
+                padding: const EdgeInsets.only(left: 48, right: 8, top: 4),
+                child: BbcodeWidget(body: body),
+              ),
+              const SizedBox(height: 6),
+              Divider(
+                height: 1,
+                color: scheme.outlineVariant.withValues(alpha: 0.5),
               ),
             ],
           ),
@@ -297,73 +292,64 @@ class _PostWidgetState extends State<PostWidget>
     );
   }
 
-  Row _forumUserLeading({bool disableTap = false}) {
+  Widget _forumUserLeading({bool disableTap = false}) {
+    final theme = Theme.of(context);
+    final name = widget.post.createdBy?.name;
     return Row(
-      mainAxisAlignment: MainAxisAlignment.start,
-      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        AnimatedContainer(
-          height: 40,
-          width: 40,
-          curve: Curves.easeIn,
-          duration: const Duration(milliseconds: 300),
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color:
-                widget.isSelected ? Theme.of(context).canvasColor : null,
-            border: Border.all(
-              color: widget.isSelected
-                  ? (Theme.of(context).textTheme.bodySmall?.color ??
-                      Colors.grey)
-                  : Theme.of(context).canvasColor,
-              width: 2,
+        ForumAvatar(
+          username: name,
+          url: widget.post.createdBy?.id == null
+              ? null
+              : getUserImage(widget.post.createdBy!.id!),
+          selected: widget.isSelected,
+          tappable: !disableTap && !widget.isShareStarted && !widget.isSelected,
+        ),
+        const SizedBox(width: 10),
+        Flexible(
+          child: GestureDetector(
+            onTap: disableTap || widget.isShareStarted || widget.isSelected
+                ? null
+                : () => openForumUser(context, name),
+            child: Text(
+              name ?? S.current.Fc_User_Default,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurface,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
-          child: widget.isSelected
-              ? const Center(child: Icon(Icons.check))
-              : _avatarWidget(disableTap: disableTap),
-        ),
-        const SizedBox(width: 8),
-        Text(
-          widget.post.createdBy?.name ?? 'User',
-          style: Theme.of(context).textTheme.bodyMedium,
         ),
         if (!disableTap && widget.post.createdAt != null)
           Padding(
             padding: const EdgeInsets.only(left: 10),
             child: Text(
               displayTimeAgo(widget.post.createdAt!),
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    fontSize: 11,
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
+              style: theme.textTheme.bodySmall?.copyWith(
+                fontSize: 11,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
             ),
           ),
       ],
     );
   }
 
-  AvatarWidget _avatarWidget({bool disableTap = false}) {
-    return AvatarWidget(
-      username: widget.post.createdBy?.name,
-      url: widget.post.createdBy?.id == null
-          ? null
-          : getUserImage(widget.post.createdBy!.id!),
-    );
-  }
-
   PopupMenuButton<_PostMenuItem> _buildPopupMenu() {
     final popupItems = <_PostMenuItem>[
       if (signature != null && signature!.isNotEmpty)
-        _PostMenuItem(
-            _PostMenuItemType.signature, 'Signature', Icons.design_services),
-      _PostMenuItem(
-          _PostMenuItemType.reportPost, 'Report Post', Icons.forum),
-      _PostMenuItem(
-          _PostMenuItemType.reportUser, 'Report User', Icons.person),
+        _PostMenuItem(_PostMenuItemType.signature, S.current.Fc_Menu_Signature,
+            Icons.design_services),
+      _PostMenuItem(_PostMenuItemType.reportPost, S.current.Fc_Menu_Report_Post,
+          Icons.flag_outlined),
+      _PostMenuItem(_PostMenuItemType.reportUser, S.current.Fc_Menu_Report_User,
+          Icons.person_off_outlined),
     ];
     return PopupMenuButton<_PostMenuItem>(
-      icon: const Icon(Icons.more_horiz, size: 16),
+      tooltip: S.current.Fc_Post_Options,
+      icon: const Icon(Icons.more_horiz, size: 20),
       onSelected: (value) {
         switch (value.itemType) {
           case _PostMenuItemType.signature:
@@ -371,6 +357,7 @@ class _PostWidgetState extends State<PostWidget>
             break;
           case _PostMenuItemType.reportPost:
             _reportWithConfirmation(
+              title: S.current.Fc_Menu_Report_Post,
               type: 'forummessage',
               content: _forumUserLeading(disableTap: true),
               queryParams: {
@@ -381,6 +368,7 @@ class _PostWidgetState extends State<PostWidget>
             break;
           case _PostMenuItemType.reportUser:
             _reportWithConfirmation(
+              title: S.current.Fc_Menu_Report_User,
               type: 'profile',
               content: _forumUserLeading(disableTap: true),
               queryParams: {
@@ -402,6 +390,7 @@ class _PostWidgetState extends State<PostWidget>
   }
 
   void _reportWithConfirmation({
+    required String title,
     required String type,
     required Widget content,
     required Map<String, String> queryParams,
@@ -409,32 +398,27 @@ class _PostWidgetState extends State<PostWidget>
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('Report ${type == 'profile' ? 'User' : 'Post'}'),
+        title: Text(title),
         content: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             content,
             const SizedBox(height: 16),
-            const Text('This will open MyAnimeList report page in your browser.'),
+            Text(S.current.Fc_Report_Body),
           ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Cancel'),
+            child: Text(S.current.Fc_Cancel),
           ),
           FilledButton(
             onPressed: () {
               Navigator.of(ctx).pop();
-              final params = queryParams.entries
-                  .map((e) => '${e.key}=${e.value}')
-                  .join('&');
-              final url =
-                  'https://myanimelist.net/modules.php?go=report&type=$type&$params';
-              launchUrl(Uri.parse(url),
-                  mode: LaunchMode.externalApplication);
+              launchWebView(ForumUrls.report(type, queryParams), context: context);
             },
-            child: const Text('Report'),
+            child: Text(S.current.Fc_Report),
           ),
         ],
       ),
@@ -463,18 +447,11 @@ class _PostWidgetState extends State<PostWidget>
 
   Widget _buildQuoteWidgets() {
     if (quoteBodyList.isEmpty) return const SizedBox.shrink();
-
-    return ListView.builder(
-      shrinkWrap: true,
-      itemCount: quotedPostList.length,
-      physics: const NeverScrollableScrollPhysics(),
-      padding: EdgeInsets.zero,
-      itemBuilder: (context, index) {
-        return _quoteWidget(
-          quoteBodyList[index].trim(),
-          quotedPostList[index],
-        );
-      },
+    return Column(
+      children: [
+        for (var i = 0; i < quotedPostList.length; i++)
+          _quoteWidget(quoteBodyList[i].trim(), quotedPostList[i]),
+      ],
     );
   }
 
@@ -488,10 +465,13 @@ class _PostWidgetState extends State<PostWidget>
         mainAxisAlignment: MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(
+          Container(
             width: 3,
             height: constrainedHeight,
-            child: Material(borderRadius: BorderRadius.circular(12)),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.primary,
+              borderRadius: BorderRadius.circular(12),
+            ),
           ),
           const SizedBox(width: 10),
           Column(
@@ -499,9 +479,8 @@ class _PostWidgetState extends State<PostWidget>
             crossAxisAlignment: CrossAxisAlignment.center,
             mainAxisSize: MainAxisSize.min,
             children: [
-              AvatarWidget(
-                height: 30,
-                width: 30,
+              ForumAvatar(
+                size: 30,
                 username: quotedPost.createdBy?.name,
                 url: quotedPost.createdBy?.id == null
                     ? null
@@ -511,7 +490,7 @@ class _PostWidgetState extends State<PostWidget>
               SizedBox(
                 width: 40,
                 child: Text(
-                  quotedPost.createdBy?.name ?? 'User',
+                  quotedPost.createdBy?.name ?? S.current.Fc_User_Default,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         fontSize: 10,
                       ),
@@ -531,8 +510,8 @@ class _PostWidgetState extends State<PostWidget>
                 }
               },
               onLongPress: () {
-                showToast(
-                    "Post by ${quotedPost.createdBy?.name ?? 'User'}");
+                showToast(S.current.Fc_Post_By(
+                    quotedPost.createdBy?.name ?? S.current.Fc_User_Default));
               },
               borderRadius: BorderRadius.circular(16),
               child: ClipRect(

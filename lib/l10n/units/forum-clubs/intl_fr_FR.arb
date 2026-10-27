@@ -1,0 +1,185 @@
+{
+  "@@locale": "fr_FR",
+  "Fc_Tab_Forums": "Forums",
+  "Fc_Tab_Clubs": "Clubs",
+  "Fc_Disc_Anime": "Discussions sur les animés",
+  "Fc_Disc_Manga": "Discussions sur les mangas",
+  "Fc_Disc_Series": "Discussions sur les séries",
+  "Fc_Disc_News": "Actualités et discussions",
+  "Fc_Disc_Db": "Modifications de la base",
+  "Fc_Retry": "Réessayer",
+  "Fc_Cancel": "Annuler",
+  "Fc_Error_Title": "Impossible de charger cette page",
+  "Fc_Error_Body": "MyAnimeList est peut-être inaccessible depuis votre réseau. Vérifiez votre connexion et réessayez.",
+  "Fc_Topics_Empty_Title": "Aucun sujet pour le moment",
+  "Fc_Topics_Empty_Body": "Rien n’a été trouvé ici. Si vous attendiez des sujets, tirez vers le bas pour actualiser.",
+  "Fc_Clubs_Empty": "Aucun club trouvé",
+  "Fc_Members_Empty": "Aucun membre à afficher",
+  "Fc_Comments_Empty": "Aucun commentaire pour le moment",
+  "Fc_Posts_Empty": "Aucun message dans ce sujet",
+  "Fc_Posts_Count": "{count, plural, =1{1 message} other{{count} messages}}",
+  "@Fc_Posts_Count": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "Fc_Load_More": "Charger la suite",
+  "Fc_End_Of_List": "Vous êtes arrivé au bout",
+  "Fc_Load_More_Failed": "Impossible de charger la suite",
+  "Fc_View_All_Members": "Voir tous les membres",
+  "Fc_View_All_Topics": "Voir tous les sujets",
+  "Fc_View_All_Comments": "Voir tous les commentaires",
+  "Fc_Create_Club": "Créer un club",
+  "Fc_Join_Club": "Rejoindre",
+  "Fc_Search_Topics": "Rechercher des sujets",
+  "Fc_Search_Result_Title": "Recherche : {query}",
+  "@Fc_Search_Result_Title": {
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
+  "Fc_Clear_Search": "Effacer la recherche",
+  "Fc_Search_Hint_Empty": "Saisissez un mot pour chercher dans ce forum",
+  "Fc_Search_For": "Rechercher « {query} »",
+  "@Fc_Search_For": {
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
+  "Fc_Reply": "Répondre",
+  "Fc_Topic_Locked": "Ce sujet est verrouillé",
+  "Fc_Sort": "Trier les messages",
+  "Fc_Sort_Oldest": "Plus anciens d’abord",
+  "Fc_Sort_Newest": "Plus récents d’abord",
+  "Fc_Page_Of": "Page {page} sur {total}",
+  "@Fc_Page_Of": {
+    "placeholders": {
+      "page": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "Fc_Previous": "Précédent",
+  "Fc_Next": "Suivant",
+  "Fc_Selected_Count": "{count, plural, =1{1 sélectionné} other{{count} sélectionnés}}",
+  "@Fc_Selected_Count": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "Fc_Copy": "Copier",
+  "Fc_Copied": "Copié dans le presse-papiers",
+  "Fc_Cancel_Selection": "Annuler la sélection",
+  "Fc_Poll": "Sondage",
+  "Fc_Poll_Closed": "Clos",
+  "Fc_Poll_Votes": "{count, plural, =1{1 vote} other{{count} votes}}",
+  "@Fc_Poll_Votes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "Fc_Post_By": "Message de {name}",
+  "@Fc_Post_By": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "Fc_User_Default": "Utilisateur",
+  "Fc_Post_Options": "Options du message",
+  "Fc_Menu_Signature": "Signature",
+  "Fc_Menu_Report_Post": "Signaler le message",
+  "Fc_Menu_Report_User": "Signaler l’utilisateur",
+  "Fc_Report_Body": "La page de signalement de MyAnimeList s’ouvrira dans le navigateur intégré.",
+  "Fc_Report": "Signaler",
+  "Fc_Spoiler": "Divulgâchage",
+  "Fc_Spoiler_Show": "Afficher {name}",
+  "@Fc_Spoiler_Show": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "Fc_Spoiler_Hide": "Masquer {name}",
+  "@Fc_Spoiler_Hide": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "Fc_Club_Fallback_Title": "Club",
+  "Fc_Tab_General": "Général",
+  "Fc_Tab_Comments": "Commentaires",
+  "Fc_Tab_Staff": "Équipe",
+  "Fc_Tab_Members": "Membres",
+  "Fc_Tab_Anime": "Animés",
+  "Fc_Tab_Manga": "Mangas",
+  "Fc_Tab_Characters": "Personnages",
+  "Fc_Members_Title": "Membres · {club}",
+  "@Fc_Members_Title": {
+    "placeholders": {
+      "club": {
+        "type": "String"
+      }
+    }
+  },
+  "Fc_Forums_Title": "Forums · {club}",
+  "@Fc_Forums_Title": {
+    "placeholders": {
+      "club": {
+        "type": "String"
+      }
+    }
+  },
+  "Fc_Comments_Title": "Commentaires · {club}",
+  "@Fc_Comments_Title": {
+    "placeholders": {
+      "club": {
+        "type": "String"
+      }
+    }
+  },
+  "Fc_Members_Count": "{count, plural, =1{1 membre} other{{count} membres}}",
+  "@Fc_Members_Count": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "Fc_Club_Info_Empty": "Ce club n’a pas de description.",
+  "Fc_Last_Post_At": "Dernier message de {name}, {date}",
+  "@Fc_Last_Post_At": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "Fc_Field_Title": "Titre",
+  "Fc_Field_Link": "Lien",
+  "Fc_Field_Posts": "Messages",
+  "Fc_Field_Author": "Auteur",
+  "Fc_Board_Close": "Fermer",
+  "Fc_Staff_Empty": "Aucune équipe indiquée",
+  "Fc_Relations_Empty": "Rien n’est lié à ce club"
+}

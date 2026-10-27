@@ -3,8 +3,11 @@ import 'package:flutter_widget_from_html_core/flutter_widget_from_html_core.dart
 import 'package:mywatchlist/constants/constants.dart';
 import 'package:mywatchlist/screens/MAL/character_screen.dart';
 import 'package:mywatchlist/screens/MAL/contentdetailedscreen.dart';
+import 'package:mywatchlist/generated/l10n.dart';
+import 'package:mywatchlist/utils/web_launcher.dart';
+import 'package:mywatchlist/widgets/common/app_image.dart';
 import 'package:mywatchlist/widgets/common/image_preview.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:mywatchlist/widgets/forum/forum_common.dart';
 
 /// Converts BBCode (already bracket-converted to angle brackets) to HTML
 /// and renders it. Matching DailyAL's BbcodeWidget exactly.
@@ -42,6 +45,17 @@ class BbcodeWidget extends StatelessWidget {
     "<center",
   ];
 
+  /// Transformed bodies by source text: a post is transformed once, not on every rebuild.
+  static final Map<String, String> _transformed = {};
+
+  static String _transformCached(String body) {
+    final hit = _transformed.remove(body);
+    final value = hit ?? const BbcodeWidget(body: '').applyTransform(body);
+    _transformed[body] = value;
+    if (_transformed.length > 150) _transformed.remove(_transformed.keys.first);
+    return value;
+  }
+
   final String body;
   final Color? color;
   final bool minimize;
@@ -60,7 +74,7 @@ class BbcodeWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final transformedHtml =
-        '<div ${alignCenter ? 'style="text-align:center;"' : ''}>${applyTransform(body)}</div>';
+        '<div ${alignCenter ? 'style="text-align:center;"' : ''}>${_transformCached(body)}</div>';
     final theme = Theme.of(context);
 
     return HtmlWidget(
@@ -71,6 +85,14 @@ class BbcodeWidget extends StatelessWidget {
         fontFamily: theme.textTheme.bodyMedium?.fontFamily,
       ),
       onTapUrl: (url) async {
+        // A MyAnimeList profile opens the quick profile sheet.
+        final profileMatch =
+            RegExp(r'myanimelist\.net/profile/([^/?#]+)').firstMatch(url);
+        if (profileMatch != null) {
+          openForumUser(
+              context, Uri.decodeComponent(profileMatch.group(1)!));
+          return true;
+        }
         // Intercept MAL anime/manga/character/person URLs for in-app navigation
         final animeMatch =
             RegExp(r'myanimelist\.net/anime/(\d+)').firstMatch(url);
@@ -122,11 +144,8 @@ class BbcodeWidget extends StatelessWidget {
             return true;
           }
         }
-        // Fallback: launch in browser
-        final uri = Uri.tryParse(url);
-        if (uri != null && await canLaunchUrl(uri)) {
-          await launchUrl(uri, mode: LaunchMode.externalApplication);
-        }
+        // Anything else: ask, then open in the in-app browser.
+        if (context.mounted) await openLink(context, url);
         return true;
       },
       customWidgetBuilder: (element) {
@@ -139,22 +158,10 @@ class BbcodeWidget extends StatelessWidget {
               onTap: () => zoomInImage(context, src),
               child: Padding(
                 padding: const EdgeInsets.symmetric(vertical: 4),
-                child: Image.network(
-                  src,
-                  errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-                  loadingBuilder: (_, child, progress) {
-                    if (progress == null) return child;
-                    return const Padding(
-                      padding: EdgeInsets.all(8.0),
-                      child: Center(
-                        child: SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        ),
-                      ),
-                    );
-                  },
+                child: AppImage(
+                  url: src,
+                  fit: BoxFit.contain,
+                  errorWidget: (_) => const SizedBox.shrink(),
                 ),
               ),
             );
@@ -167,7 +174,7 @@ class BbcodeWidget extends StatelessWidget {
         // Handle spoiler tags
         if (element.localName == 'spoiler') {
           if (minimize) return const SizedBox.shrink();
-          final name = element.attributes['name'] ?? 'Spoiler';
+          final name = element.attributes['name'] ?? S.current.Fc_Spoiler;
           final innerHtml = element.innerHtml;
           return _SpoilerWidget(
             name: name,
@@ -320,7 +327,9 @@ class _SpoilerWidgetState extends State<_SpoilerWidget> {
             size: 16,
           ),
           label: Text(
-            _isRevealed ? 'Hide ${widget.name}' : 'Show ${widget.name}',
+            _isRevealed
+                ? S.current.Fc_Spoiler_Hide(widget.name)
+                : S.current.Fc_Spoiler_Show(widget.name),
             style: const TextStyle(fontSize: 12),
           ),
         ),
