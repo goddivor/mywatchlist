@@ -293,7 +293,7 @@ const UNITS = [
       "Reviews: remove the SingleChildScrollView created per review item (show_reviews.dart:174, performance.md #6).",
       "User updates: user/avatar tap → profile (userupdate_widget.dart:91, :107).",
     ],
-    dod: ["Every user name in these widgets opens the in-app profile."],
+    dod: ["Every user name in these widgets opens `AppRoutes.openUserPop` (quick user sheet with a link to the full profile)."],
   },
   {
     id: "detail-more-info", title: "More-info links: studios, magazines, authors, genres, season, media type", kind: "unit", priority: "P2", group: "detail", model: "sonnet", ui: true,
@@ -435,7 +435,7 @@ const UNITS = [
     needs: ["mal-auth-calls", "user-profile-mal", "shared-kit"],
     owns: ["lib/screens/forum/**", "lib/widgets/forum/**", "lib/pages/MAL/mal_forum_page.dart", "lib/services/api/MAL/mal_clubs_api.dart", "lib/services/api/MAL/mal_forum_api.dart"],
     dal: ["lib/screens/forumposts.dart", "lib/screens/forumtopicsscreen.dart", "lib/pages/forumpage.dart", "lib/screens/clubscreen.dart"],
-    goal: ["MalForumPage:206 pushes SettingsPage directly → `AppRoutes.openSettings` (app-shell finding); Reply FAB only copies the URL (forum_posts_screen.dart:117-126) → open a webview to post (DAL); post avatar → profile (post_widget.dart:346); club members/staff → in-app profile instead of browser; replace the club scraping in mal_clubs_api.dart by the backend methods `MwlApi.getClubPage/getClubMembers/getClubForumTopics/getClubComments` (backend-parsers finding); HTML parsing off the UI isolate in mal_clubs_api.dart (:20, :34, :61) and the forum API (performance.md #9); share/browser menus; redesign per UI directive."],
+    goal: ["MalForumPage:206 pushes SettingsPage directly → `AppRoutes.openSettings` (app-shell finding); Reply FAB only copies the URL (forum_posts_screen.dart:117-126) → open a webview to post (DAL); post avatar → profile (post_widget.dart:346); club members/staff → in-app profile instead of browser (tap = `AppRoutes.openUserPop` quick sheet, as DailyAL; user-profile-mal finding); replace the club scraping in mal_clubs_api.dart by the backend methods `MwlApi.getClubPage/getClubMembers/getClubForumTopics/getClubComments` (backend-parsers finding); HTML parsing off the UI isolate in mal_clubs_api.dart (:20, :34, :61) and the forum API (performance.md #9); share/browser menus; redesign per UI directive."],
     bugs: ["reply FAB", "avatar tap"],
     dod: ["Reply opens the MAL post form in-app on the emulator."],
   },

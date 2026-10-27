@@ -51,6 +51,6 @@ Port the behaviour into MWL's architecture: BLoC for app-wide state, Provider/Ch
 - Look at how DAL makes the same screen fluid and do at least as well; the checker compares janky-frame % on a profile build.
 
 ## Definition of Done
-- Every user name in these widgets opens the in-app profile.
+- Every user name in these widgets opens `AppRoutes.openUserPop` (quick user sheet with a link to the full profile).
 - `tools/heavy.sh flutter analyze` clean (the gate runs the full `tools/heavy.sh tools/verify.sh`).
 - PR against `dev` with `Closes #<issue>`, gate tail, decisions, findings.
