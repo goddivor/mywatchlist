@@ -69,9 +69,10 @@ enum ListStatusTone { watching, completed, onHold, dropped, planned }
 ///
 /// Screens never hardcode `Colors.*` or `Color(0x…)`: they use `Theme.of(context).colorScheme`
 /// for the accent and surfaces, and these tokens for meaning (score, list status, success,
-/// warning, danger, text on images, badges, shimmer). Every token is derived from a fixed hue
-/// harmonised with the theme accent (so it belongs to the theme's colour family) and has light
-/// and dark values with AA contrast. Table and usage: docs/THEME.md.
+/// warning, danger, text on images, badges, shimmer). The score and feedback tokens are derived
+/// from a fixed hue harmonised with the theme accent; the list statuses use DailyAL's fixed
+/// colours. Every token has light and dark values with readable pairs. Table and usage:
+/// docs/THEME.md.
 @immutable
 class AppColors extends ThemeExtension<AppColors> {
   const AppColors({
@@ -97,15 +98,61 @@ class AppColors extends ThemeExtension<AppColors> {
   /// keeps accent text at 4.5:1; "medium" 0.5 turned a pink accent into maroon).
   static const double contrastLevel = 0.0;
 
-  /// Base hues, before harmonisation with the accent.
+  /// Base hues of the score and feedback tokens, before harmonisation with the accent.
   static const Color scoreBase = Color(0xFFFFB300);
-  static const Color watchingBase = Color(0xFF2E7D32);
-  static const Color completedBase = Color(0xFF1565C0);
-  static const Color onHoldBase = Color(0xFFF9A825);
-  static const Color droppedBase = Color(0xFFC62828);
-  static const Color plannedBase = Color(0xFF78909C);
   static const Color successBase = Color(0xFF2E7D32);
   static const Color warningBase = Color(0xFFEF6C00);
+
+  /// DailyAL's list status colours (Material 500): green, blue, orange, red, brown. They are
+  /// also the default stats chart colours (lib/widgets/charts/chart_palette.dart).
+  static const Color watchingBase = Color(0xFF4CAF50);
+  static const Color completedBase = Color(0xFF2196F3);
+  static const Color onHoldBase = Color(0xFFFF9800);
+  static const Color droppedBase = Color(0xFFF44336);
+  static const Color plannedBase = Color(0xFF795548);
+
+  /// Status chips (`container` with white bold text, same in every mode): the DailyAL hue, or
+  /// the same hue one shade darker where white text would fall below 3:1 (green 600,
+  /// orange 800).
+  static const Map<ListStatusTone, Color> statusChips = {
+    ListStatusTone.watching: Color(0xFF43A047),
+    ListStatusTone.completed: Color(0xFF2196F3),
+    ListStatusTone.onHold: Color(0xFFEF6C00),
+    ListStatusTone.dropped: Color(0xFFF44336),
+    ListStatusTone.planned: Color(0xFF795548),
+  };
+
+  /// Status marks on light surfaces (`color`, with white `onColor`): one shade darker than the
+  /// chip where needed to keep 3:1 on the page and cards (green 700, blue 600, orange 900).
+  static const Map<ListStatusTone, Color> statusMarksLight = {
+    ListStatusTone.watching: Color(0xFF388E3C),
+    ListStatusTone.completed: Color(0xFF1E88E5),
+    ListStatusTone.onHold: Color(0xFFE65100),
+    ListStatusTone.dropped: Color(0xFFF44336),
+    ListStatusTone.planned: Color(0xFF795548),
+  };
+
+  /// Status marks on dark and black surfaces (`color`, with black `onColor`): the DailyAL hue,
+  /// brown one shade lighter (brown 300) since brown 500 is below 3:1 on a dark page.
+  static const Map<ListStatusTone, Color> statusMarksDark = {
+    ListStatusTone.watching: Color(0xFF4CAF50),
+    ListStatusTone.completed: Color(0xFF2196F3),
+    ListStatusTone.onHold: Color(0xFFFF9800),
+    ListStatusTone.dropped: Color(0xFFF44336),
+    ListStatusTone.planned: Color(0xFFA1887F),
+  };
+
+  /// The role of a list status for [brightness]: DailyAL's hues, not harmonised with the
+  /// accent, so a status reads the same whatever the theme.
+  static AppColorRole statusRole(ListStatusTone tone, Brightness brightness) {
+    final dark = brightness == Brightness.dark;
+    return AppColorRole(
+      color: (dark ? statusMarksDark : statusMarksLight)[tone]!,
+      onColor: dark ? const Color(0xFF000000) : const Color(0xFFFFFFFF),
+      container: statusChips[tone]!,
+      onContainer: const Color(0xFFFFFFFF),
+    );
+  }
 
   /// Opacity of [imageScrim]: with it, [onImageScrim] stays above 4.5:1 even on a white picture.
   static const double imageScrimOpacity = 0.6;
@@ -148,11 +195,11 @@ class AppColors extends ThemeExtension<AppColors> {
         );
     return AppColors(
       score: role(scoreBase),
-      watching: role(watchingBase),
-      completed: role(completedBase),
-      onHold: role(onHoldBase),
-      dropped: role(droppedBase),
-      planned: role(plannedBase),
+      watching: statusRole(ListStatusTone.watching, brightness),
+      completed: statusRole(ListStatusTone.completed, brightness),
+      onHold: statusRole(ListStatusTone.onHold, brightness),
+      dropped: statusRole(ListStatusTone.dropped, brightness),
+      planned: statusRole(ListStatusTone.planned, brightness),
       success: role(successBase),
       warning: role(warningBase),
       danger: AppColorRole(

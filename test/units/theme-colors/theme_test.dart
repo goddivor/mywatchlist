@@ -234,11 +234,11 @@ void main() {
       await bloc.close();
     });
 
-    test('black mode builds a true-black dark theme', () async {
+    test('black mode builds DailyAL\'s near-black dark theme', () async {
       final bloc = await loaded(values: {ThemeBloc.keyThemeModeName: 'black'});
       expect(bloc.state.themeMode, ThemeMode.dark);
-      expect(bloc.state.darkThemeData.colorScheme.surface, const Color(0xFF000000));
-      expect(bloc.state.darkThemeData.scaffoldBackgroundColor, const Color(0xFF000000));
+      expect(bloc.state.darkThemeData.colorScheme.surface, const Color(0xFF0C0404));
+      expect(bloc.state.darkThemeData.scaffoldBackgroundColor, const Color(0xFF0C0404));
       await bloc.close();
     });
   });
