@@ -9,6 +9,8 @@
 ## Owns (may create or edit ONLY these)
 - `lib/services/notifications/**`
 - `lib/screens/settings/notifications_settings.dart`
+- `android/app/src/main/res/drawable/ic_stat_notification.xml`
+- `android/app/src/main/res/drawable-*/ic_stat_notification.png`
 - `lib/l10n/units/notifications/**`
 - `test/units/notifications/**`
 

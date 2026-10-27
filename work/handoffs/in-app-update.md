@@ -9,13 +9,14 @@
 ## Owns (may create or edit ONLY these)
 - `lib/services/updater/**`
 - `lib/screens/settings/about_settings.dart`
+- `android/app/src/main/res/xml/updater_paths.xml`
 - `lib/l10n/units/in-app-update/**`
 - `test/units/in-app-update/**`
 
 Plus `PROJECT-STATE.md` (rewrite in place, within its cap) and `docs/DECISIONS.md` (append one line per decision). Anything else you need is a FINDING to report, never an edit.
 
 ## Goal
-- Check latest release of goddivor/mywatchlist, download the right APK, install through FileProvider content URI; button in About.
+- Check latest release of goddivor/mywatchlist, download the right APK, install through FileProvider content URI (the provider declared by deps-prefs-contract reuses open_filex's broad `@xml/filepaths`: give it a dedicated `res/xml/updater_paths.xml` limited to the download cache, and report the one-line manifest change as a finding); button in About.
 
 ## Known bugs to fix in scope
 - none

@@ -931,6 +931,8 @@
       "owns": [
         "lib/screens/settings/theme_settings.dart",
         "lib/user/theme/**",
+        "lib/utils/sidebar_bg_manager.dart",
+        "lib/user/userpref.dart",
         "lib/screens/settings/about_settings.dart",
         "lib/screens/settings/backup_settings.dart",
         "lib/screens/settings/storage_settings.dart",
@@ -962,6 +964,8 @@
       "owns": [
         "lib/services/notifications/**",
         "lib/screens/settings/notifications_settings.dart",
+        "android/app/src/main/res/drawable/ic_stat_notification.xml",
+        "android/app/src/main/res/drawable-*/ic_stat_notification.png",
         "lib/l10n/units/notifications/**",
         "test/units/notifications/**"
       ],
@@ -1240,6 +1244,7 @@
       "owns": [
         "lib/services/updater/**",
         "lib/screens/settings/about_settings.dart",
+        "android/app/src/main/res/xml/updater_paths.xml",
         "lib/l10n/units/in-app-update/**",
         "test/units/in-app-update/**"
       ],
@@ -1265,7 +1270,6 @@
       ],
       "owns": [
         "lib/utils/deep_links.dart",
-        "android/app/src/main/res/xml/**",
         "lib/l10n/units/deep-links/**",
         "test/units/deep-links/**"
       ],

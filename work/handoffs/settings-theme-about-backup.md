@@ -10,6 +10,8 @@
 ## Owns (may create or edit ONLY these)
 - `lib/screens/settings/theme_settings.dart`
 - `lib/user/theme/**`
+- `lib/utils/sidebar_bg_manager.dart`
+- `lib/user/userpref.dart`
 - `lib/screens/settings/about_settings.dart`
 - `lib/screens/settings/backup_settings.dart`
 - `lib/screens/settings/storage_settings.dart`
@@ -25,6 +27,7 @@ Plus `PROJECT-STATE.md` (rewrite in place, within its cap) and `docs/DECISIONS.m
 - About: version (package_info_plus), changelog, licences, links to goddivor/mywatchlist.
 - Backup & restore UI (JSON export/import) wiring the existing cachemanager methods (:127, :145) + private notes + bookmarks export/import.
 - Clear app storage / caches.
+- Move the background image path out of the legacy `UserMal.instance.pref.bgImagePath` (lib/utils/sidebar_bg_manager.dart:240-247) into the preferences contract / ThemeBloc, then delete the reduced lib/user/userpref.dart (deps-prefs-contract finding; lib/user/user.dart is done — report if `UserMal.pref` must go).
 
 ## Known bugs to fix in scope
 - none

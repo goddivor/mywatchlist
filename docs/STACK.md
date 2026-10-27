@@ -10,7 +10,7 @@ Never state a version from memory: read it here or in `pubspec.yaml` / `pubspec.
 - Start it with `emulator -avd mwl_compare -gpu host -no-boot-anim`. With the default GPU mode it silently falls back to software rendering (qemu at ~1500 % CPU, window freezes, everything lags).
 - Fluidity is judged on a `--profile` APK only (`flutter build apk --profile`), measured with `tools/perf/measure-scroll.sh <package>` (SurfaceFlinger frame pacing; `gfxinfo` sees no Flutter frames), MWL vs DailyAL on the same gesture.
 
-## Main dependencies (from pubspec.yaml on `dev`)
+## Main dependencies (from pubspec.yaml on `dev`, updated after deps-prefs-contract)
 | Package | Constraint |
 |---|---|
 | flutter_bloc | ^9.0.0 |
@@ -29,7 +29,21 @@ Never state a version from memory: read it here or in `pubspec.yaml` / `pubspec.
 | youtube_player_flutter | ^9.1.1 |
 | flutter_dotenv | ^5.2.1 |
 | intl | ^0.20.2 |
-| json_annotation / json_serializable | ^4.9.0 / ^6.9.3 |
+| json_annotation | ^4.9.0 |
+| flutter_local_notifications | ^20.1.0 |
+| timezone | ^0.10.1 |
+| dynamic_color | ^1.9.0 |
+| flex_color_picker | ^3.7.2 |
+| translator_plus | ^1.0.1 |
+| package_info_plus | ^9.0.1 |
+| device_info_plus | ^12.4.0 |
+| add_2_calendar | ^3.0.1 |
+| open_filex | ^5.0.0 (adds READ_MEDIA_* to the merged manifest: strip before any Play Store release) |
+| flutter_displaymode | ^0.7.0 |
+| graphview | ^1.5.1 |
+| fl_chart | ^1.3.0 |
+| build_runner (dev) | ^2.15.1 |
+| json_serializable (dev) | ^6.14.1 |
 
 - Localization generator: intl_utils 2.8.14, pinned in `tools/l10n/pubspec.lock` (its own package, outside the app's dependencies; run through `tools/l10n/build.sh`).
 

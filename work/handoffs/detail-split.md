@@ -18,6 +18,7 @@ Plus `PROJECT-STATE.md` (rewrite in place, within its cap) and `docs/DECISIONS.m
 - Fix: `super.dispose()` called before disposing own controllers (:159); scroll listener re-added on every `updateVisibleSections()` (:338); info button on the cover is a no-op (:1104) → opens a More Info modal; search icon in app bar is a no-op (:939) → opens search.
 - Leave empty, documented extension points in `actions/` for share / open in browser / bookmark (the detail-header unit fills them).
 - FLUIDITY (performance.md #4): register the scroll listener ONCE in initState, dispose every TabController you replace (only the last is disposed at :161), update the selected tab only when the visible section changes — not localToGlobal on every scroll tick.
+- Remove the second `TitleLang` enum declared in contentdetailedscreen.dart:54 and use the one in constants.dart (deps-prefs-contract finding); read the preferred title from `Preferences.general` instead of a per-screen default.
 - Behaviour must stay identical otherwise (no visual redesign here beyond what the split needs); the later detail units redesign their own parts.
 
 ## Known bugs to fix in scope

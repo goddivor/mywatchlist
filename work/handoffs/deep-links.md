@@ -8,7 +8,6 @@
 
 ## Owns (may create or edit ONLY these)
 - `lib/utils/deep_links.dart`
-- `android/app/src/main/res/xml/**`
 - `lib/l10n/units/deep-links/**`
 - `test/units/deep-links/**`
 
