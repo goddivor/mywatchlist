@@ -74,9 +74,6 @@ Cap: 80 lines. Rewrite in place; history lives in git and `docs/DECISIONS.md`.
 - `lib/screens/search/`: `GeneralSearchScreen` (state + parts `search_logic`, `search_bar_part`, `search_results_part`, `search_active_filters`), `SearchService` (all fetching, no widget), `SearchFilters` (immutable, API values: genre/producer/magazine ids), `SearchCatalog` (current MAL genre, producer and magazine tables in `data/`, name to id), `search_tiles`, `search_home_view`, `search_filter_panel` (kit select widgets, searchable producers/magazines, include/exclude genres).
 - Entry points: `GeneralSearchScreen.byQuery/byGenre/byStudio/byMagazine/byTag/bySeason/byRanking/byMangaRanking/bySuggested/byUser`, `AppRoutes.openSearch(query, category, filters)`; the old `filterOutputs:` map still works. User results open the profile (long press: quick sheet); an exact MAL user name shows "User found as"; a numeric query finds the title by id; autocomplete (400 ms) under the field.
 
-## App icon (`app-icon`)
-- Android adaptive icon (navy gradient circle, white mwL): layers in `mipmap-*/ic_launcher_{background,foreground,monochrome}.png` and `mipmap-anydpi-v26/ic_launcher(_round).xml`, built from `assets/images/mwl-black-bg.png` by `tools/icon/extract.sh` (sources in `assets/images/app_icon/`). `flutter_launcher_icons` only does legacy and iOS.
-
 ## Known big gaps (see inventory)
 - No user list / profile for AniList/Kitsu/Simkl (placeholders); no notifications, share, translation.
 - MAL dead session (#71): public MAL reads (seasonal, ranking, details, search, other users' lists, forum) fall back to the client id; `/users/@me`, suggestions and list writes throw `MalSessionExpired`. The UI listens to `MalApi.sessionExpired` (`ValueListenable<bool>`); the visible prompt is still to build (accounts-ux / app-shell); the detail screen shows its own error/retry state.
