@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:isolate';
 
 import 'package:html/dom.dart';
 import 'package:html/parser.dart' as parser;
@@ -45,6 +46,11 @@ class HttpConnect {
   }
 
   /// Fetch an HTML page and parse it with a custom parser function.
+  ///
+  /// Parsing (DOM build + [fromHtml] + `toJson`) runs on a short-lived
+  /// background isolate so the in-process backend never parses a large MAL
+  /// page on the Flutter UI isolate. Where isolates are unavailable (web) or
+  /// the parser cannot be sent, it falls back to parsing inline.
   static Future<T?> htmlPage<T>(
     String url,
     dynamic Function(Document) fromHtml, {
@@ -55,23 +61,37 @@ class HttpConnect {
       logMwl('HTML error ${response.statusCode} for $url');
       return null;
     }
-    final parsed = fromHtml(parser.parse(response.body));
-    if (parsed is Map) {
-      return parsed as T;
-    } else if (parsed is List) {
-      return parsed as T;
+    final body = response.body;
+    dynamic parsed;
+    try {
+      parsed = await Isolate.run(() => parseHtml(body, fromHtml));
+    } catch (_) {
+      // No isolate support, an unsendable parser, or a parser error: parse
+      // inline (a genuine parser error then surfaces with its own stack).
+      parsed = parseHtml(body, fromHtml);
     }
-    return _toJson(parsed) as T?;
+    return parsed as T?;
   }
 
-  static Map<String, dynamic>? _toJson(dynamic data) {
+  /// Parse [body] with [fromHtml] and turn the result into JSON-ready data
+  /// (maps, lists and primitives), so it can cross isolates and be cached.
+  static dynamic parseHtml(String body, dynamic Function(Document) fromHtml) {
+    return toJsonReady(fromHtml(parser.parse(body)));
+  }
+
+  /// Recursively convert models (anything with `toJson`) to plain JSON data.
+  static dynamic toJsonReady(dynamic value) {
+    if (value == null || value is num || value is String || value is bool) {
+      return value;
+    }
+    if (value is Map) {
+      return value.map((k, v) => MapEntry('$k', toJsonReady(v)));
+    }
+    if (value is Iterable) return value.map(toJsonReady).toList();
     try {
-      return data?.toJson();
-    } catch (e) {
-      if (e is NoSuchMethodError) {
-        return data;
-      }
-      return null;
+      return toJsonReady((value as dynamic).toJson());
+    } on NoSuchMethodError {
+      return value.toString();
     }
   }
 }
