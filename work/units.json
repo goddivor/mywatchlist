@@ -855,6 +855,7 @@
         "user-list-mal"
       ],
       "owns": [
+        "lib/pages/MAL/mal_explore_page.dart",
         "lib/widgets/common/bottomnavbar.dart",
         "lib/pages/MAL/mal_home_page.dart",
         "lib/widgets/MAL/home/homeappbar.dart",

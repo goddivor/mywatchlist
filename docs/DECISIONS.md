@@ -147,3 +147,4 @@ Append-only, one line per decision: `- YYYY-MM-DD [unit] decision — why`. Earl
 - 2026-10-27 [detail-header] Header and tab labels use own `Dh_*` keys (en + hand-checked fr_FR) instead of the base ones, whose French is wrong or missing ("Des photos", "proche", untranslated "Aired", "Users").
 - 2026-10-27 [orchestrator, owner away] Notifications project 3 weekly episodes ahead; the daily refresh corrects a hiatus within a day — accepted.
 - 2026-10-27 [orchestrator, owner away] AniList/Kitsu/Simkl get airing notifications by mapping their entries to MAL ids (AniList idMal, Kitsu mappings, Simkl ids.mal), in their tracker units.
+- 2026-10-27 [orchestrator, owner away] The Explore tab uses the same header as Home (avatar → sidebar, search, bookmarks, calendar), wired by home-wiring.

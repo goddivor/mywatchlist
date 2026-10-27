@@ -10,6 +10,7 @@
 - `user-list-mal` (MAL user anime/manga list (status tabs, sort/filter, view modes, status cache))
 
 ## Owns (may create or edit ONLY these)
+- `lib/pages/MAL/mal_explore_page.dart`
 - `lib/widgets/common/bottomnavbar.dart`
 - `lib/pages/MAL/mal_home_page.dart`
 - `lib/widgets/MAL/home/homeappbar.dart`
@@ -33,6 +34,7 @@ Plus `PROJECT-STATE.md` (rewrite in place, within its cap) and `docs/DECISIONS.m
 - BottomNavBar (lib/widgets/common/bottomnavbar.dart): honour `startIndex` changes (`didUpdateWidget`) so the shell can switch tab from code, and move its hardcoded tab titles to `S`.
 - Home sections: user-list section, forum section, custom items (forum boards, user list status, season/year).
 - News items: drop ClipRRect + Opacity per item (news_widget.dart:54-56), use AppImage (performance.md #7).
+- Explore tab header: use the same home app bar (avatar opening the sidebar, search, bookmarks, calendar) on lib/pages/MAL/mal_explore_page.dart instead of its plain app bar (owner-away decision, consistency).
 - First-run feature showcase (tile size, preferred title, startup page).
 
 ## Known bugs to fix in scope

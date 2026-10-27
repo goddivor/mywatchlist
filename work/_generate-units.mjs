@@ -352,7 +352,7 @@ const UNITS = [
   {
     id: "home-wiring", title: "Home: working chips, bookmarks/calendar buttons, maintenance dialog, user-list and forum sections", kind: "screen", priority: "P1", group: "discovery", model: "sonnet", ui: true,
     needs: ["perf-foundation", "bookmarks", "calendar", "explore-seasonal", "user-list-mal"],
-    owns: ["lib/widgets/common/bottomnavbar.dart", "lib/pages/MAL/mal_home_page.dart", "lib/widgets/MAL/home/homeappbar.dart", "lib/widgets/MAL/home/accordion.dart", "lib/widgets/MAL/home/section_header.dart", "lib/widgets/MAL/home/news_widget.dart", "lib/widgets/MAL/home/show_news.dart", "lib/widgets/home/**", "lib/user/MAL/**", "lib/screens/settings/mal_home_settings.dart"],
+    owns: ["lib/pages/MAL/mal_explore_page.dart", "lib/widgets/common/bottomnavbar.dart", "lib/pages/MAL/mal_home_page.dart", "lib/widgets/MAL/home/homeappbar.dart", "lib/widgets/MAL/home/accordion.dart", "lib/widgets/MAL/home/section_header.dart", "lib/widgets/MAL/home/news_widget.dart", "lib/widgets/MAL/home/show_news.dart", "lib/widgets/home/**", "lib/user/MAL/**", "lib/screens/settings/mal_home_settings.dart"],
     dal: ["lib/pages/homepage.dart", "lib/widgets/homeappbar.dart", "lib/widgets/home/feature_first.dart", "lib/util/homepageutils.dart", "lib/pages/settings/homepagesettings.dart"],
     goal: [
       "Top chips (Categories, Genres, Top anime/manga, Top airing, Popular) are all `() {}` (mal_home_page.dart:44-52) → open the explore/ranking screens; bookmarks and calendar buttons `() {}` (:222-224) → app_routes.",
@@ -362,6 +362,7 @@ const UNITS = [
       "BottomNavBar (lib/widgets/common/bottomnavbar.dart): honour `startIndex` changes (`didUpdateWidget`) so the shell can switch tab from code, and move its hardcoded tab titles to `S`.",
       "Home sections: user-list section, forum section, custom items (forum boards, user list status, season/year).",
       "News items: drop ClipRRect + Opacity per item (news_widget.dart:54-56), use AppImage (performance.md #7).",
+      "Explore tab header: use the same home app bar (avatar opening the sidebar, search, bookmarks, calendar) on lib/pages/MAL/mal_explore_page.dart instead of its plain app bar (owner-away decision, consistency).",
       "First-run feature showcase (tile size, preferred title, startup page).",
     ],
     bugs: ["dead chips", "dead bookmarks/calendar buttons"],
