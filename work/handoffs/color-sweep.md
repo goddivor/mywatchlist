@@ -3,6 +3,7 @@
 **Kind** unit · **Priority** P1 · **Group** release · **Model** sonnet
 
 ## Needs done first
+- `detail-resilience` (Detail sections: no endless skeletons, MAL fallbacks when Jikan fails, round avatars without box shadows)
 - `home-wiring` (Home: working chips, bookmarks/calendar buttons, maintenance dialog, user-list and forum sections)
 - `featured-characters` (Featured tags search, character screen sort/dedupe/bookmark/share)
 - `dub-info` (Dub info (MyDubList): icons, languages, settings)

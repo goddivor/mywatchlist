@@ -1368,6 +1368,7 @@
       "artifact": "",
       "priority": "P1",
       "needs": [
+        "detail-resilience",
         "home-wiring",
         "featured-characters",
         "dub-info",
