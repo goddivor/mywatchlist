@@ -19,7 +19,7 @@ echo "== flutter test"
 flutter test
 
 echo "== dart analyze mwl-api"
-(cd mwl-api && dart pub get >/dev/null && dart analyze --fatal-infos=false .)
+(cd mwl-api && dart pub get >/dev/null && dart analyze .)
 
 if [ "${MAB_BUILD_APK:-0}" = 1 ]; then
   echo "== flutter build apk --debug"

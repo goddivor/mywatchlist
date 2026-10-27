@@ -33,7 +33,7 @@ const UNITS = [
   {
     id: "gate-fix", title: "Make the merge gate meaningful", kind: "foundation", priority: "P0", group: "foundation", model: "opus",
     needs: [],
-    owns: ["test/widget_test.dart", "test/smoke/**", "test/helpers/**", "android/app/src/main/AndroidManifest.xml"],
+    owns: ["test/widget_test.dart", "test/flutter_test_config.dart", "test/smoke/**", "test/helpers/**", "android/app/src/main/AndroidManifest.xml"],
     goal: [
       "Set the test layout: `test/smoke/` (yours), `test/helpers/` (shared fakes, yours), `test/units/<unit-id>/` (one folder per later unit). Replace the default Flutter counter test `test/widget_test.dart` (it fails on `dev`) with real, fast smoke tests: pure-Dart tests of enums/parsers/helpers that need no network, and at least one widget test that pumps a small MWL widget. No test may hit the network.",
       "Add `<uses-permission android:name=\"android.permission.INTERNET\"/>` to the MAIN manifest (today it is only in the debug manifest, so a release APK has no network).",

@@ -7,6 +7,7 @@
 
 ## Owns (may create or edit ONLY these)
 - `test/widget_test.dart`
+- `test/flutter_test_config.dart`
 - `test/smoke/**`
 - `test/helpers/**`
 - `android/app/src/main/AndroidManifest.xml`
