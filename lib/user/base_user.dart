@@ -1,7 +1,11 @@
 import 'dart:convert';
+import 'dart:io' show HttpClient;
+
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
+import 'package:http/io_client.dart';
 import 'package:mywatchlist/services/auth/retry_policy.dart';
 
 enum AuthStatus { UNAUTHENTICATED, AUTHENTICATED, INPROGRESS }
@@ -86,8 +90,15 @@ abstract class BaseUser<T> with ChangeNotifier {
   /// Retry policy for transient network errors (DAL: 8 attempts).
   RetryPolicy retryPolicy = const RetryPolicy();
 
-  /// Builds the HTTP client used for token and API calls. Tests replace it.
-  http.Client Function() clientFactory = http.Client.new;
+  /// Builds the HTTP client used for token and API calls, one per attempt
+  /// (closing it aborts a timed out request). Tests replace it.
+  late http.Client Function() clientFactory = _defaultClient;
+
+  http.Client _defaultClient() {
+    if (kIsWeb) return http.Client();
+    return IOClient(
+        HttpClient()..connectionTimeout = retryPolicy.connectTimeout);
+  }
 
   Future<bool>? _refreshInFlight;
 
@@ -157,10 +168,11 @@ abstract class BaseUser<T> with ChangeNotifier {
 
   Future<bool> _refresh() async {
     final refreshTok = refreshToken!;
-    final client = clientFactory();
     try {
-      final response = await retryPolicy
-          .run(() => sendRefreshRequest(client, refreshTok));
+      // A POST: never replayed once it may have reached the server, since a
+      // rotated refresh token would make the replay fail and log out.
+      final response = await retryPolicy.send(
+          clientFactory, (client) => sendRefreshRequest(client, refreshTok));
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         if (data is! Map<String, dynamic>) return false;
@@ -183,8 +195,6 @@ abstract class BaseUser<T> with ChangeNotifier {
     } catch (e) {
       debugPrint('Token refresh failed (${e.runtimeType})');
       return false;
-    } finally {
-      client.close();
     }
   }
 
@@ -206,32 +216,45 @@ abstract class BaseUser<T> with ChangeNotifier {
   /// refresh before expiry, transient errors retried with backoff, one
   /// refresh + replay on 401, never another retry on a 4xx.
   ///
+  /// Each attempt gets a fresh client, closed afterwards. Timeouts follow
+  /// [retryPolicy] (connect, response headers, body idle): a slow but
+  /// healthy large response is never cut. [timeout] adds an overall deadline
+  /// for this call. A write (anything but GET, HEAD, OPTIONS) is replayed
+  /// after a transport error only when it was provably not delivered, unless
+  /// [idempotent] is true; [idempotent] false forbids that replay for any
+  /// method. The replay after a 401 is always allowed: the server rejected
+  /// the first request.
+  ///
   /// Returns null when the account has no usable credentials (signed out or
   /// session dead). Throws the last transient error after the final attempt.
   Future<http.Response?> sendAuthenticated(
-    Future<http.Response> Function(http.Client client, String token) send,
-  ) async {
+    Future<http.Response> Function(http.Client client, String token) send, {
+    bool? idempotent,
+    Duration? timeout,
+  }) async {
     if (!await ensureFreshToken()) return null;
-    final client = clientFactory();
-    try {
-      final token = accessToken!;
-      var response = await retryPolicy.run(() => send(client, token));
-      if (response.statusCode != 401) return response;
+    Future<http.Response> attempt(String token) => retryPolicy.send(
+          clientFactory,
+          (client) => send(client, token),
+          idempotent: idempotent,
+          timeout: timeout,
+        );
 
-      if (!supportsRefresh) {
-        markNeedsReLogin();
-        return response;
-      }
-      // Another request may already have renewed the token meanwhile.
-      if (accessToken == token && !await refreshAccessToken()) return response;
-      final fresh = accessToken;
-      if (fresh == null) return response;
-      response = await retryPolicy.run(() => send(client, fresh));
-      if (response.statusCode == 401) markNeedsReLogin();
+    final token = accessToken!;
+    var response = await attempt(token);
+    if (response.statusCode != 401) return response;
+
+    if (!supportsRefresh) {
+      markNeedsReLogin();
       return response;
-    } finally {
-      client.close();
     }
+    // Another request may already have renewed the token meanwhile.
+    if (accessToken == token && !await refreshAccessToken()) return response;
+    final fresh = accessToken;
+    if (fresh == null) return response;
+    response = await attempt(fresh);
+    if (response.statusCode == 401) markNeedsReLogin();
+    return response;
   }
 
   /// Make authenticated API request with automatic token refresh.
