@@ -95,27 +95,13 @@ class MalApi {
     }
   }
 
-  /// Every field of the user's list entry that MAL can return.
-  /// [Constants] lists only some of them inside `my_list_status{...}`, and
-  /// MAL returns just what is listed there.
-  static const String _animeListStatusFields =
-      'status,score,num_episodes_watched,is_rewatching,updated_at,priority,'
-      'num_times_rewatched,rewatch_value,start_date,finish_date,tags,comments';
-  static const String _mangaListStatusFields =
-      'status,score,num_volumes_read,num_chapters_read,is_rereading,updated_at,'
-      'priority,num_times_reread,reread_value,start_date,finish_date,tags,comments';
+  /// Anime detail fields; [Constants.malAnimeFields] already asks for the
+  /// whole list entry (`my_list_status{...}`).
+  static const String animeDetailFields = Constants.malAnimeFields;
 
-  static String _withListStatus(String fields, String listStatus) =>
-      fields.replaceFirst(
-          RegExp(r'my_list_status(\{[^}]*\})?'), 'my_list_status{$listStatus}');
-
-  /// Anime detail fields with the whole list entry.
-  static final String animeDetailFields =
-      _withListStatus(Constants.malAnimeFields, _animeListStatusFields);
-
-  /// Manga detail fields with the whole list entry.
-  static final String mangaDetailFields =
-      _withListStatus(Constants.malMangaFields, _mangaListStatusFields);
+  /// Manga detail fields; [Constants.malMangaFields] already asks for the
+  /// whole list entry.
+  static const String mangaDetailFields = Constants.malMangaFields;
 
   // Get manga details - GET /manga/{manga_id}
   Future<MalAnime> getMangaDetails(int mangaId) async {
@@ -886,9 +872,21 @@ class MalApi {
   /// rankings, seasons, suggestions and lists unless asked. [nsfw] defaults
   /// to the saved preference. Pages (`paging.next`) already carry the
   /// parameter and are left alone.
+  ///
+  /// The user's own lists (`/users/@me/animelist`, `/users/@me/mangalist`)
+  /// always ask for `nsfw=1`, whatever [nsfw] and the preference say: the
+  /// adult entries the user added stay in their list (and match the profile
+  /// counts). The preference filters browse, search, rankings and seasons.
   static String withNsfw(String url, {bool? nsfw}) {
     final uri = Uri.parse(url);
-    if (uri.queryParameters.containsKey('nsfw')) return url;
+    if (_isOwnList(uri)) {
+      final current = uri.queryParameters['nsfw'];
+      if (current == '1' || current == 'true') return url;
+      url = _withoutNsfw(url);
+      nsfw = true;
+    } else if (uri.queryParameters.containsKey('nsfw')) {
+      return url;
+    }
     final value = (nsfw ?? Preferences.general.nsfw) ? '1' : '0';
     final hash = url.indexOf('#');
     final base = hash < 0 ? url : url.substring(0, hash);
@@ -898,6 +896,18 @@ class MalApi {
         : (base.endsWith('?') || base.endsWith('&') ? '' : '&');
     return '$base${separator}nsfw=$value$fragment';
   }
+
+  static final RegExp _ownListPath =
+      RegExp(r'/users/@me/(anime|manga)list/?$');
+
+  /// True for the signed in user's own anime or manga list.
+  static bool _isOwnList(Uri uri) =>
+      _ownListPath.hasMatch(Uri.decodeComponent(uri.path));
+
+  /// [url] without its `nsfw` query parameters, the rest kept as written.
+  static String _withoutNsfw(String url) => url
+      .replaceAll(RegExp(r'(?<=[?&])nsfw=[^&#]*(&|(?=#)|$)'), '')
+      .replaceFirst(RegExp(r'[?&](?=#|$)'), '');
 
   /// Endpoints MAL only answers for the signed in user.
   static bool _needsUser(String url) {
