@@ -16,13 +16,13 @@ Future<void> showMoreInfoModal(BuildContext context, DetailData data) {
       contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 5),
       content: SizedBox(
         width: double.maxFinite,
-        child: SingleChildScrollView(
-          child: MoreInfoWidget(
-            anime: content,
-            additionalTitles: data.html?['additionalTitles'],
-            horizPadding: 10,
-            category: data.category,
-          ),
+        // The widget owns its scroll view in modal mode: no second one here.
+        child: MoreInfoWidget(
+          anime: content,
+          additionalTitles: data.html?['additionalTitles'],
+          horizPadding: 10,
+          category: data.category,
+          isModal: true,
         ),
       ),
       actions: [
