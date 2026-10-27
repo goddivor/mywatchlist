@@ -1,4 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Required in release builds: every tracker API and scraper needs network access. -->
+    <uses-permission android:name="android.permission.INTERNET"/>
     <application
         android:label="mywatchlist"
         android:name="${applicationName}"
