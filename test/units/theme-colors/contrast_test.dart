@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mywatchlist/user/theme/app_themes.dart';
 import 'package:mywatchlist/widgets/common/app_colors.dart';
+import 'package:mywatchlist/widgets/charts/chart_palette.dart';
 import 'package:mywatchlist/widgets/common/bottomnavbar.dart';
 
 /// WCAG AA over every accent preset × light / dark / black: 4.5:1 for text pairs,
@@ -78,11 +79,6 @@ void main() {
         // Semantic tokens.
         final roles = {
           'score': t.score,
-          'watching': t.watching,
-          'completed': t.completed,
-          'onHold': t.onHold,
-          'dropped': t.dropped,
-          'planned': t.planned,
           'success': t.success,
           'warning': t.warning,
           'danger': t.danger,
@@ -92,6 +88,15 @@ void main() {
           check('${r.key}.onContainer/container', r.value.onContainer, r.value.container, text);
           check('${r.key}.color/surface', r.value.color, cs.surface, icon);
           check('${r.key}.color/surfaceContainerLow', r.value.color, cs.surfaceContainerLow, icon);
+        }
+
+        // List statuses (DailyAL's colours): bold chip text ≥ 3:1, marks on surfaces ≥ 3:1.
+        for (final tone in ListStatusTone.values) {
+          final r = t.status(tone);
+          check('${tone.name}.onContainer/container (chip)', r.onContainer, r.container, icon);
+          check('${tone.name}.onColor/color', r.onColor, r.color, icon);
+          check('${tone.name}.color/surface', r.color, cs.surface, icon);
+          check('${tone.name}.color/surfaceContainerLow', r.color, cs.surfaceContainerLow, icon);
         }
         check('onBadge/badge', t.onBadge, t.badge, text);
 
@@ -108,23 +113,79 @@ void main() {
     }
   });
 
-  test('black mode uses true black pages and distinct elevated surfaces', () {
-    final cs = AppThemes.colorScheme(
-      seedColor: AppThemes.predefinedColors[1],
-      brightness: Brightness.dark,
-      isBlack: true,
-    );
-    expect(cs.surface, const Color(0xFF000000));
-    final levels = [
-      cs.surface,
-      cs.surfaceContainerLow,
-      cs.surfaceContainer,
-      cs.surfaceContainerHigh,
-      cs.surfaceContainerHighest,
-    ];
-    for (var i = 1; i < levels.length; i++) {
-      expect(levels[i].computeLuminance(), greaterThan(levels[i - 1].computeLuminance()));
+  test('black mode uses DailyAL\'s #0C0404 page, white text and distinct dark-grey levels', () {
+    for (final seed in AppThemes.predefinedColors) {
+      final cs = AppThemes.colorScheme(
+        seedColor: seed,
+        brightness: Brightness.dark,
+        isBlack: true,
+      );
+      expect(cs.surface, const Color(0xFF0C0404));
+      expect(cs.onSurface, const Color(0xFFFFFFFF));
+      final levels = [
+        cs.surface,
+        cs.surfaceContainerLow,
+        cs.surfaceContainer,
+        cs.surfaceContainerHigh,
+        cs.surfaceContainerHighest,
+      ];
+      for (var i = 1; i < levels.length; i++) {
+        expect(levels[i].computeLuminance(), greaterThan(levels[i - 1].computeLuminance()));
+      }
     }
+  });
+
+  test('accent scheme is DailyAL\'s pastel recipe (fromSeed, default variant)', () {
+    for (final seed in AppThemes.predefinedColors) {
+      for (final brightness in Brightness.values) {
+        final dal = ColorScheme.fromSeed(seedColor: seed, brightness: brightness);
+        final cs = AppThemes.colorScheme(seedColor: seed, brightness: brightness);
+        expect(cs.primary, dal.primary);
+        expect(cs.primaryContainer, dal.primaryContainer);
+        expect(cs.secondary, dal.secondary);
+        expect(cs.surface, dal.surface);
+      }
+    }
+    // Pink stays a soft pink, not the vivid #B80049 of the fidelity variant.
+    final pink = AppThemes.colorScheme(
+      seedColor: const Color(0xFFE91E63),
+      brightness: Brightness.light,
+    );
+    expect(pink.primary, isNot(const Color(0xFFB80049)));
+  });
+
+  test('list statuses use DailyAL\'s hues for every tracker', () {
+    for (final brightness in Brightness.values) {
+      final t = AppColors.fromScheme(
+        AppThemes.colorScheme(seedColor: AppThemes.defaultSeedColor, brightness: brightness),
+      );
+      expect(t.watching.container, const Color(0xFF43A047)); // green 600
+      expect(t.completed.container, const Color(0xFF2196F3)); // blue 500
+      expect(t.onHold.container, const Color(0xFFEF6C00)); // orange 800
+      expect(t.dropped.container, const Color(0xFFF44336)); // red 500
+      expect(t.planned.container, const Color(0xFF795548)); // brown 500
+      for (final s in ['watching', 'reading', 'CURRENT', 'current', 'REPEATING']) {
+        expect(t.statusOf(s), t.watching);
+      }
+      for (final s in ['on_hold', 'PAUSED', 'hold']) {
+        expect(t.statusOf(s), t.onHold);
+      }
+      for (final s in ['plan_to_watch', 'plan_to_read', 'PLANNING', 'planned', 'plantowatch']) {
+        expect(t.statusOf(s), t.planned);
+      }
+      expect(t.statusOf('COMPLETED'), t.completed);
+      expect(t.statusOf('dropped'), t.dropped);
+    }
+  });
+
+  test('default stats chart colours are DailyAL\'s', () {
+    expect(defaultStatusChartColors, const [
+      Color(0xFF4CAF50),
+      Color(0xFF2196F3),
+      Color(0xFFFF9800),
+      Color(0xFFF44336),
+      Color(0xFF795548),
+    ]);
   });
 
   test('dark mode has dark surfaces (no light card or sheet left)', () {

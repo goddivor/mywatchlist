@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:mywatchlist/user/preferences/preferences.dart';
+import 'package:mywatchlist/widgets/common/app_colors.dart';
 
 /// Default colour of each list status slot (current, completed, on hold, dropped, planned),
-/// used where the user's "stats chart colors" preference leaves the theme colour.
+/// DailyAL's status colours, used where the user's "stats chart colors" preference leaves the
+/// theme colour.
 const List<Color> defaultStatusChartColors = [
-  Color(0xFF4CAF50),
-  Color(0xFF2196F3),
-  Color(0xFFFF9800),
-  Color(0xFFF44336),
-  Color(0xFF795548),
+  AppColors.watchingBase,
+  AppColors.completedBase,
+  AppColors.onHoldBase,
+  AppColors.droppedBase,
+  AppColors.plannedBase,
 ];
 
 /// The five status colours: the preference when the user picked one for the slot, the
