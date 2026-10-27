@@ -69,6 +69,19 @@ const UNITS = [
     dod: ["`dart analyze` clean in mwl-api.", "Parser tests with saved HTML fixtures under mwl-api/test/ (no live network)."],
   },
   {
+    id: "mal-auth-calls", title: "Route every MAL request through the token-refresh path", kind: "unit", priority: "P0", group: "foundation", model: "sonnet",
+    needs: ["auth-refresh"],
+    owns: ["lib/services/api/MAL/mal_api.dart", "lib/services/api/MAL/mal_user.dart", "lib/services/api/MAL/mal_user_prof.dart", "lib/services/api/MAL/mal_forum_api.dart", "lib/services/api/MAL/mal_clubs_api.dart", "lib/services/api/MAL/user_anime_statistics.dart"],
+    goal: [
+      "The owner's phone: after months without opening the app, MAL no longer works — the token expired and nothing refreshes it. auth-refresh added the mechanism (`MalConnect.authGet/authPut/authDelete`, `BaseUser.sendAuthenticated`, `MalSessionExpired`) but the 22 call sites in mal_api.dart / mal_user.dart (and any other authenticated MAL call in the files you own) still use raw `http.*` with a hand-built Bearer header.",
+      "Move EVERY authenticated MAL call onto that path, so: token near expiry → refreshed first; 401 → refresh + one replay; refresh refused → the account enters `needsReLogin` (no crash, no silent empty screens). Public (client-id only) calls stay as they are.",
+      "Where a caller would get an exception, make sure `MalSessionExpired` surfaces as a clear error state the UI can show (no infinite spinner); the visible 'sign in again' prompt itself belongs to accounts-ux.",
+      "Do not change behaviour otherwise: same endpoints, same parameters, same models.",
+    ],
+    bugs: ["MAL token never refreshed in real calls → app stops working after ~1 month (owner's phone)."],
+    dod: ["`grep -nE \"Bearer|http\\.(get|put|post|delete|patch)\\(\" lib/services/api/MAL/*.dart` shows no authenticated raw call left (list any public call kept, with why, in the PR body).", "Offline tests in test/units/mal-auth-calls/ with a fake client: expired token → refresh then the MAL call succeeds; refresh rejected → MalSessionExpired / needsReLogin."],
+  },
+  {
     id: "l10n-pipeline", title: "Restore the localization pipeline (ARB sources, per-unit fragments, working language picker)", kind: "contract", priority: "P0", group: "foundation", model: "opus",
     needs: ["gate-fix"],
     owns: ["lib/l10n/**", "l10n.yaml", "lib/generated/**", "lib/user/language/**", "lib/screens/settings/language_settings.dart", "lib/main.dart", "pubspec.yaml", "pubspec.lock", "tools/l10n/**", "tools/verify.sh", ".gitignore", "CLAUDE.md"],
@@ -206,7 +219,7 @@ const UNITS = [
   },
   {
     id: "user-profile-mal", title: "MAL user profile, stats charts and user pop-up", kind: "screen", priority: "P1", group: "user", model: "sonnet", ui: true,
-    needs: ["app-shell", "shared-kit", "backend-parsers"],
+    needs: ["mal-auth-calls", "app-shell", "shared-kit", "backend-parsers"],
     owns: ["lib/pages/MAL/mal_user_profile_page.dart", "lib/screens/user_profile/**", "lib/widgets/user/profile/**", "lib/widgets/charts/**", "lib/services/api/MAL/scrapper/user_anime_statistics.dart", "lib/services/api/MAL/scrapper/user_friends.dart", "lib/services/api/MAL/scrapper/user_history.dart", "lib/services/api/MAL/user_anime_statistics.dart", "lib/services/api/MAL/mal_user_prof.dart", "lib/cache/cached_user_profile.dart"],
     dal: ["lib/screens/user_profile.dart", "lib/widgets/user/user_header.dart", "lib/widgets/user/stats_screen.dart", "lib/user/charts/", "lib/widgets/barchart.dart", "lib/pages/userpop.dart", "lib/cache/cacheduserprof.dart", "lib/util/insight_service.dart"],
     goal: [
@@ -399,17 +412,17 @@ const UNITS = [
   },
   {
     id: "api-prefs", title: "API layer: NSFW, timezone, Jikan rate limits, MAL maintenance", kind: "unit", priority: "P1", group: "settings", model: "sonnet",
-    needs: ["deps-prefs-contract", "auth-refresh"],
+    needs: ["deps-prefs-contract", "mal-auth-calls"],
     owns: ["lib/services/api/MAL/mal_api.dart", "lib/services/api/MAL/mal_user.dart", "lib/services/api/Jikan/**", "lib/services/api/MAL/mal_anime.dart"],
     dal: ["lib/api/malapi.dart", "commit 1d1f930 (rate limit)"],
-    goal: ["Move every authenticated MAL call off raw `http.*` + hand-built Bearer header onto the refreshing path from auth-refresh (`MalConnect.authGet/authPut/authDelete`, which throw `MalSessionExpired`): mal_api.dart ~l.494-620, 798, 925 and mal_user.dart l.33, 86, 137 (auth-refresh finding).", "Send `nsfw=` from the pref; use the timezone pref (mal_api.dart:827, :884); handle Jikan 429 with backoff + caching; expose a `isUnderMaintenance()` helper for home-wiring."],
+    goal: ["Send `nsfw=` from the pref; use the timezone pref (mal_api.dart:827, :884); handle Jikan 429 with backoff + caching; expose a `isUnderMaintenance()` helper for home-wiring."],
     dod: ["Rapid navigation on the emulator no longer produces Jikan 429 errors."],
   },
 
   // ───────────────────────────── Community ─────────────────────────────
   {
     id: "forum-clubs", title: "Forum posting, profile links, club members in-app", kind: "screen", priority: "P2", group: "community", model: "sonnet", ui: true,
-    needs: ["user-profile-mal", "shared-kit"],
+    needs: ["mal-auth-calls", "user-profile-mal", "shared-kit"],
     owns: ["lib/screens/forum/**", "lib/widgets/forum/**", "lib/pages/MAL/mal_forum_page.dart", "lib/services/api/MAL/mal_clubs_api.dart", "lib/services/api/MAL/mal_forum_api.dart"],
     dal: ["lib/screens/forumposts.dart", "lib/screens/forumtopicsscreen.dart", "lib/pages/forumpage.dart", "lib/screens/clubscreen.dart"],
     goal: ["Reply FAB only copies the URL (forum_posts_screen.dart:117-126) → open a webview to post (DAL); post avatar → profile (post_widget.dart:346); club members/staff → in-app profile instead of browser; HTML parsing off the UI isolate in mal_clubs_api.dart (:20, :34, :61) and the forum API (performance.md #9); share/browser menus; redesign per UI directive."],

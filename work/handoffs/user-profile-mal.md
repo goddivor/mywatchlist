@@ -3,6 +3,7 @@
 **Kind** screen · **Priority** P1 · **Group** user · **Model** sonnet
 
 ## Needs done first
+- `mal-auth-calls` (Route every MAL request through the token-refresh path)
 - `app-shell` (App shell seams: settings hub, sidebar, home shell, startup)
 - `shared-kit` (Shared UI kit: share builder, app bar menu, select widgets, score reveal, web launcher)
 - `backend-parsers` (mwl-api: port DAL's missing routes and HTML parsers)

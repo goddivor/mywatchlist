@@ -4,7 +4,7 @@
 
 ## Needs done first
 - `deps-prefs-contract` (Dependencies, Android permissions and the preferences contract)
-- `auth-refresh` (Token refresh and retry for all trackers)
+- `mal-auth-calls` (Route every MAL request through the token-refresh path)
 
 ## Owns (may create or edit ONLY these)
 - `lib/services/api/MAL/mal_api.dart`
@@ -17,7 +17,6 @@
 Plus `PROJECT-STATE.md` (rewrite in place, within its cap) and `docs/DECISIONS.md` (append one line per decision). Anything else you need is a FINDING to report, never an edit.
 
 ## Goal
-- Move every authenticated MAL call off raw `http.*` + hand-built Bearer header onto the refreshing path from auth-refresh (`MalConnect.authGet/authPut/authDelete`, which throw `MalSessionExpired`): mal_api.dart ~l.494-620, 798, 925 and mal_user.dart l.33, 86, 137 (auth-refresh finding).
 - Send `nsfw=` from the pref; use the timezone pref (mal_api.dart:827, :884); handle Jikan 429 with backoff + caching; expose a `isUnderMaintenance()` helper for home-wiring.
 
 ## Known bugs to fix in scope

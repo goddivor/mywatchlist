@@ -3,6 +3,7 @@
 **Kind** screen · **Priority** P2 · **Group** community · **Model** sonnet
 
 ## Needs done first
+- `mal-auth-calls` (Route every MAL request through the token-refresh path)
 - `user-profile-mal` (MAL user profile, stats charts and user pop-up)
 - `shared-kit` (Shared UI kit: share builder, app bar menu, select widgets, score reveal, web launcher)
 
