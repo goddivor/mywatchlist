@@ -66,12 +66,12 @@ class UserSimklV2 extends BaseUser<SimklAuthResponse> {
     return authResponse!.createdTime!.add(Duration(seconds: authResponse!.expiresIn!));
   }
 
-  // Override refresh token since Simkl doesn't provide refresh tokens
+  // Simkl issues no refresh token: a 401 means the account must sign in again.
   @override
-  Future<bool> refreshAccessToken() async {
-    print('Simkl does not support refresh tokens');
-    return false;
-  }
+  bool get supportsRefresh => false;
+
+  @override
+  Future<bool> refreshAccessToken() async => false;
 
   // Clear override to include AccountManager
   @override

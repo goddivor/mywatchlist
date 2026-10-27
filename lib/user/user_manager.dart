@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:mywatchlist/constants/constants.dart';
 import 'package:mywatchlist/user/base_user.dart';
@@ -128,6 +130,33 @@ class UserManager with ChangeNotifier {
     await prefs.setString('current_tracker', _currentTracker.toString());
   }
 
+  /// Refresh, before it is used, every token that is about to expire.
+  /// Each tracker is handled on its own: one failure never blocks the others.
+  Future<void> refreshExpiringTokens() async {
+    await Future.wait(
+      [mal, anilist, kitsu, simkl].map((BaseUser user) async {
+        try {
+          if (user.status == AuthStatus.AUTHENTICATED) {
+            await user.ensureFreshToken();
+          }
+        } catch (_) {
+          // Transient failure: the 401 path retries on the first request.
+        }
+      }),
+    );
+  }
+
+  /// Users whose session died (refresh rejected, 401 without refresh token).
+  List<AccountType> get trackersNeedingReLogin => [
+        for (final t in const [
+          AccountType.myanimelist,
+          AccountType.anilist,
+          AccountType.kitsu,
+          AccountType.simkl,
+        ])
+          if (getUserByTracker(t)?.needsReLogin ?? false) t,
+      ];
+
   /// Initialize all users from secure storage
   Future<void> initializeAllUsers() async {
     await mal.loadFromPreferences();
@@ -140,6 +169,9 @@ class UserManager with ChangeNotifier {
 
     // Setup listeners for all users
     _setupUserListeners();
+
+    // Renew stale tokens in the background so the first request is clean.
+    unawaited(refreshExpiringTokens());
   }
 
   /// Setup listeners to propagate changes from individual users
@@ -206,8 +238,16 @@ class UserManager with ChangeNotifier {
 
   /// Refresh current user's token
   Future<bool> refreshCurrentToken() async {
-    if (currentUser == null) return false;
-    return await currentUser!.refreshAccessToken();
+    final user = currentUser;
+    if (user == null) return false;
+    return await user.refreshAccessToken();
+  }
+
+  /// Refresh the token of a given tracker (not only the active one).
+  Future<bool> refreshToken(AccountType tracker) async {
+    final user = getUserByTracker(tracker);
+    if (user == null) return false;
+    return await user.refreshAccessToken();
   }
 
   /// Make authenticated request with current user

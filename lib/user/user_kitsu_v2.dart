@@ -73,39 +73,17 @@ class UserKitsuV2 extends BaseUser<KitsuAuthResponse> {
     AccountManager().clear();
   }
 
-  // Note: Kitsu uses password-based auth, not OAuth 2.0 PKCE
-  // Override refresh token with Kitsu-specific implementation
+  // Kitsu expects a JSON body on its token endpoint.
   @override
-  Future<bool> refreshAccessToken() async {
-    final refreshTok = refreshToken;
-    if (refreshTok == null || refreshTok.isEmpty) {
-      return false;
-    }
-
-    try {
-      final response = await http.post(
-        Uri.parse(tokenEndPoint),
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: json.encode({
-          'grant_type': 'refresh_token',
-          'refresh_token': refreshTok,
-        }),
-      );
-
-      if (response.statusCode == 200) {
-        final Map<String, dynamic> responseData = json.decode(response.body);
-        final newAuthResponse = authResponseFromJson(responseData);
-        if (newAuthResponse != null) {
-          setAuthResponse(newAuthResponse);
-          return true;
-        }
-      }
-      return false;
-    } catch (e) {
-      print('Error refreshing Kitsu token: $e');
-      return false;
-    }
+  Future<http.Response> sendRefreshRequest(
+      http.Client client, String refreshTok) {
+    return client.post(
+      Uri.parse(tokenEndPoint),
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode({
+        'grant_type': 'refresh_token',
+        'refresh_token': refreshTok,
+      }),
+    );
   }
 }

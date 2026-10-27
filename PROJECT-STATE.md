@@ -25,7 +25,8 @@ Cap: 80 lines. Rewrite in place; history lives in git and `docs/DECISIONS.md`.
 ## Known big gaps (see inventory)
 - No user list / profile for any tracker; AniList/Kitsu/Simkl tabs are placeholders.
 - No notifications, calendar, bookmarks, relation graph, share, translation.
-- Language picker broken; MAL token never refreshed.
+- Language picker broken.
+- `auth-refresh` built (PR pending): token refresh/retry in `BaseUser`; call sites in `mal_api.dart`, `mal_user.dart`, Anilist/Kitsu/Simkl clients still use raw `http` and must move to `MalConnect.auth*` / `sendAuthenticated` (see PR findings).
 
 ## Next
 - Board: GitHub Project goddivor #8 "MyWatchList — Roadmap", 38 unit issues synced.

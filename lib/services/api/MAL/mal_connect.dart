@@ -6,6 +6,8 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:mwl_api/handlers/handler_core.dart';
+import 'package:mywatchlist/user/base_user.dart';
+import 'package:mywatchlist/user/user_mal_v2.dart';
 
 /// Network utility class for MAL API calls.
 /// Provides retry logic, connectivity checks, and maintenance detection.
@@ -108,6 +110,58 @@ class MalConnect {
     throw lastError ?? Exception('PUT failed after $_maxAttempts attempts');
   }
 
+  // ---------------------------------------------------------------------
+  // Authenticated MAL requests. They always go through the refreshing path
+  // of the user: token renewed before expiry, one refresh + replay on 401,
+  // transient network errors retried with backoff, other 4xx never retried.
+  // The Authorization header is set here; callers must not build it.
+  // ---------------------------------------------------------------------
+
+  /// Authenticated GET. Throws [MalSessionExpired] when the account has no
+  /// usable credentials (signed out or session dead).
+  static Future<http.Response> authGet(
+    String url, {
+    Map<String, String>? headers,
+    BaseUser? user,
+  }) =>
+      _authSend(user, (client, token) => client.get(
+            Uri.parse(url),
+            headers: {...?headers, 'Authorization': 'Bearer $token'},
+          ));
+
+  /// Authenticated PUT (form encoded or raw [body], as given).
+  static Future<http.Response> authPut(
+    String url, {
+    Map<String, String>? headers,
+    Object? body,
+    BaseUser? user,
+  }) =>
+      _authSend(user, (client, token) => client.put(
+            Uri.parse(url),
+            headers: {...?headers, 'Authorization': 'Bearer $token'},
+            body: body,
+          ));
+
+  /// Authenticated DELETE.
+  static Future<http.Response> authDelete(
+    String url, {
+    Map<String, String>? headers,
+    BaseUser? user,
+  }) =>
+      _authSend(user, (client, token) => client.delete(
+            Uri.parse(url),
+            headers: {...?headers, 'Authorization': 'Bearer $token'},
+          ));
+
+  static Future<http.Response> _authSend(
+    BaseUser? user,
+    Future<http.Response> Function(http.Client, String) send,
+  ) async {
+    final response = await (user ?? UserMalV2.instance).sendAuthenticated(send);
+    if (response == null) throw const MalSessionExpired();
+    return response;
+  }
+
   /// Check if the device has network connectivity.
   static Future<bool> hasConnection() async {
     try {
@@ -145,4 +199,12 @@ class MalConnect {
       return false;
     }
   }
+}
+
+/// The MAL account has no valid credentials and must sign in again.
+class MalSessionExpired implements Exception {
+  const MalSessionExpired();
+
+  @override
+  String toString() => 'MalSessionExpired: sign in again';
 }
