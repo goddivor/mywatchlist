@@ -48,6 +48,11 @@ Cap: 80 lines. Rewrite in place; history lives in git and `docs/DECISIONS.md`.
 - Rules and measurement procedure (incl. Impeller vs Skia A/B): `docs/PERFORMANCE.md`. Foundation: high refresh rate, `AppImage` (decode at displayed size), one shared shimmer ticker, MaterialApp rebuilt only on theme/locale, avatars without fade or blurred shadow, viewer without blur.
 - Screen-level fixes (home tabs, cards, detail listeners, parsing) belong to their units; cards must switch to `AppImage`.
 
+## Edit sheet (`edit-sheet`)
+- `ContentEditWidget` (same constructor) loads the whole MAL `my_list_status` itself (`MalListEntryService`, `lib/widgets/user/edit/`), so dates, priority, rewatch, tags, comments, chapters and volumes are pre-filled exactly (partial dates kept as text); load error / dead session / non-MAL account show a message with retry or sign-in, never a spinner.
+- Auto dates follow `autoAddStartEndDate` and only fill empty dates; the last episode completes with a finish date, the first one fills the start date; add uses `defaultAnime/MangaAddStatus`; airing shows without total get an estimated episode count (picker bar or stepper).
+- Private notes: `PrivateNotesStore` (`lib/user/private_notes/`, SharedPreferences `private_note_v1:<tracker>:<category>:<id>`), `export()`/`import()` for the backup unit; shown when `showPrivateNotes` is on.
+
 ## Known big gaps (see inventory)
 - No user list / profile for any tracker; AniList/Kitsu/Simkl tabs are placeholders.
 - No notifications, calendar, bookmarks, relation graph, share, translation.
