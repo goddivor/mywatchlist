@@ -7,6 +7,7 @@
 - `app-shell` (App shell seams: settings hub, sidebar, home shell, startup)
 
 ## Owns (may create or edit ONLY these)
+- `test/units/app-shell/app_routes_test.dart`
 - `lib/cache/dub_info.dart`
 - `lib/screens/settings/dub_settings.dart`
 - `lib/widgets/MAL/home/animegridcard.dart`

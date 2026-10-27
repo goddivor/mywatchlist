@@ -480,7 +480,7 @@ const UNITS = [
   {
     id: "dub-info", title: "Dub info (MyDubList): icons, languages, settings", kind: "unit", priority: "P2", group: "settings", model: "sonnet", ui: true,
     needs: ["cards-upgrade", "app-shell"],
-    owns: ["lib/cache/dub_info.dart", "lib/screens/settings/dub_settings.dart", "lib/widgets/MAL/home/animegridcard.dart", "lib/widgets/common/dub_icon.dart"],
+    owns: ["test/units/app-shell/app_routes_test.dart", "lib/cache/dub_info.dart", "lib/screens/settings/dub_settings.dart", "lib/widgets/MAL/home/animegridcard.dart", "lib/widgets/common/dub_icon.dart"],
     dal: ["lib/pages/settings/dubsettings.dart", "lib/cache/dubinfomanager.dart", "commits 17dd437, 6f75ed3"],
     goal: ["Dub status icon on cards (asset MyDubListIcons.ttf is already present), dub languages, min source count, icon style, report/support links; fill the dub settings stub."],
     dod: ["Dub icon visible on dubbed anime cards on the emulator."],
@@ -564,7 +564,7 @@ const UNITS = [
     owns: ["lib/widgets/loading/**", "lib/widgets/MAL/home/**", "lib/widgets/MAL/content/**", "lib/widgets/MAL/review/**", "lib/widgets/user/**", "lib/widgets/charts/**", "lib/widgets/bookmarks/**", "lib/widgets/calendar/**", "lib/widgets/common/**", "lib/screens/MAL/**", "lib/screens/explore/**", "lib/screens/seasonal/**", "lib/screens/calendar/**", "lib/screens/user_profile/**", "lib/screens/settings/**", "lib/screens/bookmarks_screen.dart", "lib/pages/side_bar.dart", "lib/constants/constants.dart"],
     goal: [
       "Replace every hardcoded `Colors.*` / `Color(0x…)` in the owned screens with `colorScheme` roles or the app_colors tokens (theme-colors), except intrinsic content colours (e.g. a tracker's brand logo) — list those exceptions in the PR body.",
-      "Known spots (detail-resilience finding): `reviewScoreColor` in lib/widgets/MAL/review/review_logic.dart (hardcoded green/amber/red → score tokens); lib/widgets/common/avatar_widget.dart (white shimmer box and old fallback image → themed placeholder + clean circle like the detail sections); `getStatusColorInt` and `loadingGraph` in lib/constants/constants.dart.",
+      "Dub badge on cards uses a literal dark scrim + white glyph (dub-info): use the badge/scrim tokens. Known spots (detail-resilience finding): `reviewScoreColor` in lib/widgets/MAL/review/review_logic.dart (hardcoded green/amber/red → score tokens); lib/widgets/common/avatar_widget.dart (white shimmer box and old fallback image → themed placeholder + clean circle like the detail sections); `getStatusColorInt` and `loadingGraph` in lib/constants/constants.dart.",
       "Check each screen in light, dark and black themes for contrast: no button, chip, badge or coloured area where the text is unreadable (owner's complaint); text on images uses the scrim token; no light surface left in dark mode.",
     ],
     dod: ["`grep -rnE \"Colors\\.|Color\\(0x\" lib/<owned>` only shows the documented exceptions.", "Checker: screenshots in light/dark/black of each touched screen."],
