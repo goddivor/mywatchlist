@@ -19,6 +19,10 @@ Cap: 80 lines. Rewrite in place; history lives in git and `docs/DECISIONS.md`.
 4. app-shell, detail-split, shared-kit, perf-foundation, edit-sheet, api-prefs, versioning-ci
 5+. features (user list/profile, detail, discovery, settings, community), then other trackers.
 
+## Backend (mwl-api)
+- `backend-parsers` ported DailyAL's page parsers (`PageParsers`, typed `*Html` models) and routes: `content/characters`, `character|people/*id/pics`, `characters`, `people`, `magazines`, `studios`, `clubs?id=`, `clubs/type`, `search/all`; `reviews`, `users/about` parsed; `schedules` = LiveChart (`source=jikan` for the old proxy).
+- Typed client methods on `MwlApi` (listed in the backend-parsers PR body, issue #27); HTML parsed off the UI isolate.
+
 ## Fluidity baseline
 - Home scroll, profile builds: MWL 22-23 % janky frames vs DailyAL 1.6 % (`tools/perf/measure-scroll.sh`). Unit `perf-foundation` + fluidity rules in every UI handoff. Emulator must run with `-gpu host`.
 
