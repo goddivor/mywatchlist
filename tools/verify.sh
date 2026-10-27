@@ -9,6 +9,10 @@ if [ -d /usr/lib/jvm/java-21-openjdk-amd64 ]; then
   export GRADLE_OPTS="${GRADLE_OPTS:-} -Dorg.gradle.java.home=/usr/lib/jvm/java-21-openjdk-amd64"
 fi
 
+# S (lib/generated/l10n.dart + intl/) is a build output of lib/l10n/**: regenerate it first.
+echo "== l10n build"
+tools/l10n/build.sh
+
 echo "== flutter pub get"
 flutter pub get >/dev/null
 
