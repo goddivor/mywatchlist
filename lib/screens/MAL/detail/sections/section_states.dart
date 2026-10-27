@@ -7,14 +7,14 @@ import 'package:mywatchlist/widgets/common/app_image.dart';
 /// ([onRetry] null) or an error with a Retry button. Every section ends in
 /// content or in one of these, never in an endless skeleton.
 class SectionMessage extends StatelessWidget {
-  final IconData icon;
+  final IconData? icon;
   final String message;
   final VoidCallback? onRetry;
   final double height;
 
   const SectionMessage({
     super.key,
-    required this.icon,
+    this.icon,
     required this.message,
     this.onRetry,
     this.height = 160,
@@ -52,8 +52,10 @@ class SectionMessage extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, size: 36, color: scheme.onSurfaceVariant),
-              const SizedBox(height: 10),
+              if (icon != null) ...[
+                Icon(icon, size: 36, color: retry != null ? scheme.error : scheme.onSurfaceVariant),
+                const SizedBox(height: 10),
+              ],
               Text(
                 message,
                 textAlign: TextAlign.center,
@@ -77,7 +79,7 @@ class SectionMessage extends StatelessWidget {
 
 /// Round picture of a character, a person or a user: the image clipped to a
 /// circle, nothing painted behind it (no shadow, no elevation, no box). A
-/// missing or broken picture shows a person icon on a tinted circle.
+/// missing or broken picture shows a person icon on a tinted circle (theme colours).
 class RoundAvatar extends StatelessWidget {
   final String? url;
   final double size;

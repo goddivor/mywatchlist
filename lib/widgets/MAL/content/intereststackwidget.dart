@@ -70,7 +70,7 @@ class _StackCard extends StatelessWidget {
         width: isHoriz ? 310 : null,
         child: Material(
           borderRadius: radius,
-          color: Colors.transparent,
+          type: MaterialType.transparency,
           child: InkWell(
             onTap: () => gotoPage(context: context, newPage: InterestStackDetailScreen(stack: stack)),
             borderRadius: radius,

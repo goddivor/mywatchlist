@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:mywatchlist/constants/constants.dart';
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/screens/MAL/character_screen.dart';
+import 'package:mywatchlist/screens/MAL/detail/sections/section_states.dart';
 import 'package:mywatchlist/services/api/MAL/scrapper/anime_detailed_html.dart';
-import 'package:mywatchlist/widgets/common/avatar_widget.dart';
 
 //this file will be renomed to content_character_widget.dart
 
@@ -22,6 +22,8 @@ String _extractCategory(String? url) {
   return 'character';
 }
 
+/// Characters (with their voice actor), manga characters or staff of a detail page, as
+/// pages of rows (grid) or one list. Every picture is a clean circle ([RoundAvatar]).
 class AnimeCharacterWidget extends StatelessWidget {
   final List<CharactersVoiceActors> animeCharacterList;
   final List<MangaCharacters>? mangaCharacterList;
@@ -36,218 +38,145 @@ class AnimeCharacterWidget extends StatelessWidget {
     this.type = DisplayType.grid,
   });
 
+  static const double _avatar = 56;
+  static const double _rowHeight = 76;
+
   bool get _isStaff => staffList != null && staffList!.isNotEmpty;
   bool get _isManga => mangaCharacterList != null && mangaCharacterList!.isNotEmpty;
   List get _characters => _isStaff ? staffList! : (_isManga ? mangaCharacterList! : animeCharacterList);
+
+  Widget _row(int index) {
+    if (_isStaff) return _buildStaffWidget(staffList![index]);
+    if (_isManga) return _buildMangaCharacterWidget(mangaCharacterList![index]);
+    return _buildCharacterWidget(animeCharacterList[index]);
+  }
 
   @override
   Widget build(BuildContext context) {
     if (type == DisplayType.grid) {
       final itemsPerPage = (_isManga || _isStaff) ? 4 : 3;
-      final itemHeight = (_isManga || _isStaff) ? 120.0 : 140.0;
-      return _buildGridView(
-          _characters.length,
-          (i, pageIndex) {
-            final idx = pageIndex * itemsPerPage + i;
-            if (_isStaff) {
-              return _buildStaffWidget(staffList![idx]);
-            }
-            if (_isManga) {
-              return _buildMangaCharacterWidget(mangaCharacterList![idx]);
-            }
-            return _buildCharacterWidget(animeCharacterList[idx]);
-          },
-          .89,
-          itemsPerPage,
-          itemHeight);
-    } else {
-      return _buildListView();
+      return _CharacterPages(
+        length: _characters.length,
+        itemBuilder: (i, pageIndex) => _row(pageIndex * itemsPerPage + i),
+        viewportFraction: .89,
+        itemsPerPage: itemsPerPage,
+        itemHeight: _rowHeight,
+      );
     }
-  }
-
-  Widget _buildListView() {
     return ListView.builder(
       padding: const EdgeInsets.symmetric(vertical: 20),
-      itemBuilder: (context, index) {
-        if (_isStaff) {
-          return _buildStaffWidget(staffList![index]);
-        }
-        if (_isManga) {
-          return _buildMangaCharacterWidget(mangaCharacterList![index]);
-        }
-        return _buildCharacterWidget(animeCharacterList[index]);
-      },
+      itemExtent: _rowHeight,
+      itemBuilder: (context, index) => _row(index),
       itemCount: _characters.length,
     );
   }
 
-  Widget _buildCharacterWidget(CharactersVoiceActors? details) {
+  EdgeInsets get _padding => type == DisplayType.grid
+      ? const EdgeInsetsDirectional.only(end: 10).resolve(TextDirection.ltr)
+      : const EdgeInsets.symmetric(horizontal: 12);
+
+  Widget _buildCharacterWidget(CharactersVoiceActors details) {
+    final character = details.character;
+    final voice = details.voiceActor;
+    final hasVoice = voice.name.name.isNotBlank;
     return Padding(
-      padding: type == DisplayType.grid
-          ? const EdgeInsets.fromLTRB(0, 5, 10, 5)
-          : const EdgeInsets.symmetric(horizontal: 5, vertical: 5),
-      child: SizedBox(
-        width: double.infinity,
-        child: Material(
-            color: Colors.transparent,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.start,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                _characterWidget(
-                  _extractMalId(details?.character.name.url),
-                  details?.character.image,
-                  category: _extractCategory(details?.character.name.url),
-                ),
-                Expanded(child: _centerTextWidegt(details)),
-                _seiyuuWidget(
-                  _extractMalId(details?.voiceActor.name.url),
-                  details?.voiceActor.image,
-                ),
-              ],
-            )),
+      padding: _padding,
+      child: Row(
+        children: [
+          _avatarLink(character.name.url, character.image, character.name.name),
+          const SizedBox(width: 12),
+          Expanded(child: _NameAndRole(name: character.name.name, role: character.role)),
+          if (hasVoice) ...[
+            const SizedBox(width: 8),
+            Expanded(
+              child: _NameAndRole(name: voice.name.name, role: voice.role, end: true),
+            ),
+            const SizedBox(width: 12),
+            _avatarLink(voice.name.url, voice.image, voice.name.name, category: 'person'),
+          ],
+        ],
       ),
     );
   }
 
-  Widget _buildMangaCharacterWidget(MangaCharacters? details) {
-    final isGrid = type == DisplayType.grid;
+  Widget _buildMangaCharacterWidget(MangaCharacters details) {
+    final character = details.character;
     return Padding(
-      padding: isGrid
-          ? const EdgeInsets.fromLTRB(0, 3, 10, 3)
-          : const EdgeInsets.symmetric(horizontal: 5, vertical: 5),
-      child: SizedBox(
-        width: double.infinity,
-        child: Material(
-            color: Colors.transparent,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.start,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                _characterWidget(
-                    _extractMalId(details?.character.name.url),
-                    details?.character.image,
-                    height: isGrid ? 110.0 : 120.0,
-                    width: isGrid ? 85.0 : 100.0,
-                    category: _extractCategory(details?.character.name.url)),
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 10),
-                    child: _buildNameAndRole(
-                      details?.character.name.name ?? S.current.Card_Unknown,
-                      details?.character.role ?? "",
-                    ),
-                  ),
-                ),
-              ],
-            )),
+      padding: _padding,
+      child: Row(
+        children: [
+          _avatarLink(character.name.url, character.image, character.name.name),
+          const SizedBox(width: 12),
+          Expanded(child: _NameAndRole(name: character.name.name, role: character.role)),
+        ],
       ),
     );
   }
 
   Widget _buildStaffWidget(CharacterNode staff) {
-    final isGrid = type == DisplayType.grid;
-    final hasQuestionmark = staff.image.contains('questionmark');
-    final staffId = _extractMalId(staff.name.url);
     return Padding(
-      padding: isGrid
-          ? const EdgeInsets.fromLTRB(0, 3, 10, 3)
-          : const EdgeInsets.symmetric(horizontal: 5, vertical: 5),
-      child: SizedBox(
-        width: double.infinity,
-        child: Material(
-            color: Colors.transparent,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.start,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                hasQuestionmark
-                    ? _assetImageWidget(
-                        height: isGrid ? 110.0 : 120.0,
-                        width: isGrid ? 85.0 : 100.0)
-                    : _characterWidget(staffId, staff.image,
-                        height: isGrid ? 110.0 : 120.0,
-                        width: isGrid ? 85.0 : 100.0,
-                        category: 'person'),
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 10),
-                    child: _buildNameAndRole(
-                      staff.name.name,
-                      staff.role,
-                    ),
-                  ),
-                ),
-              ],
-            )),
-      ),
-    );
-  }
-
-  Padding _centerTextWidegt(CharactersVoiceActors? chara) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 10),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        mainAxisSize: MainAxisSize.max,
+      padding: _padding,
+      child: Row(
         children: [
-          Flexible(
-            child: _buildNameAndRole(
-                chara?.character.name.name ?? S.current.Card_Unknown, chara?.character.role ?? ""),
-          ),
-          const SizedBox(height: 10),
-          Flexible(
-            child: _buildSeiyuuNameAndRole(
-                chara?.voiceActor.name.name ?? S.current.Card_Unknown,
-                chara?.voiceActor.role ?? ''),
-          ),
+          _avatarLink(staff.name.url, staff.image, staff.name.name, category: 'person'),
+          const SizedBox(width: 12),
+          Expanded(child: _NameAndRole(name: staff.name.name, role: staff.role)),
         ],
       ),
     );
   }
+
+  Widget _avatarLink(String? url, String? image, String name, {String? category}) {
+    final id = _extractMalId(url);
+    final kind = category ?? _extractCategory(url);
+    return Builder(
+      builder: (context) => RoundAvatar(
+        url: image,
+        size: _avatar,
+        semanticLabel: name.isBlank ? null : S.current.Res_Open_Character(name),
+        onTap: id == null
+            ? null
+            : () => gotoPage(context: context, newPage: CharacterScreen(id: id, category: kind)),
+      ),
+    );
+  }
 }
 
-Widget _buildSeiyuuNameAndRole(String name, String origin) {
-  return Column(
-    mainAxisAlignment: MainAxisAlignment.end,
-    crossAxisAlignment: CrossAxisAlignment.end,
-    children: [
-      title(name, opacity: 1, align: TextAlign.end),
-      const SizedBox(height: 5),
-      if (origin.isNotBlank)
-        title(origin, opacity: .8, fontSize: 11, align: TextAlign.end),
-    ],
-  );
-}
+class _NameAndRole extends StatelessWidget {
+  final String name;
+  final String role;
+  final bool end;
 
-Widget _buildNameAndRole(String characterName, String characterType) {
-  return Column(
-    mainAxisAlignment: MainAxisAlignment.start,
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      title(characterName, opacity: 1, align: TextAlign.start),
-      const SizedBox(height: 5),
-      if (characterType.isNotBlank)
-        title(characterType, opacity: .8, fontSize: 11, align: TextAlign.start),
-    ],
-  );
-}
+  const _NameAndRole({required this.name, required this.role, this.end = false});
 
-Widget _buildGridView(
-  final int length,
-  Widget Function(int, int) itemBuilder, [
-  final double viewportFraction = .89,
-  final int itemsPerPage = 3,
-  final double itemHeight = 140.0,
-]) {
-  return _CharacterPages(
-    length: length,
-    itemBuilder: itemBuilder,
-    viewportFraction: viewportFraction,
-    itemsPerPage: itemsPerPage,
-    itemHeight: itemHeight,
-  );
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final align = end ? TextAlign.end : TextAlign.start;
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: end ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+      children: [
+        Text(
+          name.isBlank ? S.current.Res_Unknown : name,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          textAlign: align,
+          style: theme.textTheme.bodyMedium,
+        ),
+        if (role.isNotBlank) ...[
+          const SizedBox(height: 3),
+          Text(
+            role,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: align,
+            style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+          ),
+        ],
+      ],
+    );
+  }
 }
 
 /// Pages of [itemsPerPage] rows. The page controller lives in the state (it
@@ -323,78 +252,4 @@ class _CharacterPagesState extends State<_CharacterPages> {
       ),
     );
   }
-}
-
-const BorderRadiusDirectional _startRadius = BorderRadiusDirectional.only(
-    topStart: Radius.circular(8), bottomStart: Radius.circular(8));
-const BorderRadiusDirectional _endRadius = BorderRadiusDirectional.only(
-    topEnd: Radius.circular(8), bottomEnd: Radius.circular(8));
-
-Widget _seiyuuWidget(
-  int? id,
-  String? imageUrl, {
-  double height = 120.0,
-  double width = 100.0,
-}) {
-  return Builder(
-    builder: (context) => AvatarWidget(
-      userRoundBorderforLoading: false,
-      height: height,
-      width: width,
-      onTap: () {
-        if (id != null) {
-          gotoPage(
-            context: context,
-            newPage: CharacterScreen(id: id, category: 'person'),
-          );
-        }
-      },
-      radius: _endRadius.resolve(Directionality.of(context)),
-      url: imageUrl,
-    ),
-  );
-}
-
-Widget _characterWidget(
-  int? id,
-  String? imageUrl, {
-  double height = 120.0,
-  double width = 100.0,
-  String category = 'character',
-}) {
-  return Builder(
-    builder: (context) => AvatarWidget(
-      userRoundBorderforLoading: false,
-      height: height,
-      width: width,
-      onTap: () {
-        if (id != null) {
-          gotoPage(
-            context: context,
-            newPage: CharacterScreen(id: id, category: category),
-          );
-        }
-      },
-      radius: _startRadius.resolve(Directionality.of(context)),
-      url: imageUrl,
-    ),
-  );
-}
-
-Widget _assetImageWidget({
-  double height = 120.0,
-  double width = 100.0,
-}) {
-  return Builder(
-    builder: (context) => ClipRRect(
-      borderRadius: _startRadius.resolve(Directionality.of(context)),
-      child: Image.asset(
-        'assets/images/user_dal.png',
-        height: height,
-        width: width,
-        fit: BoxFit.cover,
-        cacheWidth: 200,
-      ),
-    ),
-  );
 }
