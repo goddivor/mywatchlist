@@ -1,6 +1,7 @@
 library mwl_commons;
 
 export 'src/constants/constant.dart';
+export 'src/model/bad_request.dart';
 export 'src/model/path_matcher.dart';
 export 'src/model/servers.dart';
 export 'src/model/html/anime_detailed_html.dart';

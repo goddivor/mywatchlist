@@ -55,13 +55,16 @@ class HandlerCore {
 
   /// In-process entry point — called from Flutter via MalConnect.
   ///
-  /// Returns JSON string or null on error.
+  /// Returns JSON string, the error body of a refused request, or null on
+  /// any other error.
   Future<String?> handleRequestAsString(Uri uri) async {
     try {
       final result = await _handleUri(uri);
       if (result != null) {
         return jsonEncode(result);
       }
+    } on BadRequest catch (e) {
+      return jsonEncode(badRequestBody(e.message));
     } catch (e) {
       logMwl('handleRequestAsString error: $e');
     }
@@ -69,13 +72,20 @@ class HandlerCore {
   }
 
   /// Shelf HTTP entry point.
-  Future<Response> handleRequest(Request request) async {
+  Future<Response> handleRequest(Request request) =>
+      respond(request.requestedUri);
+
+  /// Answers [uri]: 200 with the result, 400 when a parameter is missing or
+  /// invalid ([BadRequest]), 500 on any other error.
+  Future<Response> respond(Uri uri) async {
     try {
-      final result = await _handleUri(request.requestedUri);
+      final result = await _handleUri(uri);
       if (result != null && (result['error'] ?? false) == true) {
         return errorResponse(result['message'] ?? 'Unknown error');
       }
       return okResponse(result ?? {'error': true});
+    } on BadRequest catch (e) {
+      return badRequestResponse(e.message);
     } catch (e) {
       logMwl('handleRequest error: $e');
       return errorResponse(e.toString());
@@ -119,7 +129,7 @@ class HandlerCore {
   /// Anime detail: MAL API v2 + HTML scraping in parallel.
   Future<Map<String, dynamic>> _handleAnime(
       PathMatcher path, Uri uri, Map<String, String> params) async {
-    final id = path.pathParam<int>(uri.path.substring(1));
+    final id = path.intPathParam(uri.path.substring(1));
     final htmlOnly = queryParams<bool>(uri, 'htmlOnly', false)!;
 
     if (htmlOnly) {
@@ -146,7 +156,7 @@ class HandlerCore {
   /// Manga detail: MAL API v2 + HTML scraping in parallel.
   Future<Map<String, dynamic>> _handleManga(
       PathMatcher path, Uri uri, Map<String, String> params) async {
-    final id = path.pathParam<int>(uri.path.substring(1));
+    final id = path.intPathParam(uri.path.substring(1));
     final htmlOnly = queryParams<bool>(uri, 'htmlOnly', false)!;
 
     if (htmlOnly) {
@@ -234,7 +244,7 @@ class HandlerCore {
   Future<Map<String, dynamic>> _handleAllCharacters(
       PathMatcher path, Uri uri, Map<String, String> params) async {
     final id = queryParams<int>(uri, 'id');
-    if (id == null) return _missing('id');
+    if (id == null) throw _missing('id');
     final category = _category(uri);
     final result = await HttpConnect.htmlPage(
       '${Constants.malBaseUrl}/$category/$id/_/characters',
@@ -254,8 +264,7 @@ class HandlerCore {
   /// Full-size picture URLs of a character or a person.
   Future<Map<String, dynamic>> _handlePics(
       String type, PathMatcher path, Uri uri) async {
-    final id = int.tryParse(path.pathParam<String>(uri.path.substring(1)));
-    if (id == null) return _missing('id');
+    final id = path.intPathParam(uri.path.substring(1));
     final result = await HttpConnect.htmlPage(
       '${Constants.malBaseUrl}/$type/$id/_/pics',
       PageParsers.parsePicturesPage,
@@ -304,7 +313,7 @@ class HandlerCore {
   Future<Map<String, dynamic>> _handleSearchAll(
       PathMatcher path, Uri uri, Map<String, String> params) async {
     final query = queryParams<String>(uri, 'q', '')!;
-    if (query.trim().isEmpty) return _missing('q');
+    if (query.trim().isEmpty) throw _missing('q');
     final result = await HttpConnect.htmlPage(
       '${Constants.malBaseUrl}/search/all?q=${Uri.encodeQueryComponent(query)}&cat=all',
       PageParsers.allSearchResultFromHtml,
@@ -315,7 +324,7 @@ class HandlerCore {
   /// Character info from Jikan v4.
   Future<Map<String, dynamic>> _handleCharacterInfo(
       PathMatcher path, Uri uri, Map<String, String> params) async {
-    final id = path.pathParam<int>(uri.path.substring(1));
+    final id = path.intPathParam(uri.path.substring(1));
     final result = await HttpConnect.retryGetChecked(
       '${Constants.jikanV4}characters/$id/full',
       {},
@@ -326,7 +335,7 @@ class HandlerCore {
   /// Person/seiyuu info from Jikan v4.
   Future<Map<String, dynamic>> _handlePeopleInfo(
       PathMatcher path, Uri uri, Map<String, String> params) async {
-    final id = path.pathParam<int>(uri.path.substring(1));
+    final id = path.intPathParam(uri.path.substring(1));
     final result = await HttpConnect.retryGetChecked(
       '${Constants.jikanV4}people/$id/full',
       {},
@@ -360,7 +369,7 @@ class HandlerCore {
   Future<Map<String, dynamic>> _handleUserAbout(
       PathMatcher path, Uri uri, Map<String, String> params) async {
     final username = queryParams<String>(uri, 'username', '')!;
-    if (username.isEmpty) return _missing('username');
+    if (username.isEmpty) throw _missing('username');
     final result = await HttpConnect.htmlPage(
       '${Constants.malBaseUrl}/profile/${Uri.encodeComponent(username)}',
       PageParsers.parseUserAboutPage,
@@ -427,9 +436,9 @@ class HandlerCore {
       PathMatcher path, Uri uri, Map<String, String> params) async {
     final type = queryParams<String>(uri, 'type');
     final id = queryParams<int>(uri, 'id');
-    if (id == null) return _missing('id');
+    if (id == null) throw _missing('id');
     if (!const ['members', 'forum', 'comments'].contains(type)) {
-      return _missing('type');
+      throw _missing('type');
     }
     final offset = queryParams<int>(uri, 'offset', 0)!;
     final url = type == 'forum'
@@ -463,9 +472,11 @@ class HandlerCore {
     }
 
     final current = currentSeason(DateTime.now());
-    final year = queryParams<int>(uri, 'year', current.year)!;
-    var season = queryParams<String>(uri, 'season', current.season)!;
-    if (!seasons.contains(season)) season = current.season;
+    final rawYear = uri.queryParameters['year'];
+    final year = rawYear == null ? current.year : int.tryParse(rawYear);
+    if (year == null) throw _missing('year');
+    final season = queryParams<String>(uri, 'season', current.season)!;
+    if (!seasons.contains(season)) throw _missing('season');
     final result = await HttpConnect.htmlPage(
       'https://www.livechart.me/$season-$year/${type ?? 'all'}',
       PageParsers.parseLiveChartSchedule,
@@ -496,7 +507,7 @@ class HandlerCore {
       PathMatcher path, Uri uri, Map<String, String> params) async {
     final id = queryParams<int>(uri, 'id');
     if (id == null) {
-      return {'error': true, 'message': 'Missing id parameter'};
+      throw _missing('id');
     }
 
     final url = '${Constants.malBaseUrl}/stacks/$id?view_style=seasonal';
@@ -514,7 +525,7 @@ class HandlerCore {
     final page = queryParams<int>(uri, 'page', 1)!;
 
     if (categoryId == null) {
-      return {'error': true, 'message': 'Missing categoryId parameter'};
+      throw _missing('categoryId');
     }
 
     final offset = (page - 1) * 20;
@@ -536,7 +547,7 @@ class HandlerCore {
     final name = queryParams<String>(uri, 'name');
 
     if (id == null) {
-      return {'error': true, 'message': 'Missing id parameter'};
+      throw _missing('id');
     }
 
     final slug = (name != null && name.isNotEmpty) ? '/$name' : '';
@@ -554,7 +565,7 @@ class HandlerCore {
     final categoryId = queryParams<int>(uri, 'id');
 
     if (categoryId == null) {
-      return {'error': true, 'message': 'Missing id parameter'};
+      throw _missing('id');
     }
 
     final url = '${Constants.malBaseUrl}/$category/$categoryId/_/userrecs';
@@ -573,8 +584,9 @@ class HandlerCore {
           ? 'manga'
           : 'anime';
 
-  Map<String, dynamic> _missing(String param) =>
-      {'error': true, 'message': 'Missing or invalid $param parameter'};
+  /// Refusal of a missing or invalid [param]: thrown, it answers 400.
+  BadRequest _missing(String param) =>
+      BadRequest('Missing or invalid $param parameter');
 
   Future<Map<String, dynamic>?> _getHtmlContent(String category, int id) async {
     try {
