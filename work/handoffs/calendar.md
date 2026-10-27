@@ -10,6 +10,7 @@
 - `user-list-mal` (MAL user anime/manga list (status tabs, sort/filter, view modes, status cache))
 
 ## Owns (may create or edit ONLY these)
+- `test/units/app-shell/app_routes_test.dart`
 - `lib/screens/calendar/**`
 - `lib/widgets/calendar/**`
 - `lib/l10n/units/calendar/**`

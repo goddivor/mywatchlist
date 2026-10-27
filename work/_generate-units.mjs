@@ -317,7 +317,7 @@ const UNITS = [
   {
     id: "calendar", title: "Anime calendar, weekly schedule, .ics export, add to device calendar", kind: "screen", priority: "P1", group: "discovery", model: "sonnet", ui: true,
     needs: ["perf-foundation", "app-shell", "shared-kit", "backend-parsers", "user-list-mal"],
-    owns: ["lib/screens/calendar/**", "lib/widgets/calendar/**"],
+    owns: ["test/units/app-shell/app_routes_test.dart", "lib/screens/calendar/**", "lib/widgets/calendar/**"],
     dal: ["lib/widgets/home/anime_calendar.dart", "lib/widgets/user/weeklyanime.dart", "commits 1e3e833 (ics), 17dd437 (add to calendar), 970111b ('All' filter)"],
     goal: ["Per-day schedule with status filter chips (incl. 'All' and 3-state 'in list'), timezone pref (JST/UTC/local), .ics download/share, add to device calendar with recurring option; fills app-shell's calendar stub."],
     dod: ["Calendar shows this week's airing anime with the owner's watching list highlighted."],
@@ -411,7 +411,7 @@ const UNITS = [
     needs: ["perf-foundation", "app-shell", "user-list-mal"],
     owns: ["lib/main.dart", "lib/services/notifications/**", "lib/screens/settings/notifications_settings.dart", "android/app/src/main/res/drawable/ic_stat_notification.xml", "android/app/src/main/res/drawable-*/ic_stat_notification.png"],
     dal: ["lib/notifservice.dart", "lib/pages/settings/notifsettings.dart", "commits 820a295, 92cc38d"],
-    goal: ["Schedule airing notifications for watching / plan-to-watch lists (flutter_local_notifications + timezone), large image pref, permission request, test notification, clear and reschedule all, reschedule after boot, open the detail screen from a notification (cold and warm start) through the app-shell hook: read the payload of the notification that launched the app in main.dart and pass it to `OpenScreen(notificationPayload:)`; payload format `anime:<id>`, `manga:<id>`, `calendar`, `bookmarks` (documented in lib/utils/app_routes.dart). Fill the notification_service stub. Also call `ListStatusCache.instance.ensureLoaded()` at startup in main.dart so status badges show from the first frame (user-list-mal finding)."],
+    goal: ["Use the calendar unit's `AiringSchedule.instance` (`ensureLoaded()`, `nextEpisode(malId)` → episode number + UTC time) as the source of airing times; fall back to the weekly broadcast slot only when it returns null. Schedule airing notifications for watching / plan-to-watch lists (flutter_local_notifications + timezone), large image pref, permission request, test notification, clear and reschedule all, reschedule after boot, open the detail screen from a notification (cold and warm start) through the app-shell hook: read the payload of the notification that launched the app in main.dart and pass it to `OpenScreen(notificationPayload:)`; payload format `anime:<id>`, `manga:<id>`, `calendar`, `bookmarks` (documented in lib/utils/app_routes.dart). Fill the notification_service stub. Also call `ListStatusCache.instance.ensureLoaded()` at startup in main.dart so status badges show from the first frame (user-list-mal finding)."],
     dod: ["Test notification shows on the emulator and opens the right anime."],
   },
   {

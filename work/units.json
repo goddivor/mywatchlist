@@ -767,6 +767,7 @@
         "user-list-mal"
       ],
       "owns": [
+        "test/units/app-shell/app_routes_test.dart",
         "lib/screens/calendar/**",
         "lib/widgets/calendar/**",
         "lib/l10n/units/calendar/**",
