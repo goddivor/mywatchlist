@@ -1,0 +1,114 @@
+{
+  "@@locale": "fr_FR",
+  "Mi_Information": "Informations",
+  "Mi_Alternative_Titles": "Titres alternatifs",
+  "Mi_Original": "Original",
+  "Mi_Mal_Id": "ID MAL",
+  "Mi_Unknown": "Inconnu",
+  "Mi_Date_Range": "{start} au {end}",
+  "@Mi_Date_Range": {
+    "placeholders": {
+      "start": {
+        "type": "String"
+      },
+      "end": {
+        "type": "String"
+      }
+    }
+  },
+  "Mi_Date_Unknown": "?",
+  "Mi_Duration_Minutes": "{minutes} min",
+  "@Mi_Duration_Minutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "Mi_Duration_Hours": "{hours} h {minutes} min",
+  "@Mi_Duration_Hours": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "Mi_Broadcast_Jst": "{day} à {time} (JST)",
+  "@Mi_Broadcast_Jst": {
+    "placeholders": {
+      "day": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "Mi_Season_Year": "{season} {year}",
+  "@Mi_Season_Year": {
+    "placeholders": {
+      "season": {
+        "type": "String"
+      },
+      "year": {
+        "type": "String"
+      }
+    }
+  },
+  "Mi_Author_Role": "{name} ({role})",
+  "@Mi_Author_Role": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "role": {
+        "type": "String"
+      }
+    }
+  },
+  "Mi_Status_Finished_Airing": "Diffusion terminée",
+  "Mi_Status_Currently_Airing": "En cours de diffusion",
+  "Mi_Status_Not_Yet_Aired": "Pas encore diffusé",
+  "Mi_Status_Finished": "Terminé",
+  "Mi_Status_Currently_Publishing": "En cours de publication",
+  "Mi_Status_On_Hiatus": "En pause",
+  "Mi_Status_Discontinued": "Abandonné",
+  "Mi_Status_Not_Yet_Published": "Pas encore publié",
+  "Mi_Rating_G": "G - Tous publics",
+  "Mi_Rating_Pg": "PG - Enfants",
+  "Mi_Rating_Pg_13": "PG-13 - Adolescents de 13 ans et plus",
+  "Mi_Rating_R": "R - 17 ans et plus (violence et grossièretés)",
+  "Mi_Rating_R_Plus": "R+ - Nudité légère",
+  "Mi_Rating_Rx": "Rx - Hentai",
+  "Mi_Source_Original": "Original",
+  "Mi_Source_Manga": "Manga",
+  "Mi_Source_Four_Koma": "Manga en 4 cases",
+  "Mi_Source_Web_Manga": "Manga web",
+  "Mi_Source_Digital_Manga": "Manga numérique",
+  "Mi_Source_Novel": "Roman",
+  "Mi_Source_Light_Novel": "Light novel",
+  "Mi_Source_Visual_Novel": "Visual novel",
+  "Mi_Source_Game": "Jeu",
+  "Mi_Source_Card_Game": "Jeu de cartes",
+  "Mi_Source_Book": "Livre",
+  "Mi_Source_Picture_Book": "Livre illustré",
+  "Mi_Source_Radio": "Radio",
+  "Mi_Source_Music": "Musique",
+  "Mi_Source_Web_Novel": "Roman web",
+  "Mi_Source_Mixed_Media": "Médias mixtes",
+  "Mi_Source_Other": "Autre",
+  "Mi_Type_Movie": "Film",
+  "Mi_Type_Special": "Spécial",
+  "Mi_Type_Tv_Special": "Spécial TV",
+  "Mi_Type_Music": "Musique",
+  "Mi_Type_Manga": "Manga",
+  "Mi_Type_Novel": "Roman",
+  "Mi_Type_Light_Novel": "Light novel",
+  "Mi_Type_One_Shot": "One-shot",
+  "Mi_Type_Doujinshi": "Doujinshi",
+  "Mi_Type_Manhwa": "Manhwa",
+  "Mi_Type_Manhua": "Manhua"
+}
