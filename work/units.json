@@ -60,6 +60,7 @@
       "priority": "P1",
       "units": [
         "settings-prefs-pages",
+        "theme-colors",
         "settings-theme-about-backup",
         "notifications",
         "dub-info",
@@ -92,6 +93,7 @@
       "units": [
         "versioning-ci",
         "l10n-quality",
+        "color-sweep",
         "in-app-update",
         "deep-links"
       ]
@@ -936,22 +938,50 @@
       "status": "✅ done"
     },
     {
+      "id": "theme-colors",
+      "title": "Theme colours: status bar, coherent accents per theme, colour tokens, contrast",
+      "kind": "foundation",
+      "entry": "",
+      "artifact": "",
+      "priority": "P0",
+      "needs": [
+        "perf-foundation",
+        "deps-prefs-contract"
+      ],
+      "owns": [
+        "lib/user/theme/**",
+        "lib/screens/settings/theme_settings.dart",
+        "lib/widgets/common/app_colors.dart",
+        "lib/widgets/common/background.dart",
+        "lib/utils/sidebar_bg_manager.dart",
+        "lib/user/userpref.dart",
+        "docs/THEME.md",
+        "lib/l10n/units/theme-colors/**",
+        "test/units/theme-colors/**"
+      ],
+      "group": "settings",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "⬜ todo"
+    },
+    {
       "id": "settings-theme-about-backup",
-      "title": "Theme additions, About, backup & restore, clear storage",
+      "title": "About, backup & restore, clear storage",
       "kind": "screen",
       "entry": "",
       "artifact": "",
       "priority": "P1",
       "needs": [
+        "theme-colors",
         "app-shell",
         "edit-sheet",
         "bookmarks"
       ],
       "owns": [
-        "lib/screens/settings/theme_settings.dart",
-        "lib/user/theme/**",
-        "lib/utils/sidebar_bg_manager.dart",
-        "lib/user/userpref.dart",
         "lib/screens/settings/about_settings.dart",
         "lib/screens/settings/backup_settings.dart",
         "lib/screens/settings/storage_settings.dart",
@@ -1280,6 +1310,71 @@
         "lib/l10n/intl_ar_EG.arb",
         "lib/l10n/units/l10n-pipeline/**",
         "test/units/l10n-quality/**"
+      ],
+      "group": "release",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: sonnet"
+      ],
+      "status": "⬜ todo"
+    },
+    {
+      "id": "color-sweep",
+      "title": "Colour sweep: hardcoded colours of already-merged screens onto the theme tokens",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "home-wiring",
+        "featured-characters",
+        "dub-info",
+        "detail-more-info",
+        "settings-theme-about-backup",
+        "in-app-update",
+        "forum-clubs",
+        "search-upgrade",
+        "theme-colors",
+        "cards-upgrade",
+        "detail-header",
+        "detail-social",
+        "detail-related-graph",
+        "detail-synopsis-media",
+        "user-list-mal",
+        "user-profile-mal",
+        "edit-sheet",
+        "sync-dialog",
+        "bookmarks",
+        "calendar",
+        "explore-seasonal",
+        "settings-prefs-pages",
+        "accounts-ux",
+        "app-shell",
+        "shared-kit",
+        "notifications"
+      ],
+      "owns": [
+        "lib/widgets/MAL/home/**",
+        "lib/widgets/MAL/content/**",
+        "lib/widgets/MAL/review/**",
+        "lib/widgets/user/**",
+        "lib/widgets/charts/**",
+        "lib/widgets/bookmarks/**",
+        "lib/widgets/calendar/**",
+        "lib/widgets/common/**",
+        "lib/screens/MAL/**",
+        "lib/screens/explore/**",
+        "lib/screens/seasonal/**",
+        "lib/screens/calendar/**",
+        "lib/screens/user_profile/**",
+        "lib/screens/settings/**",
+        "lib/screens/bookmarks_screen.dart",
+        "lib/pages/side_bar.dart",
+        "lib/constants/constants.dart",
+        "lib/l10n/units/color-sweep/**",
+        "test/units/color-sweep/**"
       ],
       "group": "release",
       "dropped": null,

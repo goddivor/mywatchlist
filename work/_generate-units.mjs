@@ -394,17 +394,33 @@ const UNITS = [
     dod: ["Each toggle persists across restart."],
   },
   {
-    id: "settings-theme-about-backup", title: "Theme additions, About, backup & restore, clear storage", kind: "screen", priority: "P1", group: "settings", model: "sonnet", ui: true,
-    needs: ["app-shell", "edit-sheet", "bookmarks"],
-    owns: ["lib/screens/settings/theme_settings.dart", "lib/user/theme/**", "lib/utils/sidebar_bg_manager.dart", "lib/user/userpref.dart", "lib/screens/settings/about_settings.dart", "lib/screens/settings/backup_settings.dart", "lib/screens/settings/storage_settings.dart", "lib/cache/cachemanager.dart", "lib/screens/settings/download_settings.dart"],
+    id: "theme-colors", title: "Theme colours: status bar, coherent accents per theme, colour tokens, contrast", kind: "foundation", priority: "P0", group: "settings", model: "opus", ui: true,
+    needs: ["perf-foundation", "deps-prefs-contract"],
+    owns: ["lib/user/theme/**", "lib/screens/settings/theme_settings.dart", "lib/widgets/common/app_colors.dart", "lib/widgets/common/background.dart", "lib/utils/sidebar_bg_manager.dart", "lib/user/userpref.dart", "docs/THEME.md"],
+    dal: ["lib/theme/theme.dart", "lib/theme/themedata.dart", "lib/pages/settings/themesettings.dart"],
+    goal: [
+      "The owner reports colour bugs. Seen on the emulator (Spring theme, light): the status bar clock and icons are WHITE on a near-white pink background (unreadable) — no `systemOverlayStyle` exists anywhere in lib/; the selected tab is dark teal, the card edit button orange, the score star green and the chips grey on a pink theme: the palette is not coherent; many colours are hardcoded (`Colors.*` / `Color(0x…)` in ~25 files: animegridcard, constants, scorestatisticswidget, reviews, featured, entry cards, charts, side_bar…).",
+      "Fix the theme at the source: `appBarTheme.systemOverlayStyle` (and the navigation bar) per brightness for every theme mode (light, dark, black, Auto) and every seasonal theme, with a transparent status bar and readable icons; one coherent accent per theme driving `ColorScheme` (primary, secondary, tertiary, containers, surfaces, outline) so chips, tabs, FABs, badges, switches and the bottom bar all use it; correct contrast in dark and black (WCAG AA for text).",
+      "Add semantic colour tokens as a `ThemeExtension` in lib/widgets/common/app_colors.dart (e.g. score, status per list status — watching/completed/on hold/dropped/plan —, success/warning/danger, overlay scrims for text on images, badge background/foreground) with light/dark values, so screens never hardcode colours. Document them in docs/THEME.md with a usage table.",
+      "Theme settings (taken over from settings-theme-about-backup): Material You 'Auto' accent (dynamic_color, Android 12+), custom colour picker (flex_color_picker), keep the 19 presets; the background image path moves off the legacy `UserMal.instance.pref.bgImagePath` (sidebar_bg_manager.dart:240-247) into ThemeBloc / the contract, then delete the reduced lib/user/userpref.dart if nothing else needs it.",
+      "Issue #110 item 2: lib/widgets/common/background.dart ignores `forceBg` and decodes the full image — honour it and decode at screen size (AppImage/SizedDecodeImage).",
+      "Owner's words: buttons and coloured areas whose colour makes the text unreadable, and dark mode, must be handled properly everywhere. So: every filled/tonal/outlined button, chip, badge, FAB, snackbar, dialog, bottom sheet, nav bar and app bar gets its foreground from the matching `on*` role (onPrimary, onPrimaryContainer, onSurfaceVariant…), never a fixed white/black; text on images always sits on the scrim token; verify AA contrast (4.5:1 text, 3:1 large text/icons) for every accent preset × light/dark/black with a unit test that computes the contrast ratios of the ColorScheme roles you generate.",
+      "Dark and black modes: real dark surfaces (no light cards or white sheets left in dark), elevated surfaces distinguishable, images and shimmers adapted, the status bar and navigation bar icons light; black mode = true black backgrounds with readable dark-grey surfaces.",
+      "Compare with DailyAL's theme (lib/theme/): keep what is better.",
+    ],
+    bugs: ["white status bar icons on light themes", "incoherent accent colours", "hardcoded colours", "Background ignores forceBg"],
+    dod: ["Widget tests: overlay style per brightness, ColorScheme built from the accent, tokens resolve in light and dark.", "Checker: screenshots of home, detail, list, settings in Spring/Summer/Autumn/Winter light, dark and black: readable status bar, one accent family per theme, no garish leftovers."],
+  },
+  {
+    id: "settings-theme-about-backup", title: "About, backup & restore, clear storage", kind: "screen", priority: "P1", group: "settings", model: "sonnet", ui: true,
+    needs: ["theme-colors", "app-shell", "edit-sheet", "bookmarks"],
+    owns: ["lib/screens/settings/about_settings.dart", "lib/screens/settings/backup_settings.dart", "lib/screens/settings/storage_settings.dart", "lib/cache/cachemanager.dart", "lib/screens/settings/download_settings.dart"],
     dal: ["lib/pages/settings/themesettings.dart", "lib/pages/settings/about.dart", "lib/pages/settings/backup_restore.dart", "lib/cache/cachemanager.dart"],
     goal: [
-      "Theme: Material You 'Auto' accent (dynamic_color) and custom color picker (flex_color_picker).",
-      "About: version (package_info_plus), changelog, licences, links to goddivor/mywatchlist, and the feedback entry (report a bug / open an issue on goddivor/mywatchlist) — the owner chose to move Help & Feedback here instead of a separate settings page.",
+            "About: version (package_info_plus), changelog, licences, links to goddivor/mywatchlist, and the feedback entry (report a bug / open an issue on goddivor/mywatchlist) — the owner chose to move Help & Feedback here instead of a separate settings page.",
       "Backup & restore UI (JSON export/import) wiring the existing cachemanager methods (:127, :145) + private notes + bookmarks export/import.",
       "Clear app storage / caches.",
-      "Move the background image path out of the legacy `UserMal.instance.pref.bgImagePath` (lib/utils/sidebar_bg_manager.dart:240-247) into the preferences contract / ThemeBloc, then delete the reduced lib/user/userpref.dart (deps-prefs-contract finding; lib/user/user.dart is done — report if `UserMal.pref` must go).",
-    ],
+          ],
     dod: ["Backup on the emulator, clear storage, restore → bookmarks and private notes are back."],
   },
   {
@@ -497,6 +513,16 @@ const UNITS = [
     dod: ["Checker: switch to French, no English left on the language picker; About tile reads « À propos »."],
   },
   {
+    id: "color-sweep", title: "Colour sweep: hardcoded colours of already-merged screens onto the theme tokens", kind: "unit", priority: "P1", group: "release", model: "sonnet", ui: true,
+    needs: ["home-wiring", "featured-characters", "dub-info", "detail-more-info", "settings-theme-about-backup", "in-app-update", "forum-clubs", "search-upgrade", "theme-colors", "cards-upgrade", "detail-header", "detail-social", "detail-related-graph", "detail-synopsis-media", "user-list-mal", "user-profile-mal", "edit-sheet", "sync-dialog", "bookmarks", "calendar", "explore-seasonal", "settings-prefs-pages", "accounts-ux", "app-shell", "shared-kit", "notifications"],
+    owns: ["lib/widgets/MAL/home/**", "lib/widgets/MAL/content/**", "lib/widgets/MAL/review/**", "lib/widgets/user/**", "lib/widgets/charts/**", "lib/widgets/bookmarks/**", "lib/widgets/calendar/**", "lib/widgets/common/**", "lib/screens/MAL/**", "lib/screens/explore/**", "lib/screens/seasonal/**", "lib/screens/calendar/**", "lib/screens/user_profile/**", "lib/screens/settings/**", "lib/screens/bookmarks_screen.dart", "lib/pages/side_bar.dart", "lib/constants/constants.dart"],
+    goal: [
+      "Replace every hardcoded `Colors.*` / `Color(0x…)` in the owned screens with `colorScheme` roles or the app_colors tokens (theme-colors), except intrinsic content colours (e.g. a tracker's brand logo) — list those exceptions in the PR body.",
+      "Check each screen in light, dark and black themes for contrast: no button, chip, badge or coloured area where the text is unreadable (owner's complaint); text on images uses the scrim token; no light surface left in dark mode.",
+    ],
+    dod: ["`grep -rnE \"Colors\\.|Color\\(0x\" lib/<owned>` only shows the documented exceptions.", "Checker: screenshots in light/dark/black of each touched screen."],
+  },
+  {
     id: "in-app-update", title: "In-app update: check GitHub releases, download and install APK", kind: "unit", priority: "P2", group: "release", model: "sonnet", ui: true,
     needs: ["settings-theme-about-backup", "versioning-ci"],
     owns: ["lib/services/updater/**", "lib/screens/settings/about_settings.dart", "android/app/src/main/res/xml/updater_paths.xml"],
@@ -534,7 +560,7 @@ if (existsSync(INDEX)) {
 const statusOf = (u) => u.dropped ? "⛔ dropped" : prior.get(u.id) ?? "⬜ todo";
 const unitsOf = (g) => UNITS.filter((u) => u.group === g);
 
-const UI_DIRECTIVE = `**UI directive (owner's rule).** MWL's current UI is NOT the reference: the owner wrote it early and calls parts of it badly done. For every screen you touch, read the DAL equivalent's UI code, keep whichever is better (often DAL's), and improve it (hierarchy, spacing, empty/loading/error states, no dead buttons). Stay consistent with the theme system in \`lib/user/theme/\` (accent color, fonts, dark/black modes). Describe the before/after in the PR body. **Strings:** every screen you own must be fully translatable — move its existing hardcoded literals (e.g. settings_page.dart:55,119, mal_home_page.dart:45-47, mal_home_page_preferences.dart:65) to \`S\` through your l10n fragment; the checker switches the app to French and flags any English left on your screens.`;
+const UI_DIRECTIVE = `**UI directive (owner's rule).** MWL's current UI is NOT the reference: the owner wrote it early and calls parts of it badly done. For every screen you touch, read the DAL equivalent's UI code, keep whichever is better (often DAL's), and improve it (hierarchy, spacing, empty/loading/error states, no dead buttons). Stay consistent with the theme system in \`lib/user/theme/\` (accent color, fonts, dark/black modes). Describe the before/after in the PR body. **Strings:** every screen you own must be fully translatable — move its existing hardcoded literals (e.g. settings_page.dart:55,119, mal_home_page.dart:45-47, mal_home_page_preferences.dart:65) to \`S\` through your l10n fragment; the checker switches the app to French and flags any English left on your screens. **Colours:** no hardcoded \`Colors.*\` or \`Color(0x…)\` in your screens: use \`Theme.of(context).colorScheme\` and the semantic tokens of lib/widgets/common/app_colors.dart (theme-colors unit, see docs/THEME.md once merged); move the existing hardcoded colours of your files to them. Every text must stay readable on its background (buttons, chips, badges, text on images) in light, dark and black modes.`;
 
 const PERF_RULES = `**Fluidity rules (owner's rule: MWL must feel as smooth as DailyAL).** See \`docs/PERFORMANCE.md\` once perf-foundation has merged, and \`work/inventory/performance.md\`.
 - Network images only through \`AppImage\` (decode at displayed size); no \`Image.network\`.

@@ -30,7 +30,7 @@
 - `home-wiring` (Home: working chips, bookmarks/calendar buttons, maintenance dialog, user-list and forum sections)
 - `cards-upgrade` (Anime cards: quick edit, status badges, score reveal, real airing progress)
 - `settings-prefs-pages` (Settings pages: user prefs, anime/manga, list prefs)
-- `settings-theme-about-backup` (Theme additions, About, backup & restore, clear storage)
+- `settings-theme-about-backup` (About, backup & restore, clear storage)
 - `notifications` (Airing notifications)
 - `dub-info` (Dub info (MyDubList): icons, languages, settings)
 - `api-prefs` (API layer: NSFW, timezone, Jikan rate limits, MAL maintenance)

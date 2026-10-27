@@ -265,10 +265,20 @@ UI directive applies: compare DAL and MWL, keep the better, improve it.
 Deliver with the PR procedure of the brief.
 ```
 
+## theme-colors
+
+```text
+Unit theme-colors — Theme colours: status bar, coherent accents per theme, colour tokens, contrast.
+Read work/handoffs/theme-colors.md fully, then the DAL reference files it lists, then the MWL files you own.
+Build exactly the Goal, inside the Owns list. Heavy commands only through tools/heavy.sh; never run flutter build or touch the emulator.
+UI directive applies: compare DAL and MWL, keep the better, improve it.
+Deliver with the PR procedure of the brief.
+```
+
 ## settings-theme-about-backup
 
 ```text
-Unit settings-theme-about-backup — Theme additions, About, backup & restore, clear storage.
+Unit settings-theme-about-backup — About, backup & restore, clear storage.
 Read work/handoffs/settings-theme-about-backup.md fully, then the DAL reference files it lists, then the MWL files you own.
 Build exactly the Goal, inside the Owns list. Heavy commands only through tools/heavy.sh; never run flutter build or touch the emulator.
 UI directive applies: compare DAL and MWL, keep the better, improve it.
@@ -369,6 +379,16 @@ Deliver with the PR procedure of the brief.
 Unit l10n-quality — Final translation pass: French (and Arabic) wording of the base and of every unit.
 Read work/handoffs/l10n-quality.md fully, then the DAL reference files it lists, then the MWL files you own.
 Build exactly the Goal, inside the Owns list. Heavy commands only through tools/heavy.sh; never run flutter build or touch the emulator.
+Deliver with the PR procedure of the brief.
+```
+
+## color-sweep
+
+```text
+Unit color-sweep — Colour sweep: hardcoded colours of already-merged screens onto the theme tokens.
+Read work/handoffs/color-sweep.md fully, then the DAL reference files it lists, then the MWL files you own.
+Build exactly the Goal, inside the Owns list. Heavy commands only through tools/heavy.sh; never run flutter build or touch the emulator.
+UI directive applies: compare DAL and MWL, keep the better, improve it.
 Deliver with the PR procedure of the brief.
 ```
 
