@@ -44,11 +44,12 @@ class SectionMessage extends StatelessWidget {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     final retry = onRetry;
-    return SizedBox(
-      height: height,
+    // A minimum height, not a fixed one: a long translation or a large font grows the box.
+    return ConstrainedBox(
+      constraints: BoxConstraints(minHeight: height),
       child: Center(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
