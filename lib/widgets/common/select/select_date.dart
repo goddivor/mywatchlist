@@ -2,8 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:mywatchlist/generated/l10n.dart';
 
-/// Formats [date] the way the tracker APIs expect it (`2024-04-07`).
-String formatApiDate(DateTime date) => DateFormat('yyyy-MM-dd').format(date);
+/// Formats [date] the way the tracker APIs expect it (`2024-04-07`), whatever
+/// the app language.
+String formatApiDate(DateTime date) =>
+    '${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+
+/// [date] as shown to the user: `Apr 7, 2024` in English, `7 avr. 2024` in
+/// French (falls back to the numeric Material format if the locale has no
+/// date symbols loaded).
+String formatDisplayDate(BuildContext context, DateTime date) {
+  try {
+    return DateFormat.yMMMd(Localizations.localeOf(context).toString()).format(date);
+  } catch (_) {
+    return MaterialLocalizations.of(context).formatCompactDate(date);
+  }
+}
 
 /// A date field: shows [date] in the user's locale (or [hint], default
 /// "Pick a date") and opens the Material date picker on tap. Give [onClear] to
@@ -61,9 +74,7 @@ class SelectDate extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-    final text = date == null
-        ? (hint ?? S.current.Kit_Pick_Date)
-        : MaterialLocalizations.of(context).formatMediumDate(date!);
+    final text = date == null ? (hint ?? S.current.Kit_Pick_Date) : formatDisplayDate(context, date!);
     return Semantics(
       button: true,
       label: label,
