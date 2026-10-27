@@ -1,8 +1,11 @@
 // ignore_for_file: library_private_types_in_public_api
 
 import 'dart:async';
+import 'dart:io' show Platform;
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:flutter_displaymode/flutter_displaymode.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/pages/login_page.dart';
@@ -43,6 +46,9 @@ final int homeIndex = 0;
 /// Initializes services, preferences and runs the app
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Run at the panel's highest refresh rate (90/120 Hz) instead of the 60 Hz default.
+  await _useHighRefreshRate();
 
   // Load environment variables from .env
   await dotenv.load(fileName: "assets/.env");
@@ -120,6 +126,18 @@ void main() async {
       ),
     ),
   );
+}
+
+/// Asks Android for the display mode with the highest refresh rate at the current resolution
+/// (DailyAL does the same). Without it most 90/120 Hz phones keep Flutter at 60 Hz. Never throws:
+/// unsupported devices (Android < 6, emulators without modes) simply stay where they are.
+Future<void> _useHighRefreshRate() async {
+  if (kIsWeb || !Platform.isAndroid) return;
+  try {
+    await FlutterDisplayMode.setHighRefreshRate();
+  } catch (e) {
+    debugPrint('High refresh rate unavailable: $e');
+  }
 }
 
 /// Root widget of the MyWatchList application
@@ -204,13 +222,18 @@ class _MyWatchListAppState extends State<MyWatchListApp> {
   @override
   Widget build(BuildContext context) {
     // Rebuild UI when theme or language changes
+    // Only what MaterialApp reads may rebuild it: a rebuild here re-runs every route's build.
     return BlocConsumer<LanguageBloc, LanguageState>(
       listenWhen: (previous, current) => previous != current,
+      buildWhen: (previous, current) => previous.appLocale != current.appLocale,
       // Many widgets read S.current (no inherited dependency): rebuild the whole tree once the
       // new strings are loaded, keeping every route and its state.
       listener: (context, _) =>
           WidgetsBinding.instance.addPostFrameCallback((_) => _rebuildAll(context)),
       builder: (context, languageState) => BlocBuilder<ThemeBloc, ThemeState>(
+      // The background image, its visibility and the other ThemeState fields are read by the
+      // screens that draw them, not by MaterialApp.
+      buildWhen: _themeChanged,
       builder: (context, themeState) {
         return MaterialApp(
           debugShowCheckedModeBanner: false,
@@ -238,6 +261,11 @@ class _MyWatchListAppState extends State<MyWatchListApp> {
       ),
     );
   }
+
+  static bool _themeChanged(ThemeState previous, ThemeState current) =>
+      previous.themeMode != current.themeMode ||
+      previous.lightThemeData != current.lightThemeData ||
+      previous.darkThemeData != current.darkThemeData;
 
   static void _rebuildAll(BuildContext context) {
     if (!context.mounted) return;

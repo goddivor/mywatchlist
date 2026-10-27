@@ -20,6 +20,13 @@
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
 
+        <!-- Rendering backend: true = Impeller (Flutter's default), false = Skia (what DailyAL
+             ships). Kept explicit so the checker can A/B it on a profile build without touching
+             code: docs/PERFORMANCE.md, "Impeller vs Skia". Change it only with measurements. -->
+        <meta-data
+            android:name="io.flutter.embedding.android.EnableImpeller"
+            android:value="true" />
+
         <!-- Shares files of the app (the APK downloaded by the in-app updater) with the package
              installer as content:// URIs: content://${applicationId}.fileProvider/cache-path/...
              The paths resource is merged from open_filex (cache, files and external dirs). -->

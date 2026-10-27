@@ -2,9 +2,9 @@ import 'dart:io';
 
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:mywatchlist/widgets/loading/shimmercolor.dart';
 import 'package:mywatchlist/cache/cachemanager.dart';
+import 'package:mywatchlist/widgets/common/app_image.dart';
 import 'package:mywatchlist/widgets/common/image_preview.dart';
 
 class AvatarWidget extends StatelessWidget {
@@ -43,6 +43,30 @@ class AvatarWidget extends StatelessWidget {
 
     final isCircular = userRoundBorderforLoading ?? true;
 
+    final clipRadius = radius ?? BorderRadius.circular(50);
+
+    final image = SizedBox(
+      height: height,
+      width: width,
+      child: url != null && isNetworkImage
+          ? AppImage(
+              url: url,
+              width: width,
+              height: height,
+              fit: fit ?? BoxFit.cover,
+              borderRadius: clipRadius,
+              placeholder: (context) => _buildShimmerLoader(context, radius),
+              errorAsset: _userFallbackAsset,
+            )
+          : ClipRRect(
+              borderRadius: clipRadius,
+              child: Image.asset(
+                url ?? _userFallbackAsset,
+                fit: fit,
+              ),
+            ),
+    );
+
     return GestureDetector(
       onTap: onTap as void Function()?,
       onLongPress: onLongPress != null
@@ -50,62 +74,20 @@ class AvatarWidget extends StatelessWidget {
           : (url != null
               ? () => zoomInImage(context, url!, isNetworkImage)
               : null),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        decoration: isCircular
-            ? BoxDecoration(
+      // A plain border: avatars repeat in lists, a blurred shadow on each one is re-rasterized
+      // on every scrolled frame (docs/PERFORMANCE.md).
+      child: isCircular
+          ? DecoratedBox(
+              decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 border: Border.all(
                   color: effectiveBorderColor,
                   width: borderWidth,
                 ),
-                boxShadow: [
-                  BoxShadow(
-                    color: effectiveBorderColor.withValues(alpha: 0.4),
-                    blurRadius: 8,
-                    spreadRadius: 1,
-                  ),
-                ],
-              )
-            : null,
-        child: ClipRRect(
-          borderRadius: radius ?? BorderRadius.circular(50),
-          child: Container(
-            height: height,
-            width: width,
-            color: Colors.transparent,
-            child: url != null && isNetworkImage
-                ? CachedNetworkImage(
-                    imageUrl: url!,
-                    imageBuilder: (context, imageProvider) => Container(
-                      decoration: BoxDecoration(
-                          borderRadius: radius ?? BorderRadius.circular(50),
-                          image:
-                              DecorationImage(fit: fit, image: imageProvider)),
-                    ),
-                    placeholder: (context, url) =>
-                        _buildShimmerLoader(context, radius),
-                    errorWidget: (context, url, error) {
-                      return Container(
-                        decoration: BoxDecoration(
-                          borderRadius: radius ?? BorderRadius.circular(28),
-                          image: DecorationImage(
-                            fit: fit,
-                            image: const AssetImage(
-                              ("assets/images/user_dal_old.png"),
-                            ),
-                          ),
-                        ),
-                      );
-                    },
-                  )
-                : Image.asset(
-                    url ?? 'assets/images/user_dal_old.png',
-                    fit: fit,
-                  ),
-          ),
-        ),
-      ),
+              ),
+              child: image,
+            )
+          : image,
     );
   }
 
@@ -122,6 +104,10 @@ class AvatarWidget extends StatelessWidget {
   }
 }
 
+const String _userFallbackAsset = 'assets/images/user_dal_old.png';
+
+/// Network image with an `Ink` decoration (so the enclosing InkWell ripple stays visible),
+/// decoded at the slot's size and shown without fade (DailyAL: `fadeInDuration: Duration.zero`).
 Widget cachedImage(
   BorderRadius? radius,
   String? url, {
@@ -129,29 +115,30 @@ Widget cachedImage(
   BoxFit? fit = BoxFit.cover,
   userRoundBorderforLoading = true,
 }) {
-  return CachedNetworkImage(
-    imageUrl: url ?? '',
-    placeholder: (context, url) =>
+  final effectiveRadius = radius ?? BorderRadius.circular(28);
+  final effectiveFit = fit ?? BoxFit.cover;
+  return AppImage(
+    url: url,
+    fit: effectiveFit,
+    placeholder: (context) =>
         _shimmerLoader(context, radius, userRoundBorderforLoading),
-    errorWidget: (context, url, error) {
-      return Ink(
-        decoration: BoxDecoration(
-          borderRadius: radius ?? BorderRadius.circular(28),
-          image: DecorationImage(
-            fit: fit,
-            image: AssetImage(
-              (useUserImageOnError
-                  ? "assets/images/user_dal_old.png"
-                  : "assets/images/anime-collage.jpg"),
-            ),
+    errorWidget: (context) => Ink(
+      decoration: BoxDecoration(
+        borderRadius: effectiveRadius,
+        image: DecorationImage(
+          fit: effectiveFit,
+          image: AssetImage(
+            (useUserImageOnError
+                ? _userFallbackAsset
+                : "assets/images/anime-collage.jpg"),
           ),
         ),
-      );
-    },
+      ),
+    ),
     imageBuilder: (context, imageProvider) => Ink(
       decoration: BoxDecoration(
-          borderRadius: radius ?? BorderRadius.circular(28),
-          image: DecorationImage(fit: fit, image: imageProvider)),
+          borderRadius: effectiveRadius,
+          image: DecorationImage(fit: effectiveFit, image: imageProvider)),
     ),
   );
 }
