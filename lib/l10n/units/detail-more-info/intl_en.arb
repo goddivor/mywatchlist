@@ -1,0 +1,114 @@
+{
+  "@@locale": "en",
+  "Mi_Information": "Information",
+  "Mi_Alternative_Titles": "Alternative titles",
+  "Mi_Original": "Original",
+  "Mi_Mal_Id": "MAL ID",
+  "Mi_Unknown": "Unknown",
+  "Mi_Date_Range": "{start} to {end}",
+  "@Mi_Date_Range": {
+    "placeholders": {
+      "start": {
+        "type": "String"
+      },
+      "end": {
+        "type": "String"
+      }
+    }
+  },
+  "Mi_Date_Unknown": "?",
+  "Mi_Duration_Minutes": "{minutes} min",
+  "@Mi_Duration_Minutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "Mi_Duration_Hours": "{hours} h {minutes} min",
+  "@Mi_Duration_Hours": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "Mi_Broadcast_Jst": "{day} at {time} (JST)",
+  "@Mi_Broadcast_Jst": {
+    "placeholders": {
+      "day": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "Mi_Season_Year": "{season} {year}",
+  "@Mi_Season_Year": {
+    "placeholders": {
+      "season": {
+        "type": "String"
+      },
+      "year": {
+        "type": "String"
+      }
+    }
+  },
+  "Mi_Author_Role": "{name} ({role})",
+  "@Mi_Author_Role": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "role": {
+        "type": "String"
+      }
+    }
+  },
+  "Mi_Status_Finished_Airing": "Finished airing",
+  "Mi_Status_Currently_Airing": "Currently airing",
+  "Mi_Status_Not_Yet_Aired": "Not yet aired",
+  "Mi_Status_Finished": "Finished",
+  "Mi_Status_Currently_Publishing": "Currently publishing",
+  "Mi_Status_On_Hiatus": "On hiatus",
+  "Mi_Status_Discontinued": "Discontinued",
+  "Mi_Status_Not_Yet_Published": "Not yet published",
+  "Mi_Rating_G": "G - All ages",
+  "Mi_Rating_Pg": "PG - Children",
+  "Mi_Rating_Pg_13": "PG-13 - Teens 13 or older",
+  "Mi_Rating_R": "R - 17+ (violence and profanity)",
+  "Mi_Rating_R_Plus": "R+ - Mild nudity",
+  "Mi_Rating_Rx": "Rx - Hentai",
+  "Mi_Source_Original": "Original",
+  "Mi_Source_Manga": "Manga",
+  "Mi_Source_Four_Koma": "4-koma manga",
+  "Mi_Source_Web_Manga": "Web manga",
+  "Mi_Source_Digital_Manga": "Digital manga",
+  "Mi_Source_Novel": "Novel",
+  "Mi_Source_Light_Novel": "Light novel",
+  "Mi_Source_Visual_Novel": "Visual novel",
+  "Mi_Source_Game": "Game",
+  "Mi_Source_Card_Game": "Card game",
+  "Mi_Source_Book": "Book",
+  "Mi_Source_Picture_Book": "Picture book",
+  "Mi_Source_Radio": "Radio",
+  "Mi_Source_Music": "Music",
+  "Mi_Source_Web_Novel": "Web novel",
+  "Mi_Source_Mixed_Media": "Mixed media",
+  "Mi_Source_Other": "Other",
+  "Mi_Type_Movie": "Movie",
+  "Mi_Type_Special": "Special",
+  "Mi_Type_Tv_Special": "TV special",
+  "Mi_Type_Music": "Music",
+  "Mi_Type_Manga": "Manga",
+  "Mi_Type_Novel": "Novel",
+  "Mi_Type_Light_Novel": "Light novel",
+  "Mi_Type_One_Shot": "One-shot",
+  "Mi_Type_Doujinshi": "Doujinshi",
+  "Mi_Type_Manhwa": "Manhwa",
+  "Mi_Type_Manhua": "Manhua"
+}
