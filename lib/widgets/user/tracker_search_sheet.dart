@@ -1,8 +1,13 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:mywatchlist/constants/constants.dart';
+import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/services/tracker_sync_service.dart';
+import 'package:mywatchlist/widgets/common/app_image.dart';
+import 'package:mywatchlist/widgets/user/sync/sync_labels.dart';
 
+/// Searches [tracker] to link the MyAnimeList entry to one of its media.
 class TrackerSearchSheet extends StatefulWidget {
   final AccountType tracker;
   final String initialQuery;
@@ -30,7 +35,7 @@ class TrackerSearchSheet extends StatefulWidget {
     return showModalBottomSheet<TrackerSearchResult>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.transparent,
+      useSafeArea: true,
       builder: (ctx) => TrackerSearchSheet(
         tracker: tracker,
         initialQuery: initialQuery,
@@ -42,262 +47,187 @@ class TrackerSearchSheet extends StatefulWidget {
 }
 
 class _TrackerSearchSheetState extends State<TrackerSearchSheet> {
-  late TextEditingController _searchController;
-  List<TrackerSearchResult> _results = [];
+  late final TextEditingController _controller;
+  List<TrackerSearchResult> _results = const [];
   bool _loading = false;
+  bool _searched = false;
   Timer? _debounce;
+  int _request = 0;
 
   @override
   void initState() {
     super.initState();
-    _searchController = TextEditingController(text: widget.initialQuery);
-    // Auto-search on open
-    if (widget.initialQuery.isNotEmpty) {
-      _performSearch(widget.initialQuery);
+    _controller = TextEditingController(text: widget.initialQuery);
+    if (widget.initialQuery.trim().isNotEmpty) {
+      _search(widget.initialQuery.trim());
     }
   }
 
   @override
   void dispose() {
     _debounce?.cancel();
-    _searchController.dispose();
+    _controller.dispose();
     super.dispose();
   }
 
-  void _onSearchChanged(String query) {
+  void _onChanged(String query) {
     _debounce?.cancel();
     _debounce = Timer(const Duration(milliseconds: 500), () {
-      if (query.trim().isNotEmpty) _performSearch(query.trim());
+      if (query.trim().isNotEmpty) _search(query.trim());
     });
   }
 
-  Future<void> _performSearch(String query) async {
+  Future<void> _search(String query) async {
+    final request = ++_request;
     setState(() => _loading = true);
-    final results = await TrackerSyncService.instance.search(
-      widget.tracker,
-      query,
-      widget.category,
-    );
-    if (mounted) {
-      setState(() {
-        _results = results;
-        _loading = false;
-      });
-    }
+    final results = await TrackerSyncService.instance
+        .search(widget.tracker, query, widget.category);
+    // A newer search superseded this one.
+    if (!mounted || request != _request) return;
+    setState(() {
+      _results = results;
+      _loading = false;
+      _searched = true;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final trackerName = TrackerSyncService.trackerName(widget.tracker);
-    final trackerLogo = TrackerSyncService.trackerLogo(widget.tracker);
+    final name = TrackerSyncService.trackerName(widget.tracker);
+    final bottom = MediaQuery.viewInsetsOf(context).bottom;
 
-    return DraggableScrollableSheet(
-      initialChildSize: 0.6,
-      minChildSize: 0.3,
-      maxChildSize: 0.9,
-      builder: (context, scrollController) {
-        return Container(
-          decoration: BoxDecoration(
-            color: theme.colorScheme.surface,
-            borderRadius:
-                const BorderRadius.vertical(top: Radius.circular(20)),
-          ),
-          child: Column(
-            children: [
-              // Handle bar
-              Padding(
-                padding: const EdgeInsets.only(top: 12, bottom: 8),
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
-                    borderRadius: BorderRadius.circular(2),
+    return Padding(
+      padding: EdgeInsets.only(bottom: bottom),
+      child: SizedBox(
+        height: MediaQuery.sizeOf(context).height * 0.75,
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+              child: Row(
+                children: [
+                  TrackerLogo(widget.tracker),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      S.current.Sync_Link_To(name),
+                      style: theme.textTheme.titleMedium
+                          ?.copyWith(fontWeight: FontWeight.bold),
+                    ),
                   ),
-                ),
+                ],
               ),
-
-              // Header: logo + title
-              Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: Row(
-                  children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(6),
-                      child: Image.asset(
-                        trackerLogo,
-                        width: 28,
-                        height: 28,
-                        errorBuilder: (_, __, ___) =>
-                            const Icon(Icons.link, size: 28),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Text(
-                      'Link to $trackerName',
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              // Search field
-              Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                child: TextField(
-                  controller: _searchController,
-                  autofocus: false,
-                  onChanged: _onSearchChanged,
-                  onSubmitted: (q) {
-                    if (q.trim().isNotEmpty) _performSearch(q.trim());
-                  },
-                  decoration: InputDecoration(
-                    hintText: 'Search on $trackerName...',
-                    prefixIcon: const Icon(Icons.search, size: 20),
-                    suffixIcon: _searchController.text.isNotEmpty
-                        ? IconButton(
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: TextField(
+                controller: _controller,
+                onChanged: _onChanged,
+                textInputAction: TextInputAction.search,
+                onSubmitted: (q) {
+                  _debounce?.cancel();
+                  if (q.trim().isNotEmpty) _search(q.trim());
+                },
+                decoration: InputDecoration(
+                  hintText: S.current.Sync_Search_Hint(name),
+                  prefixIcon: const Icon(Icons.search, size: 20),
+                  suffixIcon: ValueListenableBuilder<TextEditingValue>(
+                    valueListenable: _controller,
+                    builder: (_, value, __) => value.text.isEmpty
+                        ? const SizedBox.shrink()
+                        : IconButton(
+                            tooltip: S.current.Sync_Clear,
                             icon: const Icon(Icons.clear, size: 20),
                             onPressed: () {
-                              _searchController.clear();
-                              setState(() => _results = []);
+                              _controller.clear();
+                              setState(() {
+                                _results = const [];
+                                _searched = false;
+                              });
                             },
-                          )
-                        : null,
-                    isDense: true,
-                    contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 10),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
+                          ),
+                  ),
+                  isDense: true,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
                   ),
                 ),
               ),
-
-              const SizedBox(height: 8),
-
-              // Results
-              Expanded(
-                child: _loading
-                    ? const Center(child: CircularProgressIndicator())
-                    : _results.isEmpty
-                        ? Center(
-                            child: Text(
-                              _searchController.text.isEmpty
-                                  ? 'Type to search'
-                                  : 'No results found',
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                color: theme.colorScheme.onSurface
-                                    .withValues(alpha: 0.5),
-                              ),
-                            ),
-                          )
-                        : ListView.builder(
-                            controller: scrollController,
-                            itemCount: _results.length,
-                            padding: const EdgeInsets.symmetric(horizontal: 8),
-                            itemBuilder: (context, index) {
-                              final item = _results[index];
-                              return _buildResultTile(theme, item);
-                            },
-                          ),
-              ),
-            ],
-          ),
-        );
-      },
+            ),
+            const SizedBox(height: 8),
+            Expanded(child: _body(theme)),
+          ],
+        ),
+      ),
     );
   }
 
-  Widget _buildResultTile(ThemeData theme, TrackerSearchResult item) {
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: () => widget.onSelected(item),
-        child: Padding(
-          padding: const EdgeInsets.all(10),
-          child: Row(
-            children: [
-              // Cover image
-              ClipRRect(
-                borderRadius: BorderRadius.circular(6),
-                child: item.imageUrl != null
-                    ? Image.network(
-                        item.imageUrl!,
-                        width: 45,
-                        height: 64,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => Container(
-                          width: 45,
-                          height: 64,
-                          color: theme.colorScheme.surfaceContainerHigh,
-                          child: const Icon(Icons.image, size: 20),
-                        ),
-                      )
-                    : Container(
-                        width: 45,
-                        height: 64,
-                        color: theme.colorScheme.surfaceContainerHigh,
-                        child: const Icon(Icons.image, size: 20),
-                      ),
-              ),
-              const SizedBox(width: 12),
-
-              // Title + details
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      item.title,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        if (item.score != null) ...[
-                          Icon(Icons.star,
-                              size: 14,
-                              color: theme.colorScheme.primary),
-                          const SizedBox(width: 2),
-                          Text(
-                            '${item.score}',
-                            style: theme.textTheme.bodySmall,
-                          ),
-                          const SizedBox(width: 8),
-                        ],
-                        if (item.mediaType != null)
-                          Text(
-                            item.mediaType!,
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: theme.colorScheme.onSurface
-                                  .withValues(alpha: 0.6),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-
-              // Link button
-              Icon(
-                Icons.add_link,
-                color: theme.colorScheme.primary,
-              ),
-            ],
-          ),
+  Widget _body(ThemeData theme) {
+    if (_loading) return const Center(child: CircularProgressIndicator());
+    if (_results.isEmpty) {
+      return Center(
+        child: Text(
+          _searched ? S.current.Sync_No_Results : S.current.Sync_Search_Prompt,
+          style: theme.textTheme.bodyMedium
+              ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
         ),
+      );
+    }
+    return ListView.builder(
+      itemCount: _results.length,
+      padding: const EdgeInsets.fromLTRB(8, 0, 8, 16),
+      itemBuilder: (context, index) => _ResultTile(
+        item: _results[index],
+        onTap: () => widget.onSelected(_results[index]),
       ),
+    );
+  }
+}
+
+class _ResultTile extends StatelessWidget {
+  const _ResultTile({required this.item, required this.onTap});
+
+  final TrackerSearchResult item;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    return ListTile(
+      onTap: onTap,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      leading: AppImage(
+        url: item.imageUrl,
+        width: 44,
+        height: 62,
+        borderRadius: BorderRadius.circular(6),
+        placeholderColor: scheme.surfaceContainerHigh,
+      ),
+      title: Text(item.title,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          style: theme.textTheme.bodyMedium
+              ?.copyWith(fontWeight: FontWeight.w600)),
+      subtitle: Row(
+        children: [
+          if (item.score != null) ...[
+            Icon(Icons.star, size: 14, color: scheme.primary),
+            const SizedBox(width: 2),
+            Text('${item.score}', style: theme.textTheme.bodySmall),
+            const SizedBox(width: 8),
+          ],
+          if (item.mediaType != null)
+            Flexible(
+              child: Text(item.mediaType!,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.bodySmall
+                      ?.copyWith(color: scheme.onSurfaceVariant)),
+            ),
+        ],
+      ),
+      trailing: Icon(Icons.add_link, color: scheme.primary),
     );
   }
 }
