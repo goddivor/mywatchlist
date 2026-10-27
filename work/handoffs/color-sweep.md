@@ -4,7 +4,7 @@
 
 ## Needs done first
 - `profile-polish` (Profile screen: readable themed header, chart colours from status tokens, lighter surfaces, no Jikan wait)
-- `list-cards-dal` (My List grid display: a better grid card (inspired by DailyAL's, not a copy))
+- `list-cards-dal` (My List grid display: the same visual as DailyAL's grid (the rest of MWL's My List stays))
 - `detail-resilience` (Detail sections: no endless skeletons, MAL fallbacks when Jikan fails, round avatars without box shadows)
 - `home-wiring` (Home: working chips, bookmarks/calendar buttons, maintenance dialog, user-list and forum sections)
 - `featured-characters` (Featured tags search, character screen sort/dedupe/bookmark/share)
