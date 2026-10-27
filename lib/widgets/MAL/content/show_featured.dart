@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:mywatchlist/constants/constants.dart';
+import 'package:mywatchlist/generated/l10n.dart';
+import 'package:mywatchlist/screens/MAL/detail/sections/section_states.dart';
 import 'package:mywatchlist/screens/MAL/featured_screen.dart';
 import 'package:mywatchlist/services/api/MAL/scrapper/anime_featured.dart';
 import 'package:mywatchlist/services/api/mwl_api.dart';
@@ -8,6 +10,9 @@ import 'package:mywatchlist/utils/url_formatter.dart';
 import 'package:mywatchlist/widgets/common/avatar_widget.dart';
 import 'package:mywatchlist/widgets/loading/shimmercolor.dart';
 
+/// MAL featured articles about a title (mwl-api `content/featured`, a MAL
+/// page parsed by the backend). Ends in articles, an empty state or an error
+/// with Retry.
 class ShowAnimeFeatured extends StatefulWidget {
   final int animeId;
   final String animeName;
@@ -28,6 +33,7 @@ class _ShowAnimeFeaturedState extends State<ShowAnimeFeatured>
     with AutomaticKeepAliveClientMixin {
   AnimeFeaturedResult? featuredArticles;
   bool isLoading = true;
+  bool hasError = false;
   final ScrollController _scrollController = ScrollController();
 
   @override
@@ -41,22 +47,25 @@ class _ShowAnimeFeaturedState extends State<ShowAnimeFeatured>
 
   Future<void> _fetchFeaturedArticles() async {
     try {
-      final response = await MwlApi.i.getContentFeaturedArticles(
-        widget.animeId,
-        widget.category,
-        name: widget.animeName.formatForUrl(),
-      );
-
-      if (response != null && mounted) {
-        setState(() {
-          featuredArticles = AnimeFeaturedResult.fromJson(response);
-          isLoading = false;
-        });
-      }
+      final response = await MwlApi.i
+          .getContentFeaturedArticles(
+            widget.animeId,
+            widget.category,
+            name: widget.animeName.formatForUrl(),
+          )
+          .timeout(const Duration(seconds: 20));
+      if (!mounted) return;
+      // A null answer is a failed page: it used to leave the skeleton forever.
+      if (response == null) throw StateError('no featured articles page');
+      setState(() {
+        featuredArticles = AnimeFeaturedResult.fromJson(response);
+        isLoading = false;
+      });
     } catch (e) {
       if (!mounted) return;
       setState(() {
         isLoading = false;
+        hasError = true;
       });
       debugPrint('Error fetching featured articles: $e');
     }
@@ -68,6 +77,19 @@ class _ShowAnimeFeaturedState extends State<ShowAnimeFeatured>
 
     if (isLoading) {
       return _buildLoadingState();
+    }
+
+    if (hasError) {
+      return SectionMessage.error(
+        message: S.current.Res_Featured_Failed,
+        onRetry: () {
+          setState(() {
+            isLoading = true;
+            hasError = false;
+          });
+          _fetchFeaturedArticles();
+        },
+      );
     }
 
     if (featuredArticles == null ||
@@ -223,7 +245,7 @@ class _ShowAnimeFeaturedState extends State<ShowAnimeFeatured>
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                   decoration: BoxDecoration(
                     color: isSpoiler
-                        ? Colors.red.withValues(alpha: 0.15)
+                        ? theme.colorScheme.errorContainer
                         : theme.colorScheme.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(10),
                   ),
@@ -233,7 +255,7 @@ class _ShowAnimeFeaturedState extends State<ShowAnimeFeatured>
                       fontSize: 10,
                       fontWeight: FontWeight.w500,
                       color: isSpoiler
-                          ? Colors.red
+                          ? theme.colorScheme.onErrorContainer
                           : theme.colorScheme.onSurfaceVariant,
                     ),
                   ),
@@ -267,14 +289,14 @@ class _ShowAnimeFeaturedState extends State<ShowAnimeFeatured>
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Container(height: 110, color: Colors.white),
+                    Container(height: 110, color: Theme.of(context).colorScheme.onSurface),
                     Padding(
                       padding: const EdgeInsets.fromLTRB(12, 10, 12, 0),
                       child: Container(
                         height: 16,
                         width: double.infinity,
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: Theme.of(context).colorScheme.onSurface,
                           borderRadius: BorderRadius.circular(4),
                         ),
                       ),
@@ -285,7 +307,7 @@ class _ShowAnimeFeaturedState extends State<ShowAnimeFeatured>
                         height: 16,
                         width: 180,
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: Theme.of(context).colorScheme.onSurface,
                           borderRadius: BorderRadius.circular(4),
                         ),
                       ),
@@ -295,7 +317,7 @@ class _ShowAnimeFeaturedState extends State<ShowAnimeFeatured>
                         padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
                         child: Container(
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: Theme.of(context).colorScheme.onSurface,
                             borderRadius: BorderRadius.circular(4),
                           ),
                         ),
@@ -309,14 +331,14 @@ class _ShowAnimeFeaturedState extends State<ShowAnimeFeatured>
                           Container(
                             height: 12, width: 70,
                             decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: Theme.of(context).colorScheme.onSurface,
                               borderRadius: BorderRadius.circular(4),
                             ),
                           ),
                           Container(
                             height: 12, width: 40,
                             decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: Theme.of(context).colorScheme.onSurface,
                               borderRadius: BorderRadius.circular(4),
                             ),
                           ),
@@ -333,31 +355,8 @@ class _ShowAnimeFeaturedState extends State<ShowAnimeFeatured>
     );
   }
 
-  // Empty state when no featured articles are available
-  Widget _buildEmptyState() {
-    return SizedBox(
-      height: 200,
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.article_outlined,
-              size: 48,
-              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'No featured articles available',
-              style: TextStyle(
-                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  Widget _buildEmptyState() =>
+      SectionMessage(icon: Icons.article_outlined, message: S.current.Res_Featured_Empty);
 
   @override
   void dispose() {

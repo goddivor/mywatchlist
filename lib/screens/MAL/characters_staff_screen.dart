@@ -2,12 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:mywatchlist/constants/constants.dart';
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/services/api/Jikan/jikan_anime_character.dart';
-import 'package:mywatchlist/services/api/Jikan/jikan_anime_staff.dart' as staff_models;
+import 'package:mywatchlist/services/api/Jikan/jikan_anime_staff.dart'
+    as staff_models;
 import 'package:mywatchlist/screens/MAL/character_screen.dart';
+import 'package:mywatchlist/screens/MAL/detail/sections/section_states.dart';
 import 'package:mywatchlist/services/api/Jikan/jikan_api.dart';
-import 'package:mywatchlist/widgets/common/avatar_widget.dart';
+import 'package:mywatchlist/services/api/Jikan/jikan_fallbacks.dart';
 import 'package:mywatchlist/widgets/loading/shimmercolor.dart';
 
+/// Full cast of a title. Source: Jikan `characters` + `staff`; when Jikan
+/// fails, the mwl-api `content/characters` route (MAL characters page parsed
+/// by the backend). Every picture is a clean circle.
 class CharactersStaffScreen extends StatefulWidget {
   final int id;
   final String category;
@@ -28,7 +33,7 @@ class _CharactersStaffScreenState extends State<CharactersStaffScreen> {
   List<AnimeCharacter>? _characters;
   List<staff_models.AnimeStaff>? _staff;
   bool _isLoading = true;
-  String? _error;
+  bool _failed = false;
   late int _currentTab;
 
   bool get _isAnime => widget.category == 'anime';
@@ -41,62 +46,67 @@ class _CharactersStaffScreenState extends State<CharactersStaffScreen> {
     _fetchData();
   }
 
+  Future<(List<AnimeCharacter>, List<staff_models.AnimeStaff>)>
+      _fromJikan() async {
+    final jikan = JikanApi();
+    if (_isAnime) {
+      final results = await Future.wait([
+        jikan.getAnimeCharacters(widget.id),
+        jikan.getAnimeStaff(widget.id),
+      ]);
+      return (
+        results[0] as List<AnimeCharacter>,
+        results[1] as List<staff_models.AnimeStaff>,
+      );
+    }
+    final raw = await jikan.getMangaCharacters(widget.id);
+    return (
+      raw.map(AnimeCharacter.fromJson).toList(),
+      <staff_models.AnimeStaff>[]
+    );
+  }
+
+  Future<(List<AnimeCharacter>, List<staff_models.AnimeStaff>)>
+      _fromMal() async {
+    final page = await JikanFallbacks.characters(widget.id, widget.category);
+    if (page == null) throw StateError('characters page unavailable');
+    return (
+      page.characters.map(characterFromHtml).toList(),
+      _isAnime
+          ? page.staff.map(staffFromHtml).toList()
+          : <staff_models.AnimeStaff>[],
+    );
+  }
+
   Future<void> _fetchData() async {
     try {
-      final jikan = JikanApi();
-
-      if (_isAnime) {
-        final results = await Future.wait([
-          jikan.getAnimeCharacters(widget.id),
-          jikan.getAnimeStaff(widget.id),
-        ]);
-        final characters = results[0] as List<AnimeCharacter>;
-        final staff = results[1] as List<staff_models.AnimeStaff>;
-
-        // Sort characters: Main first, then by favorites descending
-        characters.sort((a, b) {
-          final roleOrder = _roleWeight(a.role) - _roleWeight(b.role);
-          if (roleOrder != 0) return roleOrder;
-          final favA = a.favorites ?? 0;
-          final favB = b.favorites ?? 0;
-          return favB.compareTo(favA);
-        });
-
-        if (mounted) {
-          setState(() {
-            _characters = characters;
-            _staff = staff;
-            _isLoading = false;
-          });
-        }
-      } else {
-        // Manga: characters only, no staff
-        final rawChars = await jikan.getMangaCharacters(widget.id);
-        final characters = rawChars
-            .map((e) => AnimeCharacter.fromJson(e))
-            .toList();
-
-        characters.sort((a, b) {
-          final roleOrder = _roleWeight(a.role) - _roleWeight(b.role);
-          if (roleOrder != 0) return roleOrder;
-          return 0;
-        });
-
-        if (mounted) {
-          setState(() {
-            _characters = characters;
-            _staff = [];
-            _isLoading = false;
-          });
-        }
+      (List<AnimeCharacter>, List<staff_models.AnimeStaff>) result;
+      try {
+        result = await _fromJikan();
+      } catch (e) {
+        debugPrint('Jikan characters failed, trying the mwl-api: $e');
+        result = await _fromMal();
       }
+      final (characters, staff) = result;
+      // Main first, then by favorites descending.
+      characters.sort((a, b) {
+        final roleOrder = _roleWeight(a.role) - _roleWeight(b.role);
+        if (roleOrder != 0) return roleOrder;
+        return (b.favorites ?? 0).compareTo(a.favorites ?? 0);
+      });
+      if (!mounted) return;
+      setState(() {
+        _characters = characters;
+        _staff = staff;
+        _isLoading = false;
+      });
     } catch (e) {
-      if (mounted) {
-        setState(() {
-          _error = e.toString();
-          _isLoading = false;
-        });
-      }
+      debugPrint('Characters and staff failed: $e');
+      if (!mounted) return;
+      setState(() {
+        _failed = true;
+        _isLoading = false;
+      });
     }
   }
 
@@ -127,40 +137,17 @@ class _CharactersStaffScreenState extends State<CharactersStaffScreen> {
       return _buildLoadingState();
     }
 
-    if (_error != null) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                Icons.error_outline,
-                size: 48,
-                color: Theme.of(context).colorScheme.error,
-              ),
-              SB.h15,
-              Text(
-                _error!,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
-                ),
-              ),
-              SB.h20,
-              FilledButton.tonal(
-                onPressed: () {
-                  setState(() {
-                    _isLoading = true;
-                    _error = null;
-                  });
-                  _fetchData();
-                },
-                child: const Text('Retry'),
-              ),
-            ],
-          ),
-        ),
+    if (_failed) {
+      return SectionMessage.error(
+        height: 300,
+        message: S.current.Res_Characters_Failed,
+        onRetry: () {
+          setState(() {
+            _isLoading = true;
+            _failed = false;
+          });
+          _fetchData();
+        },
       );
     }
 
@@ -250,7 +237,7 @@ class _CharactersStaffScreenState extends State<CharactersStaffScreen> {
                   height: 80,
                   width: 60,
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: Theme.of(context).colorScheme.onSurface,
                     borderRadius: BorderRadius.circular(8),
                   ),
                 ),
@@ -265,7 +252,7 @@ class _CharactersStaffScreenState extends State<CharactersStaffScreen> {
                         height: 14,
                         width: 120,
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: Theme.of(context).colorScheme.onSurface,
                           borderRadius: BorderRadius.circular(4),
                         ),
                       ),
@@ -276,7 +263,7 @@ class _CharactersStaffScreenState extends State<CharactersStaffScreen> {
                         height: 12,
                         width: 80,
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: Theme.of(context).colorScheme.onSurface,
                           borderRadius: BorderRadius.circular(4),
                         ),
                       ),
@@ -324,14 +311,11 @@ class _CharactersStaffScreenState extends State<CharactersStaffScreen> {
                 _buildAvatarWidget(
                   imageUrl: characterImageUrl,
                   onTap: () => _onCharacterTap(char.character.malId),
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(8),
-                    bottomLeft: Radius.circular(8),
-                  ),
                 ),
                 SB.w10,
                 Expanded(
-                  child: _buildNameAndRole(characterName, role, favorites: char.favorites),
+                  child: _buildNameAndRole(characterName, role,
+                      favorites: char.favorites),
                 ),
               ],
             ),
@@ -354,41 +338,38 @@ class _CharactersStaffScreenState extends State<CharactersStaffScreen> {
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      child: Theme(
-        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
-        child: ExpansionTile(
-          tilePadding: EdgeInsets.zero,
-          childrenPadding: const EdgeInsets.only(top: 8, bottom: 8),
-          leading: _buildAvatarWidget(
-            imageUrl: characterImageUrl,
-            onTap: () => _onCharacterTap(char.character.malId),
-            borderRadius: const BorderRadius.only(
-              topLeft: Radius.circular(8),
-              bottomLeft: Radius.circular(8),
-            ),
-          ),
-          title: _buildNameAndRole(characterName, role, favorites: char.favorites),
-          trailing: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Text(
-              '${voiceActors.length} VAs',
-              style: TextStyle(
-                fontSize: 12,
-                color: Theme.of(context)
-                    .colorScheme
-                    .onSurface
-                    .withValues(alpha: 0.7),
-              ),
-            ),
-          ),
-          children: [
-            _buildHorizontalVAList(voiceActors),
-          ],
+      child: ExpansionTile(
+        // No divider lines when the tile opens.
+        shape: const Border(),
+        collapsedShape: const Border(),
+        tilePadding: EdgeInsets.zero,
+        childrenPadding: const EdgeInsets.only(top: 8, bottom: 8),
+        leading: _buildAvatarWidget(
+          imageUrl: characterImageUrl,
+          onTap: () => _onCharacterTap(char.character.malId),
         ),
+        title:
+            _buildNameAndRole(characterName, role, favorites: char.favorites),
+        trailing: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surfaceContainerHighest,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Text(
+            S.current.Res_Voice_Actors_Count(voiceActors.length),
+            style: TextStyle(
+              fontSize: 12,
+              color: Theme.of(context)
+                  .colorScheme
+                  .onSurface
+                  .withValues(alpha: 0.7),
+            ),
+          ),
+        ),
+        children: [
+          _buildHorizontalVAList(voiceActors),
+        ],
       ),
     );
   }
@@ -411,7 +392,7 @@ class _CharactersStaffScreenState extends State<CharactersStaffScreen> {
 
   Widget _buildVACard(VoiceActor va) {
     final imageUrl = va.person?.images?.jpg?.imageUrl;
-    final name = va.person?.name ?? 'Unknown';
+    final name = va.person?.name ?? S.current.Res_Unknown;
     final language = va.language ?? '';
 
     return GestureDetector(
@@ -421,16 +402,7 @@ class _CharactersStaffScreenState extends State<CharactersStaffScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: AvatarWidget(
-                userRoundBorderforLoading: false,
-                height: 60,
-                width: 60,
-                radius: BorderRadius.circular(8),
-                url: imageUrl,
-              ),
-            ),
+            RoundAvatar(url: imageUrl, size: 60, semanticLabel: name),
             const SizedBox(height: 4),
             Text(
               name,
@@ -461,7 +433,7 @@ class _CharactersStaffScreenState extends State<CharactersStaffScreen> {
 
   Widget _buildSingleVAWidget(VoiceActor va) {
     final imageUrl = va.person?.images?.jpg?.imageUrl;
-    final name = va.person?.name ?? 'Unknown';
+    final name = va.person?.name ?? S.current.Res_Unknown;
     final language = va.language ?? '';
 
     return Row(
@@ -501,10 +473,6 @@ class _CharactersStaffScreenState extends State<CharactersStaffScreen> {
         _buildAvatarWidget(
           imageUrl: imageUrl,
           onTap: () => _onPersonTap(va.person?.malId),
-          borderRadius: const BorderRadius.only(
-            topRight: Radius.circular(8),
-            bottomRight: Radius.circular(8),
-          ),
         ),
       ],
     );
@@ -516,7 +484,7 @@ class _CharactersStaffScreenState extends State<CharactersStaffScreen> {
 
   Widget _buildStaffTile(staff_models.AnimeStaff staffMember) {
     final imageUrl = staffMember.person.images?.jpg?.imageUrl;
-    final name = staffMember.person.name ?? 'Unknown';
+    final name = staffMember.person.name ?? S.current.Res_Unknown;
     final positions = staffMember.positions?.join(', ') ?? '';
 
     return Padding(
@@ -527,10 +495,6 @@ class _CharactersStaffScreenState extends State<CharactersStaffScreen> {
           _buildAvatarWidget(
             imageUrl: imageUrl,
             onTap: () => _onPersonTap(staffMember.person.malId),
-            borderRadius: const BorderRadius.only(
-              topLeft: Radius.circular(8),
-              bottomLeft: Radius.circular(8),
-            ),
           ),
           SB.w10,
           Expanded(
@@ -545,26 +509,14 @@ class _CharactersStaffScreenState extends State<CharactersStaffScreen> {
   // Shared widgets
   // ---------------------------------------------------------------------------
 
+  /// Clean round picture: no elevation, no box behind it (owner's request).
   Widget _buildAvatarWidget({
     required String? imageUrl,
     required VoidCallback onTap,
-    required BorderRadius borderRadius,
-    double height = 80,
-    double width = 60,
+    String? label,
   }) {
-    return Material(
-      color: Colors.transparent,
-      elevation: 4,
-      borderRadius: borderRadius,
-      child: AvatarWidget(
-        userRoundBorderforLoading: false,
-        height: height,
-        width: width,
-        onTap: onTap,
-        radius: borderRadius,
-        url: imageUrl,
-      ),
-    );
+    return RoundAvatar(
+        url: imageUrl, size: 60, onTap: onTap, semanticLabel: label);
   }
 
   Widget _buildNameAndRole(String name, String role, {int? favorites}) {
@@ -597,7 +549,8 @@ class _CharactersStaffScreenState extends State<CharactersStaffScreen> {
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.favorite, size: 14, color: Colors.redAccent),
+              Icon(Icons.favorite,
+                  size: 14, color: Theme.of(context).colorScheme.error),
               const SizedBox(width: 5),
               Text(
                 favorites.toString(),

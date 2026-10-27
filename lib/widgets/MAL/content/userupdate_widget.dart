@@ -1,18 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:mywatchlist/constants/constants.dart' show displayTimeAgo;
 import 'package:mywatchlist/generated/l10n.dart';
+import 'package:mywatchlist/screens/MAL/detail/sections/section_states.dart';
 import 'package:mywatchlist/services/api/Jikan/jikan_animeuserupdate.dart';
 import 'package:mywatchlist/services/api/Jikan/jikan_api.dart';
 import 'package:mywatchlist/widgets/MAL/home/animecardbar.dart';
 import 'package:mywatchlist/widgets/MAL/home/animegridcard.dart';
 import 'package:mywatchlist/widgets/MAL/review/review_item.dart';
 import 'package:mywatchlist/widgets/MAL/review/user_link.dart';
-import 'package:mywatchlist/widgets/common/avatar_widget.dart';
 import 'package:mywatchlist/widgets/loading/shimmercolor.dart';
 
 /// Latest list updates of other users for one title: a two-row horizontal grid of cards
 /// (avatar, name, progress ring, score, age, status). A tap on a card opens the quick user
 /// sheet of that user.
+///
+/// Source: Jikan `userupdates` only (neither MAL's API nor the mwl-api has these). Jikan
+/// requests time out, so the skeleton always ends in cards, an empty state or an error
+/// with Retry.
 class UserUpdatesPage extends StatefulWidget {
   final int id;
   final VoidCallback? onPageChange;
@@ -52,35 +56,18 @@ class _UserUpdatesPageState extends State<UserUpdatesPage> with AutomaticKeepAli
     return FutureBuilder<AnimeUserUpdatesResponse>(
       future: _updates,
       builder: (context, snapshot) {
-        if (snapshot.hasError) return _message(Icons.error_outline, S.current.Social_Updates_Failed, retry: true);
+        if (snapshot.hasError) {
+          return SectionMessage.error(height: 200, message: S.current.Social_Updates_Failed, onRetry: _retry);
+        }
         final data = snapshot.data;
         if (data == null) {
           return _grid(List<AnimeUserUpdate?>.generate(12, (_) => null));
         }
-        if (data.data.isEmpty) return _message(Icons.people_outline, S.current.Social_Updates_Empty);
+        if (data.data.isEmpty) {
+          return SectionMessage(height: 200, icon: Icons.people_outline, message: S.current.Social_Updates_Empty);
+        }
         return _grid(data.data);
       },
-    );
-  }
-
-  Widget _message(IconData icon, String text, {bool retry = false}) {
-    final scheme = Theme.of(context).colorScheme;
-    return SizedBox(
-      height: 200,
-      child: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 44, color: retry ? scheme.error : scheme.onSurfaceVariant),
-            const SizedBox(height: 12),
-            Text(text, textAlign: TextAlign.center),
-            if (retry) ...[
-              const SizedBox(height: 8),
-              FilledButton.tonal(onPressed: _retry, child: Text(S.current.Social_Retry)),
-            ],
-          ],
-        ),
-      ),
     );
   }
 
@@ -143,7 +130,7 @@ class _UpdateCard extends StatelessWidget {
                 children: [
                   Column(
                     children: [
-                      AvatarWidget(height: 45, width: 45, url: update.user?.images?.jpg?.imageUrl),
+                      RoundAvatar(size: 45, url: update.user?.images?.jpg?.imageUrl),
                       const SizedBox(height: 10),
                       SizedBox(
                         width: 80,

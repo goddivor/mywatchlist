@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/services/api/Jikan/jikan_anime_review.dart';
+import 'package:mywatchlist/screens/MAL/detail/sections/section_states.dart';
 import 'package:mywatchlist/services/api/Jikan/jikan_api.dart';
+import 'package:mywatchlist/services/api/Jikan/jikan_fallbacks.dart';
 import 'package:mywatchlist/widgets/MAL/review/review_detail_page.dart';
 import 'package:mywatchlist/widgets/MAL/review/review_item.dart';
 import 'package:mywatchlist/widgets/MAL/review/review_logic.dart';
@@ -13,6 +15,10 @@ import 'package:scroll_to_index/scroll_to_index.dart';
 /// Reviews section of a detail page: the AI summary row, a filter bar (score distribution,
 /// sort, score, tags) and a horizontal list of reviews that loads the next Jikan page near
 /// its end. A tap on a review opens a swipeable sheet with the full text.
+///
+/// Source: Jikan `reviews`; when Jikan fails on the first page, the mwl-api
+/// `reviews` route (MAL review pages parsed by the backend) serves this and
+/// the next pages.
 class ShowAnimeReviews extends StatefulWidget {
   final int animeId;
   final String category;
@@ -40,6 +46,9 @@ class _ShowAnimeReviewsState extends State<ShowAnimeReviews> with AutomaticKeepA
   bool _failed = false;
   bool _hasMore = true;
   int _page = 1;
+
+  /// True once Jikan failed and the pages come from the mwl-api.
+  bool _fromMwl = false;
 
   // One controller drives the list, the "near the end" listener and the jump made when the
   // user swipes between full reviews.
@@ -77,16 +86,17 @@ class _ShowAnimeReviewsState extends State<ShowAnimeReviews> with AutomaticKeepA
       _visible = const [];
       _page = 1;
       _hasMore = true;
+      _fromMwl = false;
     }
     setState(() {
       _loading = true;
       _failed = false;
     });
     try {
-      final response = await JikanApi().getAnimeReviews(widget.animeId, page: _page, category: widget.category);
+      final (page, hasMore) = await _fetchPage();
       if (!mounted) return;
-      _reviews.addAll(response.data);
-      _hasMore = response.pagination.hasNextPage ?? false;
+      _reviews.addAll(page);
+      _hasMore = hasMore;
       _page++;
       _distribution = reviewScoreDistribution(_reviews);
       _availableTags = reviewTags(_reviews);
@@ -107,6 +117,23 @@ class _ShowAnimeReviewsState extends State<ShowAnimeReviews> with AutomaticKeepA
         }
       });
     }
+  }
+
+  /// One page of reviews and whether another one exists.
+  Future<(List<AnimeReview>, bool)> _fetchPage() async {
+    if (!_fromMwl) {
+      try {
+        final response = await JikanApi().getAnimeReviews(widget.animeId, page: _page, category: widget.category);
+        return (response.data, response.pagination.hasNextPage ?? false);
+      } catch (e) {
+        // A later page keeps Jikan's numbering: give up instead of mixing sources.
+        if (_page > 1) rethrow;
+        debugPrint('Jikan reviews failed, trying the mwl-api: $e');
+        _fromMwl = true;
+      }
+    }
+    final list = await JikanFallbacks.reviews(widget.animeId, widget.category, _page);
+    return (list, list.isNotEmpty);
   }
 
   List<AnimeReview> _filtered() => filterReviews(_reviews, sort: _sort, score: _score, tags: _tags);
@@ -380,8 +407,8 @@ class _ShowAnimeReviewsState extends State<ShowAnimeReviews> with AutomaticKeepA
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.rate_review_outlined, size: 48, color: color),
-          const SizedBox(height: 16),
+          Icon(Icons.rate_review_outlined, size: 40, color: color),
+          const SizedBox(height: 12),
           Text(
             filtered ? S.current.Social_Reviews_Empty_Filtered : S.current.Social_Reviews_Empty,
             textAlign: TextAlign.center,
@@ -402,24 +429,12 @@ class _ShowAnimeReviewsState extends State<ShowAnimeReviews> with AutomaticKeepA
     );
   }
 
-  Widget _buildErrorState() {
-    final color = Theme.of(context).colorScheme.error;
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.error_outline, size: 48, color: color),
-          const SizedBox(height: 16),
-          Text(S.current.Social_Reviews_Failed, style: TextStyle(color: color)),
-          const SizedBox(height: 8),
-          FilledButton.tonal(
-            onPressed: () => _load(reset: true),
-            child: Text(S.current.Social_Retry),
-          ),
-        ],
-      ),
-    );
-  }
+  Widget _buildErrorState() => SectionMessage.error(
+        height: 200,
+        message: S.current.Social_Reviews_Failed,
+        onRetry: () => _load(reset: true),
+      );
+
 }
 
 /// Rounded filter button; wraps [child] with the tap area of a Material pill.
@@ -453,14 +468,15 @@ class _LoadingCard extends StatelessWidget {
 
   const _LoadingCard({this.detailed = false});
 
-  Widget _bar(double height, double? width, [double radius = 4]) => Container(
-        height: height,
-        width: width,
-        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(radius)),
-      );
-
   @override
   Widget build(BuildContext context) {
+    // The shimmer paints over the shape; any opaque theme colour works.
+    final fill = Theme.of(context).colorScheme.onSurface;
+    Widget bar(double height, double? width, [double radius = 4]) => Container(
+          height: height,
+          width: width,
+          decoration: BoxDecoration(color: fill, borderRadius: BorderRadius.circular(radius)),
+        );
     return Padding(
       padding: const EdgeInsetsDirectional.only(end: 12),
       child: ShimmerColor(
@@ -480,20 +496,20 @@ class _LoadingCard extends StatelessWidget {
                           children: [
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [_bar(28, 60), const SizedBox(height: 8), _bar(12, 100)],
+                              children: [bar(28, 60), const SizedBox(height: 8), bar(12, 100)],
                             ),
-                            _bar(42, 42, 21),
+                            bar(42, 42, 21),
                           ],
                         ),
                         const SizedBox(height: 16),
-                        Expanded(child: _bar(double.infinity, double.infinity)),
+                        Expanded(child: bar(double.infinity, double.infinity)),
                         const SizedBox(height: 10),
-                        _bar(14, 150),
+                        bar(14, 150),
                       ],
                     ),
                   )
                 : DecoratedBox(
-                    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
+                    decoration: BoxDecoration(color: fill, borderRadius: BorderRadius.circular(16)),
                   ),
           ),
         ),
@@ -548,7 +564,7 @@ class _DistributionDialog extends StatelessWidget {
                             Container(
                               height: maxCount > 0 ? (distribution[score] ?? 0) / maxCount * 180 : 0,
                               decoration: BoxDecoration(
-                                color: reviewScoreColor(score),
+                                color: theme.colorScheme.primary,
                                 borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
                               ),
                             ),

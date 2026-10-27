@@ -1,12 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:mywatchlist/constants/constants.dart';
+import 'package:mywatchlist/generated/l10n.dart';
+import 'package:mywatchlist/screens/MAL/detail/sections/section_states.dart';
 import 'package:mywatchlist/screens/forum/forum_posts_screen.dart';
 import 'package:mywatchlist/services/api/Jikan/jikan_anime_forum.dart';
 import 'package:mywatchlist/services/api/Jikan/jikan_api.dart';
+import 'package:mywatchlist/services/api/Jikan/jikan_fallbacks.dart';
 import 'package:mywatchlist/services/api/MAL/models/forum/forum_models.dart';
 import 'package:mywatchlist/widgets/loading/shimmercolor.dart';
 
+/// Latest forum topics of a title: Jikan `forum`, else MyAnimeList's forum
+/// page for that title (`JikanFallbacks.forum`); pages of three cards.
 class ShowAnimeForum extends StatefulWidget {
   final int animeId;
   final String category;
@@ -23,7 +28,7 @@ class _ShowAnimeForumState extends State<ShowAnimeForum>
   List<AnimeForum> forumTopicsList = [];
   bool isLoading = true;
   bool hasError = false;
-  final DateFormat _dateFormat = DateFormat('MMM d, yyyy');
+  final PageController _pages = PageController(viewportFraction: 0.92);
 
   @override
   bool get wantKeepAlive => true;
@@ -34,17 +39,32 @@ class _ShowAnimeForumState extends State<ShowAnimeForum>
     _fetchForumTopics();
   }
 
-  Future<void> _fetchForumTopics() async {
+  @override
+  void dispose() {
+    _pages.dispose();
+    super.dispose();
+  }
+
+  Future<List<AnimeForum>> _load() async {
     try {
       final response = await JikanApi().getAnimeForum(
         widget.animeId,
         AnimeForumFilter.all,
         category: widget.category,
       );
+      return response.data;
+    } catch (e) {
+      debugPrint('Jikan forum failed, trying MyAnimeList: $e');
+      return JikanFallbacks.forum(widget.animeId, widget.category);
+    }
+  }
 
+  Future<void> _fetchForumTopics() async {
+    try {
+      final topics = await _load();
       if (!mounted) return;
       setState(() {
-        forumTopicsList = response.data;
+        forumTopicsList = topics;
         isLoading = false;
       });
     } catch (e) {
@@ -92,7 +112,7 @@ class _ShowAnimeForumState extends State<ShowAnimeForum>
       height: containerHeight,
       child: PageView.builder(
         padEnds: false,
-        controller: PageController(viewportFraction: 0.92),
+        controller: _pages,
         itemCount: pageCount,
         itemBuilder: (context, pageIndex) {
           final startIndex = pageIndex * itemsPerPage;
@@ -154,7 +174,7 @@ class _ShowAnimeForumState extends State<ShowAnimeForum>
                   // Title
                   Expanded(
                     child: Text(
-                      topic.title ?? 'Untitled',
+                      topic.title ?? S.current.Res_Forum_Untitled,
                       style: theme.textTheme.bodyLarge?.copyWith(
                         fontWeight: FontWeight.w600,
                       ),
@@ -175,7 +195,7 @@ class _ShowAnimeForumState extends State<ShowAnimeForum>
                       const SizedBox(width: 4),
                       Flexible(
                         child: Text(
-                          topic.authorUsername ?? 'Unknown',
+                          topic.authorUsername ?? S.current.Res_Unknown,
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: theme.colorScheme.primary,
                           ),
@@ -184,12 +204,13 @@ class _ShowAnimeForumState extends State<ShowAnimeForum>
                       ),
                       // Date
                       if (topic.date != null) ...[
-                        Text(
-                          ' · ',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
+                        const SizedBox(width: 10),
+                        Icon(
+                          Icons.date_range,
+                          size: 14,
+                          color: theme.colorScheme.onSurfaceVariant,
                         ),
+                        const SizedBox(width: 4),
                         Text(
                           _formatDate(topic.date),
                           style: theme.textTheme.bodySmall?.copyWith(
@@ -250,12 +271,9 @@ class _ShowAnimeForumState extends State<ShowAnimeForum>
 
   String _formatDate(String? dateStr) {
     if (dateStr == null) return '';
-    try {
-      final date = DateTime.parse(dateStr);
-      return _dateFormat.format(date);
-    } catch (e) {
-      return dateStr;
-    }
+    final date = DateTime.tryParse(dateStr);
+    if (date == null) return dateStr;
+    return DateFormat.yMMMd(Localizations.localeOf(context).toString()).format(date.toLocal());
   }
 
   Widget _buildLoadingState() {
@@ -287,7 +305,7 @@ class _ShowAnimeForumState extends State<ShowAnimeForum>
                             height: 16,
                             width: double.infinity,
                             decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: Theme.of(context).colorScheme.onSurface,
                               borderRadius: BorderRadius.circular(4),
                             ),
                           ),
@@ -296,7 +314,7 @@ class _ShowAnimeForumState extends State<ShowAnimeForum>
                             height: 14,
                             width: 200,
                             decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: Theme.of(context).colorScheme.onSurface,
                               borderRadius: BorderRadius.circular(4),
                             ),
                           ),
@@ -307,7 +325,7 @@ class _ShowAnimeForumState extends State<ShowAnimeForum>
                                 height: 12,
                                 width: 120,
                                 decoration: BoxDecoration(
-                                  color: Colors.white,
+                                  color: Theme.of(context).colorScheme.onSurface,
                                   borderRadius: BorderRadius.circular(4),
                                 ),
                               ),
@@ -316,7 +334,7 @@ class _ShowAnimeForumState extends State<ShowAnimeForum>
                                 height: 12,
                                 width: 40,
                                 decoration: BoxDecoration(
-                                  color: Colors.white,
+                                  color: Theme.of(context).colorScheme.onSurface,
                                   borderRadius: BorderRadius.circular(4),
                                 ),
                               ),
@@ -335,70 +353,17 @@ class _ShowAnimeForumState extends State<ShowAnimeForum>
     );
   }
 
-  Widget _buildEmptyState() {
-    return SizedBox(
-      height: 200,
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.forum_outlined,
-              size: 48,
-              color: Theme.of(context)
-                  .colorScheme
-                  .onSurface
-                  .withValues(alpha: 0.6),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'No forum topics available',
-              style: TextStyle(
-                color: Theme.of(context)
-                    .colorScheme
-                    .onSurface
-                    .withValues(alpha: 0.6),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  Widget _buildEmptyState() =>
+      SectionMessage(icon: Icons.forum_outlined, message: S.current.Res_Forum_Empty);
 
-  Widget _buildErrorState() {
-    return SizedBox(
-      height: 200,
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.error_outline,
-              size: 48,
-              color: Theme.of(context).colorScheme.error,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Failed to load forum topics',
-              style: TextStyle(
-                color: Theme.of(context).colorScheme.error,
-              ),
-            ),
-            const SizedBox(height: 8),
-            ElevatedButton(
-              onPressed: () {
-                setState(() {
-                  isLoading = true;
-                  hasError = false;
-                });
-                _fetchForumTopics();
-              },
-              child: const Text('Retry'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  Widget _buildErrorState() => SectionMessage.error(
+        message: S.current.Res_Forum_Failed,
+        onRetry: () {
+          setState(() {
+            isLoading = true;
+            hasError = false;
+          });
+          _fetchForumTopics();
+        },
+      );
 }

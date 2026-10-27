@@ -1,140 +1,102 @@
-import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:mywatchlist/constants/constants.dart';
+import 'package:mywatchlist/generated/l10n.dart';
+import 'package:mywatchlist/screens/MAL/detail/sections/section_states.dart';
 import 'package:mywatchlist/services/api/MAL/mal_anime.dart';
 
-class AnimeStatisticsWidget extends StatefulWidget {
+/// List statuses of the members (official MAL API `statistics`): one bar per
+/// status, coloured with the theme roles, share above, label and count below.
+class AnimeStatisticsWidget extends StatelessWidget {
   final Statistics stats;
   const AnimeStatisticsWidget({required this.stats, super.key});
 
-  @override
-  // ignore: library_private_types_in_public_api
-  _AnimeStatisticsWidgetState createState() => _AnimeStatisticsWidgetState();
-}
+  static const double _maxBarHeight = 150;
 
-class _AnimeStatisticsWidgetState extends State<AnimeStatisticsWidget> {
-  int? touchedIndex;
-
-  /// watching, onHold, ptw, dropped, completed
-  List<double> statList = [0.0, 0.0, 0.0, 0.0, 0.0];
-  List<double> statListHeight = [0.0, 0.0, 0.0, 0.0, 0.0];
-  List<String> statName = [
-    'Watching',
-    'CMPL',
-    'On Hold',
-    'Dropped',
-    'PTW',
-  ];
-  NumberFormat statFormat = NumberFormat.compact();
-
-  double _toDouble(dynamic value) {
+  static double _toDouble(dynamic value) {
     if (value is num) return value.toDouble();
     if (value is String) return double.tryParse(value) ?? 0.0;
     return 0.0;
   }
 
   @override
-  void initState() {
-    super.initState();
-
-    Future.delayed(Duration.zero).then((value) {
-      statList[0] = _toDouble(widget.stats.status.watching);
-      statList[1] = _toDouble(widget.stats.status.completed);
-      statList[2] = _toDouble(widget.stats.status.onHold);
-      statList[3] = _toDouble(widget.stats.status.dropped);
-      statList[4] = _toDouble(widget.stats.status.planToWatch);
-
-      double maxProp = statList.reduce(max);
-      if (maxProp == 0) maxProp = 1;
-      var multiplier = 100 / maxProp;
-      for (var i = 0; i < statList.length; i++) {
-        statListHeight[i] = statList[i] * multiplier;
-      }
-      setState(() {});
-    });
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        const SizedBox(
-          height: 14,
-          width: double.infinity,
-        ),
-        SizedBox(
-          height: 260,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: List.generate(5, (i) => _buildStatBar(i)),
-          ),
-        ),
-        const SizedBox(
-          height: 20,
-        ),
-        Text(
-          "Total ${NumberFormat.currency(name: "", decimalDigits: 0).format(widget.stats.numListUsers)} Members",
-          overflow: TextOverflow.ellipsis,
-          style: Theme.of(context).textTheme.bodyLarge,
-        ),
-      ],
-    );
-  }
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final locale = Localizations.localeOf(context).toString();
+    final compact = NumberFormat.compact(locale: locale);
+    final percentFormat = NumberFormat.decimalPercentPattern(locale: locale, decimalDigits: 1);
+    final status = stats.status;
+    final bars = <(String, double, Color)>[
+      (S.current.Res_Status_Watching, _toDouble(status.watching), scheme.primary),
+      (S.current.Res_Status_Completed, _toDouble(status.completed), scheme.tertiary),
+      (S.current.Res_Status_On_Hold, _toDouble(status.onHold), scheme.secondary),
+      (S.current.Res_Status_Dropped, _toDouble(status.dropped), scheme.error),
+      (S.current.Res_Status_Plan_To_Watch, _toDouble(status.planToWatch), scheme.outline),
+    ];
+    final sum = bars.fold<double>(0, (a, b) => a + b.$2);
+    if (sum == 0) {
+      return SectionMessage(icon: Icons.bar_chart, message: S.current.No_Content);
+    }
+    final maxValue = bars.fold<double>(1, (m, b) => b.$2 > m ? b.$2 : m);
+    final members = stats.numListUsers > 0 ? stats.numListUsers.toDouble() : sum;
+    final small = theme.textTheme.labelSmall?.copyWith(color: scheme.onSurfaceVariant);
 
-  Column _buildStatBar(int i) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.end,
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Text(
-          "${NumberFormat.currency(name: "").format(statList[i] * (100 / formatZeroAsOne(widget.stats.numListUsers)))}%",
-          overflow: TextOverflow.ellipsis,
-          style: Theme.of(context).textTheme.labelSmall,
-        ),
-        const SizedBox(
-          height: 10,
-        ),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 300),
-            height: statListHeight[i] * 1.75,
-            width: 20,
-            decoration: BoxDecoration(
-              color: Color(getStatusColorInt(i)),
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(12),
-                topRight: Radius.circular(12),
-              ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Column(
+        children: [
+          SizedBox(
+            height: _maxBarHeight + 76,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                for (final (label, value, color) in bars)
+                  Expanded(
+                    child: Semantics(
+                      label: '$label: ${compact.format(value)}',
+                      excludeSemantics: true,
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(percentFormat.format(value / members), style: small),
+                          ),
+                          const SizedBox(height: 4),
+                          Container(
+                            height: (value / maxValue * _maxBarHeight).clamp(2.0, _maxBarHeight),
+                            width: 22,
+                            decoration: BoxDecoration(
+                              color: color,
+                              borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          SizedBox(
+                            height: 30,
+                            child: Text(
+                              label,
+                              textAlign: TextAlign.center,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.textTheme.labelSmall,
+                            ),
+                          ),
+                          Text(compact.format(value), style: theme.textTheme.labelMedium),
+                        ],
+                      ),
+                    ),
+                  ),
+              ],
             ),
           ),
-        ),
-        const SizedBox(
-          height: 10,
-        ),
-        Text(
-          statName[i],
-          overflow: TextOverflow.ellipsis,
-          style: Theme.of(context).textTheme.labelSmall,
-        ),
-        const SizedBox(
-          height: 10,
-        ),
-        Text(
-          statFormat.format(statList[i]),
-          overflow: TextOverflow.ellipsis,
-          style: Theme.of(context).textTheme.labelMedium,
-        )
-      ],
+          const SizedBox(height: 14),
+          Text(
+            S.current.Res_Total_Members(NumberFormat.decimalPattern(locale).format(members)),
+            style: theme.textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
+          ),
+        ],
+      ),
     );
-  }
-
-  int formatZeroAsOne(int? number) {
-    if (number == null || number == 0 || number == double.infinity) return 1;
-    return number;
   }
 }
