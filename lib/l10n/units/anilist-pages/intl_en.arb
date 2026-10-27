@@ -1,0 +1,51 @@
+{
+  "@@locale": "en",
+  "Al_Episode_Short": "Ep {n}",
+  "@Al_Episode_Short": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "Al_Replies": "{count, plural, =1{1 reply} other{{count} replies}}",
+  "@Al_Replies": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "Al_Views": "{count, plural, =1{1 view} other{{count} views}}",
+  "@Al_Views": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "Al_Search_Hint": "Search AniList anime and manga",
+  "Al_Search_Prompt": "Type a title to search AniList",
+  "Al_No_Results": "No results",
+  "Al_Load_Failed": "Couldn't load this page",
+  "Al_Retry": "Try again",
+  "Al_Sec_Trending": "Trending now",
+  "Al_Sec_Airing_Soon": "Airing in the next 24 hours",
+  "Al_Sec_Publishing": "Publishing now",
+  "Al_Sign_In_List": "Sign in to AniList to see your list here",
+  "Al_Sign_In": "Sign in",
+  "Al_Sign_In_Again": "Sign in again",
+  "Al_Session_Expired": "Your AniList session has expired",
+  "Al_Session_Expired_Hint": "Sign in again to see and edit your list.",
+  "Al_List_Sign_In_Title": "Your list lives here",
+  "Al_List_Sign_In_Hint": "Sign in with AniList to see and edit your anime and manga lists.",
+  "Al_Profile_Sign_In_Body": "Connect your AniList account to see your stats and favorites.",
+  "Al_Profile_Session_Expired_Body": "Your AniList session expired. Sign in again to see your profile.",
+  "Al_Edit_On_Anilist": "Edit on AniList",
+  "Al_Fav_Studios": "Studios",
+  "Al_Forum_Title": "AniList forum",
+  "Al_Forum_Recent": "Recent activity",
+  "Al_Forum_Newest": "Newest",
+  "Al_Forum_Most_Viewed": "Most viewed",
+  "Al_Forum_Most_Replied": "Most replies"
+}
