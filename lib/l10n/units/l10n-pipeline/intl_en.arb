@@ -1,0 +1,16 @@
+{
+  "@@locale": "en",
+  "Language_Use_System": "Use system language",
+  "Language_Use_System_Desc": "Follow the device language. English is used when the app does not support it.",
+  "Language_Available": "Available languages",
+  "Language_Intro_Desc": "Select the language of the app interface. You can change it later in the settings.",
+  "Language_Changed_To": "Language set to {language}",
+  "@Language_Changed_To": {
+    "description": "Snackbar shown after picking a language; {language} is the language's own name.",
+    "placeholders": {
+      "language": {
+        "type": "String"
+      }
+    }
+  }
+}
