@@ -96,10 +96,24 @@ abstract final class AppRoutes {
   static Future<void> openCalendar(BuildContext context) =>
       push<void>(context, const CalendarScreen());
 
-  /// Opens the global search screen, optionally prefilled with [query].
-  static Future<void> openSearch(BuildContext context, {String? query}) => push<void>(
+  /// Opens the global search screen, optionally prefilled with [query], on [category]
+  /// (`all`, `anime`, `manga`, `character`, `person`, `user`, `forum`, `featured`, `news`,
+  /// `club`, `interest_stack`) and with initial [filters]. For the ready-made searches (genre,
+  /// studio, magazine, tag, season…) see the static entry points of [GeneralSearchScreen].
+  static Future<void> openSearch(
+    BuildContext context, {
+    String? query,
+    String category = SearchCategory.all,
+    SearchFilters? filters,
+  }) =>
+      push<void>(
         context,
-        GeneralSearchScreen(searchQuery: query, showBackButton: true),
+        GeneralSearchScreen(
+          searchQuery: query,
+          category: category,
+          filters: filters,
+          showBackButton: true,
+        ),
       );
 
   /// Whether [tracker] has a real profile screen (MyAnimeList; no tracker selected falls back

@@ -1,0 +1,256 @@
+{
+  "@@locale": "en",
+  "Srch_Anime_Categories": "Anime rankings",
+  "Srch_Manga_Categories": "Manga rankings",
+  "Srch_By_Season": "Search by season",
+  "Srch_Apply": "Apply",
+  "Srch_Apply_Count": "Apply ({count})",
+  "@Srch_Apply_Count": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "Srch_By": "by {name}",
+  "@Srch_By": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "Srch_Cat_All": "All",
+  "Srch_Cat_Anime": "Anime",
+  "Srch_Cat_Manga": "Manga",
+  "Srch_Cat_Character": "Characters",
+  "Srch_Cat_Person": "People",
+  "Srch_Cat_User": "Users",
+  "Srch_Cat_Forum": "Forum",
+  "Srch_Cat_Featured": "Featured articles",
+  "Srch_Cat_News": "News",
+  "Srch_Cat_Club": "Clubs",
+  "Srch_Cat_Stack": "Interest stacks",
+  "Srch_Clear": "Clear",
+  "Srch_Close": "Close",
+  "Srch_Reset": "Reset",
+  "Srch_Done": "Done",
+  "Srch_Retry": "Retry",
+  "Srch_Remove": "Remove",
+  "Srch_Go": "Search",
+  "Srch_Year": "Year",
+  "Srch_Tab_Category": "Category",
+  "Srch_Tab_Filter": "Filters",
+  "Srch_Tab_Display": "Display",
+  "Srch_Display_Layout": "Layout",
+  "Srch_Display_Grid": "Grid",
+  "Srch_Display_List": "List",
+  "Srch_Display_Density": "Density",
+  "Srch_Display_Compact": "Compact",
+  "Srch_Display_Comfortable": "Comfortable",
+  "Srch_Display_CoverOnly": "Covers only",
+  "Srch_Display_Spacious": "Spacious",
+  "Srch_Display_Columns": "Columns: {count}",
+  "@Srch_Display_Columns": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "Srch_Display_Height": "Card height: {height}",
+  "@Srch_Display_Height": {
+    "placeholders": {
+      "height": {
+        "type": "int"
+      }
+    }
+  },
+  "Srch_Display_Hint": "These options apply to anime and manga results.",
+  "Srch_Entries_Count": "{count} entries",
+  "@Srch_Entries_Count": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "Srch_Restacks_Count": "{count} restacks",
+  "@Srch_Restacks_Count": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "Srch_Episodes_Short": "{count} eps",
+  "@Srch_Episodes_Short": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "Srch_Volumes_Short": "{count} vols",
+  "@Srch_Volumes_Short": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "Srch_Posts_Count": "{count} posts",
+  "@Srch_Posts_Count": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "Srch_Favorites_Count": "{count} favorites",
+  "@Srch_Favorites_Count": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "Srch_Members": "{count} members",
+  "@Srch_Members": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "Srch_Error": "Couldn’t load the results. Check your connection and try again.",
+  "Srch_Excluded": "Excluded",
+  "Srch_Included": "Included",
+  "Srch_F_AgeHigh": "Age up to",
+  "Srch_F_AgeLow": "Age from",
+  "Srch_F_Board": "Board",
+  "Srch_F_End": "End date",
+  "Srch_F_Gender": "Gender",
+  "Srch_F_Genres": "Genres",
+  "Srch_F_Letter": "Starts with",
+  "Srch_F_Location": "Location",
+  "Srch_F_Magazine": "Magazine",
+  "Srch_F_MinScore": "Minimum score",
+  "Srch_F_OrderBy": "Order by",
+  "Srch_F_Rated": "Rated",
+  "Srch_F_Sort": "Direction",
+  "Srch_F_StackType": "Type",
+  "Srch_F_Start": "Start date",
+  "Srch_F_Status": "Status",
+  "Srch_F_Studio": "Studio",
+  "Srch_F_SubBoard": "Sub board",
+  "Srch_F_Tag": "Tag",
+  "Srch_F_TopicUser": "Topic author",
+  "Srch_F_Type": "Type",
+  "Srch_F_Username": "Username",
+  "Srch_F_Location_Hint": "e.g. California",
+  "Srch_Gender_Any": "Any",
+  "Srch_Gender_Female": "Female",
+  "Srch_Gender_Male": "Male",
+  "Srch_Gender_NonBinary": "Non-binary",
+  "Srch_Genres_Choose": "Choose genres",
+  "Srch_Genres_Edit": "Edit",
+  "Srch_Genres_Hint": "Tap once to include, twice to exclude, three times to clear.",
+  "Srch_Group_Demographics": "Demographics",
+  "Srch_Group_Explicit": "Explicit genres",
+  "Srch_Group_Genres": "Genres",
+  "Srch_Group_Themes": "Themes",
+  "Srch_Hint_All": "Search anime, manga, people…",
+  "Srch_Hint_In": "Search in {category}",
+  "@Srch_Hint_In": {
+    "placeholders": {
+      "category": {
+        "type": "String"
+      }
+    }
+  },
+  "Srch_History": "Recent searches",
+  "Srch_Recent_Anime": "Recently opened anime",
+  "Srch_Recent_Manga": "Recently opened manga",
+  "Srch_MType_Doujin": "Doujinshi",
+  "Srch_MType_LightNovel": "Light novel",
+  "Srch_MType_Manga": "Manga",
+  "Srch_MType_Manhua": "Manhua",
+  "Srch_MType_Manhwa": "Manhwa",
+  "Srch_MType_Novel": "Novel",
+  "Srch_MType_Oneshot": "One-shot",
+  "Srch_Needs_Order": "Pick “Order by” first",
+  "Srch_No_Filters": "No filters for this category.",
+  "Srch_No_Results": "No results found",
+  "Srch_No_Results_Hint": "Try another spelling or fewer filters.",
+  "Srch_No_Suggestions": "No matching titles.",
+  "Srch_Order_Chapters": "Chapters",
+  "Srch_Order_End": "End date",
+  "Srch_Order_Episodes": "Episodes",
+  "Srch_Order_Favorites": "Favorites",
+  "Srch_Order_Members": "Members",
+  "Srch_Order_Popularity": "Popularity",
+  "Srch_Order_Rank": "Rank",
+  "Srch_Order_Score": "Score",
+  "Srch_Order_ScoredBy": "Number of ratings",
+  "Srch_Order_Start": "Start date",
+  "Srch_Order_Title": "Title",
+  "Srch_Order_Volumes": "Volumes",
+  "Srch_Rated_G": "G, all ages",
+  "Srch_Rated_Pg": "PG, children",
+  "Srch_Rated_Pg13": "PG-13, teens 13 and older",
+  "Srch_Rated_R17": "R-17+, violence and profanity",
+  "Srch_Rated_R": "R+, mild nudity",
+  "Srch_Rated_Rx": "Rx, hentai",
+  "Srch_Search_For": "Search for “{query}”",
+  "@Srch_Search_For": {
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
+  "Srch_Search_In": "Search “{query}” in {category}",
+  "@Srch_Search_In": {
+    "placeholders": {
+      "query": {
+        "type": "String"
+      },
+      "category": {
+        "type": "String"
+      }
+    }
+  },
+  "Srch_Season_Fall": "Fall",
+  "Srch_Season_Spring": "Spring",
+  "Srch_Season_Summer": "Summer",
+  "Srch_Season_Winter": "Winter",
+  "Srch_Sort_Asc": "Ascending",
+  "Srch_Sort_Desc": "Descending",
+  "Srch_Special": "special",
+  "Srch_Special_Tip": "Start with # for special searches, for example #airing, #bypopularity or #winter@2025.",
+  "Srch_Stack_Mal": "MyAnimeList",
+  "Srch_Start_Title": "Search anime, manga, characters, users and more",
+  "Srch_Status_Airing": "Airing",
+  "Srch_Status_Discontinued": "Discontinued",
+  "Srch_Status_Finished": "Finished",
+  "Srch_Status_Hiatus": "On hiatus",
+  "Srch_Status_Publishing": "Publishing",
+  "Srch_Status_Upcoming": "Upcoming",
+  "Srch_Suggestions": "Suggestions",
+  "Srch_Type_Movie": "Movie",
+  "Srch_Type_Music": "Music",
+  "Srch_Type_Ona": "ONA",
+  "Srch_Type_Ova": "OVA",
+  "Srch_Type_Special": "Special",
+  "Srch_Type_Tv": "TV",
+  "Srch_User_Found": "User found as {name}",
+  "@Srch_User_Found": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "Srch_Load_More": "Load more"
+}
