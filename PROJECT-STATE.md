@@ -38,10 +38,8 @@ Cap: 80 lines. Rewrite in place; history lives in git and `docs/DECISIONS.md`.
 - `TrackerActions` (connect, cancel, sign out, switch) is the only caller of the auth classes; Kitsu has its own translated dialog with inline errors; `KitsuAuth.signInWithKitsu` ends any failure unauthenticated (#88). Sign out (`RemoveAccountEvent`) clears that tracker's `ListStatusCache`, `LogoutEvent` all of it (#97).
 - One `AuthStatus` (base_user.dart, re-exported by user.dart); `needsReLogin` persists across restarts and `clear()` resets it.
 - Strings: `Acc_*` in `lib/l10n/units/accounts-ux/` (en + fr_FR).
-
 ## Calendar (`calendar`)
 - `CalendarScreen` (`lib/screens/calendar/`, `AppRoutes.openCalendar`): 7-day strip from today, list-status chips (All, Watching, Plan to Watch, 3-state In list / Not in list; hidden with a hint when the active account is not MAL), episode tiles with countdown, "now" rule, add-to-calendar sheet (device calendar with weekly recurrence, `.ics` save or share). Times follow the timezone pref; the app bar menu changes it. Logic in `lib/widgets/calendar/`: `CalendarCubit` (LiveChart schedule joined with the MAL season for covers, episode totals and list status), `calendar_logic.dart` (zones, week grouping, filters), `calendar_ics.dart` (RFC 5545 builder), `calendar_export.dart`. Read API for other units: `AiringSchedule.instance` (`ensureLoaded()`, `nextEpisode(malId)` gives `AiringEpisode` with episode + UTC time, null when unknown so callers keep their estimate).
-
 ## Backend (mwl-api)
 - `backend-parsers` ported DailyAL's page parsers (`PageParsers`, typed `*Html` models) and routes: `content/characters`, `character|people/*id/pics`, `characters`, `people`, `magazines`, `studios`, `clubs?id=`, `clubs/type`, `search/all`; `reviews`, `users/about` parsed; `schedules` = LiveChart (`source=jikan` for the old proxy).
 - Invalid parameters (unknown season, non-numeric id or year, missing `q`/`id`…) answer 400 via `BadRequest` (#72).
@@ -51,7 +49,6 @@ Cap: 80 lines. Rewrite in place; history lives in git and `docs/DECISIONS.md`.
 - Baseline home scroll, profile builds: MWL 22-23 % janky frames vs DailyAL 1.6 % (`tools/perf/measure-scroll.sh`, emulator with `-gpu host`).
 - Rules and measurement procedure (incl. Impeller vs Skia A/B): `docs/PERFORMANCE.md`. Foundation: high refresh rate, `AppImage` (decode at displayed size), one shared shimmer ticker, MaterialApp rebuilt only on theme/locale, avatars without fade or blurred shadow, viewer without blur.
 - Screen-level fixes (home tabs, cards, detail listeners, parsing) belong to their units; cards must switch to `AppImage`.
-
 ## Edit sheet (`edit-sheet`)
 - `ContentEditWidget` (same constructor) loads the whole MAL `my_list_status` itself (`MalListEntryService`, `lib/widgets/user/edit/`), so dates, priority, rewatch, tags, comments, chapters and volumes are pre-filled exactly; writes go through `MalApi.save*ListStatus` and both list-status models keep dates as MAL text, so a partial date (`2019-03`, `2019`) survives open, save, reopen (#86); load error / dead session / non-MAL account show a message with retry or sign-in, never a spinner.
 - Auto dates follow `autoAddStartEndDate` and only fill empty dates; the last episode completes with a finish date, the first one fills the start date; add uses `defaultAnime/MangaAddStatus`; airing shows without total get an estimated episode count (picker bar or stepper).
@@ -62,10 +59,8 @@ Cap: 80 lines. Rewrite in place; history lives in git and `docs/DECISIONS.md`.
 - Data: `UserProfileRepository` (official `/users/@me` for yourself + Jikan `users/{name}/full` for manga numbers and favorites; Jikan alone for others), disk cache `CachedUserProfile` (fresh 1 h, stale 14 days when the network fails).
 - Tabs (lazy, kept alive): Stats, Friends, Clubs, About, Favorites, History under a `NestedScrollView`; charts in `lib/widgets/charts/` (fl_chart bars, colors from the stats chart preference). Insights = whole MAL list fetched and reduced off the UI isolate (`UserInsightsLoader`).
 - Profile background: picked image kept on this device (`ProfileBackgroundStore`), shown on your own profile only (no server to share it).
-
 ## Settings preference pages (`settings-prefs-pages`)
 - Tiles in `lib/screens/settings/prefs/` read one contract field (`context.select`), write via the group's `copyWith` event; `Prefs_*` strings (en + fr_FR); "Restore defaults" keeps dub options and card layouts; the card field editor belongs to `user-list-mal`.
-
 ## Cross-tracker sync (`sync-dialog`)
 - `CrossTrackerWidget` (same constructor) lists the other signed-in trackers; each card loads on its own (link, then entry, in parallel) and offers Link, Edit, Sync, Unlink, Remove. Links are found automatically by MAL id (AniList `idMal`, Kitsu mappings, Simkl `mal:<id>`); unlinking sticks.
 - Sync dialog (`lib/widgets/user/sync/sync_dialog.dart`): reads both sides when opened, shows what each would copy, runs MAL to tracker or tracker to MAL, Cancel always available (no write starts after a cancel). Empty fields never erase the target.
@@ -74,6 +69,10 @@ Cap: 80 lines. Rewrite in place; history lives in git and `docs/DECISIONS.md`.
 
 ## Explore and seasonal (`explore-seasonal`)
 - Explore tab (`lib/pages/MAL/mal_explore_page.dart`, parts in `lib/screens/explore/`): search bar, Anime/Manga switch, random picks, rankings and genre tiles, season card, then Jikan recommendations, reviews, interest stacks, top characters and voice actors; each section loads when it scrolls near, cached 10 min (`ExploreCache`); "View all" pages (`ExploreListScreen`). Seasonal screen (`lib/screens/seasonal/`): whole season fetched once, sorted/filtered on the device with the shared sheet and list cards; shared view when the global seasonal filter pref is on. `lib/cache/top_characters.dart` serves the character screen's favorites. Strings `Explore_*`, `Seasonal_*`.
+
+## Search (`search-upgrade`)
+- `lib/screens/search/`: `GeneralSearchScreen` (state + parts `search_logic`, `search_bar_part`, `search_results_part`, `search_active_filters`), `SearchService` (all fetching, no widget), `SearchFilters` (immutable, API values: genre/producer/magazine ids), `SearchCatalog` (current MAL genre, producer and magazine tables in `data/`, name to id), `search_tiles`, `search_home_view`, `search_filter_panel` (kit select widgets, searchable producers/magazines, include/exclude genres).
+- Entry points: `GeneralSearchScreen.byQuery/byGenre/byStudio/byMagazine/byTag/bySeason/byRanking/byMangaRanking/bySuggested/byUser`, `AppRoutes.openSearch(query, category, filters)`; the old `filterOutputs:` map still works. User results open the profile (long press: quick sheet); an exact MAL user name shows "User found as"; a numeric query finds the title by id; autocomplete (400 ms) under the field.
 
 ## Known big gaps (see inventory)
 - No user list / profile for AniList/Kitsu/Simkl (placeholders); no notifications, share, translation.
