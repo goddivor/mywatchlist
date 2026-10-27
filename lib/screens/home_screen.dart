@@ -26,6 +26,7 @@ import 'package:mywatchlist/pages/Simkl/simkl_user_page.dart';
 import 'package:mywatchlist/pages/Simkl/simkl_user_profile_page.dart';
 import 'package:mywatchlist/pages/side_bar.dart';
 import 'package:mywatchlist/screens/open_screen.dart';
+import 'package:mywatchlist/services/api/MAL/mal_api.dart';
 import 'package:mywatchlist/user/accounts/account_bloc.dart';
 import 'package:mywatchlist/user/preferences/preferences.dart';
 import 'package:mywatchlist/user/theme/theme_bloc.dart';
@@ -95,6 +96,7 @@ class _HomeScreenState extends State<HomeScreen> {
     _pageIndex = (widget.pageIndex ?? _tabForStartup(startup))
         .clamp(0, HomeTab.count - 1);
     UserManager.instance.addListener(_onUsersChanged);
+    MalApi.sessionExpired.addListener(_onUsersChanged);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
@@ -112,6 +114,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void dispose() {
     UserManager.instance.removeListener(_onUsersChanged);
+    MalApi.sessionExpired.removeListener(_onUsersChanged);
     super.dispose();
   }
 
@@ -132,11 +135,18 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  /// Trackers whose session died: `needsReLogin` of every tracker, plus MAL's single
+  /// signal from the API layer ([MalApi.sessionExpired]).
+  static Set<AccountType> expiredTrackers() => {
+        ...UserManager.instance.trackersNeedingReLogin,
+        if (MalApi.sessionExpired.value) AccountType.myanimelist,
+      };
+
   /// Shows one non-blocking prompt per tracker whose session died (any tracker, not only
   /// MAL); forgets the tracker once it is signed in again.
   void _onUsersChanged() {
     if (!mounted) return;
-    final expired = UserManager.instance.trackersNeedingReLogin;
+    final expired = expiredTrackers();
     _reLoginPrompted.removeWhere((t) => !expired.contains(t));
     for (final tracker in expired) {
       if (_reLoginPrompted.add(tracker)) {

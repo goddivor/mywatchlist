@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mywatchlist/constants/constants.dart' show AccountType;
 import 'package:mywatchlist/generated/l10n.dart';
+import 'package:mywatchlist/services/api/MAL/mal_api.dart';
 import 'package:mywatchlist/user/accounts/account_bloc.dart';
 import 'package:mywatchlist/user/base_user.dart' show AuthStatus;
 import 'package:mywatchlist/user/user_manager.dart';
@@ -172,7 +173,7 @@ class _AppSidebarState extends State<AppSidebar> {
       width: (MediaQuery.sizeOf(context).width * 0.85).clamp(0.0, 360.0),
       backgroundColor: theme.colorScheme.surfaceContainerLow,
       child: ListenableBuilder(
-        listenable: UserManager.instance,
+        listenable: Listenable.merge([UserManager.instance, MalApi.sessionExpired]),
         builder: (context, _) {
           final accountState = context.watch<AccountBloc>().state;
           final tracker = accountState is AccountLoaded
@@ -180,7 +181,8 @@ class _AppSidebarState extends State<AppSidebar> {
               : AccountType.none;
           final user = UserManager.instance.getUserByTracker(tracker);
           final signedIn = user?.status == AuthStatus.AUTHENTICATED;
-          final needsReLogin = user?.needsReLogin ?? false;
+          final needsReLogin = (user?.needsReLogin ?? false) ||
+              (tracker == AccountType.myanimelist && MalApi.sessionExpired.value);
           return ListView(
             padding: EdgeInsets.zero,
             children: [
