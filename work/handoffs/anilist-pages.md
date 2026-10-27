@@ -17,7 +17,7 @@
 Plus `PROJECT-STATE.md` (rewrite in place, within its cap) and `docs/DECISIONS.md` (append one line per decision). Anything else you need is a FINDING to report, never an edit.
 
 ## Goal
-- Replace the 5 AniList placeholder pages with real ones reusing the tracker-agnostic list/profile widgets; AniList GraphQL for lists Authenticated calls go through `user.sendAuthenticated` (auth-refresh) instead of hand-built Bearer headers., profile, trending/seasonal; home sections honoring HomePreferencesBloc.
+- Replace the 5 AniList placeholder pages with real ones reusing the tracker-agnostic list/profile widgets; AniList GraphQL for lists On the preference pages, mark MAL-only options with a visible note for this tracker (report the file change as a finding if the page is not yours). Authenticated calls go through `user.sendAuthenticated` (auth-refresh) instead of hand-built Bearer headers., profile, trending/seasonal; home sections honoring HomePreferencesBloc.
 
 ## Known bugs to fix in scope
 - none

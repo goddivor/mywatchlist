@@ -96,3 +96,4 @@ Append-only, one line per decision: `- YYYY-MM-DD [unit] decision — why`. Earl
 - 2026-10-27 [user-profile-mal] Report user opens `modules.php?go=report&type=profile&id=<id>` in the external browser after a confirmation dialog; the id comes from the profile payload.
 - 2026-10-27 [user-profile-mal] `AppRoutes.openUserProfile/openUserStats/openUserPop` serve MyAnimeList (and `AccountType.none`, as the home shell does); other trackers still open the placeholder page until their own profile unit replaces that branch.
 - 2026-10-27 [user-profile-mal] All profile strings use `Prof_*` keys with their own French (several DailyAL base keys are wrong in French, e.g. `last_seen` is "véritable"); the base files stay untouched.
+- 2026-10-27 [orchestrator, owner away] Preference pages stay reachable for every tracker; tracker units mark MAL-only options (NSFW, priority, airing info, auto dates, MAL statuses) with a visible note.
