@@ -232,6 +232,9 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Scaffold(
         key: _scaffoldKey,
         endDrawer: const AppSidebar(),
+        // Wider than the 20 dp default so a swipe from the end edge still reaches the
+        // drawer next to Android's gesture-navigation back zone.
+        drawerEdgeDragWidth: 40,
         bottomNavigationBar: BottomNavBar(
           startIndex: _pageIndex,
           onChanged: _onTabSelected,
