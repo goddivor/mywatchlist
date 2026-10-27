@@ -119,6 +119,7 @@ const UNITS = [
       "Rebuild the settings hub (UI directive applies) with one tile per settings page. Create each settings page file listed in Owns as a STUB (title + 'coming soon') — later units own and fill them. Remove the empty `onTap` stubs (MAL Account :147, Connected Services :158, About :174, Help :185).",
       "Create stub screens `lib/screens/bookmarks_screen.dart` and `lib/screens/calendar/calendar_screen.dart`, and a tiny route helper `lib/utils/app_routes.dart` (openBookmarks, openCalendar, openUserProfile(tracker, username), openSettingsPage(...)) so feature units can link to each other without touching each other's files. openUserProfile may push a stub until the profile unit fills it.",
       "Make the sidebar actually reachable (today `AppSidebar` is only built by `SidebarBuilder`, which nothing calls) and wire: profile, stats, bookmarks, calendar, settings, login/logout. About must open the About page.",
+      "Session expired (post-merge finding #71): listen to the session-expired notifier exposed by the MAL API layer (added by the #71 fix; if absent on your base, report it) and show a non-blocking banner/snackbar 'MAL session expired — sign in again' that opens the re-login flow.",
       "Home shell: honor the startup-page preference from the contract; open screen shows a loader instead of `loadingError()` while loading (open_screen.dart:45); hook for routing from a notification payload (calls into notification_service).",
       "FLUIDITY (work/inventory/performance.md #2, #5): remove the per-tab animated `Opacity` wrap (home_screen.dart:236-237, saveLayer over the whole page on every tab switch); build only the current tab unless the keepPagesInMemory pref is on (DAL homescreen.dart:293-297) so 5 tabs don't fire their network calls at once; scope the AccountBloc/ThemeBloc builders (:88, :105) with buildWhen/BlocSelector so they don't rebuild the whole shell.",
     ],
@@ -367,6 +368,7 @@ const UNITS = [
       "`showContentEditSheet` is an empty stub (animegridcard.dart:620-623) → open the edit sheet.",
       "Card images through `AppImage` (perf-foundation) with decode size = card size; no ClipRRect+Opacity per card when a borderRadius/alpha does it (performance.md #3, #7).",
       "`releaseProgress` faked as (eps-1)/eps (~l.389) → real schedule data or hide.",
+      "RTL: score/members badges render in a jumbled order in Arabic ('k 252 | 9.04') — build them as separate directional widgets / use Directionality-safe formatting (batch-1 check).",
       "Status badge from the list status cache, score reveal, favourites count, recommendation badge, NSFW blur per pref, preferred title.",
     ],
     bugs: ["dead edit button on every card", "fake airing progress"],
@@ -473,6 +475,17 @@ const UNITS = [
     dod: ["Workflow YAML validated with `actionlint` if available, else reviewed line by line in the PR body."],
   },
   {
+    id: "l10n-quality", title: "Translation quality: French (and Arabic) wording inherited from DailyAL", kind: "unit", priority: "P2", group: "release", model: "sonnet",
+    needs: ["l10n-pipeline"],
+    owns: ["lib/l10n/intl_fr_FR.arb", "lib/l10n/intl_ar_EG.arb", "lib/l10n/units/l10n-pipeline/**"],
+    goal: [
+      "The base ARB files are DailyAL's machine-quality translations. Review intl_fr_FR.arb entirely: fix mistranslations (e.g. `About` = « Sur » → « À propos »), untranslated entries (Spanish, German, Indonesian at :595-598), capitalisation (« turc » next to « Portugais », :856), French typography (non-breaking space before : ; ! ?, « » quotes, no em dash). The French must be flawless: follow the redaction-francais rules if available to you.",
+      "Add the Arabic translations missing for the l10n-pipeline unit's own strings (language picker: 'Use system language', its description, 'Available languages').",
+      "Never rename or remove a key; only values change. Run tools/heavy.sh tools/l10n/build.sh.",
+    ],
+    dod: ["Checker: switch to French, no English left on the language picker; About tile reads « À propos »."],
+  },
+  {
     id: "in-app-update", title: "In-app update: check GitHub releases, download and install APK", kind: "unit", priority: "P2", group: "release", model: "sonnet", ui: true,
     needs: ["settings-theme-about-backup", "versioning-ci"],
     owns: ["lib/services/updater/**", "lib/screens/settings/about_settings.dart"],
@@ -510,7 +523,7 @@ if (existsSync(INDEX)) {
 const statusOf = (u) => u.dropped ? "⛔ dropped" : prior.get(u.id) ?? "⬜ todo";
 const unitsOf = (g) => UNITS.filter((u) => u.group === g);
 
-const UI_DIRECTIVE = `**UI directive (owner's rule).** MWL's current UI is NOT the reference: the owner wrote it early and calls parts of it badly done. For every screen you touch, read the DAL equivalent's UI code, keep whichever is better (often DAL's), and improve it (hierarchy, spacing, empty/loading/error states, no dead buttons). Stay consistent with the theme system in \`lib/user/theme/\` (accent color, fonts, dark/black modes). Describe the before/after in the PR body.`;
+const UI_DIRECTIVE = `**UI directive (owner's rule).** MWL's current UI is NOT the reference: the owner wrote it early and calls parts of it badly done. For every screen you touch, read the DAL equivalent's UI code, keep whichever is better (often DAL's), and improve it (hierarchy, spacing, empty/loading/error states, no dead buttons). Stay consistent with the theme system in \`lib/user/theme/\` (accent color, fonts, dark/black modes). Describe the before/after in the PR body. **Strings:** every screen you own must be fully translatable — move its existing hardcoded literals (e.g. settings_page.dart:55,119, mal_home_page.dart:45-47, mal_home_page_preferences.dart:65) to \`S\` through your l10n fragment; the checker switches the app to French and flags any English left on your screens.`;
 
 const PERF_RULES = `**Fluidity rules (owner's rule: MWL must feel as smooth as DailyAL).** See \`docs/PERFORMANCE.md\` once perf-foundation has merged, and \`work/inventory/performance.md\`.
 - Network images only through \`AppImage\` (decode at displayed size); no \`Image.network\`.

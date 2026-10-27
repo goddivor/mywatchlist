@@ -91,6 +91,7 @@
       "priority": "P2",
       "units": [
         "versioning-ci",
+        "l10n-quality",
         "in-app-update",
         "deep-links"
       ]
@@ -1185,6 +1186,31 @@
         "tools/release/**",
         "lib/l10n/units/versioning-ci/**",
         "test/units/versioning-ci/**"
+      ],
+      "group": "release",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: sonnet"
+      ],
+      "status": "⬜ todo"
+    },
+    {
+      "id": "l10n-quality",
+      "title": "Translation quality: French (and Arabic) wording inherited from DailyAL",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P2",
+      "needs": [
+        "l10n-pipeline"
+      ],
+      "owns": [
+        "lib/l10n/intl_fr_FR.arb",
+        "lib/l10n/intl_ar_EG.arb",
+        "lib/l10n/units/l10n-pipeline/**",
+        "test/units/l10n-quality/**"
       ],
       "group": "release",
       "dropped": null,

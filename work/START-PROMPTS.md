@@ -363,6 +363,15 @@ Build exactly the Goal, inside the Owns list. Heavy commands only through tools/
 Deliver with the PR procedure of the brief.
 ```
 
+## l10n-quality
+
+```text
+Unit l10n-quality — Translation quality: French (and Arabic) wording inherited from DailyAL.
+Read work/handoffs/l10n-quality.md fully, then the DAL reference files it lists, then the MWL files you own.
+Build exactly the Goal, inside the Owns list. Heavy commands only through tools/heavy.sh; never run flutter build or touch the emulator.
+Deliver with the PR procedure of the brief.
+```
+
 ## in-app-update
 
 ```text
