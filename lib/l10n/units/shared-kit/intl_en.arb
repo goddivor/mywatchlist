@@ -1,0 +1,21 @@
+{
+  "@@locale": "en",
+  "Kit_Show_Score": "Show score",
+  "Kit_Hide_Score": "Hide score",
+  "Kit_Bookmark": "Bookmark",
+  "Kit_Remove_Bookmark": "Remove bookmark",
+  "Kit_Share_Preview": "Preview",
+  "Kit_Search_Options": "Search…",
+  "Kit_Options_Count": "{count, plural, =0{No options} =1{1 option} other{{count} options}}",
+  "@Kit_Options_Count": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "Kit_Not_In_List": "Not in my list",
+  "Kit_In_List": "In my list",
+  "Kit_Pick_Date": "Pick a date",
+  "Kit_Open_Link": "Open link"
+}

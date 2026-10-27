@@ -3,20 +3,18 @@
 export 'package:mwl_commons/src/constants/constant.dart' show ContentType;
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:intl/intl.dart';
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/services/api/MAL/mal_anime.dart';
 import 'package:mywatchlist/widgets/common/custombutton.dart';
-import 'dart:ui' as ui;
 
 import 'package:mywatchlist/widgets/loading/shimmercolor.dart';
 import 'package:mywatchlist/widgets/common/slivers.dart';
 import 'package:scroll_to_index/scroll_to_index.dart';
 import 'package:shimmer/shimmer.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:mywatchlist/utils/web_launcher.dart';
 
 enum AccountType {
   none,
@@ -158,10 +156,8 @@ Future<T?> gotoPage<T>(
     {required BuildContext context, required Widget newPage}) {
   return Navigator.push<T>(
     context,
-    MaterialPageRoute(
-      builder: (context) =>
-          Directionality(textDirection: ui.TextDirection.ltr, child: newPage),
-    ),
+    // No forced Directionality: pushed pages follow the app language (Arabic is RTL).
+    MaterialPageRoute(builder: (context) => newPage),
   );
 }
 
@@ -1112,55 +1108,20 @@ TileSize getTileSizeValues(HomePageTileSize size) {
 String getDomainAsset(String e, [String domain = 'streaming']) =>
     'https://dailyanimelist.web.app/assets/$domain/${e.trim()}.png';
 
+/// Opens [url] after asking the user; MyAnimeList links go to their in-app
+/// screen when one is registered. Kept for existing callers: new code calls
+/// `openLink` from `lib/utils/web_launcher.dart`.
 void launchURLWithConfirmation(
   String url, {
   required BuildContext context,
-}) async {
-  var result = await showDialog<bool>(
-    context: context,
-    builder: (context) => AlertDialog(
-      title: Text(
-        S.current.Just_a_sec,
-      ),
-      content: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(S.current.Url_open_conf),
-            Text("$url"),
-            Text(S.current.Continue),
-          ]),
-      actions: [
-        PlainButton(
-          onPressed: () {
-            Clipboard.setData(ClipboardData(text: url));
-            Navigator.of(context, rootNavigator: true).pop(false);
-          },
-          child: Text(S.current.Copy),
-        ),
-        ..._yesOrNoButtons(context)
-      ],
-    ),
-  );
-  if (result ?? false) {
-    final uri = Uri.tryParse(url);
-    if (uri != null && uri.host.isNotBlank) {
-      launchURL(url);
-    } else {
-      // final widget = await DalPathUtils.handleUri(uri, context);
-      // if (widget != null) {
-      //   gotoPage(context: context, newPage: widget);
-      // }
-    }
-  }
+}) {
+  openLink(context, url);
 }
 
-void launchURL(String url) async {
-  try {
-    await launch(url);
-  } catch (e) {
-    showToast("${S.current.Couldn_Launch} $url!");
-  }
+/// Opens [url] in an in-app browser tab without asking. Kept for existing
+/// callers: new code calls `launchWebView` from `lib/utils/web_launcher.dart`.
+void launchURL(String url, {BuildContext? context}) {
+  launchWebView(url, context: context);
 }
 
 Future<void> showToast(String message, {Toast? toast}) async {
