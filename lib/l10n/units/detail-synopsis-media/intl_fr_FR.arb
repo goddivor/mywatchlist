@@ -1,0 +1,9 @@
+{
+  "@@locale": "fr_FR",
+  "Translator_Failed": "Impossible de traduire ce texte",
+  "Synopsis_Empty": "Aucun synopsis disponible.",
+  "Synopsis_Expand": "Afficher plus",
+  "Synopsis_Collapse": "Afficher moins",
+  "Links_Streaming": "Plateformes de streaming",
+  "Links_Set_Preferred": "Afficher ces liens sur la page"
+}
