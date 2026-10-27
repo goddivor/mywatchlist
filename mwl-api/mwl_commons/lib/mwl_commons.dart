@@ -13,6 +13,7 @@ export 'src/model/html/genre.dart';
 export 'src/model/html/pages/characters.dart';
 export 'src/model/html/pages/common.dart';
 export 'src/model/html/pages/community.dart';
+export 'src/model/html/pages/content_stats.dart';
 export 'src/model/html/pages/search_schedule.dart';
 export 'src/model/html/paging.dart';
 export 'src/model/html/user_anime_statistics.dart';

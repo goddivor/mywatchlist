@@ -24,6 +24,7 @@ class HandlerCore {
       PathMatcher('featured', _handleFeatured, ['data']),
       PathMatcher('reviews', _handleReviews, ['data']),
       PathMatcher('content/characters', _handleAllCharacters, ['data']),
+      PathMatcher('content/stats', _handleContentStats, ['data']),
       PathMatcher('character/*id', _handleCharacterInfo, ['data']),
       PathMatcher('character/*id/pics', _handleCharacterPics, ['data']),
       PathMatcher('characters', _handleCharacterHome, ['data']),
@@ -249,6 +250,26 @@ class HandlerCore {
     final result = await HttpConnect.htmlPage(
       '${Constants.malBaseUrl}/$category/$id/_/characters',
       (doc) => PageParsers.parseCharacterAllPage(doc, category),
+    );
+    return {'url': uri.path, 'data': result, 'fromCache': false};
+  }
+
+  /// Score distribution and status counts of an anime or manga, from
+  /// MAL's stats page: `{scores: [{score, votes, percentage}], statuses:
+  /// {watching, completed, on_hold, dropped, plan_to_watch, total}}`
+  /// (`ContentStatsHtml`). `id` is required and numeric; `category` is
+  /// `anime` (default) or `manga`, anything else answers 400.
+  Future<Map<String, dynamic>> _handleContentStats(
+      PathMatcher path, Uri uri, Map<String, String> params) async {
+    final id = queryParams<int>(uri, 'id');
+    if (id == null || id <= 0) throw _missing('id');
+    final category = queryParams<String>(uri, 'category', 'anime')!;
+    if (category != 'anime' && category != 'manga') {
+      throw _missing('category');
+    }
+    final result = await HttpConnect.htmlPage(
+      '${Constants.malBaseUrl}/$category/$id/x/stats',
+      PageParsers.parseContentStats,
     );
     return {'url': uri.path, 'data': result, 'fromCache': false};
   }

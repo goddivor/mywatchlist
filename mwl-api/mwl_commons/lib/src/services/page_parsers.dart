@@ -6,6 +6,7 @@ import 'package:html_unescape/html_unescape.dart';
 import '../model/html/pages/characters.dart';
 import '../model/html/pages/common.dart';
 import '../model/html/pages/community.dart';
+import '../model/html/pages/content_stats.dart';
 import '../model/html/pages/search_schedule.dart';
 import '../util/mal_path.dart';
 
@@ -763,5 +764,91 @@ class PageParsers {
       ));
     }
     return result;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Stats page (`/anime/<id>/x/stats`, `/manga/<id>/x/stats`)
+  // ---------------------------------------------------------------------------
+
+  /// Status labels of the "Summary Stats" block, anime and manga wording,
+  /// to the JSON key they fill.
+  static const _statusLabels = {
+    'watching': 'watching',
+    'reading': 'watching',
+    'completed': 'completed',
+    'on-hold': 'on_hold',
+    'dropped': 'dropped',
+    'plan to watch': 'plan_to_watch',
+    'plan to read': 'plan_to_watch',
+    'total': 'total',
+  };
+
+  static final _percent = RegExp(r'(\d+(?:\.\d+)?)\s*%');
+  static final _votes = RegExp(r'\(\s*([\d,]+)\s*votes?\s*\)');
+
+  /// Score distribution (votes per score, highest first) and status counts
+  /// of MAL's stats page. Null when the page has neither block (not a stats
+  /// page, or a layout MAL changed); a title nobody scored yet gives an
+  /// empty score list.
+  static ContentStatsHtml? parseContentStats(Document doc) {
+    final counts = <String, int>{};
+    for (final pad in _summaryStatsRows(doc)) {
+      final label = _clean(pad.querySelector('span.dark_text')?.text)
+          .replaceAll(':', '')
+          .trim()
+          .toLowerCase();
+      final key = _statusLabels[label];
+      if (key == null || counts.containsKey(key)) continue;
+      final value = _intOf(pad.nodes
+          .where((n) => n is! Element || !n.classes.contains('dark_text'))
+          .map((n) => n.text)
+          .join());
+      if (value != null) counts[key] = value;
+    }
+
+    final scores = <ScoreVotesHtml>[];
+    final table = doc.querySelector('table.score-stats');
+    for (final row in table?.querySelectorAll('tr') ?? const <Element>[]) {
+      final score = int.tryParse(
+          _clean(row.querySelector('td.score-label')?.text));
+      final text = _clean(row.text);
+      final votes = _votes.firstMatch(text)?.group(1)?.replaceAll(',', '');
+      if (score == null || score < 1 || score > 10 || votes == null) continue;
+      scores.add(ScoreVotesHtml(
+        score: score,
+        votes: int.parse(votes),
+        percentage: double.tryParse(_percent.firstMatch(text)?.group(1) ?? '') ?? 0,
+      ));
+    }
+    scores.sort((a, b) => b.score.compareTo(a.score));
+
+    if (counts.isEmpty && table == null) return null;
+    final statuses = StatusCountsHtml(
+      watching: counts['watching'] ?? 0,
+      completed: counts['completed'] ?? 0,
+      onHold: counts['on_hold'] ?? 0,
+      dropped: counts['dropped'] ?? 0,
+      planToWatch: counts['plan_to_watch'] ?? 0,
+      total: counts['total'] ??
+          counts.values.fold<int>(0, (sum, value) => sum + value),
+    );
+    return ContentStatsHtml(scores: scores, statuses: statuses);
+  }
+
+  /// The `.spaceit_pad` rows between the "Summary Stats" heading and the
+  /// next heading (so the sidebar's own rows are never read).
+  static List<Element> _summaryStatsRows(Document doc) {
+    final heading = doc.getElementById('summary_stats') ??
+        doc
+            .querySelectorAll('h2')
+            .where((h) => _clean(h.text) == 'Summary Stats')
+            .firstOrNull;
+    final rows = <Element>[];
+    var next = heading?.nextElementSibling;
+    while (next != null && next.localName != 'h2') {
+      if (next.classes.contains('spaceit_pad')) rows.add(next);
+      next = next.nextElementSibling;
+    }
+    return rows;
   }
 }
