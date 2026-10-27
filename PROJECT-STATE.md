@@ -37,8 +37,7 @@ Cap: 80 lines. Rewrite in place; history lives in git and `docs/DECISIONS.md`.
 ## Accounts (`accounts-ux`)
 - No picker, no "Continue": `AccountBloc` follows `UserManager` (sign in, sign out, dead session) and owns the active account; the first tracker that connects becomes active, signing out of the active one activates the next, `resolveSelection` (`account_selection.dart`) is the pure rule.
 - One list everywhere: `AccountsPanel` of `TrackerTile`s (connected = radio, tap switches; expired = "Sign in again"; connecting = Cancel; disconnected = Connect). Used by Settings > Accounts (`ManageAccountsPage` is the same page), the avatar switcher (tap switches and closes), `LoginPage` (first run opens the home by itself; add mode switches to the new account and closes) and the intro page.
-- `TrackerActions` (connect, cancel, sign out, switch) is the only caller of the auth classes; Kitsu has its own translated dialog with inline errors, and `KitsuAuth.signInWithKitsu` itself ends any failure unauthenticated (returns false, rethrows network errors).
-- Sign out (`RemoveAccountEvent`) clears that tracker's `ListStatusCache`; `LogoutEvent` clears all of it (#97).
+- `TrackerActions` (connect, cancel, sign out, switch) is the only caller of the auth classes; Kitsu has its own translated dialog with inline errors; `KitsuAuth.signInWithKitsu` ends any failure unauthenticated (#88). Sign out (`RemoveAccountEvent`) clears that tracker's `ListStatusCache`, `LogoutEvent` all of it (#97).
 - One `AuthStatus` (base_user.dart, re-exported by user.dart); `needsReLogin` persists across restarts and `clear()` resets it.
 - Strings: `Acc_*` in `lib/l10n/units/accounts-ux/` (en + fr_FR).
 
