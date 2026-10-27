@@ -412,7 +412,7 @@
       "notes": [
         "model: opus"
       ],
-      "status": "⬜ todo"
+      "status": "✅ done"
     },
     {
       "id": "accounts-ux",
@@ -425,6 +425,8 @@
         "app-shell"
       ],
       "owns": [
+        "lib/user/user.dart",
+        "lib/user/base_user.dart",
         "lib/screens/account_switcher_page.dart",
         "lib/screens/manage_accounts_page.dart",
         "lib/screens/onboarding_trackers.dart",
@@ -517,6 +519,7 @@
         "backend-parsers"
       ],
       "owns": [
+        "lib/utils/app_routes.dart",
         "lib/pages/MAL/mal_user_profile_page.dart",
         "lib/screens/user_profile/**",
         "lib/widgets/user/profile/**",
@@ -838,6 +841,7 @@
         "user-list-mal"
       ],
       "owns": [
+        "lib/widgets/common/bottomnavbar.dart",
         "lib/pages/MAL/mal_home_page.dart",
         "lib/widgets/MAL/home/homeappbar.dart",
         "lib/widgets/MAL/home/accordion.dart",
@@ -958,10 +962,12 @@
       "artifact": "",
       "priority": "P1",
       "needs": [
+        "perf-foundation",
         "app-shell",
         "user-list-mal"
       ],
       "owns": [
+        "lib/main.dart",
         "lib/services/notifications/**",
         "lib/screens/settings/notifications_settings.dart",
         "android/app/src/main/res/drawable/ic_stat_notification.xml",
