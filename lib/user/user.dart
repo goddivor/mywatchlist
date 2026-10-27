@@ -1,22 +1,15 @@
-// ignore_for_file: constant_identifier_names, unused_local_variable
+// ignore_for_file: constant_identifier_names
 
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:intl/date_symbol_data_local.dart';
-import 'package:intl/intl.dart';
-import 'package:intl/intl_standalone.dart';
-import 'package:mywatchlist/constants/constants.dart';
-import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/services/auth/anilist_authresp.dart';
 import 'package:mywatchlist/services/auth/kitsu_authresp.dart';
 import 'package:mywatchlist/services/auth/mal_authresp.dart';
 import 'package:mywatchlist/services/auth/simkl_authresp.dart';
 import 'package:mywatchlist/user/accounts/account_manager.dart';
-// import 'package:mywatchlist/user/hompagepref.dart';
 import 'package:mywatchlist/user/userpref.dart';
-// import 'package:mywatchlist/utils/homepageutils.dart';
 
 enum AuthStatus { UNAUTHENTICATED, AUTHENTICATED, INPROGRESS }
 
@@ -28,7 +21,9 @@ class UserMal with ChangeNotifier {
   String? username;
   String? profileImage;
   AuthStatus status = AuthStatus.UNAUTHENTICATED;
-  late UserPreferences pref; //must be initialized in the constructor
+  /// Legacy in-memory holder of the background path, still written by
+  /// `utils/sidebar_bg_manager.dart`. DailyAL preferences live in `PreferencesBloc`.
+  final UserPreferences pref = UserPreferences();
 
   factory UserMal() {
     return _instance;
@@ -59,59 +54,6 @@ class UserMal with ChangeNotifier {
   AuthStatus getStatus() {
     return status;
   }
-
-  Future<UserMal> runPostInitialization() async {
-    await setLocale(this);
-    await initializeDateFormatting(pref.userLanguage, null);
-    await updateFirstTimePref(this);
-    return this;
-  }
-
-  static Future<void> setLocale(UserMal newUser) async {
-    var languageCode = "en_US";
-    if (newUser.pref.userLanguage.equals("sys")) {
-      var locale = await findSystemLocale();
-      if (getLanguageCodes(S.delegate.supportedLocales)
-          .contains(Intl.shortLocale(locale))) {
-        languageCode = locale;
-      }
-      // newUser.pref.hpApiPrefList =
-      //     HomePageUtils().translateTitle(newUser.pref.hpApiPrefList);
-    } else {
-      languageCode = newUser.pref.userLanguage;
-    }
-    await S.load(Locale.fromSubtags(languageCode: languageCode));
-  }
-
-  static Future<void> updateFirstTimePref(UserMal newUser) async {
-    final userPref = newUser.pref;
-    if (userPref.hpApiPrefList.isEmpty) {
-      // userPref.hpApiPrefList = defaultHPPrefList;
-    }
-    if (!userPref.firstTime) {
-      bool hasChanged = false;
-      if (userPref.firstTimePref.bg) {
-        newUser.pref.showBg = true;
-        newUser.pref.firstTimePref.bg = false;
-        hasChanged = true;
-      }
-      if (userPref.firstTimePref.news) {
-        // newUser.pref.hpApiPrefList.insert(0, defaultHPPrefList[0]);
-        newUser.pref.firstTimePref.news = false;
-        hasChanged = true;
-      }
-      if (userPref.firstTimePref.themeV3) {
-        newUser.pref.firstTimePref.themeV3 = false;
-        // hasChanged = _migrateV2ToV3(newUser);
-      }
-      // if (hasChanged) {
-      //   await newUser.setIntance();
-      // }
-    }
-  }
-
-  static List<String> getLanguageCodes(List<Locale> locales) =>
-      locales.map((e) => e.languageCode).toList();
 
   Future<void> _saveAuthResponse() async {
     await secureStorage.write(

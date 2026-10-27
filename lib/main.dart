@@ -14,6 +14,7 @@ import 'package:mywatchlist/services/api/MAL/scrapper/mal_scrapper.dart';
 import 'package:mywatchlist/services/auth/mal_auth_v2.dart';
 import 'package:mywatchlist/services/auth/anilist_auth_v2.dart';
 import 'package:mywatchlist/services/auth/simkl_auth_v2.dart';
+import 'package:mywatchlist/services/notifications/notification_service.dart';
 import 'package:mywatchlist/user/user_manager.dart';
 import 'package:app_links/app_links.dart';
 import 'package:mywatchlist/user/MAL/mal_home_preferences_bloc.dart';
@@ -22,6 +23,7 @@ import 'package:mywatchlist/user/accounts/provider/account_manager_singleton.dar
 import 'package:mywatchlist/user/language/language_bloc.dart';
 import 'package:mywatchlist/user/language/language_state.dart';
 import 'package:mywatchlist/user/language/supported_languages.dart';
+import 'package:mywatchlist/user/preferences/preferences.dart';
 import 'package:mywatchlist/user/requests/requests_bloc.dart';
 import 'package:mywatchlist/user/theme/theme_bloc.dart';
 import 'package:mywatchlist/user/theme/theme_event.dart';
@@ -47,6 +49,15 @@ void main() async {
 
   // Load shared preferences
   final sharedPreferences = await SharedPreferences.getInstance();
+
+  // DailyAL preferences (the contract read by every feature): legacy keys moved first, then
+  // the bloc starts from the saved values so the first frame already uses them.
+  final preferencesStore = PreferencesStore(sharedPreferences);
+  await preferencesStore.migrateLegacy();
+  final preferencesBloc = PreferencesBloc(store: preferencesStore);
+
+  // Airing notifications (filled by the notifications unit; never throws).
+  await NotificationService.instance.init();
 
   // Initialize UserManager (POO architecture with BaseUser inheritance)
   userManager = UserManager.instance;
@@ -94,6 +105,7 @@ void main() async {
             BlocProvider.value(value: accountBloc),
             BlocProvider.value(value: themeBloc),
             BlocProvider.value(value: languageBloc),
+            BlocProvider.value(value: preferencesBloc),
             BlocProvider(
               create: (context) => RequestsBloc(
                 malScraper: malScraper,

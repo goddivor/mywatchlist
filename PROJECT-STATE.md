@@ -17,6 +17,11 @@ Cap: 80 lines. Rewrite in place; history lives in git and `docs/DECISIONS.md`.
 - Base ARBs (DailyAL, 11 locales) frozen in `lib/l10n/`; each unit adds keys in `lib/l10n/units/<unit-id>/`; `tools/l10n/build.sh` merges, validates, generates `lib/generated/l10n.dart` + `intl/` (git-ignored).
 - Language picker fixed: 11 locales + "follow the device", applied immediately and at startup, Arabic RTL.
 
+## Preferences contract and dependencies (`deps-prefs-contract`)
+- `lib/user/preferences/` (barrel `preferences.dart`): `PreferencesBloc` (state `AppPreferences` = `general`, `content`, `list`, `notifications`), one event per group with a `copyWith` updater, `PreferencesReset`, `PreferencesReloaded`; non-widget read `Preferences.current` / `Preferences.general`…; stored as one JSON per group (`prefs_*_v1`), legacy `timezone_pref` migrated.
+- Language stays in `LanguageBloc`, theme/font/background in `ThemeBloc`, home layout in `HomePreferencesBloc`; `UserPreference` keeps MWL-only device settings.
+- Every dependency of the queued units is in `pubspec.yaml` (pins listed in the PR closing issue #29); manifest has notification, exact alarm, boot, calendar and install-packages permissions, the notification receivers and a FileProvider. `NotificationService.init()` is a no-op stub called from `main`.
+
 ## Waves (from `node tools/mab/plan-waves.mjs`)
 1. gate-fix
 2. auth-refresh, backend-parsers, l10n-pipeline

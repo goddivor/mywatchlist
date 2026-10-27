@@ -2,16 +2,18 @@
 
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// User preference for timezone display in airing schedules.
-enum TimezonePref { utc, jst, local }
+// The timezone of airing times is a contract preference now (`Preferences.content.timezone`);
+// re-exported so the callers that only need the enum keep compiling.
+export 'package:mywatchlist/user/preferences/content_preferences.dart' show TimezonePref;
 
+/// MWL-only device settings (first launch, legacy theme flag, background, download folder,
+/// cross-tracker sync). DailyAL preferences live in `lib/user/preferences/` and the language
+/// in `LanguageBloc`.
 class UserPreference {
   static const String _keyFirstTime = "first_time";
-  static const String _keyLanguage = "language";
   static const String _keyTheme = "theme";
   static const String _keyBgImagePath = "bg_image_path";
   static const String _keyShowBg = "show_bg";
-  static const String _keyTimezonePref = "timezone_pref";
   static const String _keyDownloadPath = "download_path";
   static const String _keyCrossTracker = "cross_tracker_enabled";
 
@@ -27,18 +29,6 @@ class UserPreference {
   Future<void> setFirstTimeFalse() async {
     final prefs = await _prefs;
     await prefs.setBool(_keyFirstTime, false);
-  }
-
-  // Get preferred language
-  Future<String> getLanguage() async {
-    final prefs = await _prefs;
-    return prefs.getString(_keyLanguage) ?? "en";
-  }
-
-  // Set preferred language
-  Future<void> setLanguage(String language) async {
-    final prefs = await _prefs;
-    await prefs.setString(_keyLanguage, language);
   }
 
   // Get theme preference (light or dark)
@@ -79,22 +69,6 @@ class UserPreference {
   Future<void> setShowBackground(bool show) async {
     final prefs = await _prefs;
     await prefs.setBool(_keyShowBg, show);
-  }
-
-  // Get timezone preference for airing schedule display
-  Future<TimezonePref> getTimezonePref() async {
-    final prefs = await _prefs;
-    final value = prefs.getString(_keyTimezonePref) ?? 'local';
-    return TimezonePref.values.firstWhere(
-      (e) => e.name == value,
-      orElse: () => TimezonePref.local,
-    );
-  }
-
-  // Set timezone preference
-  Future<void> setTimezonePref(TimezonePref pref) async {
-    final prefs = await _prefs;
-    await prefs.setString(_keyTimezonePref, pref.name);
   }
 
   // Get custom download path (null = use default)
