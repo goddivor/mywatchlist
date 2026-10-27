@@ -562,6 +562,43 @@ class MwlApi {
     return data == null ? null : ContentCharactersHtml.fromJson(data);
   }
 
+  /// Longest wait for [getContentStats] before it gives up (null).
+  static const contentStatsTimeout = Duration(seconds: 15);
+
+  /// Score distribution and status counts of an anime or manga from MAL's
+  /// stats page (`category` is `anime` or `manga`), so the score stats
+  /// work without Jikan. The page is parsed and the JSON decoded off the UI
+  /// isolate. Null when the page failed, the parameters were refused or no
+  /// answer came within [contentStatsTimeout]; never throws.
+  Future<ContentStatsHtml?> getContentStats(
+    int id,
+    String category, {
+    bool fromCache = true,
+  }) =>
+      fetchContentStats(
+        () => _getData(
+          'content/stats?${_buildQuery({'id': id, 'category': category})}',
+          fromCache: fromCache,
+        ),
+      );
+
+  /// [getContentStats] around any [getData] source of the `data` field
+  /// (exposed so the timeout and failure paths are tested offline).
+  @visibleForTesting
+  static Future<ContentStatsHtml?> fetchContentStats(
+    Future<dynamic> Function() getData, {
+    Duration timeout = contentStatsTimeout,
+  }) async {
+    try {
+      final data = _mapOf(await getData().timeout(timeout));
+      if (data == null) return null;
+      return ContentStatsHtml.fromJson(data);
+    } catch (e) {
+      if (kDebugMode) debugPrint('MwlApi: content stats error: $e');
+      return null;
+    }
+  }
+
   /// Full-size picture URLs of a character.
   Future<List<String>> getCharacterPictures(int id,
           {bool fromCache = true}) =>
