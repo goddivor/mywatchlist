@@ -73,8 +73,7 @@ Cap: 80 lines. Rewrite in place; history lives in git and `docs/DECISIONS.md`.
 - Editor sheet (`tracker_entry_editor.dart`) edits the tracker's own entry (status, score, progress, volumes, dates) and creates it when absent. Strings: `Sync_*` in `lib/l10n/units/sync-dialog/` (en + fr_FR).
 
 ## Explore and seasonal (`explore-seasonal`)
-- Explore tab (`lib/pages/MAL/mal_explore_page.dart`, parts in `lib/screens/explore/`): search bar, Anime/Manga switch, random picks, rankings and genre tiles, season card, then Jikan recommendations, reviews, interest stacks, top characters and voice actors; each section loads when it scrolls near, cached 10 min (`ExploreCache`); "View all" pages (`ExploreListScreen`).
-- Seasonal screen (`lib/screens/seasonal/`): whole season fetched once, sorted/filtered on the device with the shared sheet and list cards; shared view when the global seasonal filter pref is on. `lib/cache/top_characters.dart` serves the character screen's favorites. Strings `Explore_*`, `Seasonal_*`.
+- Explore tab (`lib/pages/MAL/mal_explore_page.dart`, parts in `lib/screens/explore/`): search bar, Anime/Manga switch, random picks, rankings and genre tiles, season card, then Jikan recommendations, reviews, interest stacks, top characters and voice actors; each section loads when it scrolls near, cached 10 min (`ExploreCache`); "View all" pages (`ExploreListScreen`). Seasonal screen (`lib/screens/seasonal/`): whole season fetched once, sorted/filtered on the device with the shared sheet and list cards; shared view when the global seasonal filter pref is on. `lib/cache/top_characters.dart` serves the character screen's favorites. Strings `Explore_*`, `Seasonal_*`.
 
 ## Known big gaps (see inventory)
 - No user list / profile for AniList/Kitsu/Simkl (placeholders); no notifications, relation graph, share, translation.
