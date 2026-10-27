@@ -1,19 +1,29 @@
 name: Release Build
 
+# A release is a tag named yyyy.m.n (year, month without leading zero, counter in the month),
+# e.g. 2026.10.1. Running the workflow by hand with a version creates that tag on the chosen commit.
 on:
   push:
     tags:
-      - '*'
+      - '20*'
   workflow_dispatch:
     inputs:
       version:
-        description: 'Release version (yyyy.m.n format)'
+        description: 'Release version (yyyy.m.n, e.g. 2026.10.1)'
         required: true
         type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.event.inputs.version || github.ref_name }}
+  cancel-in-progress: false
 
 jobs:
   build-android:
     runs-on: ubuntu-latest
+    timeout-minutes: 60
 
     steps:
       - name: Checkout repository
@@ -21,11 +31,34 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Resolve and validate the version
+        id: version
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_VERSION: ${{ github.event.inputs.version }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            VERSION="$INPUT_VERSION"
+          else
+            VERSION="$REF_NAME"
+          fi
+          tools/release/version.sh check "$VERSION"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Write the version into pubspec.yaml
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          # Same name as pubspec: keeps its build code; new name: build code + 1 (Android versionCode).
+          FULL=$(tools/release/version.sh set "$VERSION")
+          echo "Building $FULL"
+
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
-          distribution: 'zulu'
-          java-version: '17'
+          distribution: 'temurin'
+          java-version: '21'
           cache: 'gradle'
 
       - name: Setup Flutter
@@ -35,163 +68,117 @@ jobs:
           channel: 'stable'
           cache: true
 
+      - name: Create assets/.env
+        # assets/.env is git-ignored but declared as an asset: the file must exist. Secrets that are
+        # not configured give empty values (the build passes, the trackers will not sign in).
+        env:
+          MAL_CLIENT_ID: ${{ secrets.MAL_CLIENT_ID }}
+          MAL_CLIENT_SECRET: ${{ secrets.MAL_CLIENT_SECRET }}
+          ANILIST_CLIENT_ID: ${{ secrets.ANILIST_CLIENT_ID }}
+          ANILIST_CLIENT_SECRET: ${{ secrets.ANILIST_CLIENT_SECRET }}
+          SIMKL_CLIENT_ID: ${{ secrets.SIMKL_CLIENT_ID }}
+          SIMKL_CLIENT_SECRET: ${{ secrets.SIMKL_CLIENT_SECRET }}
+          APP_CONFIG_URL: ${{ secrets.APP_CONFIG_URL }}
+          API_URL: ${{ secrets.API_URL }}
+          API_SECRET: ${{ secrets.API_SECRET }}
+          ERROR_REPORT_URL: ${{ secrets.ERROR_REPORT_URL }}
+        run: |
+          mkdir -p assets
+          {
+            echo "MAL_CLIENT_ID=$MAL_CLIENT_ID"
+            echo "MAL_CLIENT_SECRET=$MAL_CLIENT_SECRET"
+            echo "ANILIST_CLIENT_ID=$ANILIST_CLIENT_ID"
+            echo "ANILIST_CLIENT_SECRET=$ANILIST_CLIENT_SECRET"
+            echo "SIMKL_CLIENT_ID=$SIMKL_CLIENT_ID"
+            echo "SIMKL_CLIENT_SECRET=$SIMKL_CLIENT_SECRET"
+            echo "APP_CONFIG_URL=$APP_CONFIG_URL"
+            echo "BUILD_VARIANT=github"
+            echo "API_URL=$API_URL"
+            echo "API_SECRET=$API_SECRET"
+            echo "ERROR_REPORT_URL=$ERROR_REPORT_URL"
+          } > assets/.env
+          if [ -z "$MAL_CLIENT_ID" ]; then
+            echo "::warning::Tracker secrets are not configured: assets/.env holds empty placeholders."
+          fi
+
       - name: Get Flutter dependencies
         run: flutter pub get
 
-      - name: Run Flutter analyzer
-        run: flutter analyze
-
       - name: Generate localization files
-        run: flutter gen-l10n
+        # The generated S class is a build output (not in git): tools/l10n/build.sh, never flutter gen-l10n.
+        run: tools/l10n/build.sh
 
       - name: Generate JSON serialization models
         run: dart run build_runner build --delete-conflicting-outputs
 
-      - name: Create .env file
-        run: |
-          echo "MAL_CLIENT_ID=${{ secrets.MAL_CLIENT_ID }}" >> assets/.env
-          echo "MAL_CLIENT_SECRET=${{ secrets.MAL_CLIENT_SECRET }}" >> assets/.env
-          echo "ANILIST_CLIENT_ID=${{ secrets.ANILIST_CLIENT_ID }}" >> assets/.env
-          echo "ANILIST_CLIENT_SECRET=${{ secrets.ANILIST_CLIENT_SECRET }}" >> assets/.env
-          echo "SIMKL_CLIENT_ID=${{ secrets.SIMKL_CLIENT_ID }}" >> assets/.env
-          echo "SIMKL_CLIENT_SECRET=${{ secrets.SIMKL_CLIENT_SECRET }}" >> assets/.env
-          echo "APP_CONFIG_URL=${{ secrets.APP_CONFIG_URL }}" >> assets/.env
-          echo "BUILD_VARIANT=github" >> assets/.env
-          echo "API_URL=${{ secrets.API_URL }}" >> assets/.env
-          echo "API_SECRET=${{ secrets.API_SECRET }}" >> assets/.env
-          echo "ERROR_REPORT_URL=${{ secrets.ERROR_REPORT_URL }}" >> assets/.env
+      - name: Run Flutter analyzer
+        run: flutter analyze
 
-      - name: Build APK
+      - name: Prepare Android signing
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          STORE="$RUNNER_TEMP/release.jks"
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "$KEYSTORE_BASE64" | base64 --decode > "$STORE"
+          else
+            # android/app/build.gradle signs the release build with android/key.properties. Without the
+            # owner's keystore, use a throwaway one so the build passes. Such an APK cannot update an
+            # install signed with another key.
+            echo "::warning::ANDROID_KEYSTORE_BASE64 is not set: signing with a throwaway key."
+            KEYSTORE_PASSWORD="mwl-throwaway"
+            KEY_PASSWORD="mwl-throwaway"
+            KEY_ALIAS="throwaway"
+            keytool -genkeypair -keystore "$STORE" -storetype PKCS12 -alias "$KEY_ALIAS" \
+              -keyalg RSA -keysize 2048 -validity 3650 -dname "CN=MyWatchList CI" \
+              -storepass "$KEYSTORE_PASSWORD" -keypass "$KEY_PASSWORD"
+          fi
+          {
+            echo "storeFile=$STORE"
+            echo "storePassword=$KEYSTORE_PASSWORD"
+            echo "keyAlias=$KEY_ALIAS"
+            echo "keyPassword=$KEY_PASSWORD"
+          } > android/key.properties
+
+      - name: Build APK (split per ABI)
         run: flutter build apk --release --split-per-abi
 
       - name: Build APK (universal)
         run: flutter build apk --release
 
-      - name: Get version from pubspec
-        id: version
+      - name: Collect APKs and SHA1 checksums
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
         run: |
-          VERSION=$(grep '^version:' pubspec.yaml | cut -d' ' -f2 | cut -d'+' -f1)
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-
-      - name: Rename APK files
-        run: |
-          VERSION=${{ steps.version.outputs.version }}
+          OUT=build/app/outputs/flutter-apk
           mkdir -p release-artifacts
-          cp build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk release-artifacts/MyWatchList-v${VERSION}-armeabi-v7a.apk || true
-          cp build/app/outputs/flutter-apk/app-arm64-v8a-release.apk release-artifacts/MyWatchList-v${VERSION}-arm64-v8a.apk || true
-          cp build/app/outputs/flutter-apk/app-x86_64-release.apk release-artifacts/MyWatchList-v${VERSION}-x86_64.apk || true
-          cp build/app/outputs/flutter-apk/app-release.apk release-artifacts/MyWatchList-v${VERSION}-universal.apk
-
-      - name: Generate checksums
-        run: |
+          cp "$OUT/app-armeabi-v7a-release.apk" "release-artifacts/MyWatchList-v${VERSION}-armeabi-v7a.apk"
+          cp "$OUT/app-arm64-v8a-release.apk" "release-artifacts/MyWatchList-v${VERSION}-arm64-v8a.apk"
+          cp "$OUT/app-x86_64-release.apk" "release-artifacts/MyWatchList-v${VERSION}-x86_64.apk"
+          cp "$OUT/app-release.apk" "release-artifacts/MyWatchList-v${VERSION}-universal.apk"
           cd release-artifacts
-          sha256sum *.apk > checksums.txt
+          for apk in *.apk; do
+            sha1sum "$apk" > "$apk.sha1"
+          done
+          ls -l
 
-      - name: Generate changelog
-        id: changelog
-        run: |
-          # Get the previous tag
-          PREVIOUS_TAG=$(git tag --sort=-creatordate | grep -v "^${{ github.ref_name }}$" | head -1)
+      - name: Generate release notes
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: tools/release/changelog.sh "$VERSION" > release_body.md
 
-          if [ -z "$PREVIOUS_TAG" ]; then
-            COMMITS=$(git log --pretty=format:"%s" --no-merges)
-            COMPARE_TEXT="Initial release"
-          else
-            COMMITS=$(git log "${PREVIOUS_TAG}..HEAD" --pretty=format:"%s" --no-merges)
-            COMPARE_TEXT="Changes since ${PREVIOUS_TAG}"
-          fi
-
-          # Group commits by conventional commit type
-          FEATURES=$(echo "$COMMITS" | grep -E "^feat:" | sed 's/^feat: //' | sed 's/^/- /' || true)
-          FIXES=$(echo "$COMMITS" | grep -E "^fix:" | sed 's/^fix: //' | sed 's/^/- /' || true)
-          REFACTORS=$(echo "$COMMITS" | grep -E "^refactor:" | sed 's/^refactor: //' | sed 's/^/- /' || true)
-          STYLES=$(echo "$COMMITS" | grep -E "^style:" | sed 's/^style: //' | sed 's/^/- /' || true)
-          DOCS=$(echo "$COMMITS" | grep -E "^docs:" | sed 's/^docs: //' | sed 's/^/- /' || true)
-          CHORES=$(echo "$COMMITS" | grep -E "^chore:" | sed 's/^chore: //' | sed 's/^/- /' || true)
-          TESTS=$(echo "$COMMITS" | grep -E "^test:" | sed 's/^test: //' | sed 's/^/- /' || true)
-
-          # Build the full release body
-          {
-            echo "## MyWatchList ${{ steps.version.outputs.version }}"
-            echo ""
-            echo "> ${COMPARE_TEXT}"
-            echo ""
-            echo "---"
-            echo ""
-            echo "## Changelog"
-            echo ""
-
-            if [ -n "$FEATURES" ]; then
-              echo "### New Features"
-              echo "$FEATURES"
-              echo ""
-            fi
-            if [ -n "$FIXES" ]; then
-              echo "### Bug Fixes"
-              echo "$FIXES"
-              echo ""
-            fi
-            if [ -n "$REFACTORS" ]; then
-              echo "### Refactoring"
-              echo "$REFACTORS"
-              echo ""
-            fi
-            if [ -n "$STYLES" ]; then
-              echo "### Style"
-              echo "$STYLES"
-              echo ""
-            fi
-            if [ -n "$DOCS" ]; then
-              echo "### Documentation"
-              echo "$DOCS"
-              echo ""
-            fi
-            if [ -n "$CHORES" ]; then
-              echo "### Chores"
-              echo "$CHORES"
-              echo ""
-            fi
-            if [ -n "$TESTS" ]; then
-              echo "### Tests"
-              echo "$TESTS"
-              echo ""
-            fi
-
-            if [ -z "$FEATURES" ] && [ -z "$FIXES" ] && [ -z "$REFACTORS" ] && [ -z "$STYLES" ] && [ -z "$DOCS" ] && [ -z "$CHORES" ] && [ -z "$TESTS" ]; then
-              echo "See commit history for detailed changes."
-              echo ""
-            fi
-
-            echo "---"
-            echo ""
-            echo "## Downloads"
-            echo ""
-            echo "| Variant | Description |"
-            echo "|---------|-------------|"
-            echo "| \`arm64-v8a\` | Most modern Android devices (64-bit ARM) |"
-            echo "| \`armeabi-v7a\` | Older Android devices (32-bit ARM) |"
-            echo "| \`x86_64\` | Android emulators and x86 devices |"
-            echo "| \`universal\` | Works on all devices (larger file size) |"
-            echo ""
-            echo "### Verification"
-            echo ""
-            echo "Verify your download with \`checksums.txt\`:"
-            echo "\`\`\`bash"
-            echo "sha256sum -c checksums.txt"
-            echo "\`\`\`"
-          } > release_body.md
-
-      - name: Create Release
+      - name: Create release
         uses: softprops/action-gh-release@v2
         with:
           files: |
             release-artifacts/*.apk
-            release-artifacts/checksums.txt
-          tag_name: ${{ github.ref_name }}
+            release-artifacts/*.sha1
+          tag_name: ${{ steps.version.outputs.version }}
           name: Release ${{ steps.version.outputs.version }}
           body_path: release_body.md
-          generate_release_notes: true
-          append_body: true
           draft: false
           prerelease: false
         env:
@@ -201,5 +188,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: android-release-apks
-          path: release-artifacts/*.apk
+          path: |
+            release-artifacts/*.apk
+            release-artifacts/*.sha1
           retention-days: 30
