@@ -17,7 +17,7 @@
 Plus `PROJECT-STATE.md` (rewrite in place, within its cap) and `docs/DECISIONS.md` (append one line per decision). Anything else you need is a FINDING to report, never an edit.
 
 ## Goal
-- Same as anilist-pages for Kitsu (JSON:API). On the preference pages, mark MAL-only options with a visible note for this tracker (report the file change as a finding if the page is not yours). Authenticated calls go through `user.sendAuthenticated` (auth-refresh) instead of hand-built Bearer headers.
+- Same as anilist-pages for Kitsu (JSON:API). Feed airing notifications for this tracker's Watching / Plan to watch lists by mapping entries to MAL ids (notifications unit API; report the change as a finding if it needs files outside yours). On the preference pages, mark MAL-only options with a visible note for this tracker (report the file change as a finding if the page is not yours). Authenticated calls go through `user.sendAuthenticated` (auth-refresh) instead of hand-built Bearer headers.
 
 ## Known bugs to fix in scope
 - none
