@@ -120,10 +120,12 @@ class MalForumApi {
       if (mangaId != null) url += 'mangaid=$mangaId&';
       url += 'show=$offset';
 
-      final response = await http.get(Uri.parse(url));
+      final response = await http
+          .get(Uri.parse(url))
+          .timeout(const Duration(seconds: 20));
       if (response.statusCode == 200) {
-        final document = htmlParser.parse(response.body);
-        final result = HtmlParsers.parseForumTopicsHtml(document);
+        // The page is a few hundred KB of HTML: parse it off the UI isolate.
+        final result = await compute(_parseForumTopicsPage, response.body);
         return ForumTopics.fromJson(result);
       }
     } catch (e) {
@@ -132,3 +134,7 @@ class MalForumApi {
     return null;
   }
 }
+
+/// Top-level so `compute` can run it on a background isolate.
+Map<String, dynamic> _parseForumTopicsPage(String body) =>
+    HtmlParsers.parseForumTopicsHtml(htmlParser.parse(body));
