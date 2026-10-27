@@ -18,6 +18,7 @@ import 'package:mywatchlist/services/api/MAL/models/my_anime_list_status.dart' a
 import 'package:mywatchlist/services/api/MAL/models/my_manga_list_status.dart' as manga_status;
 import 'package:mywatchlist/services/api/MAL/scrapper/html_parsers.dart';
 import 'package:mywatchlist/user/accounts/provider/account_manager_singleton.dart';
+import 'package:mywatchlist/user/user_mal_v2.dart';
 import 'package:mywatchlist/user/user_preference.dart';
 
 enum SeasonalAnimeSortOption {
@@ -435,11 +436,11 @@ class MalApi {
     if (startDate != null) requestBody['start_date'] = startDate;
     if (finishDate != null) requestBody['finish_date'] = finishDate;
 
-    final response = await MalConnect.authPut(
-      url,
-      headers: const {'Content-Type': 'application/x-www-form-urlencoded'},
-      body: requestBody,
-    );
+    final response = await _signedWrite(() => MalConnect.authPut(
+          url,
+          headers: const {'Content-Type': 'application/x-www-form-urlencoded'},
+          body: requestBody,
+        ));
 
     if (response.statusCode == 200) {
       final responseData =
@@ -499,11 +500,11 @@ class MalApi {
     if (startDate != null) requestBody['start_date'] = startDate;
     if (finishDate != null) requestBody['finish_date'] = finishDate;
 
-    final response = await MalConnect.authPut(
-      url,
-      headers: const {'Content-Type': 'application/x-www-form-urlencoded'},
-      body: requestBody,
-    );
+    final response = await _signedWrite(() => MalConnect.authPut(
+          url,
+          headers: const {'Content-Type': 'application/x-www-form-urlencoded'},
+          body: requestBody,
+        ));
 
     if (response.statusCode == 200) {
       final responseData =
@@ -524,7 +525,7 @@ class MalApi {
 
     _requireMalAccount('Access token required for deleting from list');
 
-    final response = await MalConnect.authDelete(url);
+    final response = await _signedWrite(() => MalConnect.authDelete(url));
 
     if (response.statusCode != 200 && response.statusCode != 404) {
       throw Exception(
@@ -538,7 +539,7 @@ class MalApi {
 
     _requireMalAccount('Access token required for deleting from list');
 
-    final response = await MalConnect.authDelete(url);
+    final response = await _signedWrite(() => MalConnect.authDelete(url));
 
     if (response.statusCode != 200 && response.statusCode != 404) {
       throw Exception(
@@ -709,18 +710,85 @@ class MalApi {
   }
 
   /// GET on the MAL API for the selected account. A MyAnimeList account goes
-  /// through the refreshing path (token renewed before expiry, one refresh and
-  /// replay on 401); throws [MalSessionExpired] when the session is dead. Any
-  /// other account uses the public client id.
+  /// through [signedGet]; any other account uses the public client id.
   static Future<http.Response> _get(String url) {
     if (AccountManagerSingleton().selectedAcc == AccountType.myanimelist) {
-      return MalConnect.authGet(url);
+      return signedGet(url);
     }
-    return http.get(Uri.parse(url), headers: publicHeaders);
+    return _publicGet(url);
   }
 
   /// Same as [_get] for callers outside this class (forum client).
   static Future<http.Response> authorizedGet(String url) => _get(url);
+
+  /// GET with the MyAnimeList session (token renewed before expiry, one
+  /// refresh and replay on 401). When the session is dead (refresh refused,
+  /// signed out), a public endpoint is replayed with the client id so that
+  /// browsing keeps working; an endpoint that needs the user (`/users/@me`,
+  /// suggestions) throws [MalSessionExpired]. Either way [sessionExpired]
+  /// turns true.
+  static Future<http.Response> signedGet(String url) async {
+    final http.Response response;
+    try {
+      response = await MalConnect.authGet(url);
+    } on MalSessionExpired {
+      _markSessionExpired();
+      if (_needsUser(url)) rethrow;
+      return _publicGet(url);
+    }
+    if (response.statusCode == 401 && UserMalV2.instance.needsReLogin) {
+      _markSessionExpired();
+      if (_needsUser(url)) throw const MalSessionExpired();
+      return _publicGet(url);
+    }
+    return response;
+  }
+
+  /// Runs an authenticated write; a dead session raises [sessionExpired]
+  /// before the [MalSessionExpired] reaches the caller.
+  static Future<http.Response> _signedWrite(
+      Future<http.Response> Function() send) async {
+    try {
+      final response = await send();
+      if (response.statusCode == 401 && UserMalV2.instance.needsReLogin) {
+        _markSessionExpired();
+        throw const MalSessionExpired();
+      }
+      return response;
+    } on MalSessionExpired {
+      _markSessionExpired();
+      rethrow;
+    }
+  }
+
+  static Future<http.Response> _publicGet(String url) =>
+      http.get(Uri.parse(url), headers: publicHeaders);
+
+  /// Endpoints MAL only answers for the signed in user.
+  static bool _needsUser(String url) {
+    final path = Uri.parse(url).path;
+    return path.contains('/users/@me') || path.endsWith('/suggestions');
+  }
+
+  static final ValueNotifier<bool> _sessionExpired = _watchMalUser();
+
+  /// True while the MyAnimeList session is dead and the user must sign in
+  /// again. It turns true on the first failed call (one notification, not
+  /// one per request) and false again once the account signs in. The UI
+  /// listens to this single place to show its "sign in again" prompt.
+  static ValueListenable<bool> get sessionExpired => _sessionExpired;
+
+  static ValueNotifier<bool> _watchMalUser() {
+    final user = UserMalV2.instance;
+    final notifier = ValueNotifier<bool>(user.needsReLogin);
+    user.addListener(() {
+      notifier.value = user.needsReLogin ||
+          (notifier.value && user.authResponse == null);
+    });
+    return notifier;
+  }
+
+  static void _markSessionExpired() => _sessionExpired.value = true;
 
   /// Headers of a public (client id only) MAL call.
   static Map<String, String> get publicHeaders => {
