@@ -2,8 +2,10 @@
 
 import 'dart:io';
 
+import 'package:flex_color_picker/flex_color_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/main.dart';
 import 'package:mywatchlist/user/theme/app_themes.dart';
 import 'package:mywatchlist/user/theme/theme_bloc.dart';
@@ -11,11 +13,37 @@ import 'package:mywatchlist/user/theme/theme_event.dart';
 import 'package:mywatchlist/user/theme/theme_state.dart';
 import 'package:mywatchlist/user/user_preference.dart';
 import 'package:mywatchlist/utils/sidebar_bg_manager.dart';
+import 'package:mywatchlist/widgets/common/app_colors.dart';
 
+/// Theme settings: accent (Material You "Auto", 19 presets, custom colours), mode (auto, light,
+/// dark, black), home background picture and font. Changes apply at once (no save step).
 class ThemeSettings extends StatefulWidget {
   final bool isIntroPage;
 
   const ThemeSettings({super.key, this.isIntroPage = false});
+
+  /// Names of [AppThemes.predefinedColors], in the same order.
+  static List<String> presetNames() => [
+        S.current.Theme_Color_Red,
+        S.current.Theme_Color_Pink,
+        S.current.Theme_Color_Purple,
+        S.current.Theme_Color_Deep_Purple,
+        S.current.Theme_Color_Blue_Grey,
+        S.current.Theme_Color_Light_Blue,
+        S.current.Theme_Color_Blue,
+        S.current.Theme_Color_Cyan,
+        S.current.Theme_Color_Teal,
+        S.current.Theme_Color_Green,
+        S.current.Theme_Color_Light_Green,
+        S.current.Theme_Color_Lime,
+        S.current.Theme_Color_Yellow,
+        S.current.Theme_Color_Amber,
+        S.current.Theme_Color_Orange,
+        S.current.Theme_Color_Deep_Orange,
+        S.current.Theme_Color_Brown,
+        S.current.Theme_Color_Grey,
+        S.current.Theme_Color_Dark,
+      ];
 
   @override
   State<ThemeSettings> createState() => _ThemeSettingsState();
@@ -27,17 +55,12 @@ class _ThemeSettingsState extends State<ThemeSettings> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    final cs = theme.colorScheme;
 
     return PopScope(
       canPop: !widget.isIntroPage,
       child: Scaffold(
-        appBar: widget.isIntroPage
-            ? null
-            : AppBar(
-                title: const Text('Theme Settings'),
-                elevation: 0,
-              ),
+        appBar: widget.isIntroPage ? null : AppBar(title: Text(S.current.Theme_Settings)),
         floatingActionButton: widget.isIntroPage
             ? FloatingActionButton.extended(
                 onPressed: () async {
@@ -45,508 +68,678 @@ class _ThemeSettingsState extends State<ThemeSettings> {
                   restartApp(context);
                 },
                 icon: const Icon(Icons.check_rounded),
-                label: const Text('Done'),
+                label: Text(S.current.Theme_Done),
               )
             : null,
         body: BlocBuilder<ThemeBloc, ThemeState>(
           builder: (context, state) {
-            return SingleChildScrollView(
+            return ListView(
               padding: EdgeInsets.only(
                 left: 20,
                 right: 20,
-                top: widget.isIntroPage ? 48 : 8,
+                top: widget.isIntroPage ? MediaQuery.paddingOf(context).top + 32 : 8,
                 bottom: 100,
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (widget.isIntroPage) ...[
-                    Text(
-                      'Customize Your Theme',
-                      style: theme.textTheme.headlineMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: colorScheme.onSurface,
-                      ),
+              children: [
+                if (widget.isIntroPage) ...[
+                  Text(
+                    S.current.Theme_Customize_Title,
+                    style: theme.textTheme.headlineMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: cs.onSurface,
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Personalize your app appearance',
-                      style: theme.textTheme.bodyLarge?.copyWith(
-                        color: colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                    const SizedBox(height: 28),
-                  ],
-
-                  // Section 1: Pick a color
-                  _buildSectionHeader(
-                    context,
-                    icon: Icons.palette_rounded,
-                    title: 'Pick a color',
-                    tooltip:
-                        'Choose a seed color that defines the entire color scheme of the app',
                   ),
-                  const SizedBox(height: 12),
-                  _buildColorGrid(context, state),
-
+                  const SizedBox(height: 8),
+                  Text(
+                    S.current.Theme_Customize_Subtitle,
+                    style: theme.textTheme.bodyLarge?.copyWith(color: cs.onSurfaceVariant),
+                  ),
                   const SizedBox(height: 28),
-
-                  // Section 2: Select a theme mode
-                  _buildSectionHeader(
-                    context,
-                    icon: Icons.brightness_6_rounded,
-                    title: 'Select a theme mode',
-                  ),
-                  const SizedBox(height: 12),
-                  _buildThemeModeChips(context, state),
-
-                  const SizedBox(height: 28),
-
-                  // Section 3: Select a background image
-                  _buildSectionHeader(
-                    context,
-                    icon: Icons.image_rounded,
-                    title: 'Select a background image',
-                    tooltip:
-                        'Set a background image for the home screen',
-                    trailing: Switch(
-                      value: state.showBackground,
-                      onChanged: (value) {
-                        context.read<ThemeBloc>().add(
-                              ThemeBackgroundChanged(
-                                backgroundImagePath:
-                                    state.backgroundImagePath,
-                                showBackground: value,
-                              ),
-                            );
-                      },
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  AnimatedOpacity(
-                    opacity: state.showBackground ? 1.0 : 0.4,
-                    duration: const Duration(milliseconds: 200),
-                    child: IgnorePointer(
-                      ignoring: !state.showBackground,
-                      child: _buildBackgroundImageSelector(context, state),
-                    ),
-                  ),
-
-                  const SizedBox(height: 28),
-
-                  // Section 4: Font Settings
-                  _buildSectionHeader(
-                    context,
-                    icon: Icons.text_fields_rounded,
-                    title: 'Font Settings',
-                  ),
-                  const SizedBox(height: 12),
-                  _buildFontSelector(context, state),
                 ],
-              ),
+                _SectionHeader(
+                  icon: Icons.palette_rounded,
+                  title: S.current.Pick_a_color,
+                  tooltip: S.current.Theme_Color_Tip,
+                ),
+                const SizedBox(height: 12),
+                _ColorGrid(state: state),
+                const SizedBox(height: 16),
+                const _Preview(),
+                const SizedBox(height: 28),
+                _SectionHeader(
+                  icon: Icons.brightness_6_rounded,
+                  title: S.current.Select_mode,
+                  tooltip: S.current.Theme_Mode_Tip,
+                ),
+                const SizedBox(height: 12),
+                _ModeSelector(state: state),
+                const SizedBox(height: 28),
+                _SectionHeader(
+                  icon: Icons.image_rounded,
+                  title: S.current.Select_bg,
+                  tooltip: S.current.Select_bg_desc,
+                  trailing: Switch(
+                    value: state.showBackground,
+                    onChanged: (value) => context.read<ThemeBloc>().add(
+                          ThemeBackgroundChanged(
+                            backgroundImagePath: state.backgroundImagePath,
+                            showBackground: value,
+                          ),
+                        ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                AnimatedOpacity(
+                  opacity: state.showBackground ? 1.0 : 0.4,
+                  duration: const Duration(milliseconds: 200),
+                  child: IgnorePointer(
+                    ignoring: !state.showBackground,
+                    child: _BackgroundSelector(state: state),
+                  ),
+                ),
+                const SizedBox(height: 28),
+                _SectionHeader(icon: Icons.text_fields_rounded, title: S.current.Font_Settings),
+                const SizedBox(height: 12),
+                _FontTile(state: state),
+              ],
             );
           },
         ),
       ),
     );
   }
+}
 
-  Widget _buildSectionHeader(
-    BuildContext context, {
-    required IconData icon,
-    required String title,
-    String? tooltip,
-    Widget? trailing,
-  }) {
+class _SectionHeader extends StatelessWidget {
+  const _SectionHeader({required this.icon, required this.title, this.tooltip, this.trailing});
+
+  final IconData icon;
+  final String title;
+  final String? tooltip;
+  final Widget? trailing;
+
+  @override
+  Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
+    final cs = theme.colorScheme;
     return Row(
       children: [
-        Icon(icon, size: 20, color: colorScheme.primary),
+        Icon(icon, size: 20, color: cs.primary),
         const SizedBox(width: 8),
-        Text(
-          title,
-          style: theme.textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.bold,
-            color: colorScheme.onSurface,
+        Flexible(
+          child: Text(
+            title,
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: cs.onSurface,
+            ),
           ),
         ),
         if (tooltip != null) ...[
           const SizedBox(width: 4),
           Tooltip(
             message: tooltip,
-            child: Icon(
-              Icons.info_outline_rounded,
-              size: 18,
-              color: colorScheme.onSurfaceVariant,
+            triggerMode: TooltipTriggerMode.tap,
+            showDuration: const Duration(seconds: 4),
+            child: Padding(
+              padding: const EdgeInsets.all(4),
+              child: Icon(Icons.info_outline_rounded, size: 18, color: cs.onSurfaceVariant),
             ),
           ),
         ],
-        if (trailing != null) ...[
-          const Spacer(),
-          trailing,
-        ],
+        if (trailing != null) ...[const Spacer(), trailing!],
+      ],
+    );
+  }
+}
+
+/// Accent swatches: Material You "Auto" (when the device has one), the presets, the custom
+/// colours (long press removes) and the "+" picker.
+class _ColorGrid extends StatelessWidget {
+  const _ColorGrid({required this.state});
+
+  final ThemeState state;
+
+  @override
+  Widget build(BuildContext context) {
+    final bloc = context.read<ThemeBloc>();
+    final names = ThemeSettings.presetNames();
+    final seed = state.seedColor.toARGB32();
+    final auto = state.useDynamicColor && state.dynamicColorAvailable;
+
+    return Wrap(
+      spacing: 10,
+      runSpacing: 10,
+      children: [
+        if (state.dynamicColorAvailable)
+          _Swatch(
+            color: state.dynamicAccent!,
+            label: S.current.Theme_Color_Auto_Label,
+            selected: auto,
+            text: S.current.Auto,
+            onTap: () => bloc.add(const ThemeDynamicColorChanged(true)),
+          ),
+        for (var i = 0; i < AppThemes.predefinedColors.length; i++)
+          _Swatch(
+            color: AppThemes.predefinedColors[i],
+            label: names[i],
+            selected: !auto && AppThemes.predefinedColors[i].toARGB32() == seed,
+            onTap: () => bloc.add(ThemeSeedColorChanged(AppThemes.predefinedColors[i])),
+          ),
+        for (final color in state.customColors)
+          _Swatch(
+            color: color,
+            label: '${S.current.Prefs_Color_Custom}, ${S.current.Theme_Color_Remove_Hint}',
+            selected: !auto && color.toARGB32() == seed,
+            onTap: () => bloc.add(ThemeSeedColorChanged(color)),
+            onLongPress: () => _confirmRemove(context, color),
+          ),
+        _AddSwatch(onTap: () => _pickCustom(context)),
       ],
     );
   }
 
-  Widget _buildColorGrid(BuildContext context, ThemeState state) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 5,
-        crossAxisSpacing: 10,
-        mainAxisSpacing: 10,
+  Future<void> _pickCustom(BuildContext context) async {
+    final bloc = context.read<ThemeBloc>();
+    var picked = state.effectiveSeed;
+    final ok = await ColorPicker(
+      color: picked,
+      onColorChanged: (color) => picked = color,
+      width: 40,
+      height: 40,
+      borderRadius: 8,
+      spacing: 6,
+      runSpacing: 6,
+      wheelDiameter: 180,
+      heading: Text(
+        S.current.Select_a_suitable_color,
+        style: Theme.of(context).textTheme.titleMedium,
       ),
-      itemCount: AppThemes.predefinedColors.length,
-      itemBuilder: (context, index) {
-        final color = AppThemes.predefinedColors[index];
-        final isSelected = state.seedColor.toARGB32() == color.toARGB32();
-
-        return GestureDetector(
-          onTap: () {
-            context.read<ThemeBloc>().add(ThemeSeedColorChanged(color));
-          },
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            decoration: BoxDecoration(
-              color: color,
-              borderRadius: BorderRadius.circular(14),
-              border: isSelected
-                  ? Border.all(
-                      color: colorScheme.onSurface,
-                      width: 3,
-                    )
-                  : null,
-              boxShadow: isSelected
-                  ? [
-                      BoxShadow(
-                        color: color.withAlpha(100),
-                        blurRadius: 8,
-                        spreadRadius: 1,
-                      ),
-                    ]
-                  : null,
-            ),
-            child: isSelected
-                ? Center(
-                    child: Icon(
-                      Icons.check_rounded,
-                      color: _contrastColor(color),
-                      size: 24,
-                    ),
-                  )
-                : null,
-          ),
-        );
+      enableShadesSelection: true,
+      showMaterialName: false,
+      showColorName: false,
+      showColorCode: false,
+      pickersEnabled: const <ColorPickerType, bool>{
+        ColorPickerType.both: false,
+        ColorPickerType.primary: false,
+        ColorPickerType.accent: false,
+        ColorPickerType.bw: false,
+        ColorPickerType.custom: false,
+        ColorPickerType.wheel: true,
       },
+    ).showPickerDialog(
+      context,
+      constraints: const BoxConstraints(minHeight: 260, minWidth: 280, maxWidth: 340),
     );
+    if (ok) bloc.add(ThemeCustomColorAdded(picked));
   }
 
-  Widget _buildThemeModeChips(BuildContext context, ThemeState state) {
-    final modes = [
-      {'name': 'auto', 'label': 'Auto', 'icon': Icons.brightness_auto_rounded},
-      {'name': 'light', 'label': 'Light', 'icon': Icons.light_mode_rounded},
-      {'name': 'dark', 'label': 'Dark', 'icon': Icons.dark_mode_rounded},
-      {'name': 'black', 'label': 'Black', 'icon': Icons.nightlight_rounded},
-    ];
-
-    return Wrap(
-      spacing: 8,
-      children: modes.map((mode) {
-        final isSelected = state.themeModeName == mode['name'];
-        return ChoiceChip(
-          label: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                mode['icon'] as IconData,
-                size: 18,
-              ),
-              const SizedBox(width: 6),
-              Text(mode['label'] as String),
-            ],
-          ),
-          selected: isSelected,
-          onSelected: (_) {
-            context.read<ThemeBloc>().add(
-                  ThemeModeChanged(mode['name'] as String),
-                );
-          },
-        );
-      }).toList(),
-    );
-  }
-
-  Widget _buildBackgroundImageSelector(
-      BuildContext context, ThemeState state) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final customPath = state.customBgImagePath;
-
-    // 5 predefined + 1 custom slot
-    final totalItems = AppThemes.backgroundImages.length + 1;
-
-    return SizedBox(
-      height: 120,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        itemCount: totalItems,
-        separatorBuilder: (_, __) => const SizedBox(width: 12),
-        itemBuilder: (context, index) {
-          // Last item = custom gallery option
-          if (index == AppThemes.backgroundImages.length) {
-            return _buildCustomImageOption(context, state, customPath);
-          }
-
-          final imagePath = AppThemes.backgroundImages[index];
-          final isSelected = state.backgroundImagePath == imagePath;
-
-          return GestureDetector(
-            onTap: () {
-              context.read<ThemeBloc>().add(
-                    ThemeBackgroundChanged(
-                      backgroundImagePath: imagePath,
-                      showBackground: true,
-                    ),
-                  );
-            },
-            child: _buildImageCard(
-              isSelected: isSelected,
-              colorScheme: colorScheme,
-              child: Image.asset(imagePath, fit: BoxFit.cover),
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildCustomImageOption(
-      BuildContext context, ThemeState state, String? customPath) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final hasCustomImage = customPath != null && File(customPath).existsSync();
-    final isSelected = hasCustomImage && state.backgroundImagePath == customPath;
-
-    if (hasCustomImage) {
-      return GestureDetector(
-        onTap: () {
-          context.read<ThemeBloc>().add(
-                ThemeBackgroundChanged(
-                  backgroundImagePath: customPath,
-                  showBackground: true,
-                ),
-              );
-        },
-        onLongPress: () => _showCustomImageOptions(context, state, customPath),
-        child: _buildImageCard(
-          isSelected: isSelected,
-          colorScheme: colorScheme,
-          child: Image.file(File(customPath), fit: BoxFit.cover),
-          badge: Positioned(
-            top: 6,
-            right: 6,
-            child: GestureDetector(
-              onTap: () => _showCustomImageOptions(context, state, customPath),
-              child: Container(
-                padding: const EdgeInsets.all(4),
-                decoration: BoxDecoration(
-                  color: Colors.black54,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Icon(Icons.more_horiz, color: Colors.white, size: 16),
-              ),
-            ),
-          ),
-        ),
-      );
-    }
-
-    // No custom image yet — show "+" add button
-    return GestureDetector(
-      onTap: () => _pickCustomImage(context, state),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        width: 160,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: colorScheme.outlineVariant,
-            width: 1,
-          ),
-          color: colorScheme.surfaceContainerLow,
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.add_photo_alternate_outlined,
-              size: 32,
-              color: colorScheme.onSurfaceVariant,
-            ),
-            const SizedBox(height: 6),
-            Text(
-              'Gallery',
-              style: TextStyle(
-                fontSize: 12,
-                color: colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildImageCard({
-    required bool isSelected,
-    required ColorScheme colorScheme,
-    required Widget child,
-    Widget? badge,
-  }) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 200),
-      width: 160,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        border: isSelected
-            ? Border.all(color: colorScheme.primary, width: 3)
-            : Border.all(color: colorScheme.outlineVariant, width: 1),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(isSelected ? 13 : 15),
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            child,
-            if (isSelected)
-              Container(
-                color: colorScheme.primary.withAlpha(60),
-                child: Center(
-                  child: Container(
-                    padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(
-                      color: colorScheme.primary,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      Icons.check_rounded,
-                      color: colorScheme.onPrimary,
-                      size: 20,
-                    ),
-                  ),
-                ),
-              ),
-            if (badge != null) badge,
-          ],
-        ),
-      ),
-    );
-  }
-
-  Future<void> _pickCustomImage(BuildContext context, ThemeState state) async {
-    final manager = SidebarBackgroundManager.instance;
-    final path = await manager.setNewBackgroundImage(context: context);
-    if (path != null && context.mounted) {
-      context.read<ThemeBloc>().add(
-            ThemeBackgroundChanged(
-              backgroundImagePath: path,
-              customBgImagePath: path,
-              showBackground: true,
-            ),
-          );
-    }
-  }
-
-  void _showCustomImageOptions(
-      BuildContext context, ThemeState state, String customPath) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
-    showModalBottomSheet(
+  Future<void> _confirmRemove(BuildContext context, Color color) async {
+    final bloc = context.read<ThemeBloc>();
+    final confirmed = await showDialog<bool>(
       context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      builder: (dialogContext) => AlertDialog(
+        icon: const Icon(Icons.delete_outline_rounded),
+        title: Text(S.current.Theme_Color_Remove_Title),
+        content: Text(S.current.Theme_Color_Remove_Body),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: Text(S.current.Cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text(S.current.Theme_Color_Remove),
+          ),
+        ],
       ),
-      builder: (sheetContext) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 12),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
+    );
+    if (confirmed == true) bloc.add(ThemeCustomColorRemoved(color));
+  }
+}
+
+class _Swatch extends StatelessWidget {
+  const _Swatch({
+    required this.color,
+    required this.label,
+    required this.selected,
+    required this.onTap,
+    this.onLongPress,
+    this.text,
+  });
+
+  final Color color;
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+  final VoidCallback? onLongPress;
+  final String? text;
+
+  static const double size = 52;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final fg = readableOn(color);
+    final radius = BorderRadius.circular(14);
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: label,
+      excludeSemantics: true,
+      child: Tooltip(
+        message: label,
+        child: Material(
+          color: color,
+          shape: RoundedRectangleBorder(
+            borderRadius: radius,
+            side: BorderSide(
+              color: selected ? cs.onSurface : cs.outlineVariant,
+              width: selected ? 3 : 1,
+            ),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            onTap: onTap,
+            onLongPress: onLongPress,
+            child: SizedBox.square(
+              dimension: size,
+              child: Center(
+                child: selected
+                    ? Icon(Icons.check_rounded, color: fg, size: 24)
+                    : text != null
+                        ? Text(
+                            text!,
+                            style: TextStyle(color: fg, fontWeight: FontWeight.w600, fontSize: 12),
+                          )
+                        : null,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _AddSwatch extends StatelessWidget {
+  const _AddSwatch({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Tooltip(
+      message: S.current.Theme_Color_Add,
+      child: Material(
+        color: cs.surfaceContainerHigh,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14),
+          side: BorderSide(color: cs.outlineVariant),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          child: SizedBox.square(
+            dimension: _Swatch.size,
+            child: Icon(Icons.add_rounded, color: cs.onSurfaceVariant, semanticLabel: S.current.Theme_Color_Add),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// How the accent looks on the common components, in the current mode.
+class _Preview extends StatelessWidget {
+  const _Preview();
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final tokens = AppColors.of(context);
+    Widget status(String text, AppColorRole role) => Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          decoration: BoxDecoration(
+            color: role.container,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Text(
+            text,
+            style: TextStyle(color: role.onContainer, fontSize: 12, fontWeight: FontWeight.w600),
+          ),
+        );
+
+    return Card(
+      margin: EdgeInsets.zero,
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              S.current.Preview,
+              style: Theme.of(context).textTheme.labelLarge?.copyWith(color: cs.onSurfaceVariant),
+            ),
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              crossAxisAlignment: WrapCrossAlignment.center,
               children: [
-                Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: colorScheme.onSurfaceVariant.withAlpha(80),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
+                FilledButton(onPressed: () {}, child: Text(S.current.Theme_Preview_Button)),
+                FilledButton.tonal(onPressed: () {}, child: Text(S.current.Theme_Preview_Tonal)),
+                FilterChip(
+                  selected: true,
+                  onSelected: (_) {},
+                  label: Text(S.current.Theme_Preview_Chip),
                 ),
-                const SizedBox(height: 12),
-                ListTile(
-                  leading: Icon(Icons.photo_library_outlined,
-                      color: colorScheme.primary),
-                  title: const Text('Change image'),
-                  onTap: () async {
-                    Navigator.pop(sheetContext);
-                    await _pickCustomImage(context, state);
-                  },
-                ),
-                ListTile(
-                  leading: const Icon(Icons.delete_outline, color: Colors.red),
-                  title: const Text('Remove custom image'),
-                  onTap: () async {
-                    Navigator.pop(sheetContext);
-                    await SidebarBackgroundManager.instance
-                        .removeBackgroundImage(context: context);
-                    if (context.mounted) {
-                      // Fall back to first predefined image
-                      context.read<ThemeBloc>().add(
-                            ThemeBackgroundChanged(
-                              backgroundImagePath:
-                                  AppThemes.backgroundImages.first,
-                              clearCustomImage: true,
-                              showBackground: state.showBackground,
-                            ),
-                          );
-                    }
-                  },
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.star_rounded, color: tokens.score.color, size: 20),
+                    const SizedBox(width: 2),
+                    Text('8.7', style: TextStyle(color: cs.onSurface, fontWeight: FontWeight.w600)),
+                  ],
                 ),
               ],
             ),
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: [
+                status(S.current.Watching, tokens.watching),
+                status(S.current.Completed, tokens.completed),
+                status(S.current.On_Hold, tokens.onHold),
+                status(S.current.Dropped, tokens.dropped),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ModeSelector extends StatelessWidget {
+  const _ModeSelector({required this.state});
+
+  final ThemeState state;
+
+  @override
+  Widget build(BuildContext context) {
+    final modes = <(String, String, IconData)>[
+      ('auto', S.current.Auto, Icons.brightness_auto_rounded),
+      ('light', S.current.Light, Icons.light_mode_rounded),
+      ('dark', S.current.Dark, Icons.dark_mode_rounded),
+      ('black', S.current.Theme_Mode_Black, Icons.nightlight_rounded),
+    ];
+    return SizedBox(
+      width: double.infinity,
+      child: SegmentedButton<String>(
+        showSelectedIcon: false,
+        segments: [
+          for (final (name, label, icon) in modes)
+            ButtonSegment(
+              value: name,
+              icon: Icon(icon, size: 18),
+              label: FittedBox(fit: BoxFit.scaleDown, child: Text(label, maxLines: 1)),
+            ),
+        ],
+        selected: {state.themeModeName},
+        onSelectionChanged: (selection) =>
+            context.read<ThemeBloc>().add(ThemeModeChanged(selection.first)),
+      ),
+    );
+  }
+}
+
+class _BackgroundSelector extends StatelessWidget {
+  const _BackgroundSelector({required this.state});
+
+  final ThemeState state;
+
+  static const double _width = 150;
+  static const double _height = 110;
+
+  @override
+  Widget build(BuildContext context) {
+    final dpr = MediaQuery.devicePixelRatioOf(context);
+    final cacheWidth = (_width * dpr).ceil();
+    return SizedBox(
+      height: _height,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: AppThemes.backgroundImages.length + 1,
+        separatorBuilder: (_, __) => const SizedBox(width: 12),
+        itemBuilder: (context, index) {
+          if (index == AppThemes.backgroundImages.length) {
+            return _CustomImageTile(state: state, cacheWidth: cacheWidth);
+          }
+          final imagePath = AppThemes.backgroundImages[index];
+          return _ImageCard(
+            selected: state.backgroundImagePath == imagePath,
+            onTap: () => context.read<ThemeBloc>().add(
+                  ThemeBackgroundChanged(backgroundImagePath: imagePath, showBackground: true),
+                ),
+            child: Image.asset(imagePath, fit: BoxFit.cover, cacheWidth: cacheWidth),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _CustomImageTile extends StatelessWidget {
+  const _CustomImageTile({required this.state, required this.cacheWidth});
+
+  final ThemeState state;
+  final int cacheWidth;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final tokens = AppColors.of(context);
+    final customPath = state.customBgImagePath;
+    final hasCustomImage = customPath != null && File(customPath).existsSync();
+
+    if (hasCustomImage) {
+      return _ImageCard(
+        selected: state.backgroundImagePath == customPath,
+        onTap: () => context.read<ThemeBloc>().add(
+              ThemeBackgroundChanged(backgroundImagePath: customPath, showBackground: true),
+            ),
+        onLongPress: () => _showOptions(context, customPath),
+        badge: Positioned(
+          top: 6,
+          right: 6,
+          child: Material(
+            color: tokens.imageScrim,
+            borderRadius: BorderRadius.circular(8),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(8),
+              onTap: () => _showOptions(context, customPath),
+              child: Padding(
+                padding: const EdgeInsets.all(4),
+                child: Icon(
+                  Icons.more_horiz,
+                  color: tokens.onImageScrim,
+                  size: 18,
+                  semanticLabel: S.current.Theme_Bg_Options,
+                ),
+              ),
+            ),
           ),
-        );
-      },
+        ),
+        child: Image.file(File(customPath), fit: BoxFit.cover, cacheWidth: cacheWidth),
+      );
+    }
+
+    return Material(
+      color: cs.surfaceContainerLow,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: cs.outlineVariant),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () => _pick(context),
+        child: SizedBox(
+          width: _BackgroundSelector._width,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.add_photo_alternate_outlined, size: 32, color: cs.onSurfaceVariant),
+              const SizedBox(height: 6),
+              Text(
+                S.current.Theme_Bg_Gallery,
+                style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
-  Widget _buildFontSelector(BuildContext context, ThemeState state) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final displayName =
-        AppThemes.fontDisplayNames[state.fontFamily] ?? state.fontFamily;
+  Future<void> _pick(BuildContext context) async {
+    final bloc = context.read<ThemeBloc>();
+    final path = await SidebarBackgroundManager.instance.pickHomeBackgroundImage(
+      previousPath: state.customBgImagePath,
+      context: context,
+    );
+    if (path != null) {
+      bloc.add(ThemeBackgroundChanged(
+        backgroundImagePath: path,
+        customBgImagePath: path,
+        showBackground: true,
+      ));
+    }
+  }
 
-    return Card(
-      elevation: 0,
-      color: colorScheme.surfaceContainerLow,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(
-          color: colorScheme.outlineVariant,
-          width: 0.5,
+  void _showOptions(BuildContext context, String customPath) {
+    final cs = Theme.of(context).colorScheme;
+    final bloc = context.read<ThemeBloc>();
+    showModalBottomSheet(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: Icon(Icons.photo_library_outlined, color: cs.primary),
+              title: Text(S.current.Theme_Bg_Change),
+              onTap: () async {
+                Navigator.pop(sheetContext);
+                await _pick(context);
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.delete_outline, color: cs.error),
+              title: Text(S.current.Theme_Bg_Remove, style: TextStyle(color: cs.error)),
+              onTap: () async {
+                Navigator.pop(sheetContext);
+                final wasSelected = state.backgroundImagePath == customPath;
+                bloc.add(ThemeBackgroundChanged(
+                  backgroundImagePath:
+                      wasSelected ? AppThemes.backgroundImages.first : state.backgroundImagePath,
+                  clearCustomImage: true,
+                  showBackground: state.showBackground,
+                ));
+                await SidebarBackgroundManager.instance.deleteHomeBackgroundImage(customPath);
+              },
+            ),
+            const SizedBox(height: 8),
+          ],
         ),
       ),
+    );
+  }
+}
+
+class _ImageCard extends StatelessWidget {
+  const _ImageCard({
+    required this.selected,
+    required this.child,
+    required this.onTap,
+    this.onLongPress,
+    this.badge,
+  });
+
+  final bool selected;
+  final Widget child;
+  final VoidCallback onTap;
+  final VoidCallback? onLongPress;
+  final Widget? badge;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return GestureDetector(
+      onTap: onTap,
+      onLongPress: onLongPress,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        width: _BackgroundSelector._width,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          border: selected
+              ? Border.all(color: cs.primary, width: 3)
+              : Border.all(color: cs.outlineVariant, width: 1),
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(selected ? 13 : 15),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              child,
+              if (selected)
+                ColoredBox(
+                  color: cs.primary.withValues(alpha: 0.24),
+                  child: Center(
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(color: cs.primary, shape: BoxShape.circle),
+                      child: Padding(
+                        padding: const EdgeInsets.all(6),
+                        child: Icon(Icons.check_rounded, color: cs.onPrimary, size: 20),
+                      ),
+                    ),
+                  ),
+                ),
+              if (badge != null) badge!,
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _FontTile extends StatelessWidget {
+  const _FontTile({required this.state});
+
+  final ThemeState state;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final displayName = AppThemes.fontDisplayNames[state.fontFamily] ?? state.fontFamily;
+    return Card(
+      margin: EdgeInsets.zero,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: cs.outlineVariant, width: 0.5),
+      ),
+      clipBehavior: Clip.antiAlias,
       child: ListTile(
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
         leading: Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: colorScheme.primaryContainer,
+            color: cs.primaryContainer,
             borderRadius: BorderRadius.circular(10),
           ),
           child: Text(
@@ -555,152 +748,97 @@ class _ThemeSettingsState extends State<ThemeSettings> {
               fontFamily: state.fontFamily,
               fontWeight: FontWeight.bold,
               fontSize: 18,
-              color: colorScheme.onPrimaryContainer,
+              color: cs.onPrimaryContainer,
             ),
           ),
         ),
-        title: const Text('Font Family'),
+        title: Text(S.current.Font_Family),
         subtitle: Text(
           displayName,
-          style: TextStyle(
-            fontFamily: state.fontFamily,
-            color: colorScheme.primary,
-          ),
+          style: TextStyle(fontFamily: state.fontFamily, color: cs.primary),
         ),
-        trailing: Icon(
-          Icons.chevron_right_rounded,
-          color: colorScheme.onSurfaceVariant,
-        ),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        onTap: () => _showFontPickerSheet(context, state),
+        trailing: Icon(Icons.chevron_right_rounded, color: cs.onSurfaceVariant),
+        onTap: () => _showFontPicker(context),
       ),
     );
   }
 
-  void _showFontPickerSheet(BuildContext context, ThemeState state) {
+  void _showFontPicker(BuildContext context) {
     final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
+    final cs = theme.colorScheme;
+    final bloc = context.read<ThemeBloc>();
     showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
       isScrollControlled: true,
-      builder: (sheetContext) {
-        return DraggableScrollableSheet(
-          initialChildSize: 0.55,
-          minChildSize: 0.3,
-          maxChildSize: 0.7,
-          expand: false,
-          builder: (_, scrollController) {
-            return Padding(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Center(
-                    child: Container(
+      showDragHandle: true,
+      builder: (sheetContext) => DraggableScrollableSheet(
+        initialChildSize: 0.55,
+        minChildSize: 0.3,
+        maxChildSize: 0.8,
+        expand: false,
+        builder: (_, scrollController) => Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Text(
+                S.current.Select_Font_Family,
+                style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Expanded(
+              child: ListView.builder(
+                controller: scrollController,
+                itemCount: AppThemes.availableFonts.length,
+                itemBuilder: (_, index) {
+                  final font = AppThemes.availableFonts[index];
+                  final selected = state.fontFamily == font;
+                  return ListTile(
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 24),
+                    leading: Container(
                       width: 40,
-                      height: 4,
+                      height: 40,
+                      alignment: Alignment.center,
                       decoration: BoxDecoration(
-                        color: colorScheme.onSurfaceVariant.withAlpha(80),
-                        borderRadius: BorderRadius.circular(2),
+                        color: selected ? cs.primaryContainer : cs.surfaceContainerHighest,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(
+                        'Aa',
+                        style: TextStyle(
+                          fontFamily: font,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                          color: selected ? cs.onPrimaryContainer : cs.onSurfaceVariant,
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 16),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    child: Text(
-                      'Select Font Family',
-                      style: theme.textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Expanded(
-                    child: ListView(
-                      controller: scrollController,
-                      children: AppThemes.availableFonts.map((font) {
-                final displayName =
-                    AppThemes.fontDisplayNames[font] ?? font;
-                final isSelected = state.fontFamily == font;
-
-                return ListTile(
-                  contentPadding:
-                      const EdgeInsets.symmetric(horizontal: 24),
-                  leading: Container(
-                    width: 40,
-                    height: 40,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: isSelected
-                          ? colorScheme.primaryContainer
-                          : colorScheme.surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      'Aa',
+                    title: Text(
+                      AppThemes.fontDisplayNames[font] ?? font,
                       style: TextStyle(
                         fontFamily: font,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                        color: isSelected
-                            ? colorScheme.onPrimaryContainer
-                            : colorScheme.onSurfaceVariant,
+                        fontWeight: selected ? FontWeight.bold : FontWeight.normal,
                       ),
                     ),
-                  ),
-                  title: Text(
-                    displayName,
-                    style: TextStyle(
-                      fontFamily: font,
-                      fontWeight:
-                          isSelected ? FontWeight.bold : FontWeight.normal,
+                    subtitle: Text(
+                      S.current.Font_Sample_Text,
+                      style: TextStyle(fontFamily: font, fontSize: 12, color: cs.onSurfaceVariant),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                  ),
-                  subtitle: Text(
-                    'The quick brown fox jumps over the lazy dog',
-                    style: TextStyle(
-                      fontFamily: font,
-                      fontSize: 12,
-                      color: colorScheme.onSurfaceVariant,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  trailing: isSelected
-                      ? Icon(
-                          Icons.check_circle_rounded,
-                          color: colorScheme.primary,
-                        )
-                      : null,
-                  onTap: () {
-                    context
-                        .read<ThemeBloc>()
-                        .add(ThemeFontChanged(font));
-                    Navigator.pop(sheetContext);
-                  },
-                );
-              }).toList(),
-                    ),
-                  ),
-                ],
+                    trailing: selected ? Icon(Icons.check_circle_rounded, color: cs.primary) : null,
+                    onTap: () {
+                      bloc.add(ThemeFontChanged(font));
+                      Navigator.pop(sheetContext);
+                    },
+                  );
+                },
               ),
-            );
-          },
-        );
-      },
+            ),
+          ],
+        ),
+      ),
     );
-  }
-
-  Color _contrastColor(Color color) {
-    final luminance = color.computeLuminance();
-    return luminance > 0.4 ? Colors.black : Colors.white;
   }
 }

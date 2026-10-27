@@ -10,6 +10,7 @@ abstract class ThemeEvent extends Equatable {
 
 class ThemeLoadStarted extends ThemeEvent {}
 
+/// A preset or custom accent was picked (turns the Material You accent off).
 class ThemeSeedColorChanged extends ThemeEvent {
   final Color seedColor;
 
@@ -17,6 +18,46 @@ class ThemeSeedColorChanged extends ThemeEvent {
 
   @override
   List<Object?> get props => [seedColor];
+}
+
+/// Material You: the accent follows the wallpaper (Android 12+) when [enabled].
+class ThemeDynamicColorChanged extends ThemeEvent {
+  final bool enabled;
+
+  const ThemeDynamicColorChanged(this.enabled);
+
+  @override
+  List<Object?> get props => [enabled];
+}
+
+/// The system accent read from the platform (null when the device has none).
+class ThemeDynamicAccentLoaded extends ThemeEvent {
+  final Color? accent;
+
+  const ThemeDynamicAccentLoaded(this.accent);
+
+  @override
+  List<Object?> get props => [accent];
+}
+
+/// A colour from the custom picker: saved among the custom swatches and selected.
+class ThemeCustomColorAdded extends ThemeEvent {
+  final Color color;
+
+  const ThemeCustomColorAdded(this.color);
+
+  @override
+  List<Object?> get props => [color];
+}
+
+/// Removes a custom swatch; when it was the accent, the default accent comes back.
+class ThemeCustomColorRemoved extends ThemeEvent {
+  final Color color;
+
+  const ThemeCustomColorRemoved(this.color);
+
+  @override
+  List<Object?> get props => [color];
 }
 
 class ThemeModeChanged extends ThemeEvent {
