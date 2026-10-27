@@ -1,0 +1,284 @@
+{
+  "@@locale": "en",
+  "UserList_All": "All",
+  "UserList_Anime": "Anime",
+  "UserList_Manga": "Manga",
+  "UserList_Apply": "Apply",
+  "UserList_Reset": "Reset",
+  "UserList_Save": "Save",
+  "UserList_Delete": "Delete",
+  "UserList_Clear": "Clear",
+  "UserList_Retry": "Retry",
+  "UserList_Sort": "Sort",
+  "UserList_Filter": "Filter",
+  "UserList_Filter_Count": "Filters ({count})",
+  "@UserList_Filter_Count": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "UserList_Display": "Display",
+  "UserList_Ascending": "Ascending",
+  "UserList_Descending": "Descending",
+  "UserList_Filter_Hint": "Tap a value to keep only matching entries; tap it again to exclude them.",
+  "UserList_Included": "Included",
+  "UserList_Excluded": "Excluded",
+  "UserList_Layout": "Layout",
+  "UserList_Layout_List": "List",
+  "UserList_Layout_Grid": "Grid",
+  "UserList_Card_Style": "Card style",
+  "UserList_Comfortable": "Comfortable",
+  "UserList_Compact": "Compact",
+  "UserList_Spacious": "Spacious",
+  "UserList_Cover_Only": "Cover only",
+  "UserList_Custom_Card": "Custom card",
+  "UserList_Custom_Cards": "Custom cards",
+  "UserList_Custom_Cards_Empty": "No custom card yet. Create one to choose what each row shows and where.",
+  "UserList_Manage_Cards": "Edit custom cards",
+  "UserList_Grid_Columns": "Columns: {count}",
+  "@UserList_Grid_Columns": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "UserList_Grid_Height": "Card height: {height}",
+  "@UserList_Grid_Height": {
+    "placeholders": {
+      "height": {
+        "type": "int"
+      }
+    }
+  },
+  "UserList_New_Card": "New card",
+  "UserList_Untitled_Card": "Untitled card",
+  "UserList_Delete_Card": "Delete card",
+  "UserList_Delete_Card_Confirm": "Delete this custom card? Lists that use it go back to the comfortable style.",
+  "UserList_Edit_Card": "Edit card",
+  "UserList_Card_Name": "Card name",
+  "UserList_Card_Height": "Height: {height}",
+  "@UserList_Card_Height": {
+    "placeholders": {
+      "height": {
+        "type": "int"
+      }
+    }
+  },
+  "UserList_Drag_Hint": "Drag the selected field or use the arrows to move it.",
+  "UserList_Move_Up": "Move up",
+  "UserList_Move_Down": "Move down",
+  "UserList_Move_Left": "Move left",
+  "UserList_Move_Right": "Move right",
+  "UserList_Show_Field": "Show",
+  "UserList_Hide_Field": "Hide",
+  "UserList_Bring_Forward": "Bring forward",
+  "UserList_Send_Backward": "Send backward",
+  "UserList_Discard_Changes": "Discard your changes?",
+  "UserList_Discard": "Discard",
+  "UserList_Sample_Title": "Sample title",
+  "UserList_Edit_Entry": "Edit",
+  "UserList_Plus_One": "Add one",
+  "UserList_Minus_One": "Remove one",
+  "UserList_Search_In_List": "Search in the list",
+  "UserList_Close_Search": "Close search",
+  "UserList_Search_Hint": "Title…",
+  "UserList_Empty": "Nothing here yet",
+  "UserList_Empty_Hint": "Entries with this status will show up here.",
+  "UserList_No_Match": "No entry matches",
+  "UserList_No_Match_Hint": "Change the search or the filters.",
+  "UserList_Clear_Filters": "Clear search and filters",
+  "UserList_Load_Error": "Couldn't load your list",
+  "UserList_Load_Error_Hint": "Check your connection and try again.",
+  "UserList_Load_More_Failed": "Couldn't load more. Tap to retry.",
+  "UserList_Update_Failed": "Couldn't update the entry.",
+  "UserList_Session_Expired": "Your MyAnimeList session has expired",
+  "UserList_Session_Expired_Hint": "Sign in again to see and edit your list.",
+  "UserList_Sign_In_Again": "Sign in again",
+  "UserList_Sign_In": "Sign in",
+  "UserList_Sign_In_Title": "Your list lives here",
+  "UserList_Sign_In_Hint": "Sign in with MyAnimeList to see and edit your anime and manga lists.",
+  "UserList_Not_Scored": "Not scored",
+  "UserList_My_Score_Value": "My score: {score}",
+  "@UserList_My_Score_Value": {
+    "placeholders": {
+      "score": {
+        "type": "int"
+      }
+    }
+  },
+  "UserList_Unseen_Count": "{count, plural, =1{1 episode not seen} other{{count} episodes not seen}}",
+  "@UserList_Unseen_Count": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "UserList_Progress_Episodes": "{progress} / {total} ep.",
+  "@UserList_Progress_Episodes": {
+    "placeholders": {
+      "progress": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "UserList_Progress_Chapters": "{progress} / {total} ch.",
+  "@UserList_Progress_Chapters": {
+    "placeholders": {
+      "progress": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "UserList_Progress_Volumes": "{volumes} vol.",
+  "@UserList_Progress_Volumes": {
+    "placeholders": {
+      "volumes": {
+        "type": "String"
+      }
+    }
+  },
+  "UserList_Episode_Count": "{count, plural, =1{1 ep.} other{{count} ep.}}",
+  "@UserList_Episode_Count": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "UserList_Chapter_Count": "{count, plural, =1{1 ch.} other{{count} ch.}}",
+  "@UserList_Chapter_Count": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "UserList_Volume_Count": "{count, plural, =1{1 vol.} other{{count} vol.}}",
+  "@UserList_Volume_Count": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "UserList_Episode_Short": "Ep. {number}",
+  "@UserList_Episode_Short": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "UserList_In_Days_Hours": "in {days} d {hours} h",
+  "@UserList_In_Days_Hours": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      },
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
+  "UserList_In_Hours_Minutes": "in {hours} h {minutes} min",
+  "@UserList_In_Hours_Minutes": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "UserList_In_Minutes": "in {minutes} min",
+  "@UserList_In_Minutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "UserList_Short_Days_Hours": "{days}d {hours}h",
+  "@UserList_Short_Days_Hours": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      },
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
+  "UserList_Short_Hours_Minutes": "{hours}h {minutes}m",
+  "@UserList_Short_Hours_Minutes": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "UserList_Priority_High": "High",
+  "UserList_Priority_Medium": "Medium",
+  "UserList_Priority_Low": "Low",
+  "UserList_Has_Unseen": "Has unseen episodes",
+  "UserList_Facet_Media": "Type",
+  "UserList_Facet_Airing": "Airing",
+  "UserList_Facet_Publishing": "Publication",
+  "UserList_Facet_Genres": "Genres",
+  "UserList_Facet_My_Score": "My score",
+  "UserList_Facet_Priority": "Priority",
+  "UserList_Facet_Unseen": "New episodes",
+  "UserList_Release_Airing": "Airing",
+  "UserList_Release_Publishing": "Publishing",
+  "UserList_Release_Finished": "Finished",
+  "UserList_Release_Not_Aired": "Not yet aired",
+  "UserList_Release_Not_Published": "Not yet published",
+  "UserList_Release_Hiatus": "On hiatus",
+  "UserList_Media_Tv": "TV",
+  "UserList_Media_Movie": "Movie",
+  "UserList_Media_Special": "Special",
+  "UserList_Media_Tv_Special": "TV special",
+  "UserList_Media_Music": "Music",
+  "UserList_Media_Cm": "Commercial",
+  "UserList_Media_Manga": "Manga",
+  "UserList_Media_Novel": "Novel",
+  "UserList_Media_Light_Novel": "Light novel",
+  "UserList_Media_One_Shot": "One-shot",
+  "UserList_Media_Doujinshi": "Doujinshi",
+  "UserList_Media_Manhwa": "Manhwa",
+  "UserList_Media_Manhua": "Manhua",
+  "UserList_Media_Unknown": "Unknown",
+  "UserList_Sort_Updated": "Last updated",
+  "UserList_Sort_My_Score": "My score",
+  "UserList_Sort_Title": "Title",
+  "UserList_Sort_Episodes_Seen": "Episodes seen",
+  "UserList_Sort_Chapters_Read": "Chapters read",
+  "UserList_Sort_Unseen": "Unseen episodes",
+  "UserList_Sort_Next_Airing": "Next episode",
+  "UserList_Sort_Priority": "Priority",
+  "UserList_Sort_Mean": "Mean score",
+  "UserList_Sort_Members": "Members",
+  "UserList_Sort_Scorers": "Number of scores",
+  "UserList_Sort_Popularity": "Popularity",
+  "UserList_Sort_Total_Episodes": "Number of episodes",
+  "UserList_Sort_Total_Chapters": "Number of chapters",
+  "UserList_Sort_Aired_From": "Air date",
+  "UserList_Sort_Aired_To": "End of airing",
+  "UserList_Sort_Published_From": "Publication date",
+  "UserList_Sort_Published_To": "End of publication",
+  "UserList_Sort_My_Start": "My start date"
+}
