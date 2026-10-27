@@ -578,7 +578,7 @@
       "notes": [
         "model: sonnet"
       ],
-      "status": "⬜ todo"
+      "status": "✅ done"
     },
     {
       "id": "detail-header",
@@ -665,7 +665,7 @@
       "notes": [
         "model: sonnet"
       ],
-      "status": "⬜ todo"
+      "status": "✅ done"
     },
     {
       "id": "detail-social",
@@ -812,7 +812,7 @@
       "notes": [
         "model: sonnet"
       ],
-      "status": "⬜ todo"
+      "status": "✅ done"
     },
     {
       "id": "search-upgrade",
