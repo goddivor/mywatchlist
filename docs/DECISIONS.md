@@ -54,3 +54,9 @@ Append-only, one line per decision: `- YYYY-MM-DD [unit] decision — why`. Earl
 - 2026-10-27 [owner] A user who never picked a language gets the device language (not English).
 - 2026-10-27 [owner] Help & Feedback leaves the settings hub; feedback (report a bug / open an issue) lives on the About page.
 - 2026-10-27 [owner] AniList: no early warning before token expiry; when refresh fails the account goes to "sign in again" with a clear message.
+- 2026-10-27 [app-shell] Cross-unit links go through `AppRoutes` static helpers (plain `MaterialPageRoute`, never `gotoPage`, which forces left-to-right); settings pages are addressed by `SettingsSection`, so a unit links to a settings page without importing it.
+- 2026-10-27 [app-shell] The sidebar is the home shell's end drawer; pages reach it through `AppRoutes.openSidebar(context)` (an inherited `HomeShell`, no global key), outside the shell it is pushed as a page.
+- 2026-10-27 [app-shell] Home tabs: no animated opacity on tab switch; only the current tab is built unless `keepPagesInMemory`, in which case tabs are built on first visit and kept in an `IndexedStack`; the shell rebuilds only when the selected tracker changes (`BlocSelector`).
+- 2026-10-27 [app-shell] "Session expired" is read from `UserManager.trackersNeedingReLogin` (BaseUser `needsReLogin`, every tracker), shown once per tracker as a floating snackbar and as a card in the sidebar; "Sign in" restarts the tracker's OAuth flow (Kitsu opens the tracker manager).
+- 2026-10-27 [app-shell] Notification payloads are plain strings `anime:<malId>`, `manga:<malId>`, `calendar`, `bookmarks` (`NotificationRoute`), routed by the home shell after its first frame via `HomeScreen/OpenScreen(notificationPayload:)`.
+- 2026-10-27 [app-shell] Startup pages that are not tabs (calendar, search) open on top of the home tab.

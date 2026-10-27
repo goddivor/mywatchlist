@@ -1,16 +1,48 @@
 import 'package:flutter/material.dart';
-import 'package:mywatchlist/screens/settings/download_settings.dart';
-import 'package:mywatchlist/screens/settings/language_settings.dart';
-import 'package:mywatchlist/screens/settings/mal_home_settings.dart';
-import 'package:mywatchlist/screens/settings/theme_settings.dart';
+import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/user/user_preference.dart';
+import 'package:mywatchlist/utils/app_routes.dart';
 
+/// Settings hub: one tile per [SettingsSection], grouped by theme (DAL `SettingsPage`).
+///
+/// Every tile opens its page through [AppRoutes.settingsPageFor]; pages not built yet are
+/// "coming soon" stubs owned by their feature unit.
 class SettingsPage extends StatefulWidget {
-  const SettingsPage({Key? key}) : super(key: key);
+  const SettingsPage({super.key});
 
   @override
   State<SettingsPage> createState() => _SettingsPageState();
 }
+
+/// Groups of the hub, in display order.
+const List<(String Function(), List<SettingsSection>)> _groups = [
+  (_accountTitle, [SettingsSection.accounts]),
+  (
+    _appearanceTitle,
+    [SettingsSection.theme, SettingsSection.language, SettingsSection.homePage],
+  ),
+  (
+    _contentTitle,
+    [
+      SettingsSection.userPreferences,
+      SettingsSection.listPreferences,
+      SettingsSection.animeManga,
+      SettingsSection.dub,
+      SettingsSection.notifications,
+    ],
+  ),
+  (
+    _dataTitle,
+    [SettingsSection.downloads, SettingsSection.backup, SettingsSection.storage],
+  ),
+  (_infoTitle, [SettingsSection.about]),
+];
+
+String _accountTitle() => S.current.Settings_Section_Account;
+String _appearanceTitle() => S.current.Settings_Section_Appearance;
+String _contentTitle() => S.current.Settings_Section_Content;
+String _dataTitle() => S.current.Settings_Section_Data;
+String _infoTitle() => S.current.Settings_Section_Info;
 
 class _SettingsPageState extends State<SettingsPage> {
   bool _crossTrackerEnabled = true;
@@ -26,222 +58,158 @@ class _SettingsPageState extends State<SettingsPage> {
     if (mounted) setState(() => _crossTrackerEnabled = enabled);
   }
 
+  Future<void> _setCrossTracker(bool value) async {
+    setState(() => _crossTrackerEnabled = value);
+    await UserPreference().setCrossTrackerEnabled(value);
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Settings'),
-        elevation: 0,
-        automaticallyImplyLeading: true,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          // Make sure to use Navigator.of(context).pop() for proper context
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-      ),
-      body: ListView(
-        children: [
-          const SizedBox(height: 16),
-
-          // App Settings Section
-          _buildSectionHeader(theme, 'App Settings'),
-
-          // Theme Settings
-          _buildSettingTile(
-            context,
-            icon: Icons.color_lens_outlined,
-            title: 'Theme Settings',
-            subtitle: 'Change app appearance and colors',
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const ThemeSettings(),
-                ),
-              );
-            },
-          ),
-
-          // Language Settings
-          _buildSettingTile(
-            context,
-            icon: Icons.language_outlined,
-            title: 'Language Settings',
-            subtitle: 'Change app language',
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const LanguageSettings(),
-                ),
-              );
-            },
-          ),
-
-          // Home Page Settings
-          _buildSettingTile(
-            context,
-            icon: Icons.home_outlined,
-            title: 'Home Page Settings',
-            subtitle: 'Customize content and layout',
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const HomeSettingsPage(),
-                ),
-              );
-            },
-          ),
-
-          // Download Settings
-          _buildSettingTile(
-            context,
-            icon: Icons.download_outlined,
-            title: 'Download Settings',
-            subtitle: 'Choose where images are saved',
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const DownloadSettings(),
-                ),
-              );
-            },
-          ),
-
-          // Cross-Tracker Sync
-          _buildSettingTile(
-            context,
-            icon: Icons.sync_outlined,
-            title: 'Cross-Tracker Sync',
-            subtitle: 'Update anime/manga across all connected trackers',
-            trailing: Switch(
-              value: _crossTrackerEnabled,
-              onChanged: (value) async {
-                setState(() => _crossTrackerEnabled = value);
-                await UserPreference().setCrossTrackerEnabled(value);
-              },
+      body: CustomScrollView(
+        slivers: [
+          SliverAppBar.large(title: Text(S.current.Settings)),
+          for (final (title, sections) in _groups) ...[
+            SliverToBoxAdapter(child: _SectionHeader(title())),
+            SliverToBoxAdapter(
+              child: _SettingsGroup(
+                children: [
+                  if (sections.first == SettingsSection.downloads)
+                    _SettingsTile(
+                      icon: Icons.sync,
+                      title: S.current.Settings_Cross_Sync,
+                      subtitle: S.current.Settings_Cross_Sync_Desc,
+                      onTap: () => _setCrossTracker(!_crossTrackerEnabled),
+                      trailing: Switch(
+                        value: _crossTrackerEnabled,
+                        onChanged: _setCrossTracker,
+                      ),
+                    ),
+                  for (final section in sections)
+                    _SettingsTile(
+                      icon: section.icon,
+                      title: section.title,
+                      subtitle: section.description,
+                      onTap: () =>
+                          AppRoutes.openSettingsPage(context, section),
+                    ),
+                ],
+              ),
             ),
-            onTap: () async {
-              final newValue = !_crossTrackerEnabled;
-              setState(() => _crossTrackerEnabled = newValue);
-              await UserPreference().setCrossTrackerEnabled(newValue);
-            },
-          ),
-
-          const Divider(),
-
-          // Account Settings Section
-          _buildSectionHeader(theme, 'Account Settings'),
-
-          // MyAnimeList Account
-          _buildSettingTile(
-            context,
-            icon: Icons.account_circle_outlined,
-            title: 'MyAnimeList Account',
-            subtitle: 'Manage your MAL connection',
-            onTap: () {
-              // Navigate to MAL account settings
-            },
-          ),
-
-          // Other Accounts
-          _buildSettingTile(
-            context,
-            icon: Icons.link_outlined,
-            title: 'Connected Services',
-            subtitle: 'Manage AniList, Kitsu, and other services',
-            onTap: () {
-              // Navigate to services settings
-            },
-          ),
-
-          const Divider(),
-
-          // App Info Section
-          _buildSectionHeader(theme, 'App Information'),
-
-          // About
-          _buildSettingTile(
-            context,
-            icon: Icons.info_outline,
-            title: 'About',
-            subtitle: 'Version, credits, and legal information',
-            onTap: () {
-              // Navigate to about page
-            },
-          ),
-
-          // Help & Feedback
-          _buildSettingTile(
-            context,
-            icon: Icons.help_outline,
-            title: 'Help & Feedback',
-            subtitle: 'Get support or report issues',
-            onTap: () {
-              // Navigate to help page
-            },
+          ],
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 24, 16, 40),
+              child: Text(
+                '${S.current.Made_With_Flutter} Flutter',
+                textAlign: TextAlign.center,
+                style: theme.textTheme.bodySmall
+                    ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+              ),
+            ),
           ),
         ],
       ),
     );
   }
+}
 
-  Widget _buildSectionHeader(ThemeData theme, String title) {
+class _SectionHeader extends StatelessWidget {
+  final String title;
+  const _SectionHeader(this.title);
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+      padding: const EdgeInsetsDirectional.fromSTEB(28, 20, 16, 8),
       child: Text(
         title,
-        style: theme.textTheme.titleMedium?.copyWith(
+        style: theme.textTheme.labelLarge?.copyWith(
           color: theme.colorScheme.primary,
-          fontWeight: FontWeight.bold,
+          fontWeight: FontWeight.w600,
         ),
       ),
     );
   }
+}
 
-  Widget _buildSettingTile(
-    BuildContext context, {
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required VoidCallback onTap,
-    Widget? trailing,
-  }) {
+/// Rounded surface holding the tiles of one group, separated by inset dividers.
+class _SettingsGroup extends StatelessWidget {
+  final List<Widget> children;
+  const _SettingsGroup({required this.children});
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Material(
+        color: colors.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(20),
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          children: [
+            for (var i = 0; i < children.length; i++) ...[
+              if (i > 0)
+                Divider(
+                  height: 1,
+                  indent: 72,
+                  color: colors.outlineVariant.withValues(alpha: 0.5),
+                ),
+              children[i],
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SettingsTile extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+  final Widget? trailing;
+
+  const _SettingsTile({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+    this.trailing,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     final theme = Theme.of(context);
-
+    final colors = theme.colorScheme;
     return ListTile(
+      onTap: onTap,
+      contentPadding: const EdgeInsetsDirectional.fromSTEB(16, 4, 12, 4),
       leading: Container(
-        padding: const EdgeInsets.all(8),
+        width: 40,
+        height: 40,
         decoration: BoxDecoration(
-          color: theme.colorScheme.primary.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(8),
+          color: colors.primaryContainer,
+          borderRadius: BorderRadius.circular(12),
         ),
-        child: Icon(
-          icon,
-          color: theme.colorScheme.primary,
-        ),
+        child: Icon(icon, size: 22, color: colors.onPrimaryContainer),
       ),
       title: Text(
         title,
-        style: theme.textTheme.titleMedium,
+        style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
       ),
       subtitle: Text(
         subtitle,
-        style: theme.textTheme.bodySmall?.copyWith(
-          color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-        ),
+        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
+        style: theme.textTheme.bodySmall?.copyWith(color: colors.onSurfaceVariant),
       ),
       trailing: trailing ??
-          Icon(
-            Icons.arrow_forward_ios,
-            size: 16,
-            color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
-          ),
-      onTap: onTap,
+          Icon(Icons.chevron_right, color: colors.onSurfaceVariant),
     );
   }
 }
