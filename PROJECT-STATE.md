@@ -74,6 +74,7 @@ Cap: 80 lines. Rewrite in place; history lives in git and `docs/DECISIONS.md`.
 ## Search (`search-upgrade`)
 - `lib/screens/search/`: `GeneralSearchScreen` (state + parts `search_logic`, `search_bar_part`, `search_results_part`, `search_active_filters`), `SearchService` (all fetching, no widget), `SearchFilters` (immutable, API values: genre/producer/magazine ids), `SearchCatalog` (current MAL genre, producer and magazine tables in `data/`, name to id), `search_tiles`, `search_home_view`, `search_filter_panel` (kit select widgets, searchable producers/magazines, include/exclude genres).
 - Entry points: `GeneralSearchScreen.byQuery/byGenre/byStudio/byMagazine/byTag/bySeason/byRanking/byMangaRanking/bySuggested/byUser`, `AppRoutes.openSearch(query, category, filters)`; the old `filterOutputs:` map still works. User results open the profile (long press: quick sheet); an exact MAL user name shows "User found as"; a numeric query finds the title by id; autocomplete (400 ms) under the field.
+- Deep links (`deep-links`): `lib/utils/deep_links.dart`, `DeepLinks.start()` registers `WebLauncher.internalLinkHandler` and listens to https myanimelist.net intents (anime, manga, character, people, profile, forum, club, featured/news, genre/studio/magazine/season/search) through `DeepLinks.screenForLink`; `main.dart` must call `DeepLinks.start()` and the manifest needs the intent filters (see the PR).
 
 ## Known big gaps (see inventory)
 - No user list / profile for AniList/Kitsu/Simkl (placeholders); no notifications, share, translation.
