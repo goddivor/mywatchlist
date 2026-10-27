@@ -21,6 +21,13 @@ Future<AnimeGraphData> Function(int id) animeGraphLoader = (id) async {
   return AnimeGraphData.fromJson(json);
 };
 
+/// Graphs fetched during this session, so reopening one is instant.
+final Map<int, AnimeGraphData> _sessionCache = {};
+
+/// Forgets the graphs fetched so far.
+@visibleForTesting
+void clearAnimeGraphCache() => _sessionCache.clear();
+
 enum _LoadState { loading, ready, empty, failed }
 
 /// The relation graph of an anime: every title of its franchise as a node, relations as arrows.
@@ -52,9 +59,6 @@ class _AnimeGraphScreenState extends State<AnimeGraphScreen>
   static const double _focusScale = 0.8;
   static const double _pad = 40;
   static const Color _footerColor = Color(0xFF151515);
-
-  /// Graphs fetched during this session, so reopening one is instant.
-  static final Map<int, AnimeGraphData> _sessionCache = {};
 
   final TransformationController _transform = TransformationController();
   final GlobalKey _captureKey = GlobalKey();

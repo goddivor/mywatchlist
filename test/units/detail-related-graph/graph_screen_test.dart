@@ -46,6 +46,7 @@ void main() {
   setUp(() {
     SharedPreferences.setMockInitialValues({});
     ListStatusCache.instance.resetForTest();
+    clearAnimeGraphCache();
   });
 
   testWidgets('draws the franchise and opens a title sheet on tap',
@@ -78,6 +79,8 @@ void main() {
     await tester.tap(find.text('Title 3'));
     await tester.pumpAndSettle();
     expect(find.text('Completed'), findsOneWidget);
+    // Let the cache's delayed write run so no timer outlives the test.
+    await tester.pump(const Duration(seconds: 2));
   });
 
   testWidgets('a graph without edges explains itself', (tester) async {
