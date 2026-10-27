@@ -7,6 +7,8 @@ Never state a version from memory: read it here or in `pubspec.yaml` / `pubspec.
 - Android: Gradle 8.13, AGP 8.13.0, Kotlin 2.1.0, Java 11 target.
 - JDK for Gradle: **21** (`/usr/lib/jvm/java-21-openjdk-amd64`). The Android Studio JBR is Java 25 and breaks Gradle 8.13 ("Unsupported class file major version 69"); `tools/verify.sh` pins JDK 21 through `GRADLE_OPTS=-Dorg.gradle.java.home=…`.
 - Test emulator: AVD `mwl_compare` (Android 16, Play Store, x86_64, 16 GB data), serial `emulator-5554`, with DailyAL 2026.2.5+107 and MWL installed and the owner's accounts logged in. Only the checker uses it.
+- Start it with `emulator -avd mwl_compare -gpu host -no-boot-anim`. With the default GPU mode it silently falls back to software rendering (qemu at ~1500 % CPU, window freezes, everything lags).
+- Fluidity is judged on a `--profile` APK only (`flutter build apk --profile`), measured with `tools/perf/measure-scroll.sh <package>` (SurfaceFlinger frame pacing; `gfxinfo` sees no Flutter frames), MWL vs DailyAL on the same gesture.
 
 ## Main dependencies (from pubspec.yaml on `dev`)
 | Package | Constraint |

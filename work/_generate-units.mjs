@@ -62,6 +62,7 @@ const UNITS = [
     goal: [
       "Port into mwl-api / mwl_commons the parsers DAL has and MWL lacks: parseCharacterAllPage, parseCharacterPage, parseCharacterPeopleHome, parseMagazines, parseClubPage/_getClubDetails, parseClubPageViewAll, parseLiveChartSchedule, parseUserAboutPage, allSearchResultFromHtml, forumHtmlFromHtml, animeReviewHtmlfromHtml.",
       "Add the routes: `content/characters`, `character/*id/pics`, `people/*id/pics`, `characters` and `people` (top lists), `magazines`, `studios`, `clubs/type`; give `reviews` and `users/about` real parsers instead of raw text.",
+      "Parse large JSON/HTML off the UI isolate (Isolate.run/compute) in mwl_api.dart (:120, :140, :543) — performance.md #9.",
       "Expose each new route in the app client `lib/services/api/mwl_api.dart` (typed methods + models). Keep the MWL-only routes (`users/search`, `stacks/*`, `content/featured`).",
       "This is a shared shape: later units (explore, profile, reviews, characters, calendar) build on these client methods. Document each method's return type in the PR body.",
     ],
@@ -87,7 +88,7 @@ const UNITS = [
     owns: ["pubspec.yaml", "pubspec.lock", "android/app/src/main/AndroidManifest.xml", "android/app/build.gradle", "android/app/build.gradle.kts", "lib/main.dart", "lib/user/preferences/**", "lib/user/userpref.dart", "lib/user/user_preference.dart", "lib/user/anime_manga_pref.dart", "lib/user/anime_manga_pref.g.dart", "lib/user/anime_manga_tab_pref.dart", "lib/user/anime_manga_tab_pref.g.dart", "lib/user/list_pref.dart", "lib/services/notifications/notification_service.dart"],
     dal: ["lib/user/userpref.dart", "lib/user/anime_manga_pref.dart", "lib/user/anime_manga_tab_pref.dart", "lib/user/list_pref.dart", "lib/user/hompagepref.dart", "lib/notifservice.dart (NotifPref)", "pubspec.yaml", "android/app/src/main/AndroidManifest.xml"],
     goal: [
-      "Add, in ONE pass, every dependency the queued units need (check pins against pub.dev; record them in docs/STACK.md is not yours — list them in the PR body): flutter_local_notifications, timezone, dynamic_color, flex_color_picker, translator_plus, package_info_plus, device_info_plus, add_2_calendar, open_filex, graphview, fl_chart, share_plus (if absent), path_provider (if absent), file_picker (if absent), build_runner (dev). Move json_serializable to dev_dependencies.",
+      "Add, in ONE pass, every dependency the queued units need (check pins against pub.dev; record them in docs/STACK.md is not yours — list them in the PR body): flutter_local_notifications, timezone, dynamic_color, flex_color_picker, translator_plus, package_info_plus, device_info_plus, add_2_calendar, open_filex, flutter_displaymode, graphview, fl_chart, share_plus (if absent), path_provider (if absent), file_picker (if absent), build_runner (dev). Move json_serializable to dev_dependencies.",
       "Manifest: POST_NOTIFICATIONS, SCHEDULE_EXACT_ALARM/USE_EXACT_ALARM, RECEIVE_BOOT_COMPLETED + the flutter_local_notifications receivers, calendar permissions, REQUEST_INSTALL_PACKAGES + a FileProvider for the in-app updater. Keep the OAuth intent filters.",
       "PREFERENCES CONTRACT (shared shape every later unit reads): a `PreferencesBloc` (BLoC, per project convention) in `lib/user/preferences/` holding typed, persisted models for ALL DAL preferences: user prefs (preferred title EN/JA/Romaji, startup page, NSFW, show anime/manga card, allow YouTube player, keep pages in memory, show priority, auto-translate synopsis, only last quote, auto start/end date, airing info in list, stats chart colors, preferred link type), anime/manga prefs (countdown on detail, detail background, show private notes, hide score, global seasonal filter, timezone, default add-to-list status anime/manga, detail tab order/visibility), list prefs (default list tab, card view props), notification prefs (enabled lists, large image). Events to update each field; a getter API that non-widget code can call.",
       "Remove the duplicates (TimezonePref declared twice, the unused models replaced by the contract), keeping existing saved values readable (migrate keys).",
@@ -105,6 +106,7 @@ const UNITS = [
       "Create stub screens `lib/screens/bookmarks_screen.dart` and `lib/screens/calendar/calendar_screen.dart`, and a tiny route helper `lib/utils/app_routes.dart` (openBookmarks, openCalendar, openUserProfile(tracker, username), openSettingsPage(...)) so feature units can link to each other without touching each other's files. openUserProfile may push a stub until the profile unit fills it.",
       "Make the sidebar actually reachable (today `AppSidebar` is only built by `SidebarBuilder`, which nothing calls) and wire: profile, stats, bookmarks, calendar, settings, login/logout. About must open the About page.",
       "Home shell: honor the startup-page preference from the contract; open screen shows a loader instead of `loadingError()` while loading (open_screen.dart:45); hook for routing from a notification payload (calls into notification_service).",
+      "FLUIDITY (work/inventory/performance.md #2, #5): remove the per-tab animated `Opacity` wrap (home_screen.dart:236-237, saveLayer over the whole page on every tab switch); build only the current tab unless the keepPagesInMemory pref is on (DAL homescreen.dart:293-297) so 5 tabs don't fire their network calls at once; scope the AccountBloc/ThemeBloc builders (:88, :105) with buildWhen/BlocSelector so they don't rebuild the whole shell.",
     ],
     bugs: ["settings_page.dart empty onTaps.", "Sidebar never shown.", "open_screen.dart:45 shows an error widget while loading."],
     dod: ["Every settings tile opens its page (stub or real).", "Sidebar opens from the home shell on the emulator.", "app_routes.dart helpers are documented with a one-line comment each."],
@@ -118,6 +120,7 @@ const UNITS = [
       "Split `lib/screens/MAL/contentdetailedscreen.dart` into `lib/screens/MAL/detail/`: `detail_screen.dart` (scaffold + scroll/tab sync), `header/` (cover, scores, meta), `actions/` (app bar actions), `sections/` (one file per section wrapper), `detail_sections.dart` (ordered section registry that reads the detail tab order/visibility pref from the contract). Keep `contentdetailedscreen.dart` as a thin re-export so callers don't change.",
       "Fix: `super.dispose()` called before disposing own controllers (:159); scroll listener re-added on every `updateVisibleSections()` (:338); info button on the cover is a no-op (:1104) → opens a More Info modal; search icon in app bar is a no-op (:939) → opens search.",
       "Leave empty, documented extension points in `actions/` for share / open in browser / bookmark (the detail-header unit fills them).",
+      "FLUIDITY (performance.md #4): register the scroll listener ONCE in initState, dispose every TabController you replace (only the last is disposed at :161), update the selected tab only when the visible section changes — not localToGlobal on every scroll tick.",
       "Behaviour must stay identical otherwise (no visual redesign here beyond what the split needs); the later detail units redesign their own parts.",
     ],
     bugs: ["dispose order :159", "listener leak :338", "dead info button :1104", "dead search button :939"],
@@ -139,6 +142,24 @@ const UNITS = [
     dod: ["Each widget has a widget test under test/units/shared-kit/ and a usage example in the PR body."],
   },
 
+  {
+    id: "perf-foundation", title: "Fluidity foundation: 120 Hz, image decoding, shimmers, root rebuilds", kind: "foundation", priority: "P0", group: "foundation", model: "opus",
+    needs: ["deps-prefs-contract"],
+    owns: ["lib/main.dart", "lib/widgets/common/app_image.dart", "lib/widgets/common/avatar_widget.dart", "lib/widgets/common/image_preview.dart", "lib/widgets/loading/**", "lib/utils/page_transitions.dart", "android/app/src/main/AndroidManifest.xml", "docs/PERFORMANCE.md"],
+    dal: ["lib/main.dart:62 (FlutterDisplayMode.setHighRefreshRate)", "lib/widgets/avatarwidget.dart:219 (fadeInDuration zero)", "lib/screens/homescreen.dart:293-297", "android/app/src/main/AndroidManifest.xml:59-61 (EnableImpeller=false)"],
+    goal: [
+      "The owner says MWL lags on scroll and page changes while DAL is fluid. Read work/inventory/performance.md first; you own the global fixes (#1, #3 helper, #5 main.dart, #8, #10, #11, #13, #14 preview, #15).",
+      "High refresh rate: `FlutterDisplayMode.setHighRefreshRate()` before runApp (dependency added by deps-prefs-contract).",
+      "Shared image widget `lib/widgets/common/app_image.dart` wrapping CachedNetworkImage: decode at displayed size (memCacheWidth/Height = logical size × devicePixelRatio, maxWidthDiskCache), short or zero fade, cheap placeholder. Use it in avatar_widget.dart (zero fade, no blur BoxShadow on repeated avatars) and image_preview.dart (also replace Image.network; replace the BackdropFilter blur over PhotoView by a static scrim).",
+      "Shimmers: one shared animation ticker inside the shimmer widget (lib/widgets/loading/) so 38 call sites stop running 38 tickers — callers unchanged.",
+      "main.dart: scope the ThemeBloc builder around MaterialApp (:192) with buildWhen so only theme changes rebuild it.",
+      "Impeller vs Skia: do NOT flip blindly. Leave the manifest flag configurable and write in docs/PERFORMANCE.md the A/B procedure the checker runs (profile build, gfxinfo janky %, same gesture, MWL vs DAL).",
+      "Write docs/PERFORMANCE.md: the project's fluidity rules (the list in every UI handoff) + how to measure.",
+    ],
+    bugs: ["60 Hz only", "full-resolution image decode", "38 shimmer tickers", "blur re-rendered every frame in the image viewer"],
+    dod: ["Checker measures home scroll + detail open on a --profile build: janky frames % no worse than DAL's on the same gesture."],
+  },
+
   // ───────────────────────────── User ─────────────────────────────
   {
     id: "accounts-ux", title: "Redesign the account picker, account switcher and account management", kind: "screen", priority: "P1", group: "user", model: "sonnet", ui: true,
@@ -148,6 +169,7 @@ const UNITS = [
     goal: [
       "The owner says the current flow (select an account, then press Continue, for every app) is badly done. Redesign the whole account experience: first-run tracker connection, switching the active account (one tap, no Continue step), adding/removing accounts, re-login when a token is dead.",
       "Fill the Accounts settings page stub (login/logout per tracker, active account, connected services).",
+      "Tracker logos via AppImage instead of Image.network (onboarding_trackers.dart:192).",
       "This is an MWL-only flow (DAL has one MAL account): design it from scratch for 4 trackers; look at DAL only for the sign-in visuals.",
     ],
     dod: ["Switching account is one tap from the home shell.", "No dead buttons.", "Before/after screenshots described in the PR body (the checker re-takes them)."],
@@ -171,7 +193,7 @@ const UNITS = [
   },
   {
     id: "user-list-mal", title: "MAL user anime/manga list (status tabs, sort/filter, view modes, status cache)", kind: "screen", priority: "P0", group: "user", model: "opus", ui: true,
-    needs: ["shared-kit", "edit-sheet"],
+    needs: ["perf-foundation", "shared-kit", "edit-sheet"],
     owns: ["lib/pages/MAL/mal_user_page.dart", "lib/widgets/user/list/**", "lib/widgets/common/list_sort_filter.dart", "lib/user/list_cache/**"],
     dal: ["lib/pages/userpage.dart", "lib/widgets/user/contentlistwidget.dart", "lib/user/contentbuilder.dart", "lib/widgets/listsortfilter.dart", "lib/user/userlistcache.dart", "lib/widgets/user/customizedlist.dart"],
     goal: [
@@ -250,6 +272,7 @@ const UNITS = [
     goal: [
       "Review AI summary (verdict, pros/cons) via backend `getReviewsSummary`; share a review; reviewer tap → profile (TODO at review_detail_page.dart:92).",
       "Interest stacks: username tap → profile (intereststackwidget.dart:195); edit button on stack entries works (interest_stack_detail_screen.dart:771) — call the edit sheet directly.",
+      "Reviews: remove the SingleChildScrollView created per review item (show_reviews.dart:174, performance.md #6).",
       "User updates: user/avatar tap → profile (userupdate_widget.dart:91, :107).",
     ],
     dod: ["Every user name in these widgets opens the in-app profile."],
@@ -274,7 +297,7 @@ const UNITS = [
   },
   {
     id: "calendar", title: "Anime calendar, weekly schedule, .ics export, add to device calendar", kind: "screen", priority: "P1", group: "discovery", model: "sonnet", ui: true,
-    needs: ["app-shell", "shared-kit", "backend-parsers", "user-list-mal"],
+    needs: ["perf-foundation", "app-shell", "shared-kit", "backend-parsers", "user-list-mal"],
     owns: ["lib/screens/calendar/**", "lib/widgets/calendar/**"],
     dal: ["lib/widgets/home/anime_calendar.dart", "lib/widgets/user/weeklyanime.dart", "commits 1e3e833 (ics), 17dd437 (add to calendar), 970111b ('All' filter)"],
     goal: ["Per-day schedule with status filter chips (incl. 'All' and 3-state 'in list'), timezone pref (JST/UTC/local), .ics download/share, add to device calendar with recurring option; fills app-shell's calendar stub."],
@@ -282,7 +305,7 @@ const UNITS = [
   },
   {
     id: "explore-seasonal", title: "Explore page and seasonal screen", kind: "screen", priority: "P1", group: "discovery", model: "sonnet", ui: true,
-    needs: ["shared-kit", "backend-parsers", "user-list-mal"],
+    needs: ["perf-foundation", "shared-kit", "backend-parsers", "user-list-mal"],
     owns: ["lib/pages/MAL/mal_explore_page.dart", "lib/screens/explore/**", "lib/screens/seasonal/**", "lib/cache/top_characters.dart"],
     dal: ["lib/pages/explorepage.dart", "lib/pages/search/allrankingwidget.dart", "lib/pages/search/all_genre_widget.dart", "lib/pages/search/seasonalwidget.dart", "lib/screens/seasonal_screen.dart", "lib/cache/topcharactermanager.dart"],
     goal: [
@@ -293,27 +316,28 @@ const UNITS = [
   },
   {
     id: "search-upgrade", title: "Search: user results, search by id, autocomplete, searchable filters", kind: "screen", priority: "P2", group: "discovery", model: "sonnet", ui: true,
-    needs: ["shared-kit", "user-profile-mal"],
+    needs: ["perf-foundation", "shared-kit", "user-profile-mal"],
     owns: ["lib/screens/search/**", "lib/widgets/MAL/search/**"],
     dal: ["lib/screens/generalsearchscreen.dart", "lib/widgets/search/filtermodal.dart", "commits da37082, 6b2aafd, fa2fb68, 3f1f0fd, 158e206 (autocomplete), db3355e (search by id, 3-state)"],
     goal: [
       "User result tap → profile (TODO :2227) and 'User found as …' shortcut; search by MAL id; autocomplete with throttle; SearchableSelect for producers/magazines; three-state include/exclude.",
       "`_SeasonalSection._maxYear` hard-coded 2027 (:3643) → current year + 1.",
       "Expose static entry points (e.g. `GeneralSearchScreen.byGenre/byStudio/byMagazine/byTag/bySeason`) used by more-info and featured units; list them in the PR body.",
-      "Split the 3719-line file into parts under lib/screens/search/.",
+      "Split the 3719-line file into parts under lib/screens/search/; while splitting, remove the ~12 ClipRRect per result item where a decoration radius suffices and use AppImage (performance.md #7).",
     ],
     bugs: ["user tap TODO", "maxYear 2027"],
     dod: ["Searching a username opens the profile; searching '1' finds Cowboy Bebop by id."],
   },
   {
     id: "home-wiring", title: "Home: working chips, bookmarks/calendar buttons, maintenance dialog, user-list and forum sections", kind: "screen", priority: "P1", group: "discovery", model: "sonnet", ui: true,
-    needs: ["bookmarks", "calendar", "explore-seasonal", "user-list-mal"],
+    needs: ["perf-foundation", "bookmarks", "calendar", "explore-seasonal", "user-list-mal"],
     owns: ["lib/pages/MAL/mal_home_page.dart", "lib/widgets/MAL/home/homeappbar.dart", "lib/widgets/MAL/home/accordion.dart", "lib/widgets/MAL/home/section_header.dart", "lib/widgets/MAL/home/news_widget.dart", "lib/widgets/MAL/home/show_news.dart", "lib/widgets/home/**", "lib/user/MAL/**", "lib/screens/settings/mal_home_settings.dart"],
     dal: ["lib/pages/homepage.dart", "lib/widgets/homeappbar.dart", "lib/widgets/home/feature_first.dart", "lib/util/homepageutils.dart", "lib/pages/settings/homepagesettings.dart"],
     goal: [
       "Top chips (Categories, Genres, Top anime/manga, Top airing, Popular) are all `() {}` (mal_home_page.dart:44-52) → open the explore/ranking screens; bookmarks and calendar buttons `() {}` (:222-224) → app_routes.",
       "MAL under-maintenance dialog (API exists mal_api.dart:1067).",
       "Home sections: user-list section, forum section, custom items (forum boards, user list status, season/year).",
+      "News items: drop ClipRRect + Opacity per item (news_widget.dart:54-56), use AppImage (performance.md #7).",
       "First-run feature showcase (tile size, preferred title, startup page).",
     ],
     bugs: ["dead chips", "dead bookmarks/calendar buttons"],
@@ -321,11 +345,12 @@ const UNITS = [
   },
   {
     id: "cards-upgrade", title: "Anime cards: quick edit, status badges, score reveal, real airing progress", kind: "unit", priority: "P1", group: "discovery", model: "sonnet", ui: true,
-    needs: ["user-list-mal", "edit-sheet", "shared-kit"],
+    needs: ["perf-foundation", "user-list-mal", "edit-sheet", "shared-kit"],
     owns: ["lib/widgets/MAL/home/animegridcard.dart", "lib/widgets/MAL/home/animecardbar.dart", "lib/widgets/MAL/home/contentlistwidget.dart", "lib/widgets/MAL/home/animecharacterwidget.dart"],
     dal: ["lib/widgets/home/animecard.dart", "lib/widgets/home/nodebadge.dart"],
     goal: [
       "`showContentEditSheet` is an empty stub (animegridcard.dart:620-623) → open the edit sheet.",
+      "Card images through `AppImage` (perf-foundation) with decode size = card size; no ClipRRect+Opacity per card when a borderRadius/alpha does it (performance.md #3, #7).",
       "`releaseProgress` faked as (eps-1)/eps (~l.389) → real schedule data or hide.",
       "Status badge from the list status cache, score reveal, favourites count, recommendation badge, NSFW blur per pref, preferred title.",
     ],
@@ -384,9 +409,9 @@ const UNITS = [
   {
     id: "forum-clubs", title: "Forum posting, profile links, club members in-app", kind: "screen", priority: "P2", group: "community", model: "sonnet", ui: true,
     needs: ["user-profile-mal", "shared-kit"],
-    owns: ["lib/screens/forum/**", "lib/widgets/forum/**", "lib/pages/MAL/mal_forum_page.dart"],
+    owns: ["lib/screens/forum/**", "lib/widgets/forum/**", "lib/pages/MAL/mal_forum_page.dart", "lib/services/api/MAL/mal_clubs_api.dart", "lib/services/api/MAL/mal_forum_api.dart"],
     dal: ["lib/screens/forumposts.dart", "lib/screens/forumtopicsscreen.dart", "lib/pages/forumpage.dart", "lib/screens/clubscreen.dart"],
-    goal: ["Reply FAB only copies the URL (forum_posts_screen.dart:117-126) → open a webview to post (DAL); post avatar → profile (post_widget.dart:346); club members/staff → in-app profile instead of browser; share/browser menus; redesign per UI directive."],
+    goal: ["Reply FAB only copies the URL (forum_posts_screen.dart:117-126) → open a webview to post (DAL); post avatar → profile (post_widget.dart:346); club members/staff → in-app profile instead of browser; HTML parsing off the UI isolate in mal_clubs_api.dart (:20, :34, :61) and the forum API (performance.md #9); share/browser menus; redesign per UI directive."],
     bugs: ["reply FAB", "avatar tap"],
     dod: ["Reply opens the MAL post form in-app on the emulator."],
   },
@@ -395,7 +420,7 @@ const UNITS = [
     needs: ["search-upgrade", "bookmarks", "detail-synopsis-media"],
     owns: ["lib/screens/MAL/featured_screen.dart", "lib/widgets/MAL/content/show_featured.dart", "lib/widgets/MAL/content/show_forum.dart", "lib/widgets/MAL/content/show_news.dart", "lib/screens/MAL/character_screen.dart", "lib/screens/MAL/characters_staff_screen.dart"],
     dal: ["lib/screens/featurescreen.dart", "lib/widgets/featured/tagswidget.dart", "lib/screens/characterscreen.dart", "commits 01d7daf, bf06d05"],
-    goal: ["Featured tags tap → tag search (featured_screen.dart:281 `onTap: null`); character/person: sort voice roles by favorites (with rate-limit toast), dedupe, bookmark FAB, share, bio translation (translator widget)."],
+    goal: ["Featured tags tap → tag search (featured_screen.dart:281 `onTap: null`); character/person: sort voice roles by favorites (with rate-limit toast), dedupe, bookmark FAB, share, bio translation (translator widget).", "Character screen: CustomScrollView + slivers instead of an eager Column in SingleChildScrollView (:251-256); parse off the UI isolate (:129) — performance.md #9, #12."],
     bugs: ["featured tags not tappable"],
     dod: ["Tapping a featured tag opens tag search on the emulator."],
   },
@@ -472,6 +497,15 @@ const unitsOf = (g) => UNITS.filter((u) => u.group === g);
 
 const UI_DIRECTIVE = `**UI directive (owner's rule).** MWL's current UI is NOT the reference: the owner wrote it early and calls parts of it badly done. For every screen you touch, read the DAL equivalent's UI code, keep whichever is better (often DAL's), and improve it (hierarchy, spacing, empty/loading/error states, no dead buttons). Stay consistent with the theme system in \`lib/user/theme/\` (accent color, fonts, dark/black modes). Describe the before/after in the PR body.`;
 
+const PERF_RULES = `**Fluidity rules (owner's rule: MWL must feel as smooth as DailyAL).** See \`docs/PERFORMANCE.md\` once perf-foundation has merged, and \`work/inventory/performance.md\`.
+- Network images only through \`AppImage\` (decode at displayed size); no \`Image.network\`.
+- Long or unbounded lists: \`ListView.builder\`/slivers, never a \`Column\` of many children in a \`SingleChildScrollView\`; no \`shrinkWrap: true\` list inside another scroll view; no scroll view per list item.
+- No \`Opacity\`, \`BackdropFilter\`, \`ImageFilter.blur\`, \`ShaderMask\` or blurred \`BoxShadow\` on repeated items or on whole pages during animations; use alpha colors / FadeTransition.
+- No \`setState\` in scroll listeners; listeners added once and removed in dispose; dispose every controller you create.
+- BlocBuilder/Consumer as low in the tree as possible, with \`buildWhen\`/\`BlocSelector\`/\`context.select\`; \`const\` constructors wherever possible.
+- Heavy JSON/HTML parsing off the UI isolate (\`Isolate.run\`/\`compute\`); no sync storage reads in \`build\`; no \`print\` in hot paths.
+- Look at how DAL makes the same screen fluid and do at least as well; the checker compares janky-frame % on a profile build.`;
+
 mkdirSync(join(ROOT, "handoffs"), { recursive: true });
 const list = (a) => (a?.length ? a.map((x) => `- ${x}`).join("\n") : "- none");
 for (const u of UNITS) {
@@ -502,7 +536,7 @@ Port the behaviour into MWL's architecture: BLoC for app-wide state, Provider/Ch
 ## Inventory
 \`work/inventory/*.md\` lists, per feature, what MWL has and the bugs found on 2026-10-27.
 
-${u.ui ? UI_DIRECTIVE + "\n\n" : ""}## Definition of Done
+${u.ui ? UI_DIRECTIVE + "\n\n" + PERF_RULES + "\n\n" : ""}## Definition of Done
 ${list(u.dod)}
 - \`tools/heavy.sh flutter analyze\` clean (the gate runs the full \`tools/heavy.sh tools/verify.sh\`).
 - PR against \`dev\` with \`Closes #<issue>\`, gate tail, decisions, findings.

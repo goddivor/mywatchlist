@@ -17,6 +17,7 @@ Plus `PROJECT-STATE.md` (rewrite in place, within its cap) and `docs/DECISIONS.m
 ## Goal
 - Port into mwl-api / mwl_commons the parsers DAL has and MWL lacks: parseCharacterAllPage, parseCharacterPage, parseCharacterPeopleHome, parseMagazines, parseClubPage/_getClubDetails, parseClubPageViewAll, parseLiveChartSchedule, parseUserAboutPage, allSearchResultFromHtml, forumHtmlFromHtml, animeReviewHtmlfromHtml.
 - Add the routes: `content/characters`, `character/*id/pics`, `people/*id/pics`, `characters` and `people` (top lists), `magazines`, `studios`, `clubs/type`; give `reviews` and `users/about` real parsers instead of raw text.
+- Parse large JSON/HTML off the UI isolate (Isolate.run/compute) in mwl_api.dart (:120, :140, :543) — performance.md #9.
 - Expose each new route in the app client `lib/services/api/mwl_api.dart` (typed methods + models). Keep the MWL-only routes (`users/search`, `stacks/*`, `content/featured`).
 - This is a shared shape: later units (explore, profile, reviews, characters, calendar) build on these client methods. Document each method's return type in the PR body.
 

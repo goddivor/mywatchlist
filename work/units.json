@@ -11,7 +11,8 @@
         "l10n-pipeline",
         "deps-prefs-contract",
         "app-shell",
-        "shared-kit"
+        "shared-kit",
+        "perf-foundation"
       ]
     },
     {
@@ -345,6 +346,37 @@
       "status": "⬜ todo"
     },
     {
+      "id": "perf-foundation",
+      "title": "Fluidity foundation: 120 Hz, image decoding, shimmers, root rebuilds",
+      "kind": "foundation",
+      "entry": "",
+      "artifact": "",
+      "priority": "P0",
+      "needs": [
+        "deps-prefs-contract"
+      ],
+      "owns": [
+        "lib/main.dart",
+        "lib/widgets/common/app_image.dart",
+        "lib/widgets/common/avatar_widget.dart",
+        "lib/widgets/common/image_preview.dart",
+        "lib/widgets/loading/**",
+        "lib/utils/page_transitions.dart",
+        "android/app/src/main/AndroidManifest.xml",
+        "docs/PERFORMANCE.md",
+        "lib/l10n/units/perf-foundation/**",
+        "test/units/perf-foundation/**"
+      ],
+      "group": "foundation",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "⬜ todo"
+    },
+    {
       "id": "accounts-ux",
       "title": "Redesign the account picker, account switcher and account management",
       "kind": "screen",
@@ -411,6 +443,7 @@
       "artifact": "",
       "priority": "P0",
       "needs": [
+        "perf-foundation",
         "shared-kit",
         "edit-sheet"
       ],
@@ -672,6 +705,7 @@
       "artifact": "",
       "priority": "P1",
       "needs": [
+        "perf-foundation",
         "app-shell",
         "shared-kit",
         "backend-parsers",
@@ -700,6 +734,7 @@
       "artifact": "",
       "priority": "P1",
       "needs": [
+        "perf-foundation",
         "shared-kit",
         "backend-parsers",
         "user-list-mal"
@@ -729,6 +764,7 @@
       "artifact": "",
       "priority": "P2",
       "needs": [
+        "perf-foundation",
         "shared-kit",
         "user-profile-mal"
       ],
@@ -755,6 +791,7 @@
       "artifact": "",
       "priority": "P1",
       "needs": [
+        "perf-foundation",
         "bookmarks",
         "calendar",
         "explore-seasonal",
@@ -790,6 +827,7 @@
       "artifact": "",
       "priority": "P1",
       "needs": [
+        "perf-foundation",
         "user-list-mal",
         "edit-sheet",
         "shared-kit"
@@ -966,6 +1004,8 @@
         "lib/screens/forum/**",
         "lib/widgets/forum/**",
         "lib/pages/MAL/mal_forum_page.dart",
+        "lib/services/api/MAL/mal_clubs_api.dart",
+        "lib/services/api/MAL/mal_forum_api.dart",
         "lib/l10n/units/forum-clubs/**",
         "test/units/forum-clubs/**"
       ],

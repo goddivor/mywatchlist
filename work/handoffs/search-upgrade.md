@@ -3,6 +3,7 @@
 **Kind** screen · **Priority** P2 · **Group** discovery · **Model** sonnet
 
 ## Needs done first
+- `perf-foundation` (Fluidity foundation: 120 Hz, image decoding, shimmers, root rebuilds)
 - `shared-kit` (Shared UI kit: share builder, app bar menu, select widgets, score reveal, web launcher)
 - `user-profile-mal` (MAL user profile, stats charts and user pop-up)
 
@@ -18,7 +19,7 @@ Plus `PROJECT-STATE.md` (rewrite in place, within its cap) and `docs/DECISIONS.m
 - User result tap → profile (TODO :2227) and 'User found as …' shortcut; search by MAL id; autocomplete with throttle; SearchableSelect for producers/magazines; three-state include/exclude.
 - `_SeasonalSection._maxYear` hard-coded 2027 (:3643) → current year + 1.
 - Expose static entry points (e.g. `GeneralSearchScreen.byGenre/byStudio/byMagazine/byTag/bySeason`) used by more-info and featured units; list them in the PR body.
-- Split the 3719-line file into parts under lib/screens/search/.
+- Split the 3719-line file into parts under lib/screens/search/; while splitting, remove the ~12 ClipRRect per result item where a decoration radius suffices and use AppImage (performance.md #7).
 
 ## Known bugs to fix in scope
 - user tap TODO
@@ -36,6 +37,15 @@ Port the behaviour into MWL's architecture: BLoC for app-wide state, Provider/Ch
 `work/inventory/*.md` lists, per feature, what MWL has and the bugs found on 2026-10-27.
 
 **UI directive (owner's rule).** MWL's current UI is NOT the reference: the owner wrote it early and calls parts of it badly done. For every screen you touch, read the DAL equivalent's UI code, keep whichever is better (often DAL's), and improve it (hierarchy, spacing, empty/loading/error states, no dead buttons). Stay consistent with the theme system in `lib/user/theme/` (accent color, fonts, dark/black modes). Describe the before/after in the PR body.
+
+**Fluidity rules (owner's rule: MWL must feel as smooth as DailyAL).** See `docs/PERFORMANCE.md` once perf-foundation has merged, and `work/inventory/performance.md`.
+- Network images only through `AppImage` (decode at displayed size); no `Image.network`.
+- Long or unbounded lists: `ListView.builder`/slivers, never a `Column` of many children in a `SingleChildScrollView`; no `shrinkWrap: true` list inside another scroll view; no scroll view per list item.
+- No `Opacity`, `BackdropFilter`, `ImageFilter.blur`, `ShaderMask` or blurred `BoxShadow` on repeated items or on whole pages during animations; use alpha colors / FadeTransition.
+- No `setState` in scroll listeners; listeners added once and removed in dispose; dispose every controller you create.
+- BlocBuilder/Consumer as low in the tree as possible, with `buildWhen`/`BlocSelector`/`context.select`; `const` constructors wherever possible.
+- Heavy JSON/HTML parsing off the UI isolate (`Isolate.run`/`compute`); no sync storage reads in `build`; no `print` in hot paths.
+- Look at how DAL makes the same screen fluid and do at least as well; the checker compares janky-frame % on a profile build.
 
 ## Definition of Done
 - Searching a username opens the profile; searching '1' finds Cowboy Bebop by id.
