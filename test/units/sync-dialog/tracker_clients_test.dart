@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -21,6 +22,8 @@ http.Response json200(Object body) => http.Response(jsonEncode(body), 200,
     headers: {'content-type': 'application/json'});
 
 void main() {
+  setUpAll(() => dotenv.testLoad(fileInput: 'SIMKL_CLIENT_ID=test'));
+
   group('AniList', () {
     test('reads the entry with decimal scores and fuzzy dates', () async {
       late http.Request seen;
