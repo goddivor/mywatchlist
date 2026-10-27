@@ -6,6 +6,8 @@ import 'package:mywatchlist/pages/settings/coming_soon_page.dart';
 import 'package:mywatchlist/screens/home_screen.dart';
 import 'package:mywatchlist/user/language/language_bloc.dart';
 import 'package:mywatchlist/utils/app_routes.dart';
+import 'package:package_info_plus/package_info_plus.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -59,11 +61,10 @@ void main() {
     ));
   }
 
-  testWidgets('profile and settings helpers open their stubs', (tester) async {
+  testWidgets('profile helpers of trackers without a profile open their stubs', (tester) async {
     final openers = <void Function(BuildContext)>[
       (c) => AppRoutes.openUserProfile(c, tracker: AccountType.anilist, username: 'neo'),
       (c) => AppRoutes.openUserStats(c, tracker: AccountType.kitsu),
-      (c) => AppRoutes.openSettingsPage(c, SettingsSection.storage),
     ];
     for (final open in openers) {
       await tester.pumpWidget(const SizedBox()); // fresh navigator per helper
@@ -72,6 +73,29 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.byType(ComingSoonPage), findsOneWidget);
       expect(find.text(S.current.Shell_Coming_Soon), findsOneWidget);
+    }
+  });
+
+  testWidgets('the About, backup and storage helpers open real pages', (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    PackageInfo.setMockInitialValues(
+      appName: 'MyWatchList',
+      packageName: 'app.mywatchlist',
+      version: '2026.10.1',
+      buildNumber: '1',
+      buildSignature: '',
+    );
+    for (final section in [
+      SettingsSection.about,
+      SettingsSection.backup,
+      SettingsSection.storage,
+    ]) {
+      await tester.pumpWidget(const SizedBox());
+      await pumpLauncher(tester, (c) => AppRoutes.openSettingsPage(c, section));
+      await tester.tap(find.text('go'));
+      await tester.pumpAndSettle();
+      expect(find.byType(ComingSoonPage), findsNothing, reason: section.name);
+      expect(find.text(section.title), findsWidgets, reason: section.name);
     }
   });
 
