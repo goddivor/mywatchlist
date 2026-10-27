@@ -7,25 +7,16 @@ import 'package:mywatchlist/constants/constants.dart';
 import 'package:mywatchlist/services/api/MAL/mal_api.dart';
 import 'package:mywatchlist/services/api/MAL/models/forum/forum_models.dart';
 import 'package:mywatchlist/services/api/MAL/scrapper/html_parsers.dart';
-import 'package:mywatchlist/user/accounts/provider/account_manager_singleton.dart';
 
 /// MAL Forum API client.
 /// Endpoints: GET /forum/boards, GET /forum/topics, GET /forum/topic/{topic_id}
 class MalForumApi {
   static const String _forumEndPoint = Constants.malforumEndPoint;
 
-  Map<String, String> get _headers {
-    final selectedAcc = AccountManagerSingleton().selectedAcc;
-    return MalApi.getHeadersForAccountType(selectedAcc);
-  }
-
   /// Get forum boards/categories list.
   Future<Categories?> getForumBoards() async {
     try {
-      final response = await http.get(
-        Uri.parse('$_forumEndPoint/boards'),
-        headers: _headers,
-      );
+      final response = await MalApi.authorizedGet('$_forumEndPoint/boards');
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body) as Map<String, dynamic>;
@@ -79,7 +70,7 @@ class MalForumApi {
       final uri = Uri.parse('$_forumEndPoint/topics')
           .replace(queryParameters: queryParams);
 
-      final response = await http.get(uri, headers: _headers);
+      final response = await MalApi.authorizedGet(uri.toString());
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body) as Map<String, dynamic>;
@@ -101,7 +92,7 @@ class MalForumApi {
       final url =
           '$_forumEndPoint/topic/$topicId?limit=$limit&offset=$offset';
 
-      final response = await http.get(Uri.parse(url), headers: _headers);
+      final response = await MalApi.authorizedGet(url);
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body) as Map<String, dynamic>;

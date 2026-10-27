@@ -18,7 +18,6 @@ import 'package:mywatchlist/services/api/MAL/models/my_anime_list_status.dart' a
 import 'package:mywatchlist/services/api/MAL/models/my_manga_list_status.dart' as manga_status;
 import 'package:mywatchlist/services/api/MAL/scrapper/html_parsers.dart';
 import 'package:mywatchlist/user/accounts/provider/account_manager_singleton.dart';
-import 'package:mywatchlist/user/user_mal_v2.dart';
 import 'package:mywatchlist/user/user_preference.dart';
 
 enum SeasonalAnimeSortOption {
@@ -82,13 +81,7 @@ class MalApi {
 
     final url = '$animeEndPoint/$animeId?fields=$fields';
 
-    final selectedAcc = AccountManagerSingleton().selectedAcc;
-    final Map<String, String> headers = getHeadersForAccountType(selectedAcc);
-
-    final response = await http.get(
-      Uri.parse(url),
-      headers: headers,
-    );
+    final response = await _get(url);
 
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
@@ -105,13 +98,7 @@ class MalApi {
 
     final url = '$mangaEndPoint/$mangaId?fields=$fields';
 
-    final selectedAcc = AccountManagerSingleton().selectedAcc;
-    final Map<String, String> headers = getHeadersForAccountType(selectedAcc);
-
-    final response = await http.get(
-      Uri.parse(url),
-      headers: headers,
-    );
+    final response = await _get(url);
 
     if (response.statusCode == 200) {
       final data = json.decode(response.body) as Map<String, dynamic>;
@@ -134,13 +121,7 @@ class MalApi {
       url += "&fields=${Constants.malDefaultAnimeListFields}";
     }
 
-    final selectedAcc = AccountManagerSingleton().selectedAcc;
-    final Map<String, String> headers = getHeadersForAccountType(selectedAcc);
-
-    final response = await http.get(
-      Uri.parse(url),
-      headers: headers,
-    );
+    final response = await _get(url);
 
     if (response.statusCode == 200) {
       final fullResponse = json.decode(response.body) as Map<String, dynamic>;
@@ -170,13 +151,7 @@ class MalApi {
           "&fields=id,title,main_picture,alternative_titles,start_date,end_date,synopsis,mean,rank,popularity,num_list_users,num_scoring_users,nsfw,media_type,status,genres,my_list_status,num_volumes,num_chapters";
     }
 
-    final selectedAcc = AccountManagerSingleton().selectedAcc;
-    final Map<String, String> headers = getHeadersForAccountType(selectedAcc);
-
-    final response = await http.get(
-      Uri.parse(url),
-      headers: headers,
-    );
+    final response = await _get(url);
 
     if (response.statusCode == 200) {
       final fullResponse = json.decode(response.body) as Map<String, dynamic>;
@@ -220,13 +195,7 @@ class MalApi {
       url += "&fields=${Constants.malDefaultAnimeListFields}";
     }
 
-    final selectedAcc = AccountManagerSingleton().selectedAcc;
-    final Map<String, String> headers = getHeadersForAccountType(selectedAcc);
-
-    final response = await http.get(
-      Uri.parse(url),
-      headers: headers,
-    );
+    final response = await _get(url);
 
     if (response.statusCode == 200) {
       final fullResponse = json.decode(response.body) as Map<String, dynamic>;
@@ -296,13 +265,7 @@ class MalApi {
       url += "&fields=${Constants.malDefaultAnimeListFields}";
     }
 
-    final selectedAcc = AccountManagerSingleton().selectedAcc;
-    final Map<String, String> headers = getHeadersForAccountType(selectedAcc);
-
-    final response = await http.get(
-      Uri.parse(url),
-      headers: headers,
-    );
+    final response = await _get(url);
 
     if (response.statusCode == 200) {
       final fullResponse = json.decode(response.body) as Map<String, dynamic>;
@@ -343,13 +306,7 @@ class MalApi {
       url += "&fields=${Constants.malDefaultAnimeListFields}";
     }
 
-    final selectedAcc = AccountManagerSingleton().selectedAcc;
-    final Map<String, String> headers = getHeadersForAccountType(selectedAcc);
-
-    final response = await http.get(
-      Uri.parse(url),
-      headers: headers,
-    );
+    final response = await _get(url);
 
     if (response.statusCode == 200) {
       final fullResponse = json.decode(response.body) as Map<String, dynamic>;
@@ -407,13 +364,7 @@ class MalApi {
       url += '?${queryParams.join("&")}';
     }
 
-    final selectedAcc = AccountManagerSingleton().selectedAcc;
-    final Map<String, String> headers = getHeadersForAccountType(selectedAcc);
-
-    final response = await http.get(
-      Uri.parse(url),
-      headers: headers,
-    );
+    final response = await _get(url);
 
     if (response.statusCode == 200) {
       final fullResponse = json.decode(response.body) as Map<String, dynamic>;
@@ -459,16 +410,9 @@ class MalApi {
   }) async {
     String url = '$animeEndPoint/$animeId/my_list_status';
 
-    final selectedAcc = AccountManagerSingleton().selectedAcc;
-    final Map<String, String> headers = getHeadersForAccountType(selectedAcc);
-
-    if (!headers.containsKey('Authorization')) {
-      throw 'Access token required for updating list status';
-    }
+    _requireMalAccount('Access token required for updating list status');
 
     // MAL requires form-urlencoded format, not JSON
-    headers['Content-Type'] = 'application/x-www-form-urlencoded';
-
     Map<String, String> requestBody = {};
 
     if (status != null) requestBody['status'] = status;
@@ -491,9 +435,9 @@ class MalApi {
     if (startDate != null) requestBody['start_date'] = startDate;
     if (finishDate != null) requestBody['finish_date'] = finishDate;
 
-    final response = await http.put(
-      Uri.parse(url),
-      headers: headers,
+    final response = await MalConnect.authPut(
+      url,
+      headers: const {'Content-Type': 'application/x-www-form-urlencoded'},
       body: requestBody,
     );
 
@@ -528,14 +472,7 @@ class MalApi {
   }) async {
     String url = '$mangaEndPoint/$mangaId/my_list_status';
 
-    final selectedAcc = AccountManagerSingleton().selectedAcc;
-    final Map<String, String> headers = getHeadersForAccountType(selectedAcc);
-
-    if (!headers.containsKey('Authorization')) {
-      throw 'Access token required for updating list status';
-    }
-
-    headers['Content-Type'] = 'application/x-www-form-urlencoded';
+    _requireMalAccount('Access token required for updating list status');
 
     Map<String, String> requestBody = {};
 
@@ -562,9 +499,9 @@ class MalApi {
     if (startDate != null) requestBody['start_date'] = startDate;
     if (finishDate != null) requestBody['finish_date'] = finishDate;
 
-    final response = await http.put(
-      Uri.parse(url),
-      headers: headers,
+    final response = await MalConnect.authPut(
+      url,
+      headers: const {'Content-Type': 'application/x-www-form-urlencoded'},
       body: requestBody,
     );
 
@@ -585,17 +522,9 @@ class MalApi {
   Future<void> deleteAnimeFromList(int animeId) async {
     String url = '$animeEndPoint/$animeId/my_list_status';
 
-    final selectedAcc = AccountManagerSingleton().selectedAcc;
-    final Map<String, String> headers = getHeadersForAccountType(selectedAcc);
+    _requireMalAccount('Access token required for deleting from list');
 
-    if (!headers.containsKey('Authorization')) {
-      throw 'Access token required for deleting from list';
-    }
-
-    final response = await http.delete(
-      Uri.parse(url),
-      headers: headers,
-    );
+    final response = await MalConnect.authDelete(url);
 
     if (response.statusCode != 200 && response.statusCode != 404) {
       throw Exception(
@@ -607,17 +536,9 @@ class MalApi {
   Future<void> deleteMangaFromList(int mangaId) async {
     String url = '$mangaEndPoint/$mangaId/my_list_status';
 
-    final selectedAcc = AccountManagerSingleton().selectedAcc;
-    final Map<String, String> headers = getHeadersForAccountType(selectedAcc);
+    _requireMalAccount('Access token required for deleting from list');
 
-    if (!headers.containsKey('Authorization')) {
-      throw 'Access token required for deleting from list';
-    }
-
-    final response = await http.delete(
-      Uri.parse(url),
-      headers: headers,
-    );
+    final response = await MalConnect.authDelete(url);
 
     if (response.statusCode != 200 && response.statusCode != 404) {
       throw Exception(
@@ -787,28 +708,31 @@ class MalApi {
     }
   }
 
-  static Map<String, String> getHeadersForAccountType(AccountType accountType) {
-    final Map<String, String> headers = {};
-
-    switch (accountType) {
-      case AccountType.myanimelist:
-        final accessToken = UserMalV2.instance.authResponse?.accessToken;
-        if (accessToken != null) {
-          headers.addAll({
-            'Authorization': 'Bearer $accessToken',
-          });
-        } else {
-          throw 'No access token found';
-        }
-        break;
-      default:
-        headers.addAll({
-          'Content-Type': 'application/x-www-form-urlencoded',
-          'X-MAL-CLIENT-ID': clientId,
-        });
+  /// GET on the MAL API for the selected account. A MyAnimeList account goes
+  /// through the refreshing path (token renewed before expiry, one refresh and
+  /// replay on 401); throws [MalSessionExpired] when the session is dead. Any
+  /// other account uses the public client id.
+  static Future<http.Response> _get(String url) {
+    if (AccountManagerSingleton().selectedAcc == AccountType.myanimelist) {
+      return MalConnect.authGet(url);
     }
+    return http.get(Uri.parse(url), headers: publicHeaders);
+  }
 
-    return headers;
+  /// Same as [_get] for callers outside this class (forum client).
+  static Future<http.Response> authorizedGet(String url) => _get(url);
+
+  /// Headers of a public (client id only) MAL call.
+  static Map<String, String> get publicHeaders => {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'X-MAL-CLIENT-ID': clientId,
+      };
+
+  /// List writes need a signed in MyAnimeList account.
+  static void _requireMalAccount(String message) {
+    if (AccountManagerSingleton().selectedAcc != AccountType.myanimelist) {
+      throw message;
+    }
   }
 
   static const weekdaysOrderMap = {
@@ -920,9 +844,7 @@ class MalApi {
     final url = next ? page.next : page.previous;
     if (url == null) return SearchResult();
 
-    final selectedAcc = AccountManagerSingleton().selectedAcc;
-    final headers = getHeadersForAccountType(selectedAcc);
-    final response = await http.get(Uri.parse(url), headers: headers);
+    final response = await _get(url);
 
     if (response.statusCode == 200) {
       return SearchResult.fromJson(json.decode(response.body));
