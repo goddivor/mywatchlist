@@ -460,7 +460,7 @@ const UNITS = [
   {
     id: "settings-theme-about-backup", title: "About, backup & restore, clear storage", kind: "screen", priority: "P1", group: "settings", model: "sonnet", ui: true,
     needs: ["theme-colors", "app-shell", "edit-sheet", "bookmarks"],
-    owns: ["lib/screens/settings/about_settings.dart", "lib/screens/settings/backup_settings.dart", "lib/screens/settings/storage_settings.dart", "lib/cache/cachemanager.dart", "lib/screens/settings/download_settings.dart"],
+    owns: ["test/units/app-shell/app_routes_test.dart", "test/units/app-shell/settings_hub_test.dart", "lib/screens/settings/about_settings.dart", "lib/screens/settings/backup_settings.dart", "lib/screens/settings/storage_settings.dart", "lib/cache/cachemanager.dart", "lib/screens/settings/download_settings.dart"],
     dal: ["lib/pages/settings/themesettings.dart", "lib/pages/settings/about.dart", "lib/pages/settings/backup_restore.dart", "lib/cache/cachemanager.dart"],
     goal: [
             "About: version (package_info_plus), changelog, licences, links to goddivor/mywatchlist, and the feedback entry (report a bug / open an issue on goddivor/mywatchlist) — the owner chose to move Help & Feedback here instead of a separate settings page.",

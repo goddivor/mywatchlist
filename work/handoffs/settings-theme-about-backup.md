@@ -9,6 +9,8 @@
 - `bookmarks` (Bookmarks: store, screen, add/remove)
 
 ## Owns (may create or edit ONLY these)
+- `test/units/app-shell/app_routes_test.dart`
+- `test/units/app-shell/settings_hub_test.dart`
 - `lib/screens/settings/about_settings.dart`
 - `lib/screens/settings/backup_settings.dart`
 - `lib/screens/settings/storage_settings.dart`
