@@ -66,3 +66,4 @@ Append-only, one line per decision: `- YYYY-MM-DD [unit] decision — why`. Earl
 - 2026-10-27 [shared-kit] Hidden scores use `ScoreReveal`, which reads `content.hideScore` through `context.select` (falls back to `Preferences.current` without a bloc above); a tap reveals one score for 3 s, a second tap hides it at once.
 - 2026-10-27 [shared-kit] `gotoPage` no longer wraps pushed pages in a left-to-right `Directionality`, so pushed pages follow the app language (Arabic right-to-left).
 - 2026-10-27 [shared-kit] Kit strings use the `Kit_` key prefix; API dates are formatted by `formatApiDate` without intl (`yyyy-MM-dd` whatever the locale), display dates by `DateFormat.yMMMd` of the app locale.
+- 2026-10-27 [shared-kit] `loadingText` and `loadingGraph` in `constants.dart` use `ShimmerColor` (one shared ticker after perf-foundation) instead of their own `Shimmer.fromColors`; `constants.dart` no longer imports `shimmer`.
