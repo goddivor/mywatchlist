@@ -1,0 +1,99 @@
+import 'package:flutter/material.dart';
+import 'package:mywatchlist/cache/bookmarks.dart';
+import 'package:mywatchlist/constants/constants.dart' show AccountType;
+import 'package:mywatchlist/generated/l10n.dart';
+import 'package:mywatchlist/utils/app_routes.dart';
+import 'package:mywatchlist/widgets/bookmarks/bookmark_kind_info.dart';
+import 'package:mywatchlist/widgets/common/app_image.dart';
+
+/// One bookmark in the grid: cover, title, tracker line and a remove button.
+/// No opacity layer, blur or shadow (repeated item): the remove button is an alpha circle.
+class BookmarkCard extends StatelessWidget {
+  final Bookmark bookmark;
+  final VoidCallback onTap;
+  final VoidCallback onRemove;
+
+  const BookmarkCard({
+    super.key,
+    required this.bookmark,
+    required this.onTap,
+    required this.onRemove,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    final tracker = AppRoutes.trackerLabel(
+        AccountType.values.asNameMap()[bookmark.tracker] ?? AccountType.none);
+    final line = [
+      if (bookmark.subtitle != null && bookmark.subtitle!.isNotEmpty)
+        bookmark.subtitle!,
+      if (tracker.isNotEmpty) tracker,
+    ].join(' · ');
+    return InkWell(
+      borderRadius: BorderRadius.circular(12),
+      onTap: onTap,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                AppImage(
+                  url: bookmark.imageUrl,
+                  borderRadius: BorderRadius.circular(12),
+                  placeholderColor: colors.surfaceContainerHighest,
+                  errorWidget: (_) => DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: colors.surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(bookmark.kind.icon,
+                        color: colors.onSurfaceVariant, size: 32),
+                  ),
+                ),
+                PositionedDirectional(
+                  top: 4,
+                  end: 4,
+                  child: SizedBox(
+                    width: 32,
+                    height: 32,
+                    child: IconButton.filled(
+                      padding: EdgeInsets.zero,
+                      iconSize: 18,
+                      tooltip: S.current.Kit_Remove_Bookmark,
+                      style: IconButton.styleFrom(
+                        backgroundColor: colors.scrim.withValues(alpha: 0.55),
+                        foregroundColor: Colors.white,
+                      ),
+                      onPressed: onRemove,
+                      icon: const Icon(Icons.bookmark),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            bookmark.title,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: theme.textTheme.bodyMedium
+                ?.copyWith(fontWeight: FontWeight.w600, height: 1.2),
+          ),
+          if (line.isNotEmpty)
+            Text(
+              line,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.labelSmall
+                  ?.copyWith(color: colors.onSurfaceVariant),
+            ),
+        ],
+      ),
+    );
+  }
+}
