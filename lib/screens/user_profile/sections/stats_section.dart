@@ -159,9 +159,8 @@ class _StatsSectionState extends State<StatsSection> with AutomaticKeepAliveClie
                       ),
                       const SizedBox(height: 12),
                       OutlinedButton(
-                        onPressed: expired
-                            ? () => AppRoutes.signInAgain(context, _mal)
-                            : _retryInsights,
+                        onPressed:
+                            expired ? () => AppRoutes.signInAgain(context, _mal) : _retryInsights,
                         child: Text(expired ? s.Prof_Sign_In : s.Prof_Retry),
                       ),
                     ],
@@ -362,7 +361,8 @@ class _StatusCardState extends State<_StatusCard> {
           for (var i = 0; i < slots; i++)
             LegendDot(
               color: widget.colors[i],
-              label: '${labels[i]} · ${byDays ? s.Prof_Days_Count(_number(values[i], digits: 1)) : _number(values[i])}',
+              label:
+                  '${labels[i]} · ${byDays ? s.Prof_Days_Count(_number(values[i], digits: 1)) : _number(values[i])}',
             ),
         ],
       ),
@@ -417,8 +417,7 @@ class _InsightsSlivers extends StatelessWidget {
             spacing: 16,
             runSpacing: 6,
             children: [
-              for (var i = 0; i < labels.length; i++)
-                LegendDot(color: colors[i], label: labels[i]),
+              for (var i = 0; i < labels.length; i++) LegendDot(color: colors[i], label: labels[i]),
             ],
           ),
           child: ScoreStackChart(

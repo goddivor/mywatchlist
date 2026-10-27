@@ -60,7 +60,11 @@ class _UserPopSheetState extends State<UserPopSheet> {
     _sub?.cancel();
     _sub = UserProfileRepository.instance.watch(widget.username, forceRefresh: force).listen(
       (data) {
-        if (mounted) setState(() => (_data, _error) = (data, null));
+        if (mounted)
+          setState(() {
+            _data = data;
+            _error = null;
+          });
       },
       onError: (Object e) {
         if (mounted && _data == null) setState(() => _error = e);

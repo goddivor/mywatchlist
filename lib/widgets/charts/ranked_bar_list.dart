@@ -52,15 +52,16 @@ class _RankedBarListState extends State<RankedBarList> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        for (final item in shown)
-          _Row(item: item, maxCount: maxCount, color: widget.color),
+        for (final item in shown) _Row(item: item, maxCount: maxCount, color: widget.color),
         if (canExpand)
           Align(
             alignment: AlignmentDirectional.centerStart,
             child: TextButton(
               onPressed: () => setState(() => _expanded = !_expanded),
               child: Text(
-                _expanded ? S.current.Prof_Dist_Show_Less : S.current.Prof_Dist_Show_All(items.length),
+                _expanded
+                    ? S.current.Prof_Dist_Show_Less
+                    : S.current.Prof_Dist_Show_All(items.length),
                 style: theme.textTheme.labelLarge,
               ),
             ),
@@ -109,7 +110,8 @@ class _Row extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 8),
-              Text(NumberFormat.decimalPattern().format(item.count), style: theme.textTheme.labelLarge),
+              Text(NumberFormat.decimalPattern().format(item.count),
+                  style: theme.textTheme.labelLarge),
               if (item.onTap != null)
                 Icon(Icons.chevron_right, size: 18, color: theme.colorScheme.onSurfaceVariant),
             ],

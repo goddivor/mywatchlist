@@ -63,17 +63,19 @@ class _UserProfileViewState extends State<UserProfileView> {
   /// Shows each value as it comes: the official MAL data first, Jikan merged afterwards.
   void _listen({bool force = false}) {
     _sub?.cancel();
-    _sub = UserProfileRepository.instance
-        .watch(widget.username, forceRefresh: force)
-        .listen(
-          (data) {
-            if (mounted) setState(() => (_data, _error) = (data, null));
-          },
-          onError: (Object e) {
-            // A refresh that fails keeps the profile already on screen.
-            if (mounted && _data == null) setState(() => _error = e);
-          },
-        );
+    _sub = UserProfileRepository.instance.watch(widget.username, forceRefresh: force).listen(
+      (data) {
+        if (mounted)
+          setState(() {
+            _data = data;
+            _error = null;
+          });
+      },
+      onError: (Object e) {
+        // A refresh that fails keeps the profile already on screen.
+        if (mounted && _data == null) setState(() => _error = e);
+      },
+    );
   }
 
   void _reload({bool force = false}) {
@@ -189,8 +191,7 @@ class _ProfileBodyState extends State<_ProfileBody> with SingleTickerProviderSta
       UserProfileTab.friends => FriendsSection(username: data.username),
       UserProfileTab.clubs => ClubsSection(username: data.username),
       UserProfileTab.about => AboutSection(username: data.username, isSelf: widget.isSelf),
-      UserProfileTab.favorites =>
-        FavoritesSection(
+      UserProfileTab.favorites => FavoritesSection(
           favorites: data.favorites,
           username: data.username,
           extras: data.extras,

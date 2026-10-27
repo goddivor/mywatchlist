@@ -37,8 +37,7 @@ class FavoritesSection extends StatelessWidget {
             actionLabel: onRetry == null ? null : s.Prof_Retry,
             onAction: onRetry,
           ),
-        ProfileExtras.ready =>
-          ProfileMessage(icon: Icons.favorite_border, title: s.Prof_Fav_Empty),
+        ProfileExtras.ready => ProfileMessage(icon: Icons.favorite_border, title: s.Prof_Fav_Empty),
       };
       return ProfileTabScroll(
         storageKey: 'favorites_$username',

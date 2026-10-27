@@ -37,8 +37,7 @@ class ProfileFavorites {
     this.people = const [],
   });
 
-  bool get isEmpty =>
-      anime.isEmpty && manga.isEmpty && characters.isEmpty && people.isEmpty;
+  bool get isEmpty => anime.isEmpty && manga.isEmpty && characters.isEmpty && people.isEmpty;
 
   static List<ProfileFavorite> _list(Object? raw, {required bool named}) {
     if (raw is! List) return const [];
@@ -46,8 +45,8 @@ class ProfileFavorites {
     for (final row in raw) {
       if (row is! Map) continue;
       final id = (row['mal_id'] as num?)?.toInt() ?? 0;
-      final title = ((named ? row['name'] : row['title']) ?? row['title'] ?? row['name'])
-          as String?;
+      final title =
+          ((named ? row['name'] : row['title']) ?? row['title'] ?? row['name']) as String?;
       if (id == 0 || title == null || title.isEmpty) continue;
       final images = row['images'];
       final jpg = images is Map ? images['jpg'] : null;
@@ -307,8 +306,7 @@ class UserProfileRepository {
 
     // First value: the official data (with the cached Jikan part, if any) or the cached
     // profile, so the screen never waits for Jikan.
-    final samePerson =
-        previous != null && previous.username.toLowerCase() == name.toLowerCase();
+    final samePerson = previous != null && previous.username.toLowerCase() == name.toLowerCase();
     final stale = samePerson ? previous : null;
     final UserProfileData? first;
     if (mal != null) {
