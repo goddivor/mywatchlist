@@ -452,7 +452,7 @@ class GridCardBar extends StatelessWidget {
     const radius = BorderRadius.vertical(bottom: Radius.circular(gridCardRadius));
     final status = entry.status;
     final role = status?.colors(context);
-    final chipForeground = role?.onColor ?? scheme.onSurface;
+    final chipForeground = role?.onContainer ?? scheme.onSurface;
     return SizedBox(
       height: gridCardBarHeight,
       child: Material(
@@ -481,7 +481,7 @@ class GridCardBar extends StatelessWidget {
                 child: Container(
                   height: gridCardBarHeight,
                   decoration: BoxDecoration(
-                    color: role?.color ?? scheme.surfaceContainerHighest,
+                    color: role?.container ?? scheme.surfaceContainerHighest,
                     borderRadius: const BorderRadiusDirectional.only(
                       bottomEnd: Radius.circular(gridCardRadius),
                     ),
@@ -494,7 +494,8 @@ class GridCardBar extends StatelessWidget {
                         Text(
                           status.shortLabel(isAnime: entry.isAnime),
                           maxLines: 1,
-                          style: TextStyle(fontSize: 12, height: 1.2, color: chipForeground),
+                          style: TextStyle(
+                              fontSize: 12, height: 1.2, fontWeight: FontWeight.w600, color: chipForeground),
                         ),
                         const SizedBox(width: 5),
                       ],
@@ -523,8 +524,8 @@ class GridEditButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final role = entry.status?.colors(context);
-    final background = role?.color ?? scheme.surfaceContainerHighest;
-    final foreground = role?.onColor ?? scheme.onSurface;
+    final background = role?.container ?? scheme.surfaceContainerHighest;
+    final foreground = role?.onContainer ?? scheme.onSurface;
     final scored = entry.status != null && entry.score > 0;
     final hidden = scoreHiddenOf(context);
     final Widget child = scored && !hidden
@@ -533,7 +534,7 @@ class GridEditButton extends StatelessWidget {
             children: [
               Icon(Icons.star, size: 16, color: foreground),
               Text('${entry.score}',
-                  style: TextStyle(fontSize: 12, color: foreground)),
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: foreground)),
             ],
           )
         : Icon(Icons.edit, size: 16, color: foreground);
