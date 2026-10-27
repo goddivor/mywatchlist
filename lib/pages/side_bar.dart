@@ -20,7 +20,7 @@ export 'package:mywatchlist/utils/sidebar_extension.dart' show SidebarMenuItem;
 ///
 /// Header with the active account (avatar, name, tracker, custom background), then the
 /// user's destinations (profile, stats, bookmarks, calendar), the app destinations
-/// (settings, about) and sign in / sign out. Every entry closes the drawer first.
+/// (settings, about) and sign in, or add an account / sign out. Every entry closes the drawer first.
 class AppSidebar extends StatefulWidget {
   /// Extra destinations listed after "My space" (see `SidebarBuilder`).
   final List<SidebarMenuItem> extraItems;
@@ -241,14 +241,20 @@ class _AppSidebarState extends State<AppSidebar> {
                 title: S.current.About,
                 onTap: () => _go(AppRoutes.openAbout),
               ),
-              if (signedIn)
+              if (signedIn) ...[
+                _SidebarTile(
+                  icon: Icons.person_add_alt_1_outlined,
+                  title: S.current.Sidebar_Add_Account,
+                  // The login page opens in add mode: an account is already active.
+                  onTap: () => _go(AppRoutes.openLogin),
+                ),
                 _SidebarTile(
                   icon: Icons.logout,
                   title: S.current.Logout,
                   destructive: true,
                   onTap: () => _confirmLogout(tracker),
-                )
-              else
+                ),
+              ] else
                 _SidebarTile(
                   icon: Icons.login,
                   title: S.current.Log_In,
