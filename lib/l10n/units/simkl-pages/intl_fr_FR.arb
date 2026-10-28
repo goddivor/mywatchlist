@@ -1,0 +1,54 @@
+{
+  "@@locale": "fr_FR",
+  "Sk_Sign_In_Title": "Connectez-vous avec Simkl",
+  "Sk_Sign_In": "Se connecter",
+  "Sk_Sign_In_Again": "Se reconnecter",
+  "Sk_Session_Expired": "Votre session Simkl a expiré",
+  "Sk_Session_Expired_Hint": "Simkl ne vous garde connecté que pour une durée limitée. Reconnectez-vous pour voir et modifier votre liste.",
+  "Sk_List_Sign_In_Hint": "Connectez votre compte Simkl pour voir et modifier votre liste d’animés.",
+  "Sk_Profile_Sign_In_Hint": "Connectez votre compte Simkl pour voir votre profil et les statistiques de votre liste.",
+  "Sk_Edit_Status": "Statut",
+  "Sk_Edit_Progress": "Épisodes vus",
+  "Sk_Edit_Score": "Note",
+  "Sk_Edit_Remove": "Retirer de la liste",
+  "Sk_Edit_Failed": "Impossible d’enregistrer les changements. Vérifiez votre connexion et réessayez.",
+  "Sk_No_Mal_Id": "Ce titre n’a pas de page MyAnimeList. Ouverture sur Simkl.",
+  "Sk_Episode_Short": "Ép. {number}",
+  "@Sk_Episode_Short": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "Sk_Open_On_Simkl": "Ouvrir sur Simkl",
+  "Sk_Profile_Empty": "Votre liste d’animés Simkl est vide. Ajoutez un titre pour voir vos statistiques ici.",
+  "Sk_Profile_Rated": "{count, plural, =0{Aucun titre noté} =1{1 titre noté} other{{count} titres notés}}",
+  "@Sk_Profile_Rated": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "Sk_Profile_Recent": "Activité récente",
+  "Sk_Forum_Title": "Forum",
+  "Sk_Forum_None_Title": "Simkl n’a pas de forum",
+  "Sk_Forum_None_Body": "Passez sur MyAnimeList pour lire et rejoindre les discussions.",
+  "Sk_Feed_Airing": "Diffusés aujourd’hui",
+  "Sk_Feed_Trending": "Tendances",
+  "Sk_Feed_Premieres": "Nouvelles sorties",
+  "Sk_Feed_Empty": "Rien à afficher pour le moment.",
+  "Sk_Search_Hint": "Rechercher un animé sur Simkl",
+  "Sk_Search_Empty": "Aucun animé trouvé pour « {query} ».",
+  "@Sk_Search_Empty": {
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
+  "Sk_Load_Failed": "Impossible de charger Simkl. Vérifiez votre connexion et réessayez.",
+  "Sk_Continue_Watching": "Reprendre le visionnage",
+  "Sk_Continue_Empty": "Rien en cours. Les titres que vous regardez apparaissent ici."
+}
