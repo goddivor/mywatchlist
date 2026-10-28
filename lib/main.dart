@@ -9,6 +9,7 @@ import 'package:flutter_displaymode/flutter_displaymode.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/pages/login_page.dart';
+import 'package:mywatchlist/screens/explore/explore_images.dart';
 import 'package:mywatchlist/screens/open_screen.dart';
 import 'package:flutter_phoenix/flutter_phoenix.dart';
 import 'package:mywatchlist/services/api/Jikan/jikan_api.dart';
@@ -52,6 +53,7 @@ final GlobalKey<NavigatorState> appNavigatorKey = GlobalKey<NavigatorState>();
 /// Initializes services, preferences and runs the app
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  ExploreImages.registerLicense();
 
   // Run at the panel's highest refresh rate (90/120 Hz) instead of the 60 Hz default.
   await _useHighRefreshRate();

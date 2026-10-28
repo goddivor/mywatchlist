@@ -89,6 +89,8 @@ class _AnilistExplorePageState extends State<AnilistExplorePage> {
       slivers: [
         SliverAppBar(
           automaticallyImplyLeading: false,
+          // Empty list does not suppress the automatic endDrawer button; a placeholder does.
+          actions: const [SizedBox.shrink()],
           floating: true,
           snap: true,
           titleSpacing: 0,
