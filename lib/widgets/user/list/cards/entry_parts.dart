@@ -245,15 +245,17 @@ class _EntryEpisodeBadgesState extends State<EntryEpisodeBadges> {
           if (showReleased) ...[
             _EpisodeBadge(
               text: format.format(released),
-              background: tokens.completed.color,
-              foreground: tokens.completed.onColor,
+              // DailyAL's solid blue / red with white bold text, the same in
+              // light, dark and black (status chip shades, >= 3:1 bold).
+              background: tokens.completed.container,
+              foreground: tokens.completed.onContainer,
             ),
             const SizedBox(width: 3),
           ],
           _EpisodeBadge(
             text: '+${format.format(unseen)}',
-            background: tokens.danger.color,
-            foreground: tokens.danger.onColor,
+            background: tokens.dropped.container,
+            foreground: tokens.dropped.onContainer,
           ),
         ],
       ),
@@ -281,7 +283,7 @@ class _EpisodeBadge extends StatelessWidget {
           text,
           maxLines: 1,
           textScaler: MediaQuery.textScalerOf(context).clamp(maxScaleFactor: 1.2),
-          style: TextStyle(fontSize: 10, height: 1.1, fontWeight: FontWeight.w600, color: foreground),
+          style: TextStyle(fontSize: 10, height: 1.1, fontWeight: FontWeight.w700, color: foreground),
         ),
       ),
     );
