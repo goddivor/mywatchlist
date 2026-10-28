@@ -1,0 +1,138 @@
+{
+ "data": [
+  {
+   "id": "1087",
+   "type": "groups",
+   "links": {
+    "self": "https://kitsu.io/api/edge/groups/1087"
+   },
+   "attributes": {
+    "name": "Anime Pictures n stuff",
+    "slug": "anime-pictures-n-stuff",
+    "membersCount": 1472,
+    "tagline": "anime, manga, games, otaku cullture, everything in between",
+    "lastActivityAt": "2026-10-28T13:15:19.885Z",
+    "nsfw": false,
+    "avatar": {
+     "tiny": "https://media.kitsu.app/groups/avatars/1087/tiny.jpeg",
+     "large": "https://media.kitsu.app/groups/avatars/1087/large.jpeg",
+     "small": "https://media.kitsu.app/groups/avatars/1087/small.jpeg",
+     "medium": "https://media.kitsu.app/groups/avatars/1087/medium.jpeg",
+     "original": "https://media.kitsu.app/groups/avatars/1087/original.jpeg",
+     "meta": {
+      "dimensions": {
+       "tiny": {
+        "width": 40,
+        "height": 40
+       },
+       "large": {
+        "width": 200,
+        "height": 200
+       },
+       "small": {
+        "width": 64,
+        "height": 64
+       },
+       "medium": {
+        "width": 100,
+        "height": 100
+       }
+      }
+     }
+    }
+   }
+  },
+  {
+   "id": "2162",
+   "type": "groups",
+   "links": {
+    "self": "https://kitsu.io/api/edge/groups/2162"
+   },
+   "attributes": {
+    "name": "Video Games Forever",
+    "slug": "video-games-forever",
+    "membersCount": 734,
+    "tagline": "For every fan of video games.",
+    "lastActivityAt": "2026-10-27T19:47:53.321Z",
+    "nsfw": false,
+    "avatar": {
+     "tiny": "https://media.kitsu.app/groups/avatars/2162/tiny.png",
+     "large": "https://media.kitsu.app/groups/avatars/2162/large.png",
+     "small": "https://media.kitsu.app/groups/avatars/2162/small.png",
+     "medium": "https://media.kitsu.app/groups/avatars/2162/medium.png",
+     "original": "https://media.kitsu.app/groups/avatars/2162/original.png",
+     "meta": {
+      "dimensions": {
+       "tiny": {
+        "width": null,
+        "height": null
+       },
+       "large": {
+        "width": null,
+        "height": null
+       },
+       "small": {
+        "width": null,
+        "height": null
+       },
+       "medium": {
+        "width": null,
+        "height": null
+       }
+      }
+     }
+    }
+   }
+  },
+  {
+   "id": "596",
+   "type": "groups",
+   "links": {
+    "self": "https://kitsu.io/api/edge/groups/596"
+   },
+   "attributes": {
+    "name": "Kitsu News Network",
+    "slug": "kitsu-news-network",
+    "membersCount": 6346,
+    "tagline": "For all the latest anime industry news.",
+    "lastActivityAt": "2026-10-27T17:06:43.737Z",
+    "nsfw": false,
+    "avatar": {
+     "tiny": "https://media.kitsu.app/groups/avatars/596/tiny.png",
+     "large": "https://media.kitsu.app/groups/avatars/596/large.png",
+     "small": "https://media.kitsu.app/groups/avatars/596/small.png",
+     "medium": "https://media.kitsu.app/groups/avatars/596/medium.png",
+     "original": "https://media.kitsu.app/groups/avatars/596/original.png",
+     "meta": {
+      "dimensions": {
+       "tiny": {
+        "width": null,
+        "height": null
+       },
+       "large": {
+        "width": null,
+        "height": null
+       },
+       "small": {
+        "width": null,
+        "height": null
+       },
+       "medium": {
+        "width": null,
+        "height": null
+       }
+      }
+     }
+    }
+   }
+  }
+ ],
+ "meta": {
+  "count": 3422
+ },
+ "links": {
+  "first": "https://kitsu.io/api/edge/groups?fields%5Bgroups%5D=name%2Cslug%2CmembersCount%2Ctagline%2ClastActivityAt%2Cnsfw%2Cavatar&page%5Blimit%5D=3&page%5Boffset%5D=0&sort=-lastActivityAt",
+  "next": "https://kitsu.io/api/edge/groups?fields%5Bgroups%5D=name%2Cslug%2CmembersCount%2Ctagline%2ClastActivityAt%2Cnsfw%2Cavatar&page%5Blimit%5D=3&page%5Boffset%5D=3&sort=-lastActivityAt",
+  "last": "https://kitsu.io/api/edge/groups?fields%5Bgroups%5D=name%2Cslug%2CmembersCount%2Ctagline%2ClastActivityAt%2Cnsfw%2Cavatar&page%5Blimit%5D=3&page%5Boffset%5D=3419&sort=-lastActivityAt"
+ }
+}

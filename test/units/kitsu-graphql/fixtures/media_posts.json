@@ -1,0 +1,138 @@
+{
+ "data": {
+  "findMediaByIdAndType": {
+   "posts": {
+    "totalCount": 967,
+    "pageInfo": {
+     "hasNextPage": true,
+     "endCursor": "Mw"
+    },
+    "nodes": [
+     {
+      "id": "9917984",
+      "content": "rewatching (again) the best media to ever media just to feel something\n\ni swear qual & zoltraak permanently altered my worldbuilding brain chemistry",
+      "contentFormatted": "<p>rewatching (again) the best media to ever media just to feel something</p>\n\n<p>i swear qual &amp; zoltraak permanently altered my worldbuilding brain chemistry</p>\n",
+      "isSpoiler": false,
+      "isNsfw": false,
+      "createdAt": "2026-09-28T21:25:14Z",
+      "author": {
+       "id": "42670",
+       "name": "AlexHallon",
+       "slug": "AlexHallon",
+       "avatarImage": {
+        "original": {
+         "url": "https://media.kitsu.app/user/42670/avatar/1bdc93eaf3e506e779dcd996278764a1.png",
+         "width": 766,
+         "height": 766
+        }
+       }
+      },
+      "media": {
+       "__typename": "Anime",
+       "id": "46474",
+       "slug": "sousou-no-frieren",
+       "titles": {
+        "canonical": "Sousou no Frieren"
+       },
+       "posterImage": {
+        "original": {
+         "url": "https://media.kitsu.app/anime/46474/poster_image/99d7df09d8cb9360b1e02825372ce612.jpg",
+         "width": 460,
+         "height": 649
+        }
+       }
+      },
+      "likes": {
+       "totalCount": 5
+      },
+      "comments": {
+       "totalCount": 0
+      }
+     },
+     {
+      "id": "9917665",
+      "content": "we chillin'",
+      "contentFormatted": "<p>we chillin’</p>\n",
+      "isSpoiler": false,
+      "isNsfw": false,
+      "createdAt": "2026-09-25T21:44:25Z",
+      "author": {
+       "id": "66861",
+       "name": "Supesharisuto",
+       "slug": "Supesharisuto",
+       "avatarImage": {
+        "original": {
+         "url": "https://media.kitsu.app/user/66861/avatar/72c1958ed0827d889f248dcd163ce849.jpeg",
+         "width": 447,
+         "height": 447
+        }
+       }
+      },
+      "media": {
+       "__typename": "Anime",
+       "id": "46474",
+       "slug": "sousou-no-frieren",
+       "titles": {
+        "canonical": "Sousou no Frieren"
+       },
+       "posterImage": {
+        "original": {
+         "url": "https://media.kitsu.app/anime/46474/poster_image/99d7df09d8cb9360b1e02825372ce612.jpg",
+         "width": 460,
+         "height": 649
+        }
+       }
+      },
+      "likes": {
+       "totalCount": 5
+      },
+      "comments": {
+       "totalCount": 1
+      }
+     },
+     {
+      "id": "9917664",
+      "content": "This anime is pretty, these scenes look amazing",
+      "contentFormatted": "<p>This anime is pretty, these scenes look amazing</p>\n",
+      "isSpoiler": false,
+      "isNsfw": false,
+      "createdAt": "2026-09-25T21:43:12Z",
+      "author": {
+       "id": "66861",
+       "name": "Supesharisuto",
+       "slug": "Supesharisuto",
+       "avatarImage": {
+        "original": {
+         "url": "https://media.kitsu.app/user/66861/avatar/72c1958ed0827d889f248dcd163ce849.jpeg",
+         "width": 447,
+         "height": 447
+        }
+       }
+      },
+      "media": {
+       "__typename": "Anime",
+       "id": "46474",
+       "slug": "sousou-no-frieren",
+       "titles": {
+        "canonical": "Sousou no Frieren"
+       },
+       "posterImage": {
+        "original": {
+         "url": "https://media.kitsu.app/anime/46474/poster_image/99d7df09d8cb9360b1e02825372ce612.jpg",
+         "width": 460,
+         "height": 649
+        }
+       }
+      },
+      "likes": {
+       "totalCount": 4
+      },
+      "comments": {
+       "totalCount": 1
+      }
+     }
+    ]
+   }
+  }
+ }
+}

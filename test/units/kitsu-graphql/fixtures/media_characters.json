@@ -1,0 +1,103 @@
+{
+ "data": {
+  "findMediaByIdAndType": {
+   "characters": {
+    "totalCount": 125,
+    "pageInfo": {
+     "hasNextPage": true,
+     "endCursor": "Mw"
+    },
+    "nodes": [
+     {
+      "role": "BACKGROUND",
+      "character": {
+       "id": "79392",
+       "slug": "sally-yung",
+       "names": {
+        "canonical": "Sally  Yung"
+       },
+       "image": {
+        "original": {
+         "url": "https://media.kitsu.app/characters/images/79392/original.jpg",
+         "width": 225,
+         "height": 329
+        }
+       }
+      },
+      "voices": {
+       "nodes": [
+        {
+         "person": {
+          "id": "3890",
+          "name": "Ikuko Tani",
+          "image": {
+           "original": {
+            "url": "https://media.kitsu.app/people/images/3890/original.jpg",
+            "width": 225,
+            "height": 345
+           }
+          }
+         }
+        }
+       ]
+      }
+     },
+     {
+      "role": "BACKGROUND",
+      "character": {
+       "id": "75197",
+       "slug": "white-tiger-representative",
+       "names": {
+        "canonical": "White Tiger Representative"
+       },
+       "image": {
+        "original": {
+         "url": "https://media.kitsu.app/characters/images/75197/original.jpg",
+         "width": 225,
+         "height": 294
+        }
+       }
+      },
+      "voices": {
+       "nodes": []
+      }
+     },
+     {
+      "role": "BACKGROUND",
+      "character": {
+       "id": "73258",
+       "slug": "tom-wiles",
+       "names": {
+        "canonical": "Tom Wiles"
+       },
+       "image": {
+        "original": {
+         "url": "https://media.kitsu.app/characters/images/73258/original.jpg",
+         "width": 225,
+         "height": 291
+        }
+       }
+      },
+      "voices": {
+       "nodes": [
+        {
+         "person": {
+          "id": "1138",
+          "name": "Hirohiko Kakegawa",
+          "image": {
+           "original": {
+            "url": "https://media.kitsu.app/people/images/1138/original.jpg",
+            "width": 225,
+            "height": 350
+           }
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   }
+  }
+ }
+}

@@ -1,0 +1,60 @@
+{
+ "data": {
+  "findMediaByIdAndType": {
+   "staff": {
+    "totalCount": 62,
+    "pageInfo": {
+     "hasNextPage": true,
+     "endCursor": "Mw"
+    },
+    "nodes": [
+     {
+      "role": "Producer",
+      "person": {
+       "id": "22442",
+       "slug": "yutaka-maseba",
+       "name": "Yutaka Maseba",
+       "image": {
+        "original": {
+         "url": "https://media.kitsu.app/people/images/22442/original.jpg",
+         "width": 292,
+         "height": 450
+        }
+       }
+      }
+     },
+     {
+      "role": "Producer",
+      "person": {
+       "id": "1",
+       "slug": "masahiko-minami",
+       "name": "Masahiko Minami",
+       "image": {
+        "original": {
+         "url": "https://media.kitsu.app/people/images/1/original.jpg",
+         "width": null,
+         "height": null
+        }
+       }
+      }
+     },
+     {
+      "role": "Director, Script, Storyboard",
+      "person": {
+       "id": "2",
+       "slug": "shinichiro-watanabe",
+       "name": "Shinichiro Watanabe",
+       "image": {
+        "original": {
+         "url": "https://media.kitsu.app/people/images/2/original.jpg",
+         "width": 225,
+         "height": 350
+        }
+       }
+      }
+     }
+    ]
+   }
+  }
+ }
+}

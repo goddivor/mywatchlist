@@ -1,0 +1,51 @@
+{
+ "data": {
+  "findProfileBySlug": {
+   "following": {
+    "totalCount": 53,
+    "pageInfo": {
+     "hasNextPage": true,
+     "endCursor": "Mw"
+    },
+    "nodes": [
+     {
+      "id": "1344765",
+      "name": "BayuAH",
+      "slug": "bayuah",
+      "avatarImage": {
+       "original": {
+        "url": "https://media.kitsu.app/user/1344765/avatar/c15b7c3d5f2423dd22f0b24ce4d1db94.png",
+        "width": 550,
+        "height": 550
+       }
+      }
+     },
+     {
+      "id": "1127077",
+      "name": "Jumpykitten",
+      "slug": null,
+      "avatarImage": {
+       "original": {
+        "url": "https://media.kitsu.app/user/1127077/avatar/ad9825aa6cf7807f3523ed192422c4ab.jpeg",
+        "width": 564,
+        "height": 564
+       }
+      }
+     },
+     {
+      "id": "352458",
+      "name": "Just a Weeb Bean",
+      "slug": null,
+      "avatarImage": {
+       "original": {
+        "url": "https://media.kitsu.app/users/avatars/352458/original.jpeg",
+        "width": 300,
+        "height": 300
+       }
+      }
+     }
+    ]
+   }
+  }
+ }
+}
