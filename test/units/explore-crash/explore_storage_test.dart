@@ -83,14 +83,12 @@ void main() {
     await S.load(const Locale('en'));
   });
 
-  testWidgets('without separate storage the strips crash (the bug)', (tester) async {
+  testWidgets('the picker no longer leaks an ItemPosition even without ExploreStorage',
+      (tester) async {
+    // The years row has its own storage inside SeasonalPicker since #221; this guards it.
     final errors = await _run(tester, fixed: false);
-    expect(
-      errors.map((e) => '$e'),
-      // Whichever list reads the shared slot second fails: the strips (`'ItemPosition' is not a
-      // subtype of type 'double?'`) or, on the next visit, the picker itself.
-      contains(allOf(contains('ItemPosition'), contains('is not a subtype of type'))),
-    );
+    expect(errors, isEmpty);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('with ExploreStorage nothing crashes, on the first visit or the next', (tester) async {
