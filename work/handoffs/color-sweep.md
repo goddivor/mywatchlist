@@ -3,6 +3,7 @@
 **Kind** unit · **Priority** P1 · **Group** release · **Model** sonnet
 
 ## Needs done first
+- `profile-tabs` (Profile tabs (Friends, Clubs, History) never hang: timeout + MAL page fallback)
 - `theme-seasons` (Seasonal accents like DailyAL (spring pink, summer deep orange, fall brown, winter light blue))
 - `detail-polish` (Detail page polish: News never loads, faster fallbacks, status colours, tabs, numbers)
 - `home-fixes` (Home: user-list cache per account)

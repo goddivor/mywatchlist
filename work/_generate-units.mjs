@@ -264,6 +264,17 @@ const UNITS = [
     dod: ["Checker: screenshots of the own profile and a friend's profile in light, dark and black — readable header/title/tabs/status bar, chart colours = status colours.", "Widget tests: header readable (contrast) in light/dark, tokens used, French formatting."],
   },
   {
+    id: "profile-tabs", title: "Profile tabs (Friends, Clubs, History) never hang: timeout + MAL page fallback", kind: "unit", priority: "P0", group: "user", model: "sonnet", ui: true,
+    needs: ["profile-polish", "backend-parsers"],
+    owns: ["lib/screens/user_profile/sections/**", "lib/services/api/mwl_api.dart", "mwl-api/**", "lib/services/api/MAL/scrapper/user_friends.dart", "lib/services/api/MAL/scrapper/user_history.dart"],
+    goal: [
+      "Owner's screenshot: the profile Friends tab spins forever on 'Loading profile…'. friends_section.dart calls `MwlApi.getUserFriends`, which goes through an mwl-api route (Jikan-backed) with no timeout; Jikan is unreachable on the owner's network, so no error ever shows. Same risk for Clubs and History.",
+      "Every profile tab ends in content, an empty state or an error with Retry within ~12 s: client timeouts on these MwlApi calls; read friends / clubs / history from MAL's own profile pages (myanimelist.net/profile/<name>/friends, /clubs, /history — parsers exist in lib/services/api/MAL/scrapper/ and mwl_commons) when Jikan fails or first; parse off the UI isolate.",
+      "A tab never waits for the rest of the profile to load; translated states; theme tokens only.",
+    ],
+    dod: ["Tests with a failing fake Jikan: Friends / Clubs / History end in content or a state within the timeout.", "Checker: owner's profile Friends tab loads on his network."],
+  },
+  {
     id: "sync-dialog", title: "Cross-tracker sync: two-way dialog, cancel, lazy load, decimal scores", kind: "unit", priority: "P1", group: "user", model: "sonnet", ui: true,
     needs: ["edit-sheet", "auth-refresh"],
     owns: ["lib/services/tracker_sync_service.dart", "lib/widgets/user/cross_tracker_widget.dart", "lib/widgets/user/tracker_search_sheet.dart", "lib/widgets/user/sync/**"],
@@ -561,7 +572,7 @@ const UNITS = [
   },
   {
     id: "color-sweep", title: "Colour sweep: hardcoded colours of already-merged screens onto the theme tokens", kind: "unit", priority: "P1", group: "release", model: "sonnet", ui: true,
-    needs: ["theme-seasons", "detail-polish", "home-fixes", "backup-fixes", "tracker-wiring", "profile-polish", "list-cards-dal", "detail-resilience", "home-wiring", "featured-characters", "dub-info", "detail-more-info", "settings-theme-about-backup", "in-app-update", "forum-clubs", "search-upgrade", "theme-colors", "cards-upgrade", "detail-header", "detail-social", "detail-related-graph", "detail-synopsis-media", "user-list-mal", "user-profile-mal", "edit-sheet", "sync-dialog", "bookmarks", "calendar", "explore-seasonal", "settings-prefs-pages", "accounts-ux", "app-shell", "shared-kit", "notifications"],
+    needs: ["profile-tabs", "theme-seasons", "detail-polish", "home-fixes", "backup-fixes", "tracker-wiring", "profile-polish", "list-cards-dal", "detail-resilience", "home-wiring", "featured-characters", "dub-info", "detail-more-info", "settings-theme-about-backup", "in-app-update", "forum-clubs", "search-upgrade", "theme-colors", "cards-upgrade", "detail-header", "detail-social", "detail-related-graph", "detail-synopsis-media", "user-list-mal", "user-profile-mal", "edit-sheet", "sync-dialog", "bookmarks", "calendar", "explore-seasonal", "settings-prefs-pages", "accounts-ux", "app-shell", "shared-kit", "notifications"],
     owns: ["lib/widgets/loading/**", "lib/widgets/MAL/home/**", "lib/widgets/MAL/content/**", "lib/widgets/MAL/review/**", "lib/widgets/user/**", "lib/widgets/charts/**", "lib/widgets/bookmarks/**", "lib/widgets/calendar/**", "lib/widgets/common/**", "lib/screens/MAL/**", "lib/screens/explore/**", "lib/screens/seasonal/**", "lib/screens/calendar/**", "lib/screens/user_profile/**", "lib/screens/settings/**", "lib/screens/bookmarks_screen.dart", "lib/pages/side_bar.dart", "lib/constants/constants.dart"],
     goal: [
       "Replace every hardcoded `Colors.*` / `Color(0x…)` in the owned screens with `colorScheme` roles or the app_colors tokens (theme-colors), except intrinsic content colours (e.g. a tracker's brand logo) — list those exceptions in the PR body.",
@@ -613,9 +624,10 @@ const UNITS = [
   {
     id: "detail-polish", title: "Detail page polish: News never loads, faster fallbacks, status colours, tabs, numbers", kind: "unit", priority: "P0", group: "detail", model: "opus", ui: true,
     needs: ["detail-resilience", "detail-header", "home-wiring"],
-    owns: ["lib/screens/MAL/detail/**", "lib/widgets/MAL/content/animestatisticswidget.dart", "lib/widgets/MAL/home/show_news.dart", "lib/services/api/Jikan/**"],
+    owns: ["lib/widgets/MAL/home/animecharacterwidget.dart", "lib/screens/MAL/characters_staff_screen.dart", "lib/widgets/MAL/content/show_reviews.dart", "lib/widgets/MAL/review/**", "lib/screens/MAL/detail/**", "lib/widgets/MAL/content/animestatisticswidget.dart", "lib/widgets/MAL/home/show_news.dart", "lib/services/api/Jikan/**"],
     goal: [
       "BLOCKING (batch-4 check): News on detail pages loads forever — lib/widgets/MAL/home/show_news.dart:52-62 `_fetchNews` has no try/catch, `JikanUnavailable` is unhandled and the skeleton never goes. Content, empty state or error + Retry, like every other section (repro: Cowboy Bebop, Shuiro no Kamen).",
+      "OWNER REQUEST (anime page): the CHARACTERS, STAFF and REVIEWS sections must have THE SAME UI AS DAILYAL — detail-resilience changed them to 56 dp circles in rows; the owner wants DailyAL's layout back (read DAL lib/pages/animedetailed/animecharacterwidget.dart, lib/widgets/character_va_tile.dart and lib/pages/animedetailed/reviewpage.dart / review list in the detail page; reproduce them in MWL's architecture). Keep the earlier owner rule: NO grey rectangular shadow / box behind character or staff images. Keep the Jikan fallbacks and clean states. Characters & staff full screen (characters_staff_screen.dart) follows the same DailyAL style.",
       "Faster fallbacks (owner target ~12 s): the MAL fallback only starts after Jikan's 12 s timeout and then waits up to 15–20 s (content_stats_source.dart:77-91, jikan_fallbacks.dart:24): start the fallback early (race Jikan against the fallback after a short head start, or skip Jikan immediately while its circuit breaker is open), cap the total at ~12 s.",
       "Status colours: the detail edit FAB (detail_fab.dart:36 → getAnimeStatusColor / constants getStatusColor) and the Stats chart (animestatisticswidget.dart:30-34) must use the theme-colors status tokens (DailyAL's green/blue/orange/red/brown).",
       "Tapping a detail tab while the header is fully expanded highlights the tab but does not scroll — make it scroll. Manga header authors show a leading comma (', Nabana'). Header numbers use the app locale (header_meta.dart:17-19 static NumberFormat without locale: '2,169' → '2 169' in French).",

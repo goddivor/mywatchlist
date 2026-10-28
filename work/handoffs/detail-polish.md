@@ -8,6 +8,10 @@
 - `home-wiring` (Home: working chips, bookmarks/calendar buttons, maintenance dialog, user-list and forum sections)
 
 ## Owns (may create or edit ONLY these)
+- `lib/widgets/MAL/home/animecharacterwidget.dart`
+- `lib/screens/MAL/characters_staff_screen.dart`
+- `lib/widgets/MAL/content/show_reviews.dart`
+- `lib/widgets/MAL/review/**`
 - `lib/screens/MAL/detail/**`
 - `lib/widgets/MAL/content/animestatisticswidget.dart`
 - `lib/widgets/MAL/home/show_news.dart`
@@ -19,6 +23,7 @@ Plus `PROJECT-STATE.md` (rewrite in place, within its cap) and `docs/DECISIONS.m
 
 ## Goal
 - BLOCKING (batch-4 check): News on detail pages loads forever — lib/widgets/MAL/home/show_news.dart:52-62 `_fetchNews` has no try/catch, `JikanUnavailable` is unhandled and the skeleton never goes. Content, empty state or error + Retry, like every other section (repro: Cowboy Bebop, Shuiro no Kamen).
+- OWNER REQUEST (anime page): the CHARACTERS, STAFF and REVIEWS sections must have THE SAME UI AS DAILYAL — detail-resilience changed them to 56 dp circles in rows; the owner wants DailyAL's layout back (read DAL lib/pages/animedetailed/animecharacterwidget.dart, lib/widgets/character_va_tile.dart and lib/pages/animedetailed/reviewpage.dart / review list in the detail page; reproduce them in MWL's architecture). Keep the earlier owner rule: NO grey rectangular shadow / box behind character or staff images. Keep the Jikan fallbacks and clean states. Characters & staff full screen (characters_staff_screen.dart) follows the same DailyAL style.
 - Faster fallbacks (owner target ~12 s): the MAL fallback only starts after Jikan's 12 s timeout and then waits up to 15–20 s (content_stats_source.dart:77-91, jikan_fallbacks.dart:24): start the fallback early (race Jikan against the fallback after a short head start, or skip Jikan immediately while its circuit breaker is open), cap the total at ~12 s.
 - Status colours: the detail edit FAB (detail_fab.dart:36 → getAnimeStatusColor / constants getStatusColor) and the Stats chart (animestatisticswidget.dart:30-34) must use the theme-colors status tokens (DailyAL's green/blue/orange/red/brown).
 - Tapping a detail tab while the header is fully expanded highlights the tab but does not scroll — make it scroll. Manga header authors show a leading comma (', Nabana'). Header numbers use the app locale (header_meta.dart:17-19 static NumberFormat without locale: '2,169' → '2 169' in French).
