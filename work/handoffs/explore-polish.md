@@ -3,6 +3,7 @@
 **Kind** unit · **Priority** P1 · **Group** discovery · **Model** opus
 
 ## Needs done first
+- `search-sources` (Search: every filter returns data without Jikan (MAL search page fallback, live-verified) + studios directory with logos)
 - `explore-seasonal` (Explore page and seasonal screen)
 - `home-wiring` (Home: working chips, bookmarks/calendar buttons, maintenance dialog, user-list and forum sections)
 - `profile-tabs` (Profile tabs (Friends, Clubs, History) never hang: timeout + MAL page fallback)
@@ -21,6 +22,7 @@ Plus `PROJECT-STATE.md` (rewrite in place, within its cap) and `docs/DECISIONS.m
 ## Goal
 - Owner's screenshots of the Explore page: (1) Recommendations 'Couldn't load this section' and Interest Stacks 'Nothing to show right now' — wire the new MwlApi global recommendations / interest stacks methods (profile-tabs PR) as the source when Jikan fails (or first), with clean states; (2) Characters and Seiyuu cards: add a ♥ favourites badge (number of people who favourited the character / person, from the top characters/people data); (3) the Seasonal card's 'Search By Season' button text is truncated ('Search By Se…'): redo the layout so both buttons show their full label in every language and width; (4) Genres: the Explicit genres type is missing — add it (anime and manga, respecting the NSFW pref for visibility/blur as appropriate).
 - Images like DailyAL (owner request): every category / ranking card and every genre card shows its background picture, as DailyAL does. DailyAL's pictures live in its MIT-licensed repo (`web_assets/`, ~6 MB: `<type>_<category>.jpg` for rankings, `web_assets/genres/<id>_<category>.jpg`); our repo is private, so BUNDLE them as app assets under assets/images/explore/ (copy from /home/thinkpad/.cache/mwl-mab/dailyal-108/web_assets, declare the folders in pubspec.yaml, credit DailyAL via LicenseRegistry with its MIT text). Text on the pictures stays readable through the scrim token; decode at card size (AppImage / ResizeImage) so scrolling stays smooth.
+- Add a Studios entry on the Explore page opening `StudiosScreen` (lib/screens/studios/studios_screen.dart, from search-sources).
 - Theme tokens only; full translatability (English + French).
 
 ## Known bugs to fix in scope

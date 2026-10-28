@@ -3,6 +3,7 @@
 **Kind** unit · **Priority** P1 · **Group** release · **Model** sonnet
 
 ## Needs done first
+- `search-sources` (Search: every filter returns data without Jikan (MAL search page fallback, live-verified) + studios directory with logos)
 - `explore-polish` (Explore: DailyAL images on category and genre cards, explicit genres, recommendations/stacks fallbacks, favourites badges)
 - `profile-tabs` (Profile tabs (Friends, Clubs, History) never hang: timeout + MAL page fallback)
 - `theme-seasons` (Seasonal accents like DailyAL (spring pink, summer deep orange, fall brown, winter light blue))
