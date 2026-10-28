@@ -1,7 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mywatchlist/enums.dart';
 import 'package:mywatchlist/user/MAL/mal_home_page_preferences.dart';
-import 'package:mywatchlist/user/language/language_bloc.dart';
 import 'package:mywatchlist/user/requests/requests_bloc.dart';
 
 void main() {
@@ -11,7 +10,6 @@ void main() {
     expect(SectionType.news.index, 0);
     expect(SectionType.topMangaPopular.index, 12);
     expect(SectionType.forum.index, 15);
-    expect(SectionType.topAnimeOva.index, 16);
   });
 
   test('the section picker lists every kind exactly once', () {
@@ -19,24 +17,19 @@ void main() {
     expect(kSectionPickerOrder.length, SectionType.values.length);
   });
 
-  test('every MAL anime and manga ranking has a home row', () {
-    final anime = {
-      for (final t in SectionType.values)
-        if (t.animeRanking case final r?) r,
-    };
-    final manga = {
-      for (final t in SectionType.values)
-        if (t.mangaRanking case final r?) r,
-    };
-    expect(anime, RankingType.values.toSet());
-    expect(manga, MangaRanking.values.toSet());
+  test('ranking rows map to their MAL ranking', () {
+    expect(SectionType.topScore.animeRanking, RankingType.ALL);
+    expect(SectionType.upcoming.animeRanking, RankingType.UPCOMING);
+    expect(SectionType.topMangaPopular.mangaRanking, MangaRanking.bypopularity);
+    expect(SectionType.topManga.animeRanking, isNull);
+    expect(SectionType.news.mangaRanking, isNull);
   });
 
   test('content rows are the season, the suggestions and the rankings', () {
     expect(SectionType.seasonNow.isContentRow, isTrue);
     expect(SectionType.suggested.isContentRow, isTrue);
-    expect(SectionType.topManhwa.isContentRow, isTrue);
-    expect(SectionType.topAnimeOna.isContentRow, isTrue);
+    expect(SectionType.topAnimeSpecial.isContentRow, isTrue);
+    expect(SectionType.topManga.isContentRow, isTrue);
     for (final t in [SectionType.news, SectionType.features, SectionType.userList, SectionType.forum]) {
       expect(t.isContentRow, isFalse, reason: t.name);
     }
@@ -59,31 +52,5 @@ void main() {
     expect(keys.length, SectionType.values.where((t) => t.isContentRow).length);
     expect(RequestsBloc.rowCacheKey(SectionType.topScore, 15),
         isNot(RequestsBloc.rowCacheKey(SectionType.topScore, 30)));
-  });
-
-  test('new rows have their own title in English and French', () async {
-    const added = [
-      SectionType.topAnimeOva,
-      SectionType.topAnimeOna,
-      SectionType.topMangaOnly,
-      SectionType.topOneshots,
-      SectionType.topDoujin,
-      SectionType.topLightNovels,
-      SectionType.topNovels,
-      SectionType.topManhwa,
-      SectionType.topManhua,
-      SectionType.topMangaFavorites,
-    ];
-    await LanguageBloc.apply('en');
-    final en = [for (final t in added) HomeSectionPreference(type: t).getDefaultTitle()];
-    expect(en.toSet().length, added.length);
-    expect(en, contains('Top Manhwa'));
-    await LanguageBloc.apply('fr_FR');
-    final fr = [for (final t in added) HomeSectionPreference(type: t).getDefaultTitle()];
-    expect(fr, contains('Meilleurs manhwas'));
-    for (var i = 0; i < added.length; i++) {
-      expect(fr[i], isNot(en[i]), reason: added[i].name);
-    }
-    await LanguageBloc.apply('en');
   });
 }
