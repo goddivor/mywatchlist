@@ -808,6 +808,26 @@ UI directive applies: compare DAL and MWL, keep the better, improve it.
 Deliver with the PR procedure of the brief.
 ```
 
+## mal-notifications
+
+```text
+Unit mal-notifications — MAL notifications in the app: notification hub, mark as read, background polling with Android notifications.
+Read work/handoffs/mal-notifications.md fully, then the DAL reference files it lists, then the MWL files you own.
+Build exactly the Goal, inside the Owns list. Heavy commands only through tools/heavy.sh; never run flutter build or touch the emulator.
+UI directive applies: compare DAL and MWL, keep the better, improve it.
+Deliver with the PR procedure of the brief.
+```
+
+## mal-messages
+
+```text
+Unit mal-messages — MAL private messages: inbox, sent, thread, compose and reply.
+Read work/handoffs/mal-messages.md fully, then the DAL reference files it lists, then the MWL files you own.
+Build exactly the Goal, inside the Owns list. Heavy commands only through tools/heavy.sh; never run flutter build or touch the emulator.
+UI directive applies: compare DAL and MWL, keep the better, improve it.
+Deliver with the PR procedure of the brief.
+```
+
 ## explore-polish
 
 ```text

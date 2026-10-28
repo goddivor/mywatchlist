@@ -3,6 +3,8 @@
 **Kind** unit · **Priority** P2 · **Group** release · **Model** sonnet
 
 ## Needs done first
+- `mal-notifications` (MAL notifications in the app: notification hub, mark as read, background polling with Android notifications)
+- `mal-messages` (MAL private messages: inbox, sent, thread, compose and reply)
 - `ux-polish-2` (Tonal buttons stay tonal; explicit card hidden with NSFW off like DailyAL)
 - `home-rows-kinds` (Home OVA/ONA and manhwa/manhua/novel ranking rows (H3) with tracker cases)
 - `ux-explore` (Explore like DailyAL: tonal buttons, arrow headers, no extra search, no captions)
