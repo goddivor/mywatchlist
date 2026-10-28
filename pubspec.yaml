@@ -136,6 +136,8 @@ flutter:
   # To add assets to your application, add an assets section, like this:
   assets:
     - assets/images/
+    # Explore category and genre pictures from DailyAL (MIT, credited in the licences page).
+    - assets/images/explore/
     - assets/animes/
     - assets/.env
 
