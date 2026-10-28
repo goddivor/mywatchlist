@@ -7,6 +7,7 @@ import 'package:http/http.dart' as http;
 import 'package:open_filex/open_filex.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'release_service.dart';
 import 'sha1.dart';
@@ -301,4 +302,73 @@ String formatBytes(int bytes) {
     unit++;
   }
   return unit == 0 ? '$bytes B' : '${value.toStringAsFixed(1)} ${units[unit]}';
+}
+
+/// The silent update check made once the home shell is on screen (DailyAL parity): at most
+/// one GitHub request per [interval], never on F-Droid builds, never raising. A release is
+/// offered once; the dialog it opens re-reads it from [prefetched], so no second request.
+class LaunchUpdateCheck {
+  static const String keyLastCheck = 'update_last_check_v1';
+  static const String keyNotifiedTag = 'update_notified_tag_v1';
+  static const Duration interval = Duration(hours: 24);
+
+  final ReleaseService releases;
+  final String currentVersion;
+  final DateTime Function() now;
+
+  /// False on F-Droid builds and on platforms that cannot install an APK.
+  final bool enabled;
+
+  LaunchUpdateCheck({
+    required this.releases,
+    required this.currentVersion,
+    this.enabled = true,
+    DateTime Function()? now,
+  }) : now = now ?? DateTime.now;
+
+  /// The release to announce, or null (disabled, checked today, up to date, already
+  /// announced, offline or any failure).
+  Future<ReleaseInfo?> run(SharedPreferences prefs) async {
+    if (!enabled) return null;
+    try {
+      final last = prefs.getInt(keyLastCheck);
+      final current = now();
+      if (last != null) {
+        final elapsed = current.difference(DateTime.fromMillisecondsSinceEpoch(last));
+        if (!elapsed.isNegative && elapsed < interval) return null;
+      }
+      final latest = await releases.latest();
+      await prefs.setInt(keyLastCheck, current.millisecondsSinceEpoch);
+      if (latest == null || !isNewerVersion(currentVersion, latest.tag)) return null;
+      if (prefs.getString(keyNotifiedTag) == latest.tag) return null;
+      return latest;
+    } catch (e) {
+      debugPrint('Launch update check failed: $e');
+      return null;
+    }
+  }
+
+  /// Remembers that [tag] was shown, so it is not offered again.
+  Future<void> markNotified(SharedPreferences prefs, String tag) => prefs.setString(keyNotifiedTag, tag);
+
+  /// A [ReleaseService] that answers [release] to the first `latest()`, then asks GitHub.
+  static ReleaseService prefetched(ReleaseService inner, ReleaseInfo release) => _PrefetchedReleases(inner, release);
+}
+
+class _PrefetchedReleases extends ReleaseService {
+  final ReleaseService _inner;
+  ReleaseInfo? _first;
+
+  _PrefetchedReleases(this._inner, ReleaseInfo this._first);
+
+  @override
+  Future<ReleaseInfo?> latest() {
+    final first = _first;
+    if (first == null) return _inner.latest();
+    _first = null;
+    return Future.value(first);
+  }
+
+  @override
+  Future<ReleaseInfo?> forVersion(String version) => _inner.forVersion(version);
 }
