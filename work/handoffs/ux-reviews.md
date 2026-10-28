@@ -3,6 +3,7 @@
 **Kind** unit · **Priority** P1 · **Group** settings · **Model** opus
 
 ## Needs done first
+- `mal-messages` (MAL private messages: inbox, sent, thread, compose and reply)
 - `profile-lists` (Other users' anime/manga lists, weekly tab and sidebar shortcuts like DailyAL)
 
 ## Owns (may create or edit ONLY these)
@@ -15,6 +16,7 @@
 Plus `PROJECT-STATE.md` (rewrite in place, within its cap) and `docs/DECISIONS.md` (append one line per decision). Anything else you need is a FINDING to report, never an edit.
 
 ## Goal
+- From mal-messages PR #264: the quick profile sheet gets a 'Message' action calling `openComposeMalMessage(context, to: username)` for MAL users other than the owner.
 - UI comparison report docs/ui-check-report-2026-10-28.md: group E item 12. Read those items and the matching screen sections (screenshots under the checker scratchpad shots/).
 - Owner rules: replicate DailyAL's UI (dailyal-108 file:line given in the report) where MWL is weaker; remove explanatory captions/helper texts DailyAL lacks; regular-weight titles and tonal controls like DailyAL; theme tokens; English + French.
 

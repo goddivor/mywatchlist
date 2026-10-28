@@ -3,6 +3,7 @@
 **Kind** unit · **Priority** P1 · **Group** settings · **Model** opus
 
 ## Needs done first
+- `mal-messages` (MAL private messages: inbox, sent, thread, compose and reply)
 - `profile-lists` (Other users' anime/manga lists, weekly tab and sidebar shortcuts like DailyAL)
 - `ux-edit-sheet` (Edit sheet as DailyAL's single compact card; sync panel behind More options)
 - `mal-session` (Optional MAL website session (WebView login, native cookies, CSRF client) + profile comments)
@@ -30,6 +31,7 @@
 Plus `PROJECT-STATE.md` (rewrite in place, within its cap) and `docs/DECISIONS.md` (append one line per decision). Anything else you need is a FINDING to report, never an edit.
 
 ## Goal
+- From mal-messages PR #264: friend rows get a 'Message' action calling `openComposeMalMessage(context, to: friend.username)` (friends_section.dart).
 - From simkl-auth-v2 PR #234: in Settings > Accounts, when `UserSimklV2.instance.canUpgradeToV2` is true, offer a one-tap 'Reconnect Simkl' that calls `SimklAuthV2().handleSignIn`.
 - From profile-lists PR #231: remove the 'Friends since' text from friend rows entirely (owner rule, U11) in lib/screens/user_profile/sections/friends_section.dart and update test/units/profile-tabs/profile_tabs_test.dart:299.
 - From ux-home PR #229: requests_bloc.dart current-season row still asks sort=anime_score — sort by members like DailyAL; news card titles regular weight (lib/widgets/MAL/home/news_widget.dart, not ExtraBold); home settings row 'Anime News' → 'News' (Hw_Sec_News in lib/l10n/units/home-wiring/).

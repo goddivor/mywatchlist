@@ -8,6 +8,7 @@
 - `mal-messages` (MAL private messages: inbox, sent, thread, compose and reply)
 
 ## Owns (may create or edit ONLY these)
+- `lib/screens/user_profile/user_profile_view.dart`
 - `lib/widgets/MAL/home/homeappbar.dart`
 - `lib/pages/side_bar.dart`
 - `pubspec.yaml`
@@ -23,6 +24,7 @@
 Plus `PROJECT-STATE.md` (rewrite in place, within its cap) and `docs/DECISIONS.md` (append one line per decision). Anything else you need is a FINDING to report, never an edit.
 
 ## Goal
+- From mal-messages PR #264: add `malMessagesSidebarItem(context)` to the sidebar; a 'Message' action (S.current.Pm_Message) on other users' MAL profiles calling `openComposeMalMessage(context, to: username)` (user_profile_view.dart); a received private message raises a phone notification through MalHubPoller and refreshes the unread count (owner: yes).
 - From mal-notifications PR #262 findings: add `const MalNotificationsBell()` to the home header action row (homeappbar.dart `_buildActionButtons`) and `malNotificationsSidebarItem(context)` to the sidebar (side_bar.dart); background polling while the app is closed with a pinned background worker (workmanager or android_alarm_manager_plus — pick, pin in docs/STACK.md, register in main.dart, manifest bits) calling `MalHubPoller.instance.poll(force: true)` every 30 min (battery-friendly constraints); the MAL hub switches in Settings > Notifications; a `postJson` on MalWebClient and move the notifications API's JSON POSTs onto it. Also add the mal-messages entry points to the sidebar if mal-messages (merged before you) exposes them.
 - Owner rules: no explanatory captions; theme tokens; English + French. Never write to the owner's MAL account in tests.
 

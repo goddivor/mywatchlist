@@ -2048,6 +2048,7 @@
       "artifact": "",
       "priority": "P1",
       "needs": [
+        "mal-messages",
         "profile-lists",
         "ux-edit-sheet",
         "mal-session",
@@ -2514,6 +2515,7 @@
       "artifact": "",
       "priority": "P1",
       "needs": [
+        "mal-messages",
         "profile-lists"
       ],
       "owns": [
@@ -3413,6 +3415,7 @@
         "mal-messages"
       ],
       "owns": [
+        "lib/screens/user_profile/user_profile_view.dart",
         "lib/widgets/MAL/home/homeappbar.dart",
         "lib/pages/side_bar.dart",
         "pubspec.yaml",
