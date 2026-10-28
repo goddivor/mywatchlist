@@ -33,6 +33,9 @@ class ProfileTabScroll extends StatelessWidget {
 class AsyncProfileTab<T> extends StatefulWidget {
   final String storageKey;
   final Future<T> Function() loader;
+
+  /// Caption under the spinner; defaults to the generic profile one.
+  final String? loadingLabel;
   final bool Function(T data) isEmpty;
   final Widget Function(BuildContext context) emptyBuilder;
   final List<Widget> Function(BuildContext context, T data) slivers;
@@ -41,6 +44,7 @@ class AsyncProfileTab<T> extends StatefulWidget {
     super.key,
     required this.storageKey,
     required this.loader,
+    this.loadingLabel,
     required this.isEmpty,
     required this.emptyBuilder,
     required this.slivers,
@@ -63,7 +67,11 @@ class _AsyncProfileTabState<T> extends State<AsyncProfileTab<T>>
     _future = widget.loader();
   }
 
-  void _retry() => setState(() => _future = widget.loader());
+  void _retry() {
+    setState(() {
+      _future = widget.loader();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -77,7 +85,7 @@ class _AsyncProfileTabState<T> extends State<AsyncProfileTab<T>>
             slivers: [
               SliverFillRemaining(
                 hasScrollBody: false,
-                child: ProfileLoading(label: S.of(context).Prof_Loading),
+                child: ProfileLoading(label: widget.loadingLabel ?? S.of(context).Prof_Loading),
               ),
             ],
           );

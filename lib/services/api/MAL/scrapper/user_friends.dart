@@ -53,7 +53,7 @@ ProfileFriendsPage parseFriendsEnvelope(Map<String, dynamic>? envelope) {
       username: name,
       imageUrl: image is String && image.isNotEmpty ? image : null,
       lastOnline: _text(row['last_online'] ?? row['lastOnline']),
-      friendsSince: _text(row['friends_since'] ?? row['friendSince']),
+      friendsSince: _friendsSinceDate(_text(row['friends_since'] ?? row['friendSince'])),
     ));
   }
   if (!hasNext && friends.length >= ProfileFriendsPage.pageSize && payload is! Map) {
@@ -65,4 +65,12 @@ ProfileFriendsPage parseFriendsEnvelope(Map<String, dynamic>? envelope) {
 String? _text(Object? v) {
   final s = v is String ? v.trim() : null;
   return (s == null || s.isEmpty) ? null : s;
+}
+
+/// MAL's page prints "Friends since May 4, 2008 9:29 PM" while Jikan gives the bare date; the
+/// tile adds its own "Friends since", so the prefix goes.
+String? _friendsSinceDate(String? v) {
+  if (v == null) return null;
+  final date = v.replaceFirst(RegExp(r'^Friends since\s*', caseSensitive: false), '').trim();
+  return date.isEmpty ? null : date;
 }

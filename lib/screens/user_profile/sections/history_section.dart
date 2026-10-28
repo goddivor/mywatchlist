@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/screens/user_profile/sections/profile_tab.dart';
+import 'package:mywatchlist/screens/user_profile/sections/profile_tabs_source.dart';
 import 'package:mywatchlist/services/api/MAL/scrapper/user_history.dart';
-import 'package:mywatchlist/services/api/mwl_api.dart';
 import 'package:mywatchlist/utils/app_routes.dart';
 import 'package:mywatchlist/widgets/user/profile/profile_states.dart';
 
@@ -30,24 +30,13 @@ class _HistorySectionState extends State<HistorySection> with AutomaticKeepAlive
     _future = _load();
   }
 
-  Future<List<ProfileHistoryEntry>> _load() async {
-    // Anime and manga are independent pages; one failing must not hide the other.
-    Future<List<ProfileHistoryEntry>?> one(String type) async {
-      try {
-        final envelope = await MwlApi.i.getUserHistory(widget.username, type: type);
-        if (envelope == null) return null;
-        return parseHistoryEnvelope(envelope, category: type);
-      } catch (_) {
-        return null;
-      }
-    }
+  Future<List<ProfileHistoryEntry>> _load() => ProfileTabsSource.historyAll(widget.username);
 
-    final results = await Future.wait([one('anime'), one('manga')]);
-    if (results.every((r) => r == null)) throw StateError('History unavailable');
-    return [...?results[0], ...?results[1]];
+  void _retry() {
+    setState(() {
+      _future = _load();
+    });
   }
-
-  void _retry() => setState(() => _future = _load());
 
   @override
   Widget build(BuildContext context) {
@@ -61,7 +50,7 @@ class _HistorySectionState extends State<HistorySection> with AutomaticKeepAlive
           return ProfileTabScroll(storageKey: key, slivers: [
             SliverFillRemaining(
               hasScrollBody: false,
-              child: ProfileLoading(label: s.Prof_Loading),
+              child: ProfileLoading(label: s.Pt_History_Loading),
             ),
           ]);
         }

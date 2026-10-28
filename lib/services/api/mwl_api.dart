@@ -304,29 +304,51 @@ class MwlApi {
     return result as Map<String, dynamic>?;
   }
 
-  /// Fetch user friends.
+  /// Longest wait for one profile-tab route. The backend retries on its own, so without a
+  /// bound a dead Jikan keeps the caller waiting for minutes.
+  static const Duration profileTabTimeout = Duration(seconds: 12);
+
+  /// Fetch user friends (Jikan behind the backend). Fails with a `TimeoutException` after
+  /// [timeout].
   Future<Map<String, dynamic>?> getUserFriends(
     String username, {
     int page = 1,
     bool fromCache = true,
+    Duration timeout = profileTabTimeout,
   }) async {
     final result = await httpGet(
-      'users/friends?username=$username&page=$page',
+      'users/friends?username=${Uri.encodeQueryComponent(username)}&page=$page',
       fromCache: fromCache,
-    );
+    ).timeout(timeout);
     return result as Map<String, dynamic>?;
   }
 
-  /// Fetch user history.
+  /// Fetch user history (MAL page parsed by the backend). Fails with a `TimeoutException`
+  /// after [timeout].
   Future<Map<String, dynamic>?> getUserHistory(
     String username, {
     String type = 'anime',
     bool fromCache = true,
+    Duration timeout = profileTabTimeout,
   }) async {
     final result = await httpGet(
-      'users/history?username=$username&type=$type',
+      'users/history?username=${Uri.encodeQueryComponent(username)}&type=$type',
       fromCache: fromCache,
-    );
+    ).timeout(timeout);
+    return result as Map<String, dynamic>?;
+  }
+
+  /// Fetch the clubs of a user (MAL page parsed by the backend); `data` is
+  /// `{clubs: [{id, name}]}`. Fails with a `TimeoutException` after [timeout].
+  Future<Map<String, dynamic>?> getUserClubs(
+    String username, {
+    bool fromCache = true,
+    Duration timeout = profileTabTimeout,
+  }) async {
+    final result = await httpGet(
+      'users/clubs?username=${Uri.encodeQueryComponent(username)}',
+      fromCache: fromCache,
+    ).timeout(timeout);
     return result as Map<String, dynamic>?;
   }
 
@@ -381,6 +403,56 @@ class MwlApi {
     final result =
         await httpGet('stacks/$stackType?$qs', fromCache: fromCache);
     return result as Map<String, dynamic>?;
+  }
+
+  /// How long the explore-page feeds wait before giving up.
+  static const Duration feedTimeout = Duration(seconds: 15);
+
+  /// MAL's global recommendations feed (`recommendations.php?s=recentrecs`), newest first,
+  /// 100 per page: [category] `anime` or `manga`, [offset] 0, 100, 200…
+  /// Null when MAL or the backend does not answer within [feedTimeout]; an empty list is a
+  /// page without recommendations.
+  Future<List<GlobalRecommendationHtml>?> getGlobalRecommendations({
+    String category = 'anime',
+    int offset = 0,
+    bool fromCache = true,
+    Duration timeout = feedTimeout,
+  }) async {
+    try {
+      final data = await _getData(
+        'recommendations/recent?category=$category&show=$offset',
+        fromCache: fromCache,
+      ).timeout(timeout);
+      if (data is! List) return null;
+      return _listOf(data, GlobalRecommendationHtml.fromJson);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// One page of MAL's interest stacks listing (`stacks/search?type=`): [stackType] is
+  /// `anime`, `manga`, `myanimelist` or `challenges`; [query] searches by name. Null when
+  /// MAL or the backend does not answer within [feedTimeout]; an empty list is an empty page.
+  Future<List<InterestStack>?> getInterestStackList({
+    String stackType = 'anime',
+    String? query,
+    int page = 1,
+    bool fromCache = true,
+    Duration timeout = feedTimeout,
+  }) async {
+    try {
+      final result = await getInterestStacks(
+        stackType: stackType,
+        query: query,
+        page: page,
+        fromCache: fromCache,
+      ).timeout(timeout);
+      final data = result?['data'];
+      if (data is! List) return null;
+      return _listOf(data, InterestStack.fromJson);
+    } catch (_) {
+      return null;
+    }
   }
 
   /// Fetch interest stack detail.

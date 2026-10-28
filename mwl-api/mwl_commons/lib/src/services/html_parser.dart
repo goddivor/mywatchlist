@@ -716,8 +716,12 @@ class HtmlParsers {
       final username =
           element.querySelector('.title a')?.text.trim() ?? '';
       final url = userElement?.attributes['href'] ?? '';
-      final imageUrl =
-          userElement?.querySelector('img')?.attributes['src'] ?? '';
+      // MAL lazy-loads avatars: `src` is a 1px spacer, the picture is in `data-src`.
+      final img = userElement?.querySelector('img');
+      final imageUrl = img?.attributes['data-src'] ??
+          img?.attributes['data-original'] ??
+          img?.attributes['src'] ??
+          '';
 
       final dataElements =
           element.querySelectorAll('.data .fn-grey2');
@@ -1026,23 +1030,14 @@ class HtmlParsers {
     final clubs = <Map<String, dynamic>>[];
 
     try {
-      final items = document.querySelectorAll(
-          '.normal_header ~ ol li, .user-clubs li, li');
-      for (final item in items) {
-        final link = item.querySelector('a');
-        if (link != null) {
-          final href = link.attributes['href'] ?? '';
-          if (href.contains('clubs.php') || href.contains('/clubs/')) {
-            final idMatch =
-                RegExp(r'cid=(\d+)').firstMatch(href);
-            clubs.add({
-              'id': idMatch != null
-                  ? int.tryParse(idMatch.group(1)!)
-                  : null,
-              'name': link.text.trim(),
-            });
-          }
-        }
+      // Only club links carry a `cid`; the site menu also links to clubs.php without one.
+      for (final link in document.querySelectorAll('li a[href*="cid="]')) {
+        final href = link.attributes['href'] ?? '';
+        final id = int.tryParse(
+            RegExp(r'cid=(\d+)').firstMatch(href)?.group(1) ?? '');
+        final name = link.text.trim();
+        if (id == null || name.isEmpty) continue;
+        clubs.add({'id': id, 'name': name});
       }
     } catch (e) {
       // Partial results
