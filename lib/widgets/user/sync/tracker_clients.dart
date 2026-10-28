@@ -2,6 +2,8 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 import 'package:mywatchlist/constants/constants.dart';
+import 'package:mywatchlist/services/api/SimKl/simkl_api.dart';
+import 'package:mywatchlist/services/api/SimKl/simkl_client.dart';
 import 'package:mywatchlist/user/user_anilist_v2.dart';
 import 'package:mywatchlist/user/user_kitsu_v2.dart';
 import 'package:mywatchlist/user/user_simkl_v2.dart';
@@ -367,13 +369,23 @@ class KitsuEntryClient extends _BaseClient {
 
 /// Simkl lists anime only. Its API has no single-entry lookup, so the whole
 /// anime list is fetched once and kept for [listTtl].
-class SimklEntryClient extends _BaseClient {
-  SimklEntryClient({AuthSender? auth, DateTime Function()? clock})
+///
+/// Every call goes through [SimklClient] (app identification, 429 back-off,
+/// the client id of the session's AUTH version); its errors become sync errors.
+class SimklEntryClient implements TrackerEntryClient {
+  /// [client] wins; [auth] alone (tests) builds a client over that sender.
+  SimklEntryClient({SimklClient? client, AuthSender? auth, DateTime Function()? clock})
       : _clock = clock ?? DateTime.now,
-        super(auth ?? _defaultAuth(UserSimklV2.instance.sendAuthenticated));
+        _client = client ??
+            (auth == null
+                ? SimklApi.sessionClient
+                : SimklClient(
+                    auth: auth,
+                    clientId: () => UserSimklV2.instance.apiClientId));
 
   static const listTtl = Duration(seconds: 60);
   final DateTime Function() _clock;
+  final SimklClient _client;
 
   List<dynamic>? _items;
   DateTime? _fetchedAt;
@@ -384,11 +396,17 @@ class SimklEntryClient extends _BaseClient {
   @override
   bool supports({required bool isAnime}) => isAnime;
 
-  Map<String, String> _headers(String token) => {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $token',
-        'simkl-api-key': Constants.simklClientId,
-      };
+  /// Runs [call], mapping a dead session to [SyncAuthRequired] and an error
+  /// answer (429 included) to [SyncRequestFailed].
+  Future<dynamic> _run(Future<dynamic> Function() call) async {
+    try {
+      return await call();
+    } on SimklSessionExpired {
+      throw SyncAuthRequired(tracker);
+    } on SimklHttpError catch (e) {
+      throw SyncRequestFailed(tracker, e.statusCode);
+    }
+  }
 
   Future<List<dynamic>> _list() async {
     final cached = _items;
@@ -396,11 +414,7 @@ class SimklEntryClient extends _BaseClient {
     if (cached != null && at != null && _clock().difference(at) < listTtl) {
       return cached;
     }
-    final response = await send((c, t) => c.get(
-        Uri.parse('${Constants.simklApiBaseUrl}/sync/all-items/anime'),
-        headers: _headers(t)));
-    if (response.statusCode != 200) fail(response);
-    final body = json.decode(response.body);
+    final body = await _run(() => _client.getAuth('/sync/all-items/anime'));
     final items = body is Map && body['anime'] is List
         ? body['anime'] as List
         : <dynamic>[];
@@ -458,16 +472,9 @@ class SimklEntryClient extends _BaseClient {
       if (status != null) 'to': status,
       if (entry.hasScore) 'rating': SyncScores.toMal(entry.score!),
     };
-    final response = await send(
-      (c, t) => c.post(
-          Uri.parse('${Constants.simklApiBaseUrl}/sync/add-to-list'),
-          headers: _headers(t),
-          body: jsonEncode({
-            'anime': [item]
-          })),
-      idempotent: true,
-    );
-    if (response.statusCode != 200 && response.statusCode != 201) fail(response);
+    await _run(() => _client.postAuth('/sync/add-to-list', {
+          'anime': [item]
+        }));
     _items = null;
     final fresh = await read(mediaId, isAnime: true, malId: malId);
     return fresh ?? entry;
@@ -479,18 +486,11 @@ class SimklEntryClient extends _BaseClient {
     if (!isAnime) throw SyncUnsupported(tracker);
     final ids = _ids(mediaId, malId);
     if (ids.isEmpty) return;
-    final response = await send(
-      (c, t) => c.post(
-          Uri.parse('${Constants.simklApiBaseUrl}/sync/remove-from-list'),
-          headers: _headers(t),
-          body: jsonEncode({
-            'anime': [
-              {'ids': ids}
-            ]
-          })),
-      idempotent: true,
-    );
-    if (response.statusCode != 200 && response.statusCode != 204) fail(response);
+    await _run(() => _client.postAuth('/sync/remove-from-list', {
+          'anime': [
+            {'ids': ids}
+          ]
+        }));
     _items = null;
   }
 
