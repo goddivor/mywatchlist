@@ -39,11 +39,20 @@ class KitsuProfileView extends StatefulWidget {
 class _KitsuProfileViewState extends State<KitsuProfileView> {
   late Future<KitsuProfile> _future = _load();
 
-  Future<KitsuProfile> _load() => widget.loader != null
-      ? widget.loader!(widget.userId)
-      : KitsuProfiles.instance.load(userId: widget.userId);
+  Future<KitsuProfile> _load() {
+    final future = widget.loader != null
+        ? widget.loader!(widget.userId)
+        : KitsuProfiles.instance.load(userId: widget.userId);
+    // The FutureBuilder shows the error; one that lands before it listens is not "unhandled".
+    future.ignore();
+    return future;
+  }
 
-  void _retry() => setState(() => _future = _load());
+  void _retry() {
+    setState(() {
+      _future = _load();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -561,7 +570,9 @@ class _FavoritesTabState extends State<_FavoritesTab> with AutomaticKeepAliveCli
                     title: s.Prof_Error_Title,
                     body: s.Prof_Error_Body,
                     actionLabel: s.Prof_Retry,
-                    onAction: () => setState(() => _futures.remove(_anime)),
+                    onAction: () => setState(() {
+                      _futures.remove(_anime);
+                    }),
                   ),
                 ),
               );
