@@ -4,7 +4,9 @@ import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/services/tracker_sync_service.dart';
 import 'package:mywatchlist/user/user_manager.dart';
 import 'package:mywatchlist/widgets/common/app_colors.dart';
+import 'package:mywatchlist/widgets/user/edit/edit_extras.dart';
 import 'package:mywatchlist/widgets/user/edit/edit_labels.dart';
+import 'package:mywatchlist/widgets/user/edit/edit_sections.dart';
 import 'package:mywatchlist/widgets/user/sync/cross_tracker_controller.dart';
 import 'package:mywatchlist/widgets/user/sync/sync_dialog.dart';
 import 'package:mywatchlist/widgets/user/sync/sync_entry.dart';
@@ -16,8 +18,13 @@ import 'package:mywatchlist/widgets/user/tracker_search_sheet.dart';
 /// sync against MyAnimeList, an editor for each tracker's own entry and
 /// linking by hand when the automatic link finds nothing.
 ///
-/// [malStatus], [malScore] and [malProgress] are only the line shown for
-/// MyAnimeList; a sync reads the MAL entry itself, so it is never stale.
+/// Nothing loads until the user opens the section: when an edit sheet of the
+/// same entry is mounted next to it, the section lives inside that sheet's
+/// "More options" (see [EditExtras]); otherwise it draws itself as a
+/// collapsed card.
+///
+/// [malStatus], [malScore] and [malProgress] are no longer shown (the sheet
+/// already shows them); a sync reads the MAL entry itself.
 class CrossTrackerWidget extends StatefulWidget {
   final int malId;
   final String title;
@@ -25,6 +32,11 @@ class CrossTrackerWidget extends StatefulWidget {
   final String? malStatus;
   final int? malScore;
   final int? malProgress;
+
+  /// Default: the shared service and the signed-in trackers; tests inject
+  /// fakes.
+  final TrackerSyncService? service;
+  final List<AccountType>? trackers;
 
   const CrossTrackerWidget({
     super.key,
@@ -34,6 +46,8 @@ class CrossTrackerWidget extends StatefulWidget {
     this.malStatus,
     this.malScore,
     this.malProgress,
+    this.service,
+    this.trackers,
   });
 
   @override
@@ -41,16 +55,33 @@ class CrossTrackerWidget extends StatefulWidget {
 }
 
 class _CrossTrackerWidgetState extends State<CrossTrackerWidget> {
-  final _service = TrackerSyncService.instance;
-  late CrossTrackerController _controller;
+  late TrackerSyncService _service;
+  late List<AccountType> _trackers;
+  late String _key;
+  CrossTrackerController? _controller;
+
+  /// Open state of the standalone card.
+  bool _open = false;
+
+  late final WidgetBuilder _section = (_) => _TrackerRows(owner: this);
 
   bool get _isAnime => widget.category == 'anime';
+  EditExtras get _extras => EditExtras.instance;
 
-  CrossTrackerController _create() => CrossTrackerController(
+  void _setUp() {
+    _service = widget.service ?? TrackerSyncService.instance;
+    _trackers = (widget.trackers ?? UserManager.instance.authenticatedTrackers)
+        .where((t) => t != AccountType.myanimelist && t != AccountType.none)
+        .toList();
+    _key = EditExtras.keyOf(widget.malId, widget.category);
+    if (_trackers.isNotEmpty) _extras.attach(_key, _section);
+  }
+
+  /// Created, and loading, the first time the rows are shown.
+  CrossTrackerController _ensureController() =>
+      _controller ??= CrossTrackerController(
         service: _service,
-        trackers: UserManager.instance.authenticatedTrackers
-            .where((t) => t != AccountType.myanimelist)
-            .toList(),
+        trackers: _trackers,
         malId: widget.malId,
         category: widget.category,
       )..loadAll();
@@ -58,22 +89,33 @@ class _CrossTrackerWidgetState extends State<CrossTrackerWidget> {
   @override
   void initState() {
     super.initState();
-    _controller = _create();
+    _setUp();
+    _extras.addListener(_onExtras);
+  }
+
+  void _onExtras() {
+    if (mounted) setState(() {});
   }
 
   @override
   void didUpdateWidget(CrossTrackerWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.malId != widget.malId ||
-        oldWidget.category != widget.category) {
-      _controller.dispose();
-      _controller = _create();
+        oldWidget.category != widget.category ||
+        oldWidget.service != widget.service) {
+      _extras.detach(_key, _section);
+      _controller?.dispose();
+      _controller = null;
+      _open = false;
+      _setUp();
     }
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    _extras.removeListener(_onExtras);
+    _extras.detach(_key, _section);
+    _controller?.dispose();
     super.dispose();
   }
 
@@ -95,7 +137,7 @@ class _CrossTrackerWidgetState extends State<CrossTrackerWidget> {
       category: widget.category,
     );
     if (result == null || !mounted) return;
-    await _controller.link(tracker, result.id);
+    await _controller?.link(tracker, result.id);
   }
 
   Future<void> _edit(AccountType tracker, TrackerSlot slot) async {
@@ -111,11 +153,11 @@ class _CrossTrackerWidgetState extends State<CrossTrackerWidget> {
     if (saved == null || !mounted) return;
     if (saved.isRemoved) {
       // Deleted from the tracker: the card goes back to "not on this list".
-      _controller.clearEntry(tracker);
+      _controller?.clearEntry(tracker);
       _toast(S.current.Sync_Removed(TrackerSyncService.trackerName(tracker)));
       return;
     }
-    _controller.applyEntry(tracker, saved);
+    _controller?.applyEntry(tracker, saved);
     _toast(S.current.Sync_Saved(TrackerSyncService.trackerName(tracker)));
   }
 
@@ -134,7 +176,7 @@ class _CrossTrackerWidgetState extends State<CrossTrackerWidget> {
       return;
     }
     final outcome = result.outcome!;
-    _controller.applyEntry(tracker, outcome.tracker);
+    _controller?.applyEntry(tracker, outcome.tracker);
     _toast(S.current.Sync_Done_To(result.direction == SyncDirection.malToTracker
         ? TrackerSyncService.trackerName(tracker)
         : TrackerSyncService.trackerName(AccountType.myanimelist)));
@@ -161,87 +203,77 @@ class _CrossTrackerWidgetState extends State<CrossTrackerWidget> {
         ],
       ),
     );
-    if (confirmed != true || !mounted) return;
-    _controller.setBusy(tracker, true);
+    final controller = _controller;
+    if (confirmed != true || !mounted || controller == null) return;
+    controller.setBusy(tracker, true);
     try {
-      await _service.deleteTracker(
-          tracker, slot.linkId!, widget.category,
+      await _service.deleteTracker(tracker, slot.linkId!, widget.category,
           malId: widget.malId);
-      _controller.clearEntry(tracker);
+      controller.clearEntry(tracker);
       _toast(S.current.Sync_Removed(name));
     } catch (_) {
-      _controller.setBusy(tracker, false);
+      controller.setBusy(tracker, false);
       _toast(S.current.Sync_Remove_Failed);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final trackers = _controller.trackers;
-    if (trackers.isEmpty) return const SizedBox.shrink();
-    final theme = Theme.of(context);
-    final mal = SyncEntry(
-      status: widget.malStatus,
-      score: widget.malScore?.toDouble(),
-      progress: widget.malProgress,
-    );
-    final malLine = entrySummary(mal, isAnime: _isAnime);
-
+    // Shown inside the edit sheet's "More options" while a sheet hosts it.
+    if (_trackers.isEmpty || _extras.isHosted(_key)) {
+      return const SizedBox.shrink();
+    }
+    final scheme = Theme.of(context).colorScheme;
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8),
+      padding: EdgeInsets.fromLTRB(8, 8, 8, fabClearance(context)),
       child: Card(
+        key: const ValueKey('cross-tracker-card'),
         elevation: 4,
-        color: theme.colorScheme.surfaceContainerHigh,
+        margin: EdgeInsets.zero,
+        color: scheme.surfaceContainerHigh,
+        clipBehavior: Clip.antiAlias,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(Icons.sync, size: 18, color: theme.colorScheme.primary),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    child: Text(
-                      S.current.Sync_Section_Title,
-                      style: theme.textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: theme.colorScheme.primary,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              if (malLine.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(top: 2, left: 24),
-                  child: Text(
-                    '${TrackerSyncService.trackerName(AccountType.myanimelist)} · $malLine',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant),
-                  ),
-                ),
-              const SizedBox(height: 8),
-              for (final tracker in trackers)
-                ValueListenableBuilder<TrackerSlot>(
-                  valueListenable: _controller.slots[tracker]!,
-                  builder: (context, slot, _) => _TrackerCard(
-                    slot: slot,
-                    isAnime: _isAnime,
-                    onLink: () => _link(tracker),
-                    onUnlink: () => _controller.unlink(tracker),
-                    onRetry: () => _controller.load(tracker),
-                    onEdit: () => _edit(tracker, slot),
-                    onSync: () => _sync(tracker, slot),
-                    onRemove: () => _remove(tracker, slot),
-                  ),
-                ),
-            ],
-          ),
+        child: EditSection(
+          title: S.current.Sync_Section_Title,
+          icon: Icons.sync,
+          open: _open,
+          onToggle: () => setState(() => _open = !_open),
+          child: _section(context),
         ),
       ),
+    );
+  }
+}
+
+/// One row per tracker; mounting it is what starts the loading.
+class _TrackerRows extends StatelessWidget {
+  const _TrackerRows({required this.owner});
+
+  final _CrossTrackerWidgetState owner;
+
+  @override
+  Widget build(BuildContext context) {
+    final controller = owner._ensureController();
+    return Column(
+      key: const ValueKey('cross-tracker-rows'),
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        for (final tracker in controller.trackers)
+          ValueListenableBuilder<TrackerSlot>(
+            valueListenable: controller.slots[tracker]!,
+            builder: (context, slot, _) => _TrackerCard(
+              slot: slot,
+              isAnime: owner._isAnime,
+              onLink: () => owner._link(tracker),
+              onUnlink: () => owner._controller?.unlink(tracker),
+              onRetry: () => owner._controller?.load(tracker),
+              onEdit: () => owner._edit(tracker, slot),
+              onSync: () => owner._sync(tracker, slot),
+              onRemove: () => owner._remove(tracker, slot),
+            ),
+          ),
+      ],
     );
   }
 }
@@ -276,9 +308,8 @@ class _TrackerCard extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 8),
       child: Container(
         decoration: BoxDecoration(
-          color: theme.colorScheme.surface,
+          color: theme.colorScheme.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: theme.colorScheme.outlineVariant),
         ),
         padding: const EdgeInsets.all(10),
         child: AnimatedSize(
@@ -306,9 +337,7 @@ class _TrackerCard extends StatelessWidget {
         TrackerLogo(slot.tracker),
         const SizedBox(width: 10),
         Expanded(
-          child: Text(name,
-              style: theme.textTheme.bodyMedium
-                  ?.copyWith(fontWeight: FontWeight.w600)),
+          child: Text(name, style: theme.textTheme.bodyMedium),
         ),
         if (slot.phase == SlotPhase.loading ||
             (slot.phase == SlotPhase.linked && !slot.entryLoaded) ||
@@ -455,7 +484,7 @@ class _StatusChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final role = AppColors.of(context).statusOf(status);
-    // Theme status chip: solid status colour, bold `onContainer` text (≥ 3:1
+    // Theme status chip: solid status colour, semi-bold `onContainer` text (≥ 3:1
     // in light, dark and black); unknown status = neutral tonal chip.
     return Container(
       margin: const EdgeInsetsDirectional.only(end: 2),
@@ -468,7 +497,7 @@ class _StatusChip extends StatelessWidget {
         statusLabel(status),
         style: Theme.of(context).textTheme.labelSmall?.copyWith(
               color: role?.onContainer ?? scheme.onSurfaceVariant,
-              fontWeight: FontWeight.bold,
+              fontWeight: FontWeight.w600,
             ),
       ),
     );

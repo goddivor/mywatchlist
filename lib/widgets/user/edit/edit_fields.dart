@@ -77,13 +77,14 @@ class StatusButton extends StatelessWidget {
     return SizedBox(
       height: 48,
       width: double.infinity,
-      child: OutlinedButton(
-        style: OutlinedButton.styleFrom(
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          side: BorderSide(color: color.withValues(alpha: 0.7), width: 1.5),
+      // Tonal, regular weight, like DailyAL's status button.
+      child: FilledButton.tonal(
+        style: FilledButton.styleFrom(
+          padding: const EdgeInsets.symmetric(horizontal: 14),
+          backgroundColor: scheme.surfaceContainerHighest,
+          foregroundColor: scheme.onSurface,
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-          foregroundColor: scheme.onSurface,
         ),
         onPressed: busy ? null : () => _pick(context),
         child: busy
@@ -101,7 +102,7 @@ class StatusButton extends StatelessWidget {
                     child: Text(
                       statusLabel(status),
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontWeight: FontWeight.w600),
+                      style: Theme.of(context).textTheme.bodyLarge,
                     ),
                   ),
                   const Icon(Icons.expand_more, size: 20),
@@ -193,8 +194,7 @@ class ProgressStepper extends StatelessWidget {
                       inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                       textAlign: TextAlign.center,
                       textInputAction: TextInputAction.done,
-                      style: const TextStyle(
-                          fontWeight: FontWeight.w600, fontSize: 16),
+                      style: Theme.of(context).textTheme.bodyLarge,
                       decoration: const InputDecoration(
                         isCollapsed: true,
                         border: InputBorder.none,
