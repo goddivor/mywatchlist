@@ -1,23 +1,39 @@
 import 'package:flutter/material.dart';
 import 'package:mwl_commons/mwl_commons.dart' show InterestStack, RankedPersonHtml, ReviewHtml;
+import 'package:mywatchlist/cache/top_characters.dart';
 import 'package:mywatchlist/constants/constants.dart' show AccountType;
 import 'package:mywatchlist/enums.dart';
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/screens/MAL/character_screen.dart';
 import 'package:mywatchlist/screens/MAL/interest_stack_detail_screen.dart';
 import 'package:mywatchlist/screens/explore/explore_data.dart';
+import 'package:mywatchlist/screens/explore/explore_images.dart';
 import 'package:mywatchlist/screens/explore/explore_widgets.dart';
 import 'package:mywatchlist/screens/search/general_search_screen.dart';
+import 'package:mywatchlist/screens/search/search_catalog.dart' show SearchCatalog;
 import 'package:mywatchlist/screens/seasonal/season_utils.dart';
 import 'package:mywatchlist/screens/seasonal/seasonal_screen.dart';
+import 'package:mywatchlist/screens/studios/studios_screen.dart';
+import 'package:mywatchlist/user/preferences/preferences.dart';
 import 'package:mywatchlist/utils/app_routes.dart';
-import 'package:mywatchlist/widgets/MAL/search/filtermodal.dart';
+import 'package:mywatchlist/widgets/common/app_colors.dart';
 import 'package:mywatchlist/widgets/common/app_image.dart';
+import 'package:provider/provider.dart';
+
+/// Size of a category or genre group card in a row (DailyAL's 140 x 105).
+const double kExploreCardWidth = 140;
+const double kExploreCardHeight = 104;
 
 /// Search query of a ranking (`#all`, `#bypopularity@manga`…), what the search screen understands.
 String rankingQuery(Enum ranking, {required bool isAnime}) => isAnime
     ? '#${rankingMap[ranking]}'
     : '#${mangaRankingMap[ranking]}@manga';
+
+/// The bundled DailyAL picture of a ranking card, null when there is none.
+String? rankingImage(Enum ranking, {required bool isAnime}) {
+  final word = isAnime ? rankingMap[ranking] : mangaRankingMap[ranking];
+  return word == null ? null : ExploreImages.ranking(word, isAnime ? 'anime' : 'manga');
+}
 
 IconData _rankingIcon(Enum ranking) => switch (ranking) {
       RankingType.UPCOMING => Icons.event_available_rounded,
@@ -46,7 +62,20 @@ List<({Enum ranking, String label})> rankingEntries(bool isAnime) {
   return [for (final e in map.entries) (ranking: e.key, label: e.value)];
 }
 
-/// Rankings (top by score, popularity, airing…) as a row of tiles that open the search screen.
+Widget _rankingCard(BuildContext context, ({Enum ranking, String label}) e, int index,
+        {required bool isAnime, double width = kExploreCardWidth, double height = kExploreCardHeight}) =>
+    ExplorePictureCard(
+      asset: rankingImage(e.ranking, isAnime: isAnime),
+      icon: _rankingIcon(e.ranking),
+      label: e.label,
+      hue: 18.0 + index * 34,
+      width: width,
+      height: height,
+      onTap: () => AppRoutes.openSearch(context, query: rankingQuery(e.ranking, isAnime: isAnime)),
+    );
+
+/// Rankings (top by score, popularity, airing…) as a row of picture cards (DailyAL) that open
+/// the search screen.
 class RankingsRow extends StatelessWidget {
   final bool isAnime;
 
@@ -56,27 +85,19 @@ class RankingsRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final entries = rankingEntries(isAnime);
     return SizedBox(
-      height: 92,
+      height: kExploreCardHeight,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: kExplorePadding),
         itemCount: entries.length,
         separatorBuilder: (_, __) => const SizedBox(width: 10),
-        itemBuilder: (context, i) {
-          final e = entries[i];
-          return ExploreTile(
-            icon: _rankingIcon(e.ranking),
-            label: e.label,
-            hue: 18.0 + i * 34,
-            onTap: () => AppRoutes.openSearch(context, query: rankingQuery(e.ranking, isAnime: isAnime)),
-          );
-        },
+        itemBuilder: (context, i) => _rankingCard(context, entries[i], i, isAnime: isAnime),
       ),
     );
   }
 }
 
-/// Every ranking as a grid (the "View all" of the rankings row).
+/// Every ranking as a grid of picture cards (the "View all" of the rankings row).
 class RankingsScreen extends StatelessWidget {
   final bool isAnime;
 
@@ -84,29 +105,21 @@ class RankingsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    ExploreImages.registerLicense();
     final entries = rankingEntries(isAnime);
     return Scaffold(
       appBar: AppBar(title: Text(S.current.Explore_Rankings)),
       body: GridView.builder(
         padding: const EdgeInsets.all(kExplorePadding),
         gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-          maxCrossAxisExtent: 200,
-          mainAxisExtent: 96,
-          crossAxisSpacing: 10,
-          mainAxisSpacing: 10,
+          maxCrossAxisExtent: 220,
+          mainAxisExtent: 112,
+          crossAxisSpacing: 12,
+          mainAxisSpacing: 12,
         ),
         itemCount: entries.length,
-        itemBuilder: (context, i) {
-          final e = entries[i];
-          return ExploreTile(
-            icon: _rankingIcon(e.ranking),
-            label: e.label,
-            hue: 18.0 + i * 34,
-            width: double.infinity,
-            height: 96,
-            onTap: () => AppRoutes.openSearch(context, query: rankingQuery(e.ranking, isAnime: isAnime)),
-          );
-        },
+        itemBuilder: (context, i) => _rankingCard(context, entries[i], i,
+            isAnime: isAnime, width: double.infinity, height: 112),
       ),
     );
   }
@@ -116,18 +129,28 @@ String _genreGroupLabel(String type) => switch (type) {
       'Genres' => S.current.Genres,
       'Themes' => S.current.Explore_Genre_Themes,
       'Demographics' => S.current.Explore_Genre_Demographics,
-      'Explicit Genres' => S.current.Explore_Genre_Explicit,
+      GenreGroup.explicitType => S.current.Explore_Genre_Explicit,
       _ => type,
     };
 
 IconData _genreGroupIcon(String type) => switch (type) {
       'Themes' => Icons.palette_rounded,
       'Demographics' => Icons.groups_rounded,
-      'Explicit Genres' => Icons.eighteen_up_rating_rounded,
+      GenreGroup.explicitType => Icons.eighteen_up_rating_rounded,
       _ => Icons.category_rounded,
     };
 
-/// Genre groups (Genres, Themes, Demographics) as tiles; a tile opens the genres of its group.
+/// The NSFW preference, followed live (the default when no bloc is above, as in tests).
+bool _watchNsfw(BuildContext context) => context.select<PreferencesBloc?, bool>(
+    (bloc) => bloc?.state.general.nsfw ?? Preferences.general.nsfw);
+
+/// Genre groups (Genres, Explicit genres, Themes, Demographics) as DailyAL's picture cards; a
+/// card opens the genres of its group. The groups come from the app's MAL tables, so the row
+/// never waits for the network.
+///
+/// Explicit genres follow the NSFW preference: with it off, the card shows no picture (a flat
+/// 18+ block) and asks before turning the preference on, since MyAnimeList hides those titles
+/// from every browse and search while it is off.
 class GenresRow extends StatelessWidget {
   final String category;
 
@@ -135,31 +158,62 @@ class GenresRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AsyncSection<List<GenreGroup>>(
-      reloadKey: category,
-      load: () => ExploreData.genreGroups(category),
-      isEmpty: (groups) => groups.isEmpty,
-      skeleton: horizontalSkeleton(height: 92, width: 148),
-      builder: (context, groups) => SizedBox(
-        height: 92,
-        child: ListView.separated(
-          scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.symmetric(horizontal: kExplorePadding),
-          itemCount: groups.length,
-          separatorBuilder: (_, __) => const SizedBox(width: 10),
-          itemBuilder: (context, i) {
-            final group = groups[i];
-            return ExploreTile(
-              icon: _genreGroupIcon(group.type),
-              label: _genreGroupLabel(group.type),
-              caption: '${group.genres.length}',
-              hue: 200.0 + i * 55,
-              onTap: () => _showGenres(context, group, category),
-            );
-          },
-        ),
+    final nsfw = _watchNsfw(context);
+    final groups = ExploreData.genreGroups(category);
+    return SizedBox(
+      height: kExploreCardHeight,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: kExplorePadding),
+        itemCount: groups.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 10),
+        itemBuilder: (context, i) {
+          final group = groups[i];
+          final hidden = group.isExplicit && !nsfw;
+          return ExplorePictureCard(
+            asset: ExploreImages.genreGroup(group.type, category),
+            icon: _genreGroupIcon(group.type),
+            label: _genreGroupLabel(group.type),
+            caption: hidden ? S.current.Exp_Nsfw_Hidden : S.current.Exp_Genre_Count(group.ids.length),
+            hue: 200.0 + i * 55,
+            hidden: hidden,
+            width: kExploreCardWidth,
+            height: kExploreCardHeight,
+            onTap: () async {
+              if (hidden && !await _askNsfw(context)) return;
+              if (context.mounted) _showGenres(context, group, category);
+            },
+          );
+        },
       ),
     );
+  }
+
+  /// Asks to turn the NSFW preference on; true when it is on afterwards.
+  static Future<bool> _askNsfw(BuildContext context) async {
+    final yes = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        icon: const Icon(Icons.eighteen_up_rating_rounded),
+        title: Text(S.current.Exp_Nsfw_Title),
+        content: Text(S.current.Exp_Nsfw_Body),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: Text(S.current.Cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text(S.current.Exp_Nsfw_Enable),
+          ),
+        ],
+      ),
+    );
+    if (yes != true) return false;
+    final bloc = Preferences.bloc;
+    if (bloc == null) return false;
+    bloc.add(GeneralPreferencesChanged((p) => p.copyWith(nsfw: true)));
+    return true;
   }
 
   void _showGenres(BuildContext context, GenreGroup group, String category) {
@@ -170,10 +224,46 @@ class GenresRow extends StatelessWidget {
       showDragHandle: true,
       builder: (sheetContext) => DraggableScrollableSheet(
         expand: false,
-        initialChildSize: 0.7,
+        initialChildSize: 0.75,
         minChildSize: 0.4,
         maxChildSize: 0.95,
-        builder: (_, controller) => CustomScrollView(
+        builder: (_, controller) => _GenresSheet(
+          controller: controller,
+          group: group,
+          category: category,
+          onPick: (id) {
+            Navigator.of(sheetContext).pop();
+            AppRoutes.push<void>(context, GeneralSearchScreen.byGenre(ids: [id], category: category));
+          },
+        ),
+      ),
+    );
+  }
+}
+
+/// The genres of one group as DailyAL's picture cards (two per row on a phone), with the
+/// number of titles when mwl-api gives it.
+class _GenresSheet extends StatelessWidget {
+  final ScrollController controller;
+  final GenreGroup group;
+  final String category;
+  final ValueChanged<int> onPick;
+
+  const _GenresSheet({
+    required this.controller,
+    required this.group,
+    required this.category,
+    required this.onPick,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final manga = category == 'manga';
+    return FutureBuilder<Map<int, int>>(
+      future: ExploreData.genreCounts(category),
+      builder: (context, snapshot) {
+        final counts = snapshot.data ?? const <int, int>{};
+        return CustomScrollView(
           controller: controller,
           slivers: [
             SliverToBoxAdapter(
@@ -188,79 +278,93 @@ class GenresRow extends StatelessWidget {
               sliver: SliverGrid.builder(
                 gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
                   maxCrossAxisExtent: 220,
-                  mainAxisExtent: 52,
-                  crossAxisSpacing: 8,
-                  mainAxisSpacing: 8,
+                  mainAxisExtent: 100,
+                  crossAxisSpacing: 10,
+                  mainAxisSpacing: 10,
                 ),
-                itemCount: group.genres.length,
-                itemBuilder: (_, i) {
-                  final genre = group.genres[i];
-                  return _GenreChip(
-                    name: genre.name.replaceAll('_', ' '),
-                    count: genre.count,
-                    onTap: () {
-                      Navigator.of(sheetContext).pop();
-                      _openGenre(context, genre.name, category);
-                    },
+                itemCount: group.ids.length,
+                itemBuilder: (context, i) {
+                  final id = group.ids[i];
+                  final count = counts[id];
+                  return ExplorePictureCard(
+                    asset: ExploreImages.genre(id, category),
+                    icon: _genreGroupIcon(group.type),
+                    label: SearchCatalog.genreLabel(id, manga: manga),
+                    caption: count == null ? null : S.current.Exp_Genre_Titles(compactCount(context, count)),
+                    hue: 200.0 + i * 23,
+                    width: double.infinity,
+                    height: 100,
+                    onTap: () => onPick(id),
                   );
                 },
               ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-
-  void _openGenre(BuildContext context, String name, String category) {
-    AppRoutes.push<void>(
-      context,
-      GeneralSearchScreen(
-        category: category,
-        showBackButton: true,
-        filterOutputs: {
-          'genres': FilterOption(
-            type: FilterType.multiple,
-            apiFieldName: 'genres',
-            includedOptions: [name],
-            excludedOptions: const [],
-          ),
-        },
-      ),
+        );
+      },
     );
   }
 }
 
-class _GenreChip extends StatelessWidget {
-  final String name;
-  final int count;
+/// A wide entry card of the Explore page (studios directory): icon, title, caption, chevron.
+class ExploreEntryCard extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String caption;
   final VoidCallback onTap;
 
-  const _GenreChip({required this.name, required this.count, required this.onTap});
+  const ExploreEntryCard({
+    super.key,
+    required this.icon,
+    required this.title,
+    required this.caption,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Material(
-      color: scheme.surfaceContainerHigh,
-      borderRadius: BorderRadius.circular(12),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          child: Row(
-            children: [
-              Expanded(
-                child: Text(name,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
-              ),
-              if (count > 0)
-                Text(compactCount(context, count),
-                    style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 12)),
-            ],
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: kExplorePadding),
+      child: Material(
+        color: scheme.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(16),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 14, 10, 14),
+            child: Row(
+              children: [
+                DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: scheme.secondaryContainer,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(10),
+                    child: Icon(icon, color: scheme.onSecondaryContainer),
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(title,
+                          style: theme.textTheme.titleMedium
+                              ?.copyWith(fontWeight: FontWeight.w700)),
+                      const SizedBox(height: 2),
+                      Text(caption,
+                          style: theme.textTheme.bodySmall
+                              ?.copyWith(color: scheme.onSurfaceVariant)),
+                    ],
+                  ),
+                ),
+                Icon(Icons.chevron_right_rounded, color: scheme.onSurfaceVariant),
+              ],
+            ),
           ),
         ),
       ),
@@ -268,7 +372,24 @@ class _GenreChip extends StatelessWidget {
   }
 }
 
+/// The studios directory entry (anime only).
+class StudiosEntry extends StatelessWidget {
+  const StudiosEntry({super.key});
+
+  @override
+  Widget build(BuildContext context) => ExploreEntryCard(
+        icon: Icons.business_rounded,
+        title: S.current.Exp_Studios,
+        caption: S.current.Exp_Studios_Caption,
+        onTap: () => AppRoutes.push<void>(context, const StudiosScreen()),
+      );
+}
+
 /// The current season with a shortcut to browse any season and to the weekly schedule.
+///
+/// The two buttons sit side by side when both labels fit at their full width, else one under
+/// the other ([OverflowBar]), so no language or text size cuts a label; the card grows with
+/// them.
 class SeasonalCard extends StatelessWidget {
   const SeasonalCard({super.key});
 
@@ -276,61 +397,55 @@ class SeasonalCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final now = SeasonKey.current();
     final theme = Theme.of(context);
+    final tokens = AppColors.of(context);
     const radius = BorderRadius.all(Radius.circular(20));
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: kExplorePadding),
       child: ClipRRect(
         borderRadius: radius,
-        child: SizedBox(
-          height: 168,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 168),
           child: Stack(
-            fit: StackFit.expand,
             children: [
-              Image.asset(seasonImage(now.season), fit: BoxFit.cover, cacheWidth: 900),
-              // Static scrim (no blur, no opacity layer) keeps the text readable on any picture.
-              const DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [Color(0x33000000), Color(0xCC000000)],
-                  ),
-                ),
+              Positioned.fill(
+                child: Image.asset(seasonImage(now.season),
+                    fit: BoxFit.cover, cacheWidth: 900, excludeFromSemantics: true),
               ),
+              // Static scrim (no blur, no opacity layer) keeps the text readable on any picture.
+              Positioned.fill(child: ColoredBox(color: tokens.imageScrim)),
               Padding(
                 padding: const EdgeInsets.all(16),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Row(
                       children: [
-                        Icon(seasonIcon(now.season), color: Colors.white, size: 22),
+                        Icon(seasonIcon(now.season), color: tokens.onImageScrim, size: 22),
                         const SizedBox(width: 8),
-                        Text(now.label,
-                            style: theme.textTheme.titleLarge
-                                ?.copyWith(color: Colors.white, fontWeight: FontWeight.w800)),
+                        Expanded(
+                          child: Text(now.label,
+                              style: theme.textTheme.titleLarge?.copyWith(
+                                  color: tokens.onImageScrim, fontWeight: FontWeight.w800)),
+                        ),
                       ],
                     ),
-                    const Spacer(),
-                    Row(
+                    const SizedBox(height: 56),
+                    OverflowBar(
+                      spacing: 10,
+                      overflowSpacing: 8,
+                      overflowAlignment: OverflowBarAlignment.start,
                       children: [
-                        Expanded(
-                          child: FilledButton.icon(
-                            onPressed: () => AppRoutes.push<void>(
-                                context, SeasonalScreen(initial: now)),
-                            icon: const Icon(Icons.grid_view_rounded, size: 18),
-                            label: Text(S.current.Search_By_Season,
-                                maxLines: 1, overflow: TextOverflow.ellipsis),
-                          ),
+                        FilledButton.icon(
+                          onPressed: () =>
+                              AppRoutes.push<void>(context, SeasonalScreen(initial: now)),
+                          icon: const Icon(Icons.grid_view_rounded, size: 18),
+                          label: Text(S.current.Exp_Season_Browse),
                         ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: FilledButton.tonalIcon(
-                            onPressed: () => AppRoutes.openCalendar(context),
-                            icon: const Icon(Icons.calendar_month_rounded, size: 18),
-                            label: Text(S.current.WeeklyAnime,
-                                maxLines: 1, overflow: TextOverflow.ellipsis),
-                          ),
+                        FilledButton.tonalIcon(
+                          onPressed: () => AppRoutes.openCalendar(context),
+                          icon: const Icon(Icons.calendar_month_rounded, size: 18),
+                          label: Text(S.current.Exp_Season_Schedule),
                         ),
                       ],
                     ),
@@ -590,15 +705,20 @@ class StackCard extends StatelessWidget {
   }
 }
 
-/// A ranked character or voice actor with their favorites count.
+/// A ranked character or voice actor: rank at the top, ♥ favourites count at the bottom
+/// (MAL's top lists give it; for a character without it, the Top MAL characters list).
 class PersonTile extends StatelessWidget {
   final RankedPersonHtml person;
   final bool isPerson;
 
   const PersonTile({super.key, required this.person, required this.isPerson});
 
+  int? get favorites =>
+      person.favorites ?? (isPerson ? null : TopCharacters.instance.favoritesOf(person.id));
+
   @override
   Widget build(BuildContext context) {
+    final favorites = this.favorites;
     return PosterTile(
       imageUrl: person.image?.best,
       title: person.name,
@@ -606,6 +726,13 @@ class PersonTile extends StatelessWidget {
       width: 110,
       imageHeight: 150,
       badge: person.rank == null ? null : CornerBadge('#${person.rank}'),
+      bottomBadge: favorites == null
+          ? null
+          : CornerBadge(
+              compactCount(context, favorites),
+              icon: Icons.favorite_rounded,
+              semanticLabel: S.current.Exp_Favorites(favorites),
+            ),
       onTap: () => AppRoutes.push<void>(
         context,
         CharacterScreen(id: person.id, category: isPerson ? 'person' : 'character'),
