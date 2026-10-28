@@ -303,3 +303,5 @@ Append-only, one line per decision: `- YYYY-MM-DD [unit] decision — why`. Earl
 - 2026-10-28 [owner] Tenrai (api.tenrai.org, Jikan v4 schema) gets a full client and is the automatic fallback when Jikan is down.
 - 2026-10-28 [owner] Kitsu and Simkl accounts show only data from their own tracker (no MAL news or forum); scraping the Kitsu or Simkl website for extra information is welcome.
 - 2026-10-28 [owner] No remote error reporting.
+- 2026-10-28 [color-sweep] Owned screens take every colour from `colorScheme` or `AppColors`; the only literals left are `Colors.transparent` and alpha-only masks (custom card cover dimming), listed in the PR. My List episode badges use the status chip shades (`completed` / `dropped` `.container` + `.onContainer`): solid blue / red with white bold text in light, dark and black, like DailyAL.
+- 2026-10-28 [color-sweep] DailyAL's licence is registered when the About > Licences page is opened (`about_settings.dart`) as well as on Explore, since main.dart is outside the unit; explanatory captions DailyAL lacks are removed from the owned settings, Explore studios entry and AI review summary (safety warnings and gesture hints stay).
