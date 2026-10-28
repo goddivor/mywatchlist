@@ -6,8 +6,8 @@
 - `tracker-wiring` (AniList / Kitsu / Simkl wiring: notifications, profile routes, remove action, MAL-only notes)
 
 ## Owns (may create or edit ONLY these)
-- `lib/pages/Anilist/**/anilist_user_list_adapter.dart`
-- `lib/pages/Kitsu/**/kitsu_user_list_adapter.dart`
+- `lib/widgets/Anilist/**/anilist_user_list_adapter.dart`
+- `lib/widgets/Kitsu/**/kitsu_user_list_adapter.dart`
 - `lib/widgets/user/cross_tracker_widget.dart`
 - `lib/pages/Simkl/**/simkl_user_page.dart`
 - `lib/screens/settings/notifications_settings.dart`
