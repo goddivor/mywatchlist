@@ -154,10 +154,8 @@ Widget horizontalSkeleton({double height = 200, double width = 130}) => loadingC
       listPadding: const EdgeInsets.symmetric(horizontal: kExplorePadding - 5),
     );
 
-/// A rounded tonal tile with an icon and a label: rankings and genre groups.
-///
-/// Flat alpha colour from [hue] (no gradient shader, no network picture), so a row of tiles costs
-/// nothing to scroll.
+/// A rounded tonal tile with an icon and a label: the card of a ranking or genre that has no
+/// DailyAL picture. Theme roles only; [hue] is kept for callers and no longer used.
 class ExploreTile extends StatelessWidget {
   final IconData icon;
   final String label;
@@ -180,16 +178,16 @@ class ExploreTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final dark = Theme.of(context).brightness == Brightness.dark;
-    final base = HSLColor.fromAHSL(1, hue % 360, dark ? 0.35 : 0.55, dark ? 0.24 : 0.88).toColor();
-    final accent = HSLColor.fromAHSL(1, hue % 360, dark ? 0.6 : 0.65, dark ? 0.7 : 0.38).toColor();
-    final textColor = Theme.of(context).colorScheme.onSurface;
+    final scheme = Theme.of(context).colorScheme;
+    final base = scheme.secondaryContainer;
+    final accent = scheme.onSecondaryContainer;
+    final textColor = scheme.onSecondaryContainer;
     return SizedBox(
       width: width,
       height: height,
       child: Material(
         color: base,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: onTap,
@@ -211,7 +209,7 @@ class ExploreTile extends StatelessWidget {
                   Text(caption!,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(color: textColor.withValues(alpha: 0.7), fontSize: 11)),
+                      style: TextStyle(color: textColor, fontSize: 11)),
               ],
             ),
           ),

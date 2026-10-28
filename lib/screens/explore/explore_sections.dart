@@ -10,7 +10,7 @@ import 'package:mywatchlist/screens/explore/explore_data.dart';
 import 'package:mywatchlist/screens/explore/explore_images.dart';
 import 'package:mywatchlist/screens/explore/explore_widgets.dart';
 import 'package:mywatchlist/screens/search/general_search_screen.dart';
-import 'package:mywatchlist/screens/search/search_catalog.dart';
+import 'package:mywatchlist/screens/search/search_catalog.dart' show SearchCatalog;
 import 'package:mywatchlist/screens/seasonal/season_utils.dart';
 import 'package:mywatchlist/screens/seasonal/seasonal_screen.dart';
 import 'package:mywatchlist/screens/studios/studios_screen.dart';

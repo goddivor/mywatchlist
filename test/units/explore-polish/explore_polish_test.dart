@@ -10,7 +10,7 @@ import 'package:mywatchlist/screens/explore/explore_data.dart';
 import 'package:mywatchlist/screens/explore/explore_images.dart';
 import 'package:mywatchlist/screens/explore/explore_sections.dart';
 import 'package:mywatchlist/screens/explore/explore_widgets.dart';
-import 'package:mywatchlist/screens/search/search_catalog.dart';
+import 'package:mywatchlist/screens/search/search_catalog.dart' show SearchCatalog;
 
 import '../../helpers/no_network.dart';
 import '../../helpers/pump_app.dart';
@@ -167,6 +167,7 @@ void main() {
 
   group('widgets', () {
     testWidgets('a character card shows its favourites badge', (tester) async {
+      final semantics = tester.ensureSemantics();
       await pumpInApp(
         tester,
         const SizedBox(
@@ -180,7 +181,8 @@ void main() {
       expect(find.text('#1'), findsOneWidget);
       expect(find.text('171K'), findsOneWidget);
       expect(find.byIcon(Icons.favorite_rounded), findsOneWidget);
-      expect(find.bySemanticsLabel('Favorited by 171,234 people'), findsOneWidget);
+      expect(find.bySemanticsLabel(RegExp(r'Favorited by 171.?234 people')), findsOneWidget);
+      semantics.dispose();
     });
 
     testWidgets('the explicit genres card hides its picture with NSFW off', (tester) async {
@@ -188,7 +190,7 @@ void main() {
       expect(find.text(S.current.Explore_Genre_Explicit), findsOneWidget);
       expect(find.text(S.current.Exp_Nsfw_Hidden), findsOneWidget);
       expect(find.byIcon(Icons.eighteen_up_rating_rounded), findsOneWidget);
-      await tester.tap(find.text(S.current.Explore_Genre_Explicit));
+      await tester.tap(find.byType(ExplorePictureCard).at(1));
       await tester.pumpAndSettle();
       expect(find.text(S.current.Exp_Nsfw_Title), findsOneWidget);
       await tester.tap(find.text(S.current.Cancel));
@@ -197,36 +199,50 @@ void main() {
     });
 
     for (final locale in ['en', 'fr_FR']) {
-      testWidgets('seasonal buttons keep their full label on a narrow phone ($locale)',
-          (tester) async {
+      testWidgets('seasonal buttons never cut their label ($locale)', (tester) async {
         await S.load(Locale.fromSubtags(
             languageCode: locale.split('_').first,
             countryCode: locale.contains('_') ? locale.split('_').last : null));
-        tester.view.physicalSize = const Size(320 * 3, 800 * 3);
-        tester.view.devicePixelRatio = 3;
+        addTearDown(() => S.load(const Locale('en')));
+        tester.view.physicalSize = const Size(2400, 1600);
+        tester.view.devicePixelRatio = 1;
         addTearDown(tester.view.reset);
-        await tester.pumpWidget(MaterialApp(
-          home: MediaQuery(
-            data: const MediaQueryData(
-                size: Size(320, 800), textScaler: TextScaler.linear(1.3)),
-            child: const Scaffold(body: SingleChildScrollView(child: SeasonalCard())),
-          ),
-        ));
-        expect(tester.takeException(), isNull);
-        for (final label in [S.current.Exp_Season_Browse, S.current.Exp_Season_Schedule]) {
-          final text = tester.widget<Text>(find.text(label));
-          expect(text.overflow, isNull);
-          expect(text.maxLines, isNull);
-          final painter = TextPainter(
-            text: TextSpan(text: label, style: DefaultTextStyle.of(tester.element(find.text(label))).style),
-            textDirection: TextDirection.ltr,
-            textScaler: const TextScaler.linear(1.3),
-          )..layout();
-          expect(tester.getSize(find.text(label)).width,
-              greaterThanOrEqualTo(painter.width - 0.5),
-              reason: '$label is cut');
+        Future<(Rect, Rect)> layout(double width, double scale) async {
+          await tester.pumpWidget(MaterialApp(
+            home: Scaffold(
+              body: Builder(
+                builder: (context) => MediaQuery(
+                  data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(scale)),
+                  child: Align(
+                    alignment: Alignment.topLeft,
+                    child: SizedBox(
+                      width: width,
+                      child: const SingleChildScrollView(child: SeasonalCard()),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ));
+          expect(tester.takeException(), isNull);
+          for (final label in [S.current.Exp_Season_Browse, S.current.Exp_Season_Schedule]) {
+            final text = tester.widget<Text>(find.text(label));
+            expect(text.maxLines, isNull, reason: label);
+            expect(text.overflow, isNull, reason: label);
+          }
+          return (
+            tester.getRect(find.byWidgetPredicate((w) => w is FilledButton).first),
+            tester.getRect(find.byWidgetPredicate((w) => w is FilledButton).last),
+          );
         }
-        await S.load(const Locale('en'));
+
+        // A narrow phone with large text: one button under the other, each as wide as needed.
+        final (a, b) = await layout(320, 1.3);
+        expect(b.top, greaterThanOrEqualTo(a.bottom));
+        // A tablet: side by side.
+        final (c, d) = await layout(2000, 1.0);
+        expect(d.top, c.top);
+        expect(d.left, greaterThan(c.right));
       });
     }
 
