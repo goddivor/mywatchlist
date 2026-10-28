@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mywatchlist/cache/bookmarks.dart';
 import 'package:mywatchlist/constants/constants.dart';
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/screens/MAL/character_screen.dart';
@@ -10,6 +11,7 @@ import 'package:mywatchlist/services/api/MAL/mal_clubs_api.dart';
 import 'package:mywatchlist/services/api/MAL/models/club/club_data.dart';
 import 'package:mywatchlist/services/api/MAL/models/club/club_html.dart';
 import 'package:mywatchlist/utils/web_launcher.dart';
+import 'package:mywatchlist/widgets/bookmarks/bookmark_button.dart';
 import 'package:mywatchlist/widgets/common/app_bar_menu.dart';
 import 'package:mywatchlist/widgets/common/app_image.dart';
 import 'package:mywatchlist/widgets/common/image_preview.dart';
@@ -113,6 +115,17 @@ class _ClubScreenState extends State<ClubScreen> {
     );
   }
 
+  /// Shown once the club has loaded, so the saved title and picture are the club's own.
+  Widget _bookmark() => _clubData == null
+      ? const SizedBox.shrink()
+      : BookmarkButton(
+          tracker: 'myanimelist',
+          kind: BookmarkKind.club,
+          id: _id,
+          title: _clubTitle,
+          imageUrl: _imageUrl,
+        );
+
   Widget _menu() => AppBarMenu(
         onShare: _share,
         onOpenInBrowser: () => launchWebView(ForumUrls.club(_id), context: context),
@@ -162,7 +175,7 @@ class _ClubScreenState extends State<ClubScreen> {
     return SliverAppBar(
       expandedHeight: 220,
       pinned: true,
-      actions: [_menu()],
+      actions: [_bookmark(), _menu()],
       bottom: sections.isEmpty
           ? null
           : TabBar(
