@@ -13,6 +13,7 @@ import 'package:mywatchlist/services/api/Jikan/jikan_client.dart';
 import 'package:mywatchlist/services/api/Jikan/mal_news_page.dart';
 import 'package:mywatchlist/services/api/MAL/mal_forum_api.dart';
 import 'package:mywatchlist/services/api/MAL/models/forum/forum_models.dart' show ForumTopicsData;
+import 'package:mywatchlist/services/api/jikan_source.dart' show JikanSource;
 import 'package:mywatchlist/services/api/mwl_api.dart';
 
 /// Which source answered a [JikanFallbacks.race].
@@ -61,10 +62,14 @@ class JikanFallbacks {
   /// Longest wait of a whole [race] (owner's target: about 12 s).
   static Duration budget = const Duration(seconds: 12);
 
-  /// Jikan against a fallback source. Jikan runs first; the fallback starts
+  /// Jikan against a fallback source. The [jikan] leg goes through
+  /// [JikanClient], which hands the request to Tenrai (same schema) when Jikan
+  /// is down or slower than [JikanSource.hedgeAfter] (2.5 s, before the 3 s
+  /// [headStart]), so Tenrai is the fast second source and the fallback
+  /// (usually a MyAnimeList page) the third. Jikan runs first; the fallback starts
   /// after [headStart], or at once when Jikan fails or while the Jikan client
   /// skips requests after a timeout ([JikanClient.isUnreachable], then Jikan
-  /// is not asked at all). The first answer wins; when both fail, or nothing
+  /// is not asked at all; with failover that means Tenrai failed too). The first answer wins; when both fail, or nothing
   /// answered within [budget], it throws [NoSourceAnswered].
   static Future<RaceResult<T>> race<T>({
     required Future<T> Function() jikan,

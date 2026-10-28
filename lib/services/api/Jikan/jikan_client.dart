@@ -3,6 +3,8 @@ import 'dart:collection';
 
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:mywatchlist/services/api/Tenrai/tenrai_client.dart';
+import 'package:mywatchlist/services/api/jikan_source.dart';
 
 /// HTTP gateway of every Jikan call.
 ///
@@ -21,6 +23,14 @@ import 'package:http/http.dart' as http;
 ///   [JikanUnavailable]; after such a failure every request fails at once for
 ///   [unreachableCooldown], so a detail page does not wait once per section.
 ///   [resetReachability] (a Retry button) ends that pause early.
+///
+/// With a [source] (the app's [instance] has [JikanSource.instance]), Jikan
+/// fails over to Tenrai: a timeout, a network error or a 5xx marks Jikan down
+/// ([JikanSource.markJikanDown], re-probed after a few minutes) and the same
+/// request is answered by Tenrai when Tenrai has the endpoint; a request Jikan
+/// has not answered after [JikanSource.hedgeAfter] is also sent to Tenrai and
+/// the first answer wins. Only when both fail does the client pause
+/// ([isUnreachable]). Endpoints Tenrai lacks fail at once while Jikan is down.
 class JikanClient {
   JikanClient({
     http.Client? client,
@@ -32,17 +42,23 @@ class JikanClient {
     this.maxBackoff = const Duration(seconds: 8),
     this.requestTimeout = const Duration(seconds: 12),
     this.unreachableCooldown = const Duration(seconds: 30),
+    JikanSource? source,
     DateTime Function()? now,
     Future<void> Function(Duration)? delay,
   })  : _client = client,
+        _source = source,
         _now = now ?? DateTime.now,
         _delay = delay ?? Future<void>.delayed;
 
   /// The client used by the app (tests may replace it with one built on a
   /// fake `http.Client`).
-  static JikanClient instance = JikanClient();
+  static JikanClient instance = JikanClient(source: JikanSource.instance);
 
   final http.Client? _client;
+  final JikanSource? _source;
+
+  /// The Jikan / Tenrai selector of this client (null: Jikan only).
+  JikanSource? get source => _source;
   final Duration minInterval;
   final Duration cacheTtl;
   final int maxCacheEntries;
@@ -91,7 +107,8 @@ class JikanClient {
   /// Forget every stored answer.
   void clearCache() => _cache.clear();
 
-  /// True while requests fail fast after Jikan did not answer.
+  /// True while requests fail fast after Jikan did not answer (with a
+  /// [source]: after Jikan and Tenrai both failed).
   bool get isUnreachable {
     final until = _unreachableUntil;
     return until != null && _now().isBefore(until);
@@ -103,6 +120,11 @@ class JikanClient {
   void resetReachability() {
     _unreachableUntil = null;
     _retryGeneration++;
+    final source = _source;
+    if (source != null) {
+      source.allowProbe();
+      source.tenrai.resetReachability();
+    }
   }
 
   int _retryGeneration = 0;
@@ -117,25 +139,127 @@ class JikanClient {
   void _markUnreachable() =>
       _unreachableUntil = _now().add(unreachableCooldown);
 
-  Future<http.Response> _fetch(Uri url, String key) async {
+  Future<http.Response> _fetch(Uri url, String key) {
+    final source = _source;
+    if (source == null || !source.isJikan(url)) return _fetchJikan(url, key, null);
+    _throwIfUnreachable(url);
+    final served = source.tenraiServes(url);
+    if (source.jikanDown) {
+      if (!served) {
+        return Future.error(JikanUnavailable(url, 'Jikan is down and Tenrai has no such endpoint'));
+      }
+      return _fromTenrai(url, key, source).catchError((Object e) {
+        _markUnreachable();
+        throw JikanUnavailable(url, 'Jikan is down; Tenrai: $e');
+      });
+    }
+    if (!served) return _fetchJikan(url, key, source);
+    return _hedged(url, key, source);
+  }
+
+  /// Jikan first, Tenrai after [JikanSource.hedgeAfter] (at once while Jikan
+  /// is re-probed) or as soon as Jikan fails; the first usable answer wins.
+  Future<http.Response> _hedged(Uri url, String key, JikanSource source) {
+    final completer = Completer<http.Response>();
+    Object? jikanError;
+    Object? tenraiError;
+    http.Response? jikanServerError;
+    var jikanFailed = false;
+    var tenraiStarted = false;
+    var tenraiFailed = false;
+    Timer? hedge;
+
+    void failIfBoth() {
+      if (!jikanFailed || !tenraiFailed || completer.isCompleted) return;
+      final response = jikanServerError;
+      if (response != null) {
+        completer.complete(response);
+        return;
+      }
+      _markUnreachable();
+      completer.completeError(JikanUnavailable(url, 'Jikan: $jikanError; Tenrai: $tenraiError'));
+    }
+
+    void startTenrai() {
+      if (tenraiStarted || completer.isCompleted) return;
+      tenraiStarted = true;
+      hedge?.cancel();
+      _fromTenrai(url, key, source).then((response) {
+        if (!completer.isCompleted) completer.complete(response);
+      }, onError: (Object e) {
+        tenraiFailed = true;
+        tenraiError = e;
+        failIfBoth();
+      });
+    }
+
+    if (source.jikanSuspect) {
+      startTenrai();
+    } else {
+      hedge = Timer(source.hedgeAfter, startTenrai);
+    }
+    _fetchJikan(url, key, source).then((response) {
+      if (response.statusCode >= 500) {
+        jikanFailed = true;
+        jikanServerError = response;
+        startTenrai();
+        failIfBoth();
+        return;
+      }
+      hedge?.cancel();
+      if (!completer.isCompleted) completer.complete(response);
+    }, onError: (Object e) {
+      jikanFailed = true;
+      jikanError = e;
+      startTenrai();
+      failIfBoth();
+    });
+    return completer.future;
+  }
+
+  /// The Tenrai answer to the Jikan URL [url]; a 5xx counts as a failure.
+  Future<http.Response> _fromTenrai(Uri url, String key, JikanSource source) async {
+    final response = await source.tenrai.get(source.toTenrai(url));
+    if (response.statusCode >= 500) {
+      throw TenraiUnavailable(source.toTenrai(url), 'HTTP ${response.statusCode}');
+    }
+    _unreachableUntil = null;
+    if (response.statusCode == 200) _store(key, response);
+    return response;
+  }
+
+  /// One Jikan request (with the 429 retries). Without a [source] a failure
+  /// pauses every request ([unreachableCooldown]); with one it marks Jikan
+  /// down in the [source] instead.
+  Future<http.Response> _fetchJikan(Uri url, String key, JikanSource? source) async {
     var attempt = 0;
     while (true) {
-      _throwIfUnreachable(url);
+      if (source == null) _throwIfUnreachable(url);
       await _waitForSlot();
-      _throwIfUnreachable(url);
+      if (source == null) _throwIfUnreachable(url);
       final http.Response response;
       final client = _client;
+      final timeout = source != null && source.jikanSuspect && source.probeTimeout < requestTimeout
+          ? source.probeTimeout
+          : requestTimeout;
       try {
         final request = client != null ? client.get(url) : http.get(url);
-        response = await request.timeout(requestTimeout);
+        response = await request.timeout(timeout);
       } on TimeoutException {
-        _markUnreachable();
-        throw JikanUnavailable(url, 'no answer after ${requestTimeout.inSeconds} s');
+        source == null ? _markUnreachable() : source.markJikanDown();
+        throw JikanUnavailable(url, 'no answer after ${timeout.inSeconds} s');
       } on http.ClientException catch (e) {
-        _markUnreachable();
+        source == null ? _markUnreachable() : source.markJikanDown();
         throw JikanUnavailable(url, e.message);
       }
       _unreachableUntil = null;
+      if (source == null) {
+        // Jikan only: nothing else to update.
+      } else if (response.statusCode >= 500) {
+        source.markJikanDown();
+      } else {
+        source.markJikanUp();
+      }
       if (response.statusCode == 429 && attempt < maxRetries) {
         final wait = retryDelay(response, attempt);
         debugPrint('Jikan 429 for $url, retrying in ${wait.inMilliseconds} ms');
