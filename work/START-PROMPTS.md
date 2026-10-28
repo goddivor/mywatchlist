@@ -481,6 +481,15 @@ UI directive applies: compare DAL and MWL, keep the better, improve it.
 Deliver with the PR procedure of the brief.
 ```
 
+## tenrai-client
+
+```text
+Unit tenrai-client — Tenrai API client (all endpoints) and automatic Jikan → Tenrai failover.
+Read work/handoffs/tenrai-client.md fully, then the DAL reference files it lists, then the MWL files you own.
+Build exactly the Goal, inside the Owns list. Heavy commands only through tools/heavy.sh; never run flutter build or touch the emulator.
+Deliver with the PR procedure of the brief.
+```
+
 ## explore-polish
 
 ```text

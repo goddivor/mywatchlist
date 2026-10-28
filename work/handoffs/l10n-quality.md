@@ -3,6 +3,7 @@
 **Kind** unit · **Priority** P2 · **Group** release · **Model** sonnet
 
 ## Needs done first
+- `tenrai-client` (Tenrai API client (all endpoints) and automatic Jikan → Tenrai failover)
 - `splash-screen` (Launch splash like DailyAL: MWL logo centred on a dark background)
 - `stack-polish` (Interest stack page: squeezed covers, localized date, readable tabs (DailyAL layout))
 - `color-sweep` (Colour sweep: hardcoded colours of already-merged screens onto the theme tokens)
