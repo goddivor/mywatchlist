@@ -1,6 +1,7 @@
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_widget_from_html_core/flutter_widget_from_html_core.dart';
+import 'package:mywatchlist/cache/bookmarks.dart';
 import 'package:mywatchlist/constants/constants.dart';
 import 'package:mywatchlist/enums.dart' show ForumConstants;
 import 'package:mywatchlist/generated/l10n.dart';
@@ -11,6 +12,7 @@ import 'package:mywatchlist/services/api/MAL/models/featured/featured_article.da
 import 'package:mywatchlist/services/api/MAL/models/forum/forum_models.dart';
 import 'package:mywatchlist/services/api/MAL/scrapper/mal_scrapper.dart';
 import 'package:mywatchlist/utils/web_launcher.dart';
+import 'package:mywatchlist/widgets/bookmarks/bookmark_button.dart';
 import 'package:mywatchlist/widgets/common/app_bar_menu.dart';
 import 'package:mywatchlist/widgets/common/app_image.dart';
 import 'package:mywatchlist/widgets/common/background.dart';
@@ -106,6 +108,7 @@ class _FeaturedScreenState extends State<FeaturedScreen> {
                       ? Text(widget.featureTitle ?? '')
                       : null,
                   actions: [
+                    if (article != null) _bookmark(article),
                     if (article != null)
                       AppBarMenu(
                         onShare: () => _share(article),
@@ -331,6 +334,21 @@ class _FeaturedScreenState extends State<FeaturedScreen> {
 
   String get _pageUrl => 'https://myanimelist.net/'
       '${widget.category == 'news' ? 'news' : 'featured'}/${widget.id}';
+
+  /// News and featured articles are two bookmark kinds, as in DailyAL.
+  Widget _bookmark(FeaturedArticle article) {
+    final title = article.title ?? widget.featureTitle ?? '';
+    if (title.isEmpty) return const SizedBox.shrink();
+    final author = article.postedBy?.trim();
+    return BookmarkButton(
+      tracker: 'myanimelist',
+      kind: widget.category == 'news' ? BookmarkKind.news : BookmarkKind.featured,
+      id: widget.id,
+      title: title,
+      imageUrl: widget.imgUrl,
+      subtitle: author == null || author.isEmpty ? null : author,
+    );
+  }
 
   void _share(FeaturedArticle article) {
     final title = article.title ?? widget.featureTitle;

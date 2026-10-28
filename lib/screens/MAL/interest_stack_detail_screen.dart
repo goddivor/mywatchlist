@@ -1,6 +1,7 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:mywatchlist/cache/bookmarks.dart';
 import 'package:mywatchlist/constants/constants.dart';
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/screens/MAL/contentdetailedscreen.dart';
@@ -9,6 +10,7 @@ import 'package:mywatchlist/services/api/MAL/scrapper/anime_detailed_html.dart';
 import 'package:mywatchlist/services/api/mwl_api.dart';
 import 'package:mywatchlist/widgets/common/avatar_widget.dart';
 import 'package:mywatchlist/utils/web_launcher.dart';
+import 'package:mywatchlist/widgets/bookmarks/bookmark_button.dart';
 import 'package:mywatchlist/widgets/common/app_bar_menu.dart';
 import 'package:mywatchlist/widgets/common/score_reveal.dart';
 import 'package:mywatchlist/widgets/common/share_builder.dart';
@@ -386,30 +388,64 @@ class _InterestStackDetailScreenState extends State<InterestStackDetailScreen> {
               child: const Icon(Icons.arrow_back),
             ),
             if (canShare)
-              Material(
-                color: scheme.primaryContainer,
-                elevation: 4,
-                shape: const CircleBorder(),
-                child: AppBarMenu(
-                  onShare: () => showShareBuilder(
-                    context,
-                    fields: stackShareFields(
-                      url: url,
-                      title: _title,
-                      author: widget.stack.username,
-                      entries: [for (final e in _entries) if (e['title'] is String) e['title'] as String],
-                      description: _description,
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (_stackId != null) ...[
+                    Material(
+                      color: scheme.primaryContainer,
+                      elevation: 4,
+                      shape: const CircleBorder(),
+                      child: BookmarkButton(
+                        tracker: 'myanimelist',
+                        kind: BookmarkKind.interestStack,
+                        id: _stackId!,
+                        title: _title,
+                        imageUrl: _coverUrl,
+                        subtitle: widget.stack.username,
+                      ),
                     ),
-                    subject: _title,
-                    title: S.current.Social_Stack_Title,
+                    const SizedBox(width: 8),
+                  ],
+                  Material(
+                    color: scheme.primaryContainer,
+                    elevation: 4,
+                    shape: const CircleBorder(),
+                    child: AppBarMenu(
+                      onShare: () => showShareBuilder(
+                        context,
+                        fields: stackShareFields(
+                          url: url,
+                          title: _title,
+                          author: widget.stack.username,
+                          entries: [for (final e in _entries) if (e['title'] is String) e['title'] as String],
+                          description: _description,
+                        ),
+                        subject: _title,
+                        title: S.current.Social_Stack_Title,
+                      ),
+                      onOpenInBrowser: url == null ? null : () => openLink(context, url),
+                    ),
                   ),
-                  onOpenInBrowser: url == null ? null : () => openLink(context, url),
-                ),
+                ],
               ),
           ],
         ),
       ),
     );
+  }
+
+  int? get _stackId => _extractStackId(widget.stack.url);
+
+  /// The picture saved with the bookmark: the stack's first cover, else its first entry's.
+  String? get _coverUrl {
+    final images = widget.stack.imageUrls;
+    if (images != null && images.isNotEmpty) return images.first;
+    for (final e in _entries) {
+      final url = e['imageUrl'];
+      if (url is String && url.isNotEmpty) return url;
+    }
+    return null;
   }
 
   /// The stack page on MyAnimeList (the scraper may give a path or a full address).

@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:mywatchlist/cache/bookmarks.dart';
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/services/api/MAL/mal_forum_api.dart';
 import 'package:mywatchlist/services/api/MAL/models/forum/forum_models.dart';
 import 'package:mywatchlist/utils/web_launcher.dart';
+import 'package:mywatchlist/widgets/bookmarks/bookmark_button.dart';
 import 'package:mywatchlist/widgets/common/app_bar_menu.dart';
 import 'package:mywatchlist/widgets/common/share_builder.dart';
 import 'package:mywatchlist/widgets/forum/forum_common.dart';
@@ -131,6 +133,35 @@ class _ForumPostsScreenState extends State<ForumPostsScreen> {
 
   int get _totalPages => ((topic?.numberOfPosts ?? 0) / _postLimit).ceil();
 
+  /// False when the topic was opened without its post count (a bookmark, a link): the pages
+  /// then follow MyAnimeList's `paging.next` instead of a known total.
+  bool get _knownCount => topic?.numberOfPosts != null;
+
+  bool get _hasNextPage => _knownCount
+      ? _pageIndex < _totalPages - 1
+      : _data?.paging?.next != null;
+
+  String get _bookmarkTitle {
+    final title = topic?.title;
+    if (title != null && title.isNotEmpty) return title;
+    return _data?.title ?? '';
+  }
+
+  /// The topic's bookmark (MyAnimeList forum topic), once it has an id and a title.
+  Widget _bookmarkButton() {
+    final id = topic?.id;
+    final title = _bookmarkTitle;
+    if (id == null || title.isEmpty) return const SizedBox.shrink();
+    final author = topic?.createdBy?.name;
+    return BookmarkButton(
+      tracker: 'myanimelist',
+      kind: BookmarkKind.forumTopic,
+      id: id,
+      title: title,
+      subtitle: author == null || author.isEmpty ? null : author,
+    );
+  }
+
   bool get _showPages =>
       topic?.numberOfPosts != null && topic!.numberOfPosts! > _postLimit;
 
@@ -201,10 +232,10 @@ class _ForumPostsScreenState extends State<ForumPostsScreen> {
             child: Padding(
               padding: const EdgeInsets.fromLTRB(16, 24, 16, 96),
               child: NextPreviousRow(
-                page: _pageIndex + 1,
-                total: _totalPages,
+                page: _knownCount ? _pageIndex + 1 : null,
+                total: _knownCount ? _totalPages : null,
                 onPrevious: _pageIndex > 0 ? () => _changePage(_pageIndex - 1) : null,
-                onNext: _pageIndex < _totalPages - 1 ? () => _changePage(_pageIndex + 1) : null,
+                onNext: _hasNextPage ? () => _changePage(_pageIndex + 1) : null,
               ),
             ),
           ),
@@ -255,6 +286,7 @@ class _ForumPostsScreenState extends State<ForumPostsScreen> {
       actions: selecting
           ? _buildShareActions()
           : [
+              _bookmarkButton(),
               _sortMenu(),
               AppBarMenu(
                 onShare: _topicUrl == null
@@ -289,6 +321,7 @@ class _ForumPostsScreenState extends State<ForumPostsScreen> {
                     ? const SizedBox.shrink()
                     : ForumTopicHeader(topic: topic),
               ),
+              _bookmarkButton(),
               _sortMenu(),
             ],
           ),
