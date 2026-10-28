@@ -94,6 +94,7 @@
         "anilist-pages",
         "kitsu-pages",
         "simkl-pages",
+        "tracker-followups",
         "tracker-wiring"
       ]
     },
@@ -1476,6 +1477,7 @@
       "artifact": "",
       "priority": "P1",
       "needs": [
+        "tracker-followups",
         "search-sources",
         "explore-polish",
         "profile-tabs",
@@ -1603,6 +1605,35 @@
       "states": [],
       "notes": [
         "model: opus"
+      ],
+      "status": "⬜ todo"
+    },
+    {
+      "id": "tracker-followups",
+      "title": "Tracker follow-ups: removed rows disappear, Simkl list categories, notifications for every tracker",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "tracker-wiring"
+      ],
+      "owns": [
+        "lib/pages/Anilist/**/anilist_user_list_adapter.dart",
+        "lib/pages/Kitsu/**/kitsu_user_list_adapter.dart",
+        "lib/widgets/user/cross_tracker_widget.dart",
+        "lib/pages/Simkl/**/simkl_user_page.dart",
+        "lib/screens/settings/notifications_settings.dart",
+        "lib/services/notifications/**",
+        "lib/l10n/units/tracker-followups/**",
+        "test/units/tracker-followups/**"
+      ],
+      "group": "trackers",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: sonnet"
       ],
       "status": "⬜ todo"
     },

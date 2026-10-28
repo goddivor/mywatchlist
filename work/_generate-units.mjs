@@ -572,7 +572,7 @@ const UNITS = [
   },
   {
     id: "color-sweep", title: "Colour sweep: hardcoded colours of already-merged screens onto the theme tokens", kind: "unit", priority: "P1", group: "release", model: "sonnet", ui: true,
-    needs: ["search-sources", "explore-polish", "profile-tabs", "theme-seasons", "detail-polish", "home-fixes", "backup-fixes", "tracker-wiring", "profile-polish", "list-cards-dal", "detail-resilience", "home-wiring", "featured-characters", "dub-info", "detail-more-info", "settings-theme-about-backup", "in-app-update", "forum-clubs", "search-upgrade", "theme-colors", "cards-upgrade", "detail-header", "detail-social", "detail-related-graph", "detail-synopsis-media", "user-list-mal", "user-profile-mal", "edit-sheet", "sync-dialog", "bookmarks", "calendar", "explore-seasonal", "settings-prefs-pages", "accounts-ux", "app-shell", "shared-kit", "notifications"],
+    needs: ["tracker-followups", "search-sources", "explore-polish", "profile-tabs", "theme-seasons", "detail-polish", "home-fixes", "backup-fixes", "tracker-wiring", "profile-polish", "list-cards-dal", "detail-resilience", "home-wiring", "featured-characters", "dub-info", "detail-more-info", "settings-theme-about-backup", "in-app-update", "forum-clubs", "search-upgrade", "theme-colors", "cards-upgrade", "detail-header", "detail-social", "detail-related-graph", "detail-synopsis-media", "user-list-mal", "user-profile-mal", "edit-sheet", "sync-dialog", "bookmarks", "calendar", "explore-seasonal", "settings-prefs-pages", "accounts-ux", "app-shell", "shared-kit", "notifications"],
     owns: ["lib/widgets/loading/**", "lib/widgets/MAL/home/**", "lib/widgets/MAL/content/**", "lib/widgets/MAL/review/**", "lib/widgets/user/**", "lib/widgets/charts/**", "lib/widgets/bookmarks/**", "lib/widgets/calendar/**", "lib/widgets/common/**", "lib/screens/MAL/**", "lib/screens/explore/**", "lib/screens/seasonal/**", "lib/screens/calendar/**", "lib/screens/user_profile/**", "lib/screens/settings/**", "lib/screens/bookmarks_screen.dart", "lib/pages/side_bar.dart", "lib/constants/constants.dart"],
     goal: [
       "Replace every hardcoded `Colors.*` / `Color(0x…)` in the owned screens with `colorScheme` roles or the app_colors tokens (theme-colors), except intrinsic content colours (e.g. a tracker's brand logo) — list those exceptions in the PR body.",
@@ -608,6 +608,17 @@ const UNITS = [
       "Error states say what failed (no network vs source failed vs no result), translated; theme tokens only; AppImage at tile size; parse off the UI isolate.",
     ],
     dod: ["tools/search-live output in the PR: every filter returns more than 0 results.", "Checker: studio Arch and a genre filter return anime on the owner's network; the studios directory scrolls with logos and opens the filtered search."],
+  },
+  {
+    id: "tracker-followups", title: "Tracker follow-ups: removed rows disappear, Simkl list categories, notifications for every tracker", kind: "unit", priority: "P1", group: "trackers", model: "sonnet", ui: true,
+    needs: ["tracker-wiring"],
+    owns: ["lib/pages/Anilist/**/anilist_user_list_adapter.dart", "lib/pages/Kitsu/**/kitsu_user_list_adapter.dart", "lib/widgets/user/cross_tracker_widget.dart", "lib/pages/Simkl/**/simkl_user_page.dart", "lib/screens/settings/notifications_settings.dart", "lib/services/notifications/**"],
+    goal: [
+      "Findings of tracker-wiring (PR #168): the AniList and Kitsu list adapters and cross_tracker_widget.dart must drop the row when the editor returns `saved.isRemoved` (today the removed row stays as a status-less entry until refresh).",
+      "simkl_user_page.dart passes `categories: const ['anime']` to UserListView and drops its title workaround.",
+      "notifications_settings.dart no longer says 'needs MyAnimeList' when AniList, Kitsu or Simkl is connected (they now feed the planner); switching the active tracker reschedules notifications (listen to AccountBloc).",
+    ],
+    dod: ["Tests with fakes: removed row disappears; Simkl list has no manga switch; tracker switch reschedules; never writes to the owner's trackers."],
   },
   {
     id: "explore-polish", title: "Explore: DailyAL images on category and genre cards, explicit genres, recommendations/stacks fallbacks, favourites badges", kind: "unit", priority: "P1", group: "discovery", model: "opus", ui: true,
