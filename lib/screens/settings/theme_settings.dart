@@ -514,8 +514,9 @@ class _AccentSource extends StatelessWidget {
   }
 }
 
-/// Auto, light, dark and black as four equal tiles, icon above a full-size label (the former
-/// segmented button scaled long labels such as « Sombre » down to a tiny font).
+/// Auto, light, dark and black as a 2 × 2 grid of equal tiles, icon beside a full-size label:
+/// the former four-segment button scaled long labels such as "Sombre" down to a tiny font, and
+/// four tiles in a row would still break them on a small phone or with large system text.
 class _ModeSelector extends StatelessWidget {
   const _ModeSelector({required this.state});
 
@@ -529,16 +530,22 @@ class _ModeSelector extends StatelessWidget {
       ('dark', S.current.Dark, Icons.dark_mode_rounded),
       ('black', S.current.Theme_Mode_Black, Icons.nightlight_rounded),
     ];
-    return Row(
+    Widget tile(int i) => Expanded(
+          child: _ModeTile(
+            label: modes[i].$2,
+            icon: modes[i].$3,
+            selected: state.themeModeName == modes[i].$1,
+            onTap: () => context.read<ThemeBloc>().add(ThemeModeChanged(modes[i].$1)),
+          ),
+        );
+    return Column(
       children: [
-        for (var i = 0; i < modes.length; i++) ...[
-          if (i > 0) const SizedBox(width: 8),
-          Expanded(
-            child: _ModeTile(
-              label: modes[i].$2,
-              icon: modes[i].$3,
-              selected: state.themeModeName == modes[i].$1,
-              onTap: () => context.read<ThemeBloc>().add(ThemeModeChanged(modes[i].$1)),
+        for (var row = 0; row < modes.length; row += 2) ...[
+          if (row > 0) const SizedBox(height: 8),
+          IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [tile(row), const SizedBox(width: 8), tile(row + 1)],
             ),
           ),
         ],
@@ -580,24 +587,25 @@ class _ModeTile extends StatelessWidget {
         child: InkWell(
           onTap: onTap,
           child: ConstrainedBox(
-            constraints: const BoxConstraints(minHeight: 64),
+            constraints: const BoxConstraints(minHeight: 52),
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 10),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              child: Row(
                 children: [
                   Icon(icon, size: 22, color: selected ? cs.onSecondaryContainer : cs.primary),
-                  const SizedBox(height: 4),
-                  Text(
-                    label,
-                    textAlign: TextAlign.center,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.labelLarge?.copyWith(
-                      color: fg,
-                      fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      label,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.labelLarge?.copyWith(
+                        color: fg,
+                        fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                      ),
                     ),
                   ),
+                  if (selected) Icon(Icons.check_rounded, size: 18, color: fg),
                 ],
               ),
             ),
