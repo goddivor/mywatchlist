@@ -1,6 +1,7 @@
 // Re-export HtmlParsers from mwl_commons (shared with backend).
 export 'package:mwl_commons/src/services/html_parser.dart';
 
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:html/dom.dart';
 import 'package:mywatchlist/services/api/MAL/mal_anime.dart' hide Genre;
 import 'package:mywatchlist/services/api/MAL/models/all_search_result.dart';
@@ -75,20 +76,11 @@ class HtmlParsersApp {
                   .toList();
 
               if (['anime', 'manga'].contains(category)) {
-                if (lines.isNotEmpty) {
-                  mediaType =
-                      lines.first.replaceAll(RegExp(r'[^a-zA-Z]'), '').trim();
-                }
-                if (lines.length >= 2) {
-                  numEpisodes =
-                      int.tryParse(lines[0].replaceAll(RegExp(r'\D'), ''));
-                  mean =
-                      double.tryParse(lines[1].replaceAll('Scored', '').trim());
-                }
-                if (lines.length >= 3) {
-                  numListUsers =
-                      int.tryParse(lines[2].replaceAll(RegExp(r'\D'), ''));
-                }
+                final info = parseInfoLines(lines);
+                mediaType = info.mediaType;
+                numEpisodes = info.count;
+                mean = info.score;
+                numListUsers = info.members;
               } else {
                 synopsis = lines.join(' · ');
                 for (final line in lines) {
@@ -143,6 +135,47 @@ class HtmlParsersApp {
     }
 
     return AllSearchResult(categories: categories);
+  }
+
+  static final _countPattern =
+      RegExp(r'\(\s*(\d[\d,]*|\?)\s*(?:eps?|vols?|chs?|chapters?|episodes?)\s*\)', caseSensitive: false);
+  static final _scorePattern = RegExp(r'Scored\s+(\d+(?:\.\d+)?)', caseSensitive: false);
+  static final _membersPattern = RegExp(r'(\d[\d,]*)\s*members', caseSensitive: false);
+
+  /// Reads the grey info lines of an anime or manga result of /search/all by their pattern, so
+  /// their order and line breaks do not matter. MAL used to print `TV (28 eps)` on one line and
+  /// now prints `TV` and `(28 eps)` on two; either way `Scored 9.24` is the score (`Scored N/A`
+  /// gives none) and `1,537,256 members` the member count. A missing line leaves its field null.
+  @visibleForTesting
+  static ({String? mediaType, int? count, double? score, int? members}) parseInfoLines(
+      List<String> lines) {
+    String? mediaType;
+    int? count;
+    double? score;
+    int? members;
+    for (final line in lines) {
+      final countMatch = _countPattern.firstMatch(line);
+      final scoreMatch = _scorePattern.firstMatch(line);
+      final membersMatch = _membersPattern.firstMatch(line);
+      if (countMatch != null) {
+        count ??= int.tryParse(countMatch.group(1)!.replaceAll(',', ''));
+      }
+      if (scoreMatch != null) score ??= double.tryParse(scoreMatch.group(1)!);
+      if (membersMatch != null) {
+        members ??= int.tryParse(membersMatch.group(1)!.replaceAll(',', ''));
+      }
+      // The type is the text of the first line that is not a count, a score or a member count
+      // (`TV`, or `TV` before `(28 eps)` in the old one-line form).
+      if (mediaType == null && scoreMatch == null && membersMatch == null &&
+          !line.toLowerCase().startsWith('scored')) {
+        final type = line
+            .substring(0, countMatch?.start ?? line.length)
+            .replaceAll(RegExp(r'[^a-zA-Z]'), '')
+            .trim();
+        if (type.isNotEmpty) mediaType = type;
+      }
+    }
+    return (mediaType: mediaType, count: count, score: score, members: members);
   }
 
   static String? _getCategoryFromUrl(String href) {
