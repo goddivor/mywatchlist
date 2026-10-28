@@ -3,12 +3,15 @@
 **Kind** unit · **Priority** P1 · **Group** trackers · **Model** opus
 
 ## Needs done first
+- `simkl-cdn-feeds` (simkl-cdn-feeds)
 - `simkl-media-page` (simkl-media-page)
 - `simkl-api-compliance` (simkl-api-compliance)
 - `simkl-profile-plus` (simkl-profile-plus)
 - `tracker-followups` (Tracker follow-ups: removed rows disappear, Simkl list categories, notifications for every tracker)
 
 ## Owns (may create or edit ONLY these)
+- `lib/widgets/Simkl/simkl_home_plan.dart`
+- `test/units/simkl-pages/home_plan_test.dart`
 - `lib/widgets/Simkl/media/**`
 - `lib/services/api/SimKl/simkl_client.dart`
 - `lib/services/api/SimKl/simkl_list_service.dart`
@@ -24,6 +27,7 @@
 Plus `PROJECT-STATE.md` (rewrite in place, within its cap) and `docs/DECISIONS.md` (append one line per decision). Anything else you need is a FINDING to report, never an edit.
 
 ## Goal
+- From simkl-cdn-feeds PR #238: a Simkl 'top score' home row shows Best anime (simklHomePlan in lib/widgets/Simkl/simkl_home_plan.dart) — update test/units/simkl-pages/home_plan_test.dart.
 - From simkl-media-page PR #237: My list tile tap (lib/widgets/Simkl/simkl_user_list_adapter.dart:~103) opens the native Simkl page via openSimklTitle(context, simklId:, title:, posterUrl:) instead of the MAL screen; air times on the Simkl title page converted to the user's time zone setting (lib/widgets/Simkl/media/**).
 - From simkl-auth-v2 PR #234: make the shared SimklClient default to `() => UserSimklV2.instance.apiClientId` (lib/services/api/SimKl/simkl_client.dart) so V2 tokens use the V2 client id.
 - Kitsu/Simkl audit docs/kitsu-simkl-report-2026-10-28.md, unit `simkl-list-sync`: `/sync/activities` gating + `date_from` incremental pulls (B8), community score badge and sort (B7), continue watching with playback (B10) Read the matching report items (endpoints, sample responses, selectors, risks) and implement them.
