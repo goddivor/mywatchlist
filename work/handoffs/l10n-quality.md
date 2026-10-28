@@ -3,6 +3,17 @@
 **Kind** unit · **Priority** P2 · **Group** release · **Model** sonnet
 
 ## Needs done first
+- `ux-explore` (Explore like DailyAL: tonal buttons, arrow headers, no extra search, no captions)
+- `ux-search` (Search home and results like DailyAL; one season picker)
+- `ux-reviews` (Reviewer tap opens the profile directly; Helpful sort by default)
+- `ux-detail-content` (Detail content like DailyAL: adaptation tiles, empty featured hidden, fixed cast thumbnails)
+- `ux-edit-sheet` (Edit sheet as DailyAL's single compact card; sync panel behind More options)
+- `ux-calendar` (Calendar as DailyAL's week grouped by day; never opens on an empty day)
+- `ux-seasonal` (Seasonal header and list rows like DailyAL)
+- `ux-theme` (Theme settings without captions or preview card)
+- `ux-home` (Home like DailyAL: status badge on cards, plain header icons, Fall row order)
+- `ux-stack` (Interest stack page: MAL title case, collapsing app bar, single-line tabs)
+- `ux-forum` (Forum topic rows like DailyAL)
 - `kitsu-graphql` (kitsu-graphql)
 - `kitsu-media-page` (kitsu-media-page)
 - `kitsu-community` (kitsu-community)

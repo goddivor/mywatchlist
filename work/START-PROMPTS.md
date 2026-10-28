@@ -678,6 +678,116 @@ UI directive applies: compare DAL and MWL, keep the better, improve it.
 Deliver with the PR procedure of the brief.
 ```
 
+## ux-explore
+
+```text
+Unit ux-explore — Explore like DailyAL: tonal buttons, arrow headers, no extra search, no captions.
+Read work/handoffs/ux-explore.md fully, then the DAL reference files it lists, then the MWL files you own.
+Build exactly the Goal, inside the Owns list. Heavy commands only through tools/heavy.sh; never run flutter build or touch the emulator.
+UI directive applies: compare DAL and MWL, keep the better, improve it.
+Deliver with the PR procedure of the brief.
+```
+
+## ux-search
+
+```text
+Unit ux-search — Search home and results like DailyAL; one season picker.
+Read work/handoffs/ux-search.md fully, then the DAL reference files it lists, then the MWL files you own.
+Build exactly the Goal, inside the Owns list. Heavy commands only through tools/heavy.sh; never run flutter build or touch the emulator.
+UI directive applies: compare DAL and MWL, keep the better, improve it.
+Deliver with the PR procedure of the brief.
+```
+
+## ux-reviews
+
+```text
+Unit ux-reviews — Reviewer tap opens the profile directly; Helpful sort by default.
+Read work/handoffs/ux-reviews.md fully, then the DAL reference files it lists, then the MWL files you own.
+Build exactly the Goal, inside the Owns list. Heavy commands only through tools/heavy.sh; never run flutter build or touch the emulator.
+UI directive applies: compare DAL and MWL, keep the better, improve it.
+Deliver with the PR procedure of the brief.
+```
+
+## ux-detail-content
+
+```text
+Unit ux-detail-content — Detail content like DailyAL: adaptation tiles, empty featured hidden, fixed cast thumbnails.
+Read work/handoffs/ux-detail-content.md fully, then the DAL reference files it lists, then the MWL files you own.
+Build exactly the Goal, inside the Owns list. Heavy commands only through tools/heavy.sh; never run flutter build or touch the emulator.
+UI directive applies: compare DAL and MWL, keep the better, improve it.
+Deliver with the PR procedure of the brief.
+```
+
+## ux-edit-sheet
+
+```text
+Unit ux-edit-sheet — Edit sheet as DailyAL's single compact card; sync panel behind More options.
+Read work/handoffs/ux-edit-sheet.md fully, then the DAL reference files it lists, then the MWL files you own.
+Build exactly the Goal, inside the Owns list. Heavy commands only through tools/heavy.sh; never run flutter build or touch the emulator.
+UI directive applies: compare DAL and MWL, keep the better, improve it.
+Deliver with the PR procedure of the brief.
+```
+
+## ux-calendar
+
+```text
+Unit ux-calendar — Calendar as DailyAL's week grouped by day; never opens on an empty day.
+Read work/handoffs/ux-calendar.md fully, then the DAL reference files it lists, then the MWL files you own.
+Build exactly the Goal, inside the Owns list. Heavy commands only through tools/heavy.sh; never run flutter build or touch the emulator.
+UI directive applies: compare DAL and MWL, keep the better, improve it.
+Deliver with the PR procedure of the brief.
+```
+
+## ux-seasonal
+
+```text
+Unit ux-seasonal — Seasonal header and list rows like DailyAL.
+Read work/handoffs/ux-seasonal.md fully, then the DAL reference files it lists, then the MWL files you own.
+Build exactly the Goal, inside the Owns list. Heavy commands only through tools/heavy.sh; never run flutter build or touch the emulator.
+UI directive applies: compare DAL and MWL, keep the better, improve it.
+Deliver with the PR procedure of the brief.
+```
+
+## ux-theme
+
+```text
+Unit ux-theme — Theme settings without captions or preview card.
+Read work/handoffs/ux-theme.md fully, then the DAL reference files it lists, then the MWL files you own.
+Build exactly the Goal, inside the Owns list. Heavy commands only through tools/heavy.sh; never run flutter build or touch the emulator.
+UI directive applies: compare DAL and MWL, keep the better, improve it.
+Deliver with the PR procedure of the brief.
+```
+
+## ux-home
+
+```text
+Unit ux-home — Home like DailyAL: status badge on cards, plain header icons, Fall row order.
+Read work/handoffs/ux-home.md fully, then the DAL reference files it lists, then the MWL files you own.
+Build exactly the Goal, inside the Owns list. Heavy commands only through tools/heavy.sh; never run flutter build or touch the emulator.
+UI directive applies: compare DAL and MWL, keep the better, improve it.
+Deliver with the PR procedure of the brief.
+```
+
+## ux-stack
+
+```text
+Unit ux-stack — Interest stack page: MAL title case, collapsing app bar, single-line tabs.
+Read work/handoffs/ux-stack.md fully, then the DAL reference files it lists, then the MWL files you own.
+Build exactly the Goal, inside the Owns list. Heavy commands only through tools/heavy.sh; never run flutter build or touch the emulator.
+UI directive applies: compare DAL and MWL, keep the better, improve it.
+Deliver with the PR procedure of the brief.
+```
+
+## ux-forum
+
+```text
+Unit ux-forum — Forum topic rows like DailyAL.
+Read work/handoffs/ux-forum.md fully, then the DAL reference files it lists, then the MWL files you own.
+Build exactly the Goal, inside the Owns list. Heavy commands only through tools/heavy.sh; never run flutter build or touch the emulator.
+UI directive applies: compare DAL and MWL, keep the better, improve it.
+Deliver with the PR procedure of the brief.
+```
+
 ## explore-polish
 
 ```text

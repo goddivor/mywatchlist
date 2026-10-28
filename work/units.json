@@ -82,6 +82,17 @@
         "dub-info",
         "api-prefs",
         "small-fixes",
+        "ux-explore",
+        "ux-search",
+        "ux-reviews",
+        "ux-detail-content",
+        "ux-edit-sheet",
+        "ux-calendar",
+        "ux-seasonal",
+        "ux-theme",
+        "ux-home",
+        "ux-stack",
+        "ux-forum",
         "theme-seasons",
         "backup-fixes"
       ]
@@ -1438,6 +1449,17 @@
       "artifact": "",
       "priority": "P2",
       "needs": [
+        "ux-explore",
+        "ux-search",
+        "ux-reviews",
+        "ux-detail-content",
+        "ux-edit-sheet",
+        "ux-calendar",
+        "ux-seasonal",
+        "ux-theme",
+        "ux-home",
+        "ux-stack",
+        "ux-forum",
         "kitsu-graphql",
         "kitsu-media-page",
         "kitsu-community",
@@ -1800,6 +1822,7 @@
         "explore-weekly"
       ],
       "owns": [
+        "lib/screens/user_profile/sections/**",
         "lib/screens/user_profile/user_profile_view.dart",
         "lib/screens/user_profile/sections/list_section.dart",
         "lib/screens/user_profile/sections/weekly_section.dart",
@@ -2346,6 +2369,289 @@
         "test/units/simkl-list-sync/**"
       ],
       "group": "trackers",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "⬜ todo"
+    },
+    {
+      "id": "ux-explore",
+      "title": "Explore like DailyAL: tonal buttons, arrow headers, no extra search, no captions",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "explore-weekly"
+      ],
+      "owns": [
+        "lib/pages/MAL/mal_explore_page.dart",
+        "lib/screens/explore/**",
+        "test/units/ux-explore/**",
+        "lib/l10n/units/ux-explore/**",
+        "test/units/ux-explore/**"
+      ],
+      "group": "settings",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "⬜ todo"
+    },
+    {
+      "id": "ux-search",
+      "title": "Search home and results like DailyAL; one season picker",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "small-fixes",
+        "ux-explore"
+      ],
+      "owns": [
+        "lib/screens/search/search_home_view.dart",
+        "lib/screens/search/search_tiles.dart",
+        "lib/screens/search/search_filter_panel.dart",
+        "lib/widgets/common/select/searchable_select.dart",
+        "lib/l10n/units/ux-search/**",
+        "test/units/ux-search/**",
+        "test/units/ux-search/**"
+      ],
+      "group": "settings",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "⬜ todo"
+    },
+    {
+      "id": "ux-reviews",
+      "title": "Reviewer tap opens the profile directly; Helpful sort by default",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [],
+      "owns": [
+        "lib/widgets/MAL/review/**",
+        "lib/widgets/user/profile/user_pop_sheet.dart",
+        "lib/l10n/units/ux-reviews/**",
+        "test/units/ux-reviews/**",
+        "test/units/ux-reviews/**"
+      ],
+      "group": "settings",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "⬜ todo"
+    },
+    {
+      "id": "ux-detail-content",
+      "title": "Detail content like DailyAL: adaptation tiles, empty featured hidden, fixed cast thumbnails",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [],
+      "owns": [
+        "lib/widgets/MAL/content/scorestatisticswidget.dart",
+        "lib/widgets/MAL/content/show_featured.dart",
+        "lib/widgets/MAL/content/adaptation_widget.dart",
+        "lib/screens/MAL/characters_staff_screen.dart",
+        "lib/l10n/units/ux-detail-content/**",
+        "test/units/ux-detail-content/**",
+        "test/units/ux-detail-content/**"
+      ],
+      "group": "settings",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "⬜ todo"
+    },
+    {
+      "id": "ux-edit-sheet",
+      "title": "Edit sheet as DailyAL's single compact card; sync panel behind More options",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [],
+      "owns": [
+        "lib/widgets/user/edit/**",
+        "lib/widgets/user/contenteditwidget.dart",
+        "lib/widgets/user/sync/**",
+        "lib/widgets/user/cross_tracker_widget.dart",
+        "lib/l10n/units/ux-edit-sheet/**",
+        "test/units/ux-edit-sheet/**",
+        "test/units/ux-edit-sheet/**"
+      ],
+      "group": "settings",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "⬜ todo"
+    },
+    {
+      "id": "ux-calendar",
+      "title": "Calendar as DailyAL's week grouped by day; never opens on an empty day",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [],
+      "owns": [
+        "lib/screens/calendar/**",
+        "lib/widgets/calendar/**",
+        "lib/l10n/units/ux-calendar/**",
+        "test/units/ux-calendar/**",
+        "test/units/ux-calendar/**"
+      ],
+      "group": "settings",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "⬜ todo"
+    },
+    {
+      "id": "ux-seasonal",
+      "title": "Seasonal header and list rows like DailyAL",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "explore-weekly"
+      ],
+      "owns": [
+        "lib/screens/seasonal/**",
+        "lib/l10n/units/ux-seasonal/**",
+        "test/units/ux-seasonal/**",
+        "test/units/ux-seasonal/**"
+      ],
+      "group": "settings",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "⬜ todo"
+    },
+    {
+      "id": "ux-theme",
+      "title": "Theme settings without captions or preview card",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [],
+      "owns": [
+        "lib/screens/settings/theme_settings.dart",
+        "lib/l10n/units/ux-theme/**",
+        "test/units/ux-theme/**",
+        "test/units/ux-theme/**"
+      ],
+      "group": "settings",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "⬜ todo"
+    },
+    {
+      "id": "ux-home",
+      "title": "Home like DailyAL: status badge on cards, plain header icons, Fall row order",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "home-rows"
+      ],
+      "owns": [
+        "lib/pages/MAL/mal_home_page.dart",
+        "lib/widgets/home/**",
+        "lib/widgets/MAL/home/homeappbar.dart",
+        "lib/widgets/MAL/home/animegridcard.dart",
+        "lib/l10n/units/ux-home/**",
+        "test/units/ux-home/**",
+        "test/units/ux-home/**"
+      ],
+      "group": "settings",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "⬜ todo"
+    },
+    {
+      "id": "ux-stack",
+      "title": "Interest stack page: MAL title case, collapsing app bar, single-line tabs",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "bookmarks-everywhere"
+      ],
+      "owns": [
+        "lib/screens/MAL/interest_stack_detail_screen.dart",
+        "lib/widgets/MAL/content/intereststackwidget.dart",
+        "lib/l10n/units/ux-stack/**",
+        "test/units/ux-stack/**",
+        "test/units/ux-stack/**"
+      ],
+      "group": "settings",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "⬜ todo"
+    },
+    {
+      "id": "ux-forum",
+      "title": "Forum topic rows like DailyAL",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "bookmarks-everywhere"
+      ],
+      "owns": [
+        "lib/screens/forum/forum_topics_screen.dart",
+        "lib/widgets/forum/forum_topic_widget.dart",
+        "lib/l10n/units/ux-forum/**",
+        "test/units/ux-forum/**",
+        "test/units/ux-forum/**"
+      ],
+      "group": "settings",
       "dropped": null,
       "skills": [],
       "states": [],
