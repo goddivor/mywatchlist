@@ -6,6 +6,7 @@ import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/services/tracker_sync_service.dart';
 import 'package:mywatchlist/widgets/user/contenteditwidget.dart';
 import 'package:mywatchlist/widgets/user/cross_tracker_widget.dart';
+import 'package:mywatchlist/widgets/user/edit/edit_rules.dart';
 import 'package:mywatchlist/widgets/user/edit/list_entry.dart';
 import 'package:mywatchlist/widgets/user/edit/list_entry_service.dart';
 import 'package:mywatchlist/widgets/user/sync/sync_entry.dart';
@@ -16,14 +17,13 @@ import '../sync-dialog/fakes.dart';
 
 /// In-memory MAL list: nothing leaves the test.
 class _FakeEntries implements ListEntryService {
-  _FakeEntries({this.editable = true, this.onList = true});
+  _FakeEntries({this.onList = true});
 
-  final bool editable;
   final bool onList;
   final patches = <EntryPatch>[];
 
   @override
-  bool get canEdit => editable;
+  bool get canEdit => true;
 
   @override
   Future<EditableContent> load(int id, {required bool isAnime}) async {

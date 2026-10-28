@@ -9,7 +9,6 @@ import 'package:mywatchlist/widgets/user/edit/edit_labels.dart';
 import 'package:mywatchlist/widgets/user/edit/edit_sections.dart';
 import 'package:mywatchlist/widgets/user/sync/cross_tracker_controller.dart';
 import 'package:mywatchlist/widgets/user/sync/sync_dialog.dart';
-import 'package:mywatchlist/widgets/user/sync/sync_entry.dart';
 import 'package:mywatchlist/widgets/user/sync/sync_labels.dart';
 import 'package:mywatchlist/widgets/user/sync/tracker_entry_editor.dart';
 import 'package:mywatchlist/widgets/user/tracker_search_sheet.dart';
@@ -433,32 +432,46 @@ class _TrackerCard extends StatelessWidget {
           if (slot.entryLoaded)
             Padding(
               padding: const EdgeInsets.only(top: 6),
-              child: Row(
+              // Wraps the buttons under the summary when a language's
+              // labels do not fit on one line (French).
+              child: Wrap(
+                alignment: WrapAlignment.spaceBetween,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                runSpacing: 4,
                 children: [
-                  if (entry != null && entry.hasScore) ...[
-                    Icon(Icons.star,
-                        size: 14, color: theme.colorScheme.primary),
-                    const SizedBox(width: 3),
-                  ],
-                  Expanded(
-                    child: Text(
-                      entry == null
-                          ? S.current.Sync_Not_On_List
-                          : summary,
-                      style: theme.textTheme.bodySmall?.copyWith(color: muted),
-                    ),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (entry != null && entry.hasScore) ...[
+                        Icon(Icons.star,
+                            size: 14, color: theme.colorScheme.primary),
+                        const SizedBox(width: 3),
+                      ],
+                      Flexible(
+                        child: Text(
+                          entry == null ? S.current.Sync_Not_On_List : summary,
+                          style:
+                              theme.textTheme.bodySmall?.copyWith(color: muted),
+                        ),
+                      ),
+                    ],
                   ),
-                  TextButton(
-                    onPressed: slot.busy ? null : onEdit,
-                    style: _compact,
-                    child: Text(S.current.Sync_Edit),
-                  ),
-                  const SizedBox(width: 4),
-                  FilledButton.tonalIcon(
-                    onPressed: slot.busy ? null : onSync,
-                    icon: const Icon(Icons.sync, size: 16),
-                    label: Text(S.current.Sync_Sync),
-                    style: _compact,
+                  Wrap(
+                    spacing: 4,
+                    runSpacing: 4,
+                    children: [
+                      TextButton(
+                        onPressed: slot.busy ? null : onEdit,
+                        style: _compact,
+                        child: Text(S.current.Sync_Edit),
+                      ),
+                      FilledButton.tonalIcon(
+                        onPressed: slot.busy ? null : onSync,
+                        icon: const Icon(Icons.sync, size: 16),
+                        label: Text(S.current.Sync_Sync),
+                        style: _compact,
+                      ),
+                    ],
                   ),
                 ],
               ),
