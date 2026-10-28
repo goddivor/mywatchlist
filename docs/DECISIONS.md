@@ -260,3 +260,4 @@ Append-only, one line per decision: `- YYYY-MM-DD [unit] decision — why`. Earl
 - 2026-10-28 [simkl-pages] Profile numbers are computed from the list (counts, episodes, mean score, score distribution, latest activity) because Simkl's stats call needs the account id and answers in minutes; strings `Sk_*` (en + fr_FR) reuse `Prof_*` labels.
 - 2026-10-28 [owner] Anime page Characters, Staff and Reviews sections go back to DailyAL's UI (no grey box behind images); profile tabs never hang (timeout + MAL page fallback).
 - 2026-10-28 [owner] Explore cards (categories, genres) show DailyAL's pictures, bundled as app assets (MIT, credited) since our repo is private; character/seiyuu cards get a ♥ favourites badge.
+- 2026-10-28 [owner] Every search filter must return data without Jikan (MAL search-page fallback) and be live-verified; Explore gets a studios directory (name + logo, infinite scroll, tap = studio search).
