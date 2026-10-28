@@ -108,6 +108,7 @@
         "l10n-quality",
         "color-sweep",
         "app-icon",
+        "splash-screen",
         "release-fixes",
         "in-app-update",
         "deep-links"
@@ -1413,6 +1414,7 @@
       "artifact": "",
       "priority": "P2",
       "needs": [
+        "splash-screen",
         "stack-polish",
         "color-sweep",
         "backup-fixes",
@@ -1661,6 +1663,38 @@
         "test/units/stack-polish/**"
       ],
       "group": "detail",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: sonnet"
+      ],
+      "status": "⬜ todo"
+    },
+    {
+      "id": "splash-screen",
+      "title": "Launch splash like DailyAL: MWL logo centred on a dark background",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "app-icon",
+        "release-fixes"
+      ],
+      "owns": [
+        "android/app/src/main/res/values/**",
+        "android/app/src/main/res/values-night/**",
+        "android/app/src/main/res/values-v31/**",
+        "android/app/src/main/res/values-night-v31/**",
+        "android/app/src/main/res/drawable/**",
+        "android/app/src/main/res/drawable-v21/**",
+        "android/app/src/main/res/drawable-*/splash*",
+        "lib/main.dart",
+        "lib/l10n/units/splash-screen/**",
+        "test/units/splash-screen/**"
+      ],
+      "group": "release",
       "dropped": null,
       "skills": [],
       "states": [],

@@ -559,7 +559,7 @@ const UNITS = [
   },
   {
     id: "l10n-quality", title: "Final translation pass: French (and Arabic) wording of the base and of every unit", kind: "unit", priority: "P2", group: "release", model: "sonnet",
-    needs: ["stack-polish", "color-sweep", "backup-fixes", "release-fixes", "explore-polish", "tracker-wiring", "gate-fix", "auth-refresh", "backend-parsers", "mal-auth-calls", "l10n-pipeline", "deps-prefs-contract", "app-shell", "detail-split", "shared-kit", "perf-foundation", "accounts-ux", "edit-sheet", "user-list-mal", "user-profile-mal", "sync-dialog", "detail-header", "detail-related-graph", "detail-synopsis-media", "detail-social", "detail-more-info", "bookmarks", "calendar", "explore-seasonal", "search-upgrade", "home-wiring", "cards-upgrade", "settings-prefs-pages", "settings-theme-about-backup", "notifications", "dub-info", "api-prefs", "forum-clubs", "featured-characters", "anilist-pages", "kitsu-pages", "simkl-pages", "versioning-ci", "in-app-update", "deep-links"],
+    needs: ["splash-screen", "stack-polish", "color-sweep", "backup-fixes", "release-fixes", "explore-polish", "tracker-wiring", "gate-fix", "auth-refresh", "backend-parsers", "mal-auth-calls", "l10n-pipeline", "deps-prefs-contract", "app-shell", "detail-split", "shared-kit", "perf-foundation", "accounts-ux", "edit-sheet", "user-list-mal", "user-profile-mal", "sync-dialog", "detail-header", "detail-related-graph", "detail-synopsis-media", "detail-social", "detail-more-info", "bookmarks", "calendar", "explore-seasonal", "search-upgrade", "home-wiring", "cards-upgrade", "settings-prefs-pages", "settings-theme-about-backup", "notifications", "dub-info", "api-prefs", "forum-clubs", "featured-characters", "anilist-pages", "kitsu-pages", "simkl-pages", "versioning-ci", "in-app-update", "deep-links"],
     owns: ["lib/services/updater/update_controller.dart", "lib/l10n/units/*/intl_fr_FR.arb", "lib/l10n/intl_fr_FR.arb", "lib/l10n/intl_ar_EG.arb", "lib/l10n/units/l10n-pipeline/**"],
     goal: ["Update dialog download sizes: replace the duplicated English-only formatBytes in lib/services/updater/update_controller.dart with the shared locale-aware one from storage_settings.dart (backup-fixes PR #175).", 
       "The base ARB files are DailyAL's machine-quality translations. Review intl_fr_FR.arb entirely: fix mistranslations (e.g. `About` = « Sur » → « À propos »), untranslated entries (Spanish, German, Indonesian at :595-598), capitalisation (« turc » next to « Portugais », :856), French typography (non-breaking space before : ; ! ?, « » quotes, no em dash). The French must be flawless: follow the redaction-francais rules if available to you.",
@@ -631,6 +631,18 @@ const UNITS = [
       "Grep the repo for other `AvatarWidget(` calls used as covers (height > 60) without a width and list them in the PR body as findings (do not edit files you do not own).",
     ],
     dod: ["Widget test: an entry cover is 100 x 150; the date is formatted in French under fr_FR.", "Checker: the owner's stack page side by side with DailyAL."],
+  },
+  {
+    id: "splash-screen", title: "Launch splash like DailyAL: MWL logo centred on a dark background", kind: "unit", priority: "P1", group: "release", model: "sonnet", ui: true,
+    needs: ["app-icon", "release-fixes"],
+    owns: ["android/app/src/main/res/values/**", "android/app/src/main/res/values-night/**", "android/app/src/main/res/values-v31/**", "android/app/src/main/res/values-night-v31/**", "android/app/src/main/res/drawable/**", "android/app/src/main/res/drawable-v21/**", "android/app/src/main/res/drawable-*/splash*", "lib/main.dart"],
+    dal: ["android/app/src/main/res (system splash = launcher icon on a dark window background)"],
+    goal: [
+      "Owner (screenshot of DailyAL starting): when the app launches, show what DailyAL shows — the app logo centred on a dark navy background — but with MyWatchList's own logo (the round launcher icon from app-icon / assets/images/mywatchlist-logo.png).",
+      "Android 12+ system splash (values-v31 / values-night-v31: windowSplashScreenBackground dark, windowSplashScreenAnimatedIcon = the MWL adaptive icon foreground, icon background if needed) and the pre-12 launch_background.xml with the same dark colour and centred logo; NormalTheme background matches so there is no white flash between the splash and Flutter's first frame. Same look in light and dark system modes, like DailyAL.",
+      "No new dependency unless needed (flutter_native_splash only if hand-written resources cannot do it; justify).",
+    ],
+    dod: ["Test that the v31 styles reference the splash background and icon; checker: cold start on the emulator shows the MWL logo on dark, no white flash."],
   },
   {
     id: "explore-polish", title: "Explore: DailyAL images on category and genre cards, explicit genres, recommendations/stacks fallbacks, favourites badges", kind: "unit", priority: "P1", group: "discovery", model: "opus", ui: true,
