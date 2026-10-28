@@ -43,7 +43,7 @@ void main() {
   tearDown(ContentStatsSource.reset);
 
   group('Score Stats: Jikan, then MAL stats page, then MAL figures (#134)', () {
-    testWidgets('Jikan down, MAL stats page answers: bars from MAL with a source note', (tester) async {
+    testWidgets('Jikan down, MAL stats page answers: bars from MAL, no source caption (ux-detail-content U12)', (tester) async {
       ContentStatsSource.jikan = _jikanDown;
       final asked = <String>[];
       ContentStatsSource.mal = (id, category) async {
@@ -60,7 +60,7 @@ void main() {
       expect(bars.scores.map((s) => s.score), [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
       expect(bars.fromMyAnimeList, isTrue);
       expect(find.text(S.current.Res_Score_Total_Votes('5.5K')), findsOneWidget);
-      expect(find.text(S.current.Res_Source_Mal), findsOneWidget);
+      expect(find.text(S.current.Res_Source_Mal), findsNothing);
       expect(find.text(S.current.Res_Score_Unavailable), findsNothing);
     });
 
