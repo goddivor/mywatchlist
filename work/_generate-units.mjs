@@ -612,7 +612,7 @@ const UNITS = [
   {
     id: "tracker-followups", title: "Tracker follow-ups: removed rows disappear, Simkl list categories, notifications for every tracker", kind: "unit", priority: "P1", group: "trackers", model: "sonnet", ui: true,
     needs: ["tracker-wiring"],
-    owns: ["lib/widgets/Anilist/**/anilist_user_list_adapter.dart", "lib/widgets/Kitsu/**/kitsu_user_list_adapter.dart", "lib/widgets/user/cross_tracker_widget.dart", "lib/pages/Simkl/**/simkl_user_page.dart", "lib/screens/settings/notifications_settings.dart", "lib/services/notifications/**"],
+    owns: ["lib/pages/Anilist/anilist_home_page.dart", "lib/pages/Anilist/anilist_explore_page.dart", "lib/pages/Kitsu/kitsu_home_page.dart", "lib/pages/Kitsu/kitsu_explore_page.dart", "lib/pages/Simkl/simkl_home_page.dart", "lib/pages/Simkl/simkl_explore_page.dart", "lib/main.dart", "test/units/drawer-icon/**", "lib/widgets/Anilist/**/anilist_user_list_adapter.dart", "lib/widgets/Kitsu/**/kitsu_user_list_adapter.dart", "lib/widgets/user/cross_tracker_widget.dart", "lib/pages/Simkl/**/simkl_user_page.dart", "lib/screens/settings/notifications_settings.dart", "lib/services/notifications/**"],
     goal: [
       "Findings of tracker-wiring (PR #168): the AniList and Kitsu list adapters and cross_tracker_widget.dart must drop the row when the editor returns `saved.isRemoved` (today the removed row stays as a status-less entry until refresh).",
       "simkl_user_page.dart passes `categories: const ['anime']` to UserListView and drops its title workaround.",
