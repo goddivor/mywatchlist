@@ -79,7 +79,7 @@ void main() {
     expect(find.text('21,255 · 61.7%'), findsOneWidget);
     expect(find.text('245 reactions'), findsOneWidget);
     expect(find.text('6 reviews'), findsOneWidget);
-    expect(find.text('Episodes'), findsOneWidget);
+    expect(find.text('Episodes'), findsWidgets); // section title and info row
     expect(find.text('Episode 1'), findsOneWidget);
     expect(find.text('Cruelty'), findsOneWidget);
     expect(find.text('Related'), findsOneWidget);
@@ -103,20 +103,22 @@ void main() {
     await pump(tester, SimklMediaPage(simklId: 831411, service: site(pages: false).service()));
     expect(find.text('Kimetsu no Yaiba'), findsWidgets);
     expect(find.text('Synopsis'), findsOneWidget);
-    expect(find.text('Episodes'), findsOneWidget);
+    expect(find.text('Episodes'), findsWidgets); // section title and info row
     expect(find.text('Watchers'), findsNothing);
     expect(find.text('Reviews'), findsNothing);
     expect(find.text('Comments'), findsNothing);
     expect(find.text('Tags'), findsNothing);
   });
 
-  testWidgets('unknown title and unreachable API end in a message', (tester) async {
+  testWidgets('an unknown title ends in a message', (tester) async {
     await pump(tester, SimklMediaPage(simklId: 77, service: site().service()));
     expect(find.text('Simkl has no title with this id'), findsOneWidget);
+  });
 
+  testWidgets('an unreachable API ends in an error with Retry', (tester) async {
     await pump(tester, SimklMediaPage(simklId: 5, service: site().service()));
     expect(find.text("Couldn't load this title from Simkl"), findsOneWidget);
-    expect(find.text('Retry'), findsOneWidget);
+    expect(find.text(S.current.Res_Retry), findsOneWidget);
   });
 
   testWidgets('French: sections and numbers are translated', (tester) async {
