@@ -3,6 +3,17 @@
 **Kind** unit · **Priority** P2 · **Group** release · **Model** sonnet
 
 ## Needs done first
+- `kitsu-graphql` (kitsu-graphql)
+- `kitsu-media-page` (kitsu-media-page)
+- `kitsu-community` (kitsu-community)
+- `kitsu-profile-plus` (kitsu-profile-plus)
+- `kitsu-home-extras` (kitsu-home-extras)
+- `simkl-api-compliance` (simkl-api-compliance)
+- `simkl-auth-v2` (simkl-auth-v2)
+- `simkl-cdn-feeds` (simkl-cdn-feeds)
+- `simkl-media-page` (simkl-media-page)
+- `simkl-profile-plus` (simkl-profile-plus)
+- `simkl-list-sync` (simkl-list-sync)
 - `mal-session` (Optional MAL website session (WebView login, native cookies, CSRF client) + profile comments)
 - `profile-lists` (Other users' anime/manga lists, weekly tab and sidebar shortcuts like DailyAL)
 - `explore-weekly` (Weekly anime per season (MAL broadcast weekday) and Random without Jikan)

@@ -570,6 +570,114 @@ UI directive applies: compare DAL and MWL, keep the better, improve it.
 Deliver with the PR procedure of the brief.
 ```
 
+## kitsu-graphql
+
+```text
+Unit kitsu-graphql — kitsu-graphql.
+Read work/handoffs/kitsu-graphql.md fully, then the DAL reference files it lists, then the MWL files you own.
+Build exactly the Goal, inside the Owns list. Heavy commands only through tools/heavy.sh; never run flutter build or touch the emulator.
+Deliver with the PR procedure of the brief.
+```
+
+## kitsu-media-page
+
+```text
+Unit kitsu-media-page — kitsu-media-page.
+Read work/handoffs/kitsu-media-page.md fully, then the DAL reference files it lists, then the MWL files you own.
+Build exactly the Goal, inside the Owns list. Heavy commands only through tools/heavy.sh; never run flutter build or touch the emulator.
+UI directive applies: compare DAL and MWL, keep the better, improve it.
+Deliver with the PR procedure of the brief.
+```
+
+## kitsu-community
+
+```text
+Unit kitsu-community — kitsu-community.
+Read work/handoffs/kitsu-community.md fully, then the DAL reference files it lists, then the MWL files you own.
+Build exactly the Goal, inside the Owns list. Heavy commands only through tools/heavy.sh; never run flutter build or touch the emulator.
+UI directive applies: compare DAL and MWL, keep the better, improve it.
+Deliver with the PR procedure of the brief.
+```
+
+## kitsu-profile-plus
+
+```text
+Unit kitsu-profile-plus — kitsu-profile-plus.
+Read work/handoffs/kitsu-profile-plus.md fully, then the DAL reference files it lists, then the MWL files you own.
+Build exactly the Goal, inside the Owns list. Heavy commands only through tools/heavy.sh; never run flutter build or touch the emulator.
+UI directive applies: compare DAL and MWL, keep the better, improve it.
+Deliver with the PR procedure of the brief.
+```
+
+## kitsu-home-extras
+
+```text
+Unit kitsu-home-extras — kitsu-home-extras.
+Read work/handoffs/kitsu-home-extras.md fully, then the DAL reference files it lists, then the MWL files you own.
+Build exactly the Goal, inside the Owns list. Heavy commands only through tools/heavy.sh; never run flutter build or touch the emulator.
+UI directive applies: compare DAL and MWL, keep the better, improve it.
+Deliver with the PR procedure of the brief.
+```
+
+## simkl-api-compliance
+
+```text
+Unit simkl-api-compliance — simkl-api-compliance.
+Read work/handoffs/simkl-api-compliance.md fully, then the DAL reference files it lists, then the MWL files you own.
+Build exactly the Goal, inside the Owns list. Heavy commands only through tools/heavy.sh; never run flutter build or touch the emulator.
+Deliver with the PR procedure of the brief.
+```
+
+## simkl-auth-v2
+
+```text
+Unit simkl-auth-v2 — simkl-auth-v2.
+Read work/handoffs/simkl-auth-v2.md fully, then the DAL reference files it lists, then the MWL files you own.
+Build exactly the Goal, inside the Owns list. Heavy commands only through tools/heavy.sh; never run flutter build or touch the emulator.
+UI directive applies: compare DAL and MWL, keep the better, improve it.
+Deliver with the PR procedure of the brief.
+```
+
+## simkl-cdn-feeds
+
+```text
+Unit simkl-cdn-feeds — simkl-cdn-feeds.
+Read work/handoffs/simkl-cdn-feeds.md fully, then the DAL reference files it lists, then the MWL files you own.
+Build exactly the Goal, inside the Owns list. Heavy commands only through tools/heavy.sh; never run flutter build or touch the emulator.
+UI directive applies: compare DAL and MWL, keep the better, improve it.
+Deliver with the PR procedure of the brief.
+```
+
+## simkl-media-page
+
+```text
+Unit simkl-media-page — simkl-media-page.
+Read work/handoffs/simkl-media-page.md fully, then the DAL reference files it lists, then the MWL files you own.
+Build exactly the Goal, inside the Owns list. Heavy commands only through tools/heavy.sh; never run flutter build or touch the emulator.
+UI directive applies: compare DAL and MWL, keep the better, improve it.
+Deliver with the PR procedure of the brief.
+```
+
+## simkl-profile-plus
+
+```text
+Unit simkl-profile-plus — simkl-profile-plus.
+Read work/handoffs/simkl-profile-plus.md fully, then the DAL reference files it lists, then the MWL files you own.
+Build exactly the Goal, inside the Owns list. Heavy commands only through tools/heavy.sh; never run flutter build or touch the emulator.
+UI directive applies: compare DAL and MWL, keep the better, improve it.
+Deliver with the PR procedure of the brief.
+```
+
+## simkl-list-sync
+
+```text
+Unit simkl-list-sync — simkl-list-sync.
+Read work/handoffs/simkl-list-sync.md fully, then the DAL reference files it lists, then the MWL files you own.
+Build exactly the Goal, inside the Owns list. Heavy commands only through tools/heavy.sh; never run flutter build or touch the emulator.
+UI directive applies: compare DAL and MWL, keep the better, improve it.
+Deliver with the PR procedure of the brief.
+```
+
 ## explore-polish
 
 ```text

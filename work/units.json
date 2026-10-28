@@ -104,6 +104,17 @@
         "kitsu-pages",
         "simkl-pages",
         "tracker-followups",
+        "kitsu-graphql",
+        "kitsu-media-page",
+        "kitsu-community",
+        "kitsu-profile-plus",
+        "kitsu-home-extras",
+        "simkl-api-compliance",
+        "simkl-auth-v2",
+        "simkl-cdn-feeds",
+        "simkl-media-page",
+        "simkl-profile-plus",
+        "simkl-list-sync",
         "tracker-wiring"
       ]
     },
@@ -1427,6 +1438,17 @@
       "artifact": "",
       "priority": "P2",
       "needs": [
+        "kitsu-graphql",
+        "kitsu-media-page",
+        "kitsu-community",
+        "kitsu-profile-plus",
+        "kitsu-home-extras",
+        "simkl-api-compliance",
+        "simkl-auth-v2",
+        "simkl-cdn-feeds",
+        "simkl-media-page",
+        "simkl-profile-plus",
+        "simkl-list-sync",
         "mal-session",
         "profile-lists",
         "explore-weekly",
@@ -2000,6 +2022,330 @@
         "test/units/mal-session/**"
       ],
       "group": "foundation",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "⬜ todo"
+    },
+    {
+      "id": "kitsu-graphql",
+      "title": "kitsu-graphql",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "tracker-followups"
+      ],
+      "owns": [
+        "lib/services/api/Kitsu/kitsu_graphql.dart",
+        "test/units/kitsu-graphql/**",
+        "lib/l10n/units/kitsu-graphql/**",
+        "test/units/kitsu-graphql/**"
+      ],
+      "group": "trackers",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: sonnet"
+      ],
+      "status": "⬜ todo"
+    },
+    {
+      "id": "kitsu-media-page",
+      "title": "kitsu-media-page",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "kitsu-graphql",
+        "tracker-followups"
+      ],
+      "owns": [
+        "lib/pages/Kitsu/kitsu_media_page.dart",
+        "lib/services/api/Kitsu/kitsu_media_detail.dart",
+        "lib/widgets/Kitsu/media/**",
+        "lib/widgets/Kitsu/kitsu_open.dart",
+        "lib/widgets/Kitsu/kitsu_media_tile.dart",
+        "lib/l10n/units/kitsu-media-page/**",
+        "test/units/kitsu-media-page/**",
+        "test/units/kitsu-media-page/**"
+      ],
+      "group": "trackers",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "⬜ todo"
+    },
+    {
+      "id": "kitsu-community",
+      "title": "kitsu-community",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "kitsu-graphql",
+        "tracker-followups"
+      ],
+      "owns": [
+        "lib/pages/Kitsu/kitsu_forum_page.dart",
+        "lib/pages/Kitsu/kitsu_post_page.dart",
+        "lib/pages/Kitsu/kitsu_group_page.dart",
+        "lib/services/api/Kitsu/kitsu_feed.dart",
+        "lib/widgets/Kitsu/feed/**",
+        "lib/l10n/units/kitsu-community/**",
+        "test/units/kitsu-community/**",
+        "test/units/kitsu-community/**"
+      ],
+      "group": "trackers",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "⬜ todo"
+    },
+    {
+      "id": "kitsu-profile-plus",
+      "title": "kitsu-profile-plus",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "kitsu-graphql",
+        "tracker-followups"
+      ],
+      "owns": [
+        "lib/widgets/Kitsu/kitsu_profile_view.dart",
+        "lib/widgets/Kitsu/profile/**",
+        "lib/services/api/Kitsu/kitsu_profile.dart",
+        "lib/services/api/Kitsu/kitsu_social.dart",
+        "lib/pages/Kitsu/kitsu_user_profile_page.dart",
+        "lib/l10n/units/kitsu-profile-plus/**",
+        "test/units/kitsu-profile-plus/**",
+        "test/units/kitsu-profile-plus/**"
+      ],
+      "group": "trackers",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "⬜ todo"
+    },
+    {
+      "id": "kitsu-home-extras",
+      "title": "kitsu-home-extras",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "kitsu-community",
+        "tracker-followups"
+      ],
+      "owns": [
+        "lib/pages/Kitsu/kitsu_home_page.dart",
+        "lib/pages/Kitsu/kitsu_explore_page.dart",
+        "lib/pages/Kitsu/kitsu_browse_screen.dart",
+        "lib/widgets/Kitsu/kitsu_rows.dart",
+        "lib/widgets/Kitsu/kitsu_media_row.dart",
+        "lib/services/api/Kitsu/kitsu_catalog.dart",
+        "lib/l10n/units/kitsu-home-extras/**",
+        "test/units/kitsu-home-extras/**",
+        "test/units/kitsu-home-extras/**"
+      ],
+      "group": "trackers",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "⬜ todo"
+    },
+    {
+      "id": "simkl-api-compliance",
+      "title": "simkl-api-compliance",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "tracker-followups"
+      ],
+      "owns": [
+        "lib/services/api/SimKl/simkl_client.dart",
+        "test/units/simkl-api-compliance/**",
+        "lib/l10n/units/simkl-api-compliance/**",
+        "test/units/simkl-api-compliance/**"
+      ],
+      "group": "trackers",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: sonnet"
+      ],
+      "status": "⬜ todo"
+    },
+    {
+      "id": "simkl-auth-v2",
+      "title": "simkl-auth-v2",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "simkl-api-compliance",
+        "tracker-followups"
+      ],
+      "owns": [
+        "lib/services/auth/simkl_auth.dart",
+        "lib/services/auth/simkl_auth_v2.dart",
+        "lib/services/auth/simkl_authresp.dart",
+        "lib/user/user_simkl_v2.dart",
+        "test/units/simkl-auth-v2/**",
+        "lib/l10n/units/simkl-auth-v2/**",
+        "test/units/simkl-auth-v2/**"
+      ],
+      "group": "trackers",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "⬜ todo"
+    },
+    {
+      "id": "simkl-cdn-feeds",
+      "title": "simkl-cdn-feeds",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "simkl-api-compliance",
+        "tracker-followups"
+      ],
+      "owns": [
+        "lib/services/api/SimKl/simkl_cdn.dart",
+        "lib/services/api/SimKl/simkl_discover_service.dart",
+        "lib/pages/Simkl/simkl_explore_page.dart",
+        "lib/pages/Simkl/simkl_home_page.dart",
+        "lib/widgets/Simkl/simkl_feeds.dart",
+        "lib/widgets/Simkl/simkl_home_plan.dart",
+        "lib/l10n/units/simkl-cdn-feeds/**",
+        "test/units/simkl-cdn-feeds/**",
+        "test/units/simkl-cdn-feeds/**"
+      ],
+      "group": "trackers",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "⬜ todo"
+    },
+    {
+      "id": "simkl-media-page",
+      "title": "simkl-media-page",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "simkl-api-compliance",
+        "tracker-followups"
+      ],
+      "owns": [
+        "lib/pages/Simkl/simkl_media_page.dart",
+        "lib/services/api/SimKl/simkl_detail_service.dart",
+        "lib/services/api/SimKl/simkl_detail_models.dart",
+        "lib/services/api/SimKl/scrapper/**",
+        "lib/widgets/Simkl/media/**",
+        "lib/widgets/Simkl/simkl_media_widgets.dart",
+        "lib/l10n/units/simkl-media-page/**",
+        "test/units/simkl-media-page/**",
+        "test/units/simkl-media-page/**"
+      ],
+      "group": "trackers",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "⬜ todo"
+    },
+    {
+      "id": "simkl-profile-plus",
+      "title": "simkl-profile-plus",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "simkl-api-compliance",
+        "tracker-followups"
+      ],
+      "owns": [
+        "lib/widgets/Simkl/simkl_profile_view.dart",
+        "lib/pages/Simkl/simkl_user_profile_page.dart",
+        "lib/services/api/SimKl/simkl_user_prof.dart",
+        "lib/services/api/SimKl/simkl_stats_service.dart",
+        "lib/services/api/SimKl/simkl_models.dart",
+        "lib/l10n/units/simkl-profile-plus/**",
+        "test/units/simkl-profile-plus/**",
+        "test/units/simkl-profile-plus/**"
+      ],
+      "group": "trackers",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "⬜ todo"
+    },
+    {
+      "id": "simkl-list-sync",
+      "title": "simkl-list-sync",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "simkl-api-compliance",
+        "simkl-profile-plus",
+        "tracker-followups"
+      ],
+      "owns": [
+        "lib/services/api/SimKl/simkl_list_service.dart",
+        "lib/services/api/SimKl/simkl_user.dart",
+        "lib/widgets/Simkl/simkl_user_list_adapter.dart",
+        "lib/widgets/Simkl/simkl_edit_sheet.dart",
+        "lib/widgets/Simkl/simkl_states.dart",
+        "lib/pages/Simkl/simkl_user_page.dart",
+        "lib/l10n/units/simkl-list-sync/**",
+        "test/units/simkl-list-sync/**",
+        "test/units/simkl-list-sync/**"
+      ],
+      "group": "trackers",
       "dropped": null,
       "skills": [],
       "states": [],
