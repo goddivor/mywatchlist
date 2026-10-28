@@ -7,12 +7,13 @@
 - `backend-parsers` (mwl-api: port DAL's missing routes and HTML parsers)
 
 ## Owns (may create or edit ONLY these)
+- `lib/l10n/units/mal-friends-json/**`
+- `test/smoke/html_parsers_test.dart`
 - `lib/screens/user_profile/sections/**`
 - `lib/services/api/mwl_api.dart`
 - `mwl-api/**`
 - `lib/services/api/MAL/scrapper/user_friends.dart`
 - `lib/services/api/MAL/scrapper/user_history.dart`
-- `lib/l10n/units/profile-tabs/**`
 - `test/units/profile-tabs/**`
 
 Plus `PROJECT-STATE.md` (rewrite in place, within its cap) and `docs/DECISIONS.md` (append one line per decision). Anything else you need is a FINDING to report, never an edit.

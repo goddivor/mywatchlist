@@ -266,7 +266,7 @@ const UNITS = [
   {
     id: "profile-tabs", title: "Profile tabs (Friends, Clubs, History) never hang: timeout + MAL page fallback", kind: "unit", priority: "P0", group: "user", model: "sonnet", ui: true,
     needs: ["profile-polish", "backend-parsers"],
-    owns: ["lib/screens/user_profile/sections/**", "lib/services/api/mwl_api.dart", "mwl-api/**", "lib/services/api/MAL/scrapper/user_friends.dart", "lib/services/api/MAL/scrapper/user_history.dart"],
+    owns: ["lib/l10n/units/mal-friends-json/**", "test/smoke/html_parsers_test.dart", "lib/screens/user_profile/sections/**", "lib/services/api/mwl_api.dart", "mwl-api/**", "lib/services/api/MAL/scrapper/user_friends.dart", "lib/services/api/MAL/scrapper/user_history.dart"],
     goal: [
       "Owner's screenshot: the profile Friends tab spins forever on 'Loading profile…'. friends_section.dart calls `MwlApi.getUserFriends`, which goes through an mwl-api route (Jikan-backed) with no timeout; Jikan is unreachable on the owner's network, so no error ever shows. Same risk for Clubs and History.",
       "Every profile tab ends in content, an empty state or an error with Retry within ~12 s: client timeouts on these MwlApi calls; read friends / clubs / history from MAL's own profile pages (myanimelist.net/profile/<name>/friends, /clubs, /history — parsers exist in lib/services/api/MAL/scrapper/ and mwl_commons) when Jikan fails or first; parse off the UI isolate.",

@@ -637,12 +637,13 @@
         "backend-parsers"
       ],
       "owns": [
+        "lib/l10n/units/mal-friends-json/**",
+        "test/smoke/html_parsers_test.dart",
         "lib/screens/user_profile/sections/**",
         "lib/services/api/mwl_api.dart",
         "mwl-api/**",
         "lib/services/api/MAL/scrapper/user_friends.dart",
         "lib/services/api/MAL/scrapper/user_history.dart",
-        "lib/l10n/units/profile-tabs/**",
         "test/units/profile-tabs/**"
       ],
       "group": "user",
