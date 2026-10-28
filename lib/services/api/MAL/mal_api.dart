@@ -1066,66 +1066,84 @@ class MalApi {
     }
   }
 
-  /// Build a weekly airing schedule organized by day of the week.
-  /// Returns 8 lists: Monday(0) through Sunday(6) + Other(7).
-  static Future<List<List<Anime>>> getSchedule({
+  /// Fields of each anime of [getSchedule]: what the weekly cards, sorts and filters use.
+  static const String scheduleFields = 'id,title,main_picture,start_date,end_date,mean,'
+      'popularity,num_list_users,num_scoring_users,media_type,status,genres,num_episodes,'
+      'broadcast,my_list_status{status,score,num_episodes_watched,is_rewatching,updated_at,priority}';
+
+  /// Weekly schedule of a season (DailyAL `getSchedule`): every anime of [seasonType] of
+  /// [year] (all pages of 500), as the raw MAL `node` maps grouped in 8 lists, Monday to
+  /// Sunday then "others" (no broadcast slot). The day is the broadcast day in the time zone
+  /// [pref] (the preference by default), see [scheduleWeekday].
+  static Future<List<List<Map<String, dynamic>>>> getSchedule({
     SeasonType? seasonType,
     int? currentYear,
+    TimezonePref? pref,
+    DateTime? now,
   }) async {
     seasonType ??= MalApi.getSeasonType();
     currentYear ??= MalApi.getCurrentSeasonYear();
-
-    final result = await getAnimeSeasonalResult(
-      seasonType,
-      currentYear,
-      sortType: SortType.AnimeScore,
-      limit: 500,
-      fields: [
-        'my_list_status',
-        'broadcast',
-        'status',
-        'mean',
-        'num_list_users'
-      ],
-    );
-
-    // 8 buckets: index 0-6 = Monday-Sunday, index 7 = Other
-    final schedule = List.generate(8, (_) => <Anime>[]);
-
-    for (final anime in result.data) {
-      if (anime.broadcast != null &&
-          anime.broadcast!.dayOfTheWeek.isNotEmpty &&
-          anime.broadcast!.startTime.isNotEmpty) {
-        // Capitalize first letter: MAL API returns lowercase, weekdaysOrderMap uses capitalized keys
-        final dayCapitalized = anime.broadcast!.dayOfTheWeek[0].toUpperCase() +
-            anime.broadcast!.dayOfTheWeek.substring(1).toLowerCase();
-        final weekday = weekdaysOrderMap[dayCapitalized];
-        if (weekday != null) {
-          // Adjust for timezone: get airing date and find adjusted weekday
-          final airingDate = getAiringDate(
-            Broadcast(
-              dayOfTheWeek: dayCapitalized,
-              startTime: anime.broadcast!.startTime,
-            ),
-          );
-          if (airingDate != null) {
-            // Day of the week in the time zone chosen in the preferences
-            final adjustedDay = getAdjustedTime(airingDate, DateTime.now())
-                .weekday; // 1=Monday, 7=Sunday
-            schedule[adjustedDay - 1].add(anime);
-          } else {
-            schedule[weekday - 1].add(anime);
-          }
-        } else {
-          schedule[7].add(anime);
-        }
-      } else {
-        schedule[7].add(anime);
+    final season = getSeasonName(seasonType).toLowerCase();
+    final schedule = List.generate(8, (_) => <Map<String, dynamic>>[]);
+    String? url = '$animeSeasonalEndPoint/$currentYear/$season'
+        '?sort=anime_score&limit=500&offset=0&fields=$scheduleFields';
+    while (url != null) {
+      final response = await _get(url);
+      if (response.statusCode != 200) {
+        throw Exception('Failed to get the season schedule (${response.statusCode})');
       }
+      final decoded = await _decode(response.body);
+      final body = decoded is Map ? decoded : const {};
+      final data = body['data'];
+      if (data is! List || data.isEmpty) break;
+      for (final item in data) {
+        final node = item is Map ? item['node'] : null;
+        if (node is! Map || node['id'] is! num) continue;
+        final broadcast = node['broadcast'];
+        final day = broadcast is Map
+            ? scheduleWeekday(broadcast['day_of_the_week'] as String?,
+                broadcast['start_time'] as String?,
+                pref: pref, now: now)
+            : 8;
+        schedule[day - 1].add(Map<String, dynamic>.from(node));
+      }
+      final paging = body['paging'];
+      final next = paging is Map ? paging['next'] : null;
+      url = next is String && next.isNotEmpty ? next : null;
     }
-
     return schedule;
   }
+
+  /// Day (1 = Monday … 7 = Sunday) a MAL broadcast slot ([day] `monday`…, [time] `23:30`, both
+  /// Japan time) falls on in the time zone [pref]; 8 when the slot is unknown or `other`. A
+  /// late-night JST slot can be the day before in UTC or in the device zone; the device zone
+  /// is read at the next airing after [now], so summer time is taken into account.
+  static int scheduleWeekday(String? day, String? time, {TimezonePref? pref, DateTime? now}) {
+    final normalized = day == null || day.isEmpty
+        ? ''
+        : day[0].toUpperCase() + day.substring(1).toLowerCase();
+    final weekday = weekdaysOrderMap[normalized];
+    final parts = time?.split(':');
+    final hours = parts != null && parts.length >= 2 ? int.tryParse(parts[0]) : null;
+    final minutes = parts != null && parts.length >= 2 ? int.tryParse(parts[1]) : null;
+    if (weekday == null || hours == null || minutes == null) return 8;
+    final zone = pref ?? Preferences.content.timezone;
+    if (zone == TimezonePref.jst && hours < 24) return weekday;
+    // JST wall clock of the next airing, written in UTC fields, then shifted back by 9 hours.
+    final jstNow = (now ?? DateTime.now()).toUtc().add(const Duration(hours: 9));
+    final start = DateTime.utc(jstNow.year, jstNow.month, jstNow.day)
+        .add(Duration(days: (weekday - jstNow.weekday) % 7, hours: hours, minutes: minutes));
+    final airing = start.subtract(const Duration(hours: 9));
+    return switch (zone) {
+      TimezonePref.jst => start.weekday,
+      TimezonePref.utc => airing.weekday,
+      TimezonePref.local => airing.toLocal().weekday,
+    };
+  }
+
+  /// JSON body decoded off the UI isolate when large (a season of 500 anime).
+  static Future<Object?> _decode(String body) =>
+      body.length < 32 * 1024 ? Future.value(json.decode(body)) : compute(json.decode, body);
 
   /// Wrap a single anime/manga detail lookup into a SearchResult.
   Future<SearchResult> searchById(int id, {String category = "anime"}) async {

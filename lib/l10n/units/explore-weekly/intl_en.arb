@@ -1,0 +1,8 @@
+{
+  "@@locale": "en",
+  "Wk_List_Status": "List status",
+  "Wk_Not_In_List": "Not in list",
+  "Wk_Failed": "Couldn't load this season's schedule",
+  "Wk_Day_Tab": "{day} ({count})",
+  "@Wk_Day_Tab": { "placeholders": { "day": { "type": "String" }, "count": { "type": "int" } } }
+}

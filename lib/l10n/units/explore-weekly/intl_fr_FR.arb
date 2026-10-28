@@ -1,0 +1,7 @@
+{
+  "@@locale": "fr_FR",
+  "Wk_List_Status": "Statut dans la liste",
+  "Wk_Not_In_List": "Pas dans la liste",
+  "Wk_Failed": "Impossible de charger le programme de cette saison",
+  "Wk_Day_Tab": "{day} ({count})"
+}
