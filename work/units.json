@@ -57,6 +57,7 @@
         "search-upgrade",
         "home-wiring",
         "cards-upgrade",
+        "explore-polish",
         "home-fixes"
       ]
     },
@@ -1474,6 +1475,7 @@
       "artifact": "",
       "priority": "P1",
       "needs": [
+        "explore-polish",
         "profile-tabs",
         "theme-seasons",
         "detail-polish",
@@ -1570,6 +1572,36 @@
         "model: sonnet"
       ],
       "status": "✅ done"
+    },
+    {
+      "id": "explore-polish",
+      "title": "Explore: DailyAL images on category and genre cards, explicit genres, recommendations/stacks fallbacks, favourites badges",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "explore-seasonal",
+        "home-wiring",
+        "profile-tabs"
+      ],
+      "owns": [
+        "lib/pages/MAL/mal_explore_page.dart",
+        "lib/screens/explore/**",
+        "assets/images/explore/**",
+        "pubspec.yaml",
+        "lib/cache/top_characters.dart",
+        "lib/l10n/units/explore-polish/**",
+        "test/units/explore-polish/**"
+      ],
+      "group": "discovery",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "⬜ todo"
     },
     {
       "id": "tracker-wiring",

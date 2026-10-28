@@ -572,7 +572,7 @@ const UNITS = [
   },
   {
     id: "color-sweep", title: "Colour sweep: hardcoded colours of already-merged screens onto the theme tokens", kind: "unit", priority: "P1", group: "release", model: "sonnet", ui: true,
-    needs: ["profile-tabs", "theme-seasons", "detail-polish", "home-fixes", "backup-fixes", "tracker-wiring", "profile-polish", "list-cards-dal", "detail-resilience", "home-wiring", "featured-characters", "dub-info", "detail-more-info", "settings-theme-about-backup", "in-app-update", "forum-clubs", "search-upgrade", "theme-colors", "cards-upgrade", "detail-header", "detail-social", "detail-related-graph", "detail-synopsis-media", "user-list-mal", "user-profile-mal", "edit-sheet", "sync-dialog", "bookmarks", "calendar", "explore-seasonal", "settings-prefs-pages", "accounts-ux", "app-shell", "shared-kit", "notifications"],
+    needs: ["explore-polish", "profile-tabs", "theme-seasons", "detail-polish", "home-fixes", "backup-fixes", "tracker-wiring", "profile-polish", "list-cards-dal", "detail-resilience", "home-wiring", "featured-characters", "dub-info", "detail-more-info", "settings-theme-about-backup", "in-app-update", "forum-clubs", "search-upgrade", "theme-colors", "cards-upgrade", "detail-header", "detail-social", "detail-related-graph", "detail-synopsis-media", "user-list-mal", "user-profile-mal", "edit-sheet", "sync-dialog", "bookmarks", "calendar", "explore-seasonal", "settings-prefs-pages", "accounts-ux", "app-shell", "shared-kit", "notifications"],
     owns: ["lib/widgets/loading/**", "lib/widgets/MAL/home/**", "lib/widgets/MAL/content/**", "lib/widgets/MAL/review/**", "lib/widgets/user/**", "lib/widgets/charts/**", "lib/widgets/bookmarks/**", "lib/widgets/calendar/**", "lib/widgets/common/**", "lib/screens/MAL/**", "lib/screens/explore/**", "lib/screens/seasonal/**", "lib/screens/calendar/**", "lib/screens/user_profile/**", "lib/screens/settings/**", "lib/screens/bookmarks_screen.dart", "lib/pages/side_bar.dart", "lib/constants/constants.dart"],
     goal: [
       "Replace every hardcoded `Colors.*` / `Color(0x…)` in the owned screens with `colorScheme` roles or the app_colors tokens (theme-colors), except intrinsic content colours (e.g. a tracker's brand logo) — list those exceptions in the PR body.",
@@ -594,6 +594,18 @@ const UNITS = [
       "Prefer flutter_launcher_icons (already a dev dependency, config `flutter_icons:` in pubspec.yaml): set adaptive_icon_background / adaptive_icon_foreground / adaptive_icon_monochrome and regenerate with `tools/heavy.sh dart run flutter_launcher_icons`; commit the generated res files. iOS keeps a square icon (iOS masks it itself).",
     ],
     dod: ["mipmap-anydpi-v26/ic_launcher.xml (+ ic_launcher_round.xml) exist with background/foreground/monochrome.", "Checker: launcher screenshot on the emulator next to DailyAL — a full dark circle with the white mwL letters, no square inside."],
+  },
+  {
+    id: "explore-polish", title: "Explore: DailyAL images on category and genre cards, explicit genres, recommendations/stacks fallbacks, favourites badges", kind: "unit", priority: "P1", group: "discovery", model: "opus", ui: true,
+    needs: ["explore-seasonal", "home-wiring", "profile-tabs"],
+    owns: ["lib/pages/MAL/mal_explore_page.dart", "lib/screens/explore/**", "assets/images/explore/**", "pubspec.yaml", "lib/cache/top_characters.dart"],
+    dal: ["lib/pages/search/all_genre_widget.dart", "lib/pages/search/allrankingwidget.dart", "web_assets/ (category and genre images, MIT)", "lib/pages/explorepage.dart"],
+    goal: [
+      "Owner's screenshots of the Explore page: (1) Recommendations 'Couldn't load this section' and Interest Stacks 'Nothing to show right now' — wire the new MwlApi global recommendations / interest stacks methods (profile-tabs PR) as the source when Jikan fails (or first), with clean states; (2) Characters and Seiyuu cards: add a ♥ favourites badge (number of people who favourited the character / person, from the top characters/people data); (3) the Seasonal card's 'Search By Season' button text is truncated ('Search By Se…'): redo the layout so both buttons show their full label in every language and width; (4) Genres: the Explicit genres type is missing — add it (anime and manga, respecting the NSFW pref for visibility/blur as appropriate).",
+      "Images like DailyAL (owner request): every category / ranking card and every genre card shows its background picture, as DailyAL does. DailyAL's pictures live in its MIT-licensed repo (`web_assets/`, ~6 MB: `<type>_<category>.jpg` for rankings, `web_assets/genres/<id>_<category>.jpg`); our repo is private, so BUNDLE them as app assets under assets/images/explore/ (copy from /home/thinkpad/.cache/mwl-mab/dailyal-108/web_assets, declare the folders in pubspec.yaml, credit DailyAL via LicenseRegistry with its MIT text). Text on the pictures stays readable through the scrim token; decode at card size (AppImage / ResizeImage) so scrolling stays smooth.",
+      "Theme tokens only; full translatability (English + French).",
+    ],
+    dod: ["Checker: Explore on the owner's network — recommendations and stacks show content, character/seiyuu cards show ♥ counts, seasonal buttons fully readable, genre and category cards with pictures like DailyAL, Explicit genres present."],
   },
   {
     id: "tracker-wiring", title: "AniList / Kitsu / Simkl wiring: notifications, profile routes, remove action, MAL-only notes", kind: "unit", priority: "P1", group: "trackers", model: "sonnet", ui: true,
