@@ -10,7 +10,6 @@ import 'package:mywatchlist/widgets/Kitsu/kitsu_profile_view.dart';
 import 'package:mywatchlist/widgets/user/list/list_entry_view.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mywatchlist/user/preferences/preferences.dart';
-import 'package:mywatchlist/user/preferences/preferences_store.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'kitsu_fakes.dart';
