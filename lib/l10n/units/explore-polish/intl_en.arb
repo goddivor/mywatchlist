@@ -10,8 +10,6 @@
   "Exp_Nsfw_Enable": "Turn on NSFW",
   "Exp_Studios": "Studios",
   "Exp_Studios_Caption": "Every anime studio, with its logo and its anime",
-  "Exp_Season_Browse": "Browse seasons",
-  "Exp_Season_Schedule": "Weekly schedule",
   "Exp_Favorites": "{count, plural, one{Favorited by 1 person} other{Favorited by {count} people}}",
   "@Exp_Favorites": { "placeholders": { "count": { "type": "int" } } }
 }

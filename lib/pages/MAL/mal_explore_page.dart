@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mwl_commons/mwl_commons.dart' show InterestStack, RankedPersonHtml, ReviewHtml;
+import 'package:mywatchlist/constants/constants.dart' show DisplayType;
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/screens/explore/explore_data.dart';
 import 'package:mywatchlist/screens/explore/explore_images.dart';
@@ -8,6 +9,7 @@ import 'package:mywatchlist/screens/explore/explore_sections.dart';
 import 'package:mywatchlist/screens/explore/explore_widgets.dart';
 import 'package:mywatchlist/screens/explore/random_picker.dart';
 import 'package:mywatchlist/utils/app_routes.dart';
+import 'package:mywatchlist/widgets/MAL/content/intereststackwidget.dart';
 import 'package:mywatchlist/widgets/MAL/home/homeappbar.dart';
 
 /// The Explore tab: random picks, rankings, genres, the current season, and what the MyAnimeList
@@ -93,7 +95,7 @@ class _MalExplorePageState extends State<MalExplorePage> {
         SliverToBoxAdapter(child: GenresRow(category: category)),
         if (isAnime) ...[
           SliverToBoxAdapter(child: ExploreSectionHeader(title: S.current.Seasonal)),
-          const SliverToBoxAdapter(child: SeasonalCard()),
+          const SliverToBoxAdapter(child: SeasonalPicker()),
           const SliverToBoxAdapter(child: SizedBox(height: 12)),
           const SliverToBoxAdapter(child: StudiosEntry()),
         ],
@@ -137,9 +139,16 @@ class _MalExplorePageState extends State<MalExplorePage> {
               context,
               ExploreListScreen<InterestStack>(
                 title: S.current.Interest_Stacks,
-                itemExtent: 268,
+                itemExtent: null,
                 loadPage: (page) => ExploreData.interestStacks(category, page: page),
-                itemBuilder: (_, stack) => StackCard(stack: stack, width: double.infinity),
+                // The "view all" layout of the detail page's stacks, one card per row.
+                itemBuilder: (_, stack) => InterestStackContentList(
+                  horizPadding: 0,
+                  interestStacks: [stack],
+                  type: DisplayType.list_vert,
+                  shrinkWrap: true,
+                  padding: EdgeInsets.zero,
+                ),
               ),
             ),
           ),
@@ -273,11 +282,13 @@ class _StacksStrip extends StatelessWidget {
       reloadKey: category,
       load: () => ExploreData.interestStacks(category),
       isEmpty: (list) => list.isEmpty,
-      skeleton: horizontalSkeleton(height: 230, width: 250),
-      builder: (context, list) => HorizontalStrip(
-        height: 250,
-        count: list.length,
-        itemBuilder: (context, i) => StackCard(stack: list[i]),
+      skeleton: horizontalSkeleton(height: 230, width: 310),
+      // The strip of the detail page's Interest Stacks section, aligned on the Explore margins
+      // (each card already has 5 px on its sides).
+      builder: (context, list) => InterestStackContentList(
+        horizPadding: 0,
+        interestStacks: list,
+        padding: const EdgeInsets.symmetric(horizontal: kExplorePadding - 5),
       ),
     );
   }

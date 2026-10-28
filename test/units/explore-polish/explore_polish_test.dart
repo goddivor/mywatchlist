@@ -11,6 +11,9 @@ import 'package:mywatchlist/screens/explore/explore_images.dart';
 import 'package:mywatchlist/screens/explore/explore_sections.dart';
 import 'package:mywatchlist/screens/explore/explore_widgets.dart';
 import 'package:mywatchlist/screens/search/search_catalog.dart' show SearchCatalog;
+import 'package:mywatchlist/screens/seasonal/season_utils.dart';
+import 'package:mywatchlist/screens/seasonal/seasonal_screen.dart';
+import 'package:mywatchlist/widgets/common/custombutton.dart' show ShadowButton;
 
 import '../../helpers/no_network.dart';
 import '../../helpers/pump_app.dart';
@@ -199,7 +202,8 @@ void main() {
     });
 
     for (final locale in ['en', 'fr_FR']) {
-      testWidgets('seasonal buttons never cut their label ($locale)', (tester) async {
+      testWidgets('seasonal picker: years, seasons, then two uncut buttons ($locale)',
+          (tester) async {
         await S.load(Locale.fromSubtags(
             languageCode: locale.split('_').first,
             countryCode: locale.contains('_') ? locale.split('_').last : null));
@@ -217,7 +221,7 @@ void main() {
                     alignment: Alignment.topLeft,
                     child: SizedBox(
                       width: width,
-                      child: const SingleChildScrollView(child: SeasonalCard()),
+                      child: const SingleChildScrollView(child: SeasonalPicker()),
                     ),
                   ),
                 ),
@@ -225,27 +229,58 @@ void main() {
             ),
           ));
           expect(tester.takeException(), isNull);
-          for (final label in [S.current.Exp_Season_Browse, S.current.Exp_Season_Schedule]) {
+          // DailyAL's order: the years row, the seasons row, then the buttons.
+          final now = SeasonKey.current();
+          final year = tester.getRect(find.text('${now.year}'));
+          final season = tester.getRect(find.text(seasonLabel(now.season)));
+          expect(season.top, greaterThan(year.bottom));
+          for (final label in [S.current.Search_By_Season, S.current.WeeklyAnime]) {
             final text = tester.widget<Text>(find.text(label));
             expect(text.maxLines, isNull, reason: label);
             expect(text.overflow, isNull, reason: label);
+            expect(tester.getRect(find.text(label)).top, greaterThan(season.bottom));
           }
           return (
-            tester.getRect(find.byWidgetPredicate((w) => w is FilledButton).first),
-            tester.getRect(find.byWidgetPredicate((w) => w is FilledButton).last),
+            tester.getRect(find.widgetWithText(ShadowButton, S.current.Search_By_Season)),
+            tester.getRect(find.widgetWithText(ShadowButton, S.current.WeeklyAnime)),
           );
         }
 
-        // A narrow phone with large text: one button under the other, each as wide as needed.
+        // A narrow phone with large text: one button under the other.
         final (a, b) = await layout(320, 1.3);
         expect(b.top, greaterThanOrEqualTo(a.bottom));
-        // A tablet: side by side.
+        // A wide screen: side by side, as in DailyAL.
         final (c, d) = await layout(2000, 1.0);
         expect(d.top, c.top);
         expect(d.left, greaterThan(c.right));
       });
     }
 
+    testWidgets('the picked year and season open that season', (tester) async {
+      final pushed = <Route<dynamic>>[];
+      await tester.pumpWidget(MaterialApp(
+        navigatorObservers: [_RouteLog(pushed)],
+        home: const Scaffold(body: SingleChildScrollView(child: SeasonalPicker())),
+      ));
+      final now = SeasonKey.current();
+      final year = now.year - 1;
+      // Tap the previous year, then another season than the current one.
+      await tester.tap(find.text('$year'));
+      await tester.pump();
+      final other = SeasonType.values[(now.season.index + 2) % 4];
+      await tester.tap(find.text(seasonLabel(other)));
+      await tester.pump();
+      pushed.clear();
+      await tester.tap(find.text(S.current.Search_By_Season));
+      expect(pushed, hasLength(1));
+      final route = pushed.single as MaterialPageRoute<dynamic>;
+      final page = route.builder(tester.element(find.byType(SeasonalPicker)));
+      expect(page, isA<SeasonalScreen>());
+      expect((page as SeasonalScreen).initial, SeasonKey(other, year));
+      // Do not build the seasonal screen (it would load the season).
+      route.navigator!.removeRoute(route);
+      await tester.pump();
+    });
     testWidgets('a picture card falls back to a tile without a picture', (tester) async {
       await pumpInApp(
         tester,
@@ -260,4 +295,14 @@ void main() {
       expect(find.byType(ExploreTile), findsOneWidget);
     });
   });
+}
+
+/// Keeps the routes pushed on the navigator.
+class _RouteLog extends NavigatorObserver {
+  final List<Route<dynamic>> pushed;
+
+  _RouteLog(this.pushed);
+
+  @override
+  void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) => pushed.add(route);
 }

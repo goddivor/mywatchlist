@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:mwl_commons/mwl_commons.dart' show InterestStack, RankedPersonHtml, ReviewHtml;
+import 'package:mwl_commons/mwl_commons.dart' show RankedPersonHtml, ReviewHtml;
 import 'package:mywatchlist/cache/top_characters.dart';
 import 'package:mywatchlist/constants/constants.dart' show AccountType;
 import 'package:mywatchlist/enums.dart';
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/screens/MAL/character_screen.dart';
-import 'package:mywatchlist/screens/MAL/interest_stack_detail_screen.dart';
 import 'package:mywatchlist/screens/explore/explore_data.dart';
 import 'package:mywatchlist/screens/explore/explore_images.dart';
 import 'package:mywatchlist/screens/explore/explore_widgets.dart';
@@ -16,8 +15,9 @@ import 'package:mywatchlist/screens/seasonal/seasonal_screen.dart';
 import 'package:mywatchlist/screens/studios/studios_screen.dart';
 import 'package:mywatchlist/user/preferences/preferences.dart';
 import 'package:mywatchlist/utils/app_routes.dart';
-import 'package:mywatchlist/widgets/common/app_colors.dart';
+import 'package:mywatchlist/widgets/MAL/search/headerwidget.dart';
 import 'package:mywatchlist/widgets/common/app_image.dart';
+import 'package:mywatchlist/widgets/common/custombutton.dart' show PlainButton, ShadowButton;
 import 'package:provider/provider.dart';
 
 /// Size of a category or genre group card in a row (DailyAL's 140 x 105).
@@ -385,78 +385,158 @@ class StudiosEntry extends StatelessWidget {
       );
 }
 
-/// The current season with a shortcut to browse any season and to the weekly schedule.
-///
-/// The two buttons sit side by side when both labels fit at their full width, else one under
-/// the other ([OverflowBar]), so no language or text size cuts a label; the card grows with
-/// them.
-class SeasonalCard extends StatelessWidget {
-  const SeasonalCard({super.key});
+/// The seasonal picker of DailyAL's Explore page (`SeasonalWidget`): a row of years, the four
+/// seasons under it, then "Search by season" (opens the picked season) and "Weekly anime" (the
+/// airing calendar). Same rows, font sizes, gaps and margins as DailyAL; the rows grow with
+/// the text size, and the two buttons go one under the other when they do not fit side by
+/// side, so no language cuts a label.
+class SeasonalPicker extends StatefulWidget {
+  /// DailyAL's side margin of the picker.
+  static const horizPadding = 20.0;
+
+  const SeasonalPicker({super.key});
+
+  @override
+  State<SeasonalPicker> createState() => _SeasonalPickerState();
+}
+
+class _SeasonalPickerState extends State<SeasonalPicker> {
+  late final List<int> _years = [
+    for (var y = lastSeasonYear(); y >= kFirstSeasonYear; y--) y,
+  ];
+  late int _yearIndex = _years.indexOf(SeasonKey.current().year).clamp(0, _years.length - 1);
+  int _seasonIndex = SeasonKey.current().season.index;
+
+  /// The season the two rows point at.
+  SeasonKey get selected => SeasonKey(SeasonType.values[_seasonIndex], _years[_yearIndex]);
 
   @override
   Widget build(BuildContext context) {
-    final now = SeasonKey.current();
-    final theme = Theme.of(context);
-    final tokens = AppColors.of(context);
-    const radius = BorderRadius.all(Radius.circular(20));
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: kExplorePadding),
-      child: ClipRRect(
-        borderRadius: radius,
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(minHeight: 168),
-          child: Stack(
+    // DailyAL's rows are 45 high; they follow the text size here so large text is not clipped.
+    final rowHeight = MediaQuery.textScalerOf(context).scale(45);
+    const listPadding = EdgeInsets.symmetric(horizontal: SeasonalPicker.horizPadding);
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        HeaderWidget(
+          key: const ValueKey('seasonal-years'),
+          listPadding: listPadding,
+          header: [for (final y in _years) '$y'],
+          selectedIndex: _yearIndex,
+          shouldAnimate: false,
+          fontSize: 19,
+          height: rowHeight,
+          onPressed: (index) {
+            if (mounted) setState(() => _yearIndex = index);
+          },
+        ),
+        const SizedBox(height: 15),
+        _SeasonsRow(
+          padding: listPadding,
+          height: rowHeight,
+          selectedIndex: _seasonIndex,
+          onPressed: (index) {
+            if (mounted) setState(() => _seasonIndex = index);
+          },
+        ),
+        const SizedBox(height: 15),
+        Padding(
+          padding: listPadding,
+          child: OverflowBar(
+            alignment: MainAxisAlignment.spaceEvenly,
+            overflowAlignment: OverflowBarAlignment.center,
+            overflowSpacing: 8,
             children: [
-              Positioned.fill(
-                child: Image.asset(seasonImage(now.season),
-                    fit: BoxFit.cover, cacheWidth: 900, excludeFromSemantics: true),
+              ShadowButton(
+                onPressed: () => AppRoutes.push<void>(context, SeasonalScreen(initial: selected)),
+                child: Text(S.current.Search_By_Season),
               ),
-              // Static scrim (no blur, no opacity layer) keeps the text readable on any picture.
-              Positioned.fill(child: ColoredBox(color: tokens.imageScrim)),
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(seasonIcon(now.season), color: tokens.onImageScrim, size: 22),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(now.label,
-                              style: theme.textTheme.titleLarge?.copyWith(
-                                  color: tokens.onImageScrim, fontWeight: FontWeight.w800)),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 56),
-                    OverflowBar(
-                      spacing: 10,
-                      overflowSpacing: 8,
-                      overflowAlignment: OverflowBarAlignment.start,
-                      children: [
-                        FilledButton.icon(
-                          onPressed: () =>
-                              AppRoutes.push<void>(context, SeasonalScreen(initial: now)),
-                          icon: const Icon(Icons.grid_view_rounded, size: 18),
-                          label: Text(S.current.Exp_Season_Browse),
-                        ),
-                        FilledButton.tonalIcon(
-                          onPressed: () => AppRoutes.openCalendar(context),
-                          icon: const Icon(Icons.calendar_month_rounded, size: 18),
-                          label: Text(S.current.Exp_Season_Schedule),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+              ShadowButton(
+                onPressed: () => AppRoutes.openCalendar(context),
+                child: Text(S.current.WeeklyAnime),
               ),
             ],
           ),
         ),
+      ],
+    );
+  }
+}
+
+/// The seasons row of [SeasonalPicker]: DailyAL's `HeaderWidget` items (font 13, 20 px
+/// inside each button, 10 px between them). `HeaderWidget` scrolls its selected item to the
+/// start, which on four items leaves only "Fall" and an empty row in autumn; this row lays
+/// out from the first season and only scrolls as far as needed to show the selected one.
+class _SeasonsRow extends StatefulWidget {
+  final EdgeInsets padding;
+  final double height;
+  final int selectedIndex;
+  final ValueChanged<int> onPressed;
+
+  const _SeasonsRow({
+    required this.padding,
+    required this.height,
+    required this.selectedIndex,
+    required this.onPressed,
+  });
+
+  @override
+  State<_SeasonsRow> createState() => _SeasonsRowState();
+}
+
+class _SeasonsRowState extends State<_SeasonsRow> {
+  final _selectedKey = GlobalKey();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final target = _selectedKey.currentContext;
+      if (mounted && target != null) Scrollable.ensureVisible(target, alignment: 0.5);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    const itemPadding = EdgeInsets.symmetric(horizontal: 20);
+    final base = Theme.of(context).textTheme.bodyMedium;
+    return SizedBox(
+      height: widget.height,
+      child: SingleChildScrollView(
+        key: const ValueKey('seasonal-seasons'),
+        scrollDirection: Axis.horizontal,
+        padding: widget.padding,
+        child: Row(
+          children: [
+            for (var i = 0; i < SeasonType.values.length; i++)
+              Padding(
+                key: i == widget.selectedIndex ? _selectedKey : null,
+                padding: const EdgeInsets.symmetric(horizontal: 10),
+                child: _item(i, base, itemPadding),
+              ),
+          ],
+        ),
       ),
     );
+  }
+
+  Widget _item(int i, TextStyle? base, EdgeInsets itemPadding) {
+    final selected = i == widget.selectedIndex;
+    final label = Text(
+      seasonLabel(SeasonType.values[i]),
+      style: base?.copyWith(
+        fontSize: 13,
+        color: base.color?.withValues(alpha: selected ? 1.0 : 0.4),
+      ),
+    );
+    void tap() => widget.onPressed(i);
+    return selected
+        ? Padding(
+            padding: const EdgeInsets.symmetric(vertical: 3),
+            child: ShadowButton(onPressed: tap, padding: itemPadding, child: label),
+          )
+        : PlainButton(onPressed: tap, padding: itemPadding, child: label);
   }
 }
 
@@ -635,69 +715,6 @@ class ReviewCard extends StatelessWidget {
                 ),
               ],
             ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// An interest stack: a strip of covers, its title, author and size.
-class StackCard extends StatelessWidget {
-  final InterestStack stack;
-  final double width;
-
-  const StackCard({super.key, required this.stack, this.width = 260});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
-    final images = (stack.imageUrls ?? const <String>[]).take(3).toList();
-    return SizedBox(
-      width: width,
-      child: Card(
-        margin: EdgeInsets.zero,
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: () => AppRoutes.push<void>(context, InterestStackDetailScreen(stack: stack)),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              SizedBox(
-                height: 120,
-                child: Row(
-                  children: [
-                    for (final url in images)
-                      Expanded(child: AppImage(url: url, height: 120, width: width / images.length)),
-                    if (images.isEmpty)
-                      Expanded(child: ColoredBox(color: scheme.surfaceContainerHighest)),
-                  ],
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(stack.title ?? '',
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontWeight: FontWeight.w700)),
-                    const SizedBox(height: 4),
-                    Text(
-                      [
-                        if (stack.username != null) S.current.Explore_Reco_By(stack.username!),
-                        if (stack.entries != null) S.current.Explore_Stack_Entries(stack.entries!),
-                      ].join('  ·  '),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.labelMedium?.copyWith(color: scheme.onSurfaceVariant),
-                    ),
-                  ],
-                ),
-              ),
-            ],
           ),
         ),
       ),
