@@ -90,11 +90,6 @@ class _ThemeSettingsState extends State<ThemeSettings> {
                       color: cs.onSurface,
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    S.current.Theme_Customize_Subtitle,
-                    style: theme.textTheme.bodyLarge?.copyWith(color: cs.onSurfaceVariant),
-                  ),
                   const SizedBox(height: 28),
                 ],
                 _SectionHeader(

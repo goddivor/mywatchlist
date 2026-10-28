@@ -79,7 +79,6 @@ class CardProfilesSection extends StatelessWidget {
     final theme = Theme.of(context);
     return PrefGroup(
       title: S.current.Prefs_Sec_Cards,
-      description: S.current.Prefs_Cards_Desc,
       children: [
         if (profiles.isEmpty)
           Padding(

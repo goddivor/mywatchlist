@@ -82,16 +82,6 @@ class _LanguageSettingsState extends State<LanguageSettings> {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 8),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 4),
-                      child: Text(
-                        S.current.Language_Intro_Desc,
-                        style: theme.textTheme.bodyLarge?.copyWith(
-                          color: colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ),
                     const SizedBox(height: 24),
                   ],
                   _OptionTile(

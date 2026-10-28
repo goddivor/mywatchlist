@@ -273,24 +273,11 @@ class _HomeSettingsPageState extends State<HomeSettingsPage> {
 
   Widget _buildTileSizeSection(ThemeData theme) {
     return ListTile(
-      title: Row(
-        children: [
-          Text(
-            S.current.Hw_Set_Tile_Size,
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(width: 8),
-          Tooltip(
-            message: S.current.Hw_Set_Tile_Info,
-            child: Icon(
-              Icons.info_outline,
-              size: 18,
-              color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
-            ),
-          ),
-        ],
+      title: Text(
+        S.current.Hw_Set_Tile_Size,
+        style: theme.textTheme.titleMedium?.copyWith(
+          fontWeight: FontWeight.bold,
+        ),
       ),
       subtitle: Slider(
         value: _preferences.tileSize.index.toDouble(),
@@ -319,13 +306,6 @@ class _HomeSettingsPageState extends State<HomeSettingsPage> {
             S.current.Hw_Set_Sections,
             style: theme.textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            S.current.Hw_Set_Sections_Desc,
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
             ),
           ),
         ],

@@ -73,13 +73,6 @@ class _DownloadSettingsState extends State<DownloadSettings> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    S.current.Dls_Section_Location_Desc,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
-                    ),
-                  ),
                   const SizedBox(height: 20),
 
                   // Current path card
