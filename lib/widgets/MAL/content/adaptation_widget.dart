@@ -1,112 +1,102 @@
 import 'package:flutter/material.dart';
 import 'package:mywatchlist/constants/constants.dart';
+import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/screens/MAL/contentdetailedscreen.dart';
 import 'package:mywatchlist/services/api/MAL/mal_anime.dart';
 import 'package:mywatchlist/services/api/MAL/scrapper/anime_detailed_html.dart';
-import 'package:mywatchlist/widgets/common/avatar_widget.dart';
+import 'package:mywatchlist/widgets/common/app_image.dart';
+import 'package:mywatchlist/widgets/user/list/list_query.dart' show mediaTypeLabel;
 
+/// Adaptations of a title, laid out like DailyAL's tiles: a small card with
+/// the picture faded behind a centred title and the media type under it.
+/// No relation chip: the section title already says "Adaptations".
 class AdaptationsWidget extends StatelessWidget {
   final List<AdaptNode> nodes;
   const AdaptationsWidget({super.key, required this.nodes});
 
+  static const double tileWidth = 160;
+  static const double tileHeight = 105;
+
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 130,
-      child: ListView.separated(
+      height: tileHeight,
+      child: ListView.builder(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 17.0),
         itemCount: nodes.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 10),
-        itemBuilder: (context, index) => _buildCard(context, nodes[index]),
+        itemBuilder: (context, index) => AdaptationTile(node: nodes[index]),
       ),
     );
   }
+}
 
-  Widget _buildCard(BuildContext context, AdaptNode node) {
-    final theme = Theme.of(context);
-    final relation = _parseRelation(node.relation);
+/// One adaptation: DailyAL's card (160 x 105, 12 dp corners).
+class AdaptationTile extends StatelessWidget {
+  final AdaptNode node;
+  const AdaptationTile({super.key, required this.node});
 
-    return SizedBox(
-      width: 280,
+  static final BorderRadius _radius = BorderRadius.circular(12);
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final background = scheme.surfaceContainerLow;
+    final kind = adaptationKindLabel(node);
+    return Padding(
+      padding: const EdgeInsets.all(4),
       child: Material(
-        color: theme.colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(14),
+        color: background,
+        borderRadius: _radius,
         clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: () => _navigateToContent(context, node, relation),
-          borderRadius: BorderRadius.circular(14),
-          child: Row(
+        child: SizedBox(
+          width: AdaptationsWidget.tileWidth,
+          child: Stack(
+            fit: StackFit.expand,
             children: [
-              // Cover image
-              AvatarWidget(
-                height: 130,
-                width: 90,
-                url: node.image,
-                userRoundBorderforLoading: false,
-                radius: const BorderRadius.only(
-                  topLeft: Radius.circular(14),
-                  bottomLeft: Radius.circular(14),
+              // DailyAL fades the picture to 10 %; an alpha veil does the
+              // same without a saveLayer per tile.
+              if (node.image.isNotEmpty)
+                AppImage(
+                  url: node.image,
+                  width: AdaptationsWidget.tileWidth,
+                  height: AdaptationsWidget.tileHeight,
+                  placeholderColor: background,
+                  errorWidget: (_) => const SizedBox.shrink(),
                 ),
-              ),
-              // Info section
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Relation badge
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: theme.colorScheme.primaryContainer,
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Text(
-                          relation.type,
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            color: theme.colorScheme.onPrimaryContainer,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 11,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      // Title
-                      Expanded(
+              ColoredBox(color: background.withValues(alpha: 0.9)),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(8, 18, 8, 18),
+                child: Column(
+                  children: [
+                    Expanded(
+                      child: Center(
                         child: Text(
                           node.animeTitle.name,
-                          style: theme.textTheme.titleSmall?.copyWith(
-                            fontWeight: FontWeight.w600,
-                            height: 1.3,
-                          ),
+                          textAlign: TextAlign.center,
                           maxLines: 3,
                           overflow: TextOverflow.ellipsis,
+                          style: TextStyle(fontSize: 13, color: scheme.onSurface),
                         ),
                       ),
-                      // Media type (e.g., "Manga", "Light Novel")
-                      if (relation.mediaType != null)
-                        Text(
-                          relation.mediaType!,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                            fontSize: 12,
-                          ),
-                        ),
+                    ),
+                    if (kind.isNotEmpty) ...[
+                      const SizedBox(height: 5),
+                      Text(
+                        kind,
+                        textAlign: TextAlign.center,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(fontSize: 13, color: scheme.onSurfaceVariant),
+                      ),
                     ],
-                  ),
+                  ],
                 ),
               ),
-              // Arrow icon
-              Padding(
-                padding: const EdgeInsets.only(right: 10),
-                child: Icon(
-                  Icons.chevron_right_rounded,
-                  color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
-                  size: 20,
-                ),
+              // On top, so the ripple shows over the veil.
+              Material(
+                type: MaterialType.transparency,
+                child: InkWell(onTap: () => _open(context)),
               ),
             ],
           ),
@@ -115,12 +105,10 @@ class AdaptationsWidget extends StatelessWidget {
     );
   }
 
-  void _navigateToContent(BuildContext context, AdaptNode node, _RelationInfo relation) {
+  void _open(BuildContext context) {
     final url = node.animeTitle.url;
-    final id = _extractIdFromUrl(url);
+    final id = adaptationId(url);
     if (id == null) return;
-
-    final category = url.contains('/manga/') ? 'manga' : 'anime';
     gotoPage(
       context: context,
       newPage: ContentDetailedScreen(
@@ -131,30 +119,31 @@ class AdaptationsWidget extends StatelessWidget {
           score: 0,
           members: 0,
         ),
-        category: category,
+        category: adaptationCategory(url),
       ),
     );
   }
-
-  static int? _extractIdFromUrl(String url) {
-    // URL format: https://myanimelist.net/anime/33/Name or /manga/2/Name
-    final match = RegExp(r'/(?:anime|manga)/(\d+)').firstMatch(url);
-    return match != null ? int.tryParse(match.group(1)!) : null;
-  }
-
-  /// Parse relation string like "Adaptation (Manga)" into type and media type
-  _RelationInfo _parseRelation(String relation) {
-    final formatted = formatText(relation);
-    final match = RegExp(r'^(.+?)\s*\((.+?)\)$').firstMatch(formatted);
-    if (match != null) {
-      return _RelationInfo(type: match.group(1)!.trim(), mediaType: match.group(2)!.trim());
-    }
-    return _RelationInfo(type: formatted);
-  }
 }
 
-class _RelationInfo {
-  final String type;
-  final String? mediaType;
-  const _RelationInfo({required this.type, this.mediaType});
+/// MAL id in `https://myanimelist.net/anime/33/Name` or `/manga/2/Name`.
+int? adaptationId(String url) {
+  final match = RegExp(r'/(?:anime|manga)/(\d+)').firstMatch(url);
+  return match != null ? int.tryParse(match.group(1)!) : null;
+}
+
+/// `manga` or `anime`, from the entry URL.
+String adaptationCategory(String url) => url.contains('/manga/') ? 'manga' : 'anime';
+
+/// Translated media type of an adaptation: MAL writes the relation as
+/// "Adaptation (Light Novel)"; without the parentheses, the entry kind.
+String adaptationKindLabel(AdaptNode node) {
+  final match = RegExp(r'\(([^()]+)\)\s*$').firstMatch(node.relation.trim());
+  final type = match?.group(1)?.trim();
+  if (type != null && type.isNotEmpty) {
+    return mediaTypeLabel(type.toLowerCase().replaceAll(RegExp(r'[\s-]+'), '_'));
+  }
+  if (node.animeTitle.url.isEmpty) return '';
+  return adaptationCategory(node.animeTitle.url) == 'manga'
+      ? S.current.UserList_Media_Manga
+      : S.current.Anime_Caps;
 }
