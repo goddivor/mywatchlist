@@ -240,7 +240,7 @@ const UNITS = [
   {
     id: "user-profile-mal", title: "MAL user profile, stats charts and user pop-up", kind: "screen", priority: "P1", group: "user", model: "sonnet", ui: true,
     needs: ["mal-auth-calls", "app-shell", "shared-kit", "backend-parsers"],
-    owns: ["test/units/profile-polish/profile_polish_test.dart", "test/units/app-shell/app_routes_test.dart", "lib/utils/app_routes.dart", "lib/pages/MAL/mal_user_profile_page.dart", "lib/screens/user_profile/**", "lib/widgets/user/profile/**", "lib/widgets/charts/**", "lib/services/api/MAL/scrapper/user_anime_statistics.dart", "lib/services/api/MAL/scrapper/user_friends.dart", "lib/services/api/MAL/scrapper/user_history.dart", "lib/services/api/MAL/user_anime_statistics.dart", "lib/services/api/MAL/mal_user_prof.dart", "lib/cache/cached_user_profile.dart"],
+    owns: ["lib/services/api/MAL/scrapper/user_profile_page.dart", "test/units/profile-polish/profile_polish_test.dart", "test/units/app-shell/app_routes_test.dart", "lib/utils/app_routes.dart", "lib/pages/MAL/mal_user_profile_page.dart", "lib/screens/user_profile/**", "lib/widgets/user/profile/**", "lib/widgets/charts/**", "lib/services/api/MAL/scrapper/user_anime_statistics.dart", "lib/services/api/MAL/scrapper/user_friends.dart", "lib/services/api/MAL/scrapper/user_history.dart", "lib/services/api/MAL/user_anime_statistics.dart", "lib/services/api/MAL/mal_user_prof.dart", "lib/cache/cached_user_profile.dart"],
     dal: ["lib/screens/user_profile.dart", "lib/widgets/user/user_header.dart", "lib/widgets/user/stats_screen.dart", "lib/user/charts/", "lib/widgets/barchart.dart", "lib/pages/userpop.dart", "lib/cache/cacheduserprof.dart", "lib/util/insight_service.dart"],
     goal: [
       "Own profile and any other user's profile: header, about (users/about parser from backend-parsers), favorites, friends, clubs, history, stats with charts (fl_chart; colors from the stats chart pref), insights.",
@@ -518,7 +518,7 @@ const UNITS = [
   {
     id: "featured-characters", title: "Featured tags search, character screen sort/dedupe/bookmark/share", kind: "screen", priority: "P2", group: "community", model: "sonnet", ui: true,
     needs: ["detail-resilience", "search-upgrade", "bookmarks", "detail-synopsis-media"],
-    owns: ["lib/screens/MAL/featured_screen.dart", "lib/widgets/MAL/content/show_featured.dart", "lib/widgets/MAL/content/show_forum.dart", "lib/widgets/MAL/content/show_news.dart", "lib/screens/MAL/character_screen.dart", "lib/screens/MAL/characters_staff_screen.dart"],
+    owns: ["lib/services/api/MAL/scrapper/character_page.dart", "lib/screens/MAL/featured_screen.dart", "lib/widgets/MAL/content/show_featured.dart", "lib/widgets/MAL/content/show_forum.dart", "lib/widgets/MAL/content/show_news.dart", "lib/screens/MAL/character_screen.dart", "lib/screens/MAL/characters_staff_screen.dart"],
     dal: ["lib/screens/featurescreen.dart", "lib/widgets/featured/tagswidget.dart", "lib/screens/characterscreen.dart", "commits 01d7daf, bf06d05"],
     goal: ["Featured tags tap → tag search (featured_screen.dart:281 `onTap: null`); character/person: sort voice roles by favorites (with rate-limit toast), dedupe, bookmark FAB, share, bio translation (translator widget).", "Character screen: CustomScrollView + slivers instead of an eager Column in SingleChildScrollView (:251-256); parse off the UI isolate (:129) — performance.md #9, #12."],
     bugs: ["featured tags not tappable"],

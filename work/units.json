@@ -572,6 +572,7 @@
         "backend-parsers"
       ],
       "owns": [
+        "lib/services/api/MAL/scrapper/user_profile_page.dart",
         "test/units/profile-polish/profile_polish_test.dart",
         "test/units/app-shell/app_routes_test.dart",
         "lib/utils/app_routes.dart",
@@ -1280,6 +1281,7 @@
         "detail-synopsis-media"
       ],
       "owns": [
+        "lib/services/api/MAL/scrapper/character_page.dart",
         "lib/screens/MAL/featured_screen.dart",
         "lib/widgets/MAL/content/show_featured.dart",
         "lib/widgets/MAL/content/show_forum.dart",

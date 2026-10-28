@@ -9,6 +9,7 @@
 - `detail-synopsis-media` (Synopsis translation, streaming links, videos fallback)
 
 ## Owns (may create or edit ONLY these)
+- `lib/services/api/MAL/scrapper/character_page.dart`
 - `lib/screens/MAL/featured_screen.dart`
 - `lib/widgets/MAL/content/show_featured.dart`
 - `lib/widgets/MAL/content/show_forum.dart`
