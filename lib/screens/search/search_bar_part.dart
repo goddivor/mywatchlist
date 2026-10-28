@@ -33,7 +33,8 @@ extension _SearchBar on _GeneralSearchScreenState {
                 onRemove: _removeFilter,
                 onRemoveGenre: _setGenreOff,
               ),
-            if (loadedAll)
+            // Hidden under an open panel, as in DailyAL: the panel's category tab replaces them.
+            if (loadedAll && !_showPanel)
               TabBar(
                 controller: _tabController,
                 isScrollable: true,
