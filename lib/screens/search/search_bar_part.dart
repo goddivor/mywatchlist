@@ -97,7 +97,9 @@ extension _SearchBar on _GeneralSearchScreenState {
       controller: _searchController,
       textInputAction: TextInputAction.search,
       onSubmitted: (value) {
-        if (value.trim().isNotEmpty || _filters.isNotEmpty) _runSearch(value);
+        if (value.trim().isNotEmpty || _filters.isNotEmpty || SearchCategory.isBrowsable(_category)) {
+          _runSearch(value);
+        }
       },
       style: TextStyle(fontWeight: _specialQuery ? FontWeight.bold : FontWeight.normal),
       decoration: InputDecoration(
