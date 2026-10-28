@@ -149,9 +149,8 @@ class AnimeCharacterWidget extends StatelessWidget {
 
   bool get _isStaff => staffList != null && staffList!.isNotEmpty;
   bool get _isManga => mangaCharacterList != null && mangaCharacterList!.isNotEmpty;
-  int get _length => _isStaff
-      ? staffList!.length
-      : (_isManga ? mangaCharacterList!.length : animeCharacterList.length);
+  int get _length =>
+      _isStaff ? staffList!.length : (_isManga ? mangaCharacterList!.length : animeCharacterList.length);
 
   Widget _row(int index) {
     if (_isStaff) {
@@ -230,19 +229,23 @@ class _CharacterVoiceRow extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  CastNameAndRole(name: character.name.name, role: castRoleLabel(character.role)),
+                  // Flexible: two long names in a narrow row shrink instead of overflowing.
+                  Flexible(
+                    child: CastNameAndRole(name: character.name.name, role: castRoleLabel(character.role)),
+                  ),
                   if (hasVoice)
-                    CastNameAndRole(
-                      name: voice.name.name,
-                      role: castLanguageLabel(voice.role),
-                      end: true,
+                    Flexible(
+                      child: CastNameAndRole(
+                        name: voice.name.name,
+                        role: castLanguageLabel(voice.role),
+                        end: true,
+                      ),
                     ),
                 ],
               ),
             ),
           ),
-          if (hasVoice)
-            _castPicture(context, voice, side: CastPictureSide.end, category: 'person'),
+          if (hasVoice) _castPicture(context, voice, side: CastPictureSide.end, category: 'person'),
         ],
       ),
     );
@@ -320,12 +323,14 @@ class CastNameAndRole extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: end ? CrossAxisAlignment.end : CrossAxisAlignment.start,
       children: [
-        Text(
-          name.isBlank ? S.current.Res_Unknown : name,
-          maxLines: maxLines,
-          overflow: TextOverflow.ellipsis,
-          textAlign: align,
-          style: theme.textTheme.bodyMedium,
+        Flexible(
+          child: Text(
+            name.isBlank ? S.current.Res_Unknown : name,
+            maxLines: maxLines,
+            overflow: TextOverflow.ellipsis,
+            textAlign: align,
+            style: theme.textTheme.bodyMedium,
+          ),
         ),
         if (role.isNotBlank) ...[
           const SizedBox(height: 5),
@@ -397,9 +402,7 @@ class _CharacterPagesState extends State<_CharacterPages> {
         itemCount: noOfPages,
         controller: _controller,
         itemBuilder: (context, pageIndex) {
-          final rows = pageIndex == lastPage
-              ? (length % perPage == 0 ? perPage : length % perPage)
-              : perPage;
+          final rows = pageIndex == lastPage ? (length % perPage == 0 ? perPage : length % perPage) : perPage;
           return Padding(
             padding: const EdgeInsetsDirectional.only(end: 12),
             child: Column(
