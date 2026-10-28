@@ -8,6 +8,7 @@ import 'package:mywatchlist/services/api/MAL/mal_connect.dart';
 import 'package:mywatchlist/user/preferences/preferences.dart';
 import 'package:mywatchlist/user/private_notes/private_notes_store.dart';
 import 'package:mywatchlist/utils/app_routes.dart';
+import 'package:mywatchlist/widgets/user/edit/edit_extras.dart';
 import 'package:mywatchlist/widgets/user/edit/edit_fields.dart';
 import 'package:mywatchlist/widgets/user/edit/edit_labels.dart';
 import 'package:mywatchlist/widgets/user/edit/edit_rules.dart';
@@ -38,7 +39,10 @@ enum EditField {
 enum _Phase { loading, ready, failed, sessionExpired, notEditable }
 
 /// Edit sheet of the user's list entry (status, progress, score, rewatch,
-/// dates, priority, comments, tags, private note) for one anime or manga.
+/// dates, priority, comments, tags, private note) for one anime or manga:
+/// one compact card like DailyAL's (status, episodes, score, delete), the
+/// rest behind "More options", including the "Other trackers" section when
+/// a `CrossTrackerWidget` of the same entry is mounted next to it.
 ///
 /// The entry is loaded with every list field when the sheet opens, so each
 /// field is pre-filled exactly as on the tracker; [contentDetailed] is not
@@ -93,16 +97,39 @@ class _ContentEditWidgetState extends State<ContentEditWidget> {
   bool _datesOpen = true;
   bool _othersOpen = false;
   bool _noteOpen = true;
+  bool _trackersOpen = false;
+
+  /// Whether this sheet shows the "Other trackers" section itself.
+  bool _claimed = false;
+  late String _extrasKey;
 
   bool get _isAnime => widget.category.toLowerCase() == 'anime';
   ListEntryService get _service =>
       widget.service ?? const MalListEntryService();
   DateTime get _now => (widget.clock ?? DateTime.now)();
 
+  EditExtras get _extras => EditExtras.instance;
+
   @override
   void initState() {
     super.initState();
+    _extrasKey = EditExtras.keyOf(widget.id, widget.category);
+    _extras.addListener(_onExtras);
     _load();
+  }
+
+  void _onExtras() {
+    if (mounted) setState(() {});
+  }
+
+  /// Hosts the "Other trackers" section while loading or editing an entry;
+  /// otherwise (add button, errors) the section draws its own card.
+  void _syncClaim() {
+    final want = _phase == _Phase.loading ||
+        (_phase == _Phase.ready && _entry != null);
+    if (want == _claimed) return;
+    _claimed = want;
+    want ? _extras.claim(_extrasKey) : _extras.release(_extrasKey);
   }
 
   @override
@@ -111,12 +138,17 @@ class _ContentEditWidgetState extends State<ContentEditWidget> {
     // The detail page refreshes [contentDetailed] after each write; the sheet
     // already holds the tracker's answer, so only another entry reloads.
     if (oldWidget.id != widget.id || oldWidget.category != widget.category) {
+      if (_claimed) _extras.release(_extrasKey);
+      _claimed = false;
+      _extrasKey = EditExtras.keyOf(widget.id, widget.category);
       _load();
     }
   }
 
   @override
   void dispose() {
+    _extras.removeListener(_onExtras);
+    if (_claimed) _extras.release(_extrasKey);
     _progressController.dispose();
     _volumesController.dispose();
     super.dispose();
@@ -355,15 +387,21 @@ class _ContentEditWidgetState extends State<ContentEditWidget> {
 
   @override
   Widget build(BuildContext context) {
+    _syncClaim();
     final scheme = Theme.of(context).colorScheme;
+    // A section drawing its own card below is then the last card: it keeps
+    // the room for the FAB instead.
+    final sectionBelow =
+        _extras.hasSection(_extrasKey) && !_extras.isHosted(_extrasKey);
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8),
+      padding: EdgeInsets.fromLTRB(
+          8, 0, 8, sectionBelow ? 0 : fabClearance(context)),
       child: Card(
-        elevation: 6,
+        elevation: 4,
         margin: EdgeInsets.zero,
         color: scheme.surfaceContainerHigh,
         clipBehavior: Clip.antiAlias,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         child: AnimatedSize(
           duration: const Duration(milliseconds: 240),
           curve: editEaseOut,
@@ -698,6 +736,15 @@ class _ContentEditWidgetState extends State<ContentEditWidget> {
             open: _noteOpen,
             onToggle: () => setState(() => _noteOpen = !_noteOpen),
           ),
+          if (_extras.sectionFor(_extrasKey) case final section?)
+            EditSection(
+              key: const ValueKey('edit-other-trackers'),
+              title: S.current.Sync_Section_Title,
+              icon: Icons.sync,
+              open: _trackersOpen,
+              onToggle: () => setState(() => _trackersOpen = !_trackersOpen),
+              child: section(context),
+            ),
         ],
       ),
     );
@@ -841,21 +888,9 @@ class _ContentEditWidgetState extends State<ContentEditWidget> {
     final scheme = Theme.of(context).colorScheme;
     final deleting = _busy.contains(EditField.delete);
     return Padding(
-      padding: const EdgeInsets.fromLTRB(4, 4, 4, 8),
+      padding: const EdgeInsets.fromLTRB(4, 4, 12, 12),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Flexible(
-            child: TextButton.icon(
-              style: TextButton.styleFrom(foregroundColor: scheme.error),
-              onPressed: deleting ? null : _delete,
-              icon: deleting
-                  ? SmallSpinner(color: scheme.error)
-                  : const Icon(Icons.delete_outline),
-              label: Text(S.current.Delete_from_List,
-                  overflow: TextOverflow.ellipsis),
-            ),
-          ),
           Flexible(
             child: TextButton.icon(
               onPressed: _toggleAdvanced,
@@ -871,6 +906,23 @@ class _ContentEditWidgetState extends State<ContentEditWidget> {
                     : S.current.Edit_More_Options,
                 overflow: TextOverflow.ellipsis,
               ),
+            ),
+          ),
+          const Spacer(),
+          Flexible(
+            flex: 2,
+            child: FilledButton.tonalIcon(
+              style: FilledButton.styleFrom(
+                backgroundColor: scheme.errorContainer,
+                foregroundColor: scheme.onErrorContainer,
+                visualDensity: VisualDensity.compact,
+              ),
+              onPressed: deleting ? null : _delete,
+              icon: deleting
+                  ? SmallSpinner(color: scheme.onErrorContainer)
+                  : const Icon(Icons.delete_outline, size: 18),
+              label: Text(S.current.Delete_from_List,
+                  overflow: TextOverflow.ellipsis),
             ),
           ),
         ],

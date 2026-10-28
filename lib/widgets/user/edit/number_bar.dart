@@ -104,11 +104,16 @@ class _NumberBarState extends State<NumberBar> {
                 button: true,
                 label: widget.semanticLabel?.call(value),
                 excludeSemantics: widget.semanticLabel != null,
+                // Tonal chips; the selected one is outlined, as in DailyAL.
                 child: Material(
                   color: isSelected
-                      ? scheme.primary
+                      ? scheme.secondaryContainer
                       : scheme.surfaceContainerHighest,
-                  shape: const CircleBorder(),
+                  shape: CircleBorder(
+                    side: isSelected
+                        ? BorderSide(color: scheme.primary, width: 1.5)
+                        : BorderSide.none,
+                  ),
                   clipBehavior: Clip.antiAlias,
                   child: InkWell(
                     onTap: widget.busy ? null : () => widget.onSelected(value),
@@ -118,21 +123,20 @@ class _NumberBarState extends State<NumberBar> {
                               dimension: 16,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
-                                color: scheme.onPrimary,
+                                color: scheme.onSecondaryContainer,
                               ),
                             )
                           : DefaultTextStyle.merge(
                               style: TextStyle(
-                                fontWeight: FontWeight.w600,
                                 color: isSelected
-                                    ? scheme.onPrimary
+                                    ? scheme.onSecondaryContainer
                                     : scheme.onSurface,
                               ),
                               child: IconTheme.merge(
                                 data: IconThemeData(
                                   size: 18,
                                   color: isSelected
-                                      ? scheme.onPrimary
+                                      ? scheme.onSecondaryContainer
                                       : scheme.onSurfaceVariant,
                                 ),
                                 child:
