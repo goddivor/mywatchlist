@@ -12,6 +12,10 @@ class ThemeState extends Equatable {
   /// The system accent (Android 12+), null when unknown or unsupported.
   final Color? dynamicAccent;
 
+  /// "Auto (season)": the accent follows the season of the background picture
+  /// ([AppThemes.seasonAccentFor]); an explicit pick (preset, custom, Material You) turns it off.
+  final bool followSeason;
+
   /// Colours added with the custom picker, shown after the presets.
   final List<Color> customColors;
   final String fontFamily;
@@ -27,6 +31,7 @@ class ThemeState extends Equatable {
     required this.seedColor,
     this.useDynamicColor = false,
     this.dynamicAccent,
+    this.followSeason = false,
     this.customColors = const [],
     required this.fontFamily,
     required this.themeModeName,
@@ -39,22 +44,49 @@ class ThemeState extends Equatable {
   });
 
   /// The colour the schemes are built from.
-  Color get effectiveSeed =>
-      useDynamicColor && dynamicAccent != null ? dynamicAccent! : seedColor;
+  Color get effectiveSeed => resolveSeed(
+        seedColor: seedColor,
+        useDynamicColor: useDynamicColor,
+        dynamicAccent: dynamicAccent,
+        followSeason: followSeason,
+        backgroundImagePath: backgroundImagePath,
+      );
+
+  /// Material You first (when the device has an accent), then "Auto (season)", then the
+  /// picked preset or custom colour.
+  static Color resolveSeed({
+    required Color seedColor,
+    required bool useDynamicColor,
+    required Color? dynamicAccent,
+    required bool followSeason,
+    required String? backgroundImagePath,
+  }) {
+    if (useDynamicColor && dynamicAccent != null) return dynamicAccent;
+    if (followSeason) return AppThemes.seasonAccentFor(backgroundImagePath);
+    return seedColor;
+  }
+
+  /// The "Auto (season)" accent of the current background, shown on its swatch.
+  Color get seasonAccent => AppThemes.seasonAccentFor(backgroundImagePath);
 
   /// Whether the device offers a Material You accent.
   bool get dynamicColorAvailable => dynamicAccent != null;
 
+  /// A new install: DailyAL's default theme (Fall background, its Brown accent through
+  /// "Auto (season)").
   factory ThemeState.initial() => ThemeState.fromPreferences(
         seedColor: AppThemes.defaultSeedColor,
+        followSeason: true,
         fontFamily: AppThemes.defaultFontFamily,
         themeModeName: 'auto',
+        backgroundImagePath: AppThemes.defaultBackground,
       );
 
   factory ThemeState.fromPreferences({
     required Color seedColor,
     bool useDynamicColor = false,
     Color? dynamicAccent,
+    bool followSeason = false,
     List<Color> customColors = const [],
     required String fontFamily,
     required String themeModeName,
@@ -63,12 +95,19 @@ class ThemeState extends Equatable {
     bool showBackground = true,
   }) {
     final isBlack = themeModeName == 'black';
-    final seed = useDynamicColor && dynamicAccent != null ? dynamicAccent : seedColor;
+    final seed = resolveSeed(
+      seedColor: seedColor,
+      useDynamicColor: useDynamicColor,
+      dynamicAccent: dynamicAccent,
+      followSeason: followSeason,
+      backgroundImagePath: backgroundImagePath,
+    );
 
     return ThemeState(
       seedColor: seedColor,
       useDynamicColor: useDynamicColor,
       dynamicAccent: dynamicAccent,
+      followSeason: followSeason,
       customColors: List.unmodifiable(customColors),
       fontFamily: fontFamily,
       themeModeName: themeModeName,
@@ -90,12 +129,14 @@ class ThemeState extends Equatable {
     );
   }
 
-  /// Copy that rebuilds the theme data only when a colour, font or mode changed.
+  /// Copy that rebuilds the theme data only when the effective accent, font or mode changed
+  /// (a background change rebuilds it only in "Auto (season)" when the season's accent differs).
   ThemeState copyWith({
     Color? seedColor,
     bool? useDynamicColor,
     Color? dynamicAccent,
     bool clearDynamicAccent = false,
+    bool? followSeason,
     List<Color>? customColors,
     String? fontFamily,
     String? themeModeName,
@@ -109,6 +150,7 @@ class ThemeState extends Equatable {
       seedColor: seedColor ?? this.seedColor,
       useDynamicColor: useDynamicColor ?? this.useDynamicColor,
       dynamicAccent: clearDynamicAccent ? null : (dynamicAccent ?? this.dynamicAccent),
+      followSeason: followSeason ?? this.followSeason,
       customColors:
           customColors == null ? this.customColors : List.unmodifiable(customColors),
       fontFamily: fontFamily ?? this.fontFamily,
@@ -130,6 +172,7 @@ class ThemeState extends Equatable {
       seedColor: next.seedColor,
       useDynamicColor: next.useDynamicColor,
       dynamicAccent: next.dynamicAccent,
+      followSeason: next.followSeason,
       customColors: next.customColors,
       fontFamily: next.fontFamily,
       themeModeName: next.themeModeName,
@@ -164,6 +207,7 @@ class ThemeState extends Equatable {
         seedColor,
         useDynamicColor,
         dynamicAccent,
+        followSeason,
         customColors,
         fontFamily,
         themeModeName,

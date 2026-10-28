@@ -10,7 +10,7 @@ abstract class ThemeEvent extends Equatable {
 
 class ThemeLoadStarted extends ThemeEvent {}
 
-/// A preset or custom accent was picked (turns the Material You accent off).
+/// A preset or custom accent was picked (turns Material You and "Auto (season)" off).
 class ThemeSeedColorChanged extends ThemeEvent {
   final Color seedColor;
 
@@ -18,6 +18,11 @@ class ThemeSeedColorChanged extends ThemeEvent {
 
   @override
   List<Object?> get props => [seedColor];
+}
+
+/// "Auto (season)" picked: the accent follows the background's season (turns Material You off).
+class ThemeSeasonAccentSelected extends ThemeEvent {
+  const ThemeSeasonAccentSelected();
 }
 
 /// Material You: the accent follows the wallpaper (Android 12+) when [enabled].
@@ -50,7 +55,7 @@ class ThemeCustomColorAdded extends ThemeEvent {
   List<Object?> get props => [color];
 }
 
-/// Removes a custom swatch; when it was the accent, the default accent comes back.
+/// Removes a custom swatch; when it was the accent, "Auto (season)" (the default) comes back.
 class ThemeCustomColorRemoved extends ThemeEvent {
   final Color color;
 

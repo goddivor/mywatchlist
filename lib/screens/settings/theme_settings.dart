@@ -15,8 +15,9 @@ import 'package:mywatchlist/user/user_preference.dart';
 import 'package:mywatchlist/utils/sidebar_bg_manager.dart';
 import 'package:mywatchlist/widgets/common/app_colors.dart';
 
-/// Theme settings: accent (Material You "Auto", 19 presets, custom colours), mode (auto, light,
-/// dark, black), home background picture and font. Changes apply at once (no save step).
+/// Theme settings: accent ("Auto (season)" by default, Material You, 19 presets, custom
+/// colours), mode (auto, light, dark, black), home background picture and font. Changes apply
+/// at once (no save step).
 class ThemeSettings extends StatefulWidget {
   final bool isIntroPage;
 
@@ -99,10 +100,12 @@ class _ThemeSettingsState extends State<ThemeSettings> {
                 _SectionHeader(
                   icon: Icons.palette_rounded,
                   title: S.current.Pick_a_color,
-                  tooltip: S.current.Theme_Color_Tip,
+                  tooltip: S.current.Theme_Accent_Tip,
                 ),
                 const SizedBox(height: 12),
                 _ColorGrid(state: state),
+                const SizedBox(height: 10),
+                _AccentSource(state: state),
                 const SizedBox(height: 16),
                 const _Preview(),
                 const SizedBox(height: 28),
@@ -193,8 +196,8 @@ class _SectionHeader extends StatelessWidget {
   }
 }
 
-/// Accent swatches: Material You "Auto" (when the device has one), the presets, the custom
-/// colours (long press removes) and the "+" picker.
+/// Accent swatches: "Auto (season)" (the background's season accent), Material You (when the
+/// device has one), the presets, the custom colours (long press removes) and the "+" picker.
 class _ColorGrid extends StatelessWidget {
   const _ColorGrid({required this.state});
 
@@ -205,18 +208,27 @@ class _ColorGrid extends StatelessWidget {
     final bloc = context.read<ThemeBloc>();
     final names = ThemeSettings.presetNames();
     final seed = state.seedColor.toARGB32();
-    final auto = state.useDynamicColor && state.dynamicColorAvailable;
+    final wallpaper = state.useDynamicColor && state.dynamicColorAvailable;
+    final season = state.followSeason && !wallpaper;
+    final auto = wallpaper || season;
 
     return Wrap(
       spacing: 10,
       runSpacing: 10,
       children: [
+        _Swatch(
+          color: state.seasonAccent,
+          label: S.current.Theme_Accent_Season_Label,
+          selected: season,
+          icon: Icons.filter_vintage_rounded,
+          onTap: () => bloc.add(const ThemeSeasonAccentSelected()),
+        ),
         if (state.dynamicColorAvailable)
           _Swatch(
             color: state.dynamicAccent!,
             label: S.current.Theme_Color_Auto_Label,
-            selected: auto,
-            text: S.current.Auto,
+            selected: wallpaper,
+            icon: Icons.wallpaper_rounded,
             onTap: () => bloc.add(const ThemeDynamicColorChanged(true)),
           ),
         for (var i = 0; i < AppThemes.predefinedColors.length; i++)
@@ -305,7 +317,7 @@ class _Swatch extends StatelessWidget {
     required this.selected,
     required this.onTap,
     this.onLongPress,
-    this.text,
+    this.icon,
   });
 
   final Color color;
@@ -313,7 +325,9 @@ class _Swatch extends StatelessWidget {
   final bool selected;
   final VoidCallback onTap;
   final VoidCallback? onLongPress;
-  final String? text;
+
+  /// Marks an automatic swatch (season, wallpaper) when it is not selected.
+  final IconData? icon;
 
   static const double size = 52;
 
@@ -347,11 +361,8 @@ class _Swatch extends StatelessWidget {
               child: Center(
                 child: selected
                     ? Icon(Icons.check_rounded, color: fg, size: 24)
-                    : text != null
-                        ? Text(
-                            text!,
-                            style: TextStyle(color: fg, fontWeight: FontWeight.w600, fontSize: 12),
-                          )
+                    : icon != null
+                        ? Icon(icon, color: fg, size: 22)
                         : null,
               ),
             ),
@@ -463,6 +474,48 @@ class _Preview extends StatelessWidget {
   }
 }
 
+/// Where the accent comes from right now, under the swatches: the background's season, the
+/// wallpaper, or the user's own colour.
+class _AccentSource extends StatelessWidget {
+  const _AccentSource({required this.state});
+
+  final ThemeState state;
+
+  static String _seasonText(String? background) => switch (background ?? AppThemes.defaultBackground) {
+        'assets/images/spring.jpg' => S.current.Theme_Accent_Now_Spring,
+        'assets/images/summer.jpg' => S.current.Theme_Accent_Now_Summer,
+        'assets/images/fall.jpg' => S.current.Theme_Accent_Now_Fall,
+        'assets/images/winter.jpg' => S.current.Theme_Accent_Now_Winter,
+        _ => S.current.Theme_Accent_Now_Other,
+      };
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    final wallpaper = state.useDynamicColor && state.dynamicColorAvailable;
+    final (IconData icon, String text) = wallpaper
+        ? (Icons.wallpaper_rounded, S.current.Theme_Accent_Now_Wallpaper)
+        : state.followSeason
+            ? (Icons.filter_vintage_rounded, _seasonText(state.backgroundImagePath))
+            : (Icons.push_pin_outlined, S.current.Theme_Accent_Now_Fixed);
+    return Row(
+      children: [
+        Icon(icon, size: 16, color: cs.primary),
+        const SizedBox(width: 6),
+        Expanded(
+          child: Text(
+            text,
+            style: theme.textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Auto, light, dark and black as four equal tiles, icon above a full-size label (the former
+/// segmented button scaled long labels such as « Sombre » down to a tiny font).
 class _ModeSelector extends StatelessWidget {
   const _ModeSelector({required this.state});
 
@@ -472,25 +525,84 @@ class _ModeSelector extends StatelessWidget {
   Widget build(BuildContext context) {
     final modes = <(String, String, IconData)>[
       ('auto', S.current.Auto, Icons.brightness_auto_rounded),
-      ('light', S.current.Light, Icons.light_mode_rounded),
+      ('light', S.current.Theme_Mode_Light, Icons.light_mode_rounded),
       ('dark', S.current.Dark, Icons.dark_mode_rounded),
       ('black', S.current.Theme_Mode_Black, Icons.nightlight_rounded),
     ];
-    return SizedBox(
-      width: double.infinity,
-      child: SegmentedButton<String>(
-        showSelectedIcon: false,
-        segments: [
-          for (final (name, label, icon) in modes)
-            ButtonSegment(
-              value: name,
-              icon: Icon(icon, size: 18),
-              label: FittedBox(fit: BoxFit.scaleDown, child: Text(label, maxLines: 1)),
+    return Row(
+      children: [
+        for (var i = 0; i < modes.length; i++) ...[
+          if (i > 0) const SizedBox(width: 8),
+          Expanded(
+            child: _ModeTile(
+              label: modes[i].$2,
+              icon: modes[i].$3,
+              selected: state.themeModeName == modes[i].$1,
+              onTap: () => context.read<ThemeBloc>().add(ThemeModeChanged(modes[i].$1)),
             ),
+          ),
         ],
-        selected: {state.themeModeName},
-        onSelectionChanged: (selection) =>
-            context.read<ThemeBloc>().add(ThemeModeChanged(selection.first)),
+      ],
+    );
+  }
+}
+
+class _ModeTile extends StatelessWidget {
+  const _ModeTile({
+    required this.label,
+    required this.icon,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final IconData icon;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    final fg = selected ? cs.onSecondaryContainer : cs.onSurfaceVariant;
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: label,
+      excludeSemantics: true,
+      child: Material(
+        color: selected ? cs.secondaryContainer : cs.surfaceContainerLow,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14),
+          side: BorderSide(color: selected ? cs.secondary : cs.outlineVariant),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 64),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 10),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(icon, size: 22, color: selected ? cs.onSecondaryContainer : cs.primary),
+                  const SizedBox(height: 4),
+                  Text(
+                    label,
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.labelLarge?.copyWith(
+                      color: fg,
+                      fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }

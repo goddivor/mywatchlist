@@ -9,7 +9,8 @@ import 'package:mywatchlist/user/theme/theme_state.dart';
 import 'package:mywatchlist/user/theme/theme_event.dart';
 import 'package:mywatchlist/user/theme/app_themes.dart';
 
-/// App-wide theme: accent (preset, custom or Material You), mode, font and home background.
+/// App-wide theme: accent ("Auto (season)", preset, custom or Material You), mode, font and
+/// home background.
 class ThemeBloc extends Bloc<ThemeEvent, ThemeState> {
   final SharedPreferences prefs;
 
@@ -21,6 +22,11 @@ class ThemeBloc extends Bloc<ThemeEvent, ThemeState> {
 
   static const String keySeedColor = 'seed_color';
   static const String keyDynamicColor = 'dynamic_color_v1';
+
+  /// "Auto (season)" on or off. Absent (installs before theme-seasons, new installs): on unless
+  /// an accent was picked explicitly (`seed_color` saved or Material You on), so an existing
+  /// explicit choice is kept and only the never-chosen default moves to the season's accent.
+  static const String keyAccentSeason = 'accent_season_v1';
   static const String keyCustomColors = 'custom_seed_colors_v1';
   static const String keyFontFamily = 'font_family';
   static const String keyThemeModeName = 'theme_mode_name';
@@ -37,6 +43,7 @@ class ThemeBloc extends Bloc<ThemeEvent, ThemeState> {
         super(ThemeState.initial()) {
     on<ThemeLoadStarted>(_onThemeLoadStarted);
     on<ThemeSeedColorChanged>(_onSeedColorChanged);
+    on<ThemeSeasonAccentSelected>(_onSeasonAccentSelected);
     on<ThemeDynamicColorChanged>(_onDynamicColorChanged);
     on<ThemeDynamicAccentLoaded>(_onDynamicAccentLoaded);
     on<ThemeCustomColorAdded>(_onCustomColorAdded);
@@ -72,14 +79,20 @@ class ThemeBloc extends Bloc<ThemeEvent, ThemeState> {
         .whereType<int>()
         .map(Color.new)
         .toList();
+    final useDynamic = prefs.getBool(keyDynamicColor) ?? false;
+    final followSeason =
+        prefs.getBool(keyAccentSeason) ?? (!useDynamic && seedColorValue == null);
 
     emit(ThemeState.fromPreferences(
       seedColor: seedColorValue != null ? Color(seedColorValue) : AppThemes.defaultSeedColor,
-      useDynamicColor: prefs.getBool(keyDynamicColor) ?? false,
+      useDynamicColor: useDynamic,
+      followSeason: followSeason,
       customColors: custom,
       fontFamily: prefs.getString(keyFontFamily) ?? AppThemes.defaultFontFamily,
       themeModeName: prefs.getString(keyThemeModeName) ?? 'auto',
-      backgroundImagePath: prefs.getString(keyBgImagePath),
+      // Nothing saved: DailyAL's default Fall picture (the home used to show spring or fall
+      // depending on the mode).
+      backgroundImagePath: prefs.getString(keyBgImagePath) ?? AppThemes.defaultBackground,
       customBgImagePath: prefs.getString(keyCustomBgImagePath),
       showBackground: prefs.getBool(keyShowBg) ?? true,
     ));
@@ -92,12 +105,27 @@ class ThemeBloc extends Bloc<ThemeEvent, ThemeState> {
   void _onSeedColorChanged(ThemeSeedColorChanged event, Emitter<ThemeState> emit) {
     prefs.setInt(keySeedColor, event.seedColor.toARGB32());
     prefs.setBool(keyDynamicColor, false);
-    emit(state.copyWith(seedColor: event.seedColor, useDynamicColor: false));
+    prefs.setBool(keyAccentSeason, false);
+    emit(state.copyWith(
+      seedColor: event.seedColor,
+      useDynamicColor: false,
+      followSeason: false,
+    ));
+  }
+
+  void _onSeasonAccentSelected(ThemeSeasonAccentSelected event, Emitter<ThemeState> emit) {
+    prefs.setBool(keyAccentSeason, true);
+    prefs.setBool(keyDynamicColor, false);
+    emit(state.copyWith(followSeason: true, useDynamicColor: false));
   }
 
   void _onDynamicColorChanged(ThemeDynamicColorChanged event, Emitter<ThemeState> emit) {
     prefs.setBool(keyDynamicColor, event.enabled);
-    emit(state.copyWith(useDynamicColor: event.enabled));
+    if (event.enabled) prefs.setBool(keyAccentSeason, false);
+    emit(state.copyWith(
+      useDynamicColor: event.enabled,
+      followSeason: event.enabled ? false : null,
+    ));
   }
 
   void _onDynamicAccentLoaded(ThemeDynamicAccentLoaded event, Emitter<ThemeState> emit) {
@@ -116,7 +144,13 @@ class ThemeBloc extends Bloc<ThemeEvent, ThemeState> {
     _saveCustom(custom);
     prefs.setInt(keySeedColor, argb);
     prefs.setBool(keyDynamicColor, false);
-    emit(state.copyWith(seedColor: color, useDynamicColor: false, customColors: custom));
+    prefs.setBool(keyAccentSeason, false);
+    emit(state.copyWith(
+      seedColor: color,
+      useDynamicColor: false,
+      followSeason: false,
+      customColors: custom,
+    ));
   }
 
   void _onCustomColorRemoved(ThemeCustomColorRemoved event, Emitter<ThemeState> emit) {
@@ -124,10 +158,14 @@ class ThemeBloc extends Bloc<ThemeEvent, ThemeState> {
     final custom = state.customColors.where((c) => c.toARGB32() != argb).toList();
     _saveCustom(custom);
     final wasSelected = state.seedColor.toARGB32() == argb;
+    // The removed colour was the accent: back to the default, "Auto (season)".
+    final wasAccent = wasSelected && !state.followSeason && !state.useDynamicColor;
     if (wasSelected) prefs.setInt(keySeedColor, AppThemes.defaultSeedColor.toARGB32());
+    if (wasAccent) prefs.setBool(keyAccentSeason, true);
     emit(state.copyWith(
       customColors: custom,
       seedColor: wasSelected ? AppThemes.defaultSeedColor : null,
+      followSeason: wasAccent ? true : null,
     ));
   }
 
@@ -167,8 +205,8 @@ class ThemeBloc extends Bloc<ThemeEvent, ThemeState> {
     }
 
     emit(state.copyWith(
-      backgroundImagePath: event.backgroundImagePath,
-      clearBackgroundImage: event.backgroundImagePath == null,
+      // No picture saved means the default one (as on load).
+      backgroundImagePath: event.backgroundImagePath ?? AppThemes.defaultBackground,
       customBgImagePath: customPath,
       clearCustomBgImage: customPath == null,
       showBackground: event.showBackground,

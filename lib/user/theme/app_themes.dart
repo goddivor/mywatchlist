@@ -55,8 +55,26 @@ class AppThemes {
     'Quicksand': 'Quicksand',
   };
 
-  /// Default seed color
-  static const Color defaultSeedColor = Color(0xFF607D8B);
+  /// Default accent (DailyAL's default theme: Brown).
+  static const Color defaultSeedColor = Color(0xFF795548);
+
+  /// Default home background (DailyAL's default theme: the Fall picture).
+  static const String defaultBackground = 'assets/images/fall.jpg';
+
+  /// The accent each seasonal background gives in "Auto (season)" (DailyAL's season themes:
+  /// spring pink, summer deep orange, fall brown, winter light blue). Values are presets of
+  /// [predefinedColors].
+  static const Map<String, Color> seasonAccents = {
+    'assets/images/spring.jpg': Color(0xFFE91E63), // Pink
+    'assets/images/summer.jpg': Color(0xFFFF5722), // Deep Orange
+    'assets/images/fall.jpg': Color(0xFF795548), // Brown
+    'assets/images/winter.jpg': Color(0xFF03A9F4), // Light Blue
+  };
+
+  /// The "Auto (season)" accent for a background: the season's accent, or the default accent
+  /// (Brown) for a picture without a season (collage, gallery image).
+  static Color seasonAccentFor(String? backgroundImagePath) =>
+      seasonAccents[backgroundImagePath ?? defaultBackground] ?? defaultSeedColor;
 
   /// Default font family
   static const String defaultFontFamily = 'Poppins';
