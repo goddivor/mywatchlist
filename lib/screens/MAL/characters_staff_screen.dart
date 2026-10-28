@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:mywatchlist/constants/constants.dart';
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/services/api/Jikan/jikan_anime_character.dart';
@@ -8,11 +9,19 @@ import 'package:mywatchlist/screens/MAL/character_screen.dart';
 import 'package:mywatchlist/screens/MAL/detail/sections/section_states.dart';
 import 'package:mywatchlist/services/api/Jikan/jikan_api.dart';
 import 'package:mywatchlist/services/api/Jikan/jikan_fallbacks.dart';
+import 'package:mywatchlist/widgets/MAL/home/animecharacterwidget.dart';
 import 'package:mywatchlist/widgets/loading/shimmercolor.dart';
 
-/// Full cast of a title. Source: Jikan `characters` + `staff`; when Jikan
-/// fails, the mwl-api `content/characters` route (MAL characters page parsed
-/// by the backend). Every picture is a clean circle.
+/// Full cast of a title, laid out like DailyAL's "Characters & staff" page:
+/// character portrait, name, role and favorites on the left, the voice actor
+/// (name, language, portrait) on the right, or an expandable row of voice
+/// actors when there are several; staff rows are portrait, name, positions.
+/// Portraits are [CastPicture]s: DailyAL's rounded rectangles without the
+/// shadow or box behind them.
+///
+/// Source: Jikan `characters` + `staff` raced against the mwl-api
+/// `content/characters` route (MAL characters page parsed by the backend),
+/// see [JikanFallbacks.race]: the page ends within about 12 s.
 class CharactersStaffScreen extends StatefulWidget {
   final int id;
   final String category;
@@ -80,14 +89,8 @@ class _CharactersStaffScreenState extends State<CharactersStaffScreen> {
 
   Future<void> _fetchData() async {
     try {
-      (List<AnimeCharacter>, List<staff_models.AnimeStaff>) result;
-      try {
-        result = await _fromJikan();
-      } catch (e) {
-        debugPrint('Jikan characters failed, trying the mwl-api: $e');
-        result = await _fromMal();
-      }
-      final (characters, staff) = result;
+      final result = await JikanFallbacks.race(jikan: _fromJikan, fallback: _fromMal);
+      final (characters, staff) = result.value;
       // Main first, then by favorites descending.
       characters.sort((a, b) {
         final roleOrder = _roleWeight(a.role) - _roleWeight(b.role);
@@ -126,7 +129,7 @@ class _CharactersStaffScreenState extends State<CharactersStaffScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(S.current.Characters_and_staff),
+        title: Text(S.current.Dp_Characters_And_Staff),
       ),
       body: _buildBody(),
     );
@@ -195,7 +198,7 @@ class _CharactersStaffScreenState extends State<CharactersStaffScreen> {
   }
 
   Widget _buildTabToggle() {
-    final headers = [S.current.Characters, S.current.Staff];
+    final headers = [S.current.Dh_Tab_Characters, S.current.Dh_Tab_Staff];
     return Row(
       children: List.generate(headers.length, (index) {
         final isSelected = _currentTab == index;
@@ -296,7 +299,7 @@ class _CharactersStaffScreenState extends State<CharactersStaffScreen> {
   Widget _buildCharacterSimpleTile(AnimeCharacter char, bool hasSingleVA) {
     final characterImageUrl = char.character.images?.jpg?.imageUrl;
     final characterName = char.character.name ?? '?';
-    final role = char.role ?? '';
+    final role = castRoleLabel(char.role);
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -310,6 +313,7 @@ class _CharactersStaffScreenState extends State<CharactersStaffScreen> {
               children: [
                 _buildAvatarWidget(
                   imageUrl: characterImageUrl,
+                  label: characterName,
                   onTap: () => _onCharacterTap(char.character.malId),
                 ),
                 SB.w10,
@@ -333,7 +337,7 @@ class _CharactersStaffScreenState extends State<CharactersStaffScreen> {
   Widget _buildCharacterAccordionTile(AnimeCharacter char) {
     final characterImageUrl = char.character.images?.jpg?.imageUrl;
     final characterName = char.character.name ?? '?';
-    final role = char.role ?? '';
+    final role = castRoleLabel(char.role);
     final voiceActors = char.voiceActors ?? [];
 
     return Padding(
@@ -346,6 +350,7 @@ class _CharactersStaffScreenState extends State<CharactersStaffScreen> {
         childrenPadding: const EdgeInsets.only(top: 8, bottom: 8),
         leading: _buildAvatarWidget(
           imageUrl: characterImageUrl,
+          label: characterName,
           onTap: () => _onCharacterTap(char.character.malId),
         ),
         title:
@@ -393,7 +398,7 @@ class _CharactersStaffScreenState extends State<CharactersStaffScreen> {
   Widget _buildVACard(VoiceActor va) {
     final imageUrl = va.person?.images?.jpg?.imageUrl;
     final name = va.person?.name ?? S.current.Res_Unknown;
-    final language = va.language ?? '';
+    final language = castLanguageLabel(va.language);
 
     return GestureDetector(
       onTap: () => _onPersonTap(va.person?.malId),
@@ -402,7 +407,7 @@ class _CharactersStaffScreenState extends State<CharactersStaffScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            RoundAvatar(url: imageUrl, size: 60, semanticLabel: name),
+            CastPicture(url: imageUrl, width: 60, height: 60, semanticLabel: name),
             const SizedBox(height: 4),
             Text(
               name,
@@ -434,7 +439,7 @@ class _CharactersStaffScreenState extends State<CharactersStaffScreen> {
   Widget _buildSingleVAWidget(VoiceActor va) {
     final imageUrl = va.person?.images?.jpg?.imageUrl;
     final name = va.person?.name ?? S.current.Res_Unknown;
-    final language = va.language ?? '';
+    final language = castLanguageLabel(va.language);
 
     return Row(
       mainAxisSize: MainAxisSize.min,
@@ -472,6 +477,8 @@ class _CharactersStaffScreenState extends State<CharactersStaffScreen> {
         SB.w10,
         _buildAvatarWidget(
           imageUrl: imageUrl,
+          label: name,
+          side: CastPictureSide.end,
           onTap: () => _onPersonTap(va.person?.malId),
         ),
       ],
@@ -494,6 +501,8 @@ class _CharactersStaffScreenState extends State<CharactersStaffScreen> {
         children: [
           _buildAvatarWidget(
             imageUrl: imageUrl,
+            label: name,
+            side: CastPictureSide.all,
             onTap: () => _onPersonTap(staffMember.person.malId),
           ),
           SB.w10,
@@ -509,14 +518,22 @@ class _CharactersStaffScreenState extends State<CharactersStaffScreen> {
   // Shared widgets
   // ---------------------------------------------------------------------------
 
-  /// Clean round picture: no elevation, no box behind it (owner's request).
+  /// DailyAL's 60 x 80 portrait, rounded on the outer side, without the
+  /// elevation shadow DailyAL draws behind it (owner's rule).
   Widget _buildAvatarWidget({
     required String? imageUrl,
     required VoidCallback onTap,
     String? label,
+    CastPictureSide side = CastPictureSide.start,
   }) {
-    return RoundAvatar(
-        url: imageUrl, size: 60, onTap: onTap, semanticLabel: label);
+    return CastPicture(
+      url: imageUrl,
+      width: 60,
+      height: 80,
+      side: side,
+      onTap: onTap,
+      semanticLabel: label,
+    );
   }
 
   Widget _buildNameAndRole(String name, String role, {int? favorites}) {
@@ -546,17 +563,23 @@ class _CharactersStaffScreenState extends State<CharactersStaffScreen> {
           ),
         if (favorites != null) ...[
           SB.h5,
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.favorite,
-                  size: 14, color: Theme.of(context).colorScheme.error),
-              const SizedBox(width: 5),
-              Text(
-                favorites.toString(),
-                style: const TextStyle(fontSize: 12),
-              ),
-            ],
+          Semantics(
+            label: S.current.Res_Favorites_Semantics(favorites),
+            excludeSemantics: true,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.favorite,
+                    size: 14, color: Theme.of(context).colorScheme.error),
+                const SizedBox(width: 5),
+                Text(
+                  NumberFormat.decimalPattern(
+                          Localizations.localeOf(context).toString())
+                      .format(favorites),
+                  style: const TextStyle(fontSize: 12),
+                ),
+              ],
+            ),
           ),
         ],
       ],
