@@ -181,16 +181,25 @@ class MalScraper {
     return genreListContent;
   }
 
-  // Get studio list (producers for anime, magazines for manga)
-  Future<Map<String, dynamic>?> getStudioList(ContentType type) async {
+  /// Studio list (producers for anime, magazines for manga) grouped by first letter, names
+  /// and counts as MAL prints them ("8bit", 78). Null after [timeout] or on failure: the
+  /// retrying client alone can wait minutes. For names with logos, paged and searchable, use
+  /// `MwlApi.getCompanies` (MAL's company directory).
+  Future<Map<String, dynamic>?> getStudioList(
+    ContentType type, {
+    Duration timeout = const Duration(seconds: 20),
+  }) async {
     String baseurl = type == ContentType.anime
         ? Constants.malproducerUrl
         : Constants.malmagazineUrl;
-    final studioListContent = await HttpConnect.htmlPage(
-      baseurl,
-      HtmlParsers.parseProducer,
-    );
-    return studioListContent;
+    try {
+      return await HttpConnect.htmlPage(
+        baseurl,
+        HtmlParsers.parseProducer,
+      ).timeout(timeout);
+    } catch (_) {
+      return null;
+    }
   }
 
   // Get featured articles for a specific anime

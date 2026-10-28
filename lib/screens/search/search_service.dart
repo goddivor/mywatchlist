@@ -3,9 +3,11 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:html/parser.dart' as html_parser;
+import 'package:mwl_commons/mwl_commons.dart' show MalSearchPageHtml, MalSearchQuery;
 import 'package:http/http.dart' as http;
 import 'package:mywatchlist/screens/search/search_filters.dart';
 import 'package:mywatchlist/screens/search/search_queries.dart';
+import 'package:mywatchlist/screens/search/search_sources.dart';
 import 'package:mywatchlist/services/api/Jikan/jikan_anime.dart' as jikan_model;
 import 'package:mywatchlist/services/api/Jikan/jikan_api.dart';
 import 'package:mywatchlist/services/api/Jikan/jikan_client.dart';
@@ -59,13 +61,17 @@ class SearchPage {
   String? foundUser;
 
   bool hasMore = false;
+
+  /// Where the anime, manga, character or person rows came from; the next pages ask the same
+  /// source.
+  MediaSource? source;
   int _jikanPage = 1;
+  int _malPage = 1;
   int _userOffset = 0;
   int _forumOffset = 0;
   int _clubPage = 1;
   int _stackPage = 1;
   int _articlePage = 1;
-  bool _jikan = false;
 
   SearchPage(this.category);
 
@@ -91,11 +97,49 @@ class SearchPage {
 }
 
 /// Runs searches. Everything here is network and parsing, no widget: the screen only keeps the
-/// [SearchPage] it gets back. Anime and manga go to MyAnimeList's own search, or to Jikan when
-/// filters are on (MyAnimeList's API has none) or the text is shorter than three letters (the
-/// MyAnimeList API refuses it); every Jikan call goes through the shared `JikanClient`.
+/// [SearchPage] it gets back.
+///
+/// Anime and manga text without filters goes to MyAnimeList's API. Filters (MyAnimeList's API
+/// has none), characters and people go to Jikan and, at the same time, to MyAnimeList's own
+/// search page (`anime.php`, `manga.php`, `character.php`, `people.php` through the mwl-api
+/// `search/content` route): the first source with rows wins, so a network where Jikan is
+/// unreachable still gets results. Jikan is skipped while `JikanClient` knows it is down. Text
+/// of one or two characters can only go to Jikan (MyAnimeList refuses it). Every search is
+/// bounded by [searchBudget]; a failure is thrown as is and the screen asks [SearchFailures]
+/// whether the network or the source failed.
 class SearchService {
   const SearchService();
+
+  /// Longest wait for one search or one next page, every source included.
+  static const Duration searchBudget = Duration(seconds: 30);
+
+  /// Rows of MyAnimeList's search page.
+  static const int malPageSize = MalSearchQuery.pageSize;
+
+  /// MyAnimeList's search page (replaceable in tests).
+  static Future<MalSearchPageHtml?> Function({
+    required String category,
+    String query,
+    Map<String, Object?> filters,
+    int page,
+  }) malSearchPage = _malSearchPage;
+
+  /// Whether Jikan is tried at all (tests turn it off).
+  static bool Function() jikanAllowed = () => !JikanClient.instance.isUnreachable;
+
+  @visibleForTesting
+  static void reset() {
+    malSearchPage = _malSearchPage;
+    jikanAllowed = () => !JikanClient.instance.isUnreachable;
+  }
+
+  static Future<MalSearchPageHtml?> _malSearchPage({
+    required String category,
+    String query = '',
+    Map<String, Object?> filters = const {},
+    int page = 1,
+  }) =>
+      MwlApi.i.searchContentPage(category: category, query: query, filters: filters, page: page);
 
   static const int mediaPageSize = 30;
   static const int jikanPageSize = 25;
@@ -105,7 +149,12 @@ class SearchService {
 
   static const String _jikanBase = 'https://api.jikan.moe/v4';
 
-  Future<SearchPage> search(SearchRequest request) async {
+  Future<SearchPage> search(SearchRequest request) => _search(request).timeout(searchBudget);
+
+  Future<void> loadMore(SearchPage page, SearchRequest request) =>
+      _loadMore(page, request).timeout(searchBudget);
+
+  Future<SearchPage> _search(SearchRequest request) async {
     final query = request.query.trim();
     if (query.startsWith('#')) {
       final special = SpecialQuery.parse(query.substring(1));
@@ -137,7 +186,7 @@ class SearchService {
     return page;
   }
 
-  Future<void> loadMore(SearchPage page, SearchRequest request) async {
+  Future<void> _loadMore(SearchPage page, SearchRequest request) async {
     final query = request.query.trim();
     final filters = request.filters.forCategory(page.category);
     switch (page.category) {
@@ -173,11 +222,19 @@ class SearchService {
         page.articles.addAll(result?.newsorfeatured ?? []);
         page.hasMore = _hasNext(result);
       default:
-        if (page._jikan) {
+        if (page.source == MediaSource.jikan) {
           page._jikanPage++;
-          final items = await _jikanPageOf(page.category, query, filters, page._jikanPage);
+          final items = SearchCategory.isMedia(page.category)
+              ? await _jikanPageOf(page.category, query, filters, page._jikanPage)
+              : await _peoplePage(page.category, query, page._jikanPage);
           page.media.addAll(items);
           page.hasMore = items.length >= jikanPageSize;
+        } else if (page.source == MediaSource.malPage) {
+          page._malPage++;
+          final answer = await _malPageOf(page.category, query, filters, page._malPage);
+          final known = {for (final a in page.media) a.id};
+          page.media.addAll(answer.items.where((a) => known.add(a.id)));
+          page.hasMore = answer.hasMore;
         } else {
           final paging = page.paged?.paging;
           if (paging == null || !(page.paged?.hasNextPage ?? false)) {
@@ -244,24 +301,85 @@ class SearchService {
   Future<void> _media(SearchPage page, String query, SearchFilters filters) async {
     final manga = page.category == SearchCategory.manga;
     final idHit = filters.isEmpty && isIdQuery(query) ? _idHit(page.category, query) : null;
-    final useJikan = filters.isNotEmpty || query.length < 3;
-    if (useJikan) {
-      page._jikan = true;
-      page.media = await _jikanPageOf(page.category, query, filters, 1);
-      page.hasMore = page.media.length >= jikanPageSize;
+    final official = filters.isEmpty && query.length >= MalSearchQuery.minQueryLength;
+    SourceAnswer answer;
+    if (official) {
+      try {
+        final text = Uri.encodeComponent(query);
+        final result = manga
+            ? await MalApi().searchMangaResult(text, limit: mediaPageSize)
+            : await MalApi().searchAnimeResult(text, limit: mediaPageSize);
+        page.paged = result;
+        answer = SourceAnswer(MediaSource.malApi, List.of(result.data), hasMore: result.hasNextPage);
+      } catch (e) {
+        debugPrint('MAL API search failed, trying the search page: $e');
+        answer = await _malPageOf(page.category, query, filters, 1);
+      }
     } else {
-      final text = Uri.encodeComponent(query);
-      final result = manga
-          ? await MalApi().searchMangaResult(text, limit: mediaPageSize)
-          : await MalApi().searchAnimeResult(text, limit: mediaPageSize);
-      page.paged = result;
-      page.media = List.of(result.data);
-      page.hasMore = result.hasNextPage;
+      answer = await _jikanOrMalPage(
+        page.category,
+        query,
+        jikan: () => _jikanPageOf(page.category, query, filters, 1),
+        malPage: () => _malPageOf(page.category, query, filters, 1),
+      );
     }
+    page.source = answer.source;
+    page.media = answer.items;
+    page.hasMore = answer.hasMore;
     final hit = await idHit;
     if (hit != null) {
       page.media = [hit, ...page.media.where((a) => a.id != hit.id)];
     }
+  }
+
+  /// Jikan as a fast path next to MyAnimeList's search page (see the class comment). A text
+  /// too short for MyAnimeList only asks Jikan and fails as [SearchFailureKind.tooShort].
+  Future<SourceAnswer> _jikanOrMalPage(
+    String category,
+    String query, {
+    required Future<List<Anime>> Function() jikan,
+    required Future<SourceAnswer> Function() malPage,
+  }) async {
+    Future<SourceAnswer> viaJikan() async {
+      final items = await jikan();
+      return SourceAnswer(MediaSource.jikan, items, hasMore: items.length >= jikanPageSize);
+    }
+
+    if (MalSearchQuery.isTooShort(query)) {
+      if (!jikanAllowed()) throw const SearchFailure(SearchFailureKind.tooShort);
+      try {
+        return await viaJikan();
+      } catch (e) {
+        throw SearchFailure(SearchFailureKind.tooShort, e);
+      }
+    }
+    return firstUseful([
+      if (jikanAllowed()) viaJikan(),
+      malPage(),
+    ]);
+  }
+
+  /// One page of MyAnimeList's own search page; throws when it failed.
+  Future<SourceAnswer> _malPageOf(
+    String category,
+    String query,
+    SearchFilters filters,
+    int pageNumber,
+  ) async {
+    final result = await malSearchPage(
+      category: category,
+      query: query,
+      filters: filters.toApiMap(),
+      page: pageNumber,
+    );
+    if (result == null) throw StateError('MyAnimeList search page failed');
+    if (result.tooShort) throw const SearchFailure(SearchFailureKind.tooShort);
+    final nsfw = Preferences.general.nsfw;
+    final items = [
+      for (final row in result.items)
+        if (nsfw || row.rated != 'Rx') animeFromMalPage(row),
+    ];
+    return SourceAnswer(MediaSource.malPage, items, hasMore: result.hasNext);
   }
 
   /// One MyAnimeList entry by id, as a search hit; null when the id does not exist.
@@ -371,9 +489,15 @@ class SearchService {
   // --- Characters and people ---------------------------------------------------------------
 
   Future<void> _people(SearchPage page, String query) async {
-    page._jikan = true;
-    page.media = await _peoplePage(page.category, query, 1);
-    page.hasMore = page.media.length >= jikanPageSize;
+    final answer = await _jikanOrMalPage(
+      page.category,
+      query,
+      jikan: () => _peoplePage(page.category, query, 1),
+      malPage: () => _malPageOf(page.category, query, SearchFilters.empty, 1),
+    );
+    page.source = answer.source;
+    page.media = answer.items;
+    page.hasMore = answer.hasMore;
   }
 
   Future<List<Anime>> _peoplePage(String category, String query, int pageNumber) async {

@@ -82,8 +82,12 @@ extension _SearchLogic on _GeneralSearchScreenState {
       });
     } catch (e) {
       debugPrint('Search error: $e');
+      final kind = await SearchFailures.classify(e);
       if (!mounted || token != _searchToken) return;
-      _set(() => _stage = SearchStage.error);
+      _set(() {
+        _failure = kind;
+        _stage = SearchStage.error;
+      });
     }
   }
 

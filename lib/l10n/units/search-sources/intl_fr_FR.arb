@@ -1,0 +1,17 @@
+{
+  "@@locale": "fr_FR",
+  "Srs_Offline_Title": "Pas de connexion Internet",
+  "Srs_Offline_Hint": "Vérifiez le Wi-Fi ou les données mobiles, puis réessayez.",
+  "Srs_Source_Title": "MyAnimeList n’a pas répondu",
+  "Srs_Source_Hint": "Votre connexion fonctionne, mais les sources de recherche ont échoué. Réessayez dans un instant.",
+  "Srs_TooShort_Title": "Saisissez au moins 3 caractères",
+  "Srs_TooShort_Hint": "MyAnimeList ne recherche qu’à partir de 3 caractères.",
+  "Srs_Load_More_Failed": "Impossible de charger la suite",
+  "Srs_Studios_Search_Hint": "Rechercher un studio",
+  "Srs_Studios_Empty": "Aucun studio trouvé",
+  "Srs_Studios_Empty_Hint": "Essayez une autre orthographe.",
+  "Srs_Studios_Anime_Count": "{count} anime",
+  "Srs_Studios_Favorites": "{count} favoris",
+  "Srs_Studios_Open": "Anime de {name}",
+  "Srs_Studios_Clear": "Effacer la recherche"
+}
