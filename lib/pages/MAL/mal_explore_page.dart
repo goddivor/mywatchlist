@@ -83,19 +83,22 @@ class _MalExplorePageState extends State<MalExplorePage> {
             ),
           ),
         ),
-        SliverToBoxAdapter(child: RandomPickerRow(isAnime: isAnime)),
+        SliverToBoxAdapter(
+            key: ExploreStorage.strip('random'), child: RandomPickerRow(isAnime: isAnime)),
         SliverToBoxAdapter(
           child: ExploreSectionHeader(
             title: S.current.Explore_Rankings,
             onViewAll: () => AppRoutes.push<void>(context, RankingsScreen(isAnime: isAnime)),
           ),
         ),
-        SliverToBoxAdapter(child: RankingsRow(isAnime: isAnime)),
+        SliverToBoxAdapter(
+            key: ExploreStorage.strip('rankings'), child: RankingsRow(isAnime: isAnime)),
         SliverToBoxAdapter(child: ExploreSectionHeader(title: S.current.Genres)),
-        SliverToBoxAdapter(child: GenresRow(category: category)),
+        SliverToBoxAdapter(
+            key: ExploreStorage.strip('genres'), child: GenresRow(category: category)),
         if (isAnime) ...[
           SliverToBoxAdapter(child: ExploreSectionHeader(title: S.current.Seasonal)),
-          const SliverToBoxAdapter(child: SeasonalPicker()),
+          SliverToBoxAdapter(child: ExploreStorage.isolated(const SeasonalPicker())),
           const SliverToBoxAdapter(child: SizedBox(height: 12)),
           const SliverToBoxAdapter(child: StudiosEntry()),
         ],
@@ -115,7 +118,9 @@ class _MalExplorePageState extends State<MalExplorePage> {
             ),
           ),
         ),
-        SliverToBoxAdapter(child: _RecommendationsStrip(category: category)),
+        SliverToBoxAdapter(
+            key: ExploreStorage.strip('recommendations'),
+            child: _RecommendationsStrip(category: category)),
         SliverToBoxAdapter(
           child: ExploreSectionHeader(
             title: S.current.Reviews,
@@ -131,7 +136,8 @@ class _MalExplorePageState extends State<MalExplorePage> {
             ),
           ),
         ),
-        SliverToBoxAdapter(child: _ReviewsStrip(category: category)),
+        SliverToBoxAdapter(
+            key: ExploreStorage.strip('reviews'), child: _ReviewsStrip(category: category)),
         SliverToBoxAdapter(
           child: ExploreSectionHeader(
             title: S.current.Interest_Stacks,
@@ -153,21 +159,24 @@ class _MalExplorePageState extends State<MalExplorePage> {
             ),
           ),
         ),
-        SliverToBoxAdapter(child: _StacksStrip(category: category)),
+        SliverToBoxAdapter(
+            key: ExploreStorage.strip('stacks'), child: _StacksStrip(category: category)),
         SliverToBoxAdapter(
           child: ExploreSectionHeader(
             title: S.current.Characters,
             onViewAll: () => AppRoutes.push<void>(context, _peopleScreen(isPerson: false)),
           ),
         ),
-        const SliverToBoxAdapter(child: _PeopleStrip(isPerson: false)),
+        SliverToBoxAdapter(
+            key: ExploreStorage.strip('characters'), child: const _PeopleStrip(isPerson: false)),
         SliverToBoxAdapter(
           child: ExploreSectionHeader(
             title: S.current.Seiyuu,
             onViewAll: () => AppRoutes.push<void>(context, _peopleScreen(isPerson: true)),
           ),
         ),
-        const SliverToBoxAdapter(child: _PeopleStrip(isPerson: true)),
+        SliverToBoxAdapter(
+            key: ExploreStorage.strip('seiyuu'), child: const _PeopleStrip(isPerson: true)),
         const SliverToBoxAdapter(child: SizedBox(height: 96)),
       ],
     );
@@ -185,6 +194,33 @@ class _MalExplorePageState extends State<MalExplorePage> {
             isPerson ? ExploreData.topPeople(page: page) : ExploreData.topCharacters(page: page),
         itemBuilder: (_, p) => PersonTile(person: p, isPerson: isPerson),
       );
+}
+
+/// Keeps the scroll memory of the Explore lists apart.
+///
+/// [PageStorage] files a scroll position under the [PageStorageKey]s above it. Every horizontal
+/// list of the page sat under the page's single `explore-<category>` key, so they all shared one
+/// slot, and DailyAL's year row of the seasonal picker (a `ScrollablePositionedList`) stores an
+/// `ItemPosition` there, not an offset: each list built after it then failed with
+/// `'ItemPosition' is not a subtype of type 'double?'` and drew a grey box.
+class ExploreStorage {
+  ExploreStorage._();
+
+  /// The key of a horizontal strip, so it keeps its own scroll offset.
+  static PageStorageKey<String> strip(String name) => PageStorageKey('explore-strip-$name');
+
+  /// Gives [child] a storage of its own that remembers nothing. The seasonal picker holds two
+  /// rows whose saved states have different types (an `ItemPosition` and an offset), and it
+  /// scrolls both to the selected season whenever it is built, so it needs no memory.
+  static Widget isolated(Widget child) => PageStorage(bucket: _ForgetfulBucket(), child: child);
+}
+
+class _ForgetfulBucket extends PageStorageBucket {
+  @override
+  void writeState(BuildContext context, dynamic data, {Object? identifier}) {}
+
+  @override
+  dynamic readState(BuildContext context, {Object? identifier}) => null;
 }
 
 /// Fake search field: tapping it opens the search screen.
