@@ -50,6 +50,94 @@ class HttpConnect {
     return jsonDecode(response.body) as Map<String, dynamic>;
   }
 
+  /// When Jikan failed, it is skipped until then (circuit breaker).
+  static DateTime? _jikanDownUntil;
+
+  /// How long Jikan stays skipped after a failure before it is tried again.
+  static Duration jikanReprobe = const Duration(minutes: 5);
+
+  /// Longest wait for one Jikan answer before Tenrai is asked.
+  static Duration jikanTimeout = const Duration(seconds: 8);
+
+  static DateTime _nextTenraiSlot = DateTime.fromMillisecondsSinceEpoch(0);
+
+  /// True while Jikan is skipped after a failure.
+  static bool get jikanDown {
+    final until = _jikanDownUntil;
+    return until != null && DateTime.now().isBefore(until);
+  }
+
+  static void _markJikanDown() {
+    logMwl('Jikan marked down for ${jikanReprobe.inMinutes} min');
+    _jikanDownUntil = DateTime.now().add(jikanReprobe);
+  }
+
+  /// Jikan v4 [path] (`characters/1/full`, no leading slash), decoded; null on
+  /// a non-200 answer. Jikan is asked first; on a timeout, a network error or
+  /// a 5xx it is marked down for [jikanReprobe] and, when [tenrai] is true
+  /// (Tenrai has the endpoint), the same path is asked from Tenrai, which
+  /// follows Jikan's schema. Endpoints Tenrai lacks (`users/*`, `clubs/*`)
+  /// pass `tenrai: false`: they keep Jikan with its retries, and return null at
+  /// once while Jikan is down.
+  static Future<Map<String, dynamic>?> jikanGetChecked(String path, {bool tenrai = true}) async {
+    final jikanUrl = '${Constants.jikanV4}$path';
+    if (!tenrai) {
+      if (jikanDown) return null;
+      try {
+        return await retryGetChecked(jikanUrl, {});
+      } on Exception {
+        _markJikanDown();
+        rethrow;
+      }
+    }
+    if (!jikanDown) {
+      try {
+        logMwl('hitting -> $jikanUrl');
+        final response = await http.get(Uri.parse(jikanUrl)).timeout(jikanTimeout);
+        if (response.statusCode < 500) {
+          _jikanDownUntil = null;
+          if (response.statusCode == 200) {
+            return jsonDecode(response.body) as Map<String, dynamic>;
+          }
+          logMwl('Jikan error ${response.statusCode} for $jikanUrl');
+          return null;
+        }
+        _markJikanDown();
+      } on TimeoutException {
+        _markJikanDown();
+      } on SocketException {
+        _markJikanDown();
+      } on http.ClientException {
+        _markJikanDown();
+      }
+    }
+    return tenraiGetChecked(path);
+  }
+
+  /// Tenrai [path] (no leading slash), decoded; null on a non-200 answer.
+  /// Requests are spaced by 250 ms (Tenrai allows 4 per second) and a 429 is
+  /// retried once after its `Retry-After` (at most 5 s).
+  static Future<Map<String, dynamic>?> tenraiGetChecked(String path) async {
+    final url = '${Constants.tenraiV1}$path';
+    for (var attempt = 0;; attempt++) {
+      final now = DateTime.now();
+      final slot = _nextTenraiSlot.isAfter(now) ? _nextTenraiSlot : now;
+      _nextTenraiSlot = slot.add(const Duration(milliseconds: 250));
+      if (slot.isAfter(now)) await Future<void>.delayed(slot.difference(now));
+      final response = await retryGet(url, {}, options: quickRetry);
+      if (response.statusCode == 429 && attempt == 0) {
+        final seconds = int.tryParse(response.headers['retry-after'] ?? '') ?? 1;
+        await Future<void>.delayed(Duration(seconds: seconds.clamp(1, 5)));
+        continue;
+      }
+      if (response.statusCode != 200) {
+        logMwl('Tenrai error ${response.statusCode} for $url');
+        return null;
+      }
+      return jsonDecode(response.body) as Map<String, dynamic>;
+    }
+  }
+
   /// Fetch an HTML page and parse it with a custom parser function.
   ///
   /// Parsing (DOM build + [fromHtml] + `toJson`) runs on a short-lived

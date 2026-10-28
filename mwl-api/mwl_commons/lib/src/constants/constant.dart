@@ -12,6 +12,10 @@ class Constants {
   // Jikan API v4
   static const String jikanV4 = 'https://api.jikan.moe/v4/';
 
+  // Tenrai: free MyAnimeList API following Jikan v4's schema, used when Jikan
+  // is down (public tier, no key).
+  static const String tenraiV1 = 'https://api.tenrai.org/v1/';
+
   // MAL website (for HTML scraping)
   static const String malBaseUrl = 'https://myanimelist.net';
   static const String malnewsUrl = '$malBaseUrl/news';

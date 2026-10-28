@@ -409,25 +409,19 @@ class HandlerCore {
     return {'url': uri.path, 'data': result, 'fromCache': false};
   }
 
-  /// Character info from Jikan v4.
+  /// Character info from Jikan v4 (Tenrai when Jikan is down).
   Future<Map<String, dynamic>> _handleCharacterInfo(
       PathMatcher path, Uri uri, Map<String, String> params) async {
     final id = path.intPathParam(uri.path.substring(1));
-    final result = await HttpConnect.retryGetChecked(
-      '${Constants.jikanV4}characters/$id/full',
-      {},
-    );
+    final result = await HttpConnect.jikanGetChecked('characters/$id/full');
     return {'url': uri.path, 'data': result, 'fromCache': false};
   }
 
-  /// Person/seiyuu info from Jikan v4.
+  /// Person/seiyuu info from Jikan v4 (Tenrai when Jikan is down).
   Future<Map<String, dynamic>> _handlePeopleInfo(
       PathMatcher path, Uri uri, Map<String, String> params) async {
     final id = path.intPathParam(uri.path.substring(1));
-    final result = await HttpConnect.retryGetChecked(
-      '${Constants.jikanV4}people/$id/full',
-      {},
-    );
+    final result = await HttpConnect.jikanGetChecked('people/$id/full');
     return {'url': uri.path, 'data': result, 'fromCache': false};
   }
 
@@ -470,9 +464,10 @@ class HandlerCore {
       PathMatcher path, Uri uri, Map<String, String> params) async {
     final username = queryParams<String>(uri, 'username', '')!;
     final page = queryParams<int>(uri, 'page', 1)!;
-    final result = await HttpConnect.retryGetChecked(
-      '${Constants.jikanV4}users/$username/friends?page=$page',
-      {},
+    // Tenrai has no user endpoints: Jikan only.
+    final result = await HttpConnect.jikanGetChecked(
+      'users/$username/friends?page=$page',
+      tenrai: false,
     );
     return {'url': uri.path, 'data': result, 'fromCache': false};
   }
@@ -562,11 +557,11 @@ class HandlerCore {
     final type = queryParams<String>(uri, 'type');
 
     if (source == 'jikan') {
-      String url = '${Constants.jikanV4}schedules';
+      var path = 'schedules';
       if (type != null && type.isNotEmpty && type != 'all') {
-        url += '?filter=$type';
+        path += '?filter=$type';
       }
-      final result = await HttpConnect.retryGetChecked(url, {});
+      final result = await HttpConnect.jikanGetChecked(path);
       return {'url': uri.path, 'data': result, 'fromCache': false};
     }
 

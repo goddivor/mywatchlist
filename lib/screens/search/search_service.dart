@@ -11,6 +11,7 @@ import 'package:mywatchlist/screens/search/search_sources.dart';
 import 'package:mywatchlist/services/api/Jikan/jikan_anime.dart' as jikan_model;
 import 'package:mywatchlist/services/api/Jikan/jikan_api.dart';
 import 'package:mywatchlist/services/api/Jikan/jikan_client.dart';
+import 'package:mywatchlist/services/api/jikan_source.dart';
 import 'package:mywatchlist/services/api/MAL/mal_anime.dart';
 import 'package:mywatchlist/services/api/MAL/mal_api.dart';
 import 'package:mywatchlist/services/api/MAL/mal_forum_api.dart';
@@ -103,7 +104,9 @@ class SearchPage {
 /// has none), characters and people go to Jikan and, at the same time, to MyAnimeList's own
 /// search page (`anime.php`, `manga.php`, `character.php`, `people.php` through the mwl-api
 /// `search/content` route): the first source with rows wins, so a network where Jikan is
-/// unreachable still gets results. Jikan is skipped while `JikanClient` knows it is down. Text
+/// unreachable still gets results. "Jikan" here is Jikan or, when Jikan is down, Tenrai (same
+/// schema, chosen by `JikanSource` inside `JikanClient`); it is skipped while `JikanClient`
+/// knows both are down. Text
 /// of one or two characters can only go to Jikan (MyAnimeList refuses it). Every search is
 /// bounded by [searchBudget]; a failure is thrown as is and the screen asks [SearchFailures]
 /// whether the network or the source failed.
@@ -147,7 +150,9 @@ class SearchService {
   static const int _forumPageSize = 30;
   static const int _stackPageSize = 10;
 
-  static const String _jikanBase = 'https://api.jikan.moe/v4';
+  /// Jikan's base; `JikanClient` sends the request to Tenrai when Jikan is down and Tenrai
+  /// has the endpoint (`JikanSource`).
+  static const String _jikanBase = JikanSource.jikanBase;
 
   Future<SearchPage> search(SearchRequest request) => _search(request).timeout(searchBudget);
 
