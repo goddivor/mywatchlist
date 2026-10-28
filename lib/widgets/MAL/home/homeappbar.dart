@@ -107,14 +107,8 @@ class AppBarHome extends StatelessWidget implements PreferredSizeWidget {
       return const SizedBox.shrink();
     }
     final s = S.current;
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHigh.withValues(alpha: 0.85),
-        borderRadius: BorderRadius.circular(24),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 2),
-        child: Row(
+    // Plain icons like DailyAL's header (no container behind them).
+    return Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             if (showSearch)
@@ -142,8 +136,6 @@ class AppBarHome extends StatelessWidget implements PreferredSizeWidget {
                 onTap: onSettingsTap ?? () => AppRoutes.openSettings(context),
               ),
           ],
-        ),
-      ),
     );
   }
 }
@@ -163,7 +155,7 @@ class _BarButton extends StatelessWidget {
       onPressed: onTap,
       color: Theme.of(context).colorScheme.onSurface,
       visualDensity: VisualDensity.compact,
-      constraints: const BoxConstraints.tightFor(width: 40, height: 40),
+      constraints: const BoxConstraints.tightFor(width: 44, height: 40),
       padding: EdgeInsets.zero,
     );
   }
