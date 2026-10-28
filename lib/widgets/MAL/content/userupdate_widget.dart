@@ -4,6 +4,7 @@ import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/screens/MAL/detail/sections/section_states.dart';
 import 'package:mywatchlist/services/api/Jikan/jikan_animeuserupdate.dart';
 import 'package:mywatchlist/services/api/Jikan/jikan_api.dart';
+import 'package:mywatchlist/services/api/Jikan/jikan_fallbacks.dart';
 import 'package:mywatchlist/widgets/MAL/home/animecardbar.dart';
 import 'package:mywatchlist/widgets/MAL/home/animegridcard.dart';
 import 'package:mywatchlist/widgets/MAL/review/review_item.dart';
@@ -14,9 +15,10 @@ import 'package:mywatchlist/widgets/loading/shimmercolor.dart';
 /// (avatar, name, progress ring, score, age, status). A tap on a card opens the quick user
 /// sheet of that user.
 ///
-/// Source: Jikan `userupdates` only (neither MAL's API nor the mwl-api has these). Jikan
-/// requests time out, so the skeleton always ends in cards, an empty state or an error
-/// with Retry.
+/// Sources ([JikanFallbacks.race]): Jikan `userupdates`, against the "Recently Updated By"
+/// table of MAL's stats page (mwl-api `content/updates`), which answers while Jikan is down
+/// (Tenrai has no `userupdates`). The skeleton always ends in cards, an empty state or an
+/// error with Retry within about 12 s.
 class UserUpdatesPage extends StatefulWidget {
   final int id;
   final VoidCallback? onPageChange;
@@ -38,8 +40,13 @@ class UserUpdatesPage extends StatefulWidget {
 class _UserUpdatesPageState extends State<UserUpdatesPage> with AutomaticKeepAliveClientMixin {
   late Future<AnimeUserUpdatesResponse> _updates = _fetch();
 
-  Future<AnimeUserUpdatesResponse> _fetch() =>
-      JikanApi.getAnimeUserUpdates(widget.id, category: widget.category);
+  Future<AnimeUserUpdatesResponse> _fetch() async {
+    final result = await JikanFallbacks.race<AnimeUserUpdatesResponse>(
+      jikan: () => JikanApi.getAnimeUserUpdates(widget.id, category: widget.category),
+      fallback: () => JikanFallbacks.userUpdates(widget.id, widget.category, 1),
+    );
+    return result.value;
+  }
 
   void _retry() {
     setState(() {
@@ -109,7 +116,7 @@ class _UpdateCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final status = update.status;
-    final nsv = status == null ? null : NodeStatusValue.fromString(status);
+    final nsv = status == null ? null : NodeStatusValue.fromString(statusKey(status));
     final date = DateTime.tryParse(update.date ?? '');
     final username = update.user?.username;
     final linkable = isLinkableUser(username);
@@ -218,3 +225,9 @@ class _UpdateCard extends StatelessWidget {
     );
   }
 }
+
+/// The list status key (`on_hold`, `plan_to_watch`…) of a status as Jikan or MAL's page
+/// print it (`On-Hold`, `Plan to Watch`).
+@visibleForTesting
+String statusKey(String status) =>
+    status.trim().toLowerCase().replaceAll(RegExp(r'[\s-]+'), '_');

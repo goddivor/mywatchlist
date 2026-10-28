@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:html/parser.dart' as html_parser;
@@ -11,7 +10,6 @@ import 'package:mywatchlist/screens/search/search_sources.dart';
 import 'package:mywatchlist/services/api/Jikan/jikan_anime.dart' as jikan_model;
 import 'package:mywatchlist/services/api/Jikan/jikan_api.dart';
 import 'package:mywatchlist/services/api/Jikan/jikan_client.dart';
-import 'package:mywatchlist/services/api/jikan_source.dart';
 import 'package:mywatchlist/services/api/MAL/mal_anime.dart';
 import 'package:mywatchlist/services/api/MAL/mal_api.dart';
 import 'package:mywatchlist/services/api/MAL/mal_forum_api.dart';
@@ -130,9 +128,16 @@ class SearchService {
   /// Whether Jikan is tried at all (tests turn it off).
   static bool Function() jikanAllowed = () => !JikanClient.instance.isUnreachable;
 
+  /// GET of a MyAnimeList profile page for the "user found" shortcut (replaceable in tests).
+  static Future<http.Response> Function(Uri url) profileGet = http.get;
+
+  /// Longest wait for the profile probe (the user results wait for it).
+  static const Duration profileProbeTimeout = Duration(seconds: 8);
+
   @visibleForTesting
   static void reset() {
     malSearchPage = _malSearchPage;
+    profileGet = http.get;
     jikanAllowed = () => !JikanClient.instance.isUnreachable;
   }
 
@@ -149,10 +154,6 @@ class SearchService {
   static const int _userPageSize = 24;
   static const int _forumPageSize = 30;
   static const int _stackPageSize = 10;
-
-  /// Jikan's base; `JikanClient` sends the request to Tenrai when Jikan is down and Tenrai
-  /// has the endpoint (`JikanSource`).
-  static const String _jikanBase = JikanSource.jikanBase;
 
   Future<SearchPage> search(SearchRequest request) => _search(request).timeout(searchBudget);
 
@@ -587,17 +588,19 @@ class SearchService {
     return compute(_parseUsers, response.body);
   }
 
-  /// The profile of [query] when it exists on MyAnimeList (a cheap Jikan lookup), else null.
-  /// Any failure answers null: the shortcut is a bonus.
+  /// The profile of [query] when it exists on MyAnimeList, else null: MyAnimeList's own
+  /// profile page (`/profile/<name>`, 200 or 404), so the shortcut works without Jikan
+  /// (Tenrai has no user endpoints). The name keeps MyAnimeList's casing (`og:url`). Any
+  /// failure answers null: the shortcut is a bonus.
   Future<String?> _probeUser(String query) async {
     final name = query.trim();
     if (!looksLikeUsername(name)) return null;
     try {
-      final response = await JikanClient.instance.get(Uri.parse('$_jikanBase/users/${Uri.encodeComponent(name)}'));
+      final response = await profileGet(
+              Uri.https('myanimelist.net', '/profile/${Uri.encodeComponent(name)}'))
+          .timeout(profileProbeTimeout);
       if (response.statusCode != 200) return null;
-      final data = (jsonDecode(response.body) as Map<String, dynamic>)['data'];
-      final username = data is Map<String, dynamic> ? data['username'] as String? : null;
-      return username ?? name;
+      return canonicalProfileName(response.body, name);
     } catch (_) {
       return null;
     }
@@ -662,3 +665,21 @@ class SearchService {
 
 List<MalUserNode> _parseUsers(String body) =>
     HtmlParsers.parseUserSearch(html_parser.parse(body)).users;
+
+final RegExp _ogProfileUrl = RegExp(
+    r"""<meta\s+property=["']og:url["']\s+content=["']https?://myanimelist\.net/profile/([^"'/?#]+)""");
+
+/// The user name of a MyAnimeList profile page as MyAnimeList spells it (from its `og:url`
+/// meta tag, in the page head), else [typed].
+@visibleForTesting
+String canonicalProfileName(String body, String typed) {
+  final head = body.length > 40000 ? body.substring(0, 40000) : body;
+  final match = _ogProfileUrl.firstMatch(head)?.group(1);
+  if (match == null || match.isEmpty) return typed;
+  try {
+    final name = Uri.decodeComponent(match);
+    return name.toLowerCase() == typed.toLowerCase() ? name : typed;
+  } catch (_) {
+    return typed;
+  }
+}

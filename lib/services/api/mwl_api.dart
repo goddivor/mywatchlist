@@ -671,6 +671,41 @@ class MwlApi {
     }
   }
 
+  /// Longest wait for [getContentUpdates].
+  static const contentUpdatesTimeout = Duration(seconds: 12);
+
+  /// Members' latest list updates of an anime or manga (`category`), page
+  /// [page] (75 rows), from the "Recently Updated By" table of MAL's stats
+  /// page: the source of the user updates section without Jikan (Tenrai has
+  /// no `userupdates`). Throws when the page failed or after [timeout], so a
+  /// race can try the other source.
+  Future<ContentUpdatesHtml> getContentUpdates(
+    int id,
+    String category, {
+    int page = 1,
+    bool fromCache = true,
+    Duration timeout = contentUpdatesTimeout,
+  }) =>
+      fetchContentUpdates(
+        () => _getData(
+          'content/updates?${_buildQuery({'id': id, 'category': category, 'page': page})}',
+          fromCache: fromCache,
+        ),
+        timeout: timeout,
+      );
+
+  /// [getContentUpdates] around any [getData] source of the `data` field
+  /// (exposed so the failure paths are tested offline).
+  @visibleForTesting
+  static Future<ContentUpdatesHtml> fetchContentUpdates(
+    Future<dynamic> Function() getData, {
+    Duration timeout = contentUpdatesTimeout,
+  }) async {
+    final data = _mapOf(await getData().timeout(timeout));
+    if (data == null) throw StateError('MAL stats page unavailable');
+    return ContentUpdatesHtml.fromJson(data);
+  }
+
   /// Full-size picture URLs of a character.
   Future<List<String>> getCharacterPictures(int id,
           {bool fromCache = true}) =>
