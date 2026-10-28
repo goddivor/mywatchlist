@@ -14,6 +14,7 @@ import 'package:mywatchlist/services/api/Jikan/jikan_anime_statistics.dart';
 import 'package:mywatchlist/services/api/Jikan/jikan_anime_videos.dart';
 import 'package:mywatchlist/services/api/Jikan/jikan_animeuserupdate.dart';
 import 'package:mywatchlist/services/api/Jikan/jikan_characterfull.dart';
+import 'package:mywatchlist/services/api/Jikan/jikan_fallbacks.dart';
 import 'package:mywatchlist/services/api/Jikan/jikan_genre.dart';
 import 'package:mywatchlist/services/api/Jikan/jikan_personfull.dart';
 import 'package:mywatchlist/services/api/Jikan/jikan_producer.dart';
@@ -339,7 +340,22 @@ class JikanApi {
     }
   }
 
+  /// Forum topics of a title. All topics race Jikan against MyAnimeList's
+  /// forum page ([JikanFallbacks.race]), so a slow or unreachable Jikan costs
+  /// a few seconds instead of its whole timeout.
   Future<AnimeForumResponse> getAnimeForum(int animeId, AnimeForumFilter filter,
+      {String category = "anime"}) async {
+    if (filter != AnimeForumFilter.all) {
+      return _getAnimeForum(animeId, filter, category: category);
+    }
+    final result = await JikanFallbacks.race(
+      jikan: () async => (await _getAnimeForum(animeId, filter, category: category)).data,
+      fallback: () => JikanFallbacks.forum(animeId, category),
+    );
+    return AnimeForumResponse(data: result.value);
+  }
+
+  Future<AnimeForumResponse> _getAnimeForum(int animeId, AnimeForumFilter filter,
       {String category = "anime"}) async {
     final filterValue = getAnimeForumFilterValue(filter);
     final base = category == "manga" ? '$_jikanv4/manga' : _baseUrl;

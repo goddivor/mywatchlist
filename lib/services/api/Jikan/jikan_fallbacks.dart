@@ -8,9 +8,38 @@ import 'package:mywatchlist/services/api/Jikan/jikan_anime_character.dart' show 
 import 'package:mywatchlist/services/api/Jikan/jikan_anime_forum.dart';
 import 'package:mywatchlist/services/api/Jikan/jikan_anime_review.dart';
 import 'package:mywatchlist/services/api/Jikan/jikan_anime_staff.dart' as staff;
+import 'package:mywatchlist/services/api/Jikan/jikan_client.dart';
 import 'package:mywatchlist/services/api/MAL/mal_forum_api.dart';
 import 'package:mywatchlist/services/api/MAL/models/forum/forum_models.dart' show ForumTopicsData;
 import 'package:mywatchlist/services/api/mwl_api.dart';
+
+/// Which source answered a [JikanFallbacks.race].
+enum RaceWinner { jikan, fallback }
+
+/// Answer of a [JikanFallbacks.race] and the source that gave it.
+class RaceResult<T> {
+  final T value;
+  final RaceWinner winner;
+
+  const RaceResult(this.value, this.winner);
+
+  bool get fromJikan => winner == RaceWinner.jikan;
+}
+
+/// Both sources of a [JikanFallbacks.race] failed, or none answered within
+/// the budget.
+class NoSourceAnswered implements Exception {
+  final Object? jikanError;
+  final Object? fallbackError;
+  final bool timedOut;
+
+  const NoSourceAnswered({this.jikanError, this.fallbackError, this.timedOut = false});
+
+  @override
+  String toString() => timedOut
+      ? 'NoSourceAnswered: no answer within the budget'
+      : 'NoSourceAnswered: jikan=$jikanError, fallback=$fallbackError';
+}
 
 /// Sources used by the detail sections when Jikan does not answer.
 ///
@@ -21,7 +50,86 @@ class JikanFallbacks {
   JikanFallbacks._();
 
   /// Longest wait for a fallback source (the backend retries on its own).
-  static const Duration timeout = Duration(seconds: 20);
+  static const Duration timeout = Duration(seconds: 12);
+
+  /// Jikan's head start in a [race]: the fallback starts when Jikan has not
+  /// answered by then (at once when Jikan failed or is known to be down).
+  static Duration headStart = const Duration(seconds: 3);
+
+  /// Longest wait of a whole [race] (owner's target: about 12 s).
+  static Duration budget = const Duration(seconds: 12);
+
+  /// Jikan against a fallback source. Jikan runs first; the fallback starts
+  /// after [headStart], or at once when Jikan fails or while the Jikan client
+  /// skips requests after a timeout ([JikanClient.isUnreachable], then Jikan
+  /// is not asked at all). The first answer wins; when both fail, or nothing
+  /// answered within [budget], it throws [NoSourceAnswered].
+  static Future<RaceResult<T>> race<T>({
+    required Future<T> Function() jikan,
+    required Future<T> Function() fallback,
+  }) {
+    final completer = Completer<RaceResult<T>>();
+    Object? jikanError;
+    Object? fallbackError;
+    var jikanDone = false;
+    var fallbackStarted = false;
+    var fallbackDone = false;
+    Timer? headTimer;
+    Timer? budgetTimer;
+
+    void finish(RaceResult<T>? result, [Object? error]) {
+      if (completer.isCompleted) return;
+      headTimer?.cancel();
+      budgetTimer?.cancel();
+      if (result != null) {
+        completer.complete(result);
+      } else {
+        completer.completeError(error!);
+      }
+    }
+
+    void failIfBothDone() {
+      if (jikanDone && fallbackDone) {
+        finish(null, NoSourceAnswered(jikanError: jikanError, fallbackError: fallbackError));
+      }
+    }
+
+    void startFallback() {
+      if (fallbackStarted || completer.isCompleted) return;
+      fallbackStarted = true;
+      headTimer?.cancel();
+      Future<T>.sync(fallback).then(
+        (value) => finish(RaceResult(value, RaceWinner.fallback)),
+        onError: (Object e) {
+          fallbackDone = true;
+          fallbackError = e;
+          failIfBothDone();
+        },
+      );
+    }
+
+    budgetTimer = Timer(budget, () => finish(null, const NoSourceAnswered(timedOut: true)));
+    if (JikanClient.instance.isUnreachable) {
+      jikanDone = true;
+      jikanError = 'Jikan skipped (unreachable)';
+      startFallback();
+    } else {
+      headTimer = Timer(headStart, startFallback);
+      Future<T>.sync(jikan).then(
+        (value) => finish(RaceResult(value, RaceWinner.jikan)),
+        onError: (Object e) {
+          jikanDone = true;
+          jikanError = e;
+          if (fallbackDone) {
+            failIfBothDone();
+          } else {
+            startFallback();
+          }
+        },
+      );
+    }
+    return completer.future;
+  }
 
   /// Reviews of one title from the mwl-api `reviews` route (MAL review
   /// pages parsed by the backend), most voted first.
@@ -38,13 +146,21 @@ class JikanFallbacks {
   static Future<ContentCharactersHtml?> Function(int id, String category)
       characters = _mwlCharacters;
 
-  /// Restores the real sources (tests).
+  /// Restores the real sources and timings (tests).
   @visibleForTesting
   static void reset() {
     reviews = _mwlReviews;
     forum = _malForum;
     characters = _mwlCharacters;
+    headStart = const Duration(seconds: 3);
+    budget = const Duration(seconds: 12);
+    _forumMemo.clear();
   }
+
+  /// Recent forum loads, so the forum section asking again right after a
+  /// failed race shares that answer instead of waiting a second time.
+  static final Map<String, _Memo<List<AnimeForum>>> _forumMemo = {};
+  static const Duration _memoTtl = Duration(seconds: 20);
 
   static Future<List<AnimeReview>> _mwlReviews(
       int id, String category, int page) async {
@@ -54,7 +170,19 @@ class JikanFallbacks {
     return list.map(reviewFromHtml).toList();
   }
 
-  static Future<List<AnimeForum>> _malForum(int id, String category) async {
+  static Future<List<AnimeForum>> _malForum(int id, String category) {
+    final key = '$category:$id';
+    final generation = JikanClient.instance.retryGeneration;
+    final memo = _forumMemo[key];
+    if (memo != null && memo.isFresh(generation)) return memo.future;
+    _forumMemo.removeWhere((_, m) => !m.isFresh(generation));
+    final future = _loadMalForum(id, category);
+    _forumMemo[key] = _Memo(future, DateTime.now().add(_memoTtl), generation);
+    future.then<void>((_) {}, onError: (_) {});
+    return future;
+  }
+
+  static Future<List<AnimeForum>> _loadMalForum(int id, String category) async {
     final isManga = category == 'manga';
     final topics = await MalForumApi()
         .getForumTopics(
@@ -72,6 +200,17 @@ class JikanFallbacks {
   static Future<ContentCharactersHtml?> _mwlCharacters(
           int id, String category) =>
       MwlApi.i.getContentCharacters(id, category: category).timeout(timeout);
+}
+
+class _Memo<T> {
+  final Future<T> future;
+  final DateTime expires;
+  final int generation;
+
+  _Memo(this.future, this.expires, this.generation);
+
+  bool isFresh(int currentGeneration) =>
+      generation == currentGeneration && DateTime.now().isBefore(expires);
 }
 
 final DateFormat _malReviewDate = DateFormat('MMM d, yyyy', 'en_US');

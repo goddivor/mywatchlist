@@ -98,7 +98,17 @@ class JikanClient {
   }
 
   /// Let the next request reach the network again (used by Retry buttons).
-  void resetReachability() => _unreachableUntil = null;
+  /// Also bumps [retryGeneration], so answers remembered by the fallback
+  /// sources are asked again.
+  void resetReachability() {
+    _unreachableUntil = null;
+    _retryGeneration++;
+  }
+
+  int _retryGeneration = 0;
+
+  /// Number of [resetReachability] calls (a Retry button was pressed).
+  int get retryGeneration => _retryGeneration;
 
   void _throwIfUnreachable(Uri url) {
     if (isUnreachable) throw JikanUnavailable(url, 'unreachable, skipped');
