@@ -14,7 +14,8 @@ class SimklHomeBlock {
   String get key => feed?.name ?? 'continue';
 
   @override
-  bool operator ==(Object other) => other is SimklHomeBlock && other.feed == feed && other.limit == limit;
+  bool operator ==(Object other) =>
+      other is SimklHomeBlock && other.feed == feed && other.limit == limit;
 
   @override
   int get hashCode => Object.hash(feed, limit);
@@ -61,6 +62,16 @@ List<SimklHomeBlock> simklHomePlan(List<HomeSectionPreference> sections) {
       case SectionType.features:
       case SectionType.topManga:
       case SectionType.topMangaPopular:
+      case SectionType.topAnimeOva:
+      case SectionType.topAnimeOna:
+      case SectionType.topMangaOnly:
+      case SectionType.topMangaFavorites:
+      case SectionType.topOneshots:
+      case SectionType.topDoujin:
+      case SectionType.topLightNovels:
+      case SectionType.topNovels:
+      case SectionType.topManhwa:
+      case SectionType.topManhua:
       case SectionType.forum:
         break;
     }

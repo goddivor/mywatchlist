@@ -7,9 +7,11 @@ import 'package:mywatchlist/widgets/user/list/list_entry_view.dart';
 /// no equivalent (news, features, suggestions, forum) or the section is not a catalogue row
 /// (the user's own list).
 KitsuMediaQuery? kitsuQueryForSection(HomeSectionPreference section) {
-  KitsuMediaQuery anime({Map<String, String> filters = const {}, String? sort}) =>
+  KitsuMediaQuery anime(
+          {Map<String, String> filters = const {}, String? sort}) =>
       KitsuMediaQuery(isAnime: true, filters: filters, sort: sort);
-  KitsuMediaQuery manga({Map<String, String> filters = const {}, String? sort}) =>
+  KitsuMediaQuery manga(
+          {Map<String, String> filters = const {}, String? sort}) =>
       KitsuMediaQuery(isAnime: false, filters: filters, sort: sort);
 
   switch (section.type) {
@@ -38,6 +40,26 @@ KitsuMediaQuery? kitsuQueryForSection(HomeSectionPreference section) {
       return manga(sort: 'ratingRank');
     case SectionType.topMangaPopular:
       return manga(sort: 'popularityRank');
+    case SectionType.topAnimeOva:
+      return anime(filters: {'subtype': 'OVA'}, sort: 'ratingRank');
+    case SectionType.topAnimeOna:
+      return anime(filters: {'subtype': 'ONA'}, sort: 'ratingRank');
+    case SectionType.topMangaOnly:
+      return manga(filters: {'subtype': 'manga'}, sort: 'ratingRank');
+    case SectionType.topMangaFavorites:
+      return manga(sort: '-favoritesCount');
+    case SectionType.topOneshots:
+      return manga(filters: {'subtype': 'oneshot'}, sort: 'ratingRank');
+    case SectionType.topDoujin:
+      return manga(filters: {'subtype': 'doujin'}, sort: 'ratingRank');
+    // Kitsu has one `novel` subtype for light novels and novels alike.
+    case SectionType.topLightNovels:
+    case SectionType.topNovels:
+      return manga(filters: {'subtype': 'novel'}, sort: 'ratingRank');
+    case SectionType.topManhwa:
+      return manga(filters: {'subtype': 'manhwa'}, sort: 'ratingRank');
+    case SectionType.topManhua:
+      return manga(filters: {'subtype': 'manhua'}, sort: 'ratingRank');
     case SectionType.news:
     case SectionType.suggested:
     case SectionType.features:

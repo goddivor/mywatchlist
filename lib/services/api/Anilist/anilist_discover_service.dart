@@ -22,6 +22,9 @@ class AnilistMediaQuery {
 
   /// AniList `MediaFormat` values.
   final List<String> formats;
+
+  /// AniList `CountryCode` of the origin (`JP`, `KR`, `CN`), null for any.
+  final String? country;
   final String? genre;
   final String? search;
 
@@ -32,6 +35,7 @@ class AnilistMediaQuery {
     this.seasonYear,
     this.status,
     this.formats = const [],
+    this.country,
     this.genre,
     this.search,
   });
@@ -44,11 +48,12 @@ class AnilistMediaQuery {
         seasonYear: seasonYear,
         status: status,
         formats: formats,
+        country: country,
         genre: genre ?? this.genre,
         search: search ?? this.search,
       );
 
-  String get key => [category, sort, season, seasonYear, status, formats.join('+'), genre, search]
+  String get key => [category, sort, season, seasonYear, status, formats.join('+'), country, genre, search]
       .join('|');
 
   @override
@@ -169,11 +174,11 @@ class AnilistDiscoverService {
     final data = await _gql.query('''
       query (\$page: Int, \$perPage: Int, \$type: MediaType, \$sort: [MediaSort],
           \$season: MediaSeason, \$seasonYear: Int, \$status: MediaStatus,
-          \$formats: [MediaFormat], \$genre: String, \$search: String, \$adult: Boolean) {
+          \$formats: [MediaFormat], \$country: CountryCode, \$genre: String, \$search: String, \$adult: Boolean) {
         Page(page: \$page, perPage: \$perPage) {
           pageInfo { hasNextPage }
           media(type: \$type, sort: \$sort, season: \$season, seasonYear: \$seasonYear,
-              status: \$status, format_in: \$formats, genre: \$genre, search: \$search,
+              status: \$status, format_in: \$formats, countryOfOrigin: \$country, genre: \$genre, search: \$search,
               isAdult: \$adult) { ${AnilistMedia.fields} }
         }
       }
@@ -186,6 +191,7 @@ class AnilistDiscoverService {
       if (q.seasonYear != null) 'seasonYear': q.seasonYear,
       if (q.status != null) 'status': q.status,
       if (q.formats.isNotEmpty) 'formats': q.formats,
+      if (q.country != null) 'country': q.country,
       if (q.genre != null) 'genre': q.genre,
       if (q.search != null && q.search!.trim().isNotEmpty) 'search': q.search!.trim(),
       // `false` hides adult titles; null lets them through (the NSFW preference).
