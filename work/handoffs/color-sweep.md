@@ -3,6 +3,10 @@
 **Kind** unit · **Priority** P1 · **Group** release · **Model** sonnet
 
 ## Needs done first
+- `theme-seasons` (Seasonal accents like DailyAL (spring pink, summer deep orange, fall brown, winter light blue))
+- `detail-polish` (Detail page polish: News never loads, faster fallbacks, status colours, tabs, numbers)
+- `home-fixes` (Home: user-list cache per account)
+- `backup-fixes` (Backup restore never stops halfway; About closes its HTTP client)
 - `tracker-wiring` (AniList / Kitsu / Simkl wiring: notifications, profile routes, remove action, MAL-only notes)
 - `profile-polish` (Profile screen: readable themed header, chart colours from status tokens, lighter surfaces, no Jikan wait)
 - `list-cards-dal` (My List grid display: the same visual as DailyAL's grid (the rest of MWL's My List stays))
@@ -62,6 +66,7 @@ Plus `PROJECT-STATE.md` (rewrite in place, within its cap) and `docs/DECISIONS.m
 - Replace every hardcoded `Colors.*` / `Color(0x…)` in the owned screens with `colorScheme` roles or the app_colors tokens (theme-colors), except intrinsic content colours (e.g. a tracker's brand logo) — list those exceptions in the PR body.
 - Dub badge on cards uses a literal dark scrim + white glyph (dub-info): use the badge/scrim tokens. Known spots (detail-resilience finding): `reviewScoreColor` in lib/widgets/MAL/review/review_logic.dart (hardcoded green/amber/red → score tokens); lib/widgets/common/avatar_widget.dart (white shimmer box and old fallback image → themed placeholder + clean circle like the detail sections); `getStatusColorInt` and `loadingGraph` in lib/constants/constants.dart.
 - Seasonal grid spacing: lib/screens/seasonal/seasonal_screen.dart (~282-286, ~323-327) still uses 8/10/10 — reuse `listGridDelegate` / `listGridPadding` from lib/widgets/user/list/user_list_tab.dart (DailyAL gaps, fix #143).
+- Batch-4 check: Plan to watch is orange and On hold yellow (old functions) in the edit sheet status dot (lib/widgets/user/edit/edit_labels.dart:19-26, edit_fields.dart:76,135), the sync widget (lib/widgets/user/cross_tracker_widget.dart:449) and home cards (lib/widgets/MAL/home/animegridcard.dart:1118): use the status tokens; remove/redirect the legacy getStatusColor in constants.dart:585. My List badges in dark/black: red badge salmon with dark-red text, blue badge black text — keep solid blue/red with white text like DailyAL in every mode. Calendar day pill cut to « Aujourd'» (lib/widgets/calendar/**).
 - Check each screen in light, dark and black themes for contrast: no button, chip, badge or coloured area where the text is unreadable (owner's complaint); text on images uses the scrim token; no light surface left in dark mode.
 
 ## Known bugs to fix in scope

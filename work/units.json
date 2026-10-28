@@ -27,7 +27,8 @@
         "detail-synopsis-media",
         "detail-social",
         "detail-resilience",
-        "detail-more-info"
+        "detail-more-info",
+        "detail-polish"
       ]
     },
     {
@@ -54,7 +55,8 @@
         "explore-seasonal",
         "search-upgrade",
         "home-wiring",
-        "cards-upgrade"
+        "cards-upgrade",
+        "home-fixes"
       ]
     },
     {
@@ -67,7 +69,9 @@
         "settings-theme-about-backup",
         "notifications",
         "dub-info",
-        "api-prefs"
+        "api-prefs",
+        "theme-seasons",
+        "backup-fixes"
       ]
     },
     {
@@ -99,6 +103,7 @@
         "l10n-quality",
         "color-sweep",
         "app-icon",
+        "release-fixes",
         "in-app-update",
         "deep-links"
       ]
@@ -1439,6 +1444,10 @@
       "artifact": "",
       "priority": "P1",
       "needs": [
+        "theme-seasons",
+        "detail-polish",
+        "home-fixes",
+        "backup-fixes",
         "tracker-wiring",
         "profile-polish",
         "list-cards-dal",
@@ -1558,6 +1567,143 @@
         "test/units/tracker-wiring/**"
       ],
       "group": "trackers",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: sonnet"
+      ],
+      "status": "⬜ todo"
+    },
+    {
+      "id": "theme-seasons",
+      "title": "Seasonal accents like DailyAL (spring pink, summer deep orange, fall brown, winter light blue)",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P0",
+      "needs": [
+        "theme-colors"
+      ],
+      "owns": [
+        "lib/user/theme/**",
+        "lib/widgets/common/app_colors.dart",
+        "lib/screens/settings/theme_settings.dart",
+        "docs/THEME.md",
+        "lib/l10n/units/theme-seasons/**",
+        "test/units/theme-seasons/**"
+      ],
+      "group": "settings",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "⬜ todo"
+    },
+    {
+      "id": "detail-polish",
+      "title": "Detail page polish: News never loads, faster fallbacks, status colours, tabs, numbers",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P0",
+      "needs": [
+        "detail-resilience",
+        "detail-header",
+        "home-wiring"
+      ],
+      "owns": [
+        "lib/screens/MAL/detail/**",
+        "lib/widgets/MAL/content/animestatisticswidget.dart",
+        "lib/widgets/MAL/home/show_news.dart",
+        "lib/services/api/Jikan/**",
+        "lib/l10n/units/detail-polish/**",
+        "test/units/detail-polish/**"
+      ],
+      "group": "detail",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "⬜ todo"
+    },
+    {
+      "id": "home-fixes",
+      "title": "Home: user-list cache per account",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "home-wiring"
+      ],
+      "owns": [
+        "lib/widgets/home/**",
+        "lib/pages/MAL/mal_home_page.dart",
+        "lib/l10n/units/home-fixes/**",
+        "test/units/home-fixes/**"
+      ],
+      "group": "discovery",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: sonnet"
+      ],
+      "status": "⬜ todo"
+    },
+    {
+      "id": "backup-fixes",
+      "title": "Backup restore never stops halfway; About closes its HTTP client",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "in-app-update",
+        "settings-theme-about-backup"
+      ],
+      "owns": [
+        "lib/cache/cachemanager.dart",
+        "lib/screens/settings/backup_settings.dart",
+        "lib/screens/settings/about_settings.dart",
+        "lib/screens/settings/storage_settings.dart",
+        "lib/l10n/units/backup-fixes/**",
+        "test/units/backup-fixes/**"
+      ],
+      "group": "settings",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: sonnet"
+      ],
+      "status": "⬜ todo"
+    },
+    {
+      "id": "release-fixes",
+      "title": "Release: versionCode bump, launcher label, restricted update provider",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P2",
+      "needs": [
+        "versioning-ci",
+        "in-app-update"
+      ],
+      "owns": [
+        ".github/**",
+        "tools/release/**",
+        "android/app/src/main/AndroidManifest.xml",
+        "lib/services/updater/**",
+        "lib/l10n/units/release-fixes/**",
+        "test/units/release-fixes/**"
+      ],
+      "group": "release",
       "dropped": null,
       "skills": [],
       "states": [],

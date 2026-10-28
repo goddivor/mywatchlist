@@ -553,6 +553,7 @@ const UNITS = [
     goal: [
       "The base ARB files are DailyAL's machine-quality translations. Review intl_fr_FR.arb entirely: fix mistranslations (e.g. `About` = « Sur » → « À propos »), untranslated entries (Spanish, German, Indonesian at :595-598), capitalisation (« turc » next to « Portugais », :856), French typography (non-breaking space before : ; ! ?, « » quotes, no em dash). The French must be flawless: follow the redaction-francais rules if available to you.",
       "Base French (detail-header finding): `Close` = « proche » → « Fermer », `Pictures` = « Des photos » → « Images », `Aired` and `Users` untranslated. Base French: `Streaming_Platforms` has a stray trailing comma (« Plateformes de streaming, »). Base French fixes seen on the settings hub (batch-2 check): `About` = « Sur » (intl_fr_FR.arb:154) → « À propos »; `Dub_Settings` = « Signaler les doublages inexacts » (:685) → « Doublage ». Add the missing French fragments of merged units that shipped English only (e.g. lib/l10n/units/perf-foundation/: Image_Saved, Image_Save_Failed, Image_Share_Failed, Image_Share_Text) — scan every lib/l10n/units/*/ for keys without intl_fr_FR.",
+      "Batch-4 French list: rankings « Tous les favoris de temps », « Top ça », « Top téléviseurs », « Haut ELLE » (Top ONA), « Top Airing Anime » untranslated; genres « action » lowercase, « Récompensé Gagnant », « Les filles aiment », « SLICE OF LIFE », « Des sports », « Le suspense », « Supernatural »; theme chips « Chuté », « Complété », « En train de regarder »; settings « Sauvegarde sur le cloud » (it is a local JSON file), « Signaler les doublages inexacts » as dub settings title, « …le taux et l'examen » under About; « Sur » (About).",
       "Add the Arabic translations missing for the l10n-pipeline unit's own strings (language picker: 'Use system language', its description, 'Available languages').",
       "Never rename or remove a key; only values change. Run tools/heavy.sh tools/l10n/build.sh.",
     ],
@@ -560,12 +561,13 @@ const UNITS = [
   },
   {
     id: "color-sweep", title: "Colour sweep: hardcoded colours of already-merged screens onto the theme tokens", kind: "unit", priority: "P1", group: "release", model: "sonnet", ui: true,
-    needs: ["tracker-wiring", "profile-polish", "list-cards-dal", "detail-resilience", "home-wiring", "featured-characters", "dub-info", "detail-more-info", "settings-theme-about-backup", "in-app-update", "forum-clubs", "search-upgrade", "theme-colors", "cards-upgrade", "detail-header", "detail-social", "detail-related-graph", "detail-synopsis-media", "user-list-mal", "user-profile-mal", "edit-sheet", "sync-dialog", "bookmarks", "calendar", "explore-seasonal", "settings-prefs-pages", "accounts-ux", "app-shell", "shared-kit", "notifications"],
+    needs: ["theme-seasons", "detail-polish", "home-fixes", "backup-fixes", "tracker-wiring", "profile-polish", "list-cards-dal", "detail-resilience", "home-wiring", "featured-characters", "dub-info", "detail-more-info", "settings-theme-about-backup", "in-app-update", "forum-clubs", "search-upgrade", "theme-colors", "cards-upgrade", "detail-header", "detail-social", "detail-related-graph", "detail-synopsis-media", "user-list-mal", "user-profile-mal", "edit-sheet", "sync-dialog", "bookmarks", "calendar", "explore-seasonal", "settings-prefs-pages", "accounts-ux", "app-shell", "shared-kit", "notifications"],
     owns: ["lib/widgets/loading/**", "lib/widgets/MAL/home/**", "lib/widgets/MAL/content/**", "lib/widgets/MAL/review/**", "lib/widgets/user/**", "lib/widgets/charts/**", "lib/widgets/bookmarks/**", "lib/widgets/calendar/**", "lib/widgets/common/**", "lib/screens/MAL/**", "lib/screens/explore/**", "lib/screens/seasonal/**", "lib/screens/calendar/**", "lib/screens/user_profile/**", "lib/screens/settings/**", "lib/screens/bookmarks_screen.dart", "lib/pages/side_bar.dart", "lib/constants/constants.dart"],
     goal: [
       "Replace every hardcoded `Colors.*` / `Color(0x…)` in the owned screens with `colorScheme` roles or the app_colors tokens (theme-colors), except intrinsic content colours (e.g. a tracker's brand logo) — list those exceptions in the PR body.",
       "Dub badge on cards uses a literal dark scrim + white glyph (dub-info): use the badge/scrim tokens. Known spots (detail-resilience finding): `reviewScoreColor` in lib/widgets/MAL/review/review_logic.dart (hardcoded green/amber/red → score tokens); lib/widgets/common/avatar_widget.dart (white shimmer box and old fallback image → themed placeholder + clean circle like the detail sections); `getStatusColorInt` and `loadingGraph` in lib/constants/constants.dart.",
       "Seasonal grid spacing: lib/screens/seasonal/seasonal_screen.dart (~282-286, ~323-327) still uses 8/10/10 — reuse `listGridDelegate` / `listGridPadding` from lib/widgets/user/list/user_list_tab.dart (DailyAL gaps, fix #143).",
+      "Batch-4 check: Plan to watch is orange and On hold yellow (old functions) in the edit sheet status dot (lib/widgets/user/edit/edit_labels.dart:19-26, edit_fields.dart:76,135), the sync widget (lib/widgets/user/cross_tracker_widget.dart:449) and home cards (lib/widgets/MAL/home/animegridcard.dart:1118): use the status tokens; remove/redirect the legacy getStatusColor in constants.dart:585. My List badges in dark/black: red badge salmon with dark-red text, blue badge black text — keep solid blue/red with white text like DailyAL in every mode. Calendar day pill cut to « Aujourd'» (lib/widgets/calendar/**).",
       "Check each screen in light, dark and black themes for contrast: no button, chip, badge or coloured area where the text is unreadable (owner's complaint); text on images uses the scrim token; no light surface left in dark mode.",
     ],
     dod: ["`grep -rnE \"Colors\\.|Color\\(0x\" lib/<owned>` only shows the documented exceptions.", "Checker: screenshots in light/dark/black of each touched screen."],
@@ -595,6 +597,59 @@ const UNITS = [
       "Never write to the owner's trackers in tests (fakes only).",
     ],
     dod: ["Checker: switch to AniList on the emulator, open a profile link and a list entry editor (cancel); notifications settings show AniList candidates."],
+  },
+  {
+    id: "theme-seasons", title: "Seasonal accents like DailyAL (spring pink, summer deep orange, fall brown, winter light blue)", kind: "unit", priority: "P0", group: "settings", model: "opus", ui: true,
+    needs: ["theme-colors"],
+    owns: ["lib/user/theme/**", "lib/widgets/common/app_colors.dart", "lib/screens/settings/theme_settings.dart", "docs/THEME.md"],
+    dal: ["lib/theme/themedata.dart:56-70 (season → accent)", "lib/theme/theme.dart (default Brown + Fall background)"],
+    goal: [
+      "Batch-4 check, owner wish 'DailyAL's pastel tone': MWL's default accent is Blue Grey (#607D8B, app_themes.dart:59) whatever the background, so chips, tabs and the nav pill stay grey-blue on a pink or orange background. DailyAL ties the accent to the season background (spring → pink, summer → deep orange, fall → brown, winter → light blue) and defaults to Brown + the Fall background.",
+      "Do the same: each seasonal background picks its DailyAL accent automatically (an 'Auto (season)' accent choice, default), while an explicit accent pick (preset / custom / Material You) still wins. Default for a new install: DailyAL's (Brown + Fall). Keep the pastel recipe, black mode and every contrast test green.",
+      "Theme settings: the mode button 'Light' untranslated and 'Sombre' shrunk to a tiny font — fix the labels (no shrinking text) (batch-4 check).",
+    ],
+    dod: ["Tests: each season maps to DailyAL's accent; explicit picks override; contrast tests pass.", "Checker: Spring / Summer / Fall / Winter screenshots side by side with DailyAL."],
+  },
+  {
+    id: "detail-polish", title: "Detail page polish: News never loads, faster fallbacks, status colours, tabs, numbers", kind: "unit", priority: "P0", group: "detail", model: "opus", ui: true,
+    needs: ["detail-resilience", "detail-header", "home-wiring"],
+    owns: ["lib/screens/MAL/detail/**", "lib/widgets/MAL/content/animestatisticswidget.dart", "lib/widgets/MAL/home/show_news.dart", "lib/services/api/Jikan/**"],
+    goal: [
+      "BLOCKING (batch-4 check): News on detail pages loads forever — lib/widgets/MAL/home/show_news.dart:52-62 `_fetchNews` has no try/catch, `JikanUnavailable` is unhandled and the skeleton never goes. Content, empty state or error + Retry, like every other section (repro: Cowboy Bebop, Shuiro no Kamen).",
+      "Faster fallbacks (owner target ~12 s): the MAL fallback only starts after Jikan's 12 s timeout and then waits up to 15–20 s (content_stats_source.dart:77-91, jikan_fallbacks.dart:24): start the fallback early (race Jikan against the fallback after a short head start, or skip Jikan immediately while its circuit breaker is open), cap the total at ~12 s.",
+      "Status colours: the detail edit FAB (detail_fab.dart:36 → getAnimeStatusColor / constants getStatusColor) and the Stats chart (animestatisticswidget.dart:30-34) must use the theme-colors status tokens (DailyAL's green/blue/orange/red/brown).",
+      "Tapping a detail tab while the header is fully expanded highlights the tab but does not scroll — make it scroll. Manga header authors show a leading comma (', Nabana'). Header numbers use the app locale (header_meta.dart:17-19 static NumberFormat without locale: '2,169' → '2 169' in French).",
+    ],
+    dod: ["Tests with a failing fake Jikan: News ends in a state; fallbacks finish under ~12 s; status colours = tokens; French number formatting.", "Checker: Cowboy Bebop and Shuiro no Kamen on the owner's network."],
+  },
+  {
+    id: "home-fixes", title: "Home: user-list cache per account", kind: "unit", priority: "P1", group: "discovery", model: "sonnet", ui: true,
+    needs: ["home-wiring"],
+    owns: ["lib/widgets/home/**", "lib/pages/MAL/mal_home_page.dart"],
+    goal: ["The home 'My list' section cache key (lib/widgets/home/home_sections.dart:231) does not include the account: after switching account from the avatar sheet the previous account's list stays until pull-to-refresh. Key every per-user section by tracker + account id and clear on account switch (AccountBloc stream). Maintenance dialog must show at most once even under a race (batch-4 check)."],
+    dod: ["Test: switching account invalidates the user-list section."],
+  },
+  {
+    id: "backup-fixes", title: "Backup restore never stops halfway; About closes its HTTP client", kind: "unit", priority: "P1", group: "settings", model: "sonnet",
+    needs: ["in-app-update", "settings-theme-about-backup"],
+    owns: ["lib/cache/cachemanager.dart", "lib/screens/settings/backup_settings.dart", "lib/screens/settings/about_settings.dart", "lib/screens/settings/storage_settings.dart"],
+    goal: [
+      "Restore can stop halfway (cachemanager.dart:433-436 does not validate each section's version): validate the whole file first (every section's version, shape), then write all sections or none, then reload; the preview counts must equal what is restored.",
+      "about_settings.dart:44 never closes its http.Client.",
+      "Storage page sizes in the app locale ('115,4 Mo' in French, storage_settings.dart:90-100 uses toStringAsFixed).",
+    ],
+    dod: ["Tests: a file with a bad section restores nothing and reports it; preview counts = restored counts."],
+  },
+  {
+    id: "release-fixes", title: "Release: versionCode bump, launcher label, restricted update provider", kind: "unit", priority: "P2", group: "release", model: "sonnet",
+    needs: ["versioning-ci", "in-app-update"],
+    owns: [".github/**", "tools/release/**", "android/app/src/main/AndroidManifest.xml", "lib/services/updater/**"],
+    goal: [
+      "tools/release/version.sh (~62-75) never commits the bump back, so every CI release is built with versionCode +2 of the committed one: make the code monotonic (derive it from the tag date / run number, or commit the bump) — explain the choice.",
+      "Launcher label: AndroidManifest.xml:19 `android:label=\"mywatchlist\"` → \"MyWatchList\".",
+      "Issue #153: install updates through the app's restricted FileProvider (@xml/updater_paths) instead of open_filex's broad provider.",
+    ],
+    dod: ["actionlint or line-by-line review of the workflow; tests for the version script; manifest checked by a test."],
   },
   {
     id: "in-app-update", title: "In-app update: check GitHub releases, download and install APK", kind: "unit", priority: "P2", group: "release", model: "sonnet", ui: true,

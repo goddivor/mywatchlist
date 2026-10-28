@@ -441,6 +441,54 @@ UI directive applies: compare DAL and MWL, keep the better, improve it.
 Deliver with the PR procedure of the brief.
 ```
 
+## theme-seasons
+
+```text
+Unit theme-seasons — Seasonal accents like DailyAL (spring pink, summer deep orange, fall brown, winter light blue).
+Read work/handoffs/theme-seasons.md fully, then the DAL reference files it lists, then the MWL files you own.
+Build exactly the Goal, inside the Owns list. Heavy commands only through tools/heavy.sh; never run flutter build or touch the emulator.
+UI directive applies: compare DAL and MWL, keep the better, improve it.
+Deliver with the PR procedure of the brief.
+```
+
+## detail-polish
+
+```text
+Unit detail-polish — Detail page polish: News never loads, faster fallbacks, status colours, tabs, numbers.
+Read work/handoffs/detail-polish.md fully, then the DAL reference files it lists, then the MWL files you own.
+Build exactly the Goal, inside the Owns list. Heavy commands only through tools/heavy.sh; never run flutter build or touch the emulator.
+UI directive applies: compare DAL and MWL, keep the better, improve it.
+Deliver with the PR procedure of the brief.
+```
+
+## home-fixes
+
+```text
+Unit home-fixes — Home: user-list cache per account.
+Read work/handoffs/home-fixes.md fully, then the DAL reference files it lists, then the MWL files you own.
+Build exactly the Goal, inside the Owns list. Heavy commands only through tools/heavy.sh; never run flutter build or touch the emulator.
+UI directive applies: compare DAL and MWL, keep the better, improve it.
+Deliver with the PR procedure of the brief.
+```
+
+## backup-fixes
+
+```text
+Unit backup-fixes — Backup restore never stops halfway; About closes its HTTP client.
+Read work/handoffs/backup-fixes.md fully, then the DAL reference files it lists, then the MWL files you own.
+Build exactly the Goal, inside the Owns list. Heavy commands only through tools/heavy.sh; never run flutter build or touch the emulator.
+Deliver with the PR procedure of the brief.
+```
+
+## release-fixes
+
+```text
+Unit release-fixes — Release: versionCode bump, launcher label, restricted update provider.
+Read work/handoffs/release-fixes.md fully, then the DAL reference files it lists, then the MWL files you own.
+Build exactly the Goal, inside the Owns list. Heavy commands only through tools/heavy.sh; never run flutter build or touch the emulator.
+Deliver with the PR procedure of the brief.
+```
+
 ## in-app-update
 
 ```text
