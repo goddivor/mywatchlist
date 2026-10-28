@@ -72,13 +72,24 @@ class CommunityRecommendation {
   /// ISO date of the recommendation, as Jikan gives it.
   final String? date;
 
+  /// MyAnimeList id of the recommendation (its "report" link); MAL's page gives it, Jikan
+  /// does not.
+  final int? id;
+
   const CommunityRecommendation({
     required this.first,
     required this.second,
     this.username,
     this.text,
     this.date,
+    this.id,
   });
+
+  /// MyAnimeList's page to report this recommendation of [category], null without [id].
+  String? reportUrl(String category) => id == null
+      ? null
+      : 'https://myanimelist.net/dbchanges.php?go=report${category == 'manga' ? 'manga' : 'anime'}'
+          'recommendation&id=$id';
 
   /// From one element of Jikan's `recommendations/{anime|manga}` list; null when malformed.
   static CommunityRecommendation? fromJikan(Object? json) {
@@ -112,6 +123,7 @@ class CommunityRecommendation {
       username: row.username,
       text: text == null || text.isEmpty ? null : text,
       date: row.timeAdded,
+      id: row.id,
     );
   }
 
@@ -405,16 +417,78 @@ class ExploreData {
     }
   }
 
-  /// The id of a random anime or manga (Jikan, never cached). Honours the NSFW preference.
-  static Future<int?> randomId(String category) async {
-    final sfw = !Preferences.general.nsfw;
-    final url = Uri.parse('${Constants.jikanV4}/random/$category?sfw=$sfw');
-    final response = await JikanClient.instance.get(url, useCache: false);
-    if (response.statusCode != 200) return null;
-    final body = await MwlApi.decodeJson(response.body);
+  /// Rough length of MyAnimeList's popularity ranking per category: every title is in it,
+  /// so a random rank in it is a random title. A draw past the end shrinks the range.
+  static const Map<String, int> randomPool = {'anime': 29000, 'manga': 75000};
+
+  /// The id of a random anime or manga, never cached. Honours the NSFW preference.
+  ///
+  /// MyAnimeList's popularity ranking read at a random rank comes first (the MAL API works
+  /// when Jikan is down); Jikan's `random/` only answers when MyAnimeList failed and Jikan
+  /// is not known to be down.
+  static Future<int?> randomId(String category, {Random? random}) async {
+    try {
+      final id = await randomFromRanking(category, _rankingIdAt(category), random: random);
+      if (id != null) return id;
+    } catch (e) {
+      debugPrint('ExploreData.randomId (MyAnimeList): $e');
+    }
+    if (JikanClient.instance.isUnreachable) return null;
+    return _randomFromJikan(category);
+  }
+
+  /// A random id of [category] drawn through [idAt] (the id at a rank, null past the end of
+  /// the ranking): a rank below [randomPool], then, while the draw lands past the end, a rank
+  /// below the one that missed (four draws at most).
+  @visibleForTesting
+  static Future<int?> randomFromRanking(String category, Future<int?> Function(int offset) idAt,
+      {Random? random}) async {
+    final rng = random ?? Random();
+    var pool = randomPool[category] ?? 20000;
+    for (var attempt = 0; attempt < 4 && pool > 0; attempt++) {
+      final offset = rng.nextInt(pool);
+      final id = await idAt(offset);
+      if (id != null) return id;
+      pool = offset;
+    }
+    return null;
+  }
+
+  /// The id at [offset] of MAL's popularity ranking of [category] (one row, ids only).
+  static Future<int?> Function(int offset) _rankingIdAt(String category) => (offset) async {
+        final endpoint = category == 'manga' ? MalApi.mangaRankingEndPoint : MalApi.animeRankingEndPoint;
+        final response = await MalApi.authorizedGet(
+                '$endpoint?ranking_type=bypopularity&limit=1&offset=$offset&fields=id')
+            .timeout(const Duration(seconds: 12));
+        if (response.statusCode != 200) throw Exception('ranking ${response.statusCode}');
+        return firstRankingId(await MwlApi.decodeJson(response.body));
+      };
+
+  /// Id of the first row of a decoded MAL ranking answer, null when it has no row.
+  @visibleForTesting
+  static int? firstRankingId(Object? body) {
     final data = body is Map ? body['data'] : null;
-    final id = data is Map ? data['mal_id'] : null;
-    return id is int ? id : null;
+    if (data is! List || data.isEmpty) return null;
+    final first = data.first;
+    final node = first is Map ? first['node'] : null;
+    final id = node is Map ? node['id'] : null;
+    return id is num ? id.toInt() : null;
+  }
+
+  static Future<int?> _randomFromJikan(String category) async {
+    try {
+      final sfw = !Preferences.general.nsfw;
+      final url = Uri.parse('${Constants.jikanV4}/random/$category?sfw=$sfw');
+      final response = await JikanClient.instance.get(url, useCache: false);
+      if (response.statusCode != 200) return null;
+      final body = await MwlApi.decodeJson(response.body);
+      final data = body is Map ? body['data'] : null;
+      final id = data is Map ? data['mal_id'] : null;
+      return id is int ? id : null;
+    } catch (e) {
+      debugPrint('ExploreData.randomId (Jikan): $e');
+      return null;
+    }
   }
 
   /// A random id of the signed-in MyAnimeList user's list [status] (a MAL status word).

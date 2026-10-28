@@ -13,8 +13,10 @@ import 'package:mywatchlist/screens/search/search_catalog.dart' show SearchCatal
 import 'package:mywatchlist/screens/seasonal/season_utils.dart';
 import 'package:mywatchlist/screens/seasonal/seasonal_screen.dart';
 import 'package:mywatchlist/screens/studios/studios_screen.dart';
+import 'package:mywatchlist/screens/weekly/weekly_schedule_screen.dart';
 import 'package:mywatchlist/user/preferences/preferences.dart';
 import 'package:mywatchlist/utils/app_routes.dart';
+import 'package:mywatchlist/utils/web_launcher.dart' show launchWebView;
 import 'package:mywatchlist/widgets/MAL/search/headerwidget.dart';
 import 'package:mywatchlist/widgets/common/app_image.dart';
 import 'package:mywatchlist/widgets/common/custombutton.dart' show PlainButton, ShadowButton;
@@ -393,6 +395,7 @@ class _SeasonalPickerState extends State<SeasonalPicker> {
   ];
   late int _yearIndex = _years.indexOf(SeasonKey.current().year).clamp(0, _years.length - 1);
   int _seasonIndex = SeasonKey.current().season.index;
+  final PageStorageBucket _yearsBucket = PageStorageBucket();
 
   /// The season the two rows point at.
   SeasonKey get selected => SeasonKey(SeasonType.values[_seasonIndex], _years[_yearIndex]);
@@ -406,7 +409,11 @@ class _SeasonalPickerState extends State<SeasonalPicker> {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        HeaderWidget(
+        // HeaderWidget is a ScrollablePositionedList: it saves an `ItemPosition` in the page
+        // storage, which a plain scroll view of the page would read back as its offset.
+        PageStorage(
+          bucket: _yearsBucket,
+          child: HeaderWidget(
           key: const ValueKey('seasonal-years'),
           listPadding: listPadding,
           header: [for (final y in _years) '$y'],
@@ -417,6 +424,7 @@ class _SeasonalPickerState extends State<SeasonalPicker> {
           onPressed: (index) {
             if (mounted) setState(() => _yearIndex = index);
           },
+        ),
         ),
         const SizedBox(height: 15),
         _SeasonsRow(
@@ -440,7 +448,8 @@ class _SeasonalPickerState extends State<SeasonalPicker> {
                 child: Text(S.current.Search_By_Season),
               ),
               ShadowButton(
-                onPressed: () => AppRoutes.openCalendar(context),
+                onPressed: () =>
+                    AppRoutes.push<void>(context, WeeklyScheduleScreen(season: selected)),
                 child: Text(S.current.WeeklyAnime),
               ),
             ],
@@ -539,6 +548,7 @@ class RecommendationCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
+    final reportUrl = item.reportUrl(category);
     Widget side(String caption, RecoRef ref) => Expanded(
           child: InkWell(
             borderRadius: BorderRadius.circular(12),
@@ -596,14 +606,37 @@ class RecommendationCard extends StatelessWidget {
                 ),
               ] else
                 const Spacer(),
-              if (item.username != null)
-                InkWell(
-                  onTap: () => AppRoutes.openUserProfile(context,
-                      tracker: AccountType.myanimelist, username: item.username),
-                  child: Text(S.current.Explore_Reco_By(item.username!),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.labelMedium?.copyWith(color: scheme.primary)),
+              if (item.username != null || reportUrl != null)
+                Row(
+                  children: [
+                    Expanded(
+                      child: item.username == null
+                          ? const SizedBox.shrink()
+                          : InkWell(
+                              onTap: () => AppRoutes.openUserProfile(context,
+                                  tracker: AccountType.myanimelist, username: item.username),
+                              child: Text(S.current.Explore_Reco_By(item.username!),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: theme.textTheme.labelMedium
+                                      ?.copyWith(color: scheme.primary)),
+                            ),
+                    ),
+                    if (reportUrl != null)
+                      TextButton(
+                        onPressed: () => reportRecommendation(context, item, reportUrl),
+                        style: TextButton.styleFrom(
+                          visualDensity: VisualDensity.compact,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                          foregroundColor: scheme.onSurfaceVariant,
+                        ),
+                        child: Tooltip(
+                          message: S.current.Report_Recommendation,
+                          child: Text(S.current.Report),
+                        ),
+                      ),
+                  ],
                 ),
             ],
           ),
@@ -611,6 +644,45 @@ class RecommendationCard extends StatelessWidget {
       ),
     );
   }
+}
+
+/// DailyAL's report confirmation, then MyAnimeList's report page of the recommendation
+/// [item] at [url] in the browser (reporting needs the user's MAL website login).
+Future<void> reportRecommendation(
+    BuildContext context, CommunityRecommendation item, String url) async {
+  final confirmed = await showDialog<bool>(
+    context: context,
+    builder: (dialogContext) => AlertDialog(
+      title: Text(S.current.Report_Confirmation),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '${S.current.Recommendation_made_by} ${item.username ?? ''}'.trim(),
+            style: Theme.of(dialogContext).textTheme.titleSmall,
+          ),
+          const SizedBox(height: 4),
+          Text('${item.first.title} → ${item.second.title}',
+              style: Theme.of(dialogContext).textTheme.bodySmall),
+          const SizedBox(height: 16),
+          Text(S.current.Report_Description),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(dialogContext).pop(false),
+          child: Text(S.current.Cancel),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.of(dialogContext).pop(true),
+          child: Text(S.current.ContinueW),
+        ),
+      ],
+    ),
+  );
+  if (confirmed != true || !context.mounted) return;
+  await launchWebView(url, context: context, external: true);
 }
 
 /// A review: reviewer, score, the reviewed title and the start of the text.
