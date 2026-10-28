@@ -25,7 +25,8 @@ AnilistMediaQuery? anilistQueryFor(HomeSectionPreference section) {
   switch (section.type) {
     case SectionType.seasonNow:
       final season = section.season;
-      final (currentSeason, currentYear) = AnilistDiscoverService.seasonOf(DateTime.now());
+      final (currentSeason, currentYear) =
+          AnilistDiscoverService.seasonOf(DateTime.now());
       return AnilistMediaQuery(
         category: 'anime',
         sort: 'POPULARITY_DESC',
@@ -36,27 +37,69 @@ AnilistMediaQuery? anilistQueryFor(HomeSectionPreference section) {
       return const AnilistMediaQuery(category: 'anime', sort: 'TRENDING_DESC');
     case SectionType.upcoming:
       return const AnilistMediaQuery(
-          category: 'anime', sort: 'POPULARITY_DESC', status: 'NOT_YET_RELEASED');
+          category: 'anime',
+          sort: 'POPULARITY_DESC',
+          status: 'NOT_YET_RELEASED');
     case SectionType.topScore:
       return const AnilistMediaQuery(category: 'anime', sort: 'SCORE_DESC');
     case SectionType.topFavorites:
-      return const AnilistMediaQuery(category: 'anime', sort: 'FAVOURITES_DESC');
+      return const AnilistMediaQuery(
+          category: 'anime', sort: 'FAVOURITES_DESC');
     case SectionType.topPopular:
-      return const AnilistMediaQuery(category: 'anime', sort: 'POPULARITY_DESC');
+      return const AnilistMediaQuery(
+          category: 'anime', sort: 'POPULARITY_DESC');
     case SectionType.topAnimeAiring:
-      return const AnilistMediaQuery(category: 'anime', sort: 'SCORE_DESC', status: 'RELEASING');
+      return const AnilistMediaQuery(
+          category: 'anime', sort: 'SCORE_DESC', status: 'RELEASING');
     case SectionType.topAnimeTV:
       return const AnilistMediaQuery(
           category: 'anime', sort: 'SCORE_DESC', formats: ['TV', 'TV_SHORT']);
     case SectionType.topAnimeMovie:
-      return const AnilistMediaQuery(category: 'anime', sort: 'SCORE_DESC', formats: ['MOVIE']);
+      return const AnilistMediaQuery(
+          category: 'anime', sort: 'SCORE_DESC', formats: ['MOVIE']);
     case SectionType.topAnimeSpecial:
       return const AnilistMediaQuery(
           category: 'anime', sort: 'SCORE_DESC', formats: ['SPECIAL']);
     case SectionType.topManga:
       return const AnilistMediaQuery(category: 'manga', sort: 'SCORE_DESC');
     case SectionType.topMangaPopular:
-      return const AnilistMediaQuery(category: 'manga', sort: 'POPULARITY_DESC');
+      return const AnilistMediaQuery(
+          category: 'manga', sort: 'POPULARITY_DESC');
+    case SectionType.topAnimeOva:
+      return const AnilistMediaQuery(
+          category: 'anime', sort: 'SCORE_DESC', formats: ['OVA']);
+    case SectionType.topAnimeOna:
+      return const AnilistMediaQuery(
+          category: 'anime', sort: 'SCORE_DESC', formats: ['ONA']);
+    case SectionType.topMangaOnly:
+      return const AnilistMediaQuery(
+          category: 'manga',
+          sort: 'SCORE_DESC',
+          formats: ['MANGA'],
+          country: 'JP');
+    case SectionType.topMangaFavorites:
+      return const AnilistMediaQuery(
+          category: 'manga', sort: 'FAVOURITES_DESC');
+    case SectionType.topOneshots:
+      return const AnilistMediaQuery(
+          category: 'manga', sort: 'SCORE_DESC', formats: ['ONE_SHOT']);
+    case SectionType.topLightNovels:
+      return const AnilistMediaQuery(
+          category: 'manga',
+          sort: 'SCORE_DESC',
+          formats: ['NOVEL'],
+          country: 'JP');
+    case SectionType.topNovels:
+      return const AnilistMediaQuery(
+          category: 'manga', sort: 'POPULARITY_DESC', formats: ['NOVEL']);
+    case SectionType.topManhwa:
+      return const AnilistMediaQuery(
+          category: 'manga', sort: 'SCORE_DESC', country: 'KR');
+    case SectionType.topManhua:
+      return const AnilistMediaQuery(
+          category: 'manga', sort: 'SCORE_DESC', country: 'CN');
+    // AniList has no doujinshi format.
+    case SectionType.topDoujin:
     case SectionType.news:
     case SectionType.features:
     case SectionType.userList:
@@ -135,8 +178,10 @@ class AnilistHomeSection extends StatelessWidget {
               .items,
           loading: _loading(),
           builder: (context, items) => items.isEmpty
-              ? HomeMessage(icon: Icons.inbox_outlined, text: S.current.Hw_Empty_Items)
-              : AnilistMediaRow(items: items, cardWidth: cardWidth, cardHeight: cardHeight),
+              ? HomeMessage(
+                  icon: Icons.inbox_outlined, text: S.current.Hw_Empty_Items)
+              : AnilistMediaRow(
+                  items: items, cardWidth: cardWidth, cardHeight: cardHeight),
         ),
       ],
     );
@@ -170,15 +215,20 @@ class AnilistHomeSection extends StatelessWidget {
               );
             }
             return HomeAsync<List<AnilistMedia>>(
-              cacheKey: 'al:userlist:$category:${status?.name ?? 'all'}:${section.itemCount}',
+              cacheKey:
+                  'al:userlist:$category:${status?.name ?? 'all'}:${section.itemCount}',
               maxAge: Duration(hours: section.cacheDurationHours),
               refresh: refresh,
               load: () => recentEntries(category, status, section.itemCount,
                   force: refresh > 0),
               loading: _loading(),
               builder: (context, items) => items.isEmpty
-                  ? HomeMessage(icon: Icons.inbox_outlined, text: S.current.Hw_Empty_List)
-                  : AnilistMediaRow(items: items, cardWidth: cardWidth, cardHeight: cardHeight),
+                  ? HomeMessage(
+                      icon: Icons.inbox_outlined, text: S.current.Hw_Empty_List)
+                  : AnilistMediaRow(
+                      items: items,
+                      cardWidth: cardWidth,
+                      cardHeight: cardHeight),
             );
           },
         ),
@@ -194,7 +244,8 @@ class AnilistHomeSection extends StatelessWidget {
     final entries = [
       for (final e in all)
         if (status == null || e.status == status) e,
-    ]..sort((a, b) => (b.updatedAt ?? DateTime(0)).compareTo(a.updatedAt ?? DateTime(0)));
+    ]..sort((a, b) =>
+        (b.updatedAt ?? DateTime(0)).compareTo(a.updatedAt ?? DateTime(0)));
     return [
       for (final e in entries.take(count))
         AnilistMedia(
@@ -226,15 +277,19 @@ class AnilistHomeSection extends StatelessWidget {
           cacheKey: 'al:forum',
           maxAge: Duration(hours: section.cacheDurationHours),
           refresh: refresh,
-          load: () async => (await AnilistDiscoverService.instance.threads(perPage: 8)).items,
+          load: () async =>
+              (await AnilistDiscoverService.instance.threads(perPage: 8)).items,
           loading: const ForumSkeleton(count: 3),
           builder: (context, threads) {
             if (threads.isEmpty) {
               return HomeMessage(
-                  icon: Icons.forum_outlined, text: S.current.Fc_Topics_Empty_Title);
+                  icon: Icons.forum_outlined,
+                  text: S.current.Fc_Topics_Empty_Title);
             }
             return Column(
-              children: [for (final t in threads.take(6)) AnilistThreadTile(thread: t)],
+              children: [
+                for (final t in threads.take(6)) AnilistThreadTile(thread: t)
+              ],
             );
           },
         ),
@@ -244,6 +299,8 @@ class AnilistHomeSection extends StatelessWidget {
 
   String get _forumTitle {
     final custom = section.customTitle;
-    return custom != null && custom.isNotEmpty ? custom : S.current.Al_Forum_Title;
+    return custom != null && custom.isNotEmpty
+        ? custom
+        : S.current.Al_Forum_Title;
   }
 }
