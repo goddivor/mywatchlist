@@ -14,13 +14,13 @@ import 'package:mywatchlist/widgets/calendar/calendar_cubit.dart';
 import 'package:mywatchlist/widgets/calendar/calendar_logic.dart';
 import 'package:mywatchlist/widgets/calendar/calendar_models.dart';
 import 'package:mywatchlist/widgets/calendar/calendar_tiles.dart';
-import 'package:mywatchlist/widgets/common/select/select_option.dart';
-import 'package:mywatchlist/widgets/common/select/three_state_select_bar.dart';
 
-/// Weekly airing schedule (DAL `AnimeCalendarWidget`): a strip of the next seven
-/// days, list-status filter chips and the episodes of the chosen day with their
-/// countdown, the user's watching / plan-to-watch entries highlighted, and an
-/// "add to calendar" sheet (device calendar or .ics). Open it with
+/// Weekly airing schedule (DAL `AnimeCalendarWidget`): the seven days from
+/// today as one list grouped by day ("Wednesday (2)", foldable), each episode
+/// with its time and countdown, a "now" line inside today, and DailyAL's
+/// All / Plan to Watch / Watching chips (both statuses on by default). Today
+/// keeps the episodes that already aired. Each row opens the anime or the "add
+/// to calendar" sheet (device calendar or .ics). Open it with
 /// `AppRoutes.openCalendar`.
 ///
 /// Times follow the time zone preference (JST, UTC or local).
@@ -42,6 +42,7 @@ class CalendarScreen extends StatelessWidget {
           (CalendarCubit(
             timezone: Preferences.content.timezone,
             listKnown: _listKnown(context.read<AccountBloc>().state),
+            initialFilter: CalendarFilter.watchingOrPlanned,
           )..load()),
       child: MultiBlocListener(
         listeners: [
@@ -166,35 +167,14 @@ class _CalendarViewState extends State<_CalendarView> {
               onAction: () => _cubit.load(refresh: true),
             );
           }
-          return Column(
-            children: [
-              DayStrip(days: state.days, selected: state.selectedDay, onSelected: _cubit.selectDay),
-              _FilterBar(state: state, onChanged: _cubit.setFilter),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
-                child: Align(
-                  alignment: AlignmentDirectional.centerStart,
-                  child: Text(
-                    S.current.Cal_Week_Count(state.weekCount),
-                    style: Theme.of(context)
-                        .textTheme
-                        .labelMedium
-                        ?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
-                  ),
-                ),
-              ),
-              Expanded(
-                child: RefreshIndicator(
-                  onRefresh: () => _cubit.load(refresh: true),
-                  child: _DayList(
-                    state: state,
-                    seconds: _seconds,
-                    minute: _minute,
-                    onAnnounceNext: () => _announceNext(state),
-                  ),
-                ),
-              ),
-            ],
+          return RefreshIndicator(
+            onRefresh: () => _cubit.load(refresh: true),
+            child: _WeekList(
+              state: state,
+              seconds: _seconds,
+              minute: _minute,
+              onAnnounceNext: () => _announceNext(state),
+            ),
           );
         },
       ),
@@ -202,128 +182,185 @@ class _CalendarViewState extends State<_CalendarView> {
   }
 }
 
+/// DailyAL's status toggles: All, Plan to Watch, Watching.
 class _FilterBar extends StatelessWidget {
-  final CalendarState state;
-  final ValueChanged<String?> onChanged;
+  final String? filter;
+  final ValueChanged<String> onTap;
 
-  const _FilterBar({required this.state, required this.onChanged});
+  const _FilterBar({required this.filter, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    if (!state.listKnown) {
-      final scheme = Theme.of(context).colorScheme;
-      return Padding(
-        padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-        child: Row(children: [
-          Icon(Icons.info_outline, size: 18, color: scheme.onSurfaceVariant),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              S.current.Cal_Connect_Hint,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 4, 12, 4),
+      child: Wrap(
+        spacing: 8,
+        runSpacing: 4,
+        children: [
+          for (final chip in [
+            (CalendarFilter.all, S.current.Kit_Status_All),
+            (CalendarFilter.planToWatch, S.current.Kit_Status_Plan_To_Watch),
+            (CalendarFilter.watching, S.current.Kit_Status_Watching),
+          ])
+            FilterChip(
+              label: Text(chip.$2),
+              selected: isChipOn(filter, chip.$1),
+              onSelected: (_) => onTap(chip.$1),
             ),
-          ),
-        ]),
-      );
-    }
-    return ThreeStateSelectBar<String>(
-      options: [
-        SelectOption(CalendarFilter.all, S.current.Kit_Status_All),
-        SelectOption(CalendarFilter.watching, S.current.Kit_Status_Watching),
-        SelectOption(CalendarFilter.planToWatch, S.current.Kit_Status_Plan_To_Watch),
-      ],
-      selected: state.filter ?? CalendarFilter.all,
-      onChanged: onChanged,
-      cycle: CycleOption(
-        label: S.current.Kit_In_List,
-        exclude: SelectOption(CalendarFilter.notInList, S.current.Kit_Not_In_List),
-        include: SelectOption(CalendarFilter.inList, S.current.Kit_In_List),
+        ],
       ),
     );
   }
 }
 
-class _DayList extends StatelessWidget {
+/// One row of the week list.
+sealed class _Row {
+  const _Row();
+}
+
+class _HeaderRow extends _Row {
+  final CalendarDay day;
+  const _HeaderRow(this.day);
+}
+
+class _NowRow extends _Row {
+  const _NowRow();
+}
+
+/// One episode, or two side by side on wide screens.
+class _EntriesRow extends _Row {
+  final List<CalendarEntry> entries;
+  const _EntriesRow(this.entries);
+}
+
+class _WeekList extends StatefulWidget {
   final CalendarState state;
   final ValueListenable<int> seconds;
   final ValueListenable<int> minute;
   final VoidCallback onAnnounceNext;
 
-  const _DayList({
+  const _WeekList({
     required this.state,
     required this.seconds,
     required this.minute,
     required this.onAnnounceNext,
   });
 
-  bool get _filtered =>
-      state.listKnown && state.filter != null && state.filter != CalendarFilter.all;
+  @override
+  State<_WeekList> createState() => _WeekListState();
+}
+
+class _WeekListState extends State<_WeekList> {
+  /// Days the user folded, by date.
+  final Set<DateTime> _folded = {};
+
+  CalendarState get state => widget.state;
+
+  bool get _filtered => state.listKnown && state.filter != null && state.filter != CalendarFilter.all;
+
+  void _toggle(DateTime date) => setState(() => _folded.contains(date) ? _folded.remove(date) : _folded.add(date));
+
+  /// Today always (it carries the "now" line), then every day with episodes.
+  List<_Row> _rows(DateTime now, int columns) {
+    final rows = <_Row>[];
+    void addEntries(List<CalendarEntry> list) {
+      for (var i = 0; i < list.length; i += columns) {
+        rows.add(_EntriesRow(list.sublist(i, i + columns > list.length ? list.length : i + columns)));
+      }
+    }
+
+    for (var i = 0; i < state.days.length; i++) {
+      final day = state.days[i];
+      if (i > 0 && day.isEmpty) continue;
+      rows.add(_HeaderRow(day));
+      if (_folded.contains(day.date)) continue;
+      if (i == 0) {
+        final aired = day.entries.where((e) => !e.airingAt.isAfter(now)).toList();
+        addEntries(aired);
+        rows.add(const _NowRow());
+        addEntries(day.entries.sublist(aired.length));
+      } else {
+        addEntries(day.entries);
+      }
+    }
+    return rows;
+  }
 
   @override
   Widget build(BuildContext context) {
-    final day = state.day;
-    if (day == null || day.isEmpty) {
-      final String title;
-      String? description;
-      String? actionLabel;
-      VoidCallback? onAction;
-      if (state.entries.isEmpty) {
-        title = S.current.Cal_Empty_Schedule;
-        description = S.current.Cal_Empty_Schedule_Desc;
-      } else if (_filtered) {
-        title = S.current.Cal_Empty_Filtered;
-        description = S.current.Cal_Empty_Filtered_Desc;
-        actionLabel = S.current.Cal_Clear_Filter;
-        onAction = () => context.read<CalendarCubit>().setFilter(null);
-      } else {
-        title = S.current.Cal_Empty_Day;
-      }
+    final cubit = context.read<CalendarCubit>();
+    final filterBar = state.listKnown
+        ? _FilterBar(filter: state.filter, onTap: (chip) => cubit.setFilter(toggleFilter(state.filter, chip)))
+        : null;
+    final empty = state.days.every((d) => d.isEmpty);
+    if (empty) {
+      final filtered = state.entries.isNotEmpty && _filtered;
       return _Message(
+        header: filterBar,
         icon: Icons.event_busy_outlined,
-        title: title,
-        description: description,
-        actionLabel: actionLabel,
-        onAction: onAction,
+        title: filtered ? S.current.Cal_Empty_Filtered : S.current.Cal_Empty_Schedule,
+        actionLabel: filtered ? S.current.Cal_Clear_Filter : null,
+        onAction: filtered ? () => cubit.setFilter(CalendarFilter.all) : null,
       );
     }
 
-    final isToday = state.selectedDay == 0;
+    final columns = MediaQuery.sizeOf(context).width >= 600 ? 2 : 1;
     return ValueListenableBuilder<int>(
-      valueListenable: minute,
+      valueListenable: widget.minute,
       builder: (context, _, __) {
         final now = DateTime.now();
-        var dividerAt = -1;
-        if (isToday) {
-          dividerAt = day.entries.where((e) => e.airingAt.isBefore(now)).length;
-        }
-        final count = day.entries.length + (dividerAt >= 0 ? 1 : 0);
-        return ListView.builder(
+        final rows = _rows(now, columns);
+        return CustomScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.only(top: 4, bottom: 24),
-          itemCount: count,
-          itemBuilder: (context, index) {
-            if (index == dividerAt) {
-              return NowDivider(now: now, timezone: state.timezone, onTap: onAnnounceNext);
-            }
-            final entry = day.entries[dividerAt >= 0 && index > dividerAt ? index - 1 : index];
-            return EpisodeTile(
-              key: ValueKey('${entry.malId}-${entry.episode}'),
-              entry: entry,
-              timezone: state.timezone,
-              clock: seconds,
-              showStatus: state.listKnown,
-              onOpen: () => AppRoutes.openContent(context, id: entry.malId),
-              onAddToCalendar: () =>
-                  showAddToCalendarSheet(context, entry: entry, timezone: state.timezone),
-            );
-          },
+          slivers: [
+            if (filterBar != null) SliverToBoxAdapter(child: filterBar),
+            SliverPadding(
+              padding: const EdgeInsets.only(bottom: 24),
+              sliver: SliverList.builder(
+                itemCount: rows.length,
+                itemBuilder: (context, index) => switch (rows[index]) {
+                  _HeaderRow(:final day) => DayHeader(
+                      key: ValueKey(day.date),
+                      date: day.date,
+                      count: day.entries.length,
+                      open: !_folded.contains(day.date),
+                      onToggle: () => _toggle(day.date),
+                    ),
+                  _NowRow() => NowDivider(now: now, timezone: state.timezone, onTap: widget.onAnnounceNext),
+                  _EntriesRow(:final entries) => columns == 1
+                      ? _tile(entries.first, now)
+                      : Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            for (var i = 0; i < columns; i++)
+                              Expanded(child: i < entries.length ? _tile(entries[i], now) : const SizedBox.shrink()),
+                          ],
+                        ),
+                },
+              ),
+            ),
+          ],
         );
       },
     );
   }
+
+  Widget _tile(CalendarEntry entry, DateTime now) => EpisodeTile(
+        key: ValueKey('${entry.malId}-${entry.episode}'),
+        entry: entry,
+        timezone: state.timezone,
+        clock: widget.seconds,
+        showStatus: state.listKnown,
+        onOpen: () => AppRoutes.openContent(context, id: entry.malId),
+        onAddToCalendar: entry.airingAt.isAfter(now)
+            ? () => showAddToCalendarSheet(context, entry: entry, timezone: state.timezone)
+            : null,
+      );
 }
 
 class _Message extends StatelessWidget {
+  /// Shown above the message (the filter chips, so a filter can be undone).
+  final Widget? header;
   final IconData icon;
   final String title;
   final String? description;
@@ -331,6 +368,7 @@ class _Message extends StatelessWidget {
   final VoidCallback? onAction;
 
   const _Message({
+    this.header,
     required this.icon,
     required this.title,
     this.description,
@@ -343,17 +381,25 @@ class _Message extends StatelessWidget {
     final theme = Theme.of(context);
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(32, 64, 32, 32),
+      padding: const EdgeInsets.only(bottom: 32),
       children: [
+        if (header != null) header!,
+        const SizedBox(height: 64),
         Icon(icon, size: 56, color: theme.colorScheme.onSurfaceVariant),
         const SizedBox(height: 16),
-        Text(title, textAlign: TextAlign.center, style: theme.textTheme.titleMedium),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 32),
+          child: Text(title, textAlign: TextAlign.center, style: theme.textTheme.titleMedium),
+        ),
         if (description != null) ...[
           const SizedBox(height: 8),
-          Text(
-            description!,
-            textAlign: TextAlign.center,
-            style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 32),
+            child: Text(
+              description!,
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+            ),
           ),
         ],
         if (actionLabel != null && onAction != null) ...[
