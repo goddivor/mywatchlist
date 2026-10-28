@@ -6,6 +6,7 @@ import 'package:mywatchlist/screens/search/search_catalog.dart';
 import 'package:mywatchlist/screens/search/search_filters.dart';
 import 'package:mywatchlist/screens/search/search_options.dart';
 import 'package:mywatchlist/widgets/common/select/select.dart';
+import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 
 /// How anime and manga results are laid out.
 @immutable
@@ -52,9 +53,10 @@ class SearchPanelResult {
 
 enum _PanelTab { category, filter, display }
 
-/// The sheet under the search bar: pick the category, set the filters of that category, choose how
-/// results are drawn. It edits a draft and hands the whole thing back through [onApply]; nothing
-/// is searched while the user is still choosing.
+/// The sheet under the search bar, laid out like DailyAL's sort/filter popup: a tab bar (category,
+/// filters, display), radio lists for the category and the display, the reset / close / apply bar.
+/// It edits a draft and hands the whole thing back through [onApply]; nothing is searched while
+/// the user is still choosing.
 class SearchFilterPanel extends StatefulWidget {
   final String category;
   final SearchFilters filters;
@@ -75,11 +77,13 @@ class SearchFilterPanel extends StatefulWidget {
   State<SearchFilterPanel> createState() => _SearchFilterPanelState();
 }
 
-class _SearchFilterPanelState extends State<SearchFilterPanel> {
+class _SearchFilterPanelState extends State<SearchFilterPanel> with TickerProviderStateMixin {
   late String _category = widget.category;
   late SearchFilters _filters = widget.filters.forCategory(widget.category);
   late SearchDisplay _display = widget.display;
-  _PanelTab _tab = _PanelTab.filter;
+  late TabController _controller = _newController(
+    initialTab: _tabs.contains(_PanelTab.filter) ? _PanelTab.filter : _PanelTab.category,
+  );
 
   bool get _hasFilters => SearchFilters.allowedKeys(_category).isNotEmpty;
   bool get _hasDisplay => SearchCategory.isMedia(_category);
@@ -90,13 +94,41 @@ class _SearchFilterPanelState extends State<SearchFilterPanel> {
         if (_hasDisplay) _PanelTab.display,
       ];
 
-  _PanelTab get _currentTab => _tabs.contains(_tab) ? _tab : _PanelTab.category;
+  _PanelTab get _currentTab {
+    final tabs = _tabs;
+    return _controller.index < tabs.length ? tabs[_controller.index] : _PanelTab.category;
+  }
+
+  TabController _newController({required _PanelTab initialTab}) {
+    final tabs = _tabs;
+    return TabController(
+      length: tabs.length,
+      initialIndex: tabs.indexOf(initialTab).clamp(0, tabs.length - 1),
+      vsync: this,
+    );
+  }
+
+  /// The tab list follows the category; when its length changes the controller is replaced, and
+  /// the user stays on the category tab they are using.
+  void _syncController() {
+    if (_controller.length == _tabs.length) return;
+    final old = _controller;
+    _controller = _newController(initialTab: _PanelTab.category);
+    WidgetsBinding.instance.addPostFrameCallback((_) => old.dispose());
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
 
   void _setCategory(String category) {
     if (category == _category) return;
     setState(() {
       _category = category;
       _filters = SearchFilters.empty;
+      _syncController();
     });
   }
 
@@ -108,6 +140,7 @@ class _SearchFilterPanelState extends State<SearchFilterPanel> {
         case _PanelTab.category:
           _category = SearchCategory.all;
           _filters = SearchFilters.empty;
+          _syncController();
         case _PanelTab.filter:
           _filters = SearchFilters.empty;
         case _PanelTab.display:
@@ -120,39 +153,37 @@ class _SearchFilterPanelState extends State<SearchFilterPanel> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final tabs = _tabs;
-    final current = _currentTab;
     return Material(
       color: theme.colorScheme.surface,
       elevation: 4,
       child: Column(
         children: [
-          if (tabs.length > 1)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-              child: SegmentedButton<_PanelTab>(
-                showSelectedIcon: false,
-                segments: [
-                  for (final tab in tabs)
-                    ButtonSegment(
-                      value: tab,
-                      label: Text(_tabLabel(tab), maxLines: 1, overflow: TextOverflow.ellipsis),
-                    ),
-                ],
-                selected: {current},
-                onSelectionChanged: (selection) => setState(() => _tab = selection.first),
-              ),
+          SizedBox(
+            height: 50,
+            child: TabBar(
+              controller: _controller,
+              padding: EdgeInsets.zero,
+              tabs: [for (final tab in tabs) Tab(text: _tabLabel(tab))],
             ),
+          ),
           Expanded(
-            child: switch (current) {
-              _PanelTab.category => _CategoryTab(selected: _category, onSelected: _setCategory),
-              _PanelTab.filter => _FiltersTab(
-                  key: ValueKey(_category),
-                  category: _category,
-                  filters: _filters,
-                  onChanged: _setFilters,
-                ),
-              _PanelTab.display => _DisplayTab(display: _display, onChanged: (d) => setState(() => _display = d)),
-            },
+            child: TabBarView(
+              controller: _controller,
+              children: [
+                for (final tab in tabs)
+                  switch (tab) {
+                    _PanelTab.category => _CategoryTab(selected: _category, onSelected: _setCategory),
+                    _PanelTab.filter => _FiltersTab(
+                        key: ValueKey(_category),
+                        category: _category,
+                        filters: _filters,
+                        onChanged: _setFilters,
+                      ),
+                    _PanelTab.display =>
+                      _DisplayTab(display: _display, onChanged: (d) => setState(() => _display = d)),
+                  },
+              ],
+            ),
           ),
           const Divider(height: 1),
           Padding(
@@ -184,6 +215,7 @@ class _SearchFilterPanelState extends State<SearchFilterPanel> {
       };
 }
 
+/// DailyAL's category view: one radio row per category, scrolled to the selected one.
 class _CategoryTab extends StatelessWidget {
   final String selected;
   final ValueChanged<String> onSelected;
@@ -193,106 +225,167 @@ class _CategoryTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final options = SearchOptions.categories();
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: [
-            for (final option in options)
-              ChoiceChip(
-                label: Text(option.label),
-                selected: option.value == selected,
-                onSelected: (_) => onSelected(option.value),
-              ),
-          ],
+    final index = options.indexWhere((o) => o.value == selected);
+    return RadioGroup<String>(
+      groupValue: selected,
+      onChanged: (value) {
+        if (value != null) onSelected(value);
+      },
+      child: ScrollablePositionedList.builder(
+        padding: const EdgeInsets.only(top: 30, bottom: 16),
+        itemCount: options.length,
+        initialScrollIndex: index < 0 ? 0 : index,
+        itemBuilder: (context, i) => RadioListTile<String>(
+          value: options[i].value,
+          title: Text(options[i].label),
         ),
-      ],
+      ),
     );
   }
 }
 
+/// DailyAL's display view: radio rows for the layout and its density, then the grid sliders with
+/// their bounds on each side.
 class _DisplayTab extends StatelessWidget {
   final SearchDisplay display;
   final ValueChanged<SearchDisplay> onChanged;
 
   const _DisplayTab({required this.display, required this.onChanged});
 
+  static const _minColumns = 2;
+  static const _maxColumns = 8;
+  static const _minHeight = 160.0;
+  static const _maxHeight = 360.0;
+
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final subTypes = [
-      SelectOption(DisplaySubType.compact, S.current.Srch_Display_Compact),
-      SelectOption(DisplaySubType.comfortable, S.current.Srch_Display_Comfortable),
-      if (display.isGrid) SelectOption(DisplaySubType.cover_only_grid, S.current.Srch_Display_CoverOnly),
-      SelectOption(DisplaySubType.spacious, S.current.Srch_Display_Spacious),
-    ];
+    final subTypes = display.isGrid
+        ? [
+            SelectOption(DisplaySubType.comfortable, S.current.Srch_Display_Comfortable),
+            SelectOption(DisplaySubType.compact, S.current.Srch_Display_Compact),
+            SelectOption(DisplaySubType.cover_only_grid, S.current.Srch_Display_CoverOnly),
+          ]
+        : [
+            SelectOption(DisplaySubType.comfortable, S.current.Srch_Display_Comfortable),
+            SelectOption(DisplaySubType.compact, S.current.Srch_Display_Compact),
+            SelectOption(DisplaySubType.spacious, S.current.Srch_Display_Spacious),
+          ];
     return ListView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.only(top: 10, bottom: 16),
       children: [
-        _SectionTitle(S.current.Srch_Display_Layout),
-        const SizedBox(height: 8),
-        SegmentedButton<DisplayType>(
-          showSelectedIcon: false,
-          segments: [
-            ButtonSegment(
-                value: DisplayType.grid, icon: const Icon(Icons.grid_view_rounded), label: Text(S.current.Srch_Display_Grid)),
-            ButtonSegment(
-                value: DisplayType.list_vert, icon: const Icon(Icons.view_list_rounded), label: Text(S.current.Srch_Display_List)),
-          ],
-          selected: {display.type},
-          onSelectionChanged: (s) => onChanged(display.copyWith(type: s.first, subType: DisplaySubType.comfortable)),
+        ListTile(title: Text(S.current.Srch_Display_Layout)),
+        RadioGroup<DisplayType>(
+          groupValue: display.type,
+          onChanged: (value) {
+            if (value != null) onChanged(display.copyWith(type: value, subType: DisplaySubType.comfortable));
+          },
+          child: Column(
+            children: [
+              RadioListTile<DisplayType>(value: DisplayType.grid, title: Text(S.current.Srch_Display_Grid)),
+              RadioListTile<DisplayType>(value: DisplayType.list_vert, title: Text(S.current.Srch_Display_List)),
+            ],
+          ),
         ),
-        const SizedBox(height: 20),
-        _SectionTitle(S.current.Srch_Display_Density),
-        const SizedBox(height: 4),
-        ThreeStateSelectBar<DisplaySubType>(
-          padding: EdgeInsets.zero,
-          options: subTypes,
-          selected: display.subType,
+        ListTile(title: Text(S.current.Srch_Display_Density)),
+        RadioGroup<DisplaySubType>(
+          groupValue: display.subType,
           onChanged: (value) {
             if (value != null) onChanged(display.copyWith(subType: value));
           },
+          child: Column(
+            children: [
+              for (final option in subTypes) RadioListTile<DisplaySubType>(value: option.value, title: Text(option.label)),
+            ],
+          ),
         ),
         if (display.isGrid) ...[
-          const SizedBox(height: 20),
-          _SectionTitle(S.current.Srch_Display_Columns(display.gridColumns)),
-          Slider(
+          _BoundedSlider(
+            title: S.current.Srch_Display_Columns(display.gridColumns),
             value: display.gridColumns.toDouble(),
-            min: 2,
-            max: 8,
-            divisions: 6,
+            min: _minColumns.toDouble(),
+            max: _maxColumns.toDouble(),
+            divisions: _maxColumns - _minColumns,
+            minLabel: '$_minColumns',
+            maxLabel: '$_maxColumns',
             label: '${display.gridColumns}',
             onChanged: (v) => onChanged(display.copyWith(gridColumns: v.round())),
           ),
-          _SectionTitle(S.current.Srch_Display_Height(display.gridHeight.round())),
-          Slider(
-            value: display.gridHeight.clamp(160, 360),
-            min: 160,
-            max: 360,
-            divisions: 50,
+          const SizedBox(height: 10),
+          _BoundedSlider(
+            title: S.current.Srch_Display_Height(display.gridHeight.round()),
+            value: display.gridHeight.clamp(_minHeight, _maxHeight),
+            min: _minHeight,
+            max: _maxHeight,
+            divisions: 100,
+            minLabel: '${_minHeight.round()}',
+            maxLabel: '${_maxHeight.round()}',
             label: '${display.gridHeight.round()}',
             onChanged: (v) => onChanged(display.copyWith(gridHeight: v.roundToDouble())),
           ),
         ],
-        const SizedBox(height: 8),
-        Text(
-          S.current.Srch_Display_Hint,
-          style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-        ),
       ],
     );
   }
 }
 
-class _SectionTitle extends StatelessWidget {
-  final String text;
-  const _SectionTitle(this.text);
+/// A titled slider with its minimum and maximum written on each side, as in DailyAL.
+class _BoundedSlider extends StatelessWidget {
+  final String title;
+  final double value;
+  final double min;
+  final double max;
+  final int divisions;
+  final String minLabel;
+  final String maxLabel;
+  final String label;
+  final ValueChanged<double> onChanged;
+
+  const _BoundedSlider({
+    required this.title,
+    required this.value,
+    required this.min,
+    required this.max,
+    required this.divisions,
+    required this.minLabel,
+    required this.maxLabel,
+    required this.label,
+    required this.onChanged,
+  });
 
   @override
-  Widget build(BuildContext context) =>
-      Text(text, style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600));
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 15),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: 10),
+          Text(title, style: Theme.of(context).textTheme.bodyLarge),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              const SizedBox(width: 10),
+              Text(minLabel),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Slider(
+                  value: value,
+                  min: min,
+                  max: max,
+                  divisions: divisions,
+                  label: label,
+                  onChanged: onChanged,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Text(maxLabel),
+              const SizedBox(width: 10),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 // ---------------------------------------------------------------------------------------------

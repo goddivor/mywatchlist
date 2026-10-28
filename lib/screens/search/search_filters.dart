@@ -17,15 +17,15 @@ abstract final class SearchCategory {
   static const club = 'club';
   static const interestStack = 'interest_stack';
 
-  /// In the order of the category picker.
+  /// In the order of the category picker (DailyAL's order).
   static const values = [
     all,
     anime,
     manga,
+    forum,
     character,
     person,
     user,
-    forum,
     featured,
     news,
     club,
