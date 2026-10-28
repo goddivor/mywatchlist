@@ -16,6 +16,35 @@ import 'package:mywatchlist/widgets/MAL/content/intereststackwidget.dart';
 import 'package:mywatchlist/widgets/MAL/home/animegridcard.dart';
 import 'package:mywatchlist/widgets/loading/shimmercolor.dart';
 
+/// Size of an entry cover, DailyAL's 100 x 150; the loading skeleton uses the same.
+const double stackCoverWidth = 100;
+const double stackCoverHeight = 150;
+
+/// MyAnimeList writes stack dates in English ("Oct 27 2026, 1:37 AM"). Reads one (a leading
+/// "Created"/"Updated" is ignored) and writes it in [locale]; anything unreadable comes back as is.
+@visibleForTesting
+String formatStackDate(String raw, String locale) {
+  final match = _stackDate.firstMatch(raw);
+  if (match == null) return raw.trim();
+  final month = _months.indexOf(match.group(1)!.toLowerCase()) + 1;
+  if (month == 0) return raw.trim();
+  final day = int.parse(match.group(2)!);
+  final year = int.parse(match.group(3)!);
+  final hourText = match.group(4);
+  try {
+    if (hourText == null) return DateFormat.yMMMd(locale).format(DateTime(year, month, day));
+    var hour = int.parse(hourText) % 12;
+    if (match.group(6)!.toUpperCase() == 'PM') hour += 12;
+    return DateFormat.yMMMd(locale).add_jm().format(DateTime(year, month, day, hour, int.parse(match.group(5)!)));
+  } on Object {
+    return raw.trim();
+  }
+}
+
+final RegExp _stackDate = RegExp(
+    r'([A-Za-z]{3})[a-z]*\.?\s+(\d{1,2}),?\s+(\d{4})(?:,?\s+(\d{1,2}):(\d{2})\s*([AaPp][Mm]))?');
+const List<String> _months = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
+
 class InterestStackDetailScreen extends StatefulWidget {
   final InterestStack stack;
 
@@ -194,14 +223,20 @@ class _InterestStackDetailScreenState extends State<InterestStackDetailScreen> {
   // --- Title + username ---
 
   Widget _titleWidget(BuildContext context) {
+    final theme = Theme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        title(
+        Text(
           _title,
-          fontSize: 18,
-          align: TextAlign.center,
-          textStyle: Theme.of(context).textTheme.bodyMedium,
+          textAlign: TextAlign.center,
+          maxLines: 5,
+          overflow: TextOverflow.ellipsis,
+          style: theme.textTheme.titleMedium?.copyWith(
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+            color: theme.colorScheme.onSurface,
+          ),
         ),
         SB.h15,
         _usernameWidget(context),
@@ -226,30 +261,29 @@ class _InterestStackDetailScreenState extends State<InterestStackDetailScreen> {
   // --- Date widget ---
 
   Widget _dateSliver() {
-    final createdAt = _detailedData?['createdAt'] as String?;
-    final updatedAt = _detailedData?['updatedAt'] as String?;
+    final locale = Localizations.localeOf(context).toString();
+    final created = _formatted(_detailedData?['createdAt'], locale);
+    final updated = _formatted(_detailedData?['updatedAt'], locale);
+    final style = Theme.of(context).textTheme.bodySmall?.copyWith(
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        );
+    final parts = [
+      if (created != null) S.current.StackPolish_Created(created),
+      if (updated != null) S.current.StackPolish_Updated(updated),
+    ];
     return SliverToBoxAdapter(
-      child: Padding(
-        padding: padding,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            if (createdAt != null && createdAt.isNotEmpty)
-              title(createdAt, fontSize: 10,
-                  textStyle: Theme.of(context).textTheme.bodySmall),
-            if (createdAt != null &&
-                createdAt.isNotEmpty &&
-                updatedAt != null &&
-                updatedAt.isNotEmpty)
-              title(' · ',
-                  textStyle: Theme.of(context).textTheme.bodySmall),
-            if (updatedAt != null && updatedAt.isNotEmpty)
-              title(updatedAt, fontSize: 10,
-                  textStyle: Theme.of(context).textTheme.bodySmall),
-          ],
-        ),
-      ),
+      child: parts.isEmpty
+          ? const SizedBox.shrink()
+          : Padding(
+              padding: padding,
+              child: Text(parts.join(' · '), textAlign: TextAlign.center, style: style),
+            ),
     );
+  }
+
+  String? _formatted(Object? raw, String locale) {
+    final text = raw is String ? raw.trim() : '';
+    return text.isEmpty ? null : formatStackDate(text, locale);
   }
 
   // --- Description (expandable) ---
@@ -265,17 +299,22 @@ class _InterestStackDetailScreenState extends State<InterestStackDetailScreen> {
 
   // --- Tab bar ---
 
+  /// Fixed tabs sharing the width, labels wrapping on two lines: nothing is cut or hidden off screen.
   Widget _tabBarSliver() {
     return SliverToBoxAdapter(
       child: TabBar(
-        isScrollable: true,
-        tabAlignment: TabAlignment.start,
         padding: padding,
+        labelPadding: const EdgeInsets.symmetric(horizontal: 4),
         tabs: _tabs
-            .map((e) => Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 3, vertical: 6),
-                  child: Text(e, style: const TextStyle(fontSize: 15.0)),
+            .map((e) => Tab(
+                  height: 52,
+                  child: Text(
+                    e,
+                    maxLines: 2,
+                    textAlign: TextAlign.center,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 14.0),
+                  ),
                 ))
             .toList(),
       ),
@@ -308,7 +347,7 @@ class _InterestStackDetailScreenState extends State<InterestStackDetailScreen> {
       itemBuilder: (context, index) {
         final item = _entries[index];
         final category = item['category'] as String? ?? 'anime';
-        return _SpaciousContentWidget(
+        return StackEntryTile(
           item: item,
           category: category,
         );
@@ -379,6 +418,7 @@ class _InterestStackDetailScreenState extends State<InterestStackDetailScreen> {
   // --- Shell for loading shimmer ---
 
   Widget _buildShell(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return SafeArea(
       child: Column(
         children: [
@@ -394,7 +434,7 @@ class _InterestStackDetailScreenState extends State<InterestStackDetailScreen> {
                       height: 24,
                       width: 180,
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: scheme.surfaceContainerHighest,
                         borderRadius: BorderRadius.circular(4),
                       ),
                     ),
@@ -403,7 +443,7 @@ class _InterestStackDetailScreenState extends State<InterestStackDetailScreen> {
                       height: 16,
                       width: 100,
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: scheme.surfaceContainerHighest,
                         borderRadius: BorderRadius.circular(4),
                       ),
                     ),
@@ -415,7 +455,7 @@ class _InterestStackDetailScreenState extends State<InterestStackDetailScreen> {
                 height: 240,
                 width: 170,
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: scheme.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(6),
                 ),
               ),
@@ -432,10 +472,10 @@ class _InterestStackDetailScreenState extends State<InterestStackDetailScreen> {
                 child: Row(
                   children: [
                     Container(
-                      width: 100,
-                      height: 150,
+                      width: stackCoverWidth,
+                      height: stackCoverHeight,
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: scheme.surfaceContainerHighest,
                         borderRadius: BorderRadius.circular(6),
                       ),
                     ),
@@ -448,7 +488,7 @@ class _InterestStackDetailScreenState extends State<InterestStackDetailScreen> {
                             height: 18,
                             width: double.infinity,
                             decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: scheme.surfaceContainerHighest,
                               borderRadius: BorderRadius.circular(4),
                             ),
                           ),
@@ -457,7 +497,7 @@ class _InterestStackDetailScreenState extends State<InterestStackDetailScreen> {
                             height: 14,
                             width: 120,
                             decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: scheme.surfaceContainerHighest,
                               borderRadius: BorderRadius.circular(4),
                             ),
                           ),
@@ -632,13 +672,15 @@ class _ExpandableDescriptionState extends State<_ExpandableDescription> {
   }
 }
 
-// --- Spacious content widget (like DailyAL's SpaciousContentWidget) ---
+// --- Entry row (like DailyAL's SpaciousContentWidget) ---
 
-class _SpaciousContentWidget extends StatelessWidget {
+/// One entry of a stack: a 100 x 150 cover (as in DailyAL), score, title, details and genres.
+@visibleForTesting
+class StackEntryTile extends StatelessWidget {
   final Map<String, dynamic> item;
   final String category;
 
-  const _SpaciousContentWidget({
+  const StackEntryTile({
     required this.item,
     required this.category,
   });
@@ -678,8 +720,7 @@ class _SpaciousContentWidget extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 5.0),
       child: Material(
-        color: Colors.transparent,
-        borderRadius: BorderRadius.circular(6.0),
+        type: MaterialType.transparency,
         child: InkWell(
           borderRadius: BorderRadius.circular(6.0),
           onTap: malId != null
@@ -703,11 +744,12 @@ class _SpaciousContentWidget extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Leading image (150px tall like DailyAL)
+                // Leading cover: DailyAL's 100 x 150 (AvatarWidget would default to 35 wide)
                 Padding(
                   padding: const EdgeInsets.only(left: 10),
                   child: AvatarWidget(
-                    height: 150.0,
+                    height: stackCoverHeight,
+                    width: stackCoverWidth,
                     url: imageUrl.isNotEmpty ? imageUrl : null,
                     userRoundBorderforLoading: false,
                     radius: BorderRadius.circular(6.0),
