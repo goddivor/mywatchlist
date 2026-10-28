@@ -3,6 +3,7 @@
 **Kind** unit · **Priority** P2 · **Group** release · **Model** sonnet
 
 ## Needs done first
+- `mal-session` (Optional MAL website session (WebView login, native cookies, CSRF client) + profile comments)
 - `profile-lists` (Other users' anime/manga lists, weekly tab and sidebar shortcuts like DailyAL)
 - `explore-weekly` (Weekly anime per season (MAL broadcast weekday) and Random without Jikan)
 - `jikan-leftovers` (Videos, user updates and user probe without Jikan)

@@ -14,7 +14,8 @@
         "app-shell",
         "shared-kit",
         "perf-foundation",
-        "tenrai-client"
+        "tenrai-client",
+        "mal-session"
       ]
     },
     {
@@ -1426,6 +1427,7 @@
       "artifact": "",
       "priority": "P2",
       "needs": [
+        "mal-session",
         "profile-lists",
         "explore-weekly",
         "jikan-leftovers",
@@ -1957,6 +1959,37 @@
         "test/units/small-fixes/**"
       ],
       "group": "settings",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "⬜ todo"
+    },
+    {
+      "id": "mal-session",
+      "title": "Optional MAL website session (WebView login, native cookies, CSRF client) + profile comments",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P0",
+      "needs": [
+        "color-sweep"
+      ],
+      "owns": [
+        "android/app/src/main/kotlin/**",
+        "lib/services/api/MAL/web/**",
+        "lib/services/auth/mal_web_session*.dart",
+        "lib/screens/settings/mal_session_settings.dart",
+        "lib/widgets/user/profile/profile_comments*.dart",
+        "lib/screens/user_profile/sections/comments_section.dart",
+        "lib/l10n/units/mal-session/**",
+        "test/units/mal-session/**",
+        "pubspec.yaml",
+        "test/units/mal-session/**"
+      ],
+      "group": "foundation",
       "dropped": null,
       "skills": [],
       "states": [],
