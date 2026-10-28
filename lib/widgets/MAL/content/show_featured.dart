@@ -2,19 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:mywatchlist/constants/constants.dart';
 import 'package:mywatchlist/generated/l10n.dart';
+import 'package:mywatchlist/screens/MAL/detail/sections/featured_section.dart' show FeaturedArticles;
 import 'package:mywatchlist/screens/MAL/detail/sections/section_states.dart';
 import 'package:mywatchlist/enums.dart' show ForumConstants;
 import 'package:mywatchlist/screens/MAL/featured_screen.dart';
 import 'package:mywatchlist/screens/search/general_search_screen.dart';
 import 'package:mywatchlist/services/api/MAL/scrapper/anime_featured.dart';
-import 'package:mywatchlist/services/api/mwl_api.dart';
-import 'package:mywatchlist/utils/url_formatter.dart';
 import 'package:mywatchlist/widgets/common/avatar_widget.dart';
 import 'package:mywatchlist/widgets/loading/shimmercolor.dart';
 
-/// MAL featured articles about a title (mwl-api `content/featured`, a MAL
-/// page parsed by the backend). Ends in articles, nothing at all when the
-/// title has none, or an error with Retry.
+/// MAL featured articles about a title ([FeaturedArticles]: mwl-api
+/// `content/featured`, a MAL page parsed by the backend). Ends in articles,
+/// nothing at all when the title has none (the detail screen then drops the
+/// section, title row and tab included), or an error with Retry.
 class ShowAnimeFeatured extends StatefulWidget {
   final int animeId;
   final String animeName;
@@ -47,20 +47,19 @@ class _ShowAnimeFeaturedState extends State<ShowAnimeFeatured>
     _fetchFeaturedArticles();
   }
 
-  Future<void> _fetchFeaturedArticles() async {
+  Future<void> _fetchFeaturedArticles({bool refresh = false}) async {
     try {
-      final response = await MwlApi.i
-          .getContentFeaturedArticles(
-            widget.animeId,
-            widget.category,
-            name: widget.animeName.formatForUrl(),
-          )
-          .timeout(const Duration(seconds: 20));
+      // Shared with the detail screen, which drops the whole section (title
+      // row and tab) once the answer is empty.
+      final result = await FeaturedArticles.load(
+        widget.animeId,
+        widget.category,
+        widget.animeName,
+        refresh: refresh,
+      );
       if (!mounted) return;
-      // A null answer is a failed page: it used to leave the skeleton forever.
-      if (response == null) throw StateError('no featured articles page');
       setState(() {
-        featuredArticles = AnimeFeaturedResult.fromJson(response);
+        featuredArticles = result;
         isLoading = false;
       });
     } catch (e) {
@@ -89,7 +88,7 @@ class _ShowAnimeFeaturedState extends State<ShowAnimeFeatured>
             isLoading = true;
             hasError = false;
           });
-          _fetchFeaturedArticles();
+          _fetchFeaturedArticles(refresh: true);
         },
       );
     }
