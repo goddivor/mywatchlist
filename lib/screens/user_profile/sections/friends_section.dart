@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:mywatchlist/constants/constants.dart' show AccountType;
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/screens/user_profile/sections/profile_tab.dart';
@@ -8,7 +9,7 @@ import 'package:mywatchlist/utils/app_routes.dart';
 import 'package:mywatchlist/widgets/common/app_image.dart';
 import 'package:mywatchlist/widgets/user/profile/profile_states.dart';
 
-/// The friends of a MyAnimeList user, 100 per page with a "load more" button.
+/// The friends of a MyAnimeList user, a page at a time with a "load more" button.
 class FriendsSection extends StatefulWidget {
   final String username;
 
@@ -21,6 +22,7 @@ class FriendsSection extends StatefulWidget {
 class _FriendsSectionState extends State<FriendsSection> with AutomaticKeepAliveClientMixin {
   final List<ProfileFriend> _friends = [];
   int _page = 0;
+  FriendsCursor? _cursor;
   bool _hasNext = false;
   bool _loading = true;
   Object? _error;
@@ -40,13 +42,14 @@ class _FriendsSectionState extends State<FriendsSection> with AutomaticKeepAlive
       _error = null;
     });
     try {
-      final page = await ProfileTabsSource.friends(widget.username, page: _page + 1);
+      final page = await ProfileTabsSource.friends(widget.username, page: _page + 1, after: _cursor);
       if (!mounted) return;
       final known = {for (final f in _friends) f.username};
       setState(() {
         _page++;
         _friends.addAll(page.friends.where((f) => known.add(f.username)));
         _hasNext = page.hasNextPage;
+        _cursor = page.cursor;
         _loading = false;
       });
     } catch (e) {
@@ -127,9 +130,14 @@ class _FriendTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final s = S.of(context);
     final theme = Theme.of(context);
+    final locale = Localizations.localeOf(context).toString();
+    final lastSeen = friend.lastSeenAt != null ? _ago(s, friend.lastSeenAt!) : friend.lastOnline;
+    final since = friend.friendsSinceAt != null
+        ? DateFormat.yMMMd(locale).format(friend.friendsSinceAt!)
+        : friend.friendsSince;
     final lines = [
-      if (friend.lastOnline != null) s.Prof_Last_Seen(friend.lastOnline!),
-      if (friend.friendsSince != null) s.Prof_Friends_Since(friend.friendsSince!),
+      if (lastSeen != null) s.Prof_Last_Seen(lastSeen),
+      if (since != null) s.Prof_Friends_Since(since),
     ];
     return ListTile(
       leading: ClipOval(
@@ -159,4 +167,15 @@ class _FriendTile extends StatelessWidget {
       ),
     );
   }
+}
+
+/// "3 hours ago" in the app's language.
+String _ago(S s, DateTime at) {
+  final d = DateTime.now().difference(at);
+  if (d.inMinutes < 1) return s.Prof_Seen_Just_Now;
+  if (d.inHours < 1) return s.Prof_Seen_Minutes(d.inMinutes);
+  if (d.inDays < 1) return s.Prof_Seen_Hours(d.inHours);
+  if (d.inDays < 30) return s.Prof_Seen_Days(d.inDays);
+  if (d.inDays < 365) return s.Prof_Seen_Months(d.inDays ~/ 30);
+  return s.Prof_Seen_Years(d.inDays ~/ 365);
 }
