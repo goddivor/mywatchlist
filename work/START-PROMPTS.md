@@ -828,6 +828,186 @@ UI directive applies: compare DAL and MWL, keep the better, improve it.
 Deliver with the PR procedure of the brief.
 ```
 
+## anilist-client-limits
+
+```text
+Unit anilist-client-limits — anilist-client-limits.
+Read work/handoffs/anilist-client-limits.md fully, then the DAL reference files it lists, then the MWL files you own.
+Build exactly the Goal, inside the Owns list. Heavy commands only through tools/heavy.sh; never run flutter build or touch the emulator.
+UI directive applies: compare DAL and MWL, keep the better, improve it.
+Deliver with the PR procedure of the brief.
+```
+
+## anilist-list-fidelity
+
+```text
+Unit anilist-list-fidelity — anilist-list-fidelity.
+Read work/handoffs/anilist-list-fidelity.md fully, then the DAL reference files it lists, then the MWL files you own.
+Build exactly the Goal, inside the Owns list. Heavy commands only through tools/heavy.sh; never run flutter build or touch the emulator.
+UI directive applies: compare DAL and MWL, keep the better, improve it.
+Deliver with the PR procedure of the brief.
+```
+
+## anilist-people-pages
+
+```text
+Unit anilist-people-pages — anilist-people-pages.
+Read work/handoffs/anilist-people-pages.md fully, then the DAL reference files it lists, then the MWL files you own.
+Build exactly the Goal, inside the Owns list. Heavy commands only through tools/heavy.sh; never run flutter build or touch the emulator.
+UI directive applies: compare DAL and MWL, keep the better, improve it.
+Deliver with the PR procedure of the brief.
+```
+
+## anilist-search-filters
+
+```text
+Unit anilist-search-filters — anilist-search-filters.
+Read work/handoffs/anilist-search-filters.md fully, then the DAL reference files it lists, then the MWL files you own.
+Build exactly the Goal, inside the Owns list. Heavy commands only through tools/heavy.sh; never run flutter build or touch the emulator.
+UI directive applies: compare DAL and MWL, keep the better, improve it.
+Deliver with the PR procedure of the brief.
+```
+
+## anilist-social
+
+```text
+Unit anilist-social — anilist-social.
+Read work/handoffs/anilist-social.md fully, then the DAL reference files it lists, then the MWL files you own.
+Build exactly the Goal, inside the Owns list. Heavy commands only through tools/heavy.sh; never run flutter build or touch the emulator.
+UI directive applies: compare DAL and MWL, keep the better, improve it.
+Deliver with the PR procedure of the brief.
+```
+
+## anilist-notifications
+
+```text
+Unit anilist-notifications — anilist-notifications.
+Read work/handoffs/anilist-notifications.md fully, then the DAL reference files it lists, then the MWL files you own.
+Build exactly the Goal, inside the Owns list. Heavy commands only through tools/heavy.sh; never run flutter build or touch the emulator.
+UI directive applies: compare DAL and MWL, keep the better, improve it.
+Deliver with the PR procedure of the brief.
+```
+
+## anilist-settings
+
+```text
+Unit anilist-settings — anilist-settings.
+Read work/handoffs/anilist-settings.md fully, then the DAL reference files it lists, then the MWL files you own.
+Build exactly the Goal, inside the Owns list. Heavy commands only through tools/heavy.sh; never run flutter build or touch the emulator.
+UI directive applies: compare DAL and MWL, keep the better, improve it.
+Deliver with the PR procedure of the brief.
+```
+
+## anilist-media-page
+
+```text
+Unit anilist-media-page — anilist-media-page.
+Read work/handoffs/anilist-media-page.md fully, then the DAL reference files it lists, then the MWL files you own.
+Build exactly the Goal, inside the Owns list. Heavy commands only through tools/heavy.sh; never run flutter build or touch the emulator.
+UI directive applies: compare DAL and MWL, keep the better, improve it.
+Deliver with the PR procedure of the brief.
+```
+
+## anilist-profile-plus
+
+```text
+Unit anilist-profile-plus — anilist-profile-plus.
+Read work/handoffs/anilist-profile-plus.md fully, then the DAL reference files it lists, then the MWL files you own.
+Build exactly the Goal, inside the Owns list. Heavy commands only through tools/heavy.sh; never run flutter build or touch the emulator.
+UI directive applies: compare DAL and MWL, keep the better, improve it.
+Deliver with the PR procedure of the brief.
+```
+
+## anilist-home-extras
+
+```text
+Unit anilist-home-extras — anilist-home-extras.
+Read work/handoffs/anilist-home-extras.md fully, then the DAL reference files it lists, then the MWL files you own.
+Build exactly the Goal, inside the Owns list. Heavy commands only through tools/heavy.sh; never run flutter build or touch the emulator.
+UI directive applies: compare DAL and MWL, keep the better, improve it.
+Deliver with the PR procedure of the brief.
+```
+
+## mal-episodes
+
+```text
+Unit mal-episodes — mal-episodes.
+Read work/handoffs/mal-episodes.md fully, then the DAL reference files it lists, then the MWL files you own.
+Build exactly the Goal, inside the Owns list. Heavy commands only through tools/heavy.sh; never run flutter build or touch the emulator.
+UI directive applies: compare DAL and MWL, keep the better, improve it.
+Deliver with the PR procedure of the brief.
+```
+
+## mal-detail-sidebar
+
+```text
+Unit mal-detail-sidebar — mal-detail-sidebar.
+Read work/handoffs/mal-detail-sidebar.md fully, then the DAL reference files it lists, then the MWL files you own.
+Build exactly the Goal, inside the Owns list. Heavy commands only through tools/heavy.sh; never run flutter build or touch the emulator.
+UI directive applies: compare DAL and MWL, keep the better, improve it.
+Deliver with the PR procedure of the brief.
+```
+
+## mal-seasonal-groups
+
+```text
+Unit mal-seasonal-groups — mal-seasonal-groups.
+Read work/handoffs/mal-seasonal-groups.md fully, then the DAL reference files it lists, then the MWL files you own.
+Build exactly the Goal, inside the Owns list. Heavy commands only through tools/heavy.sh; never run flutter build or touch the emulator.
+UI directive applies: compare DAL and MWL, keep the better, improve it.
+Deliver with the PR procedure of the brief.
+```
+
+## mal-list-time
+
+```text
+Unit mal-list-time — mal-list-time.
+Read work/handoffs/mal-list-time.md fully, then the DAL reference files it lists, then the MWL files you own.
+Build exactly the Goal, inside the Owns list. Heavy commands only through tools/heavy.sh; never run flutter build or touch the emulator.
+UI directive applies: compare DAL and MWL, keep the better, improve it.
+Deliver with the PR procedure of the brief.
+```
+
+## mal-profile-extras
+
+```text
+Unit mal-profile-extras — mal-profile-extras.
+Read work/handoffs/mal-profile-extras.md fully, then the DAL reference files it lists, then the MWL files you own.
+Build exactly the Goal, inside the Owns list. Heavy commands only through tools/heavy.sh; never run flutter build or touch the emulator.
+UI directive applies: compare DAL and MWL, keep the better, improve it.
+Deliver with the PR procedure of the brief.
+```
+
+## mal-list-xml
+
+```text
+Unit mal-list-xml — mal-list-xml.
+Read work/handoffs/mal-list-xml.md fully, then the DAL reference files it lists, then the MWL files you own.
+Build exactly the Goal, inside the Owns list. Heavy commands only through tools/heavy.sh; never run flutter build or touch the emulator.
+UI directive applies: compare DAL and MWL, keep the better, improve it.
+Deliver with the PR procedure of the brief.
+```
+
+## mal-web-writes-2
+
+```text
+Unit mal-web-writes-2 — mal-web-writes-2.
+Read work/handoffs/mal-web-writes-2.md fully, then the DAL reference files it lists, then the MWL files you own.
+Build exactly the Goal, inside the Owns list. Heavy commands only through tools/heavy.sh; never run flutter build or touch the emulator.
+UI directive applies: compare DAL and MWL, keep the better, improve it.
+Deliver with the PR procedure of the brief.
+```
+
+## mal-api-small
+
+```text
+Unit mal-api-small — mal-api-small.
+Read work/handoffs/mal-api-small.md fully, then the DAL reference files it lists, then the MWL files you own.
+Build exactly the Goal, inside the Owns list. Heavy commands only through tools/heavy.sh; never run flutter build or touch the emulator.
+UI directive applies: compare DAL and MWL, keep the better, improve it.
+Deliver with the PR procedure of the brief.
+```
+
 ## explore-polish
 
 ```text

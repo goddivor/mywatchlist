@@ -130,6 +130,24 @@
         "simkl-media-page",
         "simkl-profile-plus",
         "simkl-list-sync",
+        "anilist-client-limits",
+        "anilist-list-fidelity",
+        "anilist-people-pages",
+        "anilist-search-filters",
+        "anilist-social",
+        "anilist-notifications",
+        "anilist-settings",
+        "anilist-media-page",
+        "anilist-profile-plus",
+        "anilist-home-extras",
+        "mal-episodes",
+        "mal-detail-sidebar",
+        "mal-seasonal-groups",
+        "mal-list-time",
+        "mal-profile-extras",
+        "mal-list-xml",
+        "mal-web-writes-2",
+        "mal-api-small",
         "tracker-wiring"
       ]
     },
@@ -1453,6 +1471,24 @@
       "artifact": "",
       "priority": "P2",
       "needs": [
+        "anilist-client-limits",
+        "anilist-list-fidelity",
+        "anilist-people-pages",
+        "anilist-search-filters",
+        "anilist-social",
+        "anilist-notifications",
+        "anilist-settings",
+        "anilist-media-page",
+        "anilist-profile-plus",
+        "anilist-home-extras",
+        "mal-episodes",
+        "mal-detail-sidebar",
+        "mal-seasonal-groups",
+        "mal-list-time",
+        "mal-profile-extras",
+        "mal-list-xml",
+        "mal-web-writes-2",
+        "mal-api-small",
         "mal-notifications",
         "mal-messages",
         "ux-polish-2",
@@ -2814,6 +2850,551 @@
       "states": [],
       "notes": [
         "model: opus"
+      ],
+      "status": "⬜ todo"
+    },
+    {
+      "id": "anilist-client-limits",
+      "title": "anilist-client-limits",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [],
+      "owns": [
+        "lib/services/api/Anilist/anilist_graphql.dart",
+        "lib/services/api/Anilist/anilist_media.dart",
+        "lib/services/api/Anilist/anilist_actions.dart",
+        "test/units/anilist-client-limits/**",
+        "lib/l10n/units/anilist-client-limits/**",
+        "test/units/anilist-client-limits/**",
+        "test/units/anilist-client-limits/**"
+      ],
+      "group": "trackers",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: sonnet"
+      ],
+      "status": "⬜ todo"
+    },
+    {
+      "id": "anilist-list-fidelity",
+      "title": "anilist-list-fidelity",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "anilist-client-limits"
+      ],
+      "owns": [
+        "lib/services/api/Anilist/anilist_list_service.dart",
+        "lib/services/api/Anilist/anilist_list_write.dart",
+        "lib/widgets/Anilist/anilist_user_list_adapter.dart",
+        "lib/pages/Anilist/anilist_user_page.dart",
+        "lib/widgets/Anilist/list/**",
+        "lib/l10n/units/anilist-list-fidelity/**",
+        "test/units/anilist-list-fidelity/**",
+        "lib/l10n/units/anilist-list-fidelity/**",
+        "test/units/anilist-list-fidelity/**",
+        "test/units/anilist-list-fidelity/**"
+      ],
+      "group": "trackers",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "⬜ todo"
+    },
+    {
+      "id": "anilist-people-pages",
+      "title": "anilist-people-pages",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "anilist-client-limits"
+      ],
+      "owns": [
+        "lib/pages/Anilist/anilist_character_page.dart",
+        "lib/pages/Anilist/anilist_staff_page.dart",
+        "lib/pages/Anilist/anilist_studio_page.dart",
+        "lib/services/api/Anilist/anilist_people_service.dart",
+        "lib/widgets/Anilist/people/**",
+        "lib/l10n/units/anilist-people-pages/**",
+        "test/units/anilist-people-pages/**",
+        "lib/l10n/units/anilist-people-pages/**",
+        "test/units/anilist-people-pages/**",
+        "test/units/anilist-people-pages/**"
+      ],
+      "group": "trackers",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "⬜ todo"
+    },
+    {
+      "id": "anilist-search-filters",
+      "title": "anilist-search-filters",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "anilist-client-limits"
+      ],
+      "owns": [
+        "lib/services/api/Anilist/anilist_discover_service.dart",
+        "lib/services/api/Anilist/anilist_catalog.dart",
+        "lib/widgets/Anilist/anilist_browse_screen.dart",
+        "lib/widgets/Anilist/anilist_chips.dart",
+        "lib/widgets/Anilist/search/**",
+        "lib/l10n/units/anilist-search-filters/**",
+        "test/units/anilist-search-filters/**",
+        "lib/l10n/units/anilist-search-filters/**",
+        "test/units/anilist-search-filters/**",
+        "test/units/anilist-search-filters/**"
+      ],
+      "group": "trackers",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "⬜ todo"
+    },
+    {
+      "id": "anilist-social",
+      "title": "anilist-social",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "anilist-client-limits"
+      ],
+      "owns": [
+        "lib/pages/Anilist/anilist_forum_page.dart",
+        "lib/widgets/Anilist/anilist_thread_tile.dart",
+        "lib/pages/Anilist/anilist_thread_page.dart",
+        "lib/pages/Anilist/anilist_activity_page.dart",
+        "lib/pages/Anilist/anilist_review_page.dart",
+        "lib/services/api/Anilist/anilist_social_service.dart",
+        "lib/widgets/Anilist/social/**",
+        "lib/l10n/units/anilist-social/**",
+        "test/units/anilist-social/**",
+        "lib/l10n/units/anilist-social/**",
+        "test/units/anilist-social/**",
+        "test/units/anilist-social/**"
+      ],
+      "group": "trackers",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "⬜ todo"
+    },
+    {
+      "id": "anilist-notifications",
+      "title": "anilist-notifications",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "anilist-client-limits",
+        "anilist-social"
+      ],
+      "owns": [
+        "lib/pages/Anilist/anilist_notifications_page.dart",
+        "lib/services/api/Anilist/anilist_notifications_service.dart",
+        "lib/widgets/Anilist/notifications/**",
+        "lib/l10n/units/anilist-notifications/**",
+        "test/units/anilist-notifications/**",
+        "lib/l10n/units/anilist-notifications/**",
+        "test/units/anilist-notifications/**",
+        "test/units/anilist-notifications/**"
+      ],
+      "group": "trackers",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "⬜ todo"
+    },
+    {
+      "id": "anilist-settings",
+      "title": "anilist-settings",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "anilist-client-limits"
+      ],
+      "owns": [
+        "lib/pages/Anilist/anilist_settings_page.dart",
+        "lib/services/api/Anilist/anilist_settings_service.dart",
+        "lib/widgets/Anilist/settings/**",
+        "lib/l10n/units/anilist-settings/**",
+        "test/units/anilist-settings/**",
+        "lib/l10n/units/anilist-settings/**",
+        "test/units/anilist-settings/**",
+        "test/units/anilist-settings/**"
+      ],
+      "group": "trackers",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "⬜ todo"
+    },
+    {
+      "id": "anilist-media-page",
+      "title": "anilist-media-page",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "anilist-list-fidelity",
+        "anilist-people-pages",
+        "anilist-social"
+      ],
+      "owns": [
+        "lib/pages/Anilist/anilist_media_page.dart",
+        "lib/services/api/Anilist/anilist_media_detail.dart",
+        "lib/widgets/Anilist/media/**",
+        "lib/widgets/Anilist/anilist_media_card.dart",
+        "lib/l10n/units/anilist-media-page/**",
+        "test/units/anilist-media-page/**",
+        "lib/l10n/units/anilist-media-page/**",
+        "test/units/anilist-media-page/**",
+        "test/units/anilist-media-page/**"
+      ],
+      "group": "trackers",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "⬜ todo"
+    },
+    {
+      "id": "anilist-profile-plus",
+      "title": "anilist-profile-plus",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "anilist-social",
+        "anilist-people-pages",
+        "anilist-settings",
+        "anilist-list-fidelity"
+      ],
+      "owns": [
+        "lib/widgets/Anilist/anilist_profile_view.dart",
+        "lib/services/api/Anilist/anilist_profile_service.dart",
+        "lib/pages/Anilist/anilist_user_profile_page.dart",
+        "lib/pages/Anilist/anilist_other_list_page.dart",
+        "lib/services/api/Anilist/anilist_follow_service.dart",
+        "lib/widgets/Anilist/profile/**",
+        "lib/l10n/units/anilist-profile-plus/**",
+        "test/units/anilist-profile-plus/**",
+        "lib/l10n/units/anilist-profile-plus/**",
+        "test/units/anilist-profile-plus/**",
+        "test/units/anilist-profile-plus/**"
+      ],
+      "group": "trackers",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "⬜ todo"
+    },
+    {
+      "id": "anilist-home-extras",
+      "title": "anilist-home-extras",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "anilist-search-filters",
+        "anilist-social",
+        "anilist-people-pages",
+        "anilist-notifications"
+      ],
+      "owns": [
+        "lib/pages/Anilist/anilist_home_page.dart",
+        "lib/pages/Anilist/anilist_explore_page.dart",
+        "lib/widgets/Anilist/anilist_home_sections.dart",
+        "lib/services/api/Anilist/anilist_feeds_service.dart",
+        "lib/widgets/Anilist/home/**",
+        "lib/l10n/units/anilist-home-extras/**",
+        "test/units/anilist-home-extras/**",
+        "lib/l10n/units/anilist-home-extras/**",
+        "test/units/anilist-home-extras/**",
+        "test/units/anilist-home-extras/**"
+      ],
+      "group": "trackers",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "⬜ todo"
+    },
+    {
+      "id": "mal-episodes",
+      "title": "mal-episodes",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [],
+      "owns": [
+        "lib/services/api/MAL/scrapper/episodes_page.dart",
+        "lib/screens/MAL/episodes/episodes_screen.dart",
+        "lib/screens/MAL/detail/sections/episodes_section.dart",
+        "lib/screens/MAL/detail/detail_sections.dart",
+        "lib/constants/constants.dart",
+        "lib/l10n/units/mal-episodes/**",
+        "lib/l10n/units/mal-episodes/**",
+        "test/units/mal-episodes/**",
+        "test/units/mal-episodes/**"
+      ],
+      "group": "trackers",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "⬜ todo"
+    },
+    {
+      "id": "mal-detail-sidebar",
+      "title": "mal-detail-sidebar",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "ux-home",
+        "jikan-leftovers"
+      ],
+      "owns": [
+        "mwl-api/mwl_commons/lib/src/model/html/anime_detailed_html.dart",
+        "mwl-api/mwl_commons/lib/src/services/html_parser.dart",
+        "mwl-api/test/fixtures/anime_php.html",
+        "lib/widgets/MAL/content/more_info_widget.dart",
+        "lib/screens/MAL/detail/header/header_meta.dart",
+        "lib/screens/MAL/detail/sections/media_section.dart",
+        "lib/services/api/MAL/mal_anime.dart",
+        "lib/widgets/MAL/home/animegridcard.dart",
+        "lib/l10n/units/mal-detail-sidebar/**",
+        "lib/l10n/units/mal-detail-sidebar/**",
+        "test/units/mal-detail-sidebar/**",
+        "test/units/mal-detail-sidebar/**"
+      ],
+      "group": "trackers",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "⬜ todo"
+    },
+    {
+      "id": "mal-seasonal-groups",
+      "title": "mal-seasonal-groups",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [],
+      "owns": [
+        "lib/screens/seasonal/seasonal_data.dart",
+        "lib/screens/seasonal/seasonal_screen.dart",
+        "lib/screens/seasonal/season_utils.dart",
+        "lib/l10n/units/mal-seasonal-groups/**",
+        "lib/l10n/units/mal-seasonal-groups/**",
+        "test/units/mal-seasonal-groups/**",
+        "test/units/mal-seasonal-groups/**"
+      ],
+      "group": "trackers",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "⬜ todo"
+    },
+    {
+      "id": "mal-list-time",
+      "title": "mal-list-time",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "small-fixes"
+      ],
+      "owns": [
+        "lib/widgets/user/list/mal_user_list_adapter.dart",
+        "lib/widgets/user/list/list_entry_view.dart",
+        "lib/widgets/user/list/user_list_view.dart",
+        "lib/widgets/user/list/card_layout_editor.dart",
+        "lib/l10n/units/mal-list-time/**",
+        "lib/l10n/units/mal-list-time/**",
+        "test/units/mal-list-time/**",
+        "test/units/mal-list-time/**"
+      ],
+      "group": "trackers",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "⬜ todo"
+    },
+    {
+      "id": "mal-profile-extras",
+      "title": "mal-profile-extras",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "profile-lists"
+      ],
+      "owns": [
+        "lib/services/api/MAL/mal_user_prof.dart",
+        "lib/services/api/MAL/mal_user.dart",
+        "lib/screens/user_profile/user_profile_data.dart",
+        "lib/screens/user_profile/user_profile_view.dart",
+        "lib/screens/user_profile/sections/profile_tabs_source.dart",
+        "lib/screens/user_profile/sections/reviews_section.dart",
+        "lib/widgets/user/profile/profile_header.dart",
+        "lib/l10n/units/mal-profile-extras/**",
+        "lib/l10n/units/mal-profile-extras/**",
+        "test/units/mal-profile-extras/**",
+        "test/units/mal-profile-extras/**"
+      ],
+      "group": "trackers",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "⬜ todo"
+    },
+    {
+      "id": "mal-list-xml",
+      "title": "mal-list-xml",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [],
+      "owns": [
+        "lib/services/list_export/mal_xml.dart",
+        "lib/services/list_export/mal_xml_import.dart",
+        "lib/screens/settings/backup_settings.dart",
+        "lib/l10n/units/mal-list-xml/**",
+        "lib/l10n/units/mal-list-xml/**",
+        "test/units/mal-list-xml/**",
+        "test/units/mal-list-xml/**"
+      ],
+      "group": "trackers",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "⬜ todo"
+    },
+    {
+      "id": "mal-web-writes-2",
+      "title": "mal-web-writes-2",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "ux-reviews"
+      ],
+      "owns": [
+        "lib/services/api/MAL/web/forum_poll_api.dart",
+        "lib/services/api/MAL/web/review_write_api.dart",
+        "lib/services/api/MAL/web/recommendation_write_api.dart",
+        "lib/screens/forum/forum_posts_screen.dart",
+        "lib/widgets/MAL/review/reviews_list_screen.dart",
+        "lib/screens/MAL/detail/sections/recommendations_section.dart",
+        "lib/l10n/units/mal-web-writes-2/**",
+        "lib/l10n/units/mal-web-writes-2/**",
+        "test/units/mal-web-writes-2/**",
+        "test/units/mal-web-writes-2/**"
+      ],
+      "group": "trackers",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "⬜ todo"
+    },
+    {
+      "id": "mal-api-small",
+      "title": "mal-api-small",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [],
+      "owns": [
+        "lib/screens/search/search_queries.dart",
+        "lib/services/api/MAL/mal_api.dart",
+        "lib/enums.dart",
+        "lib/services/api/MAL/scrapper/title_clubs.dart",
+        "lib/screens/explore/explore_sections.dart",
+        "lib/l10n/units/mal-api-small/**",
+        "test/units/mal-api-small/**",
+        "test/units/mal-api-small/**"
+      ],
+      "group": "trackers",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: sonnet"
       ],
       "status": "⬜ todo"
     },
