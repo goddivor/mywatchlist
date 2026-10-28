@@ -83,7 +83,8 @@ class ForumTopicsSliver extends StatelessWidget {
   }
 }
 
-/// One forum topic: title, author, last activity and the number of posts.
+/// One forum topic like DailyAL's row: a regular-weight title and a single meta line, the author
+/// and last activity on the left, the post count on the right. A long press names the last poster.
 class ForumTopicWidget extends StatelessWidget {
   const ForumTopicWidget({
     super.key,
@@ -107,8 +108,50 @@ class ForumTopicWidget extends StatelessWidget {
     final lastBy = topic.lastPostCreatedBy?.name;
     final meta = [
       if (author != null && author.isNotEmpty) author,
-      if (lastBy == null && when != null) when,
+      if (when != null && when.isNotEmpty) when,
     ].join(' · ');
+    final metaStyle = theme.textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant);
+
+    Widget row = Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            topic.title ?? '',
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: theme.textTheme.titleMedium?.copyWith(
+              color: scheme.onSurface,
+              fontWeight: FontWeight.w400,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Row(
+            children: [
+              Expanded(
+                child: Text(meta, maxLines: 1, overflow: TextOverflow.ellipsis, style: metaStyle),
+              ),
+              if (topic.isLocked == true) ...[
+                Tooltip(
+                  message: S.current.Fc_Topic_Locked,
+                  child: Icon(Icons.lock_outline, size: 14, color: scheme.onSurfaceVariant),
+                ),
+                const SizedBox(width: 8),
+              ],
+              Text(S.current.Fc_Posts_Count(topic.numberOfPosts ?? 0), style: metaStyle),
+            ],
+          ),
+        ],
+      ),
+    );
+    if (lastBy != null && when != null) {
+      row = Tooltip(
+        message: S.current.Fc_Last_Post_At(lastBy, when),
+        triggerMode: TooltipTriggerMode.longPress,
+        child: row,
+      );
+    }
 
     return Material(
       type: isSelected ? MaterialType.canvas : MaterialType.transparency,
@@ -124,72 +167,11 @@ class ForumTopicWidget extends StatelessWidget {
             );
           }
         },
-        child: Container(
+        child: DecoratedBox(
           decoration: BoxDecoration(
-            border: Border(
-              bottom: BorderSide(color: scheme.outlineVariant.withValues(alpha: 0.5)),
-            ),
+            border: Border(bottom: BorderSide(color: scheme.outlineVariant)),
           ),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      topic.title ?? '',
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.titleSmall?.copyWith(
-                        color: scheme.onSurface,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    if (meta.isNotEmpty) ...[
-                      const SizedBox(height: 4),
-                      Text(
-                        meta,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
-                      ),
-                    ],
-                    if (lastBy != null && when != null) ...[
-                      const SizedBox(height: 2),
-                      Text(
-                        S.current.Fc_Last_Post_At(lastBy, when),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: scheme.onSurfaceVariant,
-                          fontSize: 11,
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-              const SizedBox(width: 12),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  ForumStatChip(
-                    icon: Icons.chat_bubble_outline,
-                    label: '${topic.numberOfPosts ?? 0}',
-                  ),
-                  if (topic.isLocked == true) ...[
-                    const SizedBox(height: 6),
-                    Tooltip(
-                      message: S.current.Fc_Topic_Locked,
-                      child: Icon(Icons.lock_outline, size: 16, color: scheme.onSurfaceVariant),
-                    ),
-                  ],
-                ],
-              ),
-            ],
-          ),
+          child: row,
         ),
       ),
     );
