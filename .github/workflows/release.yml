@@ -50,8 +50,10 @@ jobs:
         env:
           VERSION: ${{ steps.version.outputs.version }}
         run: |
-          # Same name as pubspec: keeps its build code; new name: build code + 1 (Android versionCode).
-          FULL=$(tools/release/version.sh set "$VERSION")
+          # The bump is never committed back, so the Android versionCode is derived from the tag
+          # (yy*10000 + m*100 + n): monotonic across releases, independent of the committed pubspec.
+          CODE=$(tools/release/version.sh code "$VERSION")
+          FULL=$(tools/release/version.sh set "$VERSION" "$CODE")
           echo "Building $FULL"
 
       - name: Setup Java

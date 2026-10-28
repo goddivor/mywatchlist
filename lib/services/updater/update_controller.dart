@@ -101,7 +101,8 @@ abstract class ApkInstaller {
 }
 
 /// Asks for "install unknown apps" if needed, then opens the file; `open_filex` shares it
-/// with the package installer as a content:// URI through its FileProvider.
+/// with the package installer as a content:// URI through its FileProvider, whose paths the
+/// app's manifest restricts to `<cache>/updates` (res/xml/updater_paths.xml, issue #153).
 class SystemApkInstaller implements ApkInstaller {
   @override
   Future<InstallResult> install(String path) async {

@@ -1,4 +1,5 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
     <!-- Required in release builds: every tracker API and scraper needs network access. -->
     <uses-permission android:name="android.permission.INTERNET"/>
 
@@ -16,7 +17,7 @@
     <!-- In-app updater: install the downloaded APK. -->
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES"/>
     <application
-        android:label="mywatchlist"
+        android:label="MyWatchList"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
 
@@ -28,17 +29,20 @@
             android:name="io.flutter.embedding.android.EnableImpeller"
             android:value="false" />
 
-        <!-- Shares files of the app (the APK downloaded by the in-app updater) with the package
-             installer as content:// URIs: content://${applicationId}.fileProvider/cache-path/...
-             The paths resource is merged from open_filex (cache, files and external dirs). -->
+        <!-- In-app updater (#153): open_filex shares the downloaded APK with the package installer
+             through its own provider (authority ${applicationId}.fileProvider.com.crazecoder.openfile).
+             The plugin ships it with broad paths (root, files, cache, external); this entry replaces
+             only its paths resource so just <cache>/updates (UpdateEnvironment.downloadDir) can be
+             shared. The app declares no other FileProvider. -->
         <provider
-            android:name="androidx.core.content.FileProvider"
-            android:authorities="${applicationId}.fileProvider"
+            android:name="com.crazecoder.openfile.FileProvider"
+            android:authorities="${applicationId}.fileProvider.com.crazecoder.openfile"
             android:exported="false"
             android:grantUriPermissions="true">
             <meta-data
                 android:name="android.support.FILE_PROVIDER_PATHS"
-                android:resource="@xml/filepaths"/>
+                android:resource="@xml/updater_paths"
+                tools:replace="android:resource"/>
         </provider>
 
         <!-- flutter_local_notifications: fires scheduled notifications, reschedules them after a
