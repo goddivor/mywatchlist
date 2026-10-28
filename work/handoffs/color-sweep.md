@@ -3,6 +3,7 @@
 **Kind** unit · **Priority** P1 · **Group** release · **Model** sonnet
 
 ## Needs done first
+- `stack-polish` (Interest stack page: squeezed covers, localized date, readable tabs (DailyAL layout))
 - `tracker-followups` (Tracker follow-ups: removed rows disappear, Simkl list categories, notifications for every tracker)
 - `search-sources` (Search: every filter returns data without Jikan (MAL search page fallback, live-verified) + studios directory with logos)
 - `explore-polish` (Explore: DailyAL images on category and genre cards, explicit genres, recommendations/stacks fallbacks, favourites badges)
