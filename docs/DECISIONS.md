@@ -247,3 +247,4 @@ Append-only, one line per decision: `- YYYY-MM-DD [unit] decision — why`. Earl
 - 2026-10-28 [kitsu-pages] Kitsu sorts the library by last progress only (`-progressedAt`), so that sort pages from the server (200 per page) and every other sort, filter or search loads the whole status; priority and number of scorers are not offered (MAL-only).
 - 2026-10-28 [kitsu-pages] The Kitsu home adds a "Trending" row before the user's sections; the Forum tab says Kitsu has no forum here and opens kitsu.app, since Kitsu's community has no public API that fits.
 - 2026-10-28 [orchestrator] Kitsu Forum tab = a message + link to kitsu.app (no usable forum API); the shared tracker editor gets a confirmed "Remove from list" action (tracker-wiring).
+- 2026-10-28 [orchestrator] In-app update refuses a release without its .sha1 file (never installs an unverified APK).
