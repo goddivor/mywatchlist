@@ -673,8 +673,8 @@ const UNITS = [
   {
     id: "jikan-leftovers", title: "Videos, user updates and user probe without Jikan", kind: "unit", priority: "P1", group: "detail", model: "opus", ui: true,
     needs: ["tenrai-client", "color-sweep"],
-    owns: ["lib/screens/MAL/detail/detail_screen.dart", "lib/widgets/MAL/content/userupdate_widget.dart", "lib/services/api/Jikan/jikan_fallbacks.dart", "lib/services/api/mwl_api.dart", "mwl-api/lib/handlers/handler_core.dart", "mwl-api/mwl_commons/**", "lib/screens/search/search_service.dart", "test/units/jikan-leftovers/**"],
-    goal: ["DailyAL feature-gap audit docs/dal-gap-report-2026-10-28.md: items D1, D2, D4, E3 \u2014 use the Tenrai failover from tenrai-client first; MAL-page scraping only for what Tenrai lacks (/userupdates). Read those items (DailyAL and MWL file:line, gap, effort) and implement them.", "Owner rules: replicate DailyAL's UI where MWL's would be weaker; no explanatory captions or helper text DailyAL lacks; theme tokens only; full translatability (English + French)."],
+    owns: ["lib/screens/MAL/detail/sections/featured_section.dart", "lib/screens/MAL/detail/section_frame.dart", "lib/widgets/MAL/content/show_featured.dart", "lib/screens/MAL/detail/detail_screen.dart", "lib/widgets/MAL/content/userupdate_widget.dart", "lib/services/api/Jikan/jikan_fallbacks.dart", "lib/services/api/mwl_api.dart", "mwl-api/lib/handlers/handler_core.dart", "mwl-api/mwl_commons/**", "lib/screens/search/search_service.dart", "test/units/jikan-leftovers/**"],
+    goal: ["From PR #227: hide the whole Featured Articles section (title row and tab) when it has no articles \u2014 show_featured.dart must report empty to lib/screens/MAL/detail/sections/featured_section.dart / section_frame.dart.", "DailyAL feature-gap audit docs/dal-gap-report-2026-10-28.md: items D1, D2, D4, E3 \u2014 use the Tenrai failover from tenrai-client first; MAL-page scraping only for what Tenrai lacks (/userupdates). Read those items (DailyAL and MWL file:line, gap, effort) and implement them.", "Owner rules: replicate DailyAL's UI where MWL's would be weaker; no explanatory captions or helper text DailyAL lacks; theme tokens only; full translatability (English + French)."],
     dod: ["Checker compares with DailyAL on the owner's network (Jikan down)."],
   },
   {
@@ -819,7 +819,7 @@ const UNITS = [
   {
     id: "ux-detail-content", title: "Detail content like DailyAL: adaptation tiles, empty featured hidden, fixed cast thumbnails", kind: "unit", priority: "P1", group: "settings", model: "opus", ui: true,
     needs: [],
-    owns: ["lib/widgets/MAL/content/scorestatisticswidget.dart", "lib/widgets/MAL/content/show_featured.dart", "lib/widgets/MAL/content/adaptation_widget.dart", "lib/screens/MAL/characters_staff_screen.dart", "lib/l10n/units/ux-detail-content/**", "test/units/ux-detail-content/**"],
+    owns: ["test/units/detail-resilience/score_stats_fallback_test.dart", "lib/widgets/MAL/content/scorestatisticswidget.dart", "lib/widgets/MAL/content/show_featured.dart", "lib/widgets/MAL/content/adaptation_widget.dart", "lib/screens/MAL/characters_staff_screen.dart", "lib/l10n/units/ux-detail-content/**", "test/units/ux-detail-content/**"],
     goal: ["UI comparison report docs/ui-check-report-2026-10-28.md: group F items 13-14. Read those items and the matching screen sections (screenshots under the checker scratchpad shots/).", "Owner rules: replicate DailyAL's UI (dailyal-108 file:line given in the report) where MWL is weaker; remove explanatory captions/helper texts DailyAL lacks; regular-weight titles and tonal controls like DailyAL; theme tokens; English + French."],
     dod: ["Checker: side by side with DailyAL on the same theme."],
   },

@@ -6,6 +6,7 @@
 - nothing
 
 ## Owns (may create or edit ONLY these)
+- `test/units/detail-resilience/score_stats_fallback_test.dart`
 - `lib/widgets/MAL/content/scorestatisticswidget.dart`
 - `lib/widgets/MAL/content/show_featured.dart`
 - `lib/widgets/MAL/content/adaptation_widget.dart`

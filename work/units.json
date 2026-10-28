@@ -1888,6 +1888,9 @@
         "color-sweep"
       ],
       "owns": [
+        "lib/screens/MAL/detail/sections/featured_section.dart",
+        "lib/screens/MAL/detail/section_frame.dart",
+        "lib/widgets/MAL/content/show_featured.dart",
         "lib/screens/MAL/detail/detail_screen.dart",
         "lib/widgets/MAL/content/userupdate_widget.dart",
         "lib/services/api/Jikan/jikan_fallbacks.dart",
@@ -2480,6 +2483,7 @@
       "priority": "P1",
       "needs": [],
       "owns": [
+        "test/units/detail-resilience/score_stats_fallback_test.dart",
         "lib/widgets/MAL/content/scorestatisticswidget.dart",
         "lib/widgets/MAL/content/show_featured.dart",
         "lib/widgets/MAL/content/adaptation_widget.dart",

@@ -7,6 +7,9 @@
 - `color-sweep` (Colour sweep: hardcoded colours of already-merged screens onto the theme tokens)
 
 ## Owns (may create or edit ONLY these)
+- `lib/screens/MAL/detail/sections/featured_section.dart`
+- `lib/screens/MAL/detail/section_frame.dart`
+- `lib/widgets/MAL/content/show_featured.dart`
 - `lib/screens/MAL/detail/detail_screen.dart`
 - `lib/widgets/MAL/content/userupdate_widget.dart`
 - `lib/services/api/Jikan/jikan_fallbacks.dart`
@@ -21,6 +24,7 @@
 Plus `PROJECT-STATE.md` (rewrite in place, within its cap) and `docs/DECISIONS.md` (append one line per decision). Anything else you need is a FINDING to report, never an edit.
 
 ## Goal
+- From PR #227: hide the whole Featured Articles section (title row and tab) when it has no articles — show_featured.dart must report empty to lib/screens/MAL/detail/sections/featured_section.dart / section_frame.dart.
 - DailyAL feature-gap audit docs/dal-gap-report-2026-10-28.md: items D1, D2, D4, E3 — use the Tenrai failover from tenrai-client first; MAL-page scraping only for what Tenrai lacks (/userupdates). Read those items (DailyAL and MWL file:line, gap, effort) and implement them.
 - Owner rules: replicate DailyAL's UI where MWL's would be weaker; no explanatory captions or helper text DailyAL lacks; theme tokens only; full translatability (English + French).
 
