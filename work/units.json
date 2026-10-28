@@ -1744,6 +1744,7 @@
         "home-wiring"
       ],
       "owns": [
+        "lib/widgets/MAL/home/homeappbar.dart",
         "lib/widgets/home/**",
         "lib/pages/MAL/mal_home_page.dart",
         "lib/l10n/units/home-fixes/**",

@@ -6,6 +6,7 @@
 - `home-wiring` (Home: working chips, bookmarks/calendar buttons, maintenance dialog, user-list and forum sections)
 
 ## Owns (may create or edit ONLY these)
+- `lib/widgets/MAL/home/homeappbar.dart`
 - `lib/widgets/home/**`
 - `lib/pages/MAL/mal_home_page.dart`
 - `lib/l10n/units/home-fixes/**`
@@ -14,6 +15,7 @@
 Plus `PROJECT-STATE.md` (rewrite in place, within its cap) and `docs/DECISIONS.md` (append one line per decision). Anything else you need is a FINDING to report, never an edit.
 
 ## Goal
+- Owner: the ☰ menu icon next to the avatar in the home header does the same as tapping the avatar (both open the sidebar) — REMOVE the ☰ icon (lib/widgets/MAL/home/homeappbar.dart); keep tap avatar = sidebar, long press / swap badge = account switcher sheet.
 - The home 'My list' section cache key (lib/widgets/home/home_sections.dart:231) does not include the account: after switching account from the avatar sheet the previous account's list stays until pull-to-refresh. Key every per-user section by tracker + account id and clear on account switch (AccountBloc stream). Maintenance dialog must show at most once even under a race (batch-4 check).
 
 ## Known bugs to fix in scope

@@ -664,8 +664,8 @@ const UNITS = [
   {
     id: "home-fixes", title: "Home: user-list cache per account", kind: "unit", priority: "P1", group: "discovery", model: "sonnet", ui: true,
     needs: ["home-wiring"],
-    owns: ["lib/widgets/home/**", "lib/pages/MAL/mal_home_page.dart"],
-    goal: ["The home 'My list' section cache key (lib/widgets/home/home_sections.dart:231) does not include the account: after switching account from the avatar sheet the previous account's list stays until pull-to-refresh. Key every per-user section by tracker + account id and clear on account switch (AccountBloc stream). Maintenance dialog must show at most once even under a race (batch-4 check)."],
+    owns: ["lib/widgets/MAL/home/homeappbar.dart", "lib/widgets/home/**", "lib/pages/MAL/mal_home_page.dart"],
+    goal: ["Owner: the ☰ menu icon next to the avatar in the home header does the same as tapping the avatar (both open the sidebar) — REMOVE the ☰ icon (lib/widgets/MAL/home/homeappbar.dart); keep tap avatar = sidebar, long press / swap badge = account switcher sheet.", "The home 'My list' section cache key (lib/widgets/home/home_sections.dart:231) does not include the account: after switching account from the avatar sheet the previous account's list stays until pull-to-refresh. Key every per-user section by tracker + account id and clear on account switch (AccountBloc stream). Maintenance dialog must show at most once even under a race (batch-4 check)."],
     dod: ["Test: switching account invalidates the user-list section."],
   },
   {
