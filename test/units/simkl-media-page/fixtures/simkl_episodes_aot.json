@@ -1,0 +1,27 @@
+[
+ {
+  "title": "To You, 2000 Years in the Future: The Fall of Zhiganshina (1)",
+  "description": null,
+  "runtime": 25,
+  "episode": 1,
+  "type": "episode",
+  "aired": true,
+  "img": "26/26148581d640c58b8",
+  "date": "2013-04-06T15:00:00+09:00",
+  "ids": {
+   "simkl_id": 958466
+  }
+ },
+ {
+  "title": "Picture Drama 3",
+  "description": null,
+  "runtime": 15,
+  "type": "special",
+  "aired": true,
+  "img": "68/689124d248604d0d",
+  "date": "2013-09-17T15:00:00+09:00",
+  "ids": {
+   "simkl_id": 979612
+  }
+ }
+]

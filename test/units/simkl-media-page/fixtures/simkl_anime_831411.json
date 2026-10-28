@@ -1,0 +1,224 @@
+{
+ "title": "Kimetsu no Yaiba",
+ "en_title": "Demon Slayer: Kimetsu no Yaiba",
+ "year": 2019,
+ "type": "anime",
+ "anime_type": "tv",
+ "ids": {
+  "simkl": 831411,
+  "slug": "kimetsu-no-yaiba",
+  "imdb": "tt9335498",
+  "mal": "38000",
+  "tvdb": "348545",
+  "tvdbslug": "demon-slayer-kimetsu-no-yaiba",
+  "tmdb": "85937",
+  "anilist": "101922",
+  "kitsu": "41370",
+  "traktslug": "demon-slayer-kimetsu-no-yaiba",
+  "anidb": "14107"
+ },
+ "rank": 14,
+ "droprate": "0.8%",
+ "poster": "10/108215c95bbe0c40c",
+ "fanart": "11/11108654def22b4f7",
+ "runtime": 25,
+ "certification": "TV-MA",
+ "country": "JP",
+ "original_language": "ja",
+ "overview": "It is the Taisho Period in Japan. Tanjiro, a kindhearted boy who sells charcoal for a living, finds his family slaughtered by a demon. To make matters worse, his younger sister Nezuko, the sole survivor, has been transformed into a demon herself.",
+ "genres": [
+  "Action",
+  "Adventure",
+  "Fantasy"
+ ],
+ "network": "Fuji TV",
+ "status": "ended",
+ "first_aired": "2019-04-06",
+ "last_aired": "2024-06-30",
+ "airs": {
+  "day": "Sunday",
+  "time": "23:15",
+  "timezone": "Asia/Tokyo"
+ },
+ "total_episodes": 55,
+ "year_start_end": "2019-",
+ "season_name_year": "Spring 2019",
+ "mapped_tvdb_seasons": [
+  1
+ ],
+ "studios": [
+  {
+   "name": "ufotable"
+  }
+ ],
+ "alt_titles": [
+  {
+   "name": "Demon Slayer: Kimetsu no Yaiba",
+   "lang": 22,
+   "type": "official"
+  },
+  {
+   "name": "鬼滅の刃",
+   "lang": 25,
+   "type": "original"
+  }
+ ],
+ "ratings": {
+  "simkl": {
+   "rating": 8.7,
+   "votes": 1850
+  },
+  "mal": {
+   "rating": 8.6,
+   "votes": 1620000
+  }
+ },
+ "trailers": [
+  {
+   "name": "Trailer 1",
+   "youtube": "VQGCKyvzIM4",
+   "size": 1080,
+   "type": "trailer"
+  }
+ ],
+ "users_recommendations": [
+  {
+   "title": "Jujutsu Kaisen",
+   "en_title": null,
+   "year": 2020,
+   "poster": "11/11393622578cd750c3",
+   "fanart": "10/108030648258dadd46",
+   "type": "anime",
+   "anime_type": "tv",
+   "users_percent": "24%",
+   "users_count": 75,
+   "ids": {
+    "simkl": 1211265,
+    "slug": "jujutsu-kaisen",
+    "mal": "40748",
+    "imdb": "tt12343534",
+    "anilist": "113415",
+    "kitsu": "42765",
+    "anidb": "15275",
+    "tmdb": "95479",
+    "tvdb": "377543",
+    "tvdbslug": "jujutsu-kaisen",
+    "traktslug": "jujutsu-kaisen"
+   }
+  }
+ ],
+ "relations": [
+  {
+   "title": "Kimetsu no Yaiba: Mugen Ressha Hen",
+   "en_title": "Demon Slayer: Mugen Train Arc",
+   "year": 2021,
+   "poster": "12/1285113329e1dc0658",
+   "fanart": "11/11911506644ed33320",
+   "anime_type": "tv",
+   "relation_type": "sequel",
+   "is_direct": true,
+   "ids": {
+    "simkl": 1738291,
+    "slug": "kimetsu-no-yaiba-mugen-ressha-hen",
+    "mal": "49926",
+    "anilist": "129874",
+    "kitsu": "45249",
+    "anidb": "16803",
+    "imdb": "tt9335498",
+    "tmdb": "154634",
+    "tvdb": "348545",
+    "traktslug": "313759"
+   }
+  },
+  {
+   "title": "Kimetsu no Yaiba: Kyoudai no Kizuna",
+   "en_title": "Demon Slayer: Kimetsu no Yaiba Sibling's Bond",
+   "year": 2019,
+   "poster": "12/1299271995abee7b32",
+   "fanart": "11/11342888cf49780b82",
+   "anime_type": "movie",
+   "relation_type": "summary",
+   "is_direct": true,
+   "ids": {
+    "simkl": 1043309,
+    "slug": "kimetsu-no-yaiba-kyoudai-no-kizuna",
+    "imdb": "tt14888860",
+    "mal": "48745",
+    "kitsu": "44388",
+    "anidb": "14689",
+    "tmdb": "820232",
+    "tvdb": "374513",
+    "tvdbslug": "demon-slayer-kimetsu-no-yaiba-siblings-bond",
+    "traktslug": "demon-slayer-kimetsu-no-yaiba-sibling-s-bond-2019",
+    "letterboxd": "demon-slayer-kimetsu-no-yaiba-siblings-bond"
+   }
+  }
+ ],
+ "similar": [
+  {
+   "title": "Kimetsu no Yaiba: Yuukaku Hen",
+   "en_title": "Demon Slayer: Entertainment District Arc",
+   "year": 2021,
+   "poster": "11/11861097574d021bdc",
+   "fanart": "11/11911544bc2e242413",
+   "type": "anime",
+   "anime_type": "tv",
+   "ids": {
+    "simkl": 1546285,
+    "slug": "kimetsu-no-yaiba-yuukaku-hen",
+    "imdb": "tt15757634",
+    "mal": "47778",
+    "anilist": "142329",
+    "kitsu": "44081",
+    "anidb": "16054",
+    "tmdb": "317316",
+    "tvdb": "348545",
+    "traktslug": "317735"
+   }
+  },
+  {
+   "title": "Tate no Yuusha no Nariagari",
+   "en_title": "The Rising of the Shield Hero",
+   "year": 2018,
+   "poster": "75/759986065421c1d79",
+   "fanart": "75/7590762834599ce33",
+   "type": "anime",
+   "anime_type": "tv",
+   "ids": {
+    "simkl": 695799,
+    "slug": "tate-no-yuusha-no-nariagari",
+    "mal": "35790",
+    "imdb": "tt9529546",
+    "anilist": "99263",
+    "kitsu": "13593",
+    "anidb": "13246",
+    "tmdb": "83095",
+    "tvdb": "353712",
+    "tvdbslug": "the-rising-of-the-shield-hero",
+    "traktslug": "the-rising-of-the-shield-hero"
+   }
+  },
+  {
+   "title": "Youkai Apaato no Yuuga na Nichijou",
+   "en_title": "Elegant Yokai Apartment Life",
+   "year": 2017,
+   "poster": "71/71217762212a75abd",
+   "fanart": "57/5725650d649622f65",
+   "type": "anime",
+   "anime_type": "tv",
+   "ids": {
+    "simkl": 670957,
+    "slug": "youkai-apaato-no-yuuga-na-nichijou",
+    "mal": "35220",
+    "imdb": "tt12510204",
+    "anilist": "98501",
+    "kitsu": "13260",
+    "anidb": "13017",
+    "tmdb": "72514",
+    "tvdb": "329827",
+    "tvdbslug": "elegant-yokai-apartment-life",
+    "traktslug": "elegant-yokai-apartment-life"
+   }
+  }
+ ]
+}

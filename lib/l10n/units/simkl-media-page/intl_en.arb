@@ -1,0 +1,208 @@
+{
+  "@@locale": "en",
+  "Smp_Open_On_Simkl": "Open on Simkl",
+  "Smp_Open_On_Mal": "Open on MyAnimeList",
+  "Smp_Share": "Share",
+  "Smp_Load_Error": "Couldn't load this title from Simkl",
+  "Smp_Not_Found": "Simkl has no title with this id",
+  "Smp_Retry": "Retry",
+  "Smp_Title_Copied": "Title copied",
+  "Smp_Rank": "#{rank}",
+  "@Smp_Rank": {
+    "placeholders": {
+      "rank": {
+        "type": "String"
+      }
+    }
+  },
+  "Smp_Votes": "{count, plural, =1{1 vote} other{{formatted} votes}}",
+  "@Smp_Votes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "formatted": {
+        "type": "String"
+      }
+    }
+  },
+  "Smp_Episodes_Short": "{count, plural, =1{1 ep} other{{count} eps}}",
+  "@Smp_Episodes_Short": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "Smp_Minutes": "{count} min",
+  "@Smp_Minutes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "Smp_Simkl": "Simkl",
+  "Smp_Mal": "MyAnimeList",
+  "Smp_Imdb": "IMDb",
+  "Smp_Drop_Rate": "Drop rate",
+  "Smp_Aired": "Aired",
+  "Smp_Airs": "Airs",
+  "Smp_Airs_Value": "{day} at {time}",
+  "@Smp_Airs_Value": {
+    "placeholders": {
+      "day": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "Smp_Studios": "Studios",
+  "Smp_Producers": "Producers",
+  "Smp_Licensors": "Licensors",
+  "Smp_Network": "Network",
+  "Smp_Certification": "Age rating",
+  "Smp_Country": "Country",
+  "Smp_Language": "Original language",
+  "Smp_Season": "Season",
+  "Smp_Runtime": "Episode length",
+  "Smp_Status": "Status",
+  "Smp_Status_Ended": "Finished",
+  "Smp_Status_Airing": "Airing",
+  "Smp_Status_Upcoming": "Upcoming",
+  "Smp_Type": "Type",
+  "Smp_Alt_Titles": "Other titles",
+  "Smp_Genres": "Genres",
+  "Smp_Tags": "Tags",
+  "Smp_Links": "Links",
+  "Smp_Synopsis": "Synopsis",
+  "Smp_Show_More": "Show more",
+  "Smp_Show_Less": "Show less",
+  "Smp_Info": "Information",
+  "Smp_Watchers": "Watchers",
+  "Smp_Watching": "Watching",
+  "Smp_Plan_To_Watch": "Plan to watch",
+  "Smp_Completed": "Completed",
+  "Smp_On_Hold": "On hold",
+  "Smp_Dropped": "Dropped",
+  "Smp_Total": "Total",
+  "Smp_Reactions_Count": "{count, plural, =1{1 reaction} other{{formatted} reactions}}",
+  "@Smp_Reactions_Count": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "formatted": {
+        "type": "String"
+      }
+    }
+  },
+  "Smp_Reviews_Count": "{count, plural, =1{1 review} other{{formatted} reviews}}",
+  "@Smp_Reviews_Count": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "formatted": {
+        "type": "String"
+      }
+    }
+  },
+  "Smp_Comments_Count": "{count, plural, =1{1 comment} other{{formatted} comments}}",
+  "@Smp_Comments_Count": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "formatted": {
+        "type": "String"
+      }
+    }
+  },
+  "Smp_Memos_Count": "{count, plural, =1{1 memo} other{{formatted} memos}}",
+  "@Smp_Memos_Count": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "formatted": {
+        "type": "String"
+      }
+    }
+  },
+  "Smp_Trailers": "Trailers",
+  "Smp_Episodes": "Episodes",
+  "Smp_Specials": "Specials",
+  "Smp_Episode_Number": "Episode {number}",
+  "@Smp_Episode_Number": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "Smp_Not_Aired": "Not aired yet",
+  "Smp_Related": "Related",
+  "Smp_Recommendations": "Recommendations",
+  "Smp_Similar": "Similar titles",
+  "Smp_Rel_Sequel": "Sequel",
+  "Smp_Rel_Prequel": "Prequel",
+  "Smp_Rel_Side_Story": "Side story",
+  "Smp_Rel_Parent_Story": "Parent story",
+  "Smp_Rel_Summary": "Summary",
+  "Smp_Rel_Full_Story": "Full story",
+  "Smp_Rel_Alternative": "Alternative version",
+  "Smp_Rel_Alt_Setting": "Alternative setting",
+  "Smp_Rel_Spin_Off": "Spin-off",
+  "Smp_Rel_Character": "Shared characters",
+  "Smp_Rel_Other": "Other",
+  "Smp_Reviews": "Reviews",
+  "Smp_Positive_Share": "{percent} positive",
+  "@Smp_Positive_Share": {
+    "placeholders": {
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "Smp_Positive": "Positive",
+  "Smp_Neutral": "Neutral",
+  "Smp_Negative": "Negative",
+  "Smp_Overall": "Overall",
+  "Smp_Story": "Story",
+  "Smp_Animation": "Animation",
+  "Smp_Sound": "Sound",
+  "Smp_Character": "Characters",
+  "Smp_Enjoyment": "Enjoyment",
+  "Smp_Read_Full_Review": "Read the full review",
+  "Smp_Helpful": "{helpful} of {total} found it helpful",
+  "@Smp_Helpful": {
+    "placeholders": {
+      "helpful": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "Smp_Comments": "Comments",
+  "Smp_Spoiler": "Spoiler: tap to show",
+  "Smp_Vip": "VIP",
+  "Smp_Memos": "Memos",
+  "Smp_Memo_Bucket": "{min} to {max} stars",
+  "@Smp_Memo_Bucket": {
+    "placeholders": {
+      "min": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "Smp_Add_To_List": "Add to list",
+  "Smp_View_All": "View all"
+}
