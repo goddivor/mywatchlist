@@ -3,6 +3,7 @@
 **Kind** unit · **Priority** P2 · **Group** release · **Model** sonnet
 
 ## Needs done first
+- `ux-polish-2` (Tonal buttons stay tonal; explicit card hidden with NSFW off like DailyAL)
 - `home-rows-kinds` (Home OVA/ONA and manhwa/manhua/novel ranking rows (H3) with tracker cases)
 - `ux-explore` (Explore like DailyAL: tonal buttons, arrow headers, no extra search, no captions)
 - `ux-search` (Search home and results like DailyAL; one season picker)

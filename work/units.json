@@ -94,6 +94,7 @@
         "ux-home",
         "ux-stack",
         "ux-forum",
+        "ux-polish-2",
         "theme-seasons",
         "backup-fixes"
       ]
@@ -1450,6 +1451,7 @@
       "artifact": "",
       "priority": "P2",
       "needs": [
+        "ux-polish-2",
         "home-rows-kinds",
         "ux-explore",
         "ux-search",
@@ -2717,6 +2719,35 @@
         "model: sonnet"
       ],
       "status": "✅ done"
+    },
+    {
+      "id": "ux-polish-2",
+      "title": "Tonal buttons stay tonal; explicit card hidden with NSFW off like DailyAL",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "ux-explore",
+        "ux-theme"
+      ],
+      "owns": [
+        "lib/user/theme/app_themes.dart",
+        "lib/pages/MAL/mal_explore_page.dart",
+        "lib/screens/explore/**",
+        "test/units/explore-polish/**",
+        "test/units/ux-polish-2/**",
+        "lib/l10n/units/explore-polish/**",
+        "test/units/ux-polish-2/**"
+      ],
+      "group": "settings",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: sonnet"
+      ],
+      "status": "⬜ todo"
     },
     {
       "id": "explore-polish",
