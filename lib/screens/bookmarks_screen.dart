@@ -365,9 +365,8 @@ class _Rows extends StatelessWidget {
 class _Empty extends StatelessWidget {
   final IconData icon;
   final String title;
-  final String? body;
 
-  const _Empty({required this.icon, required this.title, this.body});
+  const _Empty({required this.icon, required this.title});
 
   @override
   Widget build(BuildContext context) {
@@ -395,15 +394,6 @@ class _Empty extends StatelessWidget {
               style: theme.textTheme.titleMedium
                   ?.copyWith(fontWeight: FontWeight.w600),
             ),
-            if (body != null) ...[
-              const SizedBox(height: 8),
-              Text(
-                body!,
-                textAlign: TextAlign.center,
-                style: theme.textTheme.bodyMedium
-                    ?.copyWith(color: colors.onSurfaceVariant),
-              ),
-            ],
           ],
         ),
       ),

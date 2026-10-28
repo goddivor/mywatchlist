@@ -89,6 +89,10 @@ void main() {
   });
 
   testWidgets('new kinds have French filter chips and a grid', (tester) async {
+    // Wide enough for every chip of the horizontal row to be built.
+    tester.view.physicalSize = const Size(2400, 1600);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
     await tester.runAsync(() async {
       await _save(BookmarkKind.club, 1, 'Club');
       await _save(BookmarkKind.interestStack, 4, 'Stack');
