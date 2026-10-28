@@ -9,6 +9,7 @@
 - `backend-parsers` (mwl-api: port DAL's missing routes and HTML parsers)
 
 ## Owns (may create or edit ONLY these)
+- `test/units/profile-polish/profile_polish_test.dart`
 - `test/units/app-shell/app_routes_test.dart`
 - `lib/utils/app_routes.dart`
 - `lib/pages/MAL/mal_user_profile_page.dart`
