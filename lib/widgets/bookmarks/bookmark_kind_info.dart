@@ -18,6 +18,14 @@ extension BookmarkKindInfo on BookmarkKind {
         return S.current.Bm_Kind_Forum;
       case BookmarkKind.user:
         return S.current.Bm_Kind_User;
+      case BookmarkKind.club:
+        return S.current.Bme_Kind_Club;
+      case BookmarkKind.news:
+        return S.current.Bme_Kind_News;
+      case BookmarkKind.featured:
+        return S.current.Bme_Kind_Featured;
+      case BookmarkKind.interestStack:
+        return S.current.Bme_Kind_Stack;
     }
   }
 
@@ -35,6 +43,18 @@ extension BookmarkKindInfo on BookmarkKind {
         return Icons.forum_outlined;
       case BookmarkKind.user:
         return Icons.person_outline;
+      case BookmarkKind.club:
+        return Icons.groups_outlined;
+      case BookmarkKind.news:
+        return Icons.newspaper_outlined;
+      case BookmarkKind.featured:
+        return Icons.article_outlined;
+      case BookmarkKind.interestStack:
+        return Icons.layers_outlined;
     }
   }
+
+  /// Kinds that rarely carry a picture: the bookmarks screen lists them as rows, as DailyAL
+  /// lists its forum topics, instead of a grid of empty covers.
+  bool get listsAsRows => this == BookmarkKind.forumTopic;
 }

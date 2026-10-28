@@ -9,10 +9,12 @@ import 'package:mywatchlist/widgets/bookmarks/bookmark_opener.dart';
 
 enum _Sort { recent, title }
 
-/// Saved anime, manga, characters, people, forum topics and users.
+/// Saved anime, manga, characters, people, forum topics, users, clubs, news, featured
+/// articles and interest stacks.
 ///
 /// Filters: one chip per kind that has items (with its count), one per tracker when several
-/// trackers have items, text search, sort. Removing shows an Undo. Open it with
+/// trackers have items, text search, sort. A list of forum topics only shows as rows (they
+/// have no picture), anything else as a grid of covers. Removing shows an Undo. Open it with
 /// `AppRoutes.openBookmarks`; other units save items through [Bookmarks].
 class BookmarksScreen extends StatefulWidget {
   const BookmarksScreen({super.key});
@@ -122,7 +124,6 @@ class _BookmarksScreenState extends State<BookmarksScreen> {
                   ? _Empty(
                       icon: Icons.bookmark_outline,
                       title: S.current.Bm_Empty_Title,
-                      body: S.current.Bm_Empty_Body,
                     )
                   : Column(
                       children: [
@@ -144,11 +145,17 @@ class _BookmarksScreenState extends State<BookmarksScreen> {
                                       : S.current.Bm_Empty_Kind(
                                           kind?.label ?? ''),
                                 )
-                              : _Grid(
-                                  items: shown,
-                                  onOpen: (b) => openBookmark(context, b),
-                                  onRemove: _remove,
-                                ),
+                              : shown.every((b) => b.kind.listsAsRows)
+                                  ? _Rows(
+                                      items: shown,
+                                      onOpen: (b) => openBookmark(context, b),
+                                      onRemove: _remove,
+                                    )
+                                  : _Grid(
+                                      items: shown,
+                                      onOpen: (b) => openBookmark(context, b),
+                                      onRemove: _remove,
+                                    ),
                         ),
                       ],
                     ),
@@ -314,6 +321,37 @@ class _Grid extends StatelessWidget {
       itemBuilder: (_, i) {
         final b = items[i];
         return BookmarkCard(
+          key: ValueKey(b.key),
+          bookmark: b,
+          onTap: () => onOpen(b),
+          onRemove: () => onRemove(b),
+        );
+      },
+    );
+  }
+}
+
+/// Picture-less bookmarks (forum topics) as rows, like DailyAL's forum topic list.
+class _Rows extends StatelessWidget {
+  final List<Bookmark> items;
+  final ValueChanged<Bookmark> onOpen;
+  final ValueChanged<Bookmark> onRemove;
+
+  const _Rows({
+    required this.items,
+    required this.onOpen,
+    required this.onRemove,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.separated(
+      padding: const EdgeInsets.fromLTRB(0, 4, 0, 24),
+      itemCount: items.length,
+      separatorBuilder: (_, __) => const Divider(height: 1, indent: 72),
+      itemBuilder: (_, i) {
+        final b = items[i];
+        return BookmarkRow(
           key: ValueKey(b.key),
           bookmark: b,
           onTap: () => onOpen(b),

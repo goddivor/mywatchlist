@@ -3,8 +3,22 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// What a bookmark points to.
-enum BookmarkKind { anime, manga, character, person, forumTopic, user }
+/// What a bookmark points to. Stored by name: append new kinds, never rename one.
+///
+/// [club], [news], [featured] and [interestStack] are MyAnimeList pages keyed by their MAL id
+/// (club id, article id, stack id), like DailyAL's bookmark types of the same name.
+enum BookmarkKind {
+  anime,
+  manga,
+  character,
+  person,
+  forumTopic,
+  user,
+  club,
+  news,
+  featured,
+  interestStack,
+}
 
 /// One saved item, identified by `tracker + kind + id`.
 ///
