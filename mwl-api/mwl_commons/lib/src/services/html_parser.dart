@@ -1,5 +1,7 @@
 // ignore_for_file: unused_element
 
+import 'dart:convert';
+
 import 'package:html/dom.dart';
 import 'package:html_unescape/html_unescape_small.dart';
 
@@ -704,7 +706,27 @@ class HtmlParsers {
   }
 
   // Parse user friends list page
+  //
+  // Since 2026 MAL renders `/profile/<name>/friends` with Vue: the friends are JSON in
+  // `#vm-friendlist[data-initial-data]` (`{items: [...], has_more}`) and the page has no
+  // `#contentWrapper`. The old `.friend .boxlist` rows are still read when present.
   static UserFriendsList parseUserFriends(Document? document) {
+    final vue = document?.querySelector('#vm-friendlist[data-initial-data]');
+    if (vue != null) {
+      Object? data;
+      try {
+        data = jsonDecode(vue.attributes['data-initial-data'] ?? '');
+      } on FormatException {
+        data = null;
+      }
+      final list = parseUserFriendsJson(data);
+      return UserFriendsList(
+        friends: list.friends,
+        hasMore: list.hasMore,
+        userId: int.tryParse(vue.attributes['data-user-id'] ?? ''),
+      );
+    }
+
     final friendsContainer = document?.body?.querySelector('.friend');
     if (friendsContainer == null) {
       return UserFriendsList(friends: []);
@@ -746,6 +768,45 @@ class HtmlParsers {
 
     return UserFriendsList(friends: friends);
   }
+
+  /// The `{items: [...], has_more}` body shared by the friends page's `data-initial-data`
+  /// and its "load more" endpoint `/friends/api/list/<userId>.json`. A friend without a
+  /// picture (`has_pic: false`) gets an empty [User.imageUrl] rather than MAL's kaomoji
+  /// placeholder, so clients show their own default avatar.
+  static UserFriendsList parseUserFriendsJson(Object? data) {
+    if (data is! Map) return UserFriendsList(friends: [], hasMore: false);
+    final items = data['items'];
+    final friends = <Friend>[];
+    if (items is List) {
+      for (final item in items) {
+        if (item is! Map) continue;
+        final name = item['name'];
+        if (name is! String || name.trim().isEmpty) continue;
+        final profile = item['profile_url'];
+        final pic = item['pic_url'];
+        friends.add(Friend(
+          user: User(
+            username: name.trim(),
+            url: profile is String && profile.isNotEmpty
+                ? (profile.startsWith('http') ? profile : 'https://myanimelist.net$profile')
+                : 'https://myanimelist.net/profile/${Uri.encodeComponent(name.trim())}',
+            imageUrl: item['has_pic'] == true && pic is String ? pic : '',
+          ),
+          lastOnline: '',
+          friendSince: item['time_added_str'] is String
+              ? (item['time_added_str'] as String).trim()
+              : '',
+          id: _asInt(item['id']),
+          lastActivity: _asInt(item['last_activity']),
+          timeAdded: _asInt(item['time_added']),
+        ));
+      }
+    }
+    return UserFriendsList(friends: friends, hasMore: data['has_more'] == true);
+  }
+
+  static int? _asInt(Object? v) =>
+      v is int ? v : (v is num ? v.toInt() : (v is String ? int.tryParse(v) : null));
 
   // Parse MAL genre page
   static GenreCategoryList parseGenres(Document document) {

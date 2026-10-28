@@ -1,0 +1,14 @@
+{
+  "@@locale": "en",
+  "Prof_Seen_Just_Now": "just now",
+  "Prof_Seen_Minutes": "{count, plural, one{{count} minute ago} other{{count} minutes ago}}",
+  "@Prof_Seen_Minutes": { "placeholders": { "count": { "type": "int" } } },
+  "Prof_Seen_Hours": "{count, plural, one{{count} hour ago} other{{count} hours ago}}",
+  "@Prof_Seen_Hours": { "placeholders": { "count": { "type": "int" } } },
+  "Prof_Seen_Days": "{count, plural, one{{count} day ago} other{{count} days ago}}",
+  "@Prof_Seen_Days": { "placeholders": { "count": { "type": "int" } } },
+  "Prof_Seen_Months": "{count, plural, one{{count} month ago} other{{count} months ago}}",
+  "@Prof_Seen_Months": { "placeholders": { "count": { "type": "int" } } },
+  "Prof_Seen_Years": "{count, plural, one{{count} year ago} other{{count} years ago}}",
+  "@Prof_Seen_Years": { "placeholders": { "count": { "type": "int" } } }
+}

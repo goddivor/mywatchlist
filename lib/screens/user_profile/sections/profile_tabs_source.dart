@@ -1,9 +1,11 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:html/dom.dart';
 import 'package:html/parser.dart' as html;
 import 'package:http/http.dart' as http;
+import 'package:mwl_commons/mwl_commons.dart' show UserFriendsList;
 import 'package:mywatchlist/constants/constants.dart';
 import 'package:mywatchlist/services/api/MAL/models/club/club_html.dart';
 import 'package:mywatchlist/services/api/MAL/scrapper/html_parsers.dart';
@@ -62,8 +64,27 @@ class ProfileTabsSource {
   // The three tabs
   // ---------------------------------------------------------------------------
 
-  /// One page (100) of friends. [page] starts at 1.
-  static Future<ProfileFriendsPage> friends(String username, {int page = 1}) {
+  /// One page of friends. [page] starts at 1. [after] is the [ProfileFriendsPage.cursor] of
+  /// the previous page when it came from MAL's new friends page: the next one then comes from
+  /// MAL's own "load more" endpoint, with no fallback (Jikan pages by 100 and would skip or
+  /// repeat friends).
+  static Future<ProfileFriendsPage> friends(String username,
+      {int page = 1, FriendsCursor? after}) {
+    if (after != null) {
+      return () async {
+        final body = await fetchPage(
+          Uri.parse('https://myanimelist.net/friends/api/list/${after.userId}.json').replace(
+            queryParameters: {
+              'last_friend_id': '${after.lastFriendId}',
+              'last_time_added': '${after.lastTimeAdded}',
+            },
+          ),
+          budget,
+        );
+        return _parse(parseFriendsJson, (body, after.userId));
+      }()
+          .timeout(budget + _minFallback);
+    }
     return _withFallback<ProfileFriendsPage>(
       (timeout) async {
         final offset = (page - 1) * ProfileFriendsPage.pageSize;
@@ -163,10 +184,16 @@ class ProfileTabsSource {
   static Future<R> _parse<M, R>(R Function(M) fn, M message) =>
       parseInline ? Future.value(fn(message)) : compute<M, R>(fn, message);
 
+  /// A desktop browser. MAL picks the page layout from the User-Agent: a phone gets the Vue
+  /// friends page (JSON in `#vm-friendlist`, no `#contentWrapper`), a desktop the classic HTML
+  /// rows the parsers read. Both are parsed; this keeps the classic one the normal case.
+  @visibleForTesting
+  static const String userAgent = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 '
+      '(KHTML, like Gecko) Chrome/120.0 Safari/537.36';
+
   static Future<String> _fetchPage(Uri url, Duration timeout) async {
     final response = await http.get(url, headers: const {
-      'User-Agent': 'Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 '
-          '(KHTML, like Gecko) Chrome/120.0 Mobile Safari/537.36',
+      'User-Agent': userAgent,
       'Accept-Language': 'en-US,en;q=0.9',
     }).timeout(timeout);
     if (response.statusCode != 200) {
@@ -180,24 +207,63 @@ class ProfileTabsSource {
 // Parsers (top level so `compute` can run them)
 // -----------------------------------------------------------------------------
 
-/// A MAL page always has `#contentWrapper`; a challenge or maintenance page does not, and
-/// must not read as "no friends".
+/// A classic MAL page has `#contentWrapper`, the new friends page `#vm-friendlist`; a
+/// challenge or maintenance page has neither, and must not read as "no friends".
 Document _malDocument(String body) {
   final doc = html.parse(body);
-  if (doc.querySelector('#contentWrapper') == null) {
+  if (doc.querySelector('#contentWrapper, #vm-friendlist') == null) {
     throw const FormatException('Not a MyAnimeList profile page');
   }
   return doc;
 }
 
-/// The friends of `/profile/<name>/friends` (100 per page).
+/// The friends of `/profile/<name>/friends`: the classic rows (100 per page, next page by
+/// `?offset=`) or the new page's JSON (30, next page by [FriendsCursor]).
 ProfileFriendsPage parseFriendsPage(String body) {
   final doc = _malDocument(body);
-  final page = parseFriendsEnvelope({'data': HtmlParsers.parseUserFriends(doc).toJson()});
-  return ProfileFriendsPage(
-    page.friends,
-    hasNextPage: page.friends.length >= ProfileFriendsPage.pageSize,
-  );
+  return _friendsPage(HtmlParsers.parseUserFriends(doc));
+}
+
+/// A body of MAL's "load more" endpoint; [args] = (body, id of the list's owner).
+ProfileFriendsPage parseFriendsJson((String, int) args) {
+  final Object? data;
+  try {
+    data = jsonDecode(args.$1);
+  } on FormatException {
+    throw const FormatException('Not a MyAnimeList friends answer');
+  }
+  if (data is! Map || data['items'] is! List) {
+    throw const FormatException('Not a MyAnimeList friends answer');
+  }
+  final list = HtmlParsers.parseUserFriendsJson(data);
+  return _friendsPage(UserFriendsList(
+    friends: list.friends,
+    hasMore: list.hasMore,
+    userId: args.$2,
+  ));
+}
+
+ProfileFriendsPage _friendsPage(UserFriendsList list) {
+  final page = parseFriendsEnvelope({'data': list.toJson()});
+  if (list.hasMore == null) {
+    return ProfileFriendsPage(
+      page.friends,
+      hasNextPage: page.friends.length >= ProfileFriendsPage.pageSize,
+    );
+  }
+  final last = list.friends.isEmpty ? null : list.friends.last;
+  final cursor = (list.hasMore == true &&
+          list.userId != null &&
+          last?.id != null &&
+          last?.timeAdded != null)
+      ? FriendsCursor(
+          userId: list.userId!,
+          lastFriendId: last!.id!,
+          lastTimeAdded: last.timeAdded!,
+        )
+      : null;
+  // Without a cursor there is no way to ask for more: no "load more" button.
+  return ProfileFriendsPage(page.friends, hasNextPage: cursor != null, cursor: cursor);
 }
 
 /// The rows of `/history/<name>/<type>`; [args] = (page body, `anime` or `manga`).

@@ -73,5 +73,26 @@ void main() {
       );
       expect(HtmlParsers.parseUserFriends(null).friends, isEmpty);
     });
+
+    test('reads the JSON of the Vue friends page (#vm-friendlist)', () {
+      final doc = htmlFixture('''
+<html><body><div id="content"><div id="vm-friendlist" data-user-id="42"
+  data-initial-data="{&quot;items&quot;:[{&quot;id&quot;:7,&quot;name&quot;:&quot;alice&quot;,&quot;has_pic&quot;:true,&quot;profile_url&quot;:&quot;\\/profile\\/alice&quot;,&quot;pic_url&quot;:&quot;https:\\/\\/x\\/a.jpg&quot;,&quot;time_added_str&quot;:&quot;Apr 6, 2026 3:52 PM&quot;,&quot;time_added&quot;:1775515921,&quot;last_activity&quot;:1793148915},{&quot;id&quot;:8,&quot;name&quot;:&quot;bob&quot;,&quot;has_pic&quot;:false,&quot;profile_url&quot;:&quot;\\/profile\\/bob&quot;,&quot;pic_url&quot;:&quot;https:\\/\\/x\\/kaomoji.png&quot;}],&quot;has_more&quot;:true}"></div></div></body></html>
+''');
+      final result = HtmlParsers.parseUserFriends(doc);
+
+      expect(result.userId, 42);
+      expect(result.hasMore, isTrue);
+      expect(result.friends.map((f) => f.user.username), ['alice', 'bob']);
+      final alice = result.friends.first;
+      expect(alice.user.url, 'https://myanimelist.net/profile/alice');
+      expect(alice.user.imageUrl, 'https://x/a.jpg');
+      expect(alice.friendSince, 'Apr 6, 2026 3:52 PM');
+      expect(alice.id, 7);
+      expect(alice.timeAdded, 1775515921);
+      expect(alice.lastActivity, 1793148915);
+      expect(result.friends.last.user.imageUrl, isEmpty);
+      expect(UserFriendsList.fromJson(result.toJson()).friends.first.lastActivity, 1793148915);
+    });
   });
 }

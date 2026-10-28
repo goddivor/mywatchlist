@@ -7,20 +7,45 @@ class ProfileFriend {
   final String? lastOnline;
   final String? friendsSince;
 
+  /// Exact times when MAL gives them (its new friends page); the tile then formats them in
+  /// the app's language instead of showing MAL's English wording.
+  final DateTime? lastSeenAt;
+  final DateTime? friendsSinceAt;
+
   const ProfileFriend({
     required this.username,
     this.imageUrl,
     this.lastOnline,
     this.friendsSince,
+    this.lastSeenAt,
+    this.friendsSinceAt,
   });
 }
 
-/// A page of friends. MAL (through Jikan) returns 100 per page.
+/// Where the next page of MAL's new friends page starts: its "load more" endpoint
+/// `/friends/api/list/<userId>.json?last_friend_id=&last_time_added=` pages by the last
+/// friend shown, not by number.
+class FriendsCursor {
+  final int userId;
+  final int lastFriendId;
+  final int lastTimeAdded;
+
+  const FriendsCursor({
+    required this.userId,
+    required this.lastFriendId,
+    required this.lastTimeAdded,
+  });
+}
+
+/// A page of friends. MAL's classic page and Jikan return 100 per page; MAL's new page 30.
 class ProfileFriendsPage {
   final List<ProfileFriend> friends;
   final bool hasNextPage;
 
-  const ProfileFriendsPage(this.friends, {this.hasNextPage = false});
+  /// Set when the page came from MAL's new friends page: the next page must be asked with it.
+  final FriendsCursor? cursor;
+
+  const ProfileFriendsPage(this.friends, {this.hasNextPage = false, this.cursor});
 
   static const int pageSize = 100;
 }
@@ -54,6 +79,8 @@ ProfileFriendsPage parseFriendsEnvelope(Map<String, dynamic>? envelope) {
       imageUrl: image is String && image.isNotEmpty ? image : null,
       lastOnline: _text(row['last_online'] ?? row['lastOnline']),
       friendsSince: _friendsSinceDate(_text(row['friends_since'] ?? row['friendSince'])),
+      lastSeenAt: _unixSeconds(row['lastActivity']),
+      friendsSinceAt: _unixSeconds(row['timeAdded']),
     ));
   }
   if (!hasNext && friends.length >= ProfileFriendsPage.pageSize && payload is! Map) {
@@ -61,6 +88,9 @@ ProfileFriendsPage parseFriendsEnvelope(Map<String, dynamic>? envelope) {
   }
   return ProfileFriendsPage(friends, hasNextPage: hasNext);
 }
+
+DateTime? _unixSeconds(Object? v) =>
+    v is int && v > 0 ? DateTime.fromMillisecondsSinceEpoch(v * 1000) : null;
 
 String? _text(Object? v) {
   final s = v is String ? v.trim() : null;
