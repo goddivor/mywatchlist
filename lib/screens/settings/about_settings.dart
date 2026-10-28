@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/pages/settings/settings_section.dart';
 import 'package:mywatchlist/screens/settings/prefs/pref_widgets.dart';
@@ -37,7 +38,16 @@ class AboutSettingsPage extends StatefulWidget {
 
 class _AboutSettingsPageState extends State<AboutSettingsPage> {
   PackageInfo? _info;
-  late final ReleaseService _releases = widget.releases ?? ReleaseService();
+  /// Opened here only when the caller injects no service; closed in [dispose].
+  late final http.Client? _ownClient = widget.releases == null ? http.Client() : null;
+  late final ReleaseService _releases =
+      widget.releases ?? ReleaseService(client: _ownClient);
+
+  @override
+  void dispose() {
+    _ownClient?.close();
+    super.dispose();
+  }
 
   @override
   void initState() {

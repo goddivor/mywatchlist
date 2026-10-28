@@ -339,6 +339,7 @@ abstract final class BackupService {
     'use_system_language',
     'mal_home_preferences',
     'cross_tracker_enabled',
+    'accent_season_v1',
   };
 
   /// Settings that travel with a backup (key prefixes): list views, seasonal views and
@@ -430,11 +431,8 @@ abstract final class BackupService {
         }
       });
     }
-    Map<String, dynamic>? section(String name, String listKey, bool Function(Object?) ok) {
-      final v = root[name];
-      if (v is! Map || !ok(v[listKey])) return null;
-      return Map<String, dynamic>.from(v);
-    }
+    final bookmarks = _readBookmarks(root['bookmarks']);
+    final notes = _readNotes(root['notes']);
 
     final createdRaw = root['createdAt'];
     return BackupBundle(
@@ -442,9 +440,62 @@ abstract final class BackupService {
       createdAt: createdRaw is String ? DateTime.tryParse(createdRaw)?.toLocal() : null,
       appVersion: root['appVersion'] is String ? root['appVersion'] as String : null,
       settings: settings,
-      bookmarks: section('bookmarks', 'bookmarks', (v) => v is List),
-      notes: section('notes', 'notes', (v) => v is Map),
+      bookmarks: bookmarks,
+      notes: notes,
     );
+  }
+
+  static final RegExp _noteKey = RegExp(r'^[a-z0-9_]+:[a-z0-9_]+:\d+$');
+
+  /// Checks a section's version, or throws a [BackupSectionException].
+  static void _checkSectionVersion(String name, Object? version, int supported) {
+    if (version is! int || version < 1) {
+      throw BackupSectionException(name, 'has no valid version');
+    }
+    if (version > supported) {
+      throw BackupSectionException(name, 'version $version is newer than this app', tooNew: true);
+    }
+  }
+
+  /// The bookmarks section reduced to the entries a restore writes (valid, one per key),
+  /// so the preview count equals the restored count. Null when the file has no section.
+  static Map<String, dynamic>? _readBookmarks(Object? raw) {
+    if (raw == null) return null;
+    if (raw is! Map) throw const BackupSectionException('bookmarks', 'is not an object');
+    _checkSectionVersion('bookmarks', raw['version'], Bookmarks.exportVersion);
+    final list = raw['bookmarks'];
+    if (list is! List) throw const BackupSectionException('bookmarks', 'has no list');
+    final byKey = <String, Map<String, dynamic>>{};
+    for (final e in list) {
+      final b = Bookmark.tryFromJson(e);
+      if (b != null) byKey[b.key] = b.toJson();
+    }
+    return {'version': raw['version'], 'bookmarks': byKey.values.toList()};
+  }
+
+  /// The notes section reduced to the entries a restore writes. Null when absent.
+  static Map<String, dynamic>? _readNotes(Object? raw) {
+    if (raw == null) return null;
+    if (raw is! Map) throw const BackupSectionException('notes', 'is not an object');
+    _checkSectionVersion('notes', raw['version'], PrivateNotesStore.exportVersion);
+    final notes = raw['notes'];
+    if (notes is! Map) throw const BackupSectionException('notes', 'has no notes map');
+    final out = <String, String>{};
+    notes.forEach((key, value) {
+      if (key is String && _noteKey.hasMatch(key) && value is String && value.trim().isNotEmpty) {
+        out[key] = value;
+      }
+    });
+    return {'version': raw['version'], 'notes': out};
+  }
+
+  /// Checks a whole bundle again (it may have been built by hand): throws a
+  /// [BackupSectionException] when a section would fail to import.
+  static void validate(BackupBundle bundle) {
+    final b = bundle.bookmarks;
+    if (b != null) _readBookmarks(b);
+    final n = bundle.notes;
+    if (n != null) _readNotes(n);
   }
 
   /// What this device holds now, for the "N here, M in the file" lines.
@@ -461,6 +512,9 @@ abstract final class BackupService {
   /// Writes the chosen [sections] of [bundle]. With [replace] each chosen section first
   /// loses what the device holds; otherwise the file's entries are added or overwrite the
   /// same keys and nothing else is removed. The caller shows the preview and asks first.
+  ///
+  /// All or nothing: the whole bundle is validated before the first write, and when a write
+  /// fails midway the device is put back as it was and the error is rethrown.
   static Future<BackupRestoreResult> restore(
     BackupBundle bundle, {
     Set<BackupSection> sections = const {
@@ -472,7 +526,29 @@ abstract final class BackupService {
     SharedPreferences? prefs,
     PrivateNotesStore? notesStore,
   }) async {
+    validate(bundle);
     prefs ??= await SharedPreferences.getInstance();
+    final store = notesStore ?? PrivateNotesStore.instance;
+    final before = await current(prefs: prefs, notesStore: store);
+    try {
+      return await _write(bundle, sections, replace, prefs, store);
+    } catch (_) {
+      try {
+        await _write(before, BackupSection.values.toSet(), true, prefs, store);
+      } catch (e) {
+        debugPrint('Backup rollback failed: $e');
+      }
+      rethrow;
+    }
+  }
+
+  static Future<BackupRestoreResult> _write(
+    BackupBundle bundle,
+    Set<BackupSection> sections,
+    bool replace,
+    SharedPreferences prefs,
+    PrivateNotesStore notesStore,
+  ) async {
     var settings = 0, bookmarks = 0, notes = 0;
     if (sections.contains(BackupSection.settings) && bundle.settings.isNotEmpty) {
       if (replace) {
@@ -504,8 +580,17 @@ abstract final class BackupService {
       bookmarks = await Bookmarks.import(bundle.bookmarks!, replace: replace);
     }
     if (sections.contains(BackupSection.notes) && bundle.notes != null) {
-      notes = await (notesStore ?? PrivateNotesStore.instance).import(bundle.notes!, replace: replace);
+      notes = await notesStore.import(bundle.notes!, replace: replace);
     }
     return BackupRestoreResult(settings: settings, bookmarks: bookmarks, notes: notes);
   }
+}
+
+/// A section of a backup file (bookmarks, notes) is malformed or from a newer app; the
+/// whole file is refused and nothing is written.
+class BackupSectionException extends FormatException {
+  final String section;
+  final bool tooNew;
+  const BackupSectionException(this.section, String problem, {this.tooNew = false})
+      : super('Backup section $section $problem');
 }

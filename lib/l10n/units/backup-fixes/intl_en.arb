@@ -1,0 +1,10 @@
+{
+  "@@locale": "en",
+  "Bkp_Bad_Section": "The {section} part of this file is damaged. Nothing was restored.",
+  "@Bkp_Bad_Section": { "placeholders": { "section": { "type": "String" } } },
+  "Sto_Unit_B": "B",
+  "Sto_Unit_KB": "KB",
+  "Sto_Unit_MB": "MB",
+  "Sto_Unit_GB": "GB",
+  "Sto_Unit_TB": "TB"
+}

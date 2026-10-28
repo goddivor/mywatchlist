@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:isolate';
 
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:mywatchlist/cache/bookmarks.dart';
 import 'package:mywatchlist/cache/cachemanager.dart';
 import 'package:mywatchlist/generated/l10n.dart';
@@ -87,17 +88,35 @@ class SettingsActionTile extends StatelessWidget {
   }
 }
 
-/// "12.3 MB" for a byte count (1024 steps, one decimal from KB up).
+/// "12,3 Mo" for a byte count (1024 steps, one decimal from KB up), with the number
+/// format and the unit names of the app language ("12.3 MB" in English).
 String formatBytes(int bytes) {
-  if (bytes < 1024) return '$bytes B';
-  const units = ['KB', 'MB', 'GB', 'TB'];
+  final units = _byteUnits();
+  if (bytes < 1024) return '$bytes ${units[0]}';
   var value = bytes / 1024;
-  var i = 0;
+  var i = 1;
   while (value >= 1024 && i < units.length - 1) {
     value /= 1024;
     i++;
   }
-  return '${value.toStringAsFixed(1)} ${units[i]}';
+  return '${_oneDecimal(value)} ${units[i]}';
+}
+
+String _oneDecimal(double value) {
+  try {
+    return NumberFormat('#,##0.0', Intl.getCurrentLocale()).format(value);
+  } catch (_) {
+    return value.toStringAsFixed(1);
+  }
+}
+
+List<String> _byteUnits() {
+  try {
+    final s = S.current;
+    return [s.Sto_Unit_B, s.Sto_Unit_KB, s.Sto_Unit_MB, s.Sto_Unit_GB, s.Sto_Unit_TB];
+  } catch (_) {
+    return const ['B', 'KB', 'MB', 'GB', 'TB'];
+  }
 }
 
 /// What the Storage page measures and clears.
