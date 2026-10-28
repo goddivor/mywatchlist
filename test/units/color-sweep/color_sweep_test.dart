@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/user/theme/app_themes.dart';
 import 'package:mywatchlist/widgets/MAL/home/animegridcard.dart' show NodeStatusValue;
 import 'package:mywatchlist/widgets/common/app_colors.dart';
@@ -10,6 +11,9 @@ import 'package:mywatchlist/widgets/user/edit/edit_labels.dart';
 /// list status tokens (DailyAL's hues), and every badge over a cover stays
 /// readable in light, dark and black.
 void main() {
+  // NodeStatusValue reads the translated status labels.
+  setUpAll(() => S.load(const Locale('en')));
+
   final modes = <String, (Brightness, bool)>{
     'light': (Brightness.light, false),
     'dark': (Brightness.dark, false),
