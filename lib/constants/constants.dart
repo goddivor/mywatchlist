@@ -10,6 +10,7 @@ import 'package:mywatchlist/enums.dart' as enums show myAnimeStatusMap;
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/services/api/MAL/mal_anime.dart';
 import 'package:mywatchlist/widgets/common/custombutton.dart';
+import 'package:mywatchlist/widgets/common/app_colors.dart';
 
 import 'package:mywatchlist/widgets/loading/shimmercolor.dart';
 import 'package:mywatchlist/widgets/common/slivers.dart';
@@ -582,23 +583,6 @@ bool shouldUpdateContent(
   }
 }
 
-Color getStatusColor(int index) {
-  switch (index) {
-    case 0:
-      return Colors.green;
-    case 1:
-      return Colors.blue;
-    case 2:
-      return Colors.yellow;
-    case 3:
-      return Colors.red;
-    case 4:
-      return Colors.orange;
-    default:
-      return Colors.grey;
-  }
-}
-
 Widget loadingError() {
   return Center(
     child: Column(
@@ -904,23 +888,6 @@ String displayTimeAgo(DateTime date, {bool numericDates = true}) {
   }
 }
 
-int getStatusColorInt(int i) {
-  switch (i) {
-    case 0:
-      return Colors.green.toARGB32();
-    case 1:
-      return Colors.blue.toARGB32();
-    case 2:
-      return Colors.orange.toARGB32();
-    case 3:
-      return Colors.red.toARGB32();
-    case 4:
-      return Colors.brown.toARGB32();
-    default:
-      return Colors.grey.toARGB32();
-  }
-}
-
 enum TabType {
   Synopsis,
   Media,
@@ -958,7 +925,7 @@ Widget loadingGraph(BuildContext context) {
             height: height,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(8),
-              color: Theme.of(context).dividerColor,
+              color: AppColors.of(context).shimmerBase,
             ),
           );
         }),
@@ -992,29 +959,8 @@ Widget loadingInner() {
   );
 }
 
-Color getAnimeStatusColor(String? status) {
-  // Check if the status exists in the map
-  if (myAnimeStatusIntMap.containsKey(status) && status != null) {
-    // Get the index corresponding to the status
-    int index = myAnimeStatusIntMap[status]!;
-    // Use this index to get the corresponding color
-    return getStatusColor(index);
-  } else {
-    // If the status doesn't exist, return a default color (grey)
-    return Colors.grey;
-  }
-}
-
 /// Same as `myAnimeStatusMap` in `enums.dart` (labels translated at each read).
 Map<String, String> get myAnimeStatusMap => enums.myAnimeStatusMap;
-
-Map<String, int> myAnimeStatusIntMap = {
-  "watching": 0,
-  "completed": 1,
-  "on_hold": 2,
-  "dropped": 3,
-  "plan_to_watch": 4
-};
 
 Widget loadingCenter({
   double? width,
@@ -1028,7 +974,7 @@ Widget loadingCenter({
           height: containerSide,
           child: Container(
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: AppColors.of(context).shimmerBase,
               borderRadius: BorderRadius.circular(containerSide / 2),
             ),
           ),
@@ -1117,9 +1063,8 @@ Future<void> showToast(String message, {Toast? toast}) async {
   await Fluttertoast.showToast(
       gravity: ToastGravity.CENTER,
       msg: message,
-      toastLength: toast,
-      backgroundColor: Colors.black,
-      textColor: Colors.white);
+      // No colours: the system toast (dark pill, light text) in every theme.
+      toastLength: toast);
 }
 
 List<Widget> _yesOrNoButtons(BuildContext context) {

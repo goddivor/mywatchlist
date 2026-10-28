@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mywatchlist/generated/l10n.dart';
+import 'package:mywatchlist/widgets/common/app_colors.dart';
 
 /// Labels of the edit sheet, read from `S` at build time so a language change
 /// applies at once (the global status / score maps are English or frozen).
@@ -15,15 +16,11 @@ String statusLabel(String? status) => switch (status) {
       _ => S.current.Select,
     };
 
-/// Status colours of the app (`getStatusColor`), manga statuses included.
-Color statusColor(String? status) => switch (status) {
-      'watching' || 'reading' => Colors.green,
-      'completed' => Colors.blue,
-      'on_hold' => Colors.amber,
-      'dropped' => Colors.red,
-      'plan_to_watch' || 'plan_to_read' => Colors.orange,
-      _ => Colors.grey,
-    };
+/// Status colour of the app (the theme's status tokens, DailyAL's hues), manga
+/// statuses and other trackers' statuses included; no status = `outline`.
+Color statusColor(BuildContext context, String? status) =>
+    AppColors.of(context).statusOf(status)?.color ??
+    Theme.of(context).colorScheme.outline;
 
 /// MAL's name of a 1-10 score; [score] 0 means no score.
 String scoreLabel(int score) => switch (score) {

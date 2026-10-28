@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
+import 'package:mywatchlist/widgets/common/app_colors.dart';
 import 'package:mywatchlist/widgets/common/app_image.dart';
 
 /// Shows [child] with the shimmer effect only while [showShimmer] is true.
@@ -259,25 +260,13 @@ class ShimmerColors {
     required this.highlightColor,
   });
 
+  /// The theme's shimmer tokens (`AppColors.shimmerBase` / `shimmerHighlight`):
+  /// a grey of the surface family in light, dark and black.
   factory ShimmerColors.fromContext(BuildContext context) {
-    final theme = Theme.of(context);
-    final isLight = theme.brightness != Brightness.dark;
+    final tokens = AppColors.of(context);
     return ShimmerColors(
-      baseColor: isLight ? Colors.grey[200]! : theme.scaffoldBackgroundColor,
-      highlightColor: isLight
-          ? Colors.grey[100]!
-          : _lighten(theme.scaffoldBackgroundColor),
-    );
-  }
-
-  static Color _lighten(Color color, [int percent = 10]) {
-    assert(1 <= percent && percent <= 100);
-    var p = percent / 100;
-    return Color.fromARGB(
-      (color.a * 255).round(),
-      (color.r * 255).round() + ((255 - (color.r * 255).round()) * p).round(),
-      (color.g * 255).round() + ((255 - (color.g * 255).round()) * p).round(),
-      (color.b * 255).round() + ((255 - (color.b * 255).round()) * p).round(),
+      baseColor: tokens.shimmerBase,
+      highlightColor: tokens.shimmerHighlight,
     );
   }
 }

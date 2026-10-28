@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/pages/settings/settings_section.dart';
+import 'package:mywatchlist/screens/explore/explore_images.dart';
 import 'package:mywatchlist/screens/settings/prefs/pref_widgets.dart';
 import 'package:mywatchlist/screens/settings/storage_settings.dart';
 import 'package:mywatchlist/services/updater/release_service.dart';
@@ -168,11 +169,16 @@ class _AboutSettingsPageState extends State<AboutSettingsPage> {
               icon: Icons.description_outlined,
               title: S.current.Licenses,
               subtitle: S.current.Abt_Licenses_Desc,
-              onTap: () => showLicensePage(
-                context: context,
-                applicationName: 'MyWatchList',
-                applicationVersion: info == null ? null : '${info.version}+${info.buildNumber}',
-              ),
+              onTap: () {
+                // DailyAL's licence is listed even when Explore was never opened
+                // (main.dart is outside this unit; registering twice is a no-op).
+                ExploreImages.registerLicense();
+                showLicensePage(
+                  context: context,
+                  applicationName: 'MyWatchList',
+                  applicationVersion: info == null ? null : '${info.version}+${info.buildNumber}',
+                );
+              },
             ),
             SettingsActionTile(
               icon: Icons.gavel_rounded,

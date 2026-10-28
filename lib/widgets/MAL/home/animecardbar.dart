@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/services/api/MAL/mal_anime.dart';
 import 'package:mywatchlist/widgets/MAL/home/animegridcard.dart';
+import 'package:mywatchlist/widgets/common/app_colors.dart';
 import 'package:mywatchlist/widgets/common/score_reveal.dart';
 
 /// The bar under a comfortable card: mean score and members on the start side,
@@ -92,8 +93,8 @@ class AnimeCardBar extends StatelessWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.star_rounded,
-                      size: 15, color: Color(0xFFFFC107)),
+                  Icon(Icons.star_rounded,
+                      size: 15, color: AppColors.of(context).score.color),
                   const SizedBox(width: 3),
                   Text(
                     score > 0 ? ratingFormat.format(score) : '-',
@@ -134,9 +135,9 @@ class _StatusButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final background = nsv?.color ?? scheme.surfaceContainerHighest;
-    final foreground =
-        nsv?.color == null ? scheme.onSurfaceVariant : getTextColor(background);
+    final role = nsv?.role(context);
+    final background = role?.container ?? scheme.surfaceContainerHighest;
+    final foreground = role?.onContainer ?? scheme.onSurfaceVariant;
     final hasScore = score > 0 && !scoreHiddenOf(context);
     final label = nsv?.fullLabel;
     return Semantics(
@@ -199,7 +200,10 @@ class StatusBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = nsv.color ?? Colors.grey;
+    final scheme = Theme.of(context).colorScheme;
+    final role = nsv.role(context);
+    final color = role?.container ?? scheme.surfaceContainerHighest;
+    final foreground = role?.onContainer ?? scheme.onSurfaceVariant;
     return Semantics(
       label: nsv.fullLabel,
       excludeSemantics: nsv.fullLabel != null,
@@ -215,7 +219,8 @@ class StatusBadge extends StatelessWidget {
             child: Text(
               nsv.status ?? '',
               maxLines: 1,
-              style: TextStyle(fontSize: 11, color: getTextColor(color)),
+              style: TextStyle(
+                  fontSize: 11, fontWeight: FontWeight.bold, color: foreground),
             ),
           ),
         ),

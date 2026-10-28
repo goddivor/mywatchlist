@@ -281,7 +281,8 @@ class _DayChip extends StatelessWidget {
       button: true,
       label: '${DateFormat.EEEE(locale).format(day.date)} ${day.date.day}, $count',
       child: Material(
-        color: isSelected ? scheme.primary : Colors.transparent,
+        type: isSelected ? MaterialType.canvas : MaterialType.transparency,
+        color: isSelected ? scheme.primary : null,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(14),
           side: isToday && !isSelected ? BorderSide(color: scheme.primary) : BorderSide.none,
@@ -294,11 +295,19 @@ class _DayChip extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
-                  isToday ? S.current.Cal_Today : DateFormat.E(locale).format(day.date),
-                  style: textTheme.labelSmall?.copyWith(color: muted),
-                  maxLines: 1,
-                  overflow: TextOverflow.clip,
+                // Long day names ("Aujourd'hui", "Donnerstag") shrink to the
+                // pill's width instead of being cut.
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 3),
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      isToday ? S.current.Cal_Today : DateFormat.E(locale).format(day.date),
+                      style: textTheme.labelSmall?.copyWith(color: muted),
+                      maxLines: 1,
+                      softWrap: false,
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 2),
                 Text('${day.date.day}', style: textTheme.titleMedium?.copyWith(color: fg, fontWeight: FontWeight.w700)),

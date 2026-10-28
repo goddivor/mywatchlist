@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mywatchlist/widgets/common/app_colors.dart';
 import 'package:mywatchlist/cache/bookmarks.dart';
 import 'package:mywatchlist/constants/constants.dart' show AccountType;
 import 'package:mywatchlist/generated/l10n.dart';
@@ -65,8 +66,8 @@ class BookmarkCard extends StatelessWidget {
                       iconSize: 18,
                       tooltip: S.current.Kit_Remove_Bookmark,
                       style: IconButton.styleFrom(
-                        backgroundColor: colors.scrim.withValues(alpha: 0.55),
-                        foregroundColor: Colors.white,
+                        backgroundColor: AppColors.of(context).imageScrim,
+                        foregroundColor: AppColors.of(context).onImageScrim,
                       ),
                       onPressed: onRemove,
                       icon: const Icon(Icons.bookmark),

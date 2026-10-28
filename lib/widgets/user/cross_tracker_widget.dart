@@ -3,6 +3,7 @@ import 'package:mywatchlist/constants/constants.dart';
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/services/tracker_sync_service.dart';
 import 'package:mywatchlist/user/user_manager.dart';
+import 'package:mywatchlist/widgets/common/app_colors.dart';
 import 'package:mywatchlist/widgets/user/edit/edit_labels.dart';
 import 'package:mywatchlist/widgets/user/sync/cross_tracker_controller.dart';
 import 'package:mywatchlist/widgets/user/sync/sync_dialog.dart';
@@ -452,18 +453,21 @@ class _StatusChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = statusColor(status);
+    final scheme = Theme.of(context).colorScheme;
+    final role = AppColors.of(context).statusOf(status);
+    // Theme status chip: solid status colour, bold `onContainer` text (≥ 3:1
+    // in light, dark and black); unknown status = neutral tonal chip.
     return Container(
       margin: const EdgeInsetsDirectional.only(end: 2),
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.2),
+        color: role?.container ?? scheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(8),
       ),
       child: Text(
         statusLabel(status),
         style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: color,
+              color: role?.onContainer ?? scheme.onSurfaceVariant,
               fontWeight: FontWeight.bold,
             ),
       ),

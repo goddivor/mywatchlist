@@ -11,6 +11,7 @@ import 'package:mywatchlist/services/api/MAL/mal_api.dart';
 import 'package:mywatchlist/user/list_cache/list_status_cache.dart';
 import 'package:mywatchlist/user/preferences/preferences.dart';
 import 'package:mywatchlist/widgets/MAL/home/animecardbar.dart';
+import 'package:mywatchlist/widgets/common/app_colors.dart';
 import 'package:mywatchlist/widgets/common/app_image.dart';
 import 'package:mywatchlist/widgets/common/dub_icon.dart';
 import 'package:mywatchlist/widgets/common/image_preview.dart';
@@ -404,7 +405,7 @@ class AnimeGridCard extends StatelessWidget {
                       _compactLayer(context, title, entry, edit),
                 )
               : _compactLayer(context, title, null, null),
-        if (time != null) _timeCard(time),
+        if (time != null) _timeCard(context, time),
         if (!_coverOnly) _badges(context, topInset, compact),
         if (category == 'anime' && onClose == null)
           PositionedDirectional(
@@ -448,11 +449,7 @@ class AnimeGridCard extends StatelessWidget {
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.vertical(
                     bottom: Radius.circular(borderRadius)),
-                gradient: const LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [Color(0x00000000), Color(0xD9000000)],
-                ),
+                gradient: AppColors.of(context).bottomScrimGradient,
               ),
             ),
           ),
@@ -468,6 +465,9 @@ class AnimeGridCard extends StatelessWidget {
                 painter: _ProgressPainter(
                   watched: watched,
                   aired: aired,
+                  track: AppColors.of(context).onImageScrim.withValues(alpha: 0.4),
+                  airedColor: AppColors.of(context).score.container,
+                  watchedColor: AppColors.of(context).completed.container,
                   direction: Directionality.of(context),
                 ),
               ),
@@ -489,8 +489,8 @@ class AnimeGridCard extends StatelessWidget {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       textAlign: TextAlign.start,
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: AppColors.of(context).onImageScrim,
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
                         height: 1.2,
@@ -513,7 +513,8 @@ class AnimeGridCard extends StatelessWidget {
     );
   }
 
-  Widget _timeCard(String time) {
+  Widget _timeCard(BuildContext context, String time) {
+    final tokens = AppColors.of(context);
     return PositionedDirectional(
       top: 0,
       start: 0,
@@ -522,7 +523,7 @@ class AnimeGridCard extends StatelessWidget {
       child: IgnorePointer(
         child: DecoratedBox(
           decoration: BoxDecoration(
-            color: const Color(0x80000000),
+            color: tokens.imageScrim,
             borderRadius:
                 BorderRadius.vertical(top: Radius.circular(borderRadius)),
           ),
@@ -534,7 +535,7 @@ class AnimeGridCard extends StatelessWidget {
                 child: Text(
                   time,
                   maxLines: 1,
-                  style: const TextStyle(color: Colors.white, fontSize: 10),
+                  style: TextStyle(color: tokens.onImageScrim, fontSize: 10),
                 ),
               ),
             ),
@@ -564,7 +565,7 @@ class AnimeGridCard extends StatelessWidget {
           radius: borderRadius,
           semantics: S.current.Card_Favorites_Count(favorites!),
           icon: Icons.favorite,
-          iconColor: Colors.redAccent,
+          iconColor: AppColors.of(context).dropped.container,
           text: userCountFormat.format(favorites),
         ),
       if (numRecommendations != null)
@@ -572,7 +573,6 @@ class AnimeGridCard extends StatelessWidget {
           radius: borderRadius,
           semantics: S.current.Card_Recommendations_Count(numRecommendations!),
           icon: Icons.people,
-          iconColor: Colors.white,
           text: userCountFormat.format(numRecommendations),
         ),
     ];
@@ -717,9 +717,10 @@ class _Flat extends StatelessWidget {
 // Badges
 // ---------------------------------------------------------------------------
 
-const Color _badgeColor = Color(0x8C000000);
-const TextStyle _badgeText =
-    TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w500);
+/// Badges over a cover: the image scrim with its white text (readable on any
+/// picture, the same in light, dark and black).
+TextStyle _badgeText(AppColors tokens) => TextStyle(
+    color: tokens.onImageScrim, fontSize: 10, fontWeight: FontWeight.w500);
 
 /// Mean score and member count, each in its own text so a right-to-left
 /// language reorders the two parts as a whole instead of scrambling the digits
@@ -737,17 +738,19 @@ class ScoreMembersBadge extends StatelessWidget {
     final score = this.score;
     final members = this.members;
     final scoreText = score == null ? null : ratingFormat.format(score);
+    final tokens = AppColors.of(context);
+    final soft = tokens.onImageScrim.withValues(alpha: 0.75);
     final parts = <Widget>[
       if (scoreText != null)
         ScoreReveal(
           iconSize: 12,
-          iconColor: Colors.white70,
+          iconColor: soft,
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.star_rounded, size: 12, color: Color(0xFFFFC107)),
+              Icon(Icons.star_rounded, size: 12, color: tokens.score.container),
               const SizedBox(width: 2),
-              Text(scoreText, style: _badgeText),
+              Text(scoreText, style: _badgeText(tokens)),
             ],
           ),
         ),
@@ -755,9 +758,9 @@ class ScoreMembersBadge extends StatelessWidget {
         Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.people_alt_outlined, size: 11, color: Colors.white70),
+            Icon(Icons.people_alt_outlined, size: 11, color: soft),
             const SizedBox(width: 2),
-            Text(userCountFormat.format(members), style: _badgeText),
+            Text(userCountFormat.format(members), style: _badgeText(tokens)),
           ],
         ),
     ];
@@ -770,7 +773,7 @@ class ScoreMembersBadge extends StatelessWidget {
       excludeSemantics: true,
       child: DecoratedBox(
         decoration: BoxDecoration(
-          color: _badgeColor,
+          color: tokens.imageScrim,
           borderRadius: BorderRadius.circular(radius),
         ),
         child: Padding(
@@ -793,27 +796,28 @@ class ScoreMembersBadge extends StatelessWidget {
 class _Pill extends StatelessWidget {
   final double radius;
   final IconData icon;
-  final Color iconColor;
+  final Color? iconColor;
   final String text;
   final String semantics;
 
   const _Pill({
     required this.radius,
     required this.icon,
-    required this.iconColor,
+    this.iconColor,
     required this.text,
     required this.semantics,
   });
 
   @override
   Widget build(BuildContext context) {
+    final tokens = AppColors.of(context);
     return IgnorePointer(
       child: Semantics(
         label: semantics,
         excludeSemantics: true,
         child: DecoratedBox(
           decoration: BoxDecoration(
-            color: _badgeColor,
+            color: tokens.imageScrim,
             borderRadius: BorderRadius.circular(radius),
           ),
           child: Padding(
@@ -821,9 +825,9 @@ class _Pill extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(icon, size: 12, color: iconColor),
+                Icon(icon, size: 12, color: iconColor ?? tokens.onImageScrim),
                 const SizedBox(width: 3),
-                Text(text, style: _badgeText),
+                Text(text, style: _badgeText(tokens)),
               ],
             ),
           ),
@@ -844,15 +848,16 @@ class _CloseButton extends StatelessWidget {
       label: S.current.Card_Remove,
       excludeSemantics: true,
       child: Material(
-        color: _badgeColor,
+        color: AppColors.of(context).imageScrim,
         shape: const CircleBorder(),
         child: InkWell(
           customBorder: const CircleBorder(),
           onTap: onPressed,
-          child: const SizedBox(
+          child: SizedBox(
             width: 28,
             height: 28,
-            child: Icon(Icons.close, size: 16, color: Colors.white),
+            child: Icon(Icons.close,
+                size: 16, color: AppColors.of(context).onImageScrim),
           ),
         ),
       ),
@@ -879,8 +884,10 @@ class CardEditButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final background = nsv?.color ?? const Color(0x99000000);
-    final foreground = nsv?.color == null ? Colors.white : getTextColor(background);
+    final tokens = AppColors.of(context);
+    final role = nsv?.role(context);
+    final background = role?.container ?? tokens.imageScrim;
+    final foreground = role?.onContainer ?? tokens.onImageScrim;
     final hasScore = score > 0 && !scoreHiddenOf(context);
     final status = nsv?.fullLabel;
     return Semantics(
@@ -920,17 +927,24 @@ class CardEditButton extends StatelessWidget {
   }
 }
 
-/// Aired (amber) and watched (blue) episodes on a thin track, drawn with plain
-/// rounded rectangles: no clip, no progress indicator widget per card.
+/// Aired (score amber) and watched (completed blue) episodes on a thin track,
+/// drawn with plain rounded rectangles: no clip, no progress indicator widget
+/// per card. Colours come from the theme tokens.
 class _ProgressPainter extends CustomPainter {
   final double watched;
   final double? aired;
   final TextDirection direction;
+  final Color track;
+  final Color airedColor;
+  final Color watchedColor;
 
   const _ProgressPainter({
     required this.watched,
     required this.aired,
     required this.direction,
+    required this.track,
+    required this.airedColor,
+    required this.watchedColor,
   });
 
   @override
@@ -945,14 +959,19 @@ class _ProgressPainter extends CustomPainter {
       );
     }
 
-    bar(1, const Color(0x66FFFFFF));
-    if (aired != null) bar(aired!, Colors.amber);
-    bar(watched, Colors.blue);
+    bar(1, track);
+    if (aired != null) bar(aired!, airedColor);
+    bar(watched, watchedColor);
   }
 
   @override
   bool shouldRepaint(_ProgressPainter old) =>
-      old.watched != watched || old.aired != aired || old.direction != direction;
+      old.watched != watched ||
+      old.aired != aired ||
+      old.direction != direction ||
+      old.track != track ||
+      old.airedColor != airedColor ||
+      old.watchedColor != watchedColor;
 }
 
 // ---------------------------------------------------------------------------
@@ -1059,8 +1078,11 @@ class NodeStatusValue {
 
   /// MAL's status word the value was built from.
   String? key;
+  /// The status chip colour (`AppColors.statusChips`), for callers without a
+  /// `BuildContext`; widgets use [role].
   Color? color;
   int? index;
+  ListStatusTone? tone;
 
   NodeStatusValue({this.status, this.color});
 
@@ -1115,13 +1137,21 @@ class NodeStatusValue {
         return;
     }
     key = word;
-    color = getStatusColor(index!);
+    tone = AppColors.toneOf(word);
+    color = tone == null ? null : AppColors.statusChips[tone!];
+  }
+
+  /// The theme role of this status (DailyAL's hue: `container` + white bold
+  /// `onContainer` for chips and buttons, `color` for marks); null when unknown.
+  AppColorRole? role(BuildContext context) {
+    final tone = this.tone;
+    return tone == null ? null : AppColors.of(context).status(tone);
   }
 }
 
-Color getTextColor(Color bgColor) {
-  return bgColor.computeLuminance() > 0.5 ? Colors.black : Colors.white;
-}
+/// Black or white, whichever reads best on [bgColor] (a colour that is not a
+/// theme role).
+Color getTextColor(Color bgColor) => readableOn(bgColor);
 
 class PriorityBadge {
   String? status;

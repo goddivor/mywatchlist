@@ -357,7 +357,6 @@ class _StorageSettingsPageState extends State<StorageSettingsPage> {
         _Summary(usage: usage, busy: _busy.contains('all'), onClear: idle ? _clearAll : null),
         PrefGroup(
           title: S.current.Sto_Section_Caches,
-          description: S.current.Sto_Section_Caches_Desc,
           children: [
             _CacheTile(
               icon: Icons.image_outlined,

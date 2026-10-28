@@ -99,23 +99,9 @@ class _ReviewSummaryEntryState extends State<ReviewSummaryEntry> {
                 Icon(Icons.auto_awesome, size: 20, color: scheme.onSecondaryContainer),
                 const SizedBox(width: 10),
                 Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        S.current.Social_AI_Summary,
-                        style: Theme.of(context).textTheme.labelLarge?.copyWith(color: scheme.onSecondaryContainer),
-                      ),
-                      Text(
-                        S.current.Social_AI_Summary_Hint,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context)
-                            .textTheme
-                            .bodySmall
-                            ?.copyWith(color: scheme.onSecondaryContainer.withValues(alpha: 0.8)),
-                      ),
-                    ],
+                  child: Text(
+                    S.current.Social_AI_Summary,
+                    style: Theme.of(context).textTheme.labelLarge?.copyWith(color: scheme.onSecondaryContainer),
                   ),
                 ),
                 Icon(Icons.chevron_right, color: scheme.onSecondaryContainer),

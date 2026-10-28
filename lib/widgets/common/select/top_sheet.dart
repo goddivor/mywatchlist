@@ -17,7 +17,7 @@ Future<T?> showTopSheet<T>({required BuildContext context, required Widget child
     useRootNavigator: true,
     barrierDismissible: true,
     barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
-    barrierColor: Colors.black54,
+    barrierColor: Theme.of(context).colorScheme.scrim.withValues(alpha: 0.54),
     transitionDuration: const Duration(milliseconds: 220),
     pageBuilder: (dialogContext, _, __) => SafeArea(
       child: Align(

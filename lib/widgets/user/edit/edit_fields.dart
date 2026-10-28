@@ -73,7 +73,7 @@ class StatusButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final color = statusColor(status);
+    final color = statusColor(context, status);
     return SizedBox(
       height: 48,
       width: double.infinity,
@@ -132,7 +132,7 @@ class StatusButton extends StatelessWidget {
                     width: 12,
                     height: 12,
                     decoration: BoxDecoration(
-                        color: statusColor(value), shape: BoxShape.circle),
+                        color: statusColor(ctx, value), shape: BoxShape.circle),
                   ),
                   title: Text(statusLabel(value)),
                   selected: value == status,

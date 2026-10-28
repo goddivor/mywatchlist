@@ -389,6 +389,9 @@ class _UserListViewState extends State<UserListView> with SingleTickerProviderSt
           titleSpacing: 0,
           toolbarHeight: kToolbarHeight + 8,
           title: widget.titleBuilder(context, _categorySwitch()),
+          // The home shell's sidebar is an end drawer: without a non-empty
+          // actions list Flutter adds its own ☰ next to the header's avatar.
+          actions: const [SizedBox.shrink()],
           bottom: PreferredSize(
             preferredSize: const Size.fromHeight(46 + 48),
             child: _ready ? _header(theme) : const SizedBox(height: 94),

@@ -306,18 +306,16 @@ class _GenresSheet extends StatelessWidget {
   }
 }
 
-/// A wide entry card of the Explore page (studios directory): icon, title, caption, chevron.
+/// A wide entry card of the Explore page (studios directory): icon, title, chevron.
 class ExploreEntryCard extends StatelessWidget {
   final IconData icon;
   final String title;
-  final String caption;
   final VoidCallback onTap;
 
   const ExploreEntryCard({
     super.key,
     required this.icon,
     required this.title,
-    required this.caption,
     required this.onTap,
   });
 
@@ -349,18 +347,8 @@ class ExploreEntryCard extends StatelessWidget {
                 ),
                 const SizedBox(width: 14),
                 Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(title,
-                          style: theme.textTheme.titleMedium
-                              ?.copyWith(fontWeight: FontWeight.w700)),
-                      const SizedBox(height: 2),
-                      Text(caption,
-                          style: theme.textTheme.bodySmall
-                              ?.copyWith(color: scheme.onSurfaceVariant)),
-                    ],
-                  ),
+                  child: Text(title,
+                      style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
                 ),
                 Icon(Icons.chevron_right_rounded, color: scheme.onSurfaceVariant),
               ],
@@ -380,7 +368,6 @@ class StudiosEntry extends StatelessWidget {
   Widget build(BuildContext context) => ExploreEntryCard(
         icon: Icons.business_rounded,
         title: S.current.Exp_Studios,
-        caption: S.current.Exp_Studios_Caption,
         onTap: () => AppRoutes.push<void>(context, const StudiosScreen()),
       );
 }
