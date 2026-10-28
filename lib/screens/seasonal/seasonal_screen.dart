@@ -5,6 +5,7 @@ import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/screens/explore/explore_widgets.dart';
 import 'package:mywatchlist/screens/seasonal/season_utils.dart';
 import 'package:mywatchlist/screens/seasonal/seasonal_data.dart';
+import 'package:mywatchlist/screens/weekly/weekly_schedule_screen.dart';
 import 'package:mywatchlist/user/preferences/preferences.dart';
 import 'package:mywatchlist/utils/app_routes.dart';
 import 'package:mywatchlist/widgets/common/app_colors.dart';
@@ -161,8 +162,9 @@ class _SeasonalScreenState extends State<SeasonalScreen> {
                 IconButton(
                   style: iconStyle,
                   tooltip: S.current.WeeklyAnime,
-                  onPressed: () => AppRoutes.openCalendar(context),
-                  icon: const Icon(Icons.calendar_month_rounded),
+                  onPressed: () =>
+                      AppRoutes.push<void>(context, WeeklyScheduleScreen(season: _season)),
+                  icon: const Icon(Icons.calendar_view_week_rounded),
                 ),
                 const SizedBox(width: 4),
               ],

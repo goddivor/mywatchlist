@@ -8,7 +8,6 @@ import 'package:mywatchlist/screens/explore/explore_data.dart';
 import 'package:mywatchlist/screens/seasonal/season_utils.dart';
 import 'package:mywatchlist/services/api/MAL/mal_api.dart';
 import 'package:mywatchlist/user/accounts/provider/account_manager_singleton.dart';
-import 'package:mywatchlist/user/preferences/content_preferences.dart' show TimezonePref;
 import 'package:mywatchlist/user/preferences/preferences.dart';
 import 'package:mywatchlist/widgets/common/list_sort_filter.dart';
 import 'package:mywatchlist/widgets/common/select/select_option.dart';
@@ -99,8 +98,7 @@ class WeeklyData {
         S.current.Others,
       ];
 
-  static String _capitalized(String s) =>
-      s.isEmpty ? s : s[0].toUpperCase() + s.substring(1);
+  static String _capitalized(String s) => s.isEmpty ? s : s[0].toUpperCase() + s.substring(1);
 
   /// Index of the tab of today in the time zone [pref].
   static int todayIndex(TimezonePref pref, [DateTime? now]) {
@@ -130,7 +128,8 @@ class WeeklyData {
   static bool get listKnown => AccountManagerSingleton().selectedAcc == AccountType.myanimelist;
 
   /// The list status facet (DailyAL's three-state "Not in list" included), then media types.
-  static List<ListFilterFacet> facets(Iterable<ListEntryView> entries, {required bool listKnown}) => [
+  static List<ListFilterFacet> facets(Iterable<ListEntryView> entries, {required bool listKnown}) =>
+      [
         if (listKnown)
           ListFilterFacet(
             key: statusFacet,
