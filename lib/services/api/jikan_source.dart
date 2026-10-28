@@ -107,6 +107,7 @@ class JikanSource {
 
   static final List<RegExp> _patterns = [
     for (final template in TenraiApi.paths)
-      RegExp('^${template.replaceAll(RegExp(r'\{[^}]+\}'), '[^/]+')}\$'),
+      if (!TenraiApi.keyOnlyPaths.contains(template))
+        RegExp('^${template.replaceAll(RegExp(r'\{[^}]+\}'), '[^/]+')}\$'),
   ];
 }

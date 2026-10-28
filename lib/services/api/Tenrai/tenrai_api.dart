@@ -146,6 +146,15 @@ class TenraiApi {
     '/stacks/{id}',
   ];
 
+  /// Paths that need a server key (`security: serverKey` in the spec).
+  static const List<String> keyOnlyPaths = [
+    '/anime/ids',
+    '/manga/ids',
+    '/characters/ids',
+    '/people/ids',
+    '/producers/ids',
+  ];
+
   Future<Map<String, dynamic>> _get(String path, [Map<String, String> query = const {}]) =>
       client.getJson(path, query);
 
@@ -427,6 +436,9 @@ class TenraiApi {
   }
 
   /// Get All Anime IDs: `GET /anime/ids` (`getAnimeIds`).
+  ///
+  /// Needs a Tenrai server key, which the app never ships: on the public tier it
+  /// throws [TenraiHttpError] 401 (listed for completeness, see [keyOnlyPaths]).
   Future<TenraiResponse> getAnimeIds({List<AnimeSearchQueryType>? type, AnimeSearchQueryStatus? status, List<AnimeSearchQueryRating>? rating, String? updatedAt, bool? sfw, bool? sfwStrict, String? include}) async {
     final b = await _get('/anime/ids', {
       if (type != null) 'type': type.map((e) => e.value).join(','),
@@ -693,6 +705,9 @@ class TenraiApi {
   }
 
   /// Get All Manga IDs: `GET /manga/ids` (`getMangaIds`).
+  ///
+  /// Needs a Tenrai server key, which the app never ships: on the public tier it
+  /// throws [TenraiHttpError] 401 (listed for completeness, see [keyOnlyPaths]).
   Future<TenraiResponse> getMangaIds({List<TenraiMangaType>? type, TenraiMangaStatus? status, String? updatedAt, bool? sfw, bool? sfwStrict, String? include}) async {
     final b = await _get('/manga/ids', {
       if (type != null) 'type': type.map((e) => e.value).join(','),
@@ -782,6 +797,9 @@ class TenraiApi {
   }
 
   /// Get All Character IDs: `GET /characters/ids` (`getCharactersIds`).
+  ///
+  /// Needs a Tenrai server key, which the app never ships: on the public tier it
+  /// throws [TenraiHttpError] 401 (listed for completeness, see [keyOnlyPaths]).
   Future<TenraiResponse> getCharacterIds() async {
     final b = await _get('/characters/ids');
     return TenraiResponse(b);
@@ -867,6 +885,9 @@ class TenraiApi {
   }
 
   /// Get All Person IDs: `GET /people/ids` (`getPeopleIds`).
+  ///
+  /// Needs a Tenrai server key, which the app never ships: on the public tier it
+  /// throws [TenraiHttpError] 401 (listed for completeness, see [keyOnlyPaths]).
   Future<TenraiResponse> getPeopleIds() async {
     final b = await _get('/people/ids');
     return TenraiResponse(b);
@@ -906,6 +927,9 @@ class TenraiApi {
   }
 
   /// Get All Producer IDs: `GET /producers/ids` (`getProducersIds`).
+  ///
+  /// Needs a Tenrai server key, which the app never ships: on the public tier it
+  /// throws [TenraiHttpError] 401 (listed for completeness, see [keyOnlyPaths]).
   Future<TenraiResponse> getProducerIds() async {
     final b = await _get('/producers/ids');
     return TenraiResponse(b);
