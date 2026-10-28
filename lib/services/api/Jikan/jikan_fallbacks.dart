@@ -8,7 +8,9 @@ import 'package:mywatchlist/services/api/Jikan/jikan_anime_character.dart' show 
 import 'package:mywatchlist/services/api/Jikan/jikan_anime_forum.dart';
 import 'package:mywatchlist/services/api/Jikan/jikan_anime_review.dart';
 import 'package:mywatchlist/services/api/Jikan/jikan_anime_staff.dart' as staff;
+import 'package:mywatchlist/services/api/Jikan/jikan_anime_news.dart' show AnimeNews;
 import 'package:mywatchlist/services/api/Jikan/jikan_client.dart';
+import 'package:mywatchlist/services/api/Jikan/mal_news_page.dart';
 import 'package:mywatchlist/services/api/MAL/mal_forum_api.dart';
 import 'package:mywatchlist/services/api/MAL/models/forum/forum_models.dart' show ForumTopicsData;
 import 'package:mywatchlist/services/api/mwl_api.dart';
@@ -146,9 +148,15 @@ class JikanFallbacks {
   static Future<ContentCharactersHtml?> Function(int id, String category)
       characters = _mwlCharacters;
 
+  /// News of one title from MyAnimeList's own page (`<category>/<id>/_/news`,
+  /// parsed on the device off the UI isolate); the page has no next pages.
+  static Future<List<AnimeNews>> Function(int id, String category) news =
+      MalNewsPage.fetch;
+
   /// Restores the real sources and timings (tests).
   @visibleForTesting
   static void reset() {
+    news = MalNewsPage.fetch;
     reviews = _mwlReviews;
     forum = _malForum;
     characters = _mwlCharacters;

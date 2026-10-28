@@ -6,16 +6,17 @@ import 'package:mywatchlist/screens/MAL/detail/sections/section_states.dart';
 import 'package:mywatchlist/screens/MAL/featured_screen.dart';
 import 'package:mywatchlist/services/api/Jikan/jikan_anime_news.dart';
 import 'package:mywatchlist/services/api/Jikan/jikan_api.dart';
+import 'package:mywatchlist/services/api/Jikan/jikan_fallbacks.dart';
 import 'package:mywatchlist/widgets/common/app_image.dart';
 import 'package:mywatchlist/widgets/loading/shimmercolor.dart';
 
 /// Loads one page of news of a title; replaceable in tests.
 typedef NewsPageLoader = Future<AnimeNewsResponse> Function(int id, String category, int page);
 
-/// News about a title (Jikan `news`), as a horizontal list of cards that loads
-/// the next page near its end. Always ends in content, an empty state or an
-/// error with Retry: Jikan down or slow (its client gives up after 12 s) never
-/// leaves the skeleton on screen.
+/// News about a title (Jikan `news`, raced against MyAnimeList's own news
+/// page), as a horizontal list of cards that loads the next page near its
+/// end. Always ends within about 12 s in content, an empty state or an error
+/// with Retry: Jikan down or slow never leaves the skeleton on screen.
 class ShowAnimeNews extends StatefulWidget {
   final int animeId;
   final String category;
@@ -23,13 +24,29 @@ class ShowAnimeNews extends StatefulWidget {
   const ShowAnimeNews({super.key, required this.animeId, this.category = "anime"});
 
   /// The source of the news pages (tests replace it with a fake).
-  static NewsPageLoader loader = _jikanNews;
+  static NewsPageLoader loader = _defaultNews;
+
+  /// Page 1 races Jikan against MyAnimeList's own news page
+  /// ([JikanFallbacks.race]: 3 s head start, 12 s cap). Next pages exist only
+  /// when Jikan answered (MAL's page lists everything at once), so they come
+  /// from Jikan.
+  static Future<AnimeNewsResponse> _defaultNews(int id, String category, int page) async {
+    if (page > 1) return _jikanNews(id, category, page);
+    final result = await JikanFallbacks.race<AnimeNewsResponse>(
+      jikan: () => _jikanNews(id, category, page),
+      fallback: () async => AnimeNewsResponse(
+        data: await JikanFallbacks.news(id, category),
+        pagination: Pagination(hasNextPage: false),
+      ),
+    );
+    return result.value;
+  }
 
   static Future<AnimeNewsResponse> _jikanNews(int id, String category, int page) =>
       JikanApi().getAnimeNews(id, page: page, category: category);
 
-  /// Restores the Jikan source (tests).
-  static void resetLoader() => loader = _jikanNews;
+  /// Restores the default source (tests).
+  static void resetLoader() => loader = _defaultNews;
 
   @override
   State<ShowAnimeNews> createState() => _ShowAnimeNewsState();
