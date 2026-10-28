@@ -262,3 +262,4 @@ Append-only, one line per decision: `- YYYY-MM-DD [unit] decision — why`. Earl
 - 2026-10-28 [owner] Explore cards (categories, genres) show DailyAL's pictures, bundled as app assets (MIT, credited) since our repo is private; character/seiyuu cards get a ♥ favourites badge.
 - 2026-10-28 [owner] Every search filter must return data without Jikan (MAL search-page fallback) and be live-verified; Explore gets a studios directory (name + logo, infinite scroll, tap = studio search).
 - 2026-10-28 [owner] Every search filter must return data without Jikan (MAL search-page fallback) and be live-verified; Explore gets a studios directory (name + logo, infinite scroll, tap = studio search).
+- 2026-10-28 [orchestrator] Auto (season) falls back to Brown (DailyAL default) for the collage or a gallery picture.

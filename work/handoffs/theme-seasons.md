@@ -6,6 +6,7 @@
 - `theme-colors` (Theme colours: status bar, coherent accents per theme, colour tokens, contrast)
 
 ## Owns (may create or edit ONLY these)
+- `test/units/theme-colors/theme_test.dart`
 - `lib/user/theme/**`
 - `lib/widgets/common/app_colors.dart`
 - `lib/screens/settings/theme_settings.dart`

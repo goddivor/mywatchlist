@@ -18,6 +18,7 @@ Plus `PROJECT-STATE.md` (rewrite in place, within its cap) and `docs/DECISIONS.m
 
 ## Goal
 - Restore can stop halfway (cachemanager.dart:433-436 does not validate each section's version): validate the whole file first (every section's version, shape), then write all sections or none, then reload; the preview counts must equal what is restored.
+- Add the theme-seasons pref key `accent_season_v1` to `BackupService.settingsKeys` so a restore keeps Auto (season).
 - about_settings.dart:44 never closes its http.Client.
 - Storage page sizes in the app locale ('115,4 Mo' in French, storage_settings.dart:90-100 uses toStringAsFixed).
 

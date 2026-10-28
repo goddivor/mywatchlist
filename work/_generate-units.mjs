@@ -639,7 +639,7 @@ const UNITS = [
   {
     id: "theme-seasons", title: "Seasonal accents like DailyAL (spring pink, summer deep orange, fall brown, winter light blue)", kind: "unit", priority: "P0", group: "settings", model: "opus", ui: true,
     needs: ["theme-colors"],
-    owns: ["lib/user/theme/**", "lib/widgets/common/app_colors.dart", "lib/screens/settings/theme_settings.dart", "docs/THEME.md"],
+    owns: ["test/units/theme-colors/theme_test.dart", "lib/user/theme/**", "lib/widgets/common/app_colors.dart", "lib/screens/settings/theme_settings.dart", "docs/THEME.md"],
     dal: ["lib/theme/themedata.dart:56-70 (season → accent)", "lib/theme/theme.dart (default Brown + Fall background)"],
     goal: [
       "Batch-4 check, owner wish 'DailyAL's pastel tone': MWL's default accent is Blue Grey (#607D8B, app_themes.dart:59) whatever the background, so chips, tabs and the nav pill stay grey-blue on a pink or orange background. DailyAL ties the accent to the season background (spring → pink, summer → deep orange, fall → brown, winter → light blue) and defaults to Brown + the Fall background.",
@@ -674,6 +674,7 @@ const UNITS = [
     owns: ["lib/cache/cachemanager.dart", "lib/screens/settings/backup_settings.dart", "lib/screens/settings/about_settings.dart", "lib/screens/settings/storage_settings.dart"],
     goal: [
       "Restore can stop halfway (cachemanager.dart:433-436 does not validate each section's version): validate the whole file first (every section's version, shape), then write all sections or none, then reload; the preview counts must equal what is restored.",
+      "Add the theme-seasons pref key `accent_season_v1` to `BackupService.settingsKeys` so a restore keeps Auto (season).",
       "about_settings.dart:44 never closes its http.Client.",
       "Storage page sizes in the app locale ('115,4 Mo' in French, storage_settings.dart:90-100 uses toStringAsFixed).",
     ],
