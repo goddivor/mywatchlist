@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:mywatchlist/constants/constants.dart' show AccountType, TitleLang;
+import 'package:mywatchlist/screens/user_profile/user_profile_data.dart';
 import 'package:mywatchlist/services/api/Jikan/jikan_client.dart';
 import 'package:mywatchlist/services/api/MAL/mal_api.dart';
 import 'package:mywatchlist/services/api/MAL/mal_connect.dart';
@@ -11,6 +12,7 @@ import 'package:mywatchlist/services/api/MAL/models/my_anime_list_status.dart'
     as anime_status;
 import 'package:mywatchlist/services/api/MAL/models/my_manga_list_status.dart'
     as manga_status;
+import 'package:mywatchlist/services/api/MAL/user_anime_statistics.dart' show ListStats;
 import 'package:mywatchlist/user/preferences/preferences.dart';
 import 'package:mywatchlist/user/user_mal_v2.dart';
 import 'package:mywatchlist/utils/app_routes.dart';
@@ -32,25 +34,46 @@ class MalListError implements Exception {
   String toString() => 'MalListError($statusCode)';
 }
 
-/// The signed-in user's MyAnimeList lists (`GET users/@me/animelist|mangalist`).
+/// Manga entry counts of a MyAnimeList user, or null when unknown.
+typedef MangaStatsSource = Future<ListStats?> Function(String username);
+
+/// The manga numbers of a profile: MAL's own profile page raced with Jikan by
+/// [UserProfileRepository] (cached one hour), so they come without Jikan.
+Future<ListStats?> profileMangaStats(String username) async {
+  final data = await UserProfileRepository.instance.load(username);
+  return data.manga.isEmpty ? null : data.manga;
+}
+
+/// The MyAnimeList lists of the signed-in user (`GET users/@me/animelist|mangalist`), or of
+/// another user when [username] is given (`users/<name>/…`, read with the client id when no
+/// MAL account is signed in).
 class MalUserListAdapter extends UserListAdapter {
   MalUserListAdapter({
+    this.username,
     Future<http.Response> Function(String url)? get,
     Future<http.Response> Function(Uri url)? jikanGet,
+    MangaStatsSource? mangaStats,
     ListEntryService? entryService,
     String? Function()? owner,
     DateTime Function()? clock,
   })  : _get = get ?? MalApi.authorizedGet,
         _jikanGet = jikanGet ?? JikanClient.instance.get,
+        // An injected Jikan getter alone tests the Jikan path: no profile source then.
+        _mangaStats = mangaStats ?? (jikanGet == null ? profileMangaStats : null),
         _entryService = entryService ?? const MalListEntryService(),
-        _owner = owner ?? (() => UserMalV2.instance.username),
+        _owner = owner ?? (() => username ?? UserMalV2.instance.username),
         _clock = clock ?? DateTime.now;
 
+  /// Another user's name; null = the signed-in user.
+  final String? username;
   final Future<http.Response> Function(String url) _get;
   final Future<http.Response> Function(Uri url) _jikanGet;
+  final MangaStatsSource? _mangaStats;
   final ListEntryService _entryService;
   final String? Function() _owner;
   final DateTime Function() _clock;
+
+  bool get isSelf => username == null;
 
   /// Node fields asked for each entry (everything the cards, sorts and filters use).
   static const String nodeFields = 'id,title,main_picture,alternative_titles,mean,'
@@ -100,6 +123,7 @@ class MalUserListAdapter extends UserListAdapter {
     required int offset,
     required int limit,
     String? sort,
+    String? username,
   }) {
     final isAnime = category == 'anime';
     final query = <String>[
@@ -108,8 +132,11 @@ class MalUserListAdapter extends UserListAdapter {
       'offset=$offset',
       if (status != null) 'status=${status.malValue(isAnime: isAnime)}',
       if (sort != null) 'sort=$sort',
+      // Another user's adult entries stay in their list, as on the own list (counts match).
+      if (username != null) 'nsfw=1',
     ];
-    return '${MalApi.userBaseEndPoint}/@me/${isAnime ? 'animelist' : 'mangalist'}?${query.join('&')}';
+    final who = username == null ? '@me' : Uri.encodeComponent(username);
+    return '${MalApi.userBaseEndPoint}/$who/${isAnime ? 'animelist' : 'mangalist'}?${query.join('&')}';
   }
 
   @override
@@ -126,6 +153,7 @@ class MalUserListAdapter extends UserListAdapter {
       offset: offset,
       limit: limit.clamp(1, maxPageSize),
       sort: apiSort,
+      username: username,
     );
     final response = await _get(url);
     if (response.statusCode == 401 && MalApi.sessionExpired.value) {
@@ -142,6 +170,11 @@ class MalUserListAdapter extends UserListAdapter {
   @override
   Future<Map<ListEntryStatus, int>?> statusCounts(String category) async {
     try {
+      if (!isSelf) {
+        // Another user: the numbers of their profile (official API has no statistics for them).
+        final data = await UserProfileRepository.instance.load(username);
+        return countsOf(category == 'anime' ? data.anime : data.manga);
+      }
       if (category == 'anime') {
         final response =
             await _get('${MalApi.userBaseEndPoint}/@me?fields=anime_statistics');
@@ -157,9 +190,18 @@ class MalUserListAdapter extends UserListAdapter {
           ListEntryStatus.planned: at('num_items_plan_to_watch'),
         };
       }
-      // MAL's API has no manga statistics; Jikan reads them from the profile.
+      // MAL's API has no manga statistics: MAL's profile page (raced with Jikan), then Jikan.
       final name = owner;
       if (name == null || name.isEmpty) return null;
+      final source = _mangaStats;
+      if (source != null) {
+        try {
+          final stats = await source(name);
+          if (stats != null) return countsOf(stats);
+        } catch (e) {
+          debugPrint('MalUserListAdapter.statusCounts (profile): $e');
+        }
+      }
       final response = await _jikanGet(Uri.parse(
           'https://api.jikan.moe/v4/users/${Uri.encodeComponent(name)}/statistics'));
       if (response.statusCode != 200) return null;
@@ -178,6 +220,15 @@ class MalUserListAdapter extends UserListAdapter {
       return null;
     }
   }
+
+  /// Entry counts per status of a profile's [stats].
+  static Map<ListEntryStatus, int> countsOf(ListStats stats) => {
+        ListEntryStatus.current: stats.current,
+        ListEntryStatus.completed: stats.completed,
+        ListEntryStatus.onHold: stats.onHold,
+        ListEntryStatus.dropped: stats.dropped,
+        ListEntryStatus.planned: stats.planned,
+      };
 
   @override
   void open(BuildContext context, ListEntryView entry) {
@@ -224,8 +275,9 @@ class MalUserListAdapter extends UserListAdapter {
     return const ListEditUnchanged();
   }
 
+  /// Another user's list is read only.
   @override
-  bool canStep(ListEntryView entry) => entry.status != null;
+  bool canStep(ListEntryView entry) => isSelf && entry.status != null;
 
   @override
   Future<ListEntryView> step(ListEntryView entry, int delta) async {

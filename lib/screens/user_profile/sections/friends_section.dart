@@ -130,10 +130,12 @@ class _FriendTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final s = S.of(context);
     final theme = Theme.of(context);
-    final locale = Localizations.localeOf(context).toString();
     final lastSeen = friend.lastSeenAt != null ? _ago(s, friend.lastSeenAt!) : friend.lastOnline;
+    // Two-line row like DailyAL's (name, then one meta line): the friendship date is a
+    // date only and shares the last-seen line instead of adding a third one.
     final since = friend.friendsSinceAt != null
-        ? DateFormat.yMMMd(locale).format(friend.friendsSinceAt!)
+        ? DateFormat.yMMMd(Localizations.localeOf(context).toString())
+            .format(friend.friendsSinceAt!)
         : friend.friendsSince;
     final lines = [
       if (lastSeen != null) s.Prof_Last_Seen(lastSeen),
@@ -158,8 +160,7 @@ class _FriendTile extends StatelessWidget {
       title: Text(friend.username, maxLines: 1, overflow: TextOverflow.ellipsis),
       subtitle: lines.isEmpty
           ? null
-          : Text(lines.join('\n'), maxLines: 2, overflow: TextOverflow.ellipsis),
-      isThreeLine: lines.length > 1,
+          : Text(lines.join(' · '), maxLines: 1, overflow: TextOverflow.ellipsis),
       onTap: () => AppRoutes.openUserProfile(
         context,
         tracker: AccountType.myanimelist,

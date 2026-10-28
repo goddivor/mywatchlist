@@ -45,7 +45,6 @@ class ClubsSection extends StatelessWidget {
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
-              trailing: const Icon(Icons.chevron_right),
               onTap: () => gotoPage(
                 context: context,
                 newPage: ClubScreen(clubHtml: club),

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:mywatchlist/constants/constants.dart' show AccountType, showToast;
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/screens/user_profile/user_profile_data.dart';
+import 'package:mywatchlist/screens/user_profile/user_profile_view.dart' show UserProfileTab;
 import 'package:mywatchlist/utils/app_routes.dart';
 import 'package:mywatchlist/utils/web_launcher.dart';
 import 'package:mywatchlist/widgets/common/app_colors.dart';
@@ -119,6 +120,7 @@ class _UserPopSheetState extends State<UserPopSheet> {
       context,
       tracker: AccountType.myanimelist,
       username: _isSelf ? null : data.username,
+      tab: _isSelf ? UserProfileTab.stats : UserProfileTab.list,
     );
   }
 
@@ -210,8 +212,9 @@ class _UserPopSheetState extends State<UserPopSheet> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 FilledButton.icon(
+                  // Another user's profile opens on their list (DailyAL's pop-up shows it).
                   onPressed: () => _openFull(data),
-                  icon: const Icon(Icons.person_outline),
+                  icon: Icon(_isSelf ? Icons.person_outline : Icons.view_list_rounded),
                   label: Text(s.Prof_Open_Full),
                 ),
                 const SizedBox(height: 8),
@@ -234,16 +237,6 @@ class _UserPopSheetState extends State<UserPopSheet> {
                           )
                         : Icon(hasBackground ? Icons.hide_image_outlined : Icons.image_outlined),
                     label: Text(hasBackground ? s.Prof_Bg_Remove : s.Prof_Bg_Set),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.only(top: 6),
-                    child: Text(
-                      s.Prof_Bg_Local_Note,
-                      textAlign: TextAlign.center,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
                   ),
                 ] else if (data.id != 0) ...[
                   const SizedBox(height: 8),
