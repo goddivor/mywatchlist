@@ -222,7 +222,8 @@ void main() {
     });
 
     test('a background change does not rebuild the theme data', () async {
-      final bloc = await loaded();
+      // An explicit accent: in "Auto (season)" (theme-seasons) the accent follows the picture.
+      final bloc = await loaded(values: {ThemeBloc.keySeedColor: AppThemes.defaultSeedColor.toARGB32()});
       final light = bloc.state.lightThemeData;
       bloc.add(const ThemeBackgroundChanged(
         backgroundImagePath: 'assets/images/spring.jpg',

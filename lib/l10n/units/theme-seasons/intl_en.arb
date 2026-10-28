@@ -1,0 +1,14 @@
+{
+  "@@locale": "en",
+  "Theme_Mode_Light": "Light",
+  "Theme_Accent_Season": "Auto (season)",
+  "Theme_Accent_Season_Label": "Auto (season): follows the background picture",
+  "Theme_Accent_Tip": "The accent colors the whole app. Auto (season) takes the color of the background's season; the wallpaper swatch follows your wallpaper (Android 12 or later).",
+  "Theme_Accent_Now_Spring": "Spring background: pink accent",
+  "Theme_Accent_Now_Summer": "Summer background: deep orange accent",
+  "Theme_Accent_Now_Fall": "Fall background: brown accent",
+  "Theme_Accent_Now_Winter": "Winter background: light blue accent",
+  "Theme_Accent_Now_Other": "Background without a season: brown accent",
+  "Theme_Accent_Now_Wallpaper": "Accent taken from your wallpaper",
+  "Theme_Accent_Now_Fixed": "Your color stays, whatever the background"
+}
