@@ -8,10 +8,24 @@ Owned by the `theme-colors` unit. Every screen builds on this: **no `Colors.*` a
 
 - `ThemeBloc` (lib/user/theme/) holds the accent, the mode, the font and the home background.
   `ThemeState.lightThemeData` / `darkThemeData` are built by `AppThemes.generateThemeData`.
-- Accent sources: one of the 19 presets (`AppThemes.predefinedColors`), a custom colour from
-  the picker (saved in `custom_seed_colors_v1`), or Material You "Auto"
-  (`dynamic_color_v1`): the system accent read with `DynamicColorPlugin.getAccentColor()`
-  (Android 12+). Without a system accent the Auto swatch is hidden and the chosen accent stays.
+- Accent sources (`ThemeState.resolveSeed`, first match wins):
+  1. Material You (`dynamic_color_v1`): the system accent read with
+     `DynamicColorPlugin.getAccentColor()` (Android 12+). Without a system accent its swatch is
+     hidden and the next source applies.
+  2. "Auto (season)" (`accent_season_v1`, theme-seasons, the default): the accent follows the
+     season of the home background picture, as DailyAL's season themes did
+     (`AppThemes.seasonAccents`): spring → Pink `#E91E63`, summer → Deep Orange `#FF5722`,
+     fall → Brown `#795548`, winter → Light Blue `#03A9F4`; a picture without a season (collage,
+     gallery image) gives Brown. Hiding the picture keeps the chosen picture's accent. In this
+     mode a background change rebuilds the theme data when the season's accent differs.
+  3. The picked preset (`AppThemes.predefinedColors`) or custom colour (`seed_color`, custom
+     swatches in `custom_seed_colors_v1`). Picking any preset, custom colour or Material You
+     turns "Auto (season)" off; removing the selected custom colour turns it back on.
+- New install: DailyAL's default theme, Fall background (`AppThemes.defaultBackground`) with
+  its Brown accent (`AppThemes.defaultSeedColor`) through "Auto (season)".
+- Settings saved before theme-seasons (no `accent_season_v1`): an explicit accent is kept
+  (`seed_color` saved, even the former Blue Grey default, or Material You on); otherwise the
+  accent was never chosen and follows the season. No saved background means the Fall picture.
 - Modes: `auto` (follows the device), `light`, `dark`, `black` (dark with true-black page).
 
 ## Colour scheme (`AppThemes.colorScheme`)
