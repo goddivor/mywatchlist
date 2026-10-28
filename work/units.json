@@ -1460,6 +1460,7 @@
         "deep-links"
       ],
       "owns": [
+        "lib/services/updater/update_controller.dart",
         "lib/l10n/units/*/intl_fr_FR.arb",
         "lib/l10n/intl_fr_FR.arb",
         "lib/l10n/intl_ar_EG.arb",

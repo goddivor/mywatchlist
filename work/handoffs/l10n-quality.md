@@ -50,6 +50,7 @@
 - `deep-links` (Open myanimelist.net links in the app)
 
 ## Owns (may create or edit ONLY these)
+- `lib/services/updater/update_controller.dart`
 - `lib/l10n/units/*/intl_fr_FR.arb`
 - `lib/l10n/intl_fr_FR.arb`
 - `lib/l10n/intl_ar_EG.arb`
@@ -59,6 +60,7 @@
 Plus `PROJECT-STATE.md` (rewrite in place, within its cap) and `docs/DECISIONS.md` (append one line per decision). Anything else you need is a FINDING to report, never an edit.
 
 ## Goal
+- Update dialog download sizes: replace the duplicated English-only formatBytes in lib/services/updater/update_controller.dart with the shared locale-aware one from storage_settings.dart (backup-fixes PR #175).
 - The base ARB files are DailyAL's machine-quality translations. Review intl_fr_FR.arb entirely: fix mistranslations (e.g. `About` = « Sur » → « À propos »), untranslated entries (Spanish, German, Indonesian at :595-598), capitalisation (« turc » next to « Portugais », :856), French typography (non-breaking space before : ; ! ?, « » quotes, no em dash). The French must be flawless: follow the redaction-francais rules if available to you.
 - Base French (detail-header finding): `Close` = « proche » → « Fermer », `Pictures` = « Des photos » → « Images », `Aired` and `Users` untranslated. Base French: `Streaming_Platforms` has a stray trailing comma (« Plateformes de streaming, »). Base French fixes seen on the settings hub (batch-2 check): `About` = « Sur » (intl_fr_FR.arb:154) → « À propos »; `Dub_Settings` = « Signaler les doublages inexacts » (:685) → « Doublage ». Add the missing French fragments of merged units that shipped English only (e.g. lib/l10n/units/perf-foundation/: Image_Saved, Image_Save_Failed, Image_Share_Failed, Image_Share_Text) — scan every lib/l10n/units/*/ for keys without intl_fr_FR.
 - Batch-4 French list: rankings « Tous les favoris de temps », « Top ça », « Top téléviseurs », « Haut ELLE » (Top ONA), « Top Airing Anime » untranslated; genres « action » lowercase, « Récompensé Gagnant », « Les filles aiment », « SLICE OF LIFE », « Des sports », « Le suspense », « Supernatural »; theme chips « Chuté », « Complété », « En train de regarder »; settings « Sauvegarde sur le cloud » (it is a local JSON file), « Signaler les doublages inexacts » as dub settings title, « …le taux et l'examen » under About; « Sur » (About).
