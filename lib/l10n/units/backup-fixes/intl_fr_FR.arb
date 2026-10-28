@@ -1,0 +1,10 @@
+{
+  "@@locale": "fr_FR",
+  "Bkp_Bad_Section": "La partie « {section} » de ce fichier est abîmée. Rien n’a été restauré.",
+  "@Bkp_Bad_Section": { "placeholders": { "section": { "type": "String" } } },
+  "Sto_Unit_B": "o",
+  "Sto_Unit_KB": "Ko",
+  "Sto_Unit_MB": "Mo",
+  "Sto_Unit_GB": "Go",
+  "Sto_Unit_TB": "To"
+}

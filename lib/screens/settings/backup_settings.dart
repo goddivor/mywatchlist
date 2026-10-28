@@ -45,6 +45,11 @@ class _BackupRestoreSettingsPageState extends State<BackupRestoreSettingsPage> {
       ..showSnackBar(SnackBar(content: Text(message)));
   }
 
+  String _badSection(BackupSectionException e) => e.tooNew
+      ? S.current.Bkp_Too_New
+      : S.current.Bkp_Bad_Section(
+          e.section == 'notes' ? S.current.Bkp_Item_Notes : S.current.Bkp_Item_Bookmarks);
+
   Future<String> _build() async {
     String? version;
     try {
@@ -105,6 +110,10 @@ class _BackupRestoreSettingsPageState extends State<BackupRestoreSettingsPage> {
           bundle = raw.length > 200 * 1024
               ? await compute(BackupService.parse, raw)
               : BackupService.parse(raw);
+        } on BackupSectionException catch (e) {
+          if (!mounted) return;
+          _say(_badSection(e));
+          return;
         } on FormatException catch (e) {
           if (!mounted) return;
           _say(e.message.contains('newer') ? S.current.Bkp_Too_New : S.current.Bkp_Not_A_Backup);
@@ -136,6 +145,8 @@ class _BackupRestoreSettingsPageState extends State<BackupRestoreSettingsPage> {
           );
           if (!mounted) return;
           await _showDone(result);
+        } on BackupSectionException catch (e) {
+          if (mounted) _say(_badSection(e));
         } catch (e) {
           debugPrint('Restore failed: $e');
           if (mounted) _say(S.current.Bkp_Restore_Failed);
