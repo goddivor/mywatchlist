@@ -54,15 +54,18 @@ String? statusLabel(String? status) => switch (status) {
       _ => null,
     };
 
-/// One episode of the day: cover, title, episode, time, countdown, the user's
-/// list status (highlighted when watching or planned) and an add-to-calendar button.
+/// One episode of the week, laid out like DailyAL's calendar row: round cover
+/// with the air time under it, the title, the episode and its countdown, the
+/// user's list status and an add-to-calendar button (hidden once aired).
 class EpisodeTile extends StatelessWidget {
   final CalendarEntry entry;
   final TimezonePref timezone;
   final SecondsClock clock;
   final bool showStatus;
   final VoidCallback onOpen;
-  final VoidCallback onAddToCalendar;
+
+  /// Null hides the button (an episode that already aired).
+  final VoidCallback? onAddToCalendar;
 
   const EpisodeTile({
     super.key,
@@ -71,80 +74,100 @@ class EpisodeTile extends StatelessWidget {
     required this.clock,
     required this.showStatus,
     required this.onOpen,
-    required this.onAddToCalendar,
+    this.onAddToCalendar,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-    final highlighted = showStatus && entry.isHighlighted;
     final shown = inTimezone(entry.airingAt, timezone);
-    final time = DateFormat('HH:mm').format(shown);
+    final time = '${DateFormat('HH:mm').format(shown)} ${timezoneLabel(timezone)}';
     final label = showStatus ? statusLabel(entry.listStatus) : null;
     final episode = entry.numEpisodes == null
         ? S.current.Cal_Episode_Short(entry.episode)
         : S.current.Cal_Episode_Of_Total(entry.episode, entry.numEpisodes!);
-    final secondary = theme.textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant);
+    final small = theme.textTheme.labelSmall?.copyWith(color: scheme.onSurfaceVariant);
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      child: Material(
-        color: highlighted ? scheme.primaryContainer.withValues(alpha: 0.45) : scheme.surfaceContainerLow,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: highlighted ? BorderSide(color: scheme.primary.withValues(alpha: 0.6)) : BorderSide.none,
-        ),
-        child: InkWell(
-          customBorder: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          onTap: onOpen,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(10, 10, 4, 10),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                AppImage(
-                  url: entry.imageUrl,
-                  width: 60,
-                  height: 86,
-                  borderRadius: BorderRadius.circular(10),
-                  placeholderColor: scheme.surfaceContainerHighest,
-                  semanticLabel: entry.title,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        entry.title,
-                        style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
+    return InkWell(
+      onTap: onOpen,
+      child: Padding(
+        padding: const EdgeInsetsDirectional.fromSTEB(16, 8, 4, 8),
+        child: Row(
+          children: [
+            SizedBox(
+              width: 76,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  AppImage(
+                    url: entry.imageUrl,
+                    width: 60,
+                    height: 60,
+                    borderRadius: BorderRadius.circular(30),
+                    placeholderColor: scheme.surfaceContainerHighest,
+                    semanticLabel: entry.title,
+                  ),
+                  const SizedBox(height: 8),
+                  DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: scheme.secondaryContainer,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          time,
+                          maxLines: 1,
+                          style: theme.textTheme.labelMedium?.copyWith(color: scheme.onSecondaryContainer),
+                        ),
                       ),
-                      const SizedBox(height: 4),
-                      Text('$episode · $time ${timezoneLabel(timezone)}', style: secondary),
-                      const SizedBox(height: 2),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    entry.title,
+                    style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w400),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 4,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      Text(episode, style: small),
                       CountdownLabel(
                         airingAt: entry.airingAt,
                         clock: clock,
-                        style: theme.textTheme.labelMedium?.copyWith(color: scheme.primary),
+                        style: theme.textTheme.labelSmall?.copyWith(color: scheme.primary),
                       ),
-                      if (label != null) ...[
-                        const SizedBox(height: 6),
-                        _StatusBadge(label: label, highlighted: highlighted),
-                      ],
+                      if (label != null) _StatusBadge(label: label),
                     ],
                   ),
-                ),
-                IconButton(
-                  tooltip: S.current.Cal_Add_Title,
-                  icon: const Icon(Icons.edit_calendar_outlined),
-                  onPressed: onAddToCalendar,
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
+            if (onAddToCalendar != null)
+              IconButton(
+                tooltip: S.current.Cal_Add_Title,
+                icon: const Icon(Icons.add_alert_outlined),
+                onPressed: onAddToCalendar,
+              )
+            else
+              const SizedBox(width: 48),
+          ],
         ),
       ),
     );
@@ -153,26 +176,68 @@ class EpisodeTile extends StatelessWidget {
 
 class _StatusBadge extends StatelessWidget {
   final String label;
-  final bool highlighted;
 
-  const _StatusBadge({required this.label, required this.highlighted});
+  const _StatusBadge({required this.label});
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: highlighted ? scheme.primary : scheme.surfaceContainerHighest,
+        color: scheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(8),
       ),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
         child: Text(
           label,
-          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                color: highlighted ? scheme.onPrimary : scheme.onSurfaceVariant,
-                fontWeight: FontWeight.w600,
+          style: Theme.of(context).textTheme.labelSmall?.copyWith(color: scheme.onSurfaceVariant),
+        ),
+      ),
+    );
+  }
+}
+
+/// Header of one day of the week (DailyAL's accordion title): an arrow, the
+/// weekday and the number of episodes shown. Tapping it folds the day.
+class DayHeader extends StatelessWidget {
+  final DateTime date;
+  final int count;
+  final bool open;
+  final VoidCallback onToggle;
+
+  const DayHeader({
+    super.key,
+    required this.date,
+    required this.count,
+    required this.open,
+    required this.onToggle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final locale = Localizations.localeOf(context).toString();
+    final weekday = toBeginningOfSentenceCase(DateFormat.EEEE(locale).format(date), locale);
+    return Semantics(
+      button: true,
+      expanded: open,
+      child: InkWell(
+        onTap: onToggle,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          child: Row(
+            children: [
+              Icon(
+                open ? Icons.keyboard_arrow_down : Icons.keyboard_arrow_right,
+                color: theme.colorScheme.onSurfaceVariant,
               ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text('$weekday ($count)', style: theme.textTheme.titleMedium),
+              ),
+            ],
+          ),
         ),
       ),
     );

@@ -30,20 +30,18 @@ class CalendarState extends Equatable {
   /// Every episode joined with its anime, unfiltered.
   final List<CalendarEntry> entries;
 
-  /// The chip value (`all`, `watching`, `plan_to_watch`, `in_list`, `not_in_list`);
-  /// null behaves as `all`.
+  /// The filter value (`all`, `watching`, `plan_to_watch`,
+  /// `watching_or_planned`, `in_list`, `not_in_list`); null behaves as `all`.
   final String? filter;
   final TimezonePref timezone;
 
   /// False when the active account is not MAL: the list status is unknown, the
-  /// list chips are hidden and nothing is highlighted.
+  /// status chips are hidden and nothing is highlighted.
   final bool listKnown;
 
-  /// The seven days starting today, filtered.
+  /// The seven days starting today, filtered; today also lists the episodes
+  /// that already aired (see [withPreviousEpisodes]).
   final List<CalendarDay> days;
-
-  /// Index into [days] of the day being shown.
-  final int selectedDay;
 
   const CalendarState({
     this.status = CalendarStatus.loading,
@@ -52,10 +50,7 @@ class CalendarState extends Equatable {
     this.timezone = TimezonePref.local,
     this.listKnown = true,
     this.days = const [],
-    this.selectedDay = 0,
   });
-
-  CalendarDay? get day => selectedDay < days.length ? days[selectedDay] : null;
 
   /// Episodes of the whole week that pass the filter.
   int get weekCount => days.fold(0, (sum, d) => sum + d.entries.length);
@@ -67,7 +62,6 @@ class CalendarState extends Equatable {
     TimezonePref? timezone,
     bool? listKnown,
     List<CalendarDay>? days,
-    int? selectedDay,
   }) =>
       CalendarState(
         status: status ?? this.status,
@@ -76,11 +70,10 @@ class CalendarState extends Equatable {
         timezone: timezone ?? this.timezone,
         listKnown: listKnown ?? this.listKnown,
         days: days ?? this.days,
-        selectedDay: selectedDay ?? this.selectedDay,
       );
 
   @override
-  List<Object?> get props => [status, entries, filter, timezone, listKnown, days, selectedDay];
+  List<Object?> get props => [status, entries, filter, timezone, listKnown, days];
 }
 
 const Object _keep = Object();
@@ -91,6 +84,7 @@ class CalendarCubit extends Cubit<CalendarState> {
   CalendarCubit({
     required TimezonePref timezone,
     required bool listKnown,
+    String? initialFilter,
     AiringSchedule? schedule,
     SeasonLoader? seasonLoader,
     ListStatusCache? cache,
@@ -99,7 +93,7 @@ class CalendarCubit extends Cubit<CalendarState> {
         _season = seasonLoader ?? _defaultSeasonLoader,
         _cache = cache ?? ListStatusCache.instance,
         _clock = clock ?? DateTime.now,
-        super(CalendarState(timezone: timezone, listKnown: listKnown));
+        super(CalendarState(timezone: timezone, listKnown: listKnown, filter: listKnown ? initialFilter : null));
 
   final AiringSchedule _schedule;
   final SeasonLoader _season;
@@ -169,19 +163,13 @@ class CalendarCubit extends Cubit<CalendarState> {
     if (known != state.listKnown) _emitWith(listKnown: known, filter: known ? state.filter : null);
   }
 
-  void selectDay(int index) {
-    if (index != state.selectedDay && index >= 0 && index < state.days.length) {
-      emit(state.copyWith(selectedDay: index));
-    }
-  }
-
   /// Rebuilds the week when midnight has passed in the chosen zone.
   void tick() {
     if (state.days.isEmpty) return;
     final today = inTimezone(_clock(), state.timezone);
     final first = state.days.first.date;
     if (today.year != first.year || today.month != first.month || today.day != first.day) {
-      _emitWith(selectedDay: 0);
+      _emitWith();
     }
   }
 
@@ -191,7 +179,6 @@ class CalendarCubit extends Cubit<CalendarState> {
     Object? filter = _keep,
     TimezonePref? timezone,
     bool? listKnown,
-    int? selectedDay,
   }) {
     final next = state.copyWith(
       entries: entries,
@@ -199,12 +186,12 @@ class CalendarCubit extends Cubit<CalendarState> {
       filter: filter,
       timezone: timezone,
       listKnown: listKnown,
-      selectedDay: selectedDay,
     );
+    final now = _clock();
     emit(next.copyWith(
       days: buildWeek(
-        next.entries,
-        now: _clock(),
+        withPreviousEpisodes(next.entries, now: now),
+        now: now,
         pref: next.timezone,
         filter: next.filter,
         listKnown: next.listKnown,
