@@ -9,6 +9,7 @@ import 'package:mywatchlist/user/MAL/mal_home_preferences_bloc.dart';
 import 'package:mywatchlist/user/user_simkl_v2.dart';
 import 'package:mywatchlist/widgets/MAL/home/homeappbar.dart';
 import 'package:mywatchlist/widgets/MAL/home/section_header.dart';
+import 'package:mywatchlist/widgets/Simkl/simkl_feeds.dart';
 import 'package:mywatchlist/widgets/Simkl/simkl_home_plan.dart';
 import 'package:mywatchlist/widgets/Simkl/simkl_media_widgets.dart';
 import 'package:mywatchlist/widgets/Simkl/simkl_states.dart';
@@ -16,8 +17,9 @@ import 'package:mywatchlist/widgets/home/home_sections.dart';
 import 'package:mywatchlist/widgets/user/list/list_entry_view.dart';
 
 /// Home tab for Simkl: the rows come from the shared home preferences (`simklHomePlan`): the user's
-/// "Continue watching" and the Simkl catalogue lists (airing today, trending, new premieres).
-/// Simkl has no manga, news or forum, so those MyAnimeList sections are skipped.
+/// "Continue watching" and the Simkl catalogue lists: airing today and trending from Simkl's free
+/// CDN files, new premieres from the API. Each catalogue header opens the whole list. Simkl has
+/// no manga, news or forum, so those MyAnimeList sections are skipped.
 class SimklHomePage extends StatefulWidget {
   const SimklHomePage({super.key});
 
@@ -32,6 +34,7 @@ class _SimklHomePageState extends State<SimklHomePage> {
   Future<void> _onRefresh() async {
     HomeSectionCache.clear();
     SimklListService.instance.invalidate();
+    SimklDiscoverService.instance.cdn.invalidate();
     setState(() => _refresh++);
     await Future<void>.delayed(const Duration(milliseconds: 600));
   }
@@ -116,7 +119,12 @@ class _FeedSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SectionHeader(title: feed.title),
+          SectionHeader(
+            title: feed.title,
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(builder: (_) => SimklFeedPage(feed: feed)),
+            ),
+          ),
           HomeAsync<List<SimklMedia>>(
             cacheKey: feed.cacheKey,
             maxAge: const Duration(minutes: 30),
