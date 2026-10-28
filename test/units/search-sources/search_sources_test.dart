@@ -135,7 +135,13 @@ void main() {
       expect(first.score, 6.04);
       expect(first.synopsis, startsWith('Music video for the song'));
       expect(page.items.every((i) => i.members != null && i.members! > 0), isTrue);
-      expect(page.items.every((i) => i.rated != null), isTrue);
+      expect(page.items.map((i) => i.rated), ['PG-13', 'R', 'PG', 'PG-13', null, 'R', 'R']);
+      final upcoming = page.items[4];
+      expect(upcoming.score, isNull);
+      expect(upcoming.episodes, isNull);
+      expect(upcoming.startDate, '2027-01-05');
+      expect(upcoming.endDate, isNull);
+      expect(page.items[3].startDate, '2025-10-21');
     });
 
     test('a magazine: manga rows with chapters and volumes, and a next page', () {
@@ -402,6 +408,20 @@ void main() {
       expect(pager.hasMore, isFalse);
       expect(asked, [('arch', 1), ('arch', 2), ('arch', 2)]);
     });
+  });
+
+  test('StudiosPager: the whole directory goes on with the other producers, A to Z', () async {
+    final pager = StudiosPager(
+      onChanged: () {},
+      fetch: (q, p) async => CompanyPageHtml(items: [CompanyHtml(id: 1, name: 'Studio Pierrot', logo: 'x')]),
+      fetchOthers: () async => {1: 'Studio Pierrot', 3: 'Gonzo', 1966: 'Arch'},
+    );
+    await pager.start('');
+    expect(pager.hasMore, isTrue);
+    await pager.loadMore();
+    expect(pager.items.map((c) => c.name), ['Studio Pierrot', 'Arch', 'Gonzo']);
+    expect(pager.items.last.logo, isNull);
+    expect(pager.hasMore, isFalse);
   });
 
   group('StudiosScreen', () {

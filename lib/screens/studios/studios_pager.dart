@@ -10,11 +10,29 @@ import 'package:mywatchlist/services/api/mwl_api.dart';
 enum StudiosStage { loading, loaded, empty, error }
 
 /// The pages of the studios directory (MyAnimeList's `/company`, 50 per page, logos) for one
-/// search text, no widget. The screen calls [start] for a new text and [loadMore] near the end
+/// search text, no widget. MAL's directory stops after about 2,050 companies; the whole
+/// directory (no search text) then goes on with the other producers of MAL's search form, A to
+/// Z, without logos, so every studio is listed. The screen calls [start] for a new text and [loadMore] near the end
 /// of the list; [onChanged] runs after every change. An answer for an older text is dropped.
 class StudiosPager {
-  StudiosPager({required this.onChanged, Future<CompanyPageHtml?> Function(String query, int page)? fetch})
-      : _fetch = fetch ?? defaultFetch;
+  StudiosPager({
+    required this.onChanged,
+    Future<CompanyPageHtml?> Function(String query, int page)? fetch,
+    Future<Map<int, String>?> Function()? fetchOthers,
+  })  : _fetch = fetch ?? defaultFetch,
+        _fetchOthers = fetchOthers ?? defaultFetchOthers;
+
+  /// Every producer of MAL's search form (id to name), for the end of the directory.
+  static Future<Map<int, String>?> Function() defaultFetchOthers = _mwlStudios;
+
+  static Future<Map<int, String>?> _mwlStudios() async {
+    try {
+      final all = await MwlApi.i.getStudios().timeout(MwlApi.searchPageTimeout);
+      return all.isEmpty ? null : all;
+    } catch (_) {
+      return null;
+    }
+  }
 
   /// The source of every pager built without `fetch` (tests replace it).
   static Future<CompanyPageHtml?> Function(String query, int page) defaultFetch = _mwlApi;
@@ -23,10 +41,20 @@ class StudiosPager {
       MwlApi.i.getCompanies(query: query, page: page);
 
   @visibleForTesting
-  static void reset() => defaultFetch = _mwlApi;
+  static void reset() {
+    defaultFetch = _mwlApi;
+    defaultFetchOthers = _mwlStudios;
+  }
+
+  static const int _pageSize = 50;
 
   final void Function() onChanged;
   final Future<CompanyPageHtml?> Function(String query, int page) _fetch;
+  final Future<Map<int, String>?> Function() _fetchOthers;
+
+  /// Producers left after MAL's directory, A to Z (null until the directory ended).
+  List<CompanyHtml>? _others;
+  bool _directoryDone = false;
 
   String query = '';
   StudiosStage stage = StudiosStage.loading;
@@ -46,6 +74,8 @@ class StudiosPager {
     final token = ++_token;
     items.clear();
     _page = 0;
+    _others = null;
+    _directoryDone = false;
     hasMore = false;
     loadingMore = false;
     loadMoreFailed = false;
@@ -72,6 +102,10 @@ class StudiosPager {
     loadingMore = true;
     loadMoreFailed = false;
     _notify();
+    if (_directoryDone) {
+      await _loadOthers(token);
+      return;
+    }
     final result = await _fetch(query, _page + 1);
     if (_disposed || token != _token) return;
     loadingMore = false;
@@ -91,6 +125,37 @@ class StudiosPager {
     final known = {for (final c in items) c.id};
     items.addAll(page.items.where((c) => known.add(c.id)));
     hasMore = page.hasNext && page.items.isNotEmpty;
+    if (!hasMore && query.isEmpty) {
+      // The directory ended: the other producers come next.
+      _directoryDone = true;
+      hasMore = true;
+    }
+  }
+
+  Future<void> _loadOthers(int token) async {
+    var others = _others;
+    if (others == null) {
+      final all = await _fetchOthers();
+      if (_disposed || token != _token) return;
+      if (all == null) {
+        loadingMore = false;
+        loadMoreFailed = true;
+        _notify();
+        return;
+      }
+      final known = {for (final c in items) c.id};
+      others = [
+        for (final entry in all.entries)
+          if (!known.contains(entry.key)) CompanyHtml(id: entry.key, name: entry.value),
+      ]..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+      _others = others;
+    }
+    final take = others.take(_pageSize).toList();
+    others.removeRange(0, take.length);
+    items.addAll(take);
+    hasMore = others.isNotEmpty;
+    loadingMore = false;
+    _notify();
   }
 
   void _notify() {

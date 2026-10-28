@@ -16,6 +16,7 @@ import 'package:mywatchlist/services/api/MAL/models/mal_user_search.dart';
 import 'package:mywatchlist/services/api/MAL/scrapper/anime_news_featured.dart';
 import 'package:mywatchlist/utils/app_routes.dart';
 import 'package:mywatchlist/widgets/MAL/home/animegridcard.dart' show userCountFormat, ratingFormat;
+import 'package:mywatchlist/widgets/common/app_colors.dart';
 import 'package:mywatchlist/widgets/common/app_image.dart';
 import 'package:mywatchlist/widgets/common/image_preview.dart';
 
@@ -138,7 +139,7 @@ class MediaTile extends StatelessWidget {
     final meta = Row(
       children: [
         if (item.score > 0) ...[
-          const Icon(Icons.star_rounded, size: 16, color: Colors.amber),
+          Icon(Icons.star_rounded, size: 16, color: AppColors.of(context).score.color),
           const SizedBox(width: 2),
           Text(
             ratingFormat.format(item.score),
