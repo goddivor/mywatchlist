@@ -10,12 +10,14 @@ import 'package:mywatchlist/widgets/user/profile/profile_states.dart';
 import 'package:mwl_commons/mwl_commons.dart' show UserAboutHtml;
 
 /// The "about me" text of a profile. MAL serves it as HTML; links open through [openLink]
-/// and pictures through [AppImage].
+/// and pictures through [AppImage]. When the profile came from MAL's page, [fromPage] holds
+/// the text already read there and no request is made; otherwise the mwl-api route answers.
 class AboutSection extends StatelessWidget {
   final String username;
   final bool isSelf;
+  final UserAboutHtml? fromPage;
 
-  const AboutSection({super.key, required this.username, required this.isSelf});
+  const AboutSection({super.key, required this.username, required this.isSelf, this.fromPage});
 
   static const String _editUrl = 'https://myanimelist.net/editprofile.php';
   static const String _modernEditUrl =
@@ -27,6 +29,8 @@ class AboutSection extends StatelessWidget {
     return AsyncProfileTab<UserAboutHtml?>(
       storageKey: 'about_$username',
       loader: () async {
+        final known = fromPage;
+        if (known != null && (known.about ?? '').trim().isNotEmpty) return known;
         final about = await MwlApi.i.getUserAboutHtml(username);
         if (about == null) throw StateError('No about for $username');
         return about;

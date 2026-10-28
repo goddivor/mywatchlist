@@ -220,11 +220,13 @@ class _SummaryCard extends StatelessWidget {
       if (manga) (s.Prof_Volumes_Label, _number(stats.volumes), null),
     ];
     final birthday = formatProfileDate(data.birthday);
+    final lastOnline = formatProfileLastOnline(data.lastOnline);
     final info = <(IconData, String, String)>[
       if (data.gender != null)
         (Icons.person_outline, s.Prof_Gender, profileGenderLabel(data.gender!)),
       if (data.location != null) (Icons.place_outlined, s.Prof_Location, data.location!),
       if (birthday != null) (Icons.cake_outlined, s.Prof_Birthday, birthday),
+      if (lastOnline != null) (Icons.schedule_outlined, s.Prof_Last_Online, lastOnline),
     ];
 
     return Card(

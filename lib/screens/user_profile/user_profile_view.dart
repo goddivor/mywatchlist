@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:mwl_commons/mwl_commons.dart' show UserAboutHtml;
 import 'package:mywatchlist/constants/constants.dart' show AccountType;
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/screens/user_profile/sections/about_section.dart';
@@ -190,7 +191,13 @@ class _ProfileBodyState extends State<_ProfileBody> with SingleTickerProviderSta
         StatsSection(data: data, isSelf: widget.isSelf, onRetryExtras: widget.onRetryExtras),
       UserProfileTab.friends => FriendsSection(username: data.username),
       UserProfileTab.clubs => ClubsSection(username: data.username),
-      UserProfileTab.about => AboutSection(username: data.username, isSelf: widget.isSelf),
+      UserProfileTab.about => AboutSection(
+          username: data.username,
+          isSelf: widget.isSelf,
+          fromPage: data.about == null
+              ? null
+              : UserAboutHtml(about: data.about, modern: data.aboutModern),
+        ),
       UserProfileTab.favorites => FavoritesSection(
           favorites: data.favorites,
           username: data.username,
