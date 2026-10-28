@@ -96,8 +96,10 @@ class SimklFeedQuery {
       SimklFeed.trending => window == SimklTrendingWindow.today ? '' : window.name,
       SimklFeed.airing => dayOffset == 0 ? '' : 'd$dayOffset:${_day(DateTime.now()).toIso8601String()}',
       SimklFeed.premieres || SimklFeed.soon => format == SimklFormat.all ? '' : format.name,
-      SimklFeed.best => '${best.name}:${format.name}',
-      SimklFeed.genres => '$genre:${format.name}:${sort.name}',
+      SimklFeed.best => best == SimklBest.all && format == SimklFormat.all ? '' : '${best.name}:${format.name}',
+      SimklFeed.genres => genre == 'all' && format == SimklFormat.all && sort == SimklGenreSort.popularMonth
+          ? ''
+          : '$genre:${format.name}:${sort.name}',
     };
     return extra.isEmpty ? base : '$base:$extra';
   }

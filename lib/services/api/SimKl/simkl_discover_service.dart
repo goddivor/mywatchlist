@@ -1,6 +1,8 @@
 import 'package:mywatchlist/services/api/SimKl/simkl_cdn.dart';
 import 'package:mywatchlist/services/api/SimKl/simkl_client.dart';
 import 'package:mywatchlist/services/api/SimKl/simkl_models.dart';
+import 'package:mywatchlist/user/base_user.dart' show AuthStatus;
+import 'package:mywatchlist/user/user_simkl_v2.dart';
 
 export 'package:mywatchlist/services/api/SimKl/simkl_cdn.dart' show SimklTrendingWindow;
 
@@ -54,11 +56,15 @@ class SimklPage {
 /// - Trending and the airing calendar come from the free CDN files ([SimklCdn]: no quota, no
 ///   token, they keep working under AUTH V2); when the CDN cannot be reached the API's own
 ///   `/anime/trending` and `/anime/airing` answer instead.
-/// - New premieres, coming soon, best anime and genre browse use the API with the client id.
+/// - New premieres, coming soon, best anime, genre browse and search use the API. Under AUTH V2
+///   these answer `401 user_token_required` without a user token, so they carry the Simkl
+///   session's token when one exists; without a session (or when it is refused) they go out with
+///   the client id only, which AUTH V1 still accepts.
 class SimklDiscoverService {
-  SimklDiscoverService({SimklClient? client, SimklCdn? cdn})
+  SimklDiscoverService({SimklClient? client, SimklCdn? cdn, bool Function()? signedIn})
       : _client = client ?? SimklClient.instance,
-        _cdn = cdn;
+        _cdn = cdn,
+        _signedIn = signedIn ?? _hasSession;
 
   static SimklDiscoverService instance = SimklDiscoverService();
 
@@ -70,6 +76,21 @@ class SimklDiscoverService {
 
   final SimklClient _client;
   final SimklCdn? _cdn;
+  final bool Function() _signedIn;
+
+  static bool _hasSession() => UserSimklV2.instance.status == AuthStatus.AUTHENTICATED;
+
+  /// GET of a catalogue path: with the user token when a session exists, else anonymous.
+  Future<dynamic> _get(String path, {Map<String, String>? query}) async {
+    if (_signedIn()) {
+      try {
+        return await _client.getAuth(path, query: query);
+      } on SimklSessionExpired {
+        // Dead or refused session: the anonymous call still works under AUTH V1.
+      }
+    }
+    return _client.getPublic(path, query: query);
+  }
 
   SimklCdn get cdn => _cdn ?? SimklCdn.instance;
 
@@ -82,7 +103,7 @@ class SimklDiscoverService {
     try {
       items = await cdn.trending(window);
     } catch (_) {
-      items = SimklMedia.listFrom(await _client.getPublic('/anime/trending', query: {'extended': 'overview'}));
+      items = SimklMedia.listFrom(await _get('/anime/trending', query: {'extended': 'overview'}));
     }
     return _take(items, limit);
   }
@@ -96,7 +117,7 @@ class SimklDiscoverService {
     } catch (_) {
       final text = '${day.year.toString().padLeft(4, '0')}-${day.month.toString().padLeft(2, '0')}-'
           '${day.day.toString().padLeft(2, '0')}';
-      final data = await _client.getPublic('/anime/airing', query: {'date': text, 'sort': 'time'});
+      final data = await _get('/anime/airing', query: {'date': text, 'sort': 'time'});
       return _take(SimklMedia.listFrom(data), limit);
     }
   }
@@ -113,7 +134,7 @@ class SimklDiscoverService {
       _premieres('soon', format, limit);
 
   Future<List<SimklMedia>> _premieres(String which, SimklFormat format, int limit) async {
-    final data = await _client.getPublic('/anime/premieres/$which', query: {
+    final data = await _get('/anime/premieres/$which', query: {
       'type': format.api,
       'limit': '${limit.clamp(1, pageSize)}',
     });
@@ -123,7 +144,7 @@ class SimklDiscoverService {
   /// `GET /anime/best/{filter}`: the best rated anime of the bucket (Simkl answers `null` when
   /// the format leaves nothing).
   Future<List<SimklMedia>> best({SimklBest filter = SimklBest.all, SimklFormat format = SimklFormat.all}) async {
-    final data = await _client.getPublic('/anime/best/${filter.name}', query: {'type': format.api});
+    final data = await _get('/anime/best/${filter.name}', query: {'type': format.api});
     return SimklMedia.listFrom(data);
   }
 
@@ -135,7 +156,7 @@ class SimklDiscoverService {
     int page = 1,
   }) async {
     final type = format == SimklFormat.all ? 'all' : format.api;
-    final data = await _client.getPublic('/anime/genres/$genre/$type/all/all/${sort.api}', query: {
+    final data = await _get('/anime/genres/$genre/$type/all/all/${sort.api}', query: {
       'page': '$page',
       'limit': '$pageSize',
     });
@@ -147,7 +168,7 @@ class SimklDiscoverService {
   Future<List<SimklMedia>> search(String query, {int limit = 30}) async {
     final q = query.trim();
     if (q.isEmpty) return const [];
-    final data = await _client.getPublic('/search/anime', query: {
+    final data = await _get('/search/anime', query: {
       'q': q,
       'limit': '$limit',
       'extended': 'full',
@@ -157,7 +178,7 @@ class SimklDiscoverService {
 
   /// The MyAnimeList id of a Simkl title (`GET /anime/{id}`), null when Simkl has none.
   Future<int?> malIdOf(int simklId) async {
-    final data = await _client.getPublic('/anime/$simklId');
+    final data = await _get('/anime/$simklId');
     final ids = data is Map ? data['ids'] : null;
     final mal = ids is Map ? ids['mal'] : null;
     return mal is num ? mal.toInt() : int.tryParse('$mal');

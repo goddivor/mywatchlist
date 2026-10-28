@@ -110,6 +110,31 @@ void main() {
     });
   });
 
+  group('session', () {
+    test('signed in, the API lists carry the user token (AUTH V2 refuses them without one)', () async {
+      final api = FakeApi((_) => jsonResponse([]), session: true);
+      final service = SimklDiscoverService(client: api.client, signedIn: () => true);
+      await service.comingSoon();
+      await service.search('frieren');
+      expect(api.seen.map((s) => s.headers['Authorization']), ['Bearer user-token', 'Bearer user-token']);
+    });
+
+    test('a refused session falls back to the anonymous call', () async {
+      final api = FakeApi((_) => jsonResponse([]));
+      final service = SimklDiscoverService(client: api.client, signedIn: () => true);
+      await service.best();
+      expect(api.seen.single.headers.containsKey('Authorization'), isFalse);
+      expect(api.seen.single.url.queryParameters['client_id'], 'client-id');
+    });
+
+    test('signed out, the calls go out with the client id only', () async {
+      final api = FakeApi((_) => jsonResponse([]), session: true);
+      final service = SimklDiscoverService(client: api.client, signedIn: () => false);
+      await service.premieres();
+      expect(api.seen.single.headers.containsKey('Authorization'), isFalse);
+    });
+  });
+
   group('SimklFeedQuery', () {
     test('a default query shares the home row cache key, options make their own', () {
       for (final feed in SimklFeed.values) {

@@ -113,7 +113,10 @@ class SimklCdn {
     final future = load().then((items) {
       _kept[key] = (at: _now(), items: items);
       return items;
-    }).whenComplete(() => _running.remove(key));
+    }).whenComplete(() {
+      // A block body: returning the removed future would make it wait for itself.
+      _running.remove(key);
+    });
     _running[key] = future;
     return future;
   }

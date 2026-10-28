@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
 import 'package:mywatchlist/services/api/SimKl/simkl_cdn.dart';
 import 'package:mywatchlist/services/api/SimKl/simkl_client.dart';
 
@@ -41,15 +42,27 @@ class FakeCdn {
   );
 }
 
-/// A public-only [SimklClient] (no session, no network): [answer] decides every response.
+/// A [SimklClient] without network: [answer] decides every response.
 class FakeApi {
-  FakeApi(this.answer);
+  FakeApi(this.answer, {this.session = false});
 
   final http.Response Function(Uri url) answer;
+
+  /// Whether signed-in calls get a token (false = no session, as `sendAuthenticated` answers).
+  final bool session;
   final List<Seen> seen = [];
 
   late final SimklClient client = SimklClient(
-    auth: (send, {idempotent}) async => null,
+    auth: (send, {idempotent}) async {
+      if (!session) return null;
+      return send(
+        MockClient((request) async {
+          seen.add(Seen(request.url, request.headers));
+          return answer(request.url);
+        }),
+        'user-token',
+      );
+    },
     publicGet: (uri, headers) async {
       seen.add(Seen(uri, headers));
       return answer(uri);

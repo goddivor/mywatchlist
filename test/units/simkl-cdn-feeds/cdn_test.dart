@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mywatchlist/services/api/SimKl/simkl_cdn.dart';
 import 'package:mywatchlist/services/api/SimKl/simkl_client.dart';

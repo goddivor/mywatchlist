@@ -341,8 +341,8 @@ class _ChipRow extends StatelessWidget {
       );
 }
 
-/// The options of the selected list: period (trending), day (schedule), bucket (best), genre and
-/// sort (genres), format (API lists).
+/// The options of the selected list: format first (API lists), then period (trending), day
+/// (schedule), bucket (best), or genre and sort (genres).
 class _OptionsRow extends StatelessWidget {
   const _OptionsRow({required this.query, required this.onPick});
 
@@ -352,6 +352,14 @@ class _OptionsRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final chips = <Widget>[
+      if (query.hasFormat)
+        _MenuChip<SimklFormat>(
+          label: SimklFeedLabels.format(query.format),
+          values: SimklFormat.values,
+          selected: query.format,
+          labelOf: SimklFeedLabels.format,
+          onPick: (f) => onPick(query.copyWith(format: f)),
+        ),
       ...switch (query.feed) {
         SimklFeed.trending => [
             for (final w in SimklTrendingWindow.values)
@@ -383,14 +391,6 @@ class _OptionsRow extends StatelessWidget {
           ],
         SimklFeed.premieres || SimklFeed.soon => const <Widget>[],
       },
-      if (query.hasFormat)
-        _MenuChip<SimklFormat>(
-          label: SimklFeedLabels.format(query.format),
-          values: SimklFormat.values,
-          selected: query.format,
-          labelOf: SimklFeedLabels.format,
-          onPick: (f) => onPick(query.copyWith(format: f)),
-        ),
     ];
     if (chips.isEmpty) return const SizedBox.shrink();
     return _ChipRow(children: chips);

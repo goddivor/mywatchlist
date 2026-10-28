@@ -65,7 +65,7 @@ void main() {
   Future<void> pump(WidgetTester tester, Widget page, {Locale locale = const Locale('en')}) async {
     final prefs = PreferencesBloc(store: PreferencesStore(await SharedPreferences.getInstance()));
     addTearDown(prefs.close);
-    tester.view.physicalSize = const Size(900, 2400);
+    tester.view.physicalSize = const Size(1500, 2400);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
     await tester.pumpWidget(MultiBlocProvider(
