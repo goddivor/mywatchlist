@@ -24,9 +24,15 @@ class AnilistUserListAdapter extends UserListAdapter {
     AnilistListService? service,
     TrackerSyncService? sync,
     DateTime Function()? clock,
+    Future<SyncEntry?> Function(BuildContext context, ListEntryView entry, SyncEntry initial)?
+        editor,
   })  : _service = service,
         _sync = sync,
-        _clock = clock ?? DateTime.now;
+        _clock = clock ?? DateTime.now,
+        _editor = editor;
+
+  /// Replaced by a fake in tests; null opens the tracker editor sheet.
+  final Future<SyncEntry?> Function(BuildContext, ListEntryView, SyncEntry)? _editor;
 
   final AnilistListService? _service;
   final TrackerSyncService? _sync;
@@ -119,16 +125,24 @@ class AnilistUserListAdapter extends UserListAdapter {
 
   @override
   Future<ListEditResult> edit(BuildContext context, ListEntryView entry) async {
-    final saved = await showTrackerEntryEditor(
-      context,
-      service: _tracker,
-      tracker: AccountType.anilist,
-      trackerId: entry.id.toString(),
-      malId: entry.malId ?? 0,
-      category: entry.category,
-      initial: _syncEntryOf(entry),
-    );
+    final editor = _editor;
+    final saved = editor != null
+        ? await editor(context, entry, _syncEntryOf(entry))
+        : await showTrackerEntryEditor(
+            context,
+            service: _tracker,
+            tracker: AccountType.anilist,
+            trackerId: entry.id.toString(),
+            malId: entry.malId ?? 0,
+            category: entry.category,
+            initial: _syncEntryOf(entry),
+          );
     if (saved == null) return const ListEditUnchanged();
+    if (saved.isRemoved) {
+      // Deleted from AniList: forget the row in the kept list, drop it from the screen.
+      _lists.put(entry, removed: true);
+      return const ListEditRemoved();
+    }
     final updated = applySaved(entry, saved);
     _lists.put(updated);
     return ListEditUpdated(updated);

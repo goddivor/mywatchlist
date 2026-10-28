@@ -55,7 +55,8 @@ class NotificationSummary {
   /// The last run could not read the lists or the schedule (the previous alarms stay).
   final bool failed;
 
-  /// No MyAnimeList account: the lists the notifications read are not available.
+  /// No connected account feeds the reminders (MyAnimeList is the fallback and is not
+  /// connected either): the lists the notifications read are not available.
   final bool needsMal;
 
   NotificationSummary copyWith({bool? running}) => NotificationSummary(
@@ -96,6 +97,8 @@ class NotificationService {
     NotificationTexts? texts,
     NotificationPreferences Function()? readPrefs,
     DateTime Function()? clock,
+    Listenable? trackerChanges,
+    AccountType Function()? readFeedTracker,
     this.refreshEvery = const Duration(days: 1),
     this.debounce = const Duration(seconds: 2),
   })  : _backend = backend ?? PluginNotificationBackend(),
@@ -104,12 +107,17 @@ class NotificationService {
         _fetchCover = fetchCover ?? _downloadCover,
         _texts = texts ?? const _SNotificationTexts(),
         _readPrefs = readPrefs ?? (() => Preferences.current.notifications),
-        _clock = clock ?? DateTime.now;
+        _clock = clock ?? DateTime.now,
+        _trackerChanges = trackerChanges,
+        _readFeedTracker = readFeedTracker ?? _userFeedTracker;
 
   static NotificationService instance = NotificationService();
 
   /// Last scheduling run (shared pref, milliseconds since epoch).
   static const String lastRunKey = 'notifications_last_run_v1';
+
+  /// The account whose lists the last run planned from (shared pref, the tracker's name).
+  static const String feedKey = 'notifications_feed_tracker_v1';
 
   /// Pause between a preference change and the reschedule it triggers.
   final Duration debounce;
@@ -124,6 +132,8 @@ class NotificationService {
   final NotificationTexts _texts;
   final NotificationPreferences Function() _readPrefs;
   final DateTime Function() _clock;
+  final Listenable? _trackerChanges;
+  final AccountType Function() _readFeedTracker;
 
   final ValueNotifier<NotificationSummary> summary =
       ValueNotifier(const NotificationSummary());
@@ -139,6 +149,8 @@ class NotificationService {
   bool _runAgainForced = false;
   Timer? _debounceTimer;
   StreamSubscription<AppPreferences>? _prefsSub;
+  Listenable? _boundTrackers;
+  AccountType? _lastFeedTracker;
 
   bool get isInitialized => _initialized;
 
@@ -150,6 +162,7 @@ class NotificationService {
   Future<void> init() async {
     if (_initialized) return;
     _initialized = true;
+    bindTracker(_trackerChanges ?? UserManager.instance);
     try {
       await _backend.init(_handleTap);
       _launchPayload = await _backend.launchPayload();
@@ -196,6 +209,39 @@ class NotificationService {
       if (before == null || before == state.notifications) return;
       requestReschedule();
     });
+  }
+
+  /// Follows the active tracker: when the account that feeds the reminders changes (the user
+  /// switches tracker, or connects / disconnects the one in use), the lists of the new account
+  /// replace the old ones (debounced forced run). [source] notifies on every account change;
+  /// `UserManager`, which `AccountBloc` keeps in step with the selected account, in the app.
+  void bindTracker(Listenable source) {
+    _boundTrackers?.removeListener(_onTrackerChanged);
+    _boundTrackers = source;
+    _lastFeedTracker = _readFeedTracker();
+    source.addListener(_onTrackerChanged);
+  }
+
+  void _onTrackerChanged() {
+    final feed = _readFeedTracker();
+    if (feed == _lastFeedTracker) return;
+    _lastFeedTracker = feed;
+    if (!_readPrefs().enabled) return;
+    unawaited(_rescheduleIfFeedDiffers(feed));
+  }
+
+  /// The alarms in place were planned from another account than [feed]. Startup loads the
+  /// saved tracker after `init`, which looks like a switch: the account of the last run
+  /// tells the two apart, and a never-run schedule is left to the startup refresh.
+  Future<void> _rescheduleIfFeedDiffers(AccountType feed) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final saved = prefs.getString(feedKey);
+      if (saved == null || saved == feed.name) return;
+    } catch (_) {
+      // Unreadable store: reschedule, a spare run is harmless.
+    }
+    requestReschedule();
   }
 
   /// Schedules a forced run shortly, merging bursts of changes.
@@ -270,6 +316,7 @@ class NotificationService {
 
       final List<AiringCandidate> candidates;
       final List<AiringEpisode> episodes;
+      final feed = _readFeedTracker();
       try {
         candidates = await _loadCandidates();
         episodes = await _loadEpisodes();
@@ -305,7 +352,7 @@ class NotificationService {
           debugPrint('Notifications: could not schedule ${n.id} ($e)');
         }
       }
-      await _saveLastRun(now);
+      await _saveLastRun(now, feed);
       summary.value = NotificationSummary(
         scheduled: count,
         next: planned.isEmpty ? null : planned.first.at,
@@ -334,10 +381,11 @@ class NotificationService {
     }
   }
 
-  Future<void> _saveLastRun(DateTime now) async {
+  Future<void> _saveLastRun(DateTime now, AccountType feed) async {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setInt(lastRunKey, now.millisecondsSinceEpoch);
+      await prefs.setString(feedKey, feed.name);
     } catch (_) {}
   }
 
@@ -424,6 +472,8 @@ class NotificationService {
   void dispose() {
     _debounceTimer?.cancel();
     _prefsSub?.cancel();
+    _boundTrackers?.removeListener(_onTrackerChanged);
+    _boundTrackers = null;
   }
 
   // ---- defaults ----
@@ -435,7 +485,6 @@ class NotificationService {
 
   /// Whose lists feed the notifications: the active tracker when it is AniList, Kitsu or
   /// Simkl and connected, else MyAnimeList.
-  @visibleForTesting
   static AccountType candidateTracker(
       AccountType active, bool Function(AccountType tracker) isAuthenticated) {
     switch (active) {
@@ -449,12 +498,14 @@ class NotificationService {
     }
   }
 
+  static AccountType _userFeedTracker() =>
+      candidateTracker(UserManager.instance.currentTracker, UserManager.instance.isAuthenticated);
+
   /// The watching and plan-to-watch lists of the active tracker: AniList, Kitsu and Simkl
   /// map their entries to MAL ids (the schedule is keyed by them), MyAnimeList (also the
   /// fallback when no tracker is active) reads its own lists.
   static Future<List<AiringCandidate>> _loadMalCandidates() async {
-    switch (candidateTracker(
-        UserManager.instance.currentTracker, UserManager.instance.isAuthenticated)) {
+    switch (_userFeedTracker()) {
       case AccountType.anilist:
         return AnilistListService.instance.airingCandidates();
       case AccountType.kitsu:
