@@ -285,17 +285,28 @@ class _SummaryCard extends StatelessWidget {
                 spacing: 16,
                 runSpacing: 8,
                 children: [
+                  // Labelled facts like DailyAL's tiles (Location, Birthday…), not bare icons.
                   for (final (icon, label, value) in info)
-                    Semantics(
-                      label: label,
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(icon, size: 18, color: cs.onSurfaceVariant),
-                          const SizedBox(width: 6),
-                          Flexible(child: Text(value, style: theme.textTheme.bodyMedium)),
-                        ],
-                      ),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(icon, size: 18, color: cs.onSurfaceVariant),
+                        const SizedBox(width: 8),
+                        Flexible(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                label,
+                                style: theme.textTheme.labelSmall
+                                    ?.copyWith(color: cs.onSurfaceVariant),
+                              ),
+                              Text(value, style: theme.textTheme.bodyMedium),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
                 ],
               ),
@@ -498,7 +509,6 @@ class _DistributionCardState extends State<_DistributionCard> {
 
     return ChartCard(
       title: widget.title,
-      subtitle: s.Prof_Dist_Scored_Only,
       actions: [
         PopupMenuButton<bool>(
           tooltip: _byMean ? s.Prof_Dist_Sort_Mean : s.Prof_Dist_Sort_Count,

@@ -1,0 +1,11 @@
+{
+  "@@locale": "en",
+  "Pl_Tab_List": "List",
+  "Pl_Tab_Weekly": "Weekly",
+  "Pl_List_Private": "This list is private",
+  "Pl_List_Empty": "No entries",
+  "Pl_Weekly_Day_Empty": "Nothing airs this day",
+  "Pl_Weekly_Empty": "No airing anime in your Watching or Plan to Watch list",
+  "Pl_Count_Label": "{label} ({count})",
+  "@Pl_Count_Label": { "placeholders": { "label": { "type": "String" }, "count": { "type": "int" } } }
+}

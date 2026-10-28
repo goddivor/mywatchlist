@@ -144,12 +144,15 @@ abstract final class AppRoutes {
   }
 
   /// Opens the profile of [username] on [tracker]; null [username] = the signed-in user.
+  /// [tab] picks the MyAnimeList profile tab (another user's opens on their list by
+  /// default); other trackers have a single profile page and ignore it.
   static Future<void> openUserProfile(
     BuildContext context, {
     required AccountType tracker,
     String? username,
+    UserProfileTab? tab,
   }) =>
-      push<void>(context, _profileScreen(tracker, username));
+      push<void>(context, _profileScreen(tracker, username, tab: tab));
 
   /// Opens the list statistics of [username] on [tracker] (the profile, on its Stats tab);
   /// null [username] = the signed-in user.

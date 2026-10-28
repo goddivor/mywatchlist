@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:mywatchlist/constants/constants.dart' show AccountType;
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/screens/user_profile/sections/profile_tab.dart';
@@ -130,14 +129,10 @@ class _FriendTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final s = S.of(context);
     final theme = Theme.of(context);
-    final locale = Localizations.localeOf(context).toString();
     final lastSeen = friend.lastSeenAt != null ? _ago(s, friend.lastSeenAt!) : friend.lastOnline;
-    final since = friend.friendsSinceAt != null
-        ? DateFormat.yMMMd(locale).format(friend.friendsSinceAt!)
-        : friend.friendsSince;
+    // DailyAL's row: name and last seen only (the "friends since" date was noise).
     final lines = [
       if (lastSeen != null) s.Prof_Last_Seen(lastSeen),
-      if (since != null) s.Prof_Friends_Since(since),
     ];
     return ListTile(
       leading: ClipOval(
@@ -158,8 +153,7 @@ class _FriendTile extends StatelessWidget {
       title: Text(friend.username, maxLines: 1, overflow: TextOverflow.ellipsis),
       subtitle: lines.isEmpty
           ? null
-          : Text(lines.join('\n'), maxLines: 2, overflow: TextOverflow.ellipsis),
-      isThreeLine: lines.length > 1,
+          : Text(lines.join('\n'), maxLines: 1, overflow: TextOverflow.ellipsis),
       onTap: () => AppRoutes.openUserProfile(
         context,
         tracker: AccountType.myanimelist,

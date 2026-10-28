@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mywatchlist/constants/constants.dart' show AccountType;
 import 'package:mywatchlist/generated/l10n.dart';
+import 'package:mywatchlist/screens/user_profile/user_profile_view.dart' show UserProfileTab;
 import 'package:mywatchlist/services/api/MAL/mal_api.dart';
 import 'package:mywatchlist/user/accounts/account_bloc.dart';
 import 'package:mywatchlist/user/base_user.dart' show AuthStatus;
@@ -20,7 +21,8 @@ export 'package:mywatchlist/utils/sidebar_extension.dart' show SidebarMenuItem;
 /// The app sidebar (DAL `AppSideBar`), shown as the home shell's end drawer.
 ///
 /// Header with the active account (avatar, name, tracker, custom background), then the
-/// user's destinations (profile, stats, bookmarks, calendar), the app destinations
+/// user's destinations (DailyAL's profile tabs for MyAnimeList, the profile page for the
+/// other trackers, then bookmarks and calendar), the app destinations
 /// (settings, about) and sign in, or add an account / sign out. Every entry closes the drawer first.
 class AppSidebar extends StatefulWidget {
   /// Extra destinations listed after "My space" (see `SidebarBuilder`).
@@ -195,20 +197,23 @@ class _AppSidebarState extends State<AppSidebar> {
                       _go((host) => AppRoutes.signInAgain(host, tracker)),
                 ),
               _GroupLabel(S.current.Sidebar_Section_Profile),
-              if (signedIn) ...[
+              if (signedIn && tracker == AccountType.myanimelist)
+                // DailyAL's profile shortcuts, each opening the profile on its tab.
+                for (final (tab, icon, label) in _profileShortcuts())
+                  _SidebarTile(
+                    icon: icon,
+                    title: label,
+                    onTap: () => _go((host) =>
+                        AppRoutes.openUserProfile(host, tracker: tracker, tab: tab)),
+                  )
+              else if (signedIn)
+                // Other trackers have a single profile page.
                 _SidebarTile(
                   icon: Icons.person_outline,
                   title: S.current.Profile,
                   onTap: () => _go((host) => AppRoutes.openUserProfile(host,
                       tracker: tracker, username: user?.username)),
                 ),
-                _SidebarTile(
-                  icon: Icons.bar_chart_rounded,
-                  title: S.current.Stats,
-                  onTap: () => _go((host) => AppRoutes.openUserStats(host,
-                      tracker: tracker, username: user?.username)),
-                ),
-              ],
               _SidebarTile(
                 icon: Icons.bookmark_outline,
                 title: S.current.Bookmarks,
@@ -267,6 +272,19 @@ class _AppSidebarState extends State<AppSidebar> {
         },
       ),
     );
+  }
+
+  /// The profile tabs DailyAL's sidebar lists, in its order.
+  static List<(UserProfileTab, IconData, String)> _profileShortcuts() {
+    final s = S.current;
+    return [
+      (UserProfileTab.stats, Icons.stacked_bar_chart_rounded, s.Prof_Tab_Stats),
+      (UserProfileTab.about, Icons.info_outline, s.Prof_Tab_About),
+      (UserProfileTab.friends, Icons.people_alt_outlined, s.Prof_Tab_Friends),
+      (UserProfileTab.clubs, Icons.castle_outlined, s.Prof_Tab_Clubs),
+      (UserProfileTab.favorites, Icons.favorite_outline, s.Prof_Tab_Favorites),
+      (UserProfileTab.history, Icons.history_rounded, s.Prof_Tab_History),
+    ];
   }
 
   Widget _buildFooter(ThemeData theme) {
@@ -453,7 +471,7 @@ class _SidebarTile extends StatelessWidget {
         iconColor: color ?? colors.onSurfaceVariant,
         textColor: color,
         leading: Icon(icon),
-        title: Text(title, style: const TextStyle(fontWeight: FontWeight.w500)),
+        title: Text(title),
         trailing: trailing,
       ),
     );

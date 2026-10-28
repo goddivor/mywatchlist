@@ -1,0 +1,10 @@
+{
+  "@@locale": "fr_FR",
+  "Pl_Tab_List": "Liste",
+  "Pl_Tab_Weekly": "Semaine",
+  "Pl_List_Private": "Cette liste est privée",
+  "Pl_List_Empty": "Aucune entrée",
+  "Pl_Weekly_Day_Empty": "Rien ne sort ce jour-là",
+  "Pl_Weekly_Empty": "Aucun anime en cours de diffusion dans vos listes « En cours » ou « À regarder »",
+  "Pl_Count_Label": "{label} ({count})"
+}
