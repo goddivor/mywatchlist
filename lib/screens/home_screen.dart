@@ -1,9 +1,10 @@
 import 'dart:async';
+import 'dart:io' show Platform;
 
-import 'package:flutter/foundation.dart' show ValueListenable;
+import 'package:flutter/foundation.dart' show ValueListenable, debugPrint, kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:mywatchlist/constants/constants.dart' show AccountType;
+import 'package:mywatchlist/constants/constants.dart' show AccountType, Constants;
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/pages/Anilist/anilist_explore_page.dart';
 import 'package:mywatchlist/pages/Anilist/anilist_forum_page.dart';
@@ -27,13 +28,20 @@ import 'package:mywatchlist/pages/Simkl/simkl_user_page.dart';
 import 'package:mywatchlist/pages/Simkl/simkl_user_profile_page.dart';
 import 'package:mywatchlist/pages/side_bar.dart';
 import 'package:mywatchlist/screens/open_screen.dart';
+import 'package:http/http.dart' as http;
 import 'package:mywatchlist/services/api/MAL/mal_api.dart';
+import 'package:mywatchlist/services/updater/release_service.dart';
+import 'package:mywatchlist/services/updater/update_controller.dart';
+import 'package:mywatchlist/services/updater/update_dialog.dart';
+import 'package:package_info_plus/package_info_plus.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:mywatchlist/user/accounts/account_bloc.dart';
 import 'package:mywatchlist/user/preferences/preferences.dart';
 import 'package:mywatchlist/user/theme/theme_bloc.dart';
 import 'package:mywatchlist/user/theme/theme_state.dart';
 import 'package:mywatchlist/user/user_manager.dart';
 import 'package:mywatchlist/utils/app_routes.dart';
+import 'package:mywatchlist/utils/web_launcher.dart';
 import 'package:mywatchlist/widgets/common/background.dart';
 import 'package:mywatchlist/widgets/common/bottomnavbar.dart';
 
@@ -170,7 +178,19 @@ class HomeScreen extends StatefulWidget {
   /// Payload of the notification that opened the app (see `NotificationRoute`).
   final String? notificationPayload;
 
-  const HomeScreen({super.key, this.pageIndex, this.notificationPayload});
+  /// Release lookup of the launch update check; replaceable in tests. Null = GitHub.
+  final ReleaseService? releases;
+
+  /// Turns the launch update check off (tests).
+  final bool checkForUpdates;
+
+  const HomeScreen({
+    super.key,
+    this.pageIndex,
+    this.notificationPayload,
+    this.releases,
+    this.checkForUpdates = true,
+  });
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -213,7 +233,40 @@ class _HomeScreenState extends State<HomeScreen> {
         if (startup == StartupPage.search) AppRoutes.openSearch(context);
       }
       _onUsersChanged();
+      if (widget.checkForUpdates) unawaited(_checkForUpdate());
     });
+  }
+
+  /// Once a day at most, after the first frame: silent on any failure, never blocks the
+  /// shell. Shows the update dialog once per release.
+  Future<void> _checkForUpdate() async {
+    final client = widget.releases == null ? http.Client() : null;
+    try {
+      final releases = widget.releases ?? ReleaseService(client: client);
+      final info = await PackageInfo.fromPlatform();
+      final prefs = await SharedPreferences.getInstance();
+      final check = LaunchUpdateCheck(
+        releases: releases,
+        currentVersion: info.version,
+        enabled: !kIsWeb && Platform.isAndroid && Constants.buildVariant != 'fdroid',
+      );
+      final release = await check.run(prefs);
+      if (release == null || !mounted) return;
+      await check.markNotified(prefs, release.tag);
+      if (!mounted) return;
+      await showDialog<void>(
+        context: context,
+        builder: (_) => UpdateDialog(
+          current: info.version,
+          releases: LaunchUpdateCheck.prefetched(releases, release),
+          onOpen: (url) => launchWebView(url, context: context),
+        ),
+      );
+    } catch (e) {
+      debugPrint('Launch update check failed: $e');
+    } finally {
+      client?.close();
+    }
   }
 
   @override
