@@ -1,0 +1,21 @@
+{
+  "@@locale": "en",
+  "Dp_News_Empty": "No news about this title yet",
+  "Dp_News_Failed": "Couldn't load the news",
+  "Dp_News_Comments": "{count, plural, =1{1 comment} other{{count} comments}}",
+  "@Dp_News_Comments": { "placeholders": { "count": { "type": "int" } } },
+  "Dp_Show_More": "Show more…",
+  "Dp_Open_Review": "Open the review",
+  "Dp_Characters_And_Staff": "Characters & staff",
+  "Dp_Role_Main": "Main",
+  "Dp_Role_Supporting": "Supporting",
+  "Dp_Lang_Japanese": "Japanese",
+  "Dp_Lang_English": "English",
+  "Dp_Lang_French": "French",
+  "Dp_Lang_German": "German",
+  "Dp_Lang_Spanish": "Spanish",
+  "Dp_Lang_Italian": "Italian",
+  "Dp_Lang_Korean": "Korean",
+  "Dp_Lang_Portuguese_Br": "Portuguese (Brazil)",
+  "Dp_Lang_Mandarin": "Mandarin"
+}

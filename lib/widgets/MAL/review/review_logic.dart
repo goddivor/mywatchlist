@@ -21,10 +21,6 @@ extension ReviewSortLabel on ReviewSort {
       };
 }
 
-/// Green from 8, amber from 5, red below: the colour of a review score.
-Color reviewScoreColor(int score) =>
-    score >= 8 ? Colors.green : (score >= 5 ? Colors.amber : Colors.red);
-
 /// Number of reviews per score (reviews without a score are not counted).
 Map<int, int> reviewScoreDistribution(Iterable<AnimeReview> reviews) {
   final result = <int, int>{};

@@ -4,11 +4,11 @@ import 'package:mywatchlist/services/api/Jikan/jikan_anime_review.dart';
 import 'package:mywatchlist/widgets/MAL/review/review_logic.dart';
 import 'package:mywatchlist/widgets/MAL/review/review_reactions.dart';
 import 'package:mywatchlist/widgets/MAL/review/user_link.dart';
-import 'package:mywatchlist/widgets/common/avatar_widget.dart';
+import 'package:mywatchlist/screens/MAL/detail/sections/section_states.dart' show RoundAvatar;
 import 'package:mywatchlist/widgets/common/score_reveal.dart';
 
-/// The star and the score of a review, coloured by value. A hidden score (preference) is
-/// replaced by an eye that reveals it on tap.
+/// The star and the score of a review (DailyAL: plain text beside the star). A hidden score
+/// (preference) is replaced by an eye that reveals it on tap.
 class ReviewScoreBadge extends StatelessWidget {
   final int? score;
   final double size;
@@ -29,7 +29,7 @@ class ReviewScoreBadge extends StatelessWidget {
             style: TextStyle(
               fontSize: size,
               fontWeight: FontWeight.bold,
-              color: value > 0 ? reviewScoreColor(value) : Theme.of(context).colorScheme.onSurfaceVariant,
+              color: value > 0 ? Theme.of(context).colorScheme.onSurface : Theme.of(context).colorScheme.onSurfaceVariant,
             ),
           ),
         ],
@@ -90,7 +90,7 @@ class ReviewerChip extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              AvatarWidget(height: avatarSize, width: avatarSize, url: review.user?.images?.jpg?.imageUrl),
+              RoundAvatar(url: review.user?.images?.jpg?.imageUrl, size: avatarSize),
               const SizedBox(height: 4),
               SizedBox(
                 width: nameWidth,
@@ -109,9 +109,12 @@ class ReviewerChip extends StatelessWidget {
   }
 }
 
-/// One review in the horizontal list: reviewer, score, tags, the start of the text, the
-/// top reactions and the date. A tap on the card opens the full review; a tap on the
-/// reviewer opens their profile.
+/// One review card, laid out like DailyAL's: score (star) and tags on the
+/// left, the reviewer (round picture, name) on the right, the start of the
+/// text, the reactions in one row, then "Show more…" and the date. A tap on
+/// the card or on "Show more…" opens the full review; a tap on the reviewer
+/// opens their profile. The parent gives the size (320 dp wide in the detail
+/// row, the whole width in the "view all" list).
 class ReviewItem extends StatelessWidget {
   final AnimeReview review;
   final VoidCallback onTap;
@@ -121,27 +124,27 @@ class ReviewItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
     final locale = Localizations.localeOf(context).toString();
     final date = formatReviewDate(review.date, locale);
-    final tags = review.tags?.take(2).toList() ?? const <String>[];
-    final reactions = sortedReactions(review.reactions).take(4).toList();
+    final tags = review.tags ?? const <String>[];
+    final reactions = sortedReactions(review.reactions);
+    final faded = scheme.onSurfaceVariant;
 
     return Card(
-      margin: const EdgeInsetsDirectional.only(end: 12, bottom: 4, top: 4),
+      margin: const EdgeInsetsDirectional.only(end: 10, bottom: 4, top: 4),
       elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5)),
-      ),
+      color: scheme.surfaceContainerLow,
+      clipBehavior: Clip.antiAlias,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(15, 10, 15, 0),
+              child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Expanded(
@@ -149,73 +152,89 @@ class ReviewItem extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         ReviewScoreBadge(score: review.score),
-                        const SizedBox(height: 6),
-                        Wrap(
-                          spacing: 6,
-                          runSpacing: 4,
-                          children: [
-                            for (final tag in tags)
-                              Text(
-                                tag,
-                                style: theme.textTheme.labelSmall?.copyWith(
-                                  color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.75),
-                                ),
-                              ),
-                            if (review.isPreliminary == true)
-                              ReviewTag(text: S.current.Social_Review_Preliminary, color: theme.colorScheme.primary),
-                            if (review.isSpoiler == true)
-                              ReviewTag(text: S.current.Social_Review_Spoiler, color: theme.colorScheme.error),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                  ReviewerChip(review: review),
-                ],
-              ),
-              const SizedBox(height: 10),
-              Expanded(
-                child: Text(
-                  review.review?.trim() ?? '',
-                  style: theme.textTheme.bodySmall?.copyWith(height: 1.4),
-                  overflow: TextOverflow.ellipsis,
-                  maxLines: 9,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Expanded(
-                    child: Wrap(
-                      spacing: 10,
-                      runSpacing: 4,
-                      children: [
-                        for (final (kind, count) in reactions)
-                          Row(
-                            mainAxisSize: MainAxisSize.min,
+                        const SizedBox(height: 10),
+                        for (final tag in tags.take(3))
+                          Text(
+                            tag,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.textTheme.labelSmall?.copyWith(color: faded),
+                          ),
+                        if (review.isPreliminary == true || review.isSpoiler == true) ...[
+                          const SizedBox(height: 4),
+                          Wrap(
+                            spacing: 6,
+                            runSpacing: 4,
                             children: [
-                              Icon(kind.icon, size: 14, color: theme.colorScheme.onSurfaceVariant),
-                              const SizedBox(width: 3),
-                              Text(
-                                '$count',
-                                style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-                              ),
+                              if (review.isPreliminary == true)
+                                ReviewTag(text: S.current.Social_Review_Preliminary, color: scheme.primary),
+                              if (review.isSpoiler == true)
+                                ReviewTag(text: S.current.Social_Review_Spoiler, color: scheme.error),
                             ],
                           ),
+                        ],
                       ],
                     ),
                   ),
-                  if (date.isNotEmpty)
-                    Text(
-                      date,
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
-                      ),
-                    ),
+                  ReviewerChip(review: review, avatarSize: 40),
                 ],
               ),
-            ],
-          ),
+            ),
+            const SizedBox(height: 10),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(15, 0, 15, 0),
+                child: Text(
+                  review.review?.trim() ?? '',
+                  overflow: TextOverflow.fade,
+                  style: theme.textTheme.bodySmall?.copyWith(height: 1.4),
+                ),
+              ),
+            ),
+            if (reactions.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(12, 6, 12, 0),
+                child: SizedBox(
+                  height: 20,
+                  child: ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: reactions.length,
+                    itemBuilder: (_, i) {
+                      final (kind, count) = reactions[i];
+                      return Tooltip(
+                        message: kind.label,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 5),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(kind.icon, size: 14, color: faded),
+                              const SizedBox(width: 3),
+                              Text('$count', style: theme.textTheme.labelSmall?.copyWith(color: faded)),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(15, 5, 15, 10),
+              child: Row(
+                children: [
+                  Semantics(
+                    button: true,
+                    label: S.current.Dp_Open_Review,
+                    excludeSemantics: true,
+                    child: Text(S.current.Dp_Show_More, style: theme.textTheme.labelSmall?.copyWith(color: scheme.primary)),
+                  ),
+                  const Spacer(),
+                  if (date.isNotEmpty) Text(date, style: theme.textTheme.labelSmall?.copyWith(color: faded)),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );

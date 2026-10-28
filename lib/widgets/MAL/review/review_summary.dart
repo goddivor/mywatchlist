@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mywatchlist/widgets/common/app_colors.dart';
 import 'package:mwl_commons/mwl_commons.dart' show FeatureFlag;
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/services/api/mwl_api.dart';
@@ -230,12 +231,12 @@ class _SummaryBody extends StatelessWidget {
           TranslatedText(summary.verdict, style: theme.textTheme.bodyMedium?.copyWith(height: 1.5)),
           if (summary.pros.isNotEmpty) ...[
             const SizedBox(height: 18),
-            _Section(title: S.current.Social_AI_Pros, color: Colors.green, icon: Icons.thumb_up_alt_outlined),
+            _Section(title: S.current.Social_AI_Pros, color: AppColors.of(context).success.color, icon: Icons.thumb_up_alt_outlined),
             for (final point in summary.pros) _Point(point: point),
           ],
           if (summary.cons.isNotEmpty) ...[
             const SizedBox(height: 18),
-            _Section(title: S.current.Social_AI_Cons, color: Colors.red, icon: Icons.thumb_down_alt_outlined),
+            _Section(title: S.current.Social_AI_Cons, color: AppColors.of(context).danger.color, icon: Icons.thumb_down_alt_outlined),
             for (final point in summary.cons) _Point(point: point),
           ],
           const SizedBox(height: 18),

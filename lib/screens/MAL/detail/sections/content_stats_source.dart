@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:mwl_commons/mwl_commons.dart' show ContentStatsHtml;
 import 'package:mywatchlist/services/api/Jikan/jikan_anime_statistics.dart';
 import 'package:mywatchlist/services/api/Jikan/jikan_api.dart';
+import 'package:mywatchlist/services/api/Jikan/jikan_fallbacks.dart';
 import 'package:mywatchlist/services/api/mwl_api.dart';
 
 /// Where the statistics of a title came from.
@@ -41,10 +42,11 @@ class ContentStats {
       );
 }
 
-/// Loads [ContentStats]: Jikan first (its client times out after 12 s and then
-/// skips Jikan for 30 s), then MAL's stats page through the mwl-api
-/// (`MwlApi.getContentStats`, null after 15 s). Throws when neither answered,
-/// so the caller shows MAL's score figures. A running load is shared.
+/// Loads [ContentStats]: Jikan raced against MAL's stats page through the
+/// mwl-api (`MwlApi.getContentStats`), see [JikanFallbacks.race]: the page is
+/// asked when Jikan has not answered within a few seconds, at once when Jikan
+/// is down, and the whole load ends within about 12 s. Throws when neither
+/// answered, so the caller shows MAL's score figures. A running load is shared.
 class ContentStatsSource {
   ContentStatsSource._();
 
@@ -75,20 +77,15 @@ class ContentStatsSource {
   }
 
   static Future<ContentStats> _load(int id, String category) async {
-    Object? jikanError;
-    try {
-      return ContentStats(await jikan(id, category), StatsSource.jikan);
-    } catch (e) {
-      jikanError = e;
-    }
-    ContentStatsHtml? html;
-    try {
-      html = await mal(id, category);
-    } catch (_) {
-      html = null;
-    }
-    if (html == null) throw StateError('No statistics source answered: $jikanError');
-    return ContentStats.fromMal(html);
+    final result = await JikanFallbacks.race<ContentStats>(
+      jikan: () async => ContentStats(await jikan(id, category), StatsSource.jikan),
+      fallback: () async {
+        final html = await mal(id, category);
+        if (html == null) throw StateError('MAL stats page unavailable');
+        return ContentStats.fromMal(html);
+      },
+    );
+    return result.value;
   }
 
   /// Forgets the loads and restores the real sources (tests).
