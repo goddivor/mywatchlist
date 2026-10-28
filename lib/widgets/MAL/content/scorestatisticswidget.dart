@@ -12,7 +12,7 @@ import 'package:mywatchlist/services/api/MAL/mal_anime.dart';
 ///
 /// MAL's official API has no distribution, so when both fail the section
 /// shows the score figures MAL does give ([mal]: mean, scored by, rank,
-/// popularity, members) with a note and a Retry. No votes at all shows an
+/// popularity, members) and a Retry. No votes at all shows an
 /// empty state, never grey bars.
 class ScoreStatisticsWidget extends StatefulWidget {
   final int id;
@@ -83,7 +83,8 @@ class ScoreBars extends StatelessWidget {
   final List<ScoreStatistics> scores;
   final double horizPadding;
 
-  /// The figures come from MAL's stats page (Jikan failed): says so under the bars.
+  /// The figures come from MAL's stats page (Jikan failed). Not printed:
+  /// DailyAL shows no source caption under the bars.
   final bool fromMyAnimeList;
 
   const ScoreBars({
@@ -135,10 +136,6 @@ class ScoreBars extends StatelessWidget {
             S.current.Res_Score_Total_Votes(compact.format(total)),
             style: theme.textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
           ),
-          if (fromMyAnimeList) ...[
-            const SizedBox(height: 4),
-            Text(S.current.Res_Source_Mal, style: small),
-          ],
         ],
       ),
     );
@@ -252,11 +249,6 @@ class _MalScoreFallback extends StatelessWidget {
                   ),
                 ),
             ],
-          ),
-          const SizedBox(height: 10),
-          Text(
-            S.current.Res_Source_Mal,
-            style: theme.textTheme.labelSmall?.copyWith(color: scheme.onSurfaceVariant),
           ),
           SectionMessage.error(
             height: 120,

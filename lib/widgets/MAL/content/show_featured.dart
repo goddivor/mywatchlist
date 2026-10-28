@@ -13,8 +13,8 @@ import 'package:mywatchlist/widgets/common/avatar_widget.dart';
 import 'package:mywatchlist/widgets/loading/shimmercolor.dart';
 
 /// MAL featured articles about a title (mwl-api `content/featured`, a MAL
-/// page parsed by the backend). Ends in articles, an empty state or an error
-/// with Retry.
+/// page parsed by the backend). Ends in articles, nothing at all when the
+/// title has none, or an error with Retry.
 class ShowAnimeFeatured extends StatefulWidget {
   final int animeId;
   final String animeName;
@@ -94,9 +94,10 @@ class _ShowAnimeFeaturedState extends State<ShowAnimeFeatured>
       );
     }
 
+    // Nothing to show: no block at all, as in DailyAL (no "no articles" message).
     if (featuredArticles == null ||
         featuredArticles!.featuredArticles.isEmpty) {
-      return _buildEmptyState();
+      return const SizedBox.shrink();
     }
 
     return SizedBox(
@@ -378,9 +379,6 @@ class _ShowAnimeFeaturedState extends State<ShowAnimeFeatured>
     }
     return null;
   }
-
-  Widget _buildEmptyState() =>
-      SectionMessage(icon: Icons.article_outlined, message: S.current.Res_Featured_Empty);
 
   @override
   void dispose() {

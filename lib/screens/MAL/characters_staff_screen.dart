@@ -334,47 +334,59 @@ class _CharactersStaffScreenState extends State<CharactersStaffScreen> {
     );
   }
 
+  /// Several voice actors: the same row as a single-VA character (fixed
+  /// 60 x 80 portrait, same gap and padding), the count chip on the right,
+  /// the voice actors revealed under it on tap. Not an [ExpansionTile]: its
+  /// ListTile leading slot caps the portrait at 56 dp high, which made those
+  /// rows narrower than the others.
   Widget _buildCharacterAccordionTile(AnimeCharacter char) {
     final characterImageUrl = char.character.images?.jpg?.imageUrl;
     final characterName = char.character.name ?? '?';
     final role = castRoleLabel(char.role);
     final voiceActors = char.voiceActors ?? [];
+    final scheme = Theme.of(context).colorScheme;
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      child: ExpansionTile(
-        // No divider lines when the tile opens.
-        shape: const Border(),
-        collapsedShape: const Border(),
-        tilePadding: EdgeInsets.zero,
-        childrenPadding: const EdgeInsets.only(top: 8, bottom: 8),
-        leading: _buildAvatarWidget(
-          imageUrl: characterImageUrl,
-          label: characterName,
-          onTap: () => _onCharacterTap(char.character.malId),
-        ),
-        title:
-            _buildNameAndRole(characterName, role, favorites: char.favorites),
-        trailing: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surfaceContainerHighest,
-            borderRadius: BorderRadius.circular(12),
+    return _CastExpandable(
+      header: (open) => Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          _buildAvatarWidget(
+            imageUrl: characterImageUrl,
+            label: characterName,
+            onTap: () => _onCharacterTap(char.character.malId),
           ),
-          child: Text(
-            S.current.Res_Voice_Actors_Count(voiceActors.length),
-            style: TextStyle(
-              fontSize: 12,
-              color: Theme.of(context)
-                  .colorScheme
-                  .onSurface
-                  .withValues(alpha: 0.7),
+          SB.w10,
+          Expanded(
+            child: _buildNameAndRole(characterName, role, favorites: char.favorites),
+          ),
+          SB.w10,
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: scheme.surfaceContainerHighest,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  S.current.Res_Voice_Actors_Count(voiceActors.length),
+                  style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant),
+                ),
+                AnimatedRotation(
+                  turns: open ? 0.5 : 0,
+                  duration: const Duration(milliseconds: 200),
+                  curve: const Cubic(0.23, 1, 0.32, 1),
+                  child: Icon(Icons.expand_more, size: 16, color: scheme.onSurfaceVariant),
+                ),
+              ],
             ),
           ),
-        ),
-        children: [
-          _buildHorizontalVAList(voiceActors),
         ],
+      ),
+      body: Padding(
+        padding: const EdgeInsets.only(top: 8),
+        child: _buildHorizontalVAList(voiceActors),
       ),
     );
   }
@@ -603,6 +615,46 @@ class _CharactersStaffScreenState extends State<CharactersStaffScreen> {
     gotoPage(
       context: context,
       newPage: CharacterScreen(id: id, category: 'person'),
+    );
+  }
+}
+
+/// A cast row that opens a panel under it on tap (state kept per row).
+class _CastExpandable extends StatefulWidget {
+  final Widget Function(bool open) header;
+  final Widget body;
+
+  const _CastExpandable({required this.header, required this.body});
+
+  @override
+  State<_CastExpandable> createState() => _CastExpandableState();
+}
+
+class _CastExpandableState extends State<_CastExpandable> {
+  bool _open = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Semantics(
+          expanded: _open,
+          child: InkWell(
+            onTap: () => setState(() => _open = !_open),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              child: widget.header(_open),
+            ),
+          ),
+        ),
+        AnimatedSize(
+          duration: const Duration(milliseconds: 220),
+          curve: const Cubic(0.23, 1, 0.32, 1),
+          alignment: Alignment.topCenter,
+          child: _open ? widget.body : const SizedBox(width: double.infinity),
+        ),
+      ],
     );
   }
 }
