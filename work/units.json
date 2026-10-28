@@ -2439,7 +2439,9 @@
       "entry": "",
       "artifact": "",
       "priority": "P1",
-      "needs": [],
+      "needs": [
+        "profile-lists"
+      ],
       "owns": [
         "lib/widgets/MAL/review/**",
         "lib/widgets/user/profile/user_pop_sheet.dart",

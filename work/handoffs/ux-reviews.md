@@ -3,7 +3,7 @@
 **Kind** unit · **Priority** P1 · **Group** settings · **Model** opus
 
 ## Needs done first
-- nothing
+- `profile-lists` (Other users' anime/manga lists, weekly tab and sidebar shortcuts like DailyAL)
 
 ## Owns (may create or edit ONLY these)
 - `lib/widgets/MAL/review/**`

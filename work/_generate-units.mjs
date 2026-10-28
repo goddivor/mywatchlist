@@ -811,7 +811,7 @@ const UNITS = [
   },
   {
     id: "ux-reviews", title: "Reviewer tap opens the profile directly; Helpful sort by default", kind: "unit", priority: "P1", group: "settings", model: "opus", ui: true,
-    needs: [],
+    needs: ["profile-lists"],
     owns: ["lib/widgets/MAL/review/**", "lib/widgets/user/profile/user_pop_sheet.dart", "lib/l10n/units/ux-reviews/**", "test/units/ux-reviews/**"],
     goal: ["UI comparison report docs/ui-check-report-2026-10-28.md: group E item 12. Read those items and the matching screen sections (screenshots under the checker scratchpad shots/).", "Owner rules: replicate DailyAL's UI (dailyal-108 file:line given in the report) where MWL is weaker; remove explanatory captions/helper texts DailyAL lacks; regular-weight titles and tonal controls like DailyAL; theme tokens; English + French."],
     dod: ["Checker: side by side with DailyAL on the same theme."],
