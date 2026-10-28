@@ -3,6 +3,10 @@
 **Kind** unit · **Priority** P2 · **Group** release · **Model** sonnet
 
 ## Needs done first
+- `color-sweep` (Colour sweep: hardcoded colours of already-merged screens onto the theme tokens)
+- `backup-fixes` (Backup restore never stops halfway; About closes its HTTP client)
+- `release-fixes` (Release: versionCode bump, launcher label, restricted update provider)
+- `explore-polish` (Explore: DailyAL images on category and genre cards, explicit genres, recommendations/stacks fallbacks, favourites badges)
 - `tracker-wiring` (AniList / Kitsu / Simkl wiring: notifications, profile routes, remove action, MAL-only notes)
 - `gate-fix` (Make the merge gate meaningful)
 - `auth-refresh` (Token refresh and retry for all trackers)

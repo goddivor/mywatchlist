@@ -1412,6 +1412,10 @@
       "artifact": "",
       "priority": "P2",
       "needs": [
+        "color-sweep",
+        "backup-fixes",
+        "release-fixes",
+        "explore-polish",
         "tracker-wiring",
         "gate-fix",
         "auth-refresh",
