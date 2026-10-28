@@ -41,13 +41,19 @@ class UserListView extends StatefulWidget {
   final ListViewStore store;
   final ListStatusCache? cache;
 
+  /// The categories the tracker has, in switch order. With a single one (Simkl has no manga)
+  /// the Anime/Manga switch is not built: [titleBuilder] receives an empty widget and the list
+  /// always opens on that category, whatever the "default category" preference says.
+  final List<String> categories;
+
   const UserListView({
     super.key,
     required this.adapter,
     required this.titleBuilder,
     this.store = const ListViewStore(),
     this.cache,
-  });
+    this.categories = const ['anime', 'manga'],
+  }) : assert(categories.length > 0);
 
   @override
   State<UserListView> createState() => _UserListViewState();
@@ -94,11 +100,12 @@ class _UserListViewState extends State<UserListView> with SingleTickerProviderSt
     _settings['anime'] = results[0];
     _settings['manga'] = results[1];
     _place = place;
-    _category = switch (prefs.defaultCategory) {
+    final wanted = switch (prefs.defaultCategory) {
       ListCategory.anime => 'anime',
       ListCategory.manga => 'manga',
       ListCategory.none => place.category,
     };
+    _category = widget.categories.contains(wanted) ? wanted : widget.categories.first;
     _tabs.index = _initialTab(_category);
     setState(() => _ready = true);
     _loadCounts(_category);
@@ -349,10 +356,14 @@ class _UserListViewState extends State<UserListView> with SingleTickerProviderSt
   }
 
   Widget _categorySwitch() {
+    if (widget.categories.length < 2) return const SizedBox.shrink();
     return SegmentedButton<String>(
       segments: [
-        ButtonSegment(value: 'anime', label: Text(S.current.UserList_Anime)),
-        ButtonSegment(value: 'manga', label: Text(S.current.UserList_Manga)),
+        for (final c in widget.categories)
+          ButtonSegment(
+            value: c,
+            label: Text(c == 'anime' ? S.current.UserList_Anime : S.current.UserList_Manga),
+          ),
       ],
       selected: {_category},
       showSelectedIcon: false,

@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mywatchlist/constants/constants.dart' show AccountType;
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/user/preferences/preferences.dart';
+import 'package:mywatchlist/user/user_manager.dart';
+import 'package:mywatchlist/utils/app_routes.dart';
 import 'package:mywatchlist/widgets/common/select/select.dart';
 
 /// Building blocks shared by the three preference pages: a large-title scaffold with a
@@ -164,6 +167,58 @@ class PrefIcon extends StatelessWidget {
   }
 }
 
+/// The subtitle of a preference tile; when [malOnly] and the active tracker is not
+/// MyAnimeList, a visible note says the option has no effect there (the options read MAL
+/// data or MAL list fields). Follows the active tracker, no provider needed.
+class PrefSubtitle extends StatelessWidget {
+  final String? text;
+  final bool malOnly;
+
+  const PrefSubtitle({super.key, this.text, this.malOnly = false});
+
+  /// Whether the note applies to [tracker].
+  static bool noteApplies(AccountType tracker) =>
+      tracker != AccountType.myanimelist && tracker != AccountType.none;
+
+  @override
+  Widget build(BuildContext context) {
+    final body = text == null ? null : Text(text!);
+    if (!malOnly) return body ?? const SizedBox.shrink();
+    return ListenableBuilder(
+      listenable: UserManager.instance,
+      builder: (context, _) {
+        final tracker = UserManager.instance.currentTracker;
+        if (!noteApplies(tracker)) return body ?? const SizedBox.shrink();
+        final theme = Theme.of(context);
+        final color = theme.colorScheme.tertiary;
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (body != null) body,
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(Icons.info_outline_rounded, size: 14, color: color),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      S.current.Tw_Mal_Only_Note(AppRoutes.trackerLabel(tracker)),
+                      style: theme.textTheme.bodySmall
+                          ?.copyWith(color: color, fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
 const EdgeInsetsGeometry _tilePadding = EdgeInsetsDirectional.fromSTEB(16, 4, 12, 4);
 
 /// Switch bound to one boolean of the contract. Only this tile rebuilds when it changes.
@@ -174,6 +229,9 @@ class PrefSwitchTile extends StatelessWidget {
   final bool Function(AppPreferences prefs) read;
   final PreferencesEvent Function(bool value) toEvent;
 
+  /// The option only applies to MyAnimeList: a note shows on the other trackers.
+  final bool malOnly;
+
   const PrefSwitchTile({
     super.key,
     required this.icon,
@@ -181,6 +239,7 @@ class PrefSwitchTile extends StatelessWidget {
     this.subtitle,
     required this.read,
     required this.toEvent,
+    this.malOnly = false,
   });
 
   @override
@@ -190,8 +249,10 @@ class PrefSwitchTile extends StatelessWidget {
       contentPadding: _tilePadding,
       secondary: PrefIcon(icon),
       title: Text(title),
-      subtitle: subtitle == null ? null : Text(subtitle!),
-      isThreeLine: (subtitle?.length ?? 0) > 70,
+      subtitle: subtitle == null && !malOnly
+          ? null
+          : PrefSubtitle(text: subtitle, malOnly: malOnly),
+      isThreeLine: malOnly || (subtitle?.length ?? 0) > 70,
       value: value,
       onChanged: (next) => context.read<PreferencesBloc>().add(toEvent(next)),
     );
@@ -211,6 +272,9 @@ class PrefSelectTile<T> extends StatelessWidget {
   /// Label shown when the stored value is not among [options].
   final String? fallbackLabel;
 
+  /// The option only applies to MyAnimeList: a note shows on the other trackers.
+  final bool malOnly;
+
   const PrefSelectTile({
     super.key,
     required this.icon,
@@ -220,6 +284,7 @@ class PrefSelectTile<T> extends StatelessWidget {
     required this.read,
     required this.toEvent,
     this.fallbackLabel,
+    this.malOnly = false,
   });
 
   Future<void> _open(BuildContext context, T selected) async {
@@ -238,8 +303,10 @@ class PrefSelectTile<T> extends StatelessWidget {
       contentPadding: _tilePadding,
       leading: PrefIcon(icon),
       title: Text(title),
-      subtitle: subtitle == null ? null : Text(subtitle!),
-      isThreeLine: (subtitle?.length ?? 0) > 70,
+      subtitle: subtitle == null && !malOnly
+          ? null
+          : PrefSubtitle(text: subtitle, malOnly: malOnly),
+      isThreeLine: malOnly || (subtitle?.length ?? 0) > 70,
       trailing: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 132),
         child: Row(

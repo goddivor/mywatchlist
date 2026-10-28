@@ -33,6 +33,14 @@ class SyncEntry {
     this.entryId,
   });
 
+  /// What the tracker entry editor pops after a confirmed "Remove from list": an entry with
+  /// no field at all. Callers test it with [isRemoved] and drop the row.
+  static const SyncEntry removed = SyncEntry(entryId: _removedMarker);
+  static const String _removedMarker = 'removed';
+
+  /// Whether this is [removed], i.e. the entry no longer exists on the tracker.
+  bool get isRemoved => entryId == _removedMarker && status == null;
+
   bool get hasScore => score != null && score! > 0;
 
   /// The fields worth sending: empty values are dropped.

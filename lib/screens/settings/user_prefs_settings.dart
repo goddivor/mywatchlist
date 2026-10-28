@@ -123,6 +123,7 @@ class UserPrefSettingsPage extends StatelessWidget {
             PrefSwitchTile(
               icon: Icons.work_off_outlined,
               title: s.Prefs_Nsfw,
+              malOnly: true,
               subtitle: s.Prefs_Nsfw_Desc,
               read: (p) => p.general.nsfw,
               toEvent: (v) => GeneralPreferencesChanged((p) => p.copyWith(nsfw: v)),
@@ -166,6 +167,7 @@ class UserPrefSettingsPage extends StatelessWidget {
             PrefSwitchTile(
               icon: Icons.priority_high,
               title: s.Prefs_Priority,
+              malOnly: true,
               subtitle: s.Prefs_Priority_Desc,
               read: (p) => p.general.showPriority,
               toEvent: (v) => GeneralPreferencesChanged((p) => p.copyWith(showPriority: v)),
@@ -173,6 +175,7 @@ class UserPrefSettingsPage extends StatelessWidget {
             PrefSwitchTile(
               icon: Icons.live_tv_rounded,
               title: s.Prefs_Airing_Info,
+              malOnly: true,
               subtitle: s.Prefs_Airing_Info_Desc,
               read: (p) => p.general.showAiringInfo,
               toEvent: (v) => GeneralPreferencesChanged((p) => p.copyWith(showAiringInfo: v)),
@@ -180,6 +183,7 @@ class UserPrefSettingsPage extends StatelessWidget {
             PrefSwitchTile(
               icon: Icons.date_range,
               title: s.Prefs_Auto_Dates,
+              malOnly: true,
               subtitle: s.Prefs_Auto_Dates_Desc,
               read: (p) => p.general.autoAddStartEndDate,
               toEvent: (v) =>

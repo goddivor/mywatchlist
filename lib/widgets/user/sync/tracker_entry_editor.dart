@@ -18,7 +18,9 @@ double scoreStepOf(AccountType tracker) => switch (tracker) {
 
 /// Edits the user's entry on [tracker] itself (status, score, progress and
 /// dates), and creates it when the media is not on the list yet. Pops the
-/// entry the tracker answered with, or null when nothing was saved.
+/// entry the tracker answered with, [SyncEntry.removed] after a confirmed
+/// "Remove from list" (offered when [initial] is set and [allowRemove] is true),
+/// or null when nothing was saved.
 Future<SyncEntry?> showTrackerEntryEditor(
   BuildContext context, {
   required TrackerSyncService service,
@@ -27,6 +29,7 @@ Future<SyncEntry?> showTrackerEntryEditor(
   required int malId,
   required String category,
   SyncEntry? initial,
+  bool allowRemove = true,
 }) {
   return showModalBottomSheet<SyncEntry>(
     context: context,
@@ -40,6 +43,7 @@ Future<SyncEntry?> showTrackerEntryEditor(
       malId: malId,
       category: category,
       initial: initial,
+      allowRemove: allowRemove,
     ),
   );
 }
@@ -53,7 +57,11 @@ class TrackerEntryEditor extends StatefulWidget {
     required this.malId,
     required this.category,
     this.initial,
+    this.allowRemove = true,
   });
+
+  /// Offers "Remove from list" (only when [initial] says the entry exists).
+  final bool allowRemove;
 
   final TrackerSyncService service;
   final AccountType tracker;
@@ -149,6 +157,50 @@ class _TrackerEntryEditorState extends State<TrackerEntryEditor> {
     }
   }
 
+  bool get _canRemove =>
+      widget.allowRemove && widget.initial != null && widget.initial!.status != null;
+
+  Future<void> _remove() async {
+    final name = TrackerSyncService.trackerName(widget.tracker);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(S.current.Sync_Remove_Title),
+        content: Text(S.current.Sync_Remove_Message(name)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(S.current.Sync_Cancel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: TextButton.styleFrom(
+                foregroundColor: Theme.of(ctx).colorScheme.error),
+            child: Text(S.current.Sync_Remove),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    setState(() {
+      _saving = true;
+      _error = null;
+    });
+    try {
+      await widget.service.deleteTracker(
+          widget.tracker, widget.trackerId, widget.category,
+          malId: widget.malId);
+      if (!mounted) return;
+      Navigator.of(context).pop(SyncEntry.removed);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _saving = false;
+        _error = e;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -228,6 +280,14 @@ class _TrackerEntryEditorState extends State<TrackerEntryEditor> {
                   )
                 : Text(S.current.Sync_Save),
           ),
+          if (_canRemove)
+            TextButton.icon(
+              onPressed: _saving ? null : _remove,
+              style: TextButton.styleFrom(
+                  foregroundColor: theme.colorScheme.error),
+              icon: const Icon(Icons.delete_outline_rounded),
+              label: Text(S.current.Sync_Remove_Title),
+            ),
         ],
       ),
     );

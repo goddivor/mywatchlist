@@ -1,0 +1,11 @@
+{
+  "@@locale": "fr_FR",
+  "Tw_Mal_Only_Note": "Réservé à MyAnimeList : sans effet sur {tracker}.",
+  "@Tw_Mal_Only_Note": {
+    "placeholders": {
+      "tracker": {
+        "type": "String"
+      }
+    }
+  }
+}
