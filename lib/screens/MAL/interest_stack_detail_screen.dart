@@ -108,10 +108,14 @@ class _InterestStackDetailScreenState extends State<InterestStackDetailScreen> {
 
   // --- Data accessors ---
 
-  String get _title =>
-      _detailedData?['title']?.toString().standardize() ??
-      widget.stack.title?.standardize() ??
-      S.current.Social_Stack_Title;
+  /// The title exactly as MyAnimeList writes it (no case change).
+  String get _title {
+    final fetched = _detailedData?['title']?.toString().trim();
+    if (fetched != null && fetched.isNotEmpty) return fetched;
+    final listed = widget.stack.title?.trim();
+    if (listed != null && listed.isNotEmpty) return listed;
+    return S.current.Social_Stack_Title;
+  }
 
   List<Map<String, dynamic>> get _entries =>
       (_detailedData?['items'] as List?)?.cast<Map<String, dynamic>>() ?? [];
@@ -143,6 +147,7 @@ class _InterestStackDetailScreenState extends State<InterestStackDetailScreen> {
   Widget build(BuildContext context) {
     if (_isLoading) {
       return Scaffold(
+        appBar: AppBar(),
         body: ShimmerColor(_buildShell(context)),
       );
     }
@@ -156,14 +161,9 @@ class _InterestStackDetailScreenState extends State<InterestStackDetailScreen> {
 
     if (_detailedData == null || !_showTabs) {
       return Scaffold(
-        body: Stack(
-          children: [
-            NestedScrollView(
-              headerSliverBuilder: (_, __) => _topSlivers(context),
-              body: _buildNoContentFallback(Theme.of(context)),
-            ),
-            _buildBackButton(context),
-          ],
+        body: NestedScrollView(
+          headerSliverBuilder: (_, __) => _topSlivers(context),
+          body: _buildNoContentFallback(Theme.of(context)),
         ),
       );
     }
@@ -171,15 +171,102 @@ class _InterestStackDetailScreenState extends State<InterestStackDetailScreen> {
     return Scaffold(
       body: DefaultTabController(
         length: _tabs.length,
-        child: Stack(
-          children: [
-            NestedScrollView(
-              headerSliverBuilder: (_, __) => _topSlivers(context),
-              body: _bodyWidget(),
-            ),
-            _buildBackButton(context),
-          ],
+        child: NestedScrollView(
+          headerSliverBuilder: (_, __) => _topSlivers(context),
+          body: _bodyWidget(),
         ),
+      ),
+    );
+  }
+
+  // --- Collapsing app bar ---
+
+  static const double _headerHeight = 240;
+
+  /// Pinned bar holding the back button, bookmark and menu. Title, author and pictures sit in its
+  /// expanded part and scroll away; the stack title then fades into the bar. Nothing floats over the list.
+  Widget _appBarSliver(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final url = _webUrl;
+    final canShare = !_isLoading && _error == null;
+    return SliverAppBar(
+      pinned: true,
+      expandedHeight: kToolbarHeight + _headerHeight + 16,
+      backgroundColor: scheme.surface,
+      surfaceTintColor: scheme.surfaceTint,
+      scrolledUnderElevation: 0,
+      actions: [
+        if (canShare && _stackId != null)
+          BookmarkButton(
+            tracker: 'myanimelist',
+            kind: BookmarkKind.interestStack,
+            id: _stackId!,
+            title: _title,
+            imageUrl: _coverUrl,
+            subtitle: widget.stack.username,
+          ),
+        if (canShare)
+          AppBarMenu(
+            onShare: () => showShareBuilder(
+              context,
+              fields: stackShareFields(
+                url: url,
+                title: _title,
+                author: widget.stack.username,
+                entries: [for (final e in _entries) if (e['title'] is String) e['title'] as String],
+                description: _description,
+              ),
+              subject: _title,
+              title: S.current.Social_Stack_Title,
+            ),
+            onOpenInBrowser: url == null ? null : () => openLink(context, url),
+          ),
+      ],
+      flexibleSpace: LayoutBuilder(
+        builder: (context, _) {
+          final settings = context.dependOnInheritedWidgetOfExactType<FlexibleSpaceBarSettings>();
+          var collapsed = 0.0;
+          if (settings != null) {
+            final range = settings.maxExtent - settings.minExtent;
+            if (range > 0) collapsed = (1 - (settings.currentExtent - settings.minExtent) / range).clamp(0.0, 1.0);
+          }
+          // The title shows in the bar only once the expanded header has mostly scrolled away.
+          final titleAlpha = ((collapsed - 0.6) / 0.4).clamp(0.0, 1.0);
+          return Stack(
+            fit: StackFit.expand,
+            children: [
+              Padding(
+                padding: EdgeInsets.only(top: kToolbarHeight + MediaQuery.paddingOf(context).top, bottom: 8),
+                child: Row(
+                  children: [
+                    SB.w20,
+                    Expanded(child: _titleWidget(context)),
+                    SB.w20,
+                    _picturesWidget(context),
+                    SB.w20,
+                  ],
+                ),
+              ),
+              Positioned(
+                left: 72,
+                right: 120,
+                top: MediaQuery.paddingOf(context).top,
+                height: kToolbarHeight,
+                child: Align(
+                  alignment: AlignmentDirectional.centerStart,
+                  child: Text(
+                    _title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          color: scheme.onSurface.withValues(alpha: titleAlpha),
+                        ),
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -189,19 +276,7 @@ class _InterestStackDetailScreenState extends State<InterestStackDetailScreen> {
   List<Widget> _topSlivers(BuildContext context) {
     final theme = Theme.of(context);
     return [
-      SB.lh60,
-      SliverToBoxAdapter(
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            SB.w20,
-            Expanded(child: _titleWidget(context)),
-            SB.w20,
-            _picturesWidget(context),
-            SB.w20,
-          ],
-        ),
-      ),
+      _appBarSliver(context),
       SB.lh10,
       if (_detailedData == null)
         SliverToBoxAdapter(
@@ -301,24 +376,13 @@ class _InterestStackDetailScreenState extends State<InterestStackDetailScreen> {
 
   // --- Tab bar ---
 
-  /// Fixed tabs sharing the width, labels wrapping on two lines: nothing is cut or hidden off screen.
+  /// Scrollable tabs, each label on a single line.
   Widget _tabBarSliver() {
     return SliverToBoxAdapter(
       child: TabBar(
-        padding: padding,
-        labelPadding: const EdgeInsets.symmetric(horizontal: 4),
-        tabs: _tabs
-            .map((e) => Tab(
-                  height: 52,
-                  child: Text(
-                    e,
-                    maxLines: 2,
-                    textAlign: TextAlign.center,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontSize: 14.0),
-                  ),
-                ))
-            .toList(),
+        isScrollable: true,
+        tabAlignment: TabAlignment.start,
+        tabs: [for (final e in _tabs) Tab(text: e)],
       ),
     );
   }
@@ -366,75 +430,6 @@ class _InterestStackDetailScreenState extends State<InterestStackDetailScreen> {
     );
   }
 
-  // --- Back button ---
-
-  /// Floating back button and, once the stack is loaded, the share / open-in-browser menu.
-  Widget _buildBackButton(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final url = _webUrl;
-    final canShare = !_isLoading && _error == null;
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            FloatingActionButton.small(
-              heroTag: 'back_stack',
-              elevation: 4.0,
-              tooltip: MaterialLocalizations.of(context).backButtonTooltip,
-              onPressed: () => Navigator.pop(context),
-              child: const Icon(Icons.arrow_back),
-            ),
-            if (canShare)
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (_stackId != null) ...[
-                    Material(
-                      color: scheme.primaryContainer,
-                      elevation: 4,
-                      shape: const CircleBorder(),
-                      child: BookmarkButton(
-                        tracker: 'myanimelist',
-                        kind: BookmarkKind.interestStack,
-                        id: _stackId!,
-                        title: _title,
-                        imageUrl: _coverUrl,
-                        subtitle: widget.stack.username,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                  ],
-                  Material(
-                    color: scheme.primaryContainer,
-                    elevation: 4,
-                    shape: const CircleBorder(),
-                    child: AppBarMenu(
-                      onShare: () => showShareBuilder(
-                        context,
-                        fields: stackShareFields(
-                          url: url,
-                          title: _title,
-                          author: widget.stack.username,
-                          entries: [for (final e in _entries) if (e['title'] is String) e['title'] as String],
-                          description: _description,
-                        ),
-                        subject: _title,
-                        title: S.current.Social_Stack_Title,
-                      ),
-                      onOpenInBrowser: url == null ? null : () => openLink(context, url),
-                    ),
-                  ),
-                ],
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-
   int? get _stackId => _extractStackId(widget.stack.url);
 
   /// The picture saved with the bookmark: the stack's first cover, else its first entry's.
@@ -458,7 +453,7 @@ class _InterestStackDetailScreenState extends State<InterestStackDetailScreen> {
     return SafeArea(
       child: Column(
         children: [
-          const SizedBox(height: 60),
+          SB.h20,
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
