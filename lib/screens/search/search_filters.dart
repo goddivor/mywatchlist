@@ -34,6 +34,10 @@ abstract final class SearchCategory {
 
   /// Anime and manga: the categories with the rich filters and the display options.
   static bool isMedia(String category) => category == anime || category == manga;
+
+  /// News and featured articles list the latest ones with no text and no tag (MyAnimeList's
+  /// `/news` and `/featured`); text and tag only narrow them.
+  static bool isBrowsable(String category) => category == news || category == featured;
 }
 
 /// Keys of [SearchFilters], the names the old `FilterOption.apiFieldName` used.

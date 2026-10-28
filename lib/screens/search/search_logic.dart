@@ -52,7 +52,7 @@ extension _SearchLogic on _GeneralSearchScreenState {
 
   Future<void> _runSearch(String raw) async {
     final query = raw.trim();
-    if (query.isEmpty && _filters.isEmpty) return;
+    if (query.isEmpty && _filters.isEmpty && !SearchCategory.isBrowsable(_category)) return;
     _suggestTimer?.cancel();
     _suggestToken++;
     _suggestions.value = SuggestionState.idle;
@@ -149,7 +149,7 @@ extension _SearchLogic on _GeneralSearchScreenState {
       _showPanel = false;
     });
     final text = _searchController.text;
-    if (text.trim().isNotEmpty || _filters.isNotEmpty) {
+    if (text.trim().isNotEmpty || _filters.isNotEmpty || SearchCategory.isBrowsable(_category)) {
       _runSearch(text);
     } else {
       _resetResults();
@@ -172,7 +172,7 @@ extension _SearchLogic on _GeneralSearchScreenState {
     }
     _set(() => _filters = next);
     final text = _searchController.text;
-    if (text.trim().isNotEmpty || next.isNotEmpty) {
+    if (text.trim().isNotEmpty || next.isNotEmpty || SearchCategory.isBrowsable(_category)) {
       _runSearch(text);
     } else {
       _resetResults();
@@ -185,7 +185,7 @@ extension _SearchLogic on _GeneralSearchScreenState {
         .set(FilterKey.genresOut, [..._filters.genresOut]..remove(id));
     _set(() => _filters = next);
     final text = _searchController.text;
-    if (text.trim().isNotEmpty || next.isNotEmpty) {
+    if (text.trim().isNotEmpty || next.isNotEmpty || SearchCategory.isBrowsable(_category)) {
       _runSearch(text);
     } else {
       _resetResults();

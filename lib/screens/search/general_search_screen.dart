@@ -203,7 +203,7 @@ class _GeneralSearchScreenState extends State<GeneralSearchScreen> with TickerPr
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) _runSearch(initial);
       });
-    } else if (_filters.isNotEmpty) {
+    } else if (_filters.isNotEmpty || SearchCategory.isBrowsable(_category)) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) _runSearch('');
       });

@@ -19,6 +19,8 @@ import 'package:mywatchlist/services/api/MAL/models/mal_user_search.dart';
 import 'package:mywatchlist/services/api/MAL/models/search_result.dart';
 import 'package:mywatchlist/services/api/MAL/scrapper/anime_news_featured.dart';
 import 'package:mywatchlist/services/api/MAL/scrapper/html_parsers.dart';
+import 'package:mywatchlist/services/api/MAL/mal_connect.dart';
+import 'package:mywatchlist/screens/search/search_articles_parser.dart';
 import 'package:mywatchlist/services/api/mwl_api.dart';
 import 'package:mywatchlist/user/preferences/preferences.dart';
 
@@ -125,6 +127,41 @@ class SearchService {
     int page,
   }) malSearchPage = _malSearchPage;
 
+  /// One page of news or featured articles (replaceable in tests). With no text and no tag it
+  /// reads MyAnimeList's own `/news` or `/featured` list (newest first); otherwise the mwl-api.
+  static Future<AnimeNewsOrFeaturedResult?> Function({
+    required String category,
+    required String query,
+    String? tag,
+    required int page,
+  }) articleFetch = _articleFetch;
+
+  static Future<AnimeNewsOrFeaturedResult?> _articleFetch({
+    required String category,
+    required String query,
+    String? tag,
+    required int page,
+  }) {
+    final news = category == SearchCategory.news;
+    final hasTag = tag != null && tag.isNotEmpty;
+    if (query.isEmpty && !hasTag) {
+      return _latestArticles(news ? 'news' : 'featured', page);
+    }
+    final text = query.isEmpty ? null : query;
+    final key = hasTag ? tag : null;
+    return news
+        ? MwlApi.i.searchNews(text ?? '', tag: key, page: page)
+        : MwlApi.i.searchFeatured(text ?? '', tag: key, page: page);
+  }
+
+  /// MyAnimeList's `/news` or `/featured` page [page], newest first. A failure is thrown (the
+  /// screen shows it) rather than shown as an empty list.
+  static Future<AnimeNewsOrFeaturedResult?> _latestArticles(String category, int page) async {
+    final response = await MalConnect.retryGet('https://myanimelist.net/$category?p=$page', {});
+    if (response.statusCode != 200) throw Exception('Failed to load $category (${response.statusCode})');
+    return parseLatestArticles(response.body);
+  }
+
   /// Whether Jikan is tried at all (tests turn it off).
   static bool Function() jikanAllowed = () => !JikanClient.instance.isUnreachable;
 
@@ -138,6 +175,7 @@ class SearchService {
   static void reset() {
     malSearchPage = _malSearchPage;
     profileGet = http.get;
+    articleFetch = _articleFetch;
     jikanAllowed = () => !JikanClient.instance.isUnreachable;
   }
 
@@ -628,10 +666,7 @@ class SearchService {
     SearchFilters filters,
     int pageNumber,
   ) {
-    final tag = filters.text(FilterKey.tag);
-    return category == SearchCategory.news
-        ? MwlApi.i.searchNews(query, tag: tag, page: pageNumber)
-        : MwlApi.i.searchFeatured(query, tag: tag, page: pageNumber);
+    return articleFetch(category: category, query: query, tag: filters.text(FilterKey.tag), page: pageNumber);
   }
 
   static bool _hasNext(AnimeNewsOrFeaturedResult? result) {
