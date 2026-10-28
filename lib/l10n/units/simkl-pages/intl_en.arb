@@ -1,0 +1,54 @@
+{
+  "@@locale": "en",
+  "Sk_Sign_In_Title": "Sign in with Simkl",
+  "Sk_Sign_In": "Sign in",
+  "Sk_Sign_In_Again": "Sign in again",
+  "Sk_Session_Expired": "Your Simkl session has expired",
+  "Sk_Session_Expired_Hint": "Simkl keeps you signed in for a limited time. Sign in again to see and edit your list.",
+  "Sk_List_Sign_In_Hint": "Connect your Simkl account to see and edit your anime list.",
+  "Sk_Profile_Sign_In_Hint": "Connect your Simkl account to see your profile and the stats of your list.",
+  "Sk_Edit_Status": "Status",
+  "Sk_Edit_Progress": "Episodes watched",
+  "Sk_Edit_Score": "Score",
+  "Sk_Edit_Remove": "Remove from list",
+  "Sk_Edit_Failed": "Couldn't save the changes. Check your connection and try again.",
+  "Sk_No_Mal_Id": "This title has no MyAnimeList page. Opening it on Simkl.",
+  "Sk_Episode_Short": "Ep. {number}",
+  "@Sk_Episode_Short": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "Sk_Open_On_Simkl": "Open on Simkl",
+  "Sk_Profile_Empty": "Your Simkl anime list is empty. Add a title to see your stats here.",
+  "Sk_Profile_Rated": "{count, plural, =1{1 rated title} other{{count} rated titles}}",
+  "@Sk_Profile_Rated": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "Sk_Profile_Recent": "Latest activity",
+  "Sk_Forum_Title": "Forum",
+  "Sk_Forum_None_Title": "Simkl has no forum",
+  "Sk_Forum_None_Body": "Switch to MyAnimeList to read and join discussions.",
+  "Sk_Feed_Airing": "Airing today",
+  "Sk_Feed_Trending": "Trending",
+  "Sk_Feed_Premieres": "New premieres",
+  "Sk_Feed_Empty": "Nothing to show right now.",
+  "Sk_Search_Hint": "Search Simkl anime",
+  "Sk_Search_Empty": "No anime found for “{query}”.",
+  "@Sk_Search_Empty": {
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
+  "Sk_Load_Failed": "Couldn't load Simkl. Check your connection and try again.",
+  "Sk_Continue_Watching": "Continue watching",
+  "Sk_Continue_Empty": "Nothing in progress. Titles you are watching show up here."
+}
