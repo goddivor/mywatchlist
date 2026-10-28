@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mywatchlist/constants/constants.dart';
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/pages/MAL/mal_user_page.dart';
@@ -8,6 +11,7 @@ import 'package:mywatchlist/services/api/MAL/mal_forum_api.dart';
 import 'package:mywatchlist/services/api/MAL/mal_user.dart';
 import 'package:mywatchlist/services/api/MAL/models/forum/forum_topics_data.dart';
 import 'package:mywatchlist/user/MAL/mal_home_page_preferences.dart';
+import 'package:mywatchlist/user/accounts/account_bloc.dart';
 import 'package:mywatchlist/user/user_manager.dart';
 import 'package:mywatchlist/utils/app_routes.dart';
 import 'package:mywatchlist/widgets/MAL/home/contentlistwidget.dart';
@@ -35,6 +39,10 @@ class HomeSectionCache {
       _entries[key] = (at: DateTime.now(), data: data);
 
   static void clear() => _entries.clear();
+
+  /// Drops every entry whose key starts with [prefix] (one scope, e.g. the user-list sections).
+  static void clearPrefix(String prefix) =>
+      _entries.removeWhere((key, _) => key.startsWith(prefix));
 }
 
 /// Loads [load] once (or reads the in-memory answer), shows [loading] meanwhile, an error state
@@ -93,10 +101,11 @@ class _HomeAsyncState<T extends Object> extends State<HomeAsync<T>> {
       return;
     }
     final token = ++_token;
+    final key = widget.cacheKey; // the widget may point to another key when the answer comes
     if (_failed) setState(() => _failed = false);
     try {
       final data = await widget.load();
-      HomeSectionCache.put(widget.cacheKey, data);
+      HomeSectionCache.put(key, data);
       if (!mounted || token != _token) return;
       setState(() {
         _data = data;
@@ -174,11 +183,14 @@ class HomeMessage extends StatelessWidget {
 
 /// The user's own MyAnimeList list (one category, optionally one status) as a row of cards, most
 /// recently updated first. Signed out, it explains what is missing and opens the accounts.
-class HomeUserListSection extends StatelessWidget {
+class HomeUserListSection extends StatefulWidget {
   final HomeSectionPreference section;
   final double cardWidth;
   final double cardHeight;
   final int refresh;
+
+  /// Prefix of every cache key of the per-account sections.
+  static const String cachePrefix = 'userlist:';
 
   const HomeUserListSection({
     super.key,
@@ -188,6 +200,66 @@ class HomeUserListSection extends StatelessWidget {
     this.refresh = 0,
   });
 
+  /// Cache key of a user-list section: keyed by tracker and account so one account never
+  /// reads another account's list.
+  static String cacheKeyFor({
+    required AccountType tracker,
+    required String? accountId,
+    required String category,
+    required String? status,
+    required int itemCount,
+  }) =>
+      '$cachePrefix${tracker.name}:${accountId ?? ''}:$category:${status ?? 'all'}:$itemCount';
+
+  /// The part of an [AccountLoaded] that decides whose list is shown.
+  static String accountSignature(AccountLoaded state) => [
+        state.selectedAccountType.name,
+        for (final a in state.availableAccounts)
+          '${a.typeAcc.name}=${a.name}/${a.needsReLogin}',
+      ].join('|');
+
+  @override
+  State<HomeUserListSection> createState() => _HomeUserListSectionState();
+}
+
+class _HomeUserListSectionState extends State<HomeUserListSection> {
+  StreamSubscription<AccountState>? _sub;
+  AccountBloc? _bloc;
+  String? _signature;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    AccountBloc? bloc;
+    try {
+      bloc = BlocProvider.of<AccountBloc>(context, listen: false);
+    } catch (_) {
+      bloc = null; // no AccountBloc above (e.g. isolated widget): nothing to follow.
+    }
+    if (identical(bloc, _bloc)) return;
+    _sub?.cancel();
+    _bloc = bloc;
+    final current = bloc?.state;
+    _signature = current is AccountLoaded ? HomeUserListSection.accountSignature(current) : null;
+    _sub = bloc?.stream.listen(_onAccountState);
+  }
+
+  void _onAccountState(AccountState state) {
+    if (state is! AccountLoaded) return;
+    final signature = HomeUserListSection.accountSignature(state);
+    if (signature == _signature) return;
+    _signature = signature;
+    // The account changed: forget every per-account answer and rebuild so the new key loads.
+    HomeSectionCache.clearPrefix(HomeUserListSection.cachePrefix);
+    if (mounted) setState(() {});
+  }
+
+  @override
+  void dispose() {
+    _sub?.cancel();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -196,7 +268,7 @@ class HomeUserListSection extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SectionHeader(
-            title: section.getDisplayTitle(),
+            title: widget.section.getDisplayTitle(),
             onTap: () => AppRoutes.push<void>(
               context,
               Scaffold(
@@ -225,23 +297,29 @@ class HomeUserListSection extends StatelessWidget {
   }
 
   Widget _loaded(BuildContext context) {
-    final category = section.userCategory;
-    final status = section.userStatus;
+    final category = widget.section.userCategory;
+    final status = widget.section.userStatus;
     return HomeAsync<List<Anime>>(
-      cacheKey: 'userlist:$category:${status ?? 'all'}:${section.itemCount}',
-      maxAge: Duration(hours: section.cacheDurationHours),
-      refresh: refresh,
+      cacheKey: HomeUserListSection.cacheKeyFor(
+        tracker: AccountType.myanimelist,
+        accountId: UserManager.instance.mal.username,
+        category: category,
+        status: status,
+        itemCount: widget.section.itemCount,
+      ),
+      maxAge: Duration(hours: widget.section.cacheDurationHours),
+      refresh: widget.refresh,
       load: () => MalUser.getMyContentList(
         category: category,
         status: status,
-        limit: section.itemCount,
+        limit: widget.section.itemCount,
         sortType: 'list_updated_at',
       ),
       loading: loadingCardList(
-        containerHeight: cardHeight,
-        height: cardHeight,
-        width: cardWidth,
-        itemCount: section.itemCount,
+        containerHeight: widget.cardHeight,
+        height: widget.cardHeight,
+        width: widget.cardWidth,
+        itemCount: widget.section.itemCount,
         listPadding: const EdgeInsets.all(8),
       ),
       builder: (context, items) {
@@ -251,10 +329,10 @@ class HomeUserListSection extends StatelessWidget {
         return ContentListWidget(
           category: category,
           items: items,
-          height: cardHeight,
+          height: widget.cardHeight,
           padding: const EdgeInsets.all(8),
-          tileWidth: cardWidth,
-          tileHeight: cardHeight,
+          tileWidth: widget.cardWidth,
+          tileHeight: widget.cardHeight,
         );
       },
     );
