@@ -131,6 +131,8 @@ class _Frame extends StatelessWidget {
         AppBar(
           automaticallyImplyLeading: showBack,
           title: Text(title),
+          // No automatic ☰ for the home shell's end drawer (an empty list keeps it).
+          actions: const [SizedBox.shrink()],
         ),
         Expanded(child: child),
       ],
