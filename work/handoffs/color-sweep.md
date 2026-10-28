@@ -3,6 +3,7 @@
 **Kind** unit · **Priority** P1 · **Group** release · **Model** sonnet
 
 ## Needs done first
+- `tracker-wiring` (AniList / Kitsu / Simkl wiring: notifications, profile routes, remove action, MAL-only notes)
 - `profile-polish` (Profile screen: readable themed header, chart colours from status tokens, lighter surfaces, no Jikan wait)
 - `list-cards-dal` (My List grid display: the same visual as DailyAL's grid (the rest of MWL's My List stays))
 - `detail-resilience` (Detail sections: no endless skeletons, MAL fallbacks when Jikan fails, round avatars without box shadows)

@@ -548,7 +548,7 @@ const UNITS = [
   },
   {
     id: "l10n-quality", title: "Final translation pass: French (and Arabic) wording of the base and of every unit", kind: "unit", priority: "P2", group: "release", model: "sonnet",
-    needs: ["gate-fix", "auth-refresh", "backend-parsers", "mal-auth-calls", "l10n-pipeline", "deps-prefs-contract", "app-shell", "detail-split", "shared-kit", "perf-foundation", "accounts-ux", "edit-sheet", "user-list-mal", "user-profile-mal", "sync-dialog", "detail-header", "detail-related-graph", "detail-synopsis-media", "detail-social", "detail-more-info", "bookmarks", "calendar", "explore-seasonal", "search-upgrade", "home-wiring", "cards-upgrade", "settings-prefs-pages", "settings-theme-about-backup", "notifications", "dub-info", "api-prefs", "forum-clubs", "featured-characters", "anilist-pages", "kitsu-pages", "simkl-pages", "versioning-ci", "in-app-update", "deep-links"],
+    needs: ["tracker-wiring", "gate-fix", "auth-refresh", "backend-parsers", "mal-auth-calls", "l10n-pipeline", "deps-prefs-contract", "app-shell", "detail-split", "shared-kit", "perf-foundation", "accounts-ux", "edit-sheet", "user-list-mal", "user-profile-mal", "sync-dialog", "detail-header", "detail-related-graph", "detail-synopsis-media", "detail-social", "detail-more-info", "bookmarks", "calendar", "explore-seasonal", "search-upgrade", "home-wiring", "cards-upgrade", "settings-prefs-pages", "settings-theme-about-backup", "notifications", "dub-info", "api-prefs", "forum-clubs", "featured-characters", "anilist-pages", "kitsu-pages", "simkl-pages", "versioning-ci", "in-app-update", "deep-links"],
     owns: ["lib/l10n/units/*/intl_fr_FR.arb", "lib/l10n/intl_fr_FR.arb", "lib/l10n/intl_ar_EG.arb", "lib/l10n/units/l10n-pipeline/**"],
     goal: [
       "The base ARB files are DailyAL's machine-quality translations. Review intl_fr_FR.arb entirely: fix mistranslations (e.g. `About` = « Sur » → « À propos »), untranslated entries (Spanish, German, Indonesian at :595-598), capitalisation (« turc » next to « Portugais », :856), French typography (non-breaking space before : ; ! ?, « » quotes, no em dash). The French must be flawless: follow the redaction-francais rules if available to you.",
@@ -560,7 +560,7 @@ const UNITS = [
   },
   {
     id: "color-sweep", title: "Colour sweep: hardcoded colours of already-merged screens onto the theme tokens", kind: "unit", priority: "P1", group: "release", model: "sonnet", ui: true,
-    needs: ["profile-polish", "list-cards-dal", "detail-resilience", "home-wiring", "featured-characters", "dub-info", "detail-more-info", "settings-theme-about-backup", "in-app-update", "forum-clubs", "search-upgrade", "theme-colors", "cards-upgrade", "detail-header", "detail-social", "detail-related-graph", "detail-synopsis-media", "user-list-mal", "user-profile-mal", "edit-sheet", "sync-dialog", "bookmarks", "calendar", "explore-seasonal", "settings-prefs-pages", "accounts-ux", "app-shell", "shared-kit", "notifications"],
+    needs: ["tracker-wiring", "profile-polish", "list-cards-dal", "detail-resilience", "home-wiring", "featured-characters", "dub-info", "detail-more-info", "settings-theme-about-backup", "in-app-update", "forum-clubs", "search-upgrade", "theme-colors", "cards-upgrade", "detail-header", "detail-social", "detail-related-graph", "detail-synopsis-media", "user-list-mal", "user-profile-mal", "edit-sheet", "sync-dialog", "bookmarks", "calendar", "explore-seasonal", "settings-prefs-pages", "accounts-ux", "app-shell", "shared-kit", "notifications"],
     owns: ["lib/widgets/loading/**", "lib/widgets/MAL/home/**", "lib/widgets/MAL/content/**", "lib/widgets/MAL/review/**", "lib/widgets/user/**", "lib/widgets/charts/**", "lib/widgets/bookmarks/**", "lib/widgets/calendar/**", "lib/widgets/common/**", "lib/screens/MAL/**", "lib/screens/explore/**", "lib/screens/seasonal/**", "lib/screens/calendar/**", "lib/screens/user_profile/**", "lib/screens/settings/**", "lib/screens/bookmarks_screen.dart", "lib/pages/side_bar.dart", "lib/constants/constants.dart"],
     goal: [
       "Replace every hardcoded `Colors.*` / `Color(0x…)` in the owned screens with `colorScheme` roles or the app_colors tokens (theme-colors), except intrinsic content colours (e.g. a tracker's brand logo) — list those exceptions in the PR body.",
@@ -581,6 +581,19 @@ const UNITS = [
       "Prefer flutter_launcher_icons (already a dev dependency, config `flutter_icons:` in pubspec.yaml): set adaptive_icon_background / adaptive_icon_foreground / adaptive_icon_monochrome and regenerate with `tools/heavy.sh dart run flutter_launcher_icons`; commit the generated res files. iOS keeps a square icon (iOS masks it itself).",
     ],
     dod: ["mipmap-anydpi-v26/ic_launcher.xml (+ ic_launcher_round.xml) exist with background/foreground/monochrome.", "Checker: launcher screenshot on the emulator next to DailyAL — a full dark circle with the white mwL letters, no square inside."],
+  },
+  {
+    id: "tracker-wiring", title: "AniList / Kitsu / Simkl wiring: notifications, profile routes, remove action, MAL-only notes", kind: "unit", priority: "P1", group: "trackers", model: "sonnet", ui: true,
+    needs: ["anilist-pages", "kitsu-pages", "simkl-pages"],
+    owns: ["lib/services/notifications/notification_service.dart", "lib/services/notifications/**", "lib/utils/app_routes.dart", "lib/widgets/user/sync/**", "lib/screens/settings/user_prefs_settings.dart", "lib/screens/settings/anime_manga_settings.dart", "lib/screens/settings/list_prefs_settings.dart", "lib/screens/settings/prefs/**", "test/units/app-shell/app_routes_test.dart"],
+    goal: [
+      "Notifications: when the active tracker is AniList, Kitsu or Simkl, feed the planner with that tracker's Watching / Plan to watch candidates (`AnilistListService.airingCandidates()`, `KitsuLibrary.instance.airingCandidates()`, the Simkl equivalent from simkl-pages) — entries are mapped to MAL ids, so the calendar's AiringSchedule works for them.",
+      "Profile routes: `AppRoutes.openUserProfile` / `openUserStats` (`_hasProfileScreen`) open the real AniList / Kitsu / Simkl profile screens (other users included where the tracker allows it) instead of the stub.",
+      "Tracker entry editor (lib/widgets/user/sync/**, `showTrackerEntryEditor`): add a confirmed 'Remove from list' action for AniList, Kitsu and Simkl (owner decision).",
+      "Preference pages: when the active tracker is not MAL, mark MAL-only options (NSFW, priority, airing info, auto dates, MAL statuses…) with a visible translated note (owner decision).",
+      "Never write to the owner's trackers in tests (fakes only).",
+    ],
+    dod: ["Checker: switch to AniList on the emulator, open a profile link and a list entry editor (cancel); notifications settings show AniList candidates."],
   },
   {
     id: "in-app-update", title: "In-app update: check GitHub releases, download and install APK", kind: "unit", priority: "P2", group: "release", model: "sonnet", ui: true,

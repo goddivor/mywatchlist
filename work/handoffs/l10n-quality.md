@@ -3,6 +3,7 @@
 **Kind** unit · **Priority** P2 · **Group** release · **Model** sonnet
 
 ## Needs done first
+- `tracker-wiring` (AniList / Kitsu / Simkl wiring: notifications, profile routes, remove action, MAL-only notes)
 - `gate-fix` (Make the merge gate meaningful)
 - `auth-refresh` (Token refresh and retry for all trackers)
 - `backend-parsers` (mwl-api: port DAL's missing routes and HTML parsers)

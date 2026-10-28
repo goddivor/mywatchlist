@@ -86,7 +86,8 @@
       "units": [
         "anilist-pages",
         "kitsu-pages",
-        "simkl-pages"
+        "simkl-pages",
+        "tracker-wiring"
       ]
     },
     {
@@ -1373,6 +1374,7 @@
       "artifact": "",
       "priority": "P2",
       "needs": [
+        "tracker-wiring",
         "gate-fix",
         "auth-refresh",
         "backend-parsers",
@@ -1437,6 +1439,7 @@
       "artifact": "",
       "priority": "P1",
       "needs": [
+        "tracker-wiring",
         "profile-polish",
         "list-cards-dal",
         "detail-resilience",
@@ -1527,6 +1530,40 @@
         "model: sonnet"
       ],
       "status": "✅ done"
+    },
+    {
+      "id": "tracker-wiring",
+      "title": "AniList / Kitsu / Simkl wiring: notifications, profile routes, remove action, MAL-only notes",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "anilist-pages",
+        "kitsu-pages",
+        "simkl-pages"
+      ],
+      "owns": [
+        "lib/services/notifications/notification_service.dart",
+        "lib/services/notifications/**",
+        "lib/utils/app_routes.dart",
+        "lib/widgets/user/sync/**",
+        "lib/screens/settings/user_prefs_settings.dart",
+        "lib/screens/settings/anime_manga_settings.dart",
+        "lib/screens/settings/list_prefs_settings.dart",
+        "lib/screens/settings/prefs/**",
+        "test/units/app-shell/app_routes_test.dart",
+        "lib/l10n/units/tracker-wiring/**",
+        "test/units/tracker-wiring/**"
+      ],
+      "group": "trackers",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: sonnet"
+      ],
+      "status": "⬜ todo"
     },
     {
       "id": "in-app-update",
