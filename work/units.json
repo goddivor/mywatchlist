@@ -2001,10 +2001,13 @@
       "artifact": "",
       "priority": "P1",
       "needs": [
+        "ux-edit-sheet",
         "mal-session",
         "color-sweep"
       ],
       "owns": [
+        "lib/widgets/user/edit/edit_fields.dart",
+        "test/units/edit-sheet/**",
         "lib/screens/settings/accounts_settings.dart",
         "lib/widgets/forum/post_widget.dart",
         "lib/widgets/user/list/cards/entry_parts.dart",
