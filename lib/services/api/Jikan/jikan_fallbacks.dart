@@ -3,11 +3,18 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:intl/intl.dart';
 import 'package:mwl_commons/mwl_commons.dart'
-    show ContentCharactersHtml, ContentCharacterHtml, ReviewHtml, StaffMemberHtml;
+    show
+        ContentCharactersHtml,
+        ContentCharacterHtml,
+        ContentUpdateHtml,
+        ContentUpdatesHtml,
+        ReviewHtml,
+        StaffMemberHtml;
 import 'package:mywatchlist/services/api/Jikan/jikan_anime_character.dart' show AnimeCharacter;
 import 'package:mywatchlist/services/api/Jikan/jikan_anime_forum.dart';
 import 'package:mywatchlist/services/api/Jikan/jikan_anime_review.dart';
 import 'package:mywatchlist/services/api/Jikan/jikan_anime_staff.dart' as staff;
+import 'package:mywatchlist/services/api/Jikan/jikan_animeuserupdate.dart' as updates;
 import 'package:mywatchlist/services/api/Jikan/jikan_anime_news.dart' show AnimeNews;
 import 'package:mywatchlist/services/api/Jikan/jikan_client.dart';
 import 'package:mywatchlist/services/api/Jikan/mal_news_page.dart';
@@ -158,10 +165,18 @@ class JikanFallbacks {
   static Future<List<AnimeNews>> Function(int id, String category) news =
       MalNewsPage.fetch;
 
+  /// Members' latest list updates of one title from the "Recently Updated
+  /// By" table of MAL's stats page (mwl-api `content/updates`, parsed off the
+  /// UI isolate). Tenrai has no `userupdates`, so this is the only source
+  /// while Jikan is down.
+  static Future<updates.AnimeUserUpdatesResponse> Function(
+      int id, String category, int page) userUpdates = _mwlUserUpdates;
+
   /// Restores the real sources and timings (tests).
   @visibleForTesting
   static void reset() {
     news = MalNewsPage.fetch;
+    userUpdates = _mwlUserUpdates;
     reviews = _mwlReviews;
     forum = _malForum;
     characters = _mwlCharacters;
@@ -181,6 +196,13 @@ class JikanFallbacks {
         .getReviewList(id: id, category: category, page: page)
         .timeout(timeout);
     return list.map(reviewFromHtml).toList();
+  }
+
+  static Future<updates.AnimeUserUpdatesResponse> _mwlUserUpdates(
+      int id, String category, int page) async {
+    final html = await MwlApi.i
+        .getContentUpdates(id, category, page: page, timeout: timeout);
+    return userUpdatesFromHtml(html);
   }
 
   static Future<List<AnimeForum>> _malForum(int id, String category) {
@@ -344,4 +366,36 @@ staff.AnimeStaff staffFromHtml(StaffMemberHtml html) {
     },
     'positions': positions,
   });
+}
+
+/// A page of MAL's "Recently Updated By" table in the Jikan `userupdates`
+/// shape.
+updates.AnimeUserUpdatesResponse userUpdatesFromHtml(ContentUpdatesHtml html) {
+  return updates.AnimeUserUpdatesResponse(
+    data: html.updates.map(userUpdateFromHtml).toList(),
+    pagination: updates.Pagination(hasNextPage: html.hasNextPage),
+  );
+}
+
+/// One row of MAL's "Recently Updated By" table in the Jikan shape.
+updates.AnimeUserUpdate userUpdateFromHtml(ContentUpdateHtml html) {
+  final image = html.imageUrl;
+  return updates.AnimeUserUpdate(
+    user: updates.User(
+      username: html.username,
+      url: 'https://myanimelist.net/profile/${Uri.encodeComponent(html.username)}',
+      images: image == null
+          ? null
+          : updates.Images(jpg: updates.ImageFormat(imageUrl: image)),
+    ),
+    score: html.score,
+    status: html.status,
+    episodesSeen: html.episodesSeen,
+    episodesTotal: html.episodesTotal,
+    volumesRead: html.volumesRead,
+    volumesTotal: html.volumesTotal,
+    chaptersRead: html.chaptersRead,
+    chaptersTotal: html.chaptersTotal,
+    date: html.date,
+  );
 }

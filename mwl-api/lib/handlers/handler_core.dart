@@ -25,6 +25,7 @@ class HandlerCore {
       PathMatcher('reviews', _handleReviews, ['data']),
       PathMatcher('content/characters', _handleAllCharacters, ['data']),
       PathMatcher('content/stats', _handleContentStats, ['data']),
+      PathMatcher('content/updates', _handleContentUpdates, ['data']),
       PathMatcher('character/*id', _handleCharacterInfo, ['data']),
       PathMatcher('character/*id/pics', _handleCharacterPics, ['data']),
       PathMatcher('characters', _handleCharacterHome, ['data']),
@@ -409,6 +410,29 @@ class HandlerCore {
     return {'url': uri.path, 'data': result, 'fromCache': false};
   }
 
+  /// Members' latest list updates of an anime or manga, from the "Recently
+  /// Updated By" table of MAL's stats page (Jikan's `userupdates`, which
+  /// Tenrai lacks): `{updates: [ContentUpdateHtml], has_next_page}`
+  /// (`ContentUpdatesHtml`). `id` is required and numeric, `category` is
+  /// `anime` (default) or `manga`, `page` starts at 1 (75 rows per page).
+  Future<Map<String, dynamic>> _handleContentUpdates(
+      PathMatcher path, Uri uri, Map<String, String> params) async {
+    final id = queryParams<int>(uri, 'id');
+    if (id == null || id <= 0) throw _missing('id');
+    final category = queryParams<String>(uri, 'category', 'anime')!;
+    if (category != 'anime' && category != 'manga') {
+      throw _missing('category');
+    }
+    final page = queryParams<int>(uri, 'page', 1)!;
+    if (page < 1) throw _missing('page');
+    final offset = (page - 1) * ContentUpdatesHtml.pageSize;
+    final result = await HttpConnect.htmlPage(
+      '${Constants.malBaseUrl}/$category/$id/x/stats${offset == 0 ? '' : '?show=$offset'}',
+      PageParsers.parseRecentUpdates,
+    );
+    return {'url': uri.path, 'data': result, 'fromCache': false};
+  }
+
   /// Character info from Jikan v4 (Tenrai when Jikan is down).
   Future<Map<String, dynamic>> _handleCharacterInfo(
       PathMatcher path, Uri uri, Map<String, String> params) async {
@@ -459,16 +483,32 @@ class HandlerCore {
     return {'url': uri.path, 'data': result, 'fromCache': false};
   }
 
-  /// User friends from Jikan v4.
+  /// User friends: Jikan v4 (`{pagination, data}`), else MAL's own friends
+  /// page (`{friends, hasMore, userId}`, `UserFriendsList`) for the first
+  /// page. Tenrai has no user endpoints, so while Jikan is down the first
+  /// page comes from MAL and the next ones answer null (MAL pages its new
+  /// friends list with a cursor, which the app follows itself).
   Future<Map<String, dynamic>> _handleUserFriends(
       PathMatcher path, Uri uri, Map<String, String> params) async {
     final username = queryParams<String>(uri, 'username', '')!;
+    if (username.isEmpty) throw _missing('username');
     final page = queryParams<int>(uri, 'page', 1)!;
-    // Tenrai has no user endpoints: Jikan only.
-    final result = await HttpConnect.jikanGetChecked(
-      'users/$username/friends?page=$page',
-      tenrai: false,
-    );
+    Map<String, dynamic>? result;
+    try {
+      result = await HttpConnect.jikanGetChecked(
+        'users/${Uri.encodeComponent(username)}/friends?page=$page',
+        tenrai: false,
+      );
+    } on Exception catch (e) {
+      logMwl('Jikan friends failed: $e');
+    }
+    if (result == null && page == 1) {
+      final html = await HttpConnect.htmlPage(
+        '${Constants.malBaseUrl}/profile/${Uri.encodeComponent(username)}/friends',
+        HtmlParsers.parseUserFriends,
+      );
+      if (html is Map<String, dynamic>) result = html;
+    }
     return {'url': uri.path, 'data': result, 'fromCache': false};
   }
 

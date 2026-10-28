@@ -7,6 +7,7 @@ import '../model/html/pages/characters.dart';
 import '../model/html/pages/common.dart';
 import '../model/html/pages/community.dart';
 import '../model/html/pages/content_stats.dart';
+import '../model/html/pages/content_updates.dart';
 import '../model/html/pages/recommendations.dart';
 import '../model/html/pages/search_schedule.dart';
 import '../util/mal_path.dart';
@@ -844,6 +845,167 @@ class PageParsers {
           counts.values.fold<int>(0, (sum, value) => sum + value),
     );
     return ContentStatsHtml(scores: scores, statuses: statuses);
+  }
+
+  /// The "Recently Updated By" table of MAL's stats page: one page of
+  /// members' latest list updates (75 rows, newest first). Anime rows have
+  /// Score, Status, Eps Seen, Activity; manga rows Score, Status, Vol. Read,
+  /// Chap. Read, Activity. Activity times are read against [now] (default:
+  /// the current time) in MAL's guest time zone (US Pacific). An empty page
+  /// when the table is absent (nobody listed the title).
+  static ContentUpdatesHtml parseRecentUpdates(Document doc, {DateTime? now}) {
+    final table = doc.querySelector('table.table-recently-updated');
+    if (table == null) return const ContentUpdatesHtml();
+    final at = (now ?? DateTime.now()).toUtc();
+    final updates = <ContentUpdateHtml>[];
+    for (final row in table.querySelectorAll('tr')) {
+      final cells = row.children.where((c) => c.localName == 'td').toList();
+      if (cells.length < 5) continue;
+      final links = cells.first.querySelectorAll('a');
+      final nameLink = links.where((a) => _clean(a.text).isNotEmpty).firstOrNull;
+      final username = _clean(nameLink?.text);
+      if (username.isEmpty) continue;
+      final isManga = cells.length >= 6;
+      final activity = _cleanOrNull(cells.last.text);
+      final (seen, total) = _progressOf(cells[3].text);
+      final (chapters, chaptersTotal) =
+          isManga ? _progressOf(cells[4].text) : (null, null);
+      updates.add(ContentUpdateHtml(
+        username: username,
+        imageUrl: _avatarOf(links.firstOrNull?.attributes['style']),
+        score: int.tryParse(_clean(cells[1].text)),
+        status: _cleanOrNull(cells[2].text),
+        episodesSeen: isManga ? null : seen,
+        episodesTotal: isManga ? null : total,
+        volumesRead: isManga ? seen : null,
+        volumesTotal: isManga ? total : null,
+        chaptersRead: chapters,
+        chaptersTotal: chaptersTotal,
+        activity: activity,
+        date: activity == null
+            ? null
+            : malActivityTime(activity, at)?.toIso8601String(),
+      ));
+    }
+    final hasNext = doc.querySelectorAll('a').any((a) =>
+        _clean(a.text) == 'Next Page' &&
+        (a.attributes['href'] ?? '').contains('show='));
+    return ContentUpdatesHtml(updates: updates, hasNextPage: hasNext);
+  }
+
+  static final _cssUrl = RegExp(r'''url\((['"]?)([^'")]+)\1\)''');
+
+  /// The avatar of a `background-image:url(...)` style; null for MAL's
+  /// kaomoji placeholder (no picture).
+  static String? _avatarOf(String? style) {
+    final url = _cssUrl.firstMatch(style ?? '')?.group(2)?.trim();
+    if (url == null || url.isEmpty || url.contains('kaomoji')) return null;
+    return url;
+  }
+
+  /// `789 / ?` gives (789, null); `- / 23` gives (null, 23).
+  static (int?, int?) _progressOf(String? text) {
+    final parts = _clean(text).split('/');
+    int? read(int i) => i < parts.length ? int.tryParse(parts[i].trim()) : null;
+    return (read(0), read(1));
+  }
+
+  static const _months = {
+    'jan': 1, 'feb': 2, 'mar': 3, 'apr': 4, 'may': 5, 'jun': 6, //
+    'jul': 7, 'aug': 8, 'sep': 9, 'oct': 10, 'nov': 11, 'dec': 12,
+  };
+  static final _ago = RegExp(
+      r'^(\d+)\s+(second|minute|hour|day|week)s?\s+ago$',
+      caseSensitive: false);
+  static final _dayTime = RegExp(
+      r'^(Today|Yesterday),\s*(\d{1,2}):(\d{2})\s*(AM|PM)$',
+      caseSensitive: false);
+  static final _dateTime = RegExp(
+      r'^([A-Za-z]{3})\s+(\d{1,2}),?\s*(\d{4})?,?\s+(\d{1,2}):(\d{2})\s*(AM|PM)$',
+      caseSensitive: false);
+
+  /// The UTC time of one of MAL's activity texts (`31 minutes ago`, `Now`,
+  /// `Today, 1:05 AM`, `Yesterday, 4:59 PM`, `Sep 27, 7:51 PM`,
+  /// `Jul 6, 2025 9:29 AM`) seen at [now]. Wall-clock texts are in MAL's
+  /// guest time zone, US Pacific (UTC-8, UTC-7 in daylight saving time); a
+  /// date without a year later than [now] belongs to the previous year.
+  /// Null for any other text.
+  static DateTime? malActivityTime(String text, DateTime now) {
+    final t = _clean(text);
+    final utcNow = now.toUtc();
+    final lower = t.toLowerCase();
+    if (lower == 'now' || lower == 'just now') return utcNow;
+    final ago = _ago.firstMatch(t);
+    if (ago != null) {
+      final n = int.parse(ago.group(1)!);
+      final span = switch (ago.group(2)!.toLowerCase()) {
+        'second' => Duration(seconds: n),
+        'minute' => Duration(minutes: n),
+        'hour' => Duration(hours: n),
+        'day' => Duration(days: n),
+        _ => Duration(days: 7 * n),
+      };
+      return utcNow.subtract(span);
+    }
+    int hour24(String h, String ampm) {
+      final hour = int.parse(h) % 12;
+      return ampm.toUpperCase() == 'PM' ? hour + 12 : hour;
+    }
+
+    final pacificNow = _toPacific(utcNow);
+    final day = _dayTime.firstMatch(t);
+    if (day != null) {
+      final back = day.group(1)!.toLowerCase() == 'yesterday' ? 1 : 0;
+      final date = DateTime.utc(
+          pacificNow.year, pacificNow.month, pacificNow.day - back);
+      return _fromPacific(DateTime.utc(date.year, date.month, date.day,
+          hour24(day.group(2)!, day.group(4)!), int.parse(day.group(3)!)));
+    }
+    final full = _dateTime.firstMatch(t);
+    if (full == null) return null;
+    final month = _months[full.group(1)!.toLowerCase()];
+    if (month == null) return null;
+    final hasYear = full.group(3) != null;
+    DateTime build(int year) => _fromPacific(DateTime.utc(
+        year,
+        month,
+        int.parse(full.group(2)!),
+        hour24(full.group(4)!, full.group(6)!),
+        int.parse(full.group(5)!)));
+    final year = hasYear ? int.parse(full.group(3)!) : pacificNow.year;
+    final result = build(year);
+    if (!hasYear && result.isAfter(utcNow.add(const Duration(days: 1)))) {
+      return build(year - 1);
+    }
+    return result;
+  }
+
+  /// US Pacific wall clock (as a UTC-flagged value) of the UTC time [utc].
+  static DateTime _toPacific(DateTime utc) {
+    final standard = utc.subtract(const Duration(hours: 8));
+    return _pacificDst(standard)
+        ? standard.add(const Duration(hours: 1))
+        : standard;
+  }
+
+  /// The UTC time of the US Pacific wall clock [wall] (a UTC-flagged value).
+  static DateTime _fromPacific(DateTime wall) {
+    final asStandard = wall.add(const Duration(hours: 8));
+    return _pacificDst(wall)
+        ? asStandard.subtract(const Duration(hours: 1))
+        : asStandard;
+  }
+
+  /// US daylight saving time: from the second Sunday of March, 2 AM, to the
+  /// first Sunday of November, 2 AM (wall clock [wall]).
+  static bool _pacificDst(DateTime wall) {
+    DateTime nthSunday(int month, int n) {
+      final first = DateTime.utc(wall.year, month, 1);
+      final offset = (DateTime.sunday - first.weekday) % 7;
+      return DateTime.utc(wall.year, month, 1 + offset + 7 * (n - 1), 2);
+    }
+
+    return !wall.isBefore(nthSunday(3, 2)) && wall.isBefore(nthSunday(11, 1));
   }
 
   /// The `.spaceit_pad` rows between the "Summary Stats" heading and the
