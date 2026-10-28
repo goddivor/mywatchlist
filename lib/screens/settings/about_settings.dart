@@ -1,88 +1,24 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/pages/settings/settings_section.dart';
 import 'package:mywatchlist/screens/settings/prefs/pref_widgets.dart';
 import 'package:mywatchlist/screens/settings/storage_settings.dart';
+import 'package:mywatchlist/services/updater/release_service.dart';
+import 'package:mywatchlist/services/updater/update_controller.dart';
+import 'package:mywatchlist/services/updater/update_dialog.dart';
 import 'package:mywatchlist/utils/web_launcher.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
-const String _repo = 'goddivor/mywatchlist';
-const String _repoUrl = 'https://github.com/$_repo';
+export 'package:mywatchlist/services/updater/release_service.dart'
+    show ReleaseInfo, ReleaseService, ReleaseAsset, isNewerVersion;
+
+const String _repo = updaterRepo;
+const String _repoUrl = updaterRepoUrl;
 const String _malTermsUrl = 'https://myanimelist.net/static/apiagreement.html';
-
-/// A GitHub release, as much of it as the About page shows.
-class ReleaseInfo {
-  final String tag;
-  final String? body;
-  final String url;
-
-  const ReleaseInfo({required this.tag, this.body, required this.url});
-
-  factory ReleaseInfo.fromJson(Map<String, dynamic> json) {
-    final tag = json['tag_name'];
-    if (tag is! String || tag.isEmpty) {
-      throw const FormatException('Release without a tag');
-    }
-    return ReleaseInfo(
-      tag: tag,
-      body: json['body'] is String ? json['body'] as String : null,
-      url: json['html_url'] is String ? json['html_url'] as String : '$_repoUrl/releases/tag/$tag',
-    );
-  }
-}
-
-/// Reads releases of the project from the GitHub API.
-class ReleaseService {
-  final http.Client _client;
-
-  ReleaseService({http.Client? client}) : _client = client ?? http.Client();
-
-  static final Uri _api = Uri.parse('https://api.github.com/repos/$_repo/releases');
-
-  /// The release published for [version] (tag `2026.10.1`), or null when there is none.
-  Future<ReleaseInfo?> forVersion(String version) => _get('tags/$version');
-
-  /// The newest release, or null when none was published.
-  Future<ReleaseInfo?> latest() => _get('latest');
-
-  Future<ReleaseInfo?> _get(String path) async {
-    final response = await _client.get(
-      Uri.parse('$_api/$path'),
-      headers: const {'Accept': 'application/vnd.github+json'},
-    ).timeout(const Duration(seconds: 12));
-    if (response.statusCode == 404) return null;
-    if (response.statusCode != 200) {
-      throw HttpException('GitHub answered ${response.statusCode}');
-    }
-    final decoded = jsonDecode(utf8.decode(response.bodyBytes));
-    if (decoded is! Map<String, dynamic>) throw const FormatException('Unexpected answer');
-    return ReleaseInfo.fromJson(decoded);
-  }
-}
-
-/// True when [latest] is a higher `yyyy.m.n` than [current]; a leading `v` and a `+build`
-/// suffix are ignored, unreadable versions never count as newer.
-bool isNewerVersion(String current, String latest) {
-  List<int>? parse(String v) {
-    final core = v.trim().replaceFirst(RegExp('^[vV]'), '').split('+').first;
-    final parts = core.split('.').map(int.tryParse).toList();
-    return parts.contains(null) || parts.isEmpty ? null : parts.cast<int>();
-  }
-
-  final a = parse(current), b = parse(latest);
-  if (a == null || b == null) return false;
-  for (var i = 0; i < (a.length > b.length ? a.length : b.length); i++) {
-    final x = i < a.length ? a[i] : 0, y = i < b.length ? b[i] : 0;
-    if (y != x) return y > x;
-  }
-  return false;
-}
 
 /// Settings > About: version, changelog, update check, feedback entries, project links and
 /// licences.
@@ -90,7 +26,10 @@ class AboutSettingsPage extends StatefulWidget {
   /// Replaceable in tests.
   final ReleaseService? releases;
 
-  const AboutSettingsPage({super.key, this.releases});
+  /// Download and install side of the update dialog; replaceable in tests (they never download).
+  final UpdateEnvironment? updateEnvironment;
+
+  const AboutSettingsPage({super.key, this.releases, this.updateEnvironment});
 
   @override
   State<AboutSettingsPage> createState() => _AboutSettingsPageState();
@@ -142,7 +81,12 @@ class _AboutSettingsPageState extends State<AboutSettingsPage> {
   Future<void> _checkUpdates() {
     return showDialog<void>(
       context: context,
-      builder: (_) => _UpdateDialog(current: _version, releases: _releases, onOpen: _open),
+      builder: (_) => UpdateDialog(
+        current: _version,
+        releases: _releases,
+        environment: widget.updateEnvironment,
+        onOpen: _open,
+      ),
     );
   }
 
@@ -453,74 +397,6 @@ class _Message extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
-}
-
-/// Compares the installed version with the newest GitHub release.
-class _UpdateDialog extends StatefulWidget {
-  final String current;
-  final ReleaseService releases;
-  final void Function(String url) onOpen;
-
-  const _UpdateDialog({required this.current, required this.releases, required this.onOpen});
-
-  @override
-  State<_UpdateDialog> createState() => _UpdateDialogState();
-}
-
-class _UpdateDialogState extends State<_UpdateDialog> {
-  late Future<ReleaseInfo?> _future = widget.releases.latest();
-
-  @override
-  Widget build(BuildContext context) {
-    return FutureBuilder<ReleaseInfo?>(
-      future: _future,
-      builder: (context, snap) {
-        final waiting = snap.connectionState != ConnectionState.done;
-        final release = snap.data;
-        final newer = release != null && isNewerVersion(widget.current, release.tag);
-        final String title;
-        final String body;
-        if (waiting) {
-          title = S.current.Abt_Checking;
-          body = '';
-        } else if (snap.hasError) {
-          title = S.current.Check_for_updates;
-          body = S.current.Abt_Load_Failed;
-        } else if (newer) {
-          title = S.current.Update_available;
-          body = S.current.Abt_Update_Desc(release.tag, widget.current);
-        } else {
-          title = S.current.Abt_Up_To_Date;
-          body = S.current.Abt_Up_To_Date_Desc(widget.current);
-        }
-        return AlertDialog(
-          title: Text(title),
-          content: waiting
-              ? const SizedBox(height: 48, child: Center(child: CircularProgressIndicator()))
-              : Text(body),
-          actions: [
-            if (snap.hasError)
-              TextButton(
-                onPressed: () => setState(() => _future = widget.releases.latest()),
-                child: Text(S.current.Abt_Try_Again),
-              ),
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text(S.current.Close),
-            ),
-            if (newer)
-              FilledButton(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                  widget.onOpen(release.url);
-                },
-                child: Text(S.current.Abt_View_Release),
-              ),
-          ],
-        );
-      },
     );
   }
 }

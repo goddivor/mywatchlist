@@ -1,0 +1,21 @@
+{
+  "@@locale": "fr_FR",
+  "Upd_No_Release": "Aucune version n’a encore été publiée.",
+  "Upd_Download_Install": "Télécharger et installer",
+  "Upd_Package": "{name} ({size})",
+  "@Upd_Package": { "placeholders": { "name": { "type": "String" }, "size": { "type": "String" } } },
+  "Upd_Progress": "{received} sur {total}",
+  "@Upd_Progress": { "placeholders": { "received": { "type": "String" }, "total": { "type": "String" } } },
+  "Upd_Progress_Unknown": "{received} téléchargés",
+  "@Upd_Progress_Unknown": { "placeholders": { "received": { "type": "String" } } },
+  "Upd_Verifying": "Vérification du téléchargement...",
+  "Upd_Install_Started": "L’installateur est ouvert. Confirmez-y pour terminer la mise à jour.",
+  "Upd_Install_Again": "Installer à nouveau",
+  "Upd_Download_Failed_Desc": "Le téléchargement n’a pas abouti. Vérifiez votre connexion et réessayez.",
+  "Upd_Checksum_Failed": "Le fichier téléchargé ne correspond pas à sa somme de contrôle, il a donc été supprimé. Réessayez, ou récupérez-le depuis la page de la version.",
+  "Upd_Checksum_Missing": "Cette version ne fournit pas de somme de contrôle pour votre appareil : le fichier ne peut pas être vérifié et ne sera pas installé.",
+  "Upd_No_Apk": "Cette version ne contient aucun paquet pour votre appareil. Vous pouvez le récupérer depuis la page de la version.",
+  "Upd_Permission_Needed": "Autorisez MyWatchList à installer des applications dans les réglages du système, puis réessayez.",
+  "Upd_Install_Failed": "L’installateur du système n’a pas pu être ouvert.",
+  "Upd_Unsupported": "L’installation depuis l’application n’est disponible que sur Android. Ouvrez la page de la version pour télécharger la mise à jour."
+}
