@@ -3,10 +3,13 @@
 **Kind** unit · **Priority** P1 · **Group** trackers · **Model** opus
 
 ## Needs done first
+- `ux-edit-sheet` (Edit sheet as DailyAL's single compact card; sync panel behind More options)
 - `simkl-api-compliance` (simkl-api-compliance)
 - `tracker-followups` (Tracker follow-ups: removed rows disappear, Simkl list categories, notifications for every tracker)
 
 ## Owns (may create or edit ONLY these)
+- `lib/services/api/SimKl/simkl_api.dart`
+- `lib/widgets/user/sync/tracker_clients.dart`
 - `lib/services/auth/simkl_auth.dart`
 - `lib/services/auth/simkl_auth_v2.dart`
 - `lib/services/auth/simkl_authresp.dart`
@@ -18,6 +21,7 @@
 Plus `PROJECT-STATE.md` (rewrite in place, within its cap) and `docs/DECISIONS.md` (append one line per decision). Anything else you need is a FINDING to report, never an edit.
 
 ## Goal
+- From PR #226: lib/services/api/SimKl/simkl_api.dart and lib/widgets/user/sync/tracker_clients.dart call Simkl directly — route them through SimklClient (app-name/app-version/User-Agent, 429 back-off).
 - Kitsu/Simkl audit docs/kitsu-simkl-report-2026-10-28.md, unit `simkl-auth-v2`: Real AUTH V2: `/oauth2/authorize` with PKCE S256, `/oauth2/token` with refresh, scopes `media:read media:write`, refresh through auth-refresh; anonymous catalogue calls moved to the token or the CDN. Endpoint constants live in `constants.dart` (not owned): report as a finding or add the V2 URLs as private constants in the auth file Read the matching report items (endpoints, sample responses, selectors, risks) and implement them.
 - Owner decision: a Kitsu/Simkl account shows only its own tracker's data (never MAL news/forum); scraping the tracker's own site for extra data is welcome. Replicate DailyAL/MALClient UI conventions where MWL would be weaker; no explanatory captions; theme tokens; English + French. Never write to the owner's tracker accounts in tests (fakes/fixtures only).
 

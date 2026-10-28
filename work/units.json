@@ -2241,10 +2241,13 @@
       "artifact": "",
       "priority": "P1",
       "needs": [
+        "ux-edit-sheet",
         "simkl-api-compliance",
         "tracker-followups"
       ],
       "owns": [
+        "lib/services/api/SimKl/simkl_api.dart",
+        "lib/widgets/user/sync/tracker_clients.dart",
         "lib/services/auth/simkl_auth.dart",
         "lib/services/auth/simkl_auth_v2.dart",
         "lib/services/auth/simkl_authresp.dart",
