@@ -399,7 +399,7 @@ class _SectionEditDialogState extends State<_SectionEditDialog> {
     final section = widget.section;
     _type = section?.type ?? SectionType.seasonNow;
     _titleController = TextEditingController(text: section?.customTitle ?? '');
-    _itemCount = section?.itemCount ?? 15;
+    _itemCount = (section?.itemCount ?? 15).clamp(kHomeRowMinItems, kHomeRowMaxItems);
     _cacheDurationHours = section?.cacheDurationHours ?? 2;
     _userCategory = section?.userCategory ?? 'anime';
     _userStatus = section?.userStatus;
@@ -640,7 +640,7 @@ class _SectionEditDialogState extends State<_SectionEditDialog> {
                     theme: theme,
                     value: _type,
                     items: [
-                      for (final type in SectionType.values)
+                      for (final type in kSectionPickerOrder)
                         DropdownMenuItem(
                           value: type,
                           child: Row(
@@ -690,9 +690,9 @@ class _SectionEditDialogState extends State<_SectionEditDialog> {
                 ),
                 Slider(
                   value: _itemCount.toDouble(),
-                  min: 5,
-                  max: 30,
-                  divisions: 5,
+                  min: kHomeRowMinItems.toDouble(),
+                  max: kHomeRowMaxItems.toDouble(),
+                  divisions: (kHomeRowMaxItems - kHomeRowMinItems) ~/ 5,
                   label: '$_itemCount',
                   onChanged: (value) => setState(() => _itemCount = value.toInt()),
                 ),

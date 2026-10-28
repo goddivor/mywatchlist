@@ -33,7 +33,6 @@ class MalHomePage extends StatefulWidget {
 }
 
 class _MalHomePageState extends State<MalHomePage> {
-  bool _initialDataLoaded = false;
   late final ScrollController scrollController;
 
   /// Bumped by a pull to refresh: the sections that load on their own reload when it changes.
@@ -59,77 +58,45 @@ class _MalHomePageState extends State<MalHomePage> {
     super.dispose();
   }
 
+  /// Asks the shared requests for every enabled section. A row of cards is fetched with the
+  /// largest item count among the sections of its kind; the bloc skips what it already holds, so
+  /// this runs again after each change of the home settings.
   void _loadData({bool forceUpdate = false}) {
     final requestsBloc = BlocProvider.of<RequestsBloc>(context);
     final preferences = context.read<HomePreferencesBloc>().state.preferences;
 
+    final limits = <SectionType, int>{};
+    final cacheHours = <SectionType, int>{};
     for (final section in preferences.sections.where((s) => s.enabled)) {
       final cache = section.cacheDurationHours;
-      switch (section.type) {
+      final type = section.type;
+      switch (type) {
         case SectionType.news:
-          requestsBloc.add(LoadNewsEvent(
-              forceUpdate: forceUpdate, cacheDurationHours: cache));
-          break;
-        case SectionType.seasonNow:
-          // A fixed season is loaded by its own section, not by the shared current-season request.
-          if (section.season == null && section.year == null) {
-            requestsBloc.add(LoadSeasonNowEvent(
-                forceUpdate: forceUpdate, cacheDurationHours: cache));
-          }
-          break;
-        case SectionType.upcoming:
-          requestsBloc.add(LoadUpcomingAnimeEvent(
-              forceUpdate: forceUpdate, cacheDurationHours: cache));
-          break;
-        case SectionType.topFavorites:
-          requestsBloc.add(LoadTopAnimeFavoriteEvent(
-              forceUpdate: forceUpdate, cacheDurationHours: cache));
-          break;
-        case SectionType.topPopular:
-          requestsBloc.add(LoadTopAnimeByPopularityEvent(
-              forceUpdate: forceUpdate, cacheDurationHours: cache));
-          break;
-        case SectionType.topScore:
-          requestsBloc.add(LoadTopAnimeByScoreEvent(
-              forceUpdate: forceUpdate, cacheDurationHours: cache));
-          break;
-        case SectionType.suggested:
-          requestsBloc.add(LoadSuggestedAnimeEvent(
-              forceUpdate: forceUpdate, cacheDurationHours: cache));
-          break;
-        case SectionType.topAnimeAiring:
-          requestsBloc.add(LoadTopAnimeAiringEvent(
-              forceUpdate: forceUpdate, cacheDurationHours: cache));
-          break;
-        case SectionType.topAnimeTV:
-          requestsBloc.add(LoadTopAnimeTVEvent(
-              forceUpdate: forceUpdate, cacheDurationHours: cache));
-          break;
-        case SectionType.topAnimeMovie:
-          requestsBloc.add(LoadTopAnimeMovieEvent(
-              forceUpdate: forceUpdate, cacheDurationHours: cache));
-          break;
-        case SectionType.topAnimeSpecial:
-          requestsBloc.add(LoadTopAnimeSpecialEvent(
-              forceUpdate: forceUpdate, cacheDurationHours: cache));
-          break;
-        case SectionType.topManga:
-          requestsBloc.add(LoadTopMangaEvent(
-              forceUpdate: forceUpdate, cacheDurationHours: cache));
-          break;
-        case SectionType.topMangaPopular:
-          requestsBloc.add(LoadTopMangaByPopularityEvent(
-              forceUpdate: forceUpdate, cacheDurationHours: cache));
-          break;
+          requestsBloc.add(LoadNewsEvent(forceUpdate: forceUpdate, cacheDurationHours: cache));
         case SectionType.features:
-          requestsBloc.add(LoadFeaturesEvent(
-              forceUpdate: forceUpdate, cacheDurationHours: cache));
-          break;
+          requestsBloc.add(LoadFeaturesEvent(forceUpdate: forceUpdate, cacheDurationHours: cache));
         case SectionType.userList:
         case SectionType.forum:
           // Loaded by their own widgets (lib/widgets/home/home_sections.dart).
           break;
+        case SectionType.seasonNow when section.season != null || section.year != null:
+          // A fixed season is loaded by its own section, not by the shared current-season request.
+          break;
+        default:
+          if (!type.isContentRow) break;
+          final count = section.itemCount.clamp(kHomeRowMinItems, kHomeRowMaxItems);
+          if (count > (limits[type] ?? 0)) limits[type] = count;
+          final hours = cacheHours[type];
+          if (hours == null || cache < hours) cacheHours[type] = cache;
       }
+    }
+    for (final entry in limits.entries) {
+      requestsBloc.add(LoadHomeRowEvent(
+        entry.key,
+        limit: entry.value,
+        forceUpdate: forceUpdate,
+        cacheDurationHours: cacheHours[entry.key] ?? 2,
+      ));
     }
   }
 
@@ -147,11 +114,10 @@ class _MalHomePageState extends State<MalHomePage> {
     // Section titles and chips read S.current: rebuild when the app language changes.
     Localizations.localeOf(context);
     return BlocConsumer<HomePreferencesBloc, HomePreferencesState>(
+      // Each time the preferences settle (first load, a change in the home settings), load what the
+      // sections now need: a new section or a larger item count is fetched at once.
       listener: (context, state) {
-        if (!state.isLoading && !_initialDataLoaded) {
-          _initialDataLoaded = true;
-          _loadData();
-        }
+        if (!state.isLoading) _loadData();
       },
       builder: (context, homePreferencesState) {
         final theme = Theme.of(context);
@@ -189,7 +155,8 @@ class _MalHomePageState extends State<MalHomePage> {
         showAvatar: true,
         showSettings: true,
       ),
-      actions: const <Widget>[],
+      // Not empty: an empty list lets Flutter add its endDrawer button (☰) to the app bar.
+      actions: const [SizedBox.shrink()],
       titleSpacing: 0.0,
       backgroundColor:
           constraints.scrollOffset > 20 ? theme.appBarTheme.backgroundColor : Colors.transparent,
@@ -222,37 +189,16 @@ class _MalHomePageState extends State<MalHomePage> {
 
   /// Where a ranking-backed section lands when its title is tapped, null for the others.
   Widget? _screenFor(HomeSectionPreference section) {
-    switch (section.type) {
-      case SectionType.seasonNow:
-        return GeneralSearchScreen.bySeason(section.effectiveSeason, section.effectiveYear);
-      case SectionType.suggested:
-        return GeneralSearchScreen.bySuggested();
-      case SectionType.upcoming:
-        return GeneralSearchScreen.byRanking(RankingType.UPCOMING);
-      case SectionType.topScore:
-        return GeneralSearchScreen.byRanking(RankingType.ALL);
-      case SectionType.topFavorites:
-        return GeneralSearchScreen.byRanking(RankingType.FAVOURITE);
-      case SectionType.topPopular:
-        return GeneralSearchScreen.byRanking(RankingType.BYPOPULARITY);
-      case SectionType.topAnimeAiring:
-        return GeneralSearchScreen.byRanking(RankingType.AIRING);
-      case SectionType.topAnimeTV:
-        return GeneralSearchScreen.byRanking(RankingType.TV);
-      case SectionType.topAnimeMovie:
-        return GeneralSearchScreen.byRanking(RankingType.MOVIE);
-      case SectionType.topAnimeSpecial:
-        return GeneralSearchScreen.byRanking(RankingType.SPECIAL);
-      case SectionType.topManga:
-        return GeneralSearchScreen.byMangaRanking(MangaRanking.all);
-      case SectionType.topMangaPopular:
-        return GeneralSearchScreen.byMangaRanking(MangaRanking.bypopularity);
-      case SectionType.news:
-      case SectionType.features:
-      case SectionType.userList:
-      case SectionType.forum:
-        return null;
+    final type = section.type;
+    if (type == SectionType.seasonNow) {
+      return GeneralSearchScreen.bySeason(section.effectiveSeason, section.effectiveYear);
     }
+    if (type == SectionType.suggested) return GeneralSearchScreen.bySuggested();
+    final anime = type.animeRanking;
+    if (anime != null) return GeneralSearchScreen.byRanking(anime);
+    final manga = type.mangaRanking;
+    if (manga != null) return GeneralSearchScreen.byMangaRanking(manga);
+    return null;
   }
 
   Widget _buildSection(ThemeData theme, HomeSectionPreference section, TileSize tileSize) {
@@ -263,6 +209,7 @@ class _MalHomePageState extends State<MalHomePage> {
           section,
           category: 'news',
           isLoaded: (state) => state.isNewsLoaded,
+          isFailed: (state) => state.isNewsFailed,
           items: (state) => state.news,
           emptyText: S.current.Hw_Empty_News,
         );
@@ -271,6 +218,7 @@ class _MalHomePageState extends State<MalHomePage> {
           section,
           category: 'featured',
           isLoaded: (state) => state.isFeaturesLoaded,
+          isFailed: (state) => state.isFeaturesFailed,
           items: (state) => state.features,
           emptyText: S.current.Hw_Empty_Features,
         );
@@ -283,45 +231,10 @@ class _MalHomePageState extends State<MalHomePage> {
         );
       case SectionType.forum:
         return HomeForumSection(section: section, refresh: _refresh);
-      case SectionType.seasonNow:
-        if (section.season != null || section.year != null) {
-          return _buildFixedSeasonSection(theme, section, title, tileSize);
-        }
-        return _buildAnimeSection(theme, section, title, (s) => s.isSeasonNowLoaded,
-            (s) => s.seasonNow, tileSize);
-      case SectionType.suggested:
-        return _buildAnimeSection(theme, section, title, (s) => s.isSuggestedAnimeLoaded,
-            (s) => s.suggestedAnime, tileSize);
-      case SectionType.upcoming:
-        return _buildAnimeSection(theme, section, title, (s) => s.isUpcomingAnimeLoaded,
-            (s) => s.upcomingAnime, tileSize);
-      case SectionType.topScore:
-        return _buildAnimeSection(theme, section, title, (s) => s.isTopAnimeByScoreLoaded,
-            (s) => s.topAnimeByScore, tileSize);
-      case SectionType.topFavorites:
-        return _buildAnimeSection(theme, section, title, (s) => s.isTopAnimeFavoriteLoaded,
-            (s) => s.topAnimeFavorite, tileSize);
-      case SectionType.topPopular:
-        return _buildAnimeSection(theme, section, title,
-            (s) => s.isTopAnimeByPopularityLoaded, (s) => s.topAnimeByPopularity, tileSize);
-      case SectionType.topAnimeAiring:
-        return _buildAnimeSection(theme, section, title, (s) => s.isTopAnimeAiringLoaded,
-            (s) => s.topAnimeAiring, tileSize);
-      case SectionType.topAnimeTV:
-        return _buildAnimeSection(theme, section, title, (s) => s.isTopAnimeTVLoaded,
-            (s) => s.topAnimeTV, tileSize);
-      case SectionType.topAnimeMovie:
-        return _buildAnimeSection(theme, section, title, (s) => s.isTopAnimeMovieLoaded,
-            (s) => s.topAnimeMovie, tileSize);
-      case SectionType.topAnimeSpecial:
-        return _buildAnimeSection(theme, section, title, (s) => s.isTopAnimeSpecialLoaded,
-            (s) => s.topAnimeSpecial, tileSize);
-      case SectionType.topManga:
-        return _buildAnimeSection(theme, section, title, (s) => s.isTopMangaLoaded,
-            (s) => s.topManga, tileSize);
-      case SectionType.topMangaPopular:
-        return _buildAnimeSection(theme, section, title,
-            (s) => s.isTopMangaByPopularityLoaded, (s) => s.topMangaByPopularity, tileSize);
+      case SectionType.seasonNow when section.season != null || section.year != null:
+        return _buildFixedSeasonSection(theme, section, title, tileSize);
+      default:
+        return _buildAnimeSection(theme, section, title, tileSize);
     }
   }
 
@@ -330,6 +243,7 @@ class _MalHomePageState extends State<MalHomePage> {
     HomeSectionPreference section, {
     required String category,
     required bool Function(RequestsState) isLoaded,
+    required bool Function(RequestsState) isFailed,
     required List<Map<String, String>> Function(RequestsState) items,
     required String emptyText,
   }) {
@@ -349,8 +263,15 @@ class _MalHomePageState extends State<MalHomePage> {
           BlocBuilder<RequestsBloc, RequestsState>(
             buildWhen: (previous, current) =>
                 isLoaded(previous) != isLoaded(current) ||
+                isFailed(previous) != isFailed(current) ||
                 !identical(items(previous), items(current)),
             builder: (context, state) {
+              if (!isLoaded(state) && isFailed(state)) {
+                return _failed(() => context.read<RequestsBloc>().add(isNews
+                    ? LoadNewsEvent(forceUpdate: true, cacheDurationHours: section.cacheDurationHours)
+                    : LoadFeaturesEvent(
+                        forceUpdate: true, cacheDurationHours: section.cacheDurationHours)));
+              }
               if (!isLoaded(state)) {
                 return loadingCardList(
                   containerHeight: 250.0,
@@ -379,15 +300,12 @@ class _MalHomePageState extends State<MalHomePage> {
     ThemeData theme,
     HomeSectionPreference section,
     String title,
-    bool Function(RequestsState) isLoaded,
-    List<Anime> Function(RequestsState) getItems,
     TileSize tileSize,
   ) {
     // Match DailyAL: width = containerHeight * (2/3)
     final double cardWidth = tileSize.containerHeight * (2 / 3);
     final double cardHeight = tileSize.containerHeight;
-    final isManga =
-        section.type == SectionType.topManga || section.type == SectionType.topMangaPopular;
+    final type = section.type;
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 10.0),
@@ -397,16 +315,24 @@ class _MalHomePageState extends State<MalHomePage> {
           _header(section, title),
           BlocBuilder<RequestsBloc, RequestsState>(
             buildWhen: (previous, current) =>
-                isLoaded(previous) != isLoaded(current) ||
-                !identical(getItems(previous), getItems(current)),
+                !identical(previous.rows[type], current.rows[type]) ||
+                previous.isRowFailed(type) != current.isRowFailed(type),
             builder: (context, state) {
-              if (!isLoaded(state)) {
+              if (!state.isRowLoaded(type)) {
+                if (state.isRowFailed(type)) {
+                  return _failed(() => context.read<RequestsBloc>().add(LoadHomeRowEvent(
+                        type,
+                        limit: section.itemCount,
+                        forceUpdate: true,
+                        cacheDurationHours: section.cacheDurationHours,
+                      )));
+                }
                 return _loadingRow(section, cardWidth, cardHeight);
               }
               return _animeRow(
-                getItems(state),
+                state.row(type),
                 section: section,
-                isManga: isManga,
+                isManga: type.mangaRanking != null,
                 cardWidth: cardWidth,
                 cardHeight: cardHeight,
               );
@@ -416,6 +342,13 @@ class _MalHomePageState extends State<MalHomePage> {
       ),
     );
   }
+
+  Widget _failed(VoidCallback onRetry) => HomeMessage(
+        icon: Icons.cloud_off_outlined,
+        text: S.current.Hw_Section_Failed,
+        actionLabel: S.current.Hw_Retry,
+        onAction: onRetry,
+      );
 
   /// A seasonal row for a season picked in the home settings (the shared request only knows the
   /// current season).

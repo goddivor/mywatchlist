@@ -29,6 +29,61 @@ enum SectionType {
   forum,
 }
 
+/// Bounds of the per-section item count (the slider of the home settings). MAL's ranking,
+/// seasonal and suggestion endpoints all accept that many in one call.
+const int kHomeRowMinItems = 5;
+const int kHomeRowMaxItems = 30;
+
+/// The order of the kinds in the "section type" picker: anime rows, then manga rows, then the
+/// others (the enum order is the storage order and cannot be regrouped).
+const List<SectionType> kSectionPickerOrder = [
+  SectionType.seasonNow,
+  SectionType.suggested,
+  SectionType.upcoming,
+  SectionType.topScore,
+  SectionType.topAnimeAiring,
+  SectionType.topPopular,
+  SectionType.topFavorites,
+  SectionType.topAnimeTV,
+  SectionType.topAnimeMovie,
+  SectionType.topAnimeSpecial,
+  SectionType.topManga,
+  SectionType.topMangaPopular,
+  SectionType.userList,
+  SectionType.forum,
+  SectionType.news,
+  SectionType.features,
+];
+
+extension SectionTypeRanking on SectionType {
+  /// The MAL anime ranking behind the row, null when it is not an anime ranking.
+  RankingType? get animeRanking => switch (this) {
+        SectionType.upcoming => RankingType.UPCOMING,
+        SectionType.topScore => RankingType.ALL,
+        SectionType.topFavorites => RankingType.FAVOURITE,
+        SectionType.topPopular => RankingType.BYPOPULARITY,
+        SectionType.topAnimeAiring => RankingType.AIRING,
+        SectionType.topAnimeTV => RankingType.TV,
+        SectionType.topAnimeMovie => RankingType.MOVIE,
+        SectionType.topAnimeSpecial => RankingType.SPECIAL,
+        _ => null,
+      };
+
+  /// The MAL manga ranking behind the row, null when it is not a manga ranking.
+  MangaRanking? get mangaRanking => switch (this) {
+        SectionType.topManga => MangaRanking.all,
+        SectionType.topMangaPopular => MangaRanking.bypopularity,
+        _ => null,
+      };
+
+  /// A row of anime or manga cards filled by the shared home requests (RequestsBloc).
+  bool get isContentRow =>
+      this == SectionType.seasonNow ||
+      this == SectionType.suggested ||
+      animeRanking != null ||
+      mangaRanking != null;
+}
+
 class HomeSectionPreference {
   SectionType type;
   bool enabled;
@@ -105,7 +160,8 @@ class HomeSectionPreference {
     return HomeSectionPreference(
       type: SectionType.values[typeIndex],
       enabled: json['enabled'] as bool? ?? true,
-      itemCount: json['itemCount'] as int? ?? 15,
+      itemCount: ((json['itemCount'] as num?)?.toInt() ?? 15)
+          .clamp(kHomeRowMinItems, kHomeRowMaxItems),
       customTitle: json['customTitle'] as String?,
       cacheDurationHours: json['cacheDurationHours'] as int? ?? 2,
       userCategory: json['userCategory'] == 'manga' ? 'manga' : 'anime',
