@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mwl_commons/mwl_commons.dart' show InterestStack, RankedPersonHtml, ReviewHtml;
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/screens/explore/explore_data.dart';
+import 'package:mywatchlist/screens/explore/explore_images.dart';
 import 'package:mywatchlist/screens/explore/explore_list_screen.dart';
 import 'package:mywatchlist/screens/explore/explore_sections.dart';
 import 'package:mywatchlist/screens/explore/explore_widgets.dart';
@@ -29,6 +30,12 @@ class _MalExplorePageState extends State<MalExplorePage> {
   bool get _isAnime => _category == 'anime';
 
   @override
+  void initState() {
+    super.initState();
+    ExploreImages.registerLicense();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final category = _category;
     final isAnime = _isAnime;
@@ -48,6 +55,10 @@ class _MalExplorePageState extends State<MalExplorePage> {
             transparent: true,
             showSettings: true,
           ),
+          // A non-empty action list stops the AppBar from adding its own end-drawer (☰)
+          // button next to the avatar, which already opens the sidebar. Flutter 3.35 has no
+          // `automaticallyImplyActions`, and an empty list does not count.
+          actions: const [SizedBox.shrink()],
         ),
         SliverToBoxAdapter(child: _SearchBarTile(onTap: () => AppRoutes.openSearch(context))),
         SliverToBoxAdapter(
@@ -83,6 +94,8 @@ class _MalExplorePageState extends State<MalExplorePage> {
         if (isAnime) ...[
           SliverToBoxAdapter(child: ExploreSectionHeader(title: S.current.Seasonal)),
           const SliverToBoxAdapter(child: SeasonalCard()),
+          const SliverToBoxAdapter(child: SizedBox(height: 12)),
+          const SliverToBoxAdapter(child: StudiosEntry()),
         ],
         SliverToBoxAdapter(
           child: ExploreSectionHeader(

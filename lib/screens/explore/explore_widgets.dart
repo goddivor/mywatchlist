@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:mywatchlist/generated/l10n.dart';
+import 'package:mywatchlist/screens/explore/explore_images.dart';
+import 'package:mywatchlist/widgets/common/app_colors.dart';
 import 'package:mywatchlist/widgets/common/app_image.dart';
 import 'package:mywatchlist/widgets/loading/loadingcard.dart';
 
@@ -228,6 +230,9 @@ class PosterTile extends StatelessWidget {
   final double width;
   final double imageHeight;
   final Widget? badge;
+
+  /// Drawn at the bottom start corner of the picture (the favourites count of a person).
+  final Widget? bottomBadge;
   final bool round;
 
   const PosterTile({
@@ -239,6 +244,7 @@ class PosterTile extends StatelessWidget {
     this.width = 110,
     this.imageHeight = 156,
     this.badge,
+    this.bottomBadge,
     this.round = false,
   });
 
@@ -263,6 +269,8 @@ class PosterTile extends StatelessWidget {
                   borderRadius: radius,
                 ),
                 if (badge != null) PositionedDirectional(top: 6, start: 6, child: badge!),
+                if (bottomBadge != null)
+                  PositionedDirectional(bottom: 6, start: 6, child: bottomBadge!),
               ],
             ),
             const SizedBox(height: 6),
@@ -283,18 +291,25 @@ class PosterTile extends StatelessWidget {
   }
 }
 
-/// Small rounded label drawn over a picture, with a flat translucent background.
+/// Small rounded label drawn over a picture, on the `imageScrim` token (flat, no blur).
 class CornerBadge extends StatelessWidget {
   final String text;
   final IconData? icon;
 
-  const CornerBadge(this.text, {super.key, this.icon});
+  /// Colour of [icon]; the label stays `onImageScrim`.
+  final Color? iconColor;
+
+  /// Read by screen readers instead of [text] (e.g. "12,345 favourites" for "12K").
+  final String? semanticLabel;
+
+  const CornerBadge(this.text, {super.key, this.icon, this.iconColor, this.semanticLabel});
 
   @override
   Widget build(BuildContext context) {
-    return DecoratedBox(
+    final tokens = AppColors.of(context);
+    final badge = DecoratedBox(
       decoration: BoxDecoration(
-        color: const Color(0xB3000000),
+        color: tokens.imageScrim,
         borderRadius: BorderRadius.circular(8),
       ),
       child: Padding(
@@ -303,12 +318,131 @@ class CornerBadge extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             if (icon != null) ...[
-              Icon(icon, size: 11, color: Colors.white),
+              Icon(icon, size: 11, color: iconColor ?? tokens.onImageScrim),
               const SizedBox(width: 3),
             ],
             Text(text,
-                style: const TextStyle(
-                    color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600)),
+                style: TextStyle(
+                    color: tokens.onImageScrim, fontSize: 11, fontWeight: FontWeight.w600)),
+          ],
+        ),
+      ),
+    );
+    if (semanticLabel == null) return badge;
+    return Semantics(label: semanticLabel, excludeSemantics: true, child: badge);
+  }
+}
+
+/// A DailyAL Explore card: its bundled picture under the `imageScrim` token with the label
+/// centred in `onImageScrim` (DailyAL fades the picture to 30 % behind the text; a flat scrim
+/// keeps the same look and stays readable on every picture, in every theme mode).
+///
+/// The picture is decoded at the card's size (never above the 225 px source), so a row of
+/// cards scrolls without decoding full pictures. Without a picture the card is an
+/// [ExploreTile]; [hidden] replaces the picture by a flat block (adult content with NSFW off).
+class ExplorePictureCard extends StatelessWidget {
+  final String? asset;
+  final String label;
+  final String? caption;
+  final IconData icon;
+  final double hue;
+  final VoidCallback onTap;
+  final double width;
+  final double height;
+  final bool hidden;
+
+  const ExplorePictureCard({
+    super.key,
+    required this.asset,
+    required this.label,
+    required this.icon,
+    required this.hue,
+    required this.onTap,
+    this.caption,
+    this.width = 148,
+    this.height = 100,
+    this.hidden = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final asset = this.asset;
+    if (asset == null && !hidden) {
+      return ExploreTile(
+        icon: icon,
+        label: label,
+        caption: caption,
+        hue: hue,
+        onTap: onTap,
+        width: width,
+        height: height,
+      );
+    }
+    final scheme = Theme.of(context).colorScheme;
+    final tokens = AppColors.of(context);
+    final foreground = hidden ? scheme.onSurfaceVariant : tokens.onImageScrim;
+    final text = Padding(
+      padding: const EdgeInsets.all(10),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          if (hidden) ...[
+            Icon(Icons.eighteen_up_rating_rounded, color: foreground, size: 22),
+            const SizedBox(height: 4),
+          ],
+          Text(
+            label,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+                color: hidden ? scheme.onSurface : foreground,
+                fontWeight: FontWeight.w700,
+                fontSize: 14,
+                height: 1.15),
+          ),
+          if (caption != null) ...[
+            const SizedBox(height: 2),
+            Text(caption!,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+                style: TextStyle(color: foreground, fontSize: 11.5)),
+          ],
+        ],
+      ),
+    );
+    return SizedBox(
+      width: width,
+      height: height,
+      child: Material(
+        color: hidden ? scheme.surfaceContainerHighest : scheme.surfaceContainer,
+        borderRadius: BorderRadius.circular(12),
+        clipBehavior: Clip.antiAlias,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            if (!hidden && asset != null) ...[
+              LayoutBuilder(builder: (context, constraints) {
+                final ratio = MediaQuery.devicePixelRatioOf(context);
+                final w = constraints.maxWidth.isFinite ? constraints.maxWidth : width;
+                final decode = (w * ratio).round().clamp(32, ExploreImages.sourceWidth);
+                return Image.asset(
+                  asset,
+                  fit: BoxFit.cover,
+                  cacheWidth: decode,
+                  excludeFromSemantics: true,
+                  gaplessPlayback: true,
+                  errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                );
+              }),
+              ColoredBox(color: tokens.imageScrim),
+            ],
+            Center(child: text),
+            Material(
+              type: MaterialType.transparency,
+              child: InkWell(onTap: onTap),
+            ),
           ],
         ),
       ),
