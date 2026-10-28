@@ -11,6 +11,7 @@ import 'package:mywatchlist/pages/Simkl/simkl_user_page.dart';
 import 'package:mywatchlist/pages/Simkl/simkl_user_profile_page.dart';
 import 'package:mywatchlist/services/api/SimKl/simkl_discover_service.dart';
 import 'package:mywatchlist/user/accounts/account_bloc.dart';
+import 'package:mywatchlist/user/MAL/mal_home_preferences_bloc.dart';
 import 'package:mywatchlist/user/language/language_bloc.dart';
 import 'package:mywatchlist/user/preferences/preferences.dart';
 import 'package:mywatchlist/widgets/home/home_sections.dart';
@@ -58,6 +59,7 @@ void main() {
     await tester.pumpWidget(MultiBlocProvider(
       providers: [
         BlocProvider(create: (_) => AccountBloc()),
+        BlocProvider(create: (_) => HomePreferencesBloc()),
         BlocProvider.value(value: prefs),
       ],
       child: MaterialApp(
@@ -80,12 +82,14 @@ void main() {
     await initializeDateFormatting();
   });
 
-  testWidgets('home lists the three catalogue rows and hides "Continue watching" signed out', (tester) async {
+  testWidgets('home shows the rows of the default home preferences, "Continue watching" only signed in',
+      (tester) async {
     await pump(tester, const SimklHomePage());
-    expect(find.text('Airing today'), findsOneWidget);
     expect(find.text('Trending'), findsOneWidget);
     expect(find.text('New premieres'), findsOneWidget);
     expect(find.text('Trending show'), findsOneWidget);
+    expect(find.text('Premiere show'), findsOneWidget);
+    expect(find.text('Airing today'), findsNothing, reason: 'not among the default sections');
     expect(find.text('Continue watching'), findsNothing);
   });
 
