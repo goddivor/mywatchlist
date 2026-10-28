@@ -7,6 +7,7 @@ import '../model/html/pages/characters.dart';
 import '../model/html/pages/common.dart';
 import '../model/html/pages/community.dart';
 import '../model/html/pages/content_stats.dart';
+import '../model/html/pages/recommendations.dart';
 import '../model/html/pages/search_schedule.dart';
 import '../util/mal_path.dart';
 
@@ -850,5 +851,73 @@ class PageParsers {
       next = next.nextElementSibling;
     }
     return rows;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Global recommendations
+  // ---------------------------------------------------------------------------
+
+  /// The feed of `recommendations.php?s=recentrecs&t=<category>`: one `.borderClass` block
+  /// per recommendation, a two-cell table (liked title, recommended title), the user's text
+  /// and a "rec by <user> - <time>" line. Blocks that do not read as a pair are skipped.
+  static List<GlobalRecommendationHtml> parseRecentRecommendations(
+    Document doc,
+    String category,
+  ) {
+    final out = <GlobalRecommendationHtml>[];
+    for (final block in doc.querySelectorAll('div.borderClass')) {
+      try {
+        final cells = block.querySelectorAll('table td');
+        if (cells.length < 2) continue;
+        final source = _recommendationNode(cells[0], category);
+        final recommended = _recommendationNode(cells[1], category);
+        if (source == null || recommended == null) continue;
+
+        final textElement = block.querySelector('.recommendations-user-recs-text');
+        final footer = block.querySelector('.lightLink.spaceit');
+        final userLink = footer?.querySelector('a[href*="/profile/"]');
+        final reportHref =
+            footer?.querySelector('a[href*="id="]')?.attributes['href'] ?? '';
+        final footerText = _clean(footer?.text);
+        final dash = footerText.lastIndexOf(' - ');
+
+        out.add(GlobalRecommendationHtml(
+          id: int.tryParse(RegExp(r'[?&]id=(\d+)').firstMatch(reportHref)?.group(1) ?? ''),
+          category: category,
+          source: source,
+          recommended: recommended,
+          text: textElement == null ? null : _textWithBreaks(textElement),
+          username: _cleanOrNull(userLink?.text),
+          timeAdded: dash < 0 ? null : _cleanOrNull(footerText.substring(dash + 3)),
+        ));
+      } catch (_) {
+        // A block that changed layout is skipped, the rest of the feed stays.
+      }
+    }
+    return out;
+  }
+
+  static MalNodeRef? _recommendationNode(Element cell, String category) {
+    final link = cell.querySelector('a[href*="/$category/"]');
+    final id = MalPath.idFromUrl(link?.attributes['href']);
+    if (link == null || id == null) return null;
+    final title = _cleanOrNull(cell.querySelector('strong')?.text) ??
+        _cleanOrNull(link.attributes['title']);
+    final img = cell.querySelector('img');
+    final src = img?.attributes['data-src'] ?? img?.attributes['src'];
+    // `...t.jpg` is the 50 px thumbnail; the 2x source of the srcset is sharper.
+    final large = (img?.attributes['data-srcset'] ?? '')
+        .split(',')
+        .map((e) => e.trim().split(' ').first)
+        .where((e) => e.startsWith('http'))
+        .fold<String?>(null, (_, e) => e);
+    return MalNodeRef(
+      id: id,
+      title: title,
+      category: category,
+      image: src == null || src.contains('spacer.gif')
+          ? null
+          : ImageSet(medium: src, large: large),
+    );
   }
 }

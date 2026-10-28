@@ -39,6 +39,7 @@ class HandlerCore {
       PathMatcher('users/about', _handleUserAbout, ['data']),
       PathMatcher('users/friends', _handleUserFriends, ['data']),
       PathMatcher('users/history', _handleUserHistory, ['data']),
+      PathMatcher('users/clubs', _handleUserClubs, ['data']),
       PathMatcher('clubs', _handleClubs, ['data']),
       PathMatcher('clubs/type', _handleClubViewAll, ['data']),
       PathMatcher('schedules', _handleSchedules, ['data']),
@@ -46,6 +47,7 @@ class HandlerCore {
       PathMatcher('stacks/content', _handleStackContent, ['data']),
       PathMatcher('stacks/*stackType', _handleContentStack),
       PathMatcher('content/featured', _handleContentFeatured, ['data']),
+      PathMatcher('recommendations/recent', _handleRecentRecommendations, ['data']),
       PathMatcher('recommendations', _handleRecommendations),
     ];
   }
@@ -422,6 +424,17 @@ class HandlerCore {
     return {'url': uri.path, 'data': result, 'fromCache': false};
   }
 
+  /// The clubs a user belongs to (HTML scraping of `/profile/<name>/clubs`).
+  Future<Map<String, dynamic>> _handleUserClubs(
+      PathMatcher path, Uri uri, Map<String, String> params) async {
+    final username = queryParams<String>(uri, 'username', '')!;
+    final result = await HttpConnect.htmlPage(
+      '${Constants.malBaseUrl}/profile/${Uri.encodeComponent(username)}/clubs',
+      HtmlParsers.parseUserClubs,
+    );
+    return {'url': uri.path, 'data': result, 'fromCache': false};
+  }
+
   /// Clubs (HTML scraping).
   ///
   /// With `id`: that club's page (`ClubPageHtml`). Without: the club list,
@@ -516,7 +529,8 @@ class HandlerCore {
     if (query != null && query.isNotEmpty) {
       url = '${Constants.malBaseUrl}/stacks/search?q=${Uri.encodeComponent(query)}&type=$stackType&p=$page';
     } else {
-      url = '${Constants.malBaseUrl}/stacks?type=$stackType&p=$page';
+      // `/stacks?type=` is the hub page (no list); the paged listing is `/stacks/search`.
+      url = '${Constants.malBaseUrl}/stacks/search?type=$stackType&p=$page';
     }
 
     final result = await HttpConnect.htmlPage(url, HtmlParsers.parseInterestStackSearch);
@@ -592,6 +606,20 @@ class HandlerCore {
     final url = '${Constants.malBaseUrl}/$category/$categoryId/_/userrecs';
     final result =
         await HttpConnect.htmlPage(url, HtmlParsers.getRecommendations);
+    return {'url': uri.path, 'data': result, 'fromCache': false};
+  }
+
+  /// MAL's global feed of recommendations
+  /// (`recommendations.php?s=recentrecs&t=<category>&show=<offset>`, 100 per page).
+  Future<Map<String, dynamic>> _handleRecentRecommendations(
+      PathMatcher path, Uri uri, Map<String, String> params) async {
+    final category = _category(uri);
+    final show = queryParams<int>(uri, 'show', 0)!;
+    if (show < 0) throw _missing('show');
+    final result = await HttpConnect.htmlPage(
+      '${Constants.malBaseUrl}/recommendations.php?s=recentrecs&t=$category&show=$show',
+      (doc) => PageParsers.parseRecentRecommendations(doc, category),
+    );
     return {'url': uri.path, 'data': result, 'fromCache': false};
   }
 

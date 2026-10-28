@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:mywatchlist/constants/constants.dart' show AccountType;
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/screens/user_profile/sections/profile_tab.dart';
+import 'package:mywatchlist/screens/user_profile/sections/profile_tabs_source.dart';
 import 'package:mywatchlist/services/api/MAL/scrapper/user_friends.dart';
-import 'package:mywatchlist/services/api/mwl_api.dart';
 import 'package:mywatchlist/utils/app_routes.dart';
 import 'package:mywatchlist/widgets/common/app_image.dart';
 import 'package:mywatchlist/widgets/user/profile/profile_states.dart';
@@ -40,13 +40,12 @@ class _FriendsSectionState extends State<FriendsSection> with AutomaticKeepAlive
       _error = null;
     });
     try {
-      final envelope = await MwlApi.i.getUserFriends(widget.username, page: _page + 1);
-      if (envelope == null) throw StateError('No answer for the friends of ${widget.username}');
-      final page = parseFriendsEnvelope(envelope);
+      final page = await ProfileTabsSource.friends(widget.username, page: _page + 1);
       if (!mounted) return;
+      final known = {for (final f in _friends) f.username};
       setState(() {
         _page++;
-        _friends.addAll(page.friends);
+        _friends.addAll(page.friends.where((f) => known.add(f.username)));
         _hasNext = page.hasNextPage;
         _loading = false;
       });
@@ -68,7 +67,7 @@ class _FriendsSectionState extends State<FriendsSection> with AutomaticKeepAlive
     if (_friends.isEmpty) {
       final Widget child;
       if (_loading) {
-        child = ProfileLoading(label: s.Prof_Loading);
+        child = ProfileLoading(label: s.Pt_Friends_Loading);
       } else if (_error != null) {
         child = ProfileErrorView(error: _error!, onRetry: _loadNext);
       } else {
