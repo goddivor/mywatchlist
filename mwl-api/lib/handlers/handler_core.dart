@@ -483,31 +483,34 @@ class HandlerCore {
     return {'url': uri.path, 'data': result, 'fromCache': false};
   }
 
-  /// User friends: Jikan v4 (`{pagination, data}`), else MAL's own friends
-  /// page (`{friends, hasMore, userId}`, `UserFriendsList`) for the first
-  /// page. Tenrai has no user endpoints, so while Jikan is down the first
-  /// page comes from MAL and the next ones answer null (MAL pages its new
-  /// friends list with a cursor, which the app follows itself).
+  /// User friends. Page 1 comes from MAL's own friends page (`{friends,
+  /// hasMore, userId}`, `UserFriendsList`), then Jikan v4 (`{pagination,
+  /// data}`) when that page failed; the next pages come from Jikan only (MAL
+  /// pages its new friends list with a cursor, which the app follows
+  /// itself). Tenrai has no user endpoints, so while Jikan is down the next
+  /// pages answer null.
   Future<Map<String, dynamic>> _handleUserFriends(
       PathMatcher path, Uri uri, Map<String, String> params) async {
     final username = queryParams<String>(uri, 'username', '')!;
     if (username.isEmpty) throw _missing('username');
     final page = queryParams<int>(uri, 'page', 1)!;
     Map<String, dynamic>? result;
-    try {
-      result = await HttpConnect.jikanGetChecked(
-        'users/${Uri.encodeComponent(username)}/friends?page=$page',
-        tenrai: false,
-      );
-    } on Exception catch (e) {
-      logMwl('Jikan friends failed: $e');
-    }
-    if (result == null && page == 1) {
+    if (page == 1) {
       final html = await HttpConnect.htmlPage(
         '${Constants.malBaseUrl}/profile/${Uri.encodeComponent(username)}/friends',
         HtmlParsers.parseUserFriends,
       );
-      if (html is Map<String, dynamic>) result = html;
+      if (html is Map<String, dynamic> && html['friends'] is List) result = html;
+    }
+    if (result == null) {
+      try {
+        result = await HttpConnect.jikanGetChecked(
+          'users/${Uri.encodeComponent(username)}/friends?page=$page',
+          tenrai: false,
+        );
+      } on Exception catch (e) {
+        logMwl('Jikan friends failed: $e');
+      }
     }
     return {'url': uri.path, 'data': result, 'fromCache': false};
   }
