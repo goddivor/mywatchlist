@@ -82,6 +82,8 @@ class JikanSource {
   bool tenraiServes(Uri url) {
     if (!isJikan(url)) return false;
     final path = _jikanPath(url);
+    // Server-key-only paths (`/anime/ids`…) would match `/anime/{id}`.
+    if (TenraiApi.keyOnlyPaths.contains(path)) return false;
     if (!_patterns.any((p) => p.hasMatch(path))) return false;
     // Tenrai's forum endpoints only list episode / chapter threads.
     if (path.endsWith('/forum')) return url.queryParameters['filter'] == 'episode';
@@ -107,7 +109,6 @@ class JikanSource {
 
   static final List<RegExp> _patterns = [
     for (final template in TenraiApi.paths)
-      if (!TenraiApi.keyOnlyPaths.contains(template))
-        RegExp('^${template.replaceAll(RegExp(r'\{[^}]+\}'), '[^/]+')}\$'),
+      RegExp('^${template.replaceAll(RegExp(r'\{[^}]+\}'), '[^/]+')}\$'),
   ];
 }
