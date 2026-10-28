@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:mywatchlist/constants/constants.dart' show AccountType;
 import 'package:mywatchlist/generated/l10n.dart';
+import 'package:mywatchlist/screens/mal_web/notifications_screen.dart' show openMalHubPayload;
 import 'package:mywatchlist/services/api/Anilist/anilist_list_service.dart';
 import 'package:mywatchlist/services/api/Kitsu/kitsu_library.dart';
 import 'package:mywatchlist/services/api/MAL/mal_api.dart';
@@ -15,6 +16,7 @@ import 'package:mywatchlist/widgets/calendar/airing_schedule.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'mal_hub_poller.dart';
 import 'notification_backend.dart';
 import 'notification_models.dart';
 import 'notification_planner.dart';
@@ -101,6 +103,8 @@ class NotificationService {
     AccountType Function()? readFeedTracker,
     this.refreshEvery = const Duration(days: 1),
     this.debounce = const Duration(seconds: 2),
+    this.pollMalHub = false,
+    void Function(String payload)? openHubPayload,
   })  : _backend = backend ?? PluginNotificationBackend(),
         _loadCandidates = loadCandidates ?? _loadMalCandidates,
         _loadEpisodes = loadEpisodes ?? _loadScheduleEpisodes,
@@ -109,9 +113,18 @@ class NotificationService {
         _readPrefs = readPrefs ?? (() => Preferences.current.notifications),
         _clock = clock ?? DateTime.now,
         _trackerChanges = trackerChanges,
-        _readFeedTracker = readFeedTracker ?? _userFeedTracker;
+        _readFeedTracker = readFeedTracker ?? _userFeedTracker,
+        _openHubPayload = openHubPayload ?? openMalHubPayload;
 
-  static NotificationService instance = NotificationService();
+  /// The app's service; it also polls MAL's notification hub ([MalHubPoller]).
+  static NotificationService instance = NotificationService(pollMalHub: true);
+
+  /// Start [MalHubPoller.instance] from [init] (the app's instance only, not tests').
+  final bool pollMalHub;
+
+  /// Opens a tapped MAL hub notification (`malhub:` payloads, see [MalHubPayload]); the
+  /// other payloads go to [onOpen].
+  final void Function(String payload) _openHubPayload;
 
   /// Last scheduling run (shared pref, milliseconds since epoch).
   static const String lastRunKey = 'notifications_last_run_v1';
@@ -165,10 +178,17 @@ class NotificationService {
     bindTracker(_trackerChanges ?? UserManager.instance);
     try {
       await _backend.init(_handleTap);
-      _launchPayload = await _backend.launchPayload();
+      final launch = await _backend.launchPayload();
+      if (MalHubPayload.isHub(launch)) {
+        // Not a route of the home shell: opened once the navigator exists (flushPendingTap).
+        _pendingTap = launch;
+      } else {
+        _launchPayload = launch;
+      }
     } catch (e) {
       debugPrint('Notifications init: $e');
     }
+    if (pollMalHub) unawaited(MalHubPoller.instance.start());
   }
 
   /// The payload of the notification that launched the app, once: a Phoenix restart or a
@@ -181,6 +201,14 @@ class NotificationService {
 
   void _handleTap(String? payload) {
     if (payload == null || payload.isEmpty) return;
+    if (MalHubPayload.isHub(payload)) {
+      if (onOpen == null) {
+        _pendingTap = payload;
+      } else {
+        _openHubPayload(payload);
+      }
+      return;
+    }
     final open = onOpen;
     if (open == null) {
       _pendingTap = payload;
@@ -195,6 +223,10 @@ class NotificationService {
     final open = onOpen;
     if (payload == null || open == null) return;
     _pendingTap = null;
+    if (MalHubPayload.isHub(payload)) {
+      _openHubPayload(payload);
+      return;
+    }
     open(payload);
   }
 

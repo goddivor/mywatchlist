@@ -1,0 +1,212 @@
+{
+  "@@locale": "en",
+  "Mn_Title": "Notifications",
+  "Mn_Tab_Friends": "Friends activity",
+  "Mn_Mark_All_Read": "Mark all as read",
+  "Mn_Mark_Read": "Mark as read",
+  "Mn_Empty": "No notifications",
+  "Mn_Error": "Notifications couldn't be loaded",
+  "Mn_Connect_Title": "Your MyAnimeList notifications",
+  "Mn_Filter_All": "All",
+  "Mn_Filter_Unread": "Unread",
+  "Mn_Group_Friends": "Friends",
+  "Mn_Group_Comments": "Comments",
+  "Mn_Group_Forum": "Forum",
+  "Mn_Group_Clubs": "Clubs",
+  "Mn_Group_Anime": "Anime",
+  "Mn_Group_Other": "Other",
+  "Mn_Friend_Request": "{name} sent you a friend request",
+  "@Mn_Friend_Request": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "Mn_Friend_Accepted": "{name} accepted your friend request",
+  "@Mn_Friend_Accepted": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "Mn_Friend_Denied": "{name} declined your friend request",
+  "@Mn_Friend_Denied": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "Mn_Profile_Comment": "{name} commented on your profile",
+  "@Mn_Profile_Comment": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "Mn_Blog_Comment": "{name} commented on your blog",
+  "@Mn_Blog_Comment": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "Mn_Forum_Quote": "{name} quoted your post in {topic}",
+  "@Mn_Forum_Quote": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "topic": {
+        "type": "String"
+      }
+    }
+  },
+  "Mn_Watched_Topic": "{name} posted in {topic}",
+  "@Mn_Watched_Topic": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "topic": {
+        "type": "String"
+      }
+    }
+  },
+  "Mn_Club_Message": "{club} shared {topic}",
+  "@Mn_Club_Message": {
+    "placeholders": {
+      "club": {
+        "type": "String"
+      },
+      "topic": {
+        "type": "String"
+      }
+    }
+  },
+  "Mn_Forum_Mention": "{name} mentioned you in {page}",
+  "@Mn_Forum_Mention": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "page": {
+        "type": "String"
+      }
+    }
+  },
+  "Mn_Club_Mention": "{name} mentioned you in the club {page}",
+  "@Mn_Club_Mention": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "page": {
+        "type": "String"
+      }
+    }
+  },
+  "Mn_Related_Anime": "New related anime: {title}",
+  "@Mn_Related_Anime": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "Mn_On_Air": "{title} has started airing",
+  "@Mn_On_Air": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "Mn_Payment": "Payment: {plan}",
+  "@Mn_Payment": {
+    "placeholders": {
+      "plan": {
+        "type": "String"
+      }
+    }
+  },
+  "Mn_Generic": "New notification",
+  "Mn_Someone": "Someone",
+  "Mn_Accept": "Accept",
+  "Mn_Deny": "Decline",
+  "Mn_Accepted": "Friend request accepted",
+  "Mn_Denied": "Friend request declined",
+  "Mn_Open_Web": "Open on MyAnimeList",
+  "Mn_Push_Hub": "Phone notifications",
+  "Mn_Push_Friends": "Friends' completed and dropped titles",
+  "Mn_Friends_Empty": "No recent activity from your friends",
+  "Mn_Friends_Error": "Your friends' activity couldn't be loaded",
+  "Mn_Progress_Episodes": "Ep. {progress}/{total}",
+  "@Mn_Progress_Episodes": {
+    "placeholders": {
+      "progress": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "Mn_Progress_Chapters": "Ch. {progress}/{total}",
+  "@Mn_Progress_Chapters": {
+    "placeholders": {
+      "progress": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "Mn_Channel_Hub": "MyAnimeList notifications",
+  "Mn_Channel_Hub_Desc": "Friend requests, comments, forum replies and other MyAnimeList notifications",
+  "Mn_Channel_Friends": "Friends activity",
+  "Mn_Channel_Friends_Desc": "Titles your friends completed or dropped",
+  "Mn_Friend_Completed": "{name} completed {title}",
+  "@Mn_Friend_Completed": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "Mn_Friend_Dropped": "{name} dropped {title}",
+  "@Mn_Friend_Dropped": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "Mn_Summary": "{count, plural, one{1 new notification} other{{count} new notifications}}",
+  "@Mn_Summary": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "Mn_Friends_Summary": "{count, plural, one{1 friend update} other{{count} friend updates}}",
+  "@Mn_Friends_Summary": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
+}
