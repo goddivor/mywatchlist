@@ -3,6 +3,7 @@
 **Kind** unit · **Priority** P1 · **Group** trackers · **Model** opus
 
 ## Needs done first
+- `simkl-media-page` (simkl-media-page)
 - `simkl-api-compliance` (simkl-api-compliance)
 - `tracker-followups` (Tracker follow-ups: removed rows disappear, Simkl list categories, notifications for every tracker)
 
@@ -19,6 +20,7 @@
 Plus `PROJECT-STATE.md` (rewrite in place, within its cap) and `docs/DECISIONS.md` (append one line per decision). Anything else you need is a FINDING to report, never an edit.
 
 ## Goal
+- From simkl-media-page PR #237: profile favourites (lib/widgets/Simkl/simkl_profile_view.dart:~380) open the native Simkl page via openSimklTitle instead of the MAL screen.
 - Kitsu/Simkl audit docs/kitsu-simkl-report-2026-10-28.md, unit `simkl-profile-plus`: Profile: time watched, left to watch, last week (B6, on open and pull to refresh only), "now watching" cover (B11), top rated by me (B9), custom lists for PRO/VIP (B13) Read the matching report items (endpoints, sample responses, selectors, risks) and implement them.
 - Owner decision: a Kitsu/Simkl account shows only its own tracker's data (never MAL news/forum); scraping the tracker's own site for extra data is welcome. Replicate DailyAL/MALClient UI conventions where MWL would be weaker; no explanatory captions; theme tokens; English + French. Never write to the owner's tracker accounts in tests (fakes/fixtures only).
 
