@@ -27,6 +27,91 @@ enum SectionType {
   features,
   userList,
   forum,
+  topAnimeOva,
+  topAnimeOna,
+  topMangaOnly,
+  topOneshots,
+  topDoujin,
+  topLightNovels,
+  topNovels,
+  topManhwa,
+  topManhua,
+  topMangaFavorites,
+}
+
+/// Bounds of the per-section item count (the slider of the home settings). MAL's ranking,
+/// seasonal and suggestion endpoints all accept that many in one call.
+const int kHomeRowMinItems = 5;
+const int kHomeRowMaxItems = 30;
+
+/// The order of the kinds in the "section type" picker: anime rows, then manga rows, then the
+/// others (the enum order is the storage order and cannot be regrouped).
+const List<SectionType> kSectionPickerOrder = [
+  SectionType.seasonNow,
+  SectionType.suggested,
+  SectionType.upcoming,
+  SectionType.topScore,
+  SectionType.topAnimeAiring,
+  SectionType.topPopular,
+  SectionType.topFavorites,
+  SectionType.topAnimeTV,
+  SectionType.topAnimeMovie,
+  SectionType.topAnimeOva,
+  SectionType.topAnimeOna,
+  SectionType.topAnimeSpecial,
+  SectionType.topManga,
+  SectionType.topMangaOnly,
+  SectionType.topMangaPopular,
+  SectionType.topMangaFavorites,
+  SectionType.topManhwa,
+  SectionType.topManhua,
+  SectionType.topLightNovels,
+  SectionType.topNovels,
+  SectionType.topOneshots,
+  SectionType.topDoujin,
+  SectionType.userList,
+  SectionType.forum,
+  SectionType.news,
+  SectionType.features,
+];
+
+extension SectionTypeRanking on SectionType {
+  /// The MAL anime ranking behind the row, null when it is not an anime ranking.
+  RankingType? get animeRanking => switch (this) {
+        SectionType.upcoming => RankingType.UPCOMING,
+        SectionType.topScore => RankingType.ALL,
+        SectionType.topFavorites => RankingType.FAVOURITE,
+        SectionType.topPopular => RankingType.BYPOPULARITY,
+        SectionType.topAnimeAiring => RankingType.AIRING,
+        SectionType.topAnimeTV => RankingType.TV,
+        SectionType.topAnimeMovie => RankingType.MOVIE,
+        SectionType.topAnimeSpecial => RankingType.SPECIAL,
+        SectionType.topAnimeOva => RankingType.OVA,
+        SectionType.topAnimeOna => RankingType.ONA,
+        _ => null,
+      };
+
+  /// The MAL manga ranking behind the row, null when it is not a manga ranking.
+  MangaRanking? get mangaRanking => switch (this) {
+        SectionType.topManga => MangaRanking.all,
+        SectionType.topMangaPopular => MangaRanking.bypopularity,
+        SectionType.topMangaOnly => MangaRanking.manga,
+        SectionType.topOneshots => MangaRanking.oneshots,
+        SectionType.topDoujin => MangaRanking.doujin,
+        SectionType.topLightNovels => MangaRanking.lightnovels,
+        SectionType.topNovels => MangaRanking.novels,
+        SectionType.topManhwa => MangaRanking.manhwa,
+        SectionType.topManhua => MangaRanking.manhua,
+        SectionType.topMangaFavorites => MangaRanking.favorite,
+        _ => null,
+      };
+
+  /// A row of anime or manga cards filled by the shared home requests (RequestsBloc).
+  bool get isContentRow =>
+      this == SectionType.seasonNow ||
+      this == SectionType.suggested ||
+      animeRanking != null ||
+      mangaRanking != null;
 }
 
 class HomeSectionPreference {
@@ -105,7 +190,8 @@ class HomeSectionPreference {
     return HomeSectionPreference(
       type: SectionType.values[typeIndex],
       enabled: json['enabled'] as bool? ?? true,
-      itemCount: json['itemCount'] as int? ?? 15,
+      itemCount: ((json['itemCount'] as num?)?.toInt() ?? 15)
+          .clamp(kHomeRowMinItems, kHomeRowMaxItems),
       customTitle: json['customTitle'] as String?,
       cacheDurationHours: json['cacheDurationHours'] as int? ?? 2,
       userCategory: json['userCategory'] == 'manga' ? 'manga' : 'anime',
@@ -162,6 +248,26 @@ class HomeSectionPreference {
       case SectionType.forum:
         final board = boardId == null ? null : ForumConstants.boards[boardId];
         return board == null ? s.Hw_Sec_Forum : s.Hw_Sec_Forum_Board(board);
+      case SectionType.topAnimeOva:
+        return s.Hr_Sec_Ova;
+      case SectionType.topAnimeOna:
+        return s.Hr_Sec_Ona;
+      case SectionType.topMangaOnly:
+        return s.Hr_Sec_Manga_Only;
+      case SectionType.topOneshots:
+        return s.Hr_Sec_Oneshots;
+      case SectionType.topDoujin:
+        return s.Hr_Sec_Doujin;
+      case SectionType.topLightNovels:
+        return s.Hr_Sec_Light_Novels;
+      case SectionType.topNovels:
+        return s.Hr_Sec_Novels;
+      case SectionType.topManhwa:
+        return s.Hr_Sec_Manhwa;
+      case SectionType.topManhua:
+        return s.Hr_Sec_Manhua;
+      case SectionType.topMangaFavorites:
+        return s.Hr_Sec_Manga_Favorites;
     }
   }
 
@@ -206,6 +312,26 @@ class HomeSectionPreference {
         return Icons.video_library_outlined;
       case SectionType.forum:
         return Icons.forum_outlined;
+      case SectionType.topAnimeOva:
+        return Icons.album_outlined;
+      case SectionType.topAnimeOna:
+        return Icons.public;
+      case SectionType.topMangaOnly:
+        return Icons.import_contacts;
+      case SectionType.topOneshots:
+        return Icons.looks_one_outlined;
+      case SectionType.topDoujin:
+        return Icons.brush_outlined;
+      case SectionType.topLightNovels:
+        return Icons.lightbulb_outline;
+      case SectionType.topNovels:
+        return Icons.book_outlined;
+      case SectionType.topManhwa:
+        return Icons.view_day_outlined;
+      case SectionType.topManhua:
+        return Icons.view_agenda_outlined;
+      case SectionType.topMangaFavorites:
+        return Icons.favorite_border;
     }
   }
 }
