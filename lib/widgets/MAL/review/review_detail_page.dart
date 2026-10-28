@@ -119,21 +119,20 @@ class ReviewDetailPage extends StatelessWidget {
                     message: kind.label,
                     child: DecoratedBox(
                       decoration: BoxDecoration(
-                        color: kind.color.withValues(alpha: 0.08),
+                        color: theme.colorScheme.surfaceContainerHighest,
                         borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: kind.color.withValues(alpha: 0.2)),
                       ),
                       child: Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 10),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(kind.icon, size: 16, color: kind.color),
+                            Icon(kind.icon, size: 16, color: theme.colorScheme.onSurfaceVariant),
                             const SizedBox(width: 5),
                             Text(
                               '$count',
                               style: theme.textTheme.labelMedium?.copyWith(
-                                color: kind.color,
+                                color: theme.colorScheme.onSurfaceVariant,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),

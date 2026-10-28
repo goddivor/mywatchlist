@@ -25,16 +25,6 @@ extension ReviewReactionStyle on ReviewReactionKind {
         ReviewReactionKind.wellWritten => Icons.description,
         ReviewReactionKind.creative => Icons.lightbulb_outline,
       };
-
-  Color get color => switch (this) {
-        ReviewReactionKind.nice => Colors.blue,
-        ReviewReactionKind.loveIt => Colors.pink,
-        ReviewReactionKind.funny => Colors.orange,
-        ReviewReactionKind.confusing => Colors.purple,
-        ReviewReactionKind.informative => Colors.teal,
-        ReviewReactionKind.wellWritten => Colors.deepPurple,
-        ReviewReactionKind.creative => Colors.amber.shade700,
-      };
 }
 
 /// The non-zero reactions of a review, most numerous first.
