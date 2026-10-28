@@ -678,7 +678,7 @@ const UNITS = [
     dod: ["Checker compares with DailyAL on the owner's network (Jikan down)."],
   },
   {
-    id: "bookmarks-everywhere", title: "Bookmarks on forum topics, clubs, articles and stacks", kind: "unit", priority: "P1", group: "library", model: "opus", ui: true,
+    id: "bookmarks-everywhere", title: "Bookmarks on forum topics, clubs, articles and stacks", kind: "unit", priority: "P1", group: "discovery", model: "opus", ui: true,
     needs: ["color-sweep"],
     owns: ["lib/cache/bookmarks.dart", "lib/widgets/bookmarks/**", "lib/screens/bookmarks_screen.dart", "lib/screens/forum/forum_posts_screen.dart", "lib/screens/forum/club_screen.dart", "lib/screens/MAL/featured_screen.dart", "lib/screens/MAL/interest_stack_detail_screen.dart", "lib/l10n/units/bookmarks-everywhere/**", "test/units/bookmarks-everywhere/**"],
     goal: ["DailyAL feature-gap audit docs/dal-gap-report-2026-10-28.md: item D3 (except profile). Read those items (DailyAL and MWL file:line, gap, effort) and implement them.", "Owner rules: replicate DailyAL's UI where MWL's would be weaker; no explanatory captions or helper text DailyAL lacks; theme tokens only; full translatability (English + French)."],
@@ -699,7 +699,7 @@ const UNITS = [
     dod: ["Checker compares with DailyAL on the owner's network (Jikan down)."],
   },
   {
-    id: "small-fixes", title: "Dead settings switches, dub icon on cards and tiles, report recommendation, backup keys", kind: "unit", priority: "P1", group: "misc", model: "opus", ui: true,
+    id: "small-fixes", title: "Dead settings switches, dub icon on cards and tiles, report recommendation, backup keys", kind: "unit", priority: "P1", group: "settings", model: "opus", ui: true,
     needs: ["color-sweep"],
     owns: ["lib/widgets/forum/post_widget.dart", "lib/widgets/user/list/cards/entry_parts.dart", "lib/widgets/user/list/cards/entry_cards.dart", "lib/screens/search/search_tiles.dart", "lib/cache/cachemanager.dart", "lib/user/preferences/notification_preferences.dart", "lib/l10n/units/small-fixes/**", "test/units/small-fixes/**"],
     goal: ["DailyAL feature-gap audit docs/dal-gap-report-2026-10-28.md: items F1, L2, B1, S1 (detailsExpanded / showOnlyLastQuote switches that do nothing, search history + recently opened in backups, community recommendation Report action). Read those items (DailyAL and MWL file:line, gap, effort) and implement them.", "Owner rules: replicate DailyAL's UI where MWL's would be weaker; no explanatory captions or helper text DailyAL lacks; theme tokens only; full translatability (English + French)."],

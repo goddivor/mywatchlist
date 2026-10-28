@@ -3,6 +3,13 @@
 **Kind** unit · **Priority** P2 · **Group** release · **Model** sonnet
 
 ## Needs done first
+- `profile-lists` (Other users' anime/manga lists, weekly tab and sidebar shortcuts like DailyAL)
+- `explore-weekly` (Weekly anime per season (MAL broadcast weekday) and Random without Jikan)
+- `jikan-leftovers` (Videos, user updates and user probe without Jikan)
+- `bookmarks-everywhere` (Bookmarks on forum topics, clubs, articles and stacks)
+- `home-rows` (Home rows honour the 30-item slider; OVA/ONA and manhwa/manhua/novel rows)
+- `launch-update-check` (Check for an app update at launch like DailyAL)
+- `small-fixes` (Dead settings switches, dub icon on cards and tiles, report recommendation, backup keys)
 - `tenrai-client` (Tenrai API client (all endpoints) and automatic Jikan → Tenrai failover)
 - `splash-screen` (Launch splash like DailyAL: MWL logo centred on a dark background)
 - `stack-polish` (Interest stack page: squeezed covers, localized date, readable tabs (DailyAL layout))

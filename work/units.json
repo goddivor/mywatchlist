@@ -30,6 +30,7 @@
         "detail-resilience",
         "detail-more-info",
         "stack-polish",
+        "jikan-leftovers",
         "detail-polish"
       ]
     },
@@ -45,7 +46,8 @@
         "user-profile-mal",
         "profile-polish",
         "profile-tabs",
-        "sync-dialog"
+        "sync-dialog",
+        "profile-lists"
       ]
     },
     {
@@ -60,6 +62,9 @@
         "home-wiring",
         "cards-upgrade",
         "search-sources",
+        "explore-weekly",
+        "bookmarks-everywhere",
+        "home-rows",
         "explore-polish",
         "home-fixes"
       ]
@@ -75,6 +80,7 @@
         "notifications",
         "dub-info",
         "api-prefs",
+        "small-fixes",
         "theme-seasons",
         "backup-fixes"
       ]
@@ -110,6 +116,7 @@
         "color-sweep",
         "app-icon",
         "splash-screen",
+        "launch-update-check",
         "release-fixes",
         "in-app-update",
         "deep-links"
@@ -1419,6 +1426,13 @@
       "artifact": "",
       "priority": "P2",
       "needs": [
+        "profile-lists",
+        "explore-weekly",
+        "jikan-leftovers",
+        "bookmarks-everywhere",
+        "home-rows",
+        "launch-update-check",
+        "small-fixes",
         "tenrai-client",
         "splash-screen",
         "stack-polish",
@@ -1734,6 +1748,215 @@
         "test/units/tenrai-client/**"
       ],
       "group": "foundation",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "⬜ todo"
+    },
+    {
+      "id": "profile-lists",
+      "title": "Other users' anime/manga lists, weekly tab and sidebar shortcuts like DailyAL",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "color-sweep",
+        "explore-weekly"
+      ],
+      "owns": [
+        "lib/screens/user_profile/user_profile_view.dart",
+        "lib/screens/user_profile/sections/list_section.dart",
+        "lib/screens/user_profile/sections/weekly_section.dart",
+        "lib/widgets/user/list/mal_user_list_adapter.dart",
+        "lib/widgets/user/profile/user_pop_sheet.dart",
+        "lib/pages/side_bar.dart",
+        "lib/utils/app_routes.dart",
+        "lib/l10n/units/profile-lists/**",
+        "test/units/profile-lists/**",
+        "test/units/profile-lists/**"
+      ],
+      "group": "user",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "⬜ todo"
+    },
+    {
+      "id": "explore-weekly",
+      "title": "Weekly anime per season (MAL broadcast weekday) and Random without Jikan",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "color-sweep"
+      ],
+      "owns": [
+        "lib/screens/weekly/**",
+        "lib/screens/explore/explore_sections.dart",
+        "lib/screens/explore/explore_data.dart",
+        "lib/screens/explore/random_picker.dart",
+        "lib/screens/seasonal/seasonal_screen.dart",
+        "lib/services/api/MAL/mal_api.dart",
+        "lib/l10n/units/explore-weekly/**",
+        "test/units/explore-weekly/**",
+        "test/units/explore-weekly/**"
+      ],
+      "group": "discovery",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "⬜ todo"
+    },
+    {
+      "id": "jikan-leftovers",
+      "title": "Videos, user updates and user probe without Jikan",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "tenrai-client",
+        "color-sweep"
+      ],
+      "owns": [
+        "lib/screens/MAL/detail/detail_screen.dart",
+        "lib/widgets/MAL/content/userupdate_widget.dart",
+        "lib/services/api/Jikan/jikan_fallbacks.dart",
+        "lib/services/api/mwl_api.dart",
+        "mwl-api/lib/handlers/handler_core.dart",
+        "mwl-api/mwl_commons/**",
+        "lib/screens/search/search_service.dart",
+        "test/units/jikan-leftovers/**",
+        "lib/l10n/units/jikan-leftovers/**",
+        "test/units/jikan-leftovers/**"
+      ],
+      "group": "detail",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "⬜ todo"
+    },
+    {
+      "id": "bookmarks-everywhere",
+      "title": "Bookmarks on forum topics, clubs, articles and stacks",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "color-sweep"
+      ],
+      "owns": [
+        "lib/cache/bookmarks.dart",
+        "lib/widgets/bookmarks/**",
+        "lib/screens/bookmarks_screen.dart",
+        "lib/screens/forum/forum_posts_screen.dart",
+        "lib/screens/forum/club_screen.dart",
+        "lib/screens/MAL/featured_screen.dart",
+        "lib/screens/MAL/interest_stack_detail_screen.dart",
+        "lib/l10n/units/bookmarks-everywhere/**",
+        "test/units/bookmarks-everywhere/**",
+        "test/units/bookmarks-everywhere/**"
+      ],
+      "group": "discovery",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "⬜ todo"
+    },
+    {
+      "id": "home-rows",
+      "title": "Home rows honour the 30-item slider; OVA/ONA and manhwa/manhua/novel rows",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "color-sweep"
+      ],
+      "owns": [
+        "lib/user/requests/requests_bloc.dart",
+        "lib/user/MAL/mal_home_page_preferences.dart",
+        "lib/pages/MAL/mal_home_page.dart",
+        "lib/screens/settings/mal_home_settings.dart",
+        "lib/l10n/units/home-rows/**",
+        "test/units/home-rows/**",
+        "test/units/home-rows/**"
+      ],
+      "group": "discovery",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "⬜ todo"
+    },
+    {
+      "id": "launch-update-check",
+      "title": "Check for an app update at launch like DailyAL",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "color-sweep"
+      ],
+      "owns": [
+        "lib/screens/home_screen.dart",
+        "lib/services/updater/update_controller.dart",
+        "lib/l10n/units/launch-update-check/**",
+        "test/units/launch-update-check/**",
+        "test/units/launch-update-check/**"
+      ],
+      "group": "release",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "⬜ todo"
+    },
+    {
+      "id": "small-fixes",
+      "title": "Dead settings switches, dub icon on cards and tiles, report recommendation, backup keys",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "color-sweep"
+      ],
+      "owns": [
+        "lib/widgets/forum/post_widget.dart",
+        "lib/widgets/user/list/cards/entry_parts.dart",
+        "lib/widgets/user/list/cards/entry_cards.dart",
+        "lib/screens/search/search_tiles.dart",
+        "lib/cache/cachemanager.dart",
+        "lib/user/preferences/notification_preferences.dart",
+        "lib/l10n/units/small-fixes/**",
+        "test/units/small-fixes/**",
+        "test/units/small-fixes/**"
+      ],
+      "group": "settings",
       "dropped": null,
       "skills": [],
       "states": [],

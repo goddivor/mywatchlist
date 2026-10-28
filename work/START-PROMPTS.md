@@ -490,6 +490,76 @@ Build exactly the Goal, inside the Owns list. Heavy commands only through tools/
 Deliver with the PR procedure of the brief.
 ```
 
+## profile-lists
+
+```text
+Unit profile-lists — Other users' anime/manga lists, weekly tab and sidebar shortcuts like DailyAL.
+Read work/handoffs/profile-lists.md fully, then the DAL reference files it lists, then the MWL files you own.
+Build exactly the Goal, inside the Owns list. Heavy commands only through tools/heavy.sh; never run flutter build or touch the emulator.
+UI directive applies: compare DAL and MWL, keep the better, improve it.
+Deliver with the PR procedure of the brief.
+```
+
+## explore-weekly
+
+```text
+Unit explore-weekly — Weekly anime per season (MAL broadcast weekday) and Random without Jikan.
+Read work/handoffs/explore-weekly.md fully, then the DAL reference files it lists, then the MWL files you own.
+Build exactly the Goal, inside the Owns list. Heavy commands only through tools/heavy.sh; never run flutter build or touch the emulator.
+UI directive applies: compare DAL and MWL, keep the better, improve it.
+Deliver with the PR procedure of the brief.
+```
+
+## jikan-leftovers
+
+```text
+Unit jikan-leftovers — Videos, user updates and user probe without Jikan.
+Read work/handoffs/jikan-leftovers.md fully, then the DAL reference files it lists, then the MWL files you own.
+Build exactly the Goal, inside the Owns list. Heavy commands only through tools/heavy.sh; never run flutter build or touch the emulator.
+UI directive applies: compare DAL and MWL, keep the better, improve it.
+Deliver with the PR procedure of the brief.
+```
+
+## bookmarks-everywhere
+
+```text
+Unit bookmarks-everywhere — Bookmarks on forum topics, clubs, articles and stacks.
+Read work/handoffs/bookmarks-everywhere.md fully, then the DAL reference files it lists, then the MWL files you own.
+Build exactly the Goal, inside the Owns list. Heavy commands only through tools/heavy.sh; never run flutter build or touch the emulator.
+UI directive applies: compare DAL and MWL, keep the better, improve it.
+Deliver with the PR procedure of the brief.
+```
+
+## home-rows
+
+```text
+Unit home-rows — Home rows honour the 30-item slider; OVA/ONA and manhwa/manhua/novel rows.
+Read work/handoffs/home-rows.md fully, then the DAL reference files it lists, then the MWL files you own.
+Build exactly the Goal, inside the Owns list. Heavy commands only through tools/heavy.sh; never run flutter build or touch the emulator.
+UI directive applies: compare DAL and MWL, keep the better, improve it.
+Deliver with the PR procedure of the brief.
+```
+
+## launch-update-check
+
+```text
+Unit launch-update-check — Check for an app update at launch like DailyAL.
+Read work/handoffs/launch-update-check.md fully, then the DAL reference files it lists, then the MWL files you own.
+Build exactly the Goal, inside the Owns list. Heavy commands only through tools/heavy.sh; never run flutter build or touch the emulator.
+UI directive applies: compare DAL and MWL, keep the better, improve it.
+Deliver with the PR procedure of the brief.
+```
+
+## small-fixes
+
+```text
+Unit small-fixes — Dead settings switches, dub icon on cards and tiles, report recommendation, backup keys.
+Read work/handoffs/small-fixes.md fully, then the DAL reference files it lists, then the MWL files you own.
+Build exactly the Goal, inside the Owns list. Heavy commands only through tools/heavy.sh; never run flutter build or touch the emulator.
+UI directive applies: compare DAL and MWL, keep the better, improve it.
+Deliver with the PR procedure of the brief.
+```
+
 ## explore-polish
 
 ```text
