@@ -64,6 +64,7 @@ Map<String, dynamic> simklItem({
   int total = 12,
   int notAired = 0,
   String? lastWatched,
+  bool poster = true,
 }) =>
     {
       'status': status,
@@ -74,7 +75,7 @@ Map<String, dynamic> simklItem({
       'last_watched_at': lastWatched,
       'show': {
         'title': '$title $id',
-        'poster': 'ab/$id',
+        'poster': poster ? 'ab/$id' : null,
         'year': 2024,
         'ids': {'simkl': id, 'slug': 'slug-$id', if (mal != null) 'mal': mal},
       },
