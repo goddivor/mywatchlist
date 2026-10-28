@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'dart:io';
-import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -8,261 +7,271 @@ import 'package:flutter_custom_tabs/flutter_custom_tabs.dart' as custom_tabs;
 import 'package:flutter_web_auth_2/flutter_web_auth_2.dart';
 import 'package:http/http.dart' as http;
 import 'package:mywatchlist/constants/constants.dart';
-import 'package:mywatchlist/services/auth/simkl_authresp.dart';
+import 'package:mywatchlist/services/api/SimKl/simkl_api.dart';
 import 'package:mywatchlist/services/api/SimKl/simkl_user.dart';
-import 'package:mywatchlist/user/user_simkl_v2.dart';
+import 'package:mywatchlist/services/auth/simkl_auth.dart';
+import 'package:mywatchlist/services/auth/simkl_authresp.dart';
 import 'package:mywatchlist/user/base_user.dart';
+import 'package:mywatchlist/user/user_simkl_v2.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// Enhanced Simkl authentication with Custom Tabs (mobile) and flutter_web_auth_2 (desktop)
-/// Based on MalAuthV2 implementation
+/// Simkl sign in: Custom Tabs on Android (Simkl asks for the platform's secure browser, never an
+/// embedded WebView), flutter_web_auth_2 elsewhere; the redirect comes back through app_links
+/// (`main.dart` calls [checkIfSignIn]).
+///
+/// With a V2 client id (`SIMKL_V2_CLIENT_ID`) every new sign in, and every "sign in again" of a
+/// V1 session, goes through AUTH V2: `/oauth2/authorize` with PKCE S256 and the
+/// `media:read media:write` scopes, then `/oauth2/token`. Without one it stays on AUTH V1.
 class SimklAuthV2 {
-  final String clientId = Constants.simklClientId;
-  final String clientSecret = Constants.simklClientSecret;
-  final String redirectUri = Constants.simklRedirectUri;
-  final String oauthEndPoint = Constants.simklOAuthEndPoint;
-  final String tokenEndPoint = Constants.simklTokenEndPoint;
+  SimklAuthV2({
+    http.Client Function()? httpClient,
+    Future<({String name, String avatar})?> Function()? fetchProfile,
+  })  : _httpClient = httpClient ?? http.Client.new,
+        _fetchProfile = fetchProfile ?? _defaultProfile;
 
-  final String _chars = Constants.chars;
-  final Random _rnd = Random.secure();
+  final http.Client Function() _httpClient;
+  final Future<({String name, String avatar})?> Function() _fetchProfile;
 
-  /// Generate a random string of specified length for state parameter
-  String _getRandomString(int length) => String.fromCharCodes(
-      Iterable.generate(length, (_) => _chars.codeUnitAt(_rnd.nextInt(_chars.length))));
+  // Pending flow (SharedPreferences): survives the app being killed while the browser is open.
+  static const String _stateKey = 'simkl_oauth_state';
+  static const String _verifierKey = 'simkl_oauth_verifier';
+  static const String _versionKey = 'simkl_oauth_version';
 
-  /// Handle sign-in process
-  /// Returns true if sign-in is successful, false otherwise
+  String get _redirectUri => Constants.simklRedirectUri;
+
+  static Future<({String name, String avatar})?> _defaultProfile() async {
+    final profile = await SimklUser(client: SimklApi.sessionClient).getUserInfo();
+    return (name: profile.name, avatar: profile.avatar);
+  }
+
+  /// A sign in that did not finish leaves a still-working session signed in. The redirect may
+  /// reach another instance than the one that opened the browser (Android: `main.dart`), so this
+  /// looks at the stored session, not at what this instance saw.
+  void _endWithoutSignIn() {
+    final user = UserSimklV2.instance;
+    user.setStatus(user.accessToken != null ? AuthStatus.AUTHENTICATED : AuthStatus.UNAUTHENTICATED);
+    user.notifyAccountChange();
+  }
+
+  /// Starts the sign in. Returns false when it could not start or failed at once; on Android it
+  /// returns true once the browser is open and the redirect finishes the job.
   Future<bool> handleSignIn({BuildContext? context}) async {
-    final currentStatus = UserSimklV2.instance.getStatus();
+    final user = UserSimklV2.instance;
+    if (user.getStatus() == AuthStatus.INPROGRESS) return false; // double tap
 
-    // Prevent double-click
-    if (currentStatus == AuthStatus.INPROGRESS) {
-      return false;
-    }
-
-    UserSimklV2.instance.setStatus(AuthStatus.INPROGRESS);
-    UserSimklV2.instance.notifyAccountChange();
+    user.setStatus(AuthStatus.INPROGRESS);
+    user.notifyAccountChange();
 
     try {
-      final success = await _oAuthSignIn(context: context);
-      return success;
+      return await _oAuthSignIn(context: context);
     } catch (e) {
-      print('Simkl sign-in error: $e');
-      UserSimklV2.instance.setStatus(AuthStatus.UNAUTHENTICATED);
-      UserSimklV2.instance.notifyAccountChange();
+      debugPrint('Simkl sign in failed (${e.runtimeType})');
+      _endWithoutSignIn();
       return false;
     }
   }
 
-  /// Main OAuth sign-in flow
-  Future<bool> _oAuthSignIn({BuildContext? context}) async {
-    // Generate and cache state parameter
-    final state = _getRandomString(127);
-    await _saveState(state);
-
-    // Build OAuth URL (Simkl uses state parameter)
-    final url = '$oauthEndPoint'
-        '?response_type=code'
-        '&client_id=$clientId'
-        '&redirect_uri=$redirectUri'
-        '&state=$state';
-
-    // Use flutter_web_auth_2 for desktop platforms
-    if (!kIsWeb && (Platform.isLinux || Platform.isWindows || Platform.isMacOS)) {
-      return await _desktopAuth(url, state);
+  /// The consent URL of a new flow, its state and verifier saved for the redirect.
+  @visibleForTesting
+  Future<Uri> startFlow() async {
+    final state = SimklOAuth2.randomToken(48);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_stateKey, state);
+    if (SimklOAuth2.isConfigured) {
+      final verifier = SimklOAuth2.randomToken(64);
+      await prefs.setString(_verifierKey, verifier);
+      await prefs.setString(_versionKey, 'v2');
+      return SimklOAuth2.authorizeUri(
+        clientId: SimklOAuth2.clientId,
+        redirectUri: _redirectUri,
+        state: state,
+        codeChallenge: SimklOAuth2.challengeOf(verifier),
+      );
     }
-    // Use Custom Tabs for Android
-    else if (!kIsWeb && Platform.isAndroid) {
-      return await _mobileAuthAndroid(url, state, context);
-    }
-    // Use WebView for iOS or fallback
-    else {
-      return await _mobileAuthFallback(url, state);
-    }
+    await prefs.remove(_verifierKey);
+    await prefs.setString(_versionKey, 'v1');
+    return Uri.parse(Constants.simklOAuthEndPoint).replace(queryParameters: {
+      'response_type': 'code',
+      'client_id': Constants.simklClientId,
+      'redirect_uri': _redirectUri,
+      'state': state,
+    });
   }
 
-  /// Desktop authentication using flutter_web_auth_2
-  Future<bool> _desktopAuth(String url, String state) async {
+  Future<bool> _oAuthSignIn({BuildContext? context}) async {
+    final url = await startFlow();
+    if (!kIsWeb && Platform.isAndroid) return _androidAuth(url, context);
+    // Desktop: system browser; iOS and the rest: the platform's web auth session.
+    final result = await FlutterWebAuth2.authenticate(
+      url: url.toString(),
+      callbackUrlScheme: Constants.simklCallbackScheme,
+      options: FlutterWebAuth2Options(
+        useWebview: !(!kIsWeb && (Platform.isLinux || Platform.isWindows || Platform.isMacOS)),
+      ),
+    );
+    return checkIfSignIn(Uri.parse(result));
+  }
+
+  Future<bool> _androidAuth(Uri url, BuildContext? context) async {
+    final colors = context != null && context.mounted ? Theme.of(context).colorScheme : null;
+    await custom_tabs.launchUrl(
+      url,
+      customTabsOptions: custom_tabs.CustomTabsOptions(
+        colorSchemes: colors != null
+            ? custom_tabs.CustomTabsColorSchemes.defaults(toolbarColor: colors.surface)
+            : null,
+        shareState: custom_tabs.CustomTabsShareState.off,
+        urlBarHidingEnabled: true,
+        showTitle: true,
+      ),
+      safariVCOptions: custom_tabs.SafariViewControllerOptions(
+        preferredBarTintColor: colors?.surface,
+        preferredControlTintColor: colors?.primary,
+        barCollapsingEnabled: true,
+      ),
+    );
+    return true; // the redirect is handled by app_links
+  }
+
+  /// Handles the redirect `com.teen.mywatchlist://simkl-callback?code=…&state=…`.
+  ///
+  /// The state must match the saved one (CSRF), a V2 redirect must come from Simkl's issuer when
+  /// it names one, and an `error` (refusal) ends the flow. The code is exchanged once: Simkl
+  /// consumes it even when the exchange fails.
+  Future<bool> checkIfSignIn(Uri? uri) async {
+    if (uri == null) return false;
+    final prefs = await SharedPreferences.getInstance();
+    final expected = prefs.getString(_stateKey);
+    final verifier = prefs.getString(_verifierKey);
+    final version = prefs.getString(_versionKey);
+    final params = uri.queryParameters;
+    final code = params['code'];
+    final state = params['state'];
+    final iss = params['iss'];
+
+    final valid = expected != null &&
+        state == expected &&
+        params['error'] == null &&
+        code != null &&
+        code.isNotEmpty &&
+        (version != 'v2' || ((iss == null || iss == SimklOAuth2.issuer) && verifier != null));
+    // A redirect is answered once; the saved flow is dropped whatever happens next.
+    if (expected != null) await _clearFlow(prefs);
+    if (!valid) {
+      _endWithoutSignIn();
+      return false;
+    }
+
     try {
-      print('Starting Simkl OAuth with flutter_web_auth_2 for desktop');
-
-      final result = await FlutterWebAuth2.authenticate(
-        url: url,
-        callbackUrlScheme: Constants.simklCallbackScheme,
-        options: const FlutterWebAuth2Options(
-          useWebview: false, // Use system browser
-        ),
-      );
-
-      print('Simkl OAuth callback received: $result');
-      final uri = Uri.parse(result);
-      final code = uri.queryParameters['code'];
-
-      if (code != null) {
-        return await _exchangeCodeForToken(code, state);
-      } else {
-        print('No code received from Simkl OAuth callback');
-        UserSimklV2.instance.setStatus(AuthStatus.UNAUTHENTICATED);
-        UserSimklV2.instance.notifyAccountChange();
+      final auth = version == 'v2'
+          ? await _exchangeV2(code, verifier!)
+          : await _exchangeV1(code);
+      if (auth == null) {
+        _endWithoutSignIn();
         return false;
       }
-    } catch (e) {
-      print('Simkl OAuth error on desktop: $e');
-      UserSimklV2.instance.setStatus(AuthStatus.UNAUTHENTICATED);
-      UserSimklV2.instance.notifyAccountChange();
-      return false;
-    }
-  }
-
-  /// Android authentication using Custom Tabs
-  Future<bool> _mobileAuthAndroid(
-    String url,
-    String state,
-    BuildContext? context,
-  ) async {
-    try {
-      // Launch Custom Tabs with theme colors
-      await custom_tabs.launchUrl(
-        Uri.parse(url),
-        customTabsOptions: custom_tabs.CustomTabsOptions(
-          colorSchemes: context != null
-              ? custom_tabs.CustomTabsColorSchemes.defaults(
-                  toolbarColor: Theme.of(context).colorScheme.surface,
-                )
-              : null,
-          shareState: custom_tabs.CustomTabsShareState.off,
-          urlBarHidingEnabled: true,
-          showTitle: true,
-        ),
-        safariVCOptions: custom_tabs.SafariViewControllerOptions(
-          preferredBarTintColor: context != null
-              ? Theme.of(context).colorScheme.surface
-              : null,
-          preferredControlTintColor: context != null
-              ? Theme.of(context).colorScheme.primary
-              : null,
-          barCollapsingEnabled: true,
-        ),
-      );
-
-      // The callback will be handled by app_links
+      await _finishSignIn(auth);
       return true;
     } catch (e) {
-      print('Simkl Custom Tabs error: $e');
-      UserSimklV2.instance.setStatus(AuthStatus.UNAUTHENTICATED);
-      UserSimklV2.instance.notifyAccountChange();
+      debugPrint('Simkl token exchange failed (${e.runtimeType})');
+      _endWithoutSignIn();
       return false;
     }
   }
 
-  /// Fallback mobile authentication (iOS or other platforms)
-  Future<bool> _mobileAuthFallback(String url, String state) async {
+  Future<SimklAuthResponse?> _exchangeV2(String code, String verifier) async {
+    final client = _httpClient();
     try {
-      final result = await FlutterWebAuth2.authenticate(
-        url: url,
-        callbackUrlScheme: Constants.simklCallbackScheme,
-      );
-
-      final uri = Uri.parse(result);
-      final code = uri.queryParameters['code'];
-
-      if (code != null) {
-        return await _exchangeCodeForToken(code, state);
+      final response = await SimklOAuth2.postForm(
+        client,
+        SimklOAuth2.tokenUri,
+        SimklOAuth2.codeGrant(
+          code: code,
+          codeVerifier: verifier,
+          clientId: SimklOAuth2.clientId,
+          redirectUri: _redirectUri,
+        ),
+      ).timeout(const Duration(seconds: 30));
+      final auth = SimklOAuth2.parseToken(response);
+      if (auth == null) {
+        debugPrint('Simkl V2 token exchange refused: ${response.statusCode} '
+            '${SimklOAuth2.errorOf(response) ?? ''}');
+      } else if (!auth.canWrite) {
+        debugPrint('Simkl granted read-only access (${auth.scope})');
       }
-      return false;
-    } catch (e) {
-      print('Simkl fallback auth error: $e');
-      UserSimklV2.instance.setStatus(AuthStatus.UNAUTHENTICATED);
-      UserSimklV2.instance.notifyAccountChange();
-      return false;
+      return auth;
+    } finally {
+      client.close();
     }
   }
 
-  /// Exchange authorization code for access token
-  Future<bool> _exchangeCodeForToken(String code, String state) async {
+  Future<SimklAuthResponse?> _exchangeV1(String code) async {
+    final client = _httpClient();
     try {
-      final response = await http.post(
-        Uri.parse(tokenEndPoint),
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: json.encode({
-          'code': code,
-          'client_id': clientId,
-          'client_secret': clientSecret,
-          'redirect_uri': redirectUri,
-          'grant_type': 'authorization_code',
-        }),
-      );
-
-      if (response.statusCode == 200) {
-        final Map<String, dynamic> responseData = json.decode(response.body);
-        final authResponse = SimklAuthResponse.fromJson(responseData);
-
-        UserSimklV2.instance.setAuthResponse(authResponse);
-        UserSimklV2.instance.setStatus(AuthStatus.AUTHENTICATED);
-        UserSimklV2.instance.notifyAccountChange();
-
-        // Fetch user profile data
-        try {
-          final userProfile = await SimklUser().getUserInfo();
-          UserSimklV2.instance.setUserInfo(userProfile.name, userProfile.avatar);
-        } catch (e) {
-          print('Failed to fetch Simkl user profile: $e');
-        }
-
-        // Clear cached state
-        await _clearState();
-
-        return true;
-      } else {
-        print('Simkl token exchange failed: ${response.statusCode} - ${response.body}');
-        UserSimklV2.instance.setStatus(AuthStatus.UNAUTHENTICATED);
-        UserSimklV2.instance.notifyAccountChange();
-        return false;
+      final response = await client
+          .post(
+            Uri.parse(Constants.simklTokenEndPoint),
+            headers: const {'Content-Type': 'application/json'},
+            body: json.encode({
+              'code': code,
+              'client_id': Constants.simklClientId,
+              'client_secret': Constants.simklClientSecret,
+              'redirect_uri': _redirectUri,
+              'grant_type': 'authorization_code',
+            }),
+          )
+          .timeout(const Duration(seconds: 30));
+      if (response.statusCode != 200) {
+        debugPrint('Simkl V1 token exchange refused: ${response.statusCode}');
+        return null;
       }
+      final data = json.decode(response.body);
+      if (data is! Map<String, dynamic> || data['access_token'] is! String) return null;
+      return SimklAuthResponse.fromJson(data);
+    } finally {
+      client.close();
+    }
+  }
+
+  Future<void> _finishSignIn(SimklAuthResponse auth) async {
+    final user = UserSimklV2.instance;
+    user.setAuthResponse(auth);
+    user.setStatus(AuthStatus.AUTHENTICATED);
+    user.notifyAccountChange();
+    try {
+      final profile = await _fetchProfile();
+      if (profile != null) user.setUserInfo(profile.name, profile.avatar);
     } catch (e) {
-      print('Error exchanging Simkl code for token: $e');
-      UserSimklV2.instance.setStatus(AuthStatus.UNAUTHENTICATED);
-      UserSimklV2.instance.notifyAccountChange();
-      return false;
+      debugPrint('Simkl profile fetch failed (${e.runtimeType})');
     }
   }
 
-  /// Check if sign-in callback is valid and process it
-  /// Used by app_links to handle deep link callbacks
-  Future<bool> checkIfSignIn(Uri? uri) async {
-    final code = uri?.queryParameters['code'];
-    if (code != null) {
-      final state = await _getState();
-      if (state != null) {
-        return await _exchangeCodeForToken(code, state);
-      }
-    }
-    return false;
+  Future<void> _clearFlow(SharedPreferences prefs) async {
+    await prefs.remove(_stateKey);
+    await prefs.remove(_verifierKey);
+    await prefs.remove(_versionKey);
   }
 
-  /// Save state to SharedPreferences
-  Future<void> _saveState(String state) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('simkl_oauth_state', state);
-  }
-
-  /// Get state from SharedPreferences
-  Future<String?> _getState() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString('simkl_oauth_state');
-  }
-
-  /// Clear state from SharedPreferences
-  Future<void> _clearState() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('simkl_oauth_state');
-  }
-
-  /// Sign out
+  /// Ends the V2 grant on Simkl (`/oauth2/revoke`, best effort: always 200, never blocks the
+  /// sign out), then clears the local session. V1 has no revocation endpoint.
   Future<void> signOut() async {
-    UserSimklV2.instance.clear();
-    await _clearState();
+    final user = UserSimklV2.instance;
+    final auth = user.authResponse;
+    final token = auth?.refreshToken ?? auth?.accessToken;
+    if (auth != null && auth.isV2 && token != null && SimklOAuth2.isConfigured) {
+      final client = _httpClient();
+      try {
+        await SimklOAuth2.postForm(client, SimklOAuth2.revokeUri, {
+          'token': token,
+          'client_id': SimklOAuth2.clientId,
+        }).timeout(const Duration(seconds: 10));
+      } catch (e) {
+        debugPrint('Simkl revoke failed (${e.runtimeType})');
+      } finally {
+        client.close();
+      }
+    }
+    user.clear();
+    await _clearFlow(await SharedPreferences.getInstance());
   }
 }
