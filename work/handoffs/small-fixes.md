@@ -8,6 +8,9 @@
 - `color-sweep` (Colour sweep: hardcoded colours of already-merged screens onto the theme tokens)
 
 ## Owns (may create or edit ONLY these)
+- `lib/user/requests/requests_bloc.dart`
+- `lib/widgets/MAL/home/news_widget.dart`
+- `lib/l10n/units/home-wiring/**`
 - `lib/widgets/user/edit/edit_fields.dart`
 - `test/units/edit-sheet/**`
 - `lib/screens/settings/accounts_settings.dart`
@@ -24,6 +27,7 @@
 Plus `PROJECT-STATE.md` (rewrite in place, within its cap) and `docs/DECISIONS.md` (append one line per decision). Anything else you need is a FINDING to report, never an edit.
 
 ## Goal
+- From ux-home PR #229: requests_bloc.dart current-season row still asks sort=anime_score — sort by members like DailyAL; news card titles regular weight (lib/widgets/MAL/home/news_widget.dart, not ExtraBold); home settings row 'Anime News' → 'News' (Hw_Sec_News in lib/l10n/units/home-wiring/).
 - Owner rule (no captions DailyAL lacks): remove the edit sheet's 'of 64' episode hint and '10 · Masterpiece' score hint (lib/widgets/user/edit/edit_fields.dart), and update the edit-sheet unit tests that pin them.
 - Wire mal-session (PR #220): in Settings > Accounts, the MyAnimeList tile opens `MalSessionSettingsPage` (state, check, disconnect, connect).
 - DailyAL feature-gap audit docs/dal-gap-report-2026-10-28.md: items F1, L2, B1, S1 (detailsExpanded / showOnlyLastQuote switches that do nothing, search history + recently opened in backups, community recommendation Report action). Read those items (DailyAL and MWL file:line, gap, effort) and implement them.
