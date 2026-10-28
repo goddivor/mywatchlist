@@ -3,6 +3,8 @@ import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/screens/explore/explore_data.dart';
 import 'package:mywatchlist/screens/explore/explore_widgets.dart';
 import 'package:mywatchlist/utils/app_routes.dart';
+import 'package:mywatchlist/widgets/common/app_colors.dart';
+import 'package:mywatchlist/widgets/common/custombutton.dart' show ShadowButton;
 
 /// Where a random pick comes from.
 enum RandomSource {
@@ -23,7 +25,10 @@ String? randomListStatus(RandomSource source, {required bool isAnime}) => switch
       RandomSource.planned => isAnime ? 'plan_to_watch' : 'plan_to_read',
     };
 
-/// Row of "surprise me" buttons: any title, one from the list in progress, one from the plan list.
+/// Row of "surprise me" buttons: any title, one from the list in progress, one from the plan
+/// list. DailyAL's `_randomButton`s: raised surface buttons with a coloured icon (green, amber,
+/// orange, here the `success`, `score` and `warning` tokens), centred, scrolling when they do
+/// not fit.
 class RandomPickerRow extends StatelessWidget {
   final bool isAnime;
 
@@ -32,25 +37,40 @@ class RandomPickerRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final category = isAnime ? 'anime' : 'manga';
-    Widget button(RandomSource source, IconData icon, String label) => FilledButton.tonalIcon(
+    final tokens = AppColors.of(context);
+    Widget button(RandomSource source, IconData icon, Color iconColor, String label) =>
+        ShadowButton(
           onPressed: () => pickRandom(context, category, source),
-          icon: Icon(icon, size: 20),
-          label: Text(label),
+          elevation: 2,
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 26, color: iconColor),
+              const SizedBox(width: 10),
+              Text(label, style: const TextStyle(fontSize: 13)),
+            ],
+          ),
         );
-    return SizedBox(
-      height: 44,
-      child: ListView(
+    return Center(
+      child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: kExplorePadding),
-        children: [
-          button(RandomSource.anywhere, Icons.shuffle_rounded, S.current.Random),
-          const SizedBox(width: 10),
-          button(RandomSource.inProgress, isAnime ? Icons.tv_rounded : Icons.menu_book_rounded,
-              isAnime ? S.current.Watching : S.current.Reading),
-          const SizedBox(width: 10),
-          button(RandomSource.planned, Icons.bookmark_added_rounded,
-              isAnime ? S.current.Plan_To_Watch : S.current.Plan_To_Read),
-        ],
+        padding: const EdgeInsets.symmetric(horizontal: kExplorePadding, vertical: 3),
+        child: Row(
+          children: [
+            button(RandomSource.anywhere, Icons.shuffle_rounded, tokens.success.color,
+                S.current.Random),
+            const SizedBox(width: 10),
+            button(
+                RandomSource.inProgress,
+                isAnime ? Icons.tv_rounded : Icons.menu_book_rounded,
+                tokens.score.color,
+                isAnime ? S.current.Watching : S.current.Reading),
+            const SizedBox(width: 10),
+            button(RandomSource.planned, Icons.history_rounded, tokens.warning.color,
+                isAnime ? S.current.Plan_To_Watch : S.current.Plan_To_Read),
+          ],
+        ),
       ),
     );
   }

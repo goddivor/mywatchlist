@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show RenderAbstractViewport;
 import 'package:mwl_commons/mwl_commons.dart' show RankedPersonHtml, ReviewHtml;
 import 'package:mywatchlist/cache/top_characters.dart';
 import 'package:mywatchlist/constants/constants.dart' show AccountType;
@@ -176,7 +177,8 @@ class GenresRow extends StatelessWidget {
             asset: ExploreImages.genreGroup(group.type, category),
             icon: _genreGroupIcon(group.type),
             label: _genreGroupLabel(group.type),
-            caption: hidden ? S.current.Exp_Nsfw_Hidden : S.current.Exp_Genre_Count(group.ids.length),
+            // DailyAL shows the group name only (no genre count).
+            caption: hidden ? S.current.Exp_Nsfw_Hidden : null,
             hue: 200.0 + i * 55,
             hidden: hidden,
             width: kExploreCardWidth,
@@ -350,7 +352,7 @@ class ExploreEntryCard extends StatelessWidget {
                 const SizedBox(width: 14),
                 Expanded(
                   child: Text(title,
-                      style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+                      style: theme.textTheme.titleMedium),
                 ),
                 Icon(Icons.chevron_right_rounded, color: scheme.onSurfaceVariant),
               ],
@@ -463,7 +465,10 @@ class _SeasonalPickerState extends State<SeasonalPicker> {
 /// The seasons row of [SeasonalPicker]: DailyAL's `HeaderWidget` items (font 13, 20 px
 /// inside each button, 10 px between them). `HeaderWidget` scrolls its selected item to the
 /// start, which on four items leaves only "Fall" and an empty row in autumn; this row lays
-/// out from the first season and only scrolls as far as needed to show the selected one.
+/// out from the first season and centres the selected one as far as the row can scroll.
+///
+/// It scrolls its own [ScrollController] only: `Scrollable.ensureVisible` would also scroll
+/// the Explore page back up to the picker each time the picker is built again.
 class _SeasonsRow extends StatefulWidget {
   final EdgeInsets padding;
   final double height;
@@ -483,14 +488,48 @@ class _SeasonsRow extends StatefulWidget {
 
 class _SeasonsRowState extends State<_SeasonsRow> {
   final _selectedKey = GlobalKey();
+  final _controller = ScrollController();
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final target = _selectedKey.currentContext;
-      if (mounted && target != null) Scrollable.ensureVisible(target, alignment: 0.5);
-    });
+    WidgetsBinding.instance.addPostFrameCallback((_) => _centreSelected(animate: false));
+  }
+
+  @override
+  void didUpdateWidget(_SeasonsRow old) {
+    super.didUpdateWidget(old);
+    if (old.selectedIndex != widget.selectedIndex) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _centreSelected(animate: true));
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  /// Offset of the row that puts the selected season in its middle, within the row's extent.
+  void _centreSelected({required bool animate}) {
+    if (!mounted || !_controller.hasClients) return;
+    final item = _selectedKey.currentContext?.findRenderObject();
+    if (item == null || !item.attached) return;
+    // The nearest viewport of the item is the row's own, never the page's.
+    final viewport = RenderAbstractViewport.maybeOf(item);
+    if (viewport == null) return;
+    final position = _controller.position;
+    final target = viewport
+        .getOffsetToReveal(item, 0.5, axis: Axis.horizontal)
+        .offset
+        .clamp(position.minScrollExtent, position.maxScrollExtent);
+    if ((target - position.pixels).abs() < 0.5) return;
+    if (animate) {
+      _controller.animateTo(target,
+          duration: const Duration(milliseconds: 250), curve: const Cubic(0.23, 1, 0.32, 1));
+    } else {
+      _controller.jumpTo(target);
+    }
   }
 
   @override
@@ -501,6 +540,7 @@ class _SeasonsRowState extends State<_SeasonsRow> {
       height: widget.height,
       child: SingleChildScrollView(
         key: const ValueKey('seasonal-seasons'),
+        controller: _controller,
         scrollDirection: Axis.horizontal,
         padding: widget.padding,
         child: Row(
@@ -571,7 +611,7 @@ class RecommendationCard extends StatelessWidget {
                 Text(ref.title,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w600)),
+                    style: theme.textTheme.bodySmall),
               ],
             ),
           ),

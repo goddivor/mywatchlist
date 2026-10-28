@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/material.dart';
 import 'package:mwl_commons/mwl_commons.dart' show InterestStack, RankedPersonHtml, ReviewHtml;
 import 'package:mywatchlist/constants/constants.dart' show DisplayType;
@@ -18,7 +19,7 @@ import 'package:mywatchlist/widgets/MAL/home/homeappbar.dart';
 /// Every data section below the first screen loads only when it scrolls near the viewport
 /// ([AsyncSection]) and its answer is cached for ten minutes, so switching between Anime and
 /// Manga or coming back to the tab is instant. Searching lives in the search screen, opened from
-/// the bar at the top.
+/// the app bar's search icon (DailyAL has no second search field on this page).
 class MalExplorePage extends StatefulWidget {
   const MalExplorePage({super.key});
 
@@ -29,6 +30,10 @@ class MalExplorePage extends StatefulWidget {
 class _MalExplorePageState extends State<MalExplorePage> {
   String _category = 'anime';
 
+  /// True once the page is scrolled: the status bar scrim then takes the colour of the app
+  /// bar scrolled under, as the bar does when it floats back over the content.
+  final _scrolled = ValueNotifier<bool>(false);
+
   bool get _isAnime => _category == 'anime';
 
   @override
@@ -38,9 +43,39 @@ class _MalExplorePageState extends State<MalExplorePage> {
   }
 
   @override
+  void dispose() {
+    _scrolled.dispose();
+    super.dispose();
+  }
+
+  bool _onScroll(ScrollNotification n) {
+    if (n.depth == 0 && n.metrics.axis == Axis.vertical) _scrolled.value = n.metrics.extentBefore > 0;
+    return false;
+  }
+
+  @override
   Widget build(BuildContext context) {
     final category = _category;
     final isAnime = _isAnime;
+    // The floating app bar leaves with the content; DailyAL keeps the status bar tinted, so the
+    // page never draws its cards under the clock.
+    return Stack(
+      children: [
+        NotificationListener<ScrollNotification>(
+          onNotification: _onScroll,
+          child: _page(context, category, isAnime),
+        ),
+        PositionedDirectional(
+          top: 0,
+          start: 0,
+          end: 0,
+          child: _StatusBarScrim(scrolled: _scrolled),
+        ),
+      ],
+    );
+  }
+
+  Widget _page(BuildContext context, String category, bool isAnime) {
     return CustomScrollView(
       key: PageStorageKey('explore-$category'),
       slivers: [
@@ -62,21 +97,15 @@ class _MalExplorePageState extends State<MalExplorePage> {
           // `automaticallyImplyActions`, and an empty list does not count.
           actions: const [SizedBox.shrink()],
         ),
-        SliverToBoxAdapter(child: _SearchBarTile(onTap: () => AppRoutes.openSearch(context))),
         SliverToBoxAdapter(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(kExplorePadding, 14, kExplorePadding, 14),
             child: SegmentedButton<String>(
               showSelectedIcon: false,
               segments: [
-                ButtonSegment(
-                    value: 'anime',
-                    icon: const Icon(Icons.tv_rounded, size: 18),
-                    label: Text(S.current.Explore_Anime)),
-                ButtonSegment(
-                    value: 'manga',
-                    icon: const Icon(Icons.menu_book_rounded, size: 18),
-                    label: Text(S.current.Explore_Manga)),
+                // Text only, like DailyAL's Anime / Manga switch.
+                ButtonSegment(value: 'anime', label: Text(S.current.Explore_Anime)),
+                ButtonSegment(value: 'manga', label: Text(S.current.Explore_Manga)),
               ],
               selected: {category},
               onSelectionChanged: (s) => setState(() => _category = s.first),
@@ -223,42 +252,30 @@ class _ForgetfulBucket extends PageStorageBucket {
   dynamic readState(BuildContext context, {Object? identifier}) => null;
 }
 
-/// Fake search field: tapping it opens the search screen.
-class _SearchBarTile extends StatelessWidget {
-  final VoidCallback onTap;
+/// Paints the status bar area with the app bar's colour, scrolled under or not.
+class _StatusBarScrim extends StatelessWidget {
+  final ValueListenable<bool> scrolled;
 
-  const _SearchBarTile({required this.onTap});
+  const _StatusBarScrim({required this.scrolled});
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: kExplorePadding),
-      child: Material(
-        color: scheme.surfaceContainerHigh,
-        borderRadius: BorderRadius.circular(28),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: onTap,
-          child: SizedBox(
-            height: 52,
-            child: Row(
-              children: [
-                const SizedBox(width: 18),
-                Icon(Icons.search_rounded, color: scheme.onSurfaceVariant),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    S.current.Explore_Search_Hint,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(color: scheme.onSurfaceVariant),
-                  ),
-                ),
-                const SizedBox(width: 18),
-              ],
-            ),
-          ),
+    final height = MediaQuery.paddingOf(context).top;
+    if (height <= 0) return const SizedBox.shrink();
+    final theme = Theme.of(context);
+    final bar = theme.appBarTheme;
+    final base = bar.backgroundColor ?? theme.colorScheme.surface;
+    final tint = bar.surfaceTintColor;
+    final under = tint == null
+        ? base
+        : ElevationOverlay.applySurfaceTint(base, tint, bar.scrolledUnderElevation ?? 3);
+    return IgnorePointer(
+      child: ValueListenableBuilder<bool>(
+        valueListenable: scrolled,
+        builder: (context, isScrolled, _) => AnimatedContainer(
+          duration: kThemeChangeDuration,
+          height: height,
+          color: isScrolled ? under : base,
         ),
       ),
     );
