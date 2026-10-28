@@ -5,7 +5,10 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:mywatchlist/constants/constants.dart' show AccountType;
 import 'package:mywatchlist/generated/l10n.dart';
+import 'package:mywatchlist/services/api/Anilist/anilist_list_service.dart';
+import 'package:mywatchlist/services/api/Kitsu/kitsu_library.dart';
 import 'package:mywatchlist/services/api/MAL/mal_api.dart';
+import 'package:mywatchlist/services/api/SimKl/simkl_list_service.dart';
 import 'package:mywatchlist/user/preferences/preferences.dart';
 import 'package:mywatchlist/user/user_manager.dart';
 import 'package:mywatchlist/widgets/calendar/airing_schedule.dart';
@@ -430,9 +433,38 @@ class NotificationService {
     return AiringSchedule.instance.episodes;
   }
 
-  /// The user's MAL watching and plan-to-watch lists. Other trackers have no equivalent
-  /// here: the schedule is keyed by MAL id, so without a MAL account nothing is scheduled.
+  /// Whose lists feed the notifications: the active tracker when it is AniList, Kitsu or
+  /// Simkl and connected, else MyAnimeList.
+  @visibleForTesting
+  static AccountType candidateTracker(
+      AccountType active, bool Function(AccountType tracker) isAuthenticated) {
+    switch (active) {
+      case AccountType.anilist:
+      case AccountType.kitsu:
+      case AccountType.simkl:
+        return isAuthenticated(active) ? active : AccountType.myanimelist;
+      case AccountType.myanimelist:
+      case AccountType.none:
+        return AccountType.myanimelist;
+    }
+  }
+
+  /// The watching and plan-to-watch lists of the active tracker: AniList, Kitsu and Simkl
+  /// map their entries to MAL ids (the schedule is keyed by them), MyAnimeList (also the
+  /// fallback when no tracker is active) reads its own lists.
   static Future<List<AiringCandidate>> _loadMalCandidates() async {
+    switch (candidateTracker(
+        UserManager.instance.currentTracker, UserManager.instance.isAuthenticated)) {
+      case AccountType.anilist:
+        return AnilistListService.instance.airingCandidates();
+      case AccountType.kitsu:
+        return KitsuLibrary.instance.airingCandidates();
+      case AccountType.simkl:
+        return SimklListService.instance.airingCandidates();
+      case AccountType.myanimelist:
+      case AccountType.none:
+        break;
+    }
     if (!UserManager.instance.isAuthenticated(AccountType.myanimelist)) throw const _NeedsMal();
     const fields = ['status', 'num_episodes', 'broadcast', 'main_picture'];
     final api = MalApi();

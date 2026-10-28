@@ -61,18 +61,22 @@ void main() {
     ));
   }
 
-  testWidgets('profile helpers of trackers without a profile open their stubs', (tester) async {
+  testWidgets('profile helpers of AniList, Kitsu and Simkl open their real profile pages',
+      (tester) async {
+    // Not signed in (no network, no tracker written): each page shows its own prompt.
     final openers = <void Function(BuildContext)>[
-      (c) => AppRoutes.openUserProfile(c, tracker: AccountType.anilist, username: 'neo'),
+      (c) => AppRoutes.openUserProfile(c, tracker: AccountType.anilist),
       (c) => AppRoutes.openUserStats(c, tracker: AccountType.kitsu),
+      (c) => AppRoutes.openUserPop(c, tracker: AccountType.simkl),
     ];
     for (final open in openers) {
       await tester.pumpWidget(const SizedBox()); // fresh navigator per helper
       await pumpLauncher(tester, open);
       await tester.tap(find.text('go'));
       await tester.pumpAndSettle();
-      expect(find.byType(ComingSoonPage), findsOneWidget);
-      expect(find.text(S.current.Shell_Coming_Soon), findsOneWidget);
+      expect(find.byType(TrackerProfileScreen), findsOneWidget);
+      expect(find.byType(ComingSoonPage), findsNothing);
+      expect(find.text(S.current.Shell_Coming_Soon), findsNothing);
     }
   });
 

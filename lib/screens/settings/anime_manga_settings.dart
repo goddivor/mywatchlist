@@ -72,6 +72,7 @@ class AnimeMangaSettingsPage extends StatelessWidget {
             PrefSwitchTile(
               icon: Icons.notes_rounded,
               title: s.Prefs_Private_Notes,
+              malOnly: true,
               subtitle: s.Prefs_Private_Notes_Desc,
               read: (p) => p.content.showPrivateNotes,
               toEvent: (v) => ContentPreferencesChanged((p) => p.copyWith(showPrivateNotes: v)),
@@ -120,6 +121,7 @@ class AnimeMangaSettingsPage extends StatelessWidget {
             PrefSelectTile<String>(
               icon: Icons.playlist_add_check,
               title: s.Prefs_Add_Anime,
+              malOnly: true,
               subtitle: s.Prefs_Add_Anime_Desc,
               options: PrefStatusLabels.options(PrefStatusLabels.animeAdd),
               read: (p) => p.content.defaultAnimeAddStatus,
@@ -129,6 +131,7 @@ class AnimeMangaSettingsPage extends StatelessWidget {
             PrefSelectTile<String>(
               icon: Icons.playlist_add_check,
               title: s.Prefs_Add_Manga,
+              malOnly: true,
               subtitle: s.Prefs_Add_Manga_Desc,
               options: PrefStatusLabels.options(PrefStatusLabels.mangaAdd),
               read: (p) => p.content.defaultMangaAddStatus,

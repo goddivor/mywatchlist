@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:mywatchlist/constants/constants.dart' show AccountType;
-import 'package:mywatchlist/generated/l10n.dart';
-import 'package:mywatchlist/pages/settings/coming_soon_page.dart';
+import 'package:mywatchlist/pages/Anilist/anilist_user_profile_page.dart';
+import 'package:mywatchlist/pages/Kitsu/kitsu_user_profile_page.dart';
+import 'package:mywatchlist/pages/Simkl/simkl_user_profile_page.dart';
 import 'package:mywatchlist/pages/settings/settings_section.dart';
 import 'package:mywatchlist/pages/side_bar.dart';
 import 'package:mywatchlist/screens/MAL/contentdetailedscreen.dart';
@@ -29,6 +30,14 @@ import 'package:mywatchlist/screens/user_profile/user_profile_screen.dart';
 import 'package:mywatchlist/services/auth/anilist_auth_v2.dart';
 import 'package:mywatchlist/services/auth/mal_auth_v2.dart';
 import 'package:mywatchlist/services/auth/simkl_auth_v2.dart';
+import 'package:mywatchlist/user/base_user.dart' show AuthStatus;
+import 'package:mywatchlist/user/user_anilist_v2.dart';
+import 'package:mywatchlist/user/user_kitsu_v2.dart';
+import 'package:mywatchlist/user/user_simkl_v2.dart';
+import 'package:mywatchlist/widgets/Anilist/anilist_profile_view.dart';
+import 'package:mywatchlist/widgets/Kitsu/kitsu_profile_view.dart';
+import 'package:mywatchlist/widgets/Simkl/simkl_profile_view.dart';
+import 'package:mywatchlist/widgets/Simkl/simkl_states.dart' show simklSignedIn;
 import 'package:mywatchlist/widgets/user/profile/user_pop_sheet.dart';
 
 export 'package:mywatchlist/pages/settings/settings_section.dart';
@@ -117,11 +126,22 @@ abstract final class AppRoutes {
         ),
       );
 
-  /// Whether [tracker] has a real profile screen (MyAnimeList; no tracker selected falls back
-  /// to MyAnimeList, as the home shell does). The others open a placeholder page until
-  /// their profile unit lands.
-  static bool _hasProfileScreen(AccountType tracker) =>
-      tracker == AccountType.myanimelist || tracker == AccountType.none;
+  /// The profile screen of [tracker] pushed as a page. AniList shows any public profile by
+  /// username, Kitsu one by user id (a username that is not a number opens the signed-in
+  /// profile), Simkl only the signed-in one.
+  static Widget _profileScreen(AccountType tracker, String? username,
+      {UserProfileTab? tab}) {
+    switch (tracker) {
+      case AccountType.anilist:
+      case AccountType.kitsu:
+      case AccountType.simkl:
+        return TrackerProfileScreen(tracker: tracker, username: username);
+      case AccountType.myanimelist:
+      case AccountType.none:
+        return UserProfileScreen(
+            username: username, initialTab: tab ?? UserProfileTab.stats);
+    }
+  }
 
   /// Opens the profile of [username] on [tracker]; null [username] = the signed-in user.
   static Future<void> openUserProfile(
@@ -129,17 +149,7 @@ abstract final class AppRoutes {
     required AccountType tracker,
     String? username,
   }) =>
-      push<void>(
-        context,
-        _hasProfileScreen(tracker)
-            ? UserProfileScreen(username: username)
-            : _UserProfileStub(
-                title: S.current.Profile,
-                icon: Icons.person_outline,
-                tracker: tracker,
-                username: username,
-              ),
-      );
+      push<void>(context, _profileScreen(tracker, username));
 
   /// Opens the list statistics of [username] on [tracker] (the profile, on its Stats tab);
   /// null [username] = the signed-in user.
@@ -149,16 +159,7 @@ abstract final class AppRoutes {
     String? username,
   }) =>
       push<void>(
-        context,
-        _hasProfileScreen(tracker)
-            ? UserProfileScreen(username: username, initialTab: UserProfileTab.stats)
-            : _UserProfileStub(
-                title: S.current.Stats,
-                icon: Icons.bar_chart_rounded,
-                tracker: tracker,
-                username: username,
-              ),
-      );
+          context, _profileScreen(tracker, username, tab: UserProfileTab.stats));
 
   /// Opens the quick profile sheet (header, main numbers, actions) of a MyAnimeList user;
   /// null [username] = the signed-in user. Other trackers open their full profile page.
@@ -167,7 +168,7 @@ abstract final class AppRoutes {
     required AccountType tracker,
     String? username,
   }) {
-    if (!_hasProfileScreen(tracker)) {
+    if (tracker != AccountType.myanimelist && tracker != AccountType.none) {
       return openUserProfile(context, tracker: tracker, username: username);
     }
     return showUserPopSheet(context, username: username);
@@ -290,29 +291,66 @@ class NotificationRoute {
   }
 }
 
-class _UserProfileStub extends StatelessWidget {
-  final String title;
-  final IconData icon;
+/// A pushed profile page of AniList, Kitsu or Simkl: the tracker's profile view with a back
+/// button when the account is connected (or when another AniList user is shown), else the
+/// tracker's own sign-in prompt under a plain app bar.
+@visibleForTesting
+class TrackerProfileScreen extends StatelessWidget {
   final AccountType tracker;
   final String? username;
 
-  const _UserProfileStub({
-    required this.title,
-    required this.icon,
-    required this.tracker,
-    this.username,
-  });
+  const TrackerProfileScreen({super.key, required this.tracker, this.username});
 
   @override
   Widget build(BuildContext context) {
-    final label = AppRoutes.trackerLabel(tracker);
-    final who = username == null || username!.isEmpty
-        ? label
-        : (label.isEmpty ? username! : '$username · $label');
-    return ComingSoonPage(
-      title: title,
-      icon: icon,
-      subtitle: who.isEmpty ? null : who,
+    switch (tracker) {
+      case AccountType.anilist:
+        if (username != null) {
+          return Scaffold(
+              body: AnilistProfileView(username: username, showBack: true));
+        }
+        return _own(
+          UserAnilistV2.instance,
+          signedIn: (u) => u.status == AuthStatus.AUTHENTICATED,
+          view: (u) => AnilistProfileView(key: ValueKey(u.username), showBack: true),
+          prompt: const AnilistUserProfilePage(isSelf: true),
+        );
+      case AccountType.kitsu:
+        final id = username == null ? null : int.tryParse(username!.trim());
+        if (id != null) {
+          return Scaffold(
+              body: KitsuProfileView(userId: '$id', showBack: true));
+        }
+        return _own(
+          UserKitsuV2.instance,
+          signedIn: (u) => u.status == AuthStatus.AUTHENTICATED,
+          view: (u) => KitsuProfileView(key: ValueKey(u.username), showBack: true),
+          prompt: const KitsuUserProfilePage(isSelf: true),
+        );
+      case AccountType.simkl:
+        return _own(
+          UserSimklV2.instance,
+          signedIn: (_) => simklSignedIn,
+          view: (u) => SimklProfileView(key: ValueKey(u.username), showBack: true),
+          prompt: const SimklUserProfilePage(isSelf: true),
+        );
+      case AccountType.myanimelist:
+      case AccountType.none:
+        return UserProfileScreen(username: username);
+    }
+  }
+
+  Widget _own<U extends ChangeNotifier>(
+    U user, {
+    required bool Function(U user) signedIn,
+    required Widget Function(U user) view,
+    required Widget prompt,
+  }) {
+    return ListenableBuilder(
+      listenable: user,
+      builder: (context, _) => signedIn(user)
+          ? Scaffold(body: view(user))
+          : Scaffold(appBar: AppBar(), body: prompt),
     );
   }
 }
