@@ -1,0 +1,20 @@
+{
+  "@@locale": "fr_FR",
+  "Dp_News_Empty": "Aucune actualité sur ce titre pour l'instant",
+  "Dp_News_Failed": "Impossible de charger les actualités",
+  "Dp_News_Comments": "{count, plural, one{{count} commentaire} other{{count} commentaires}}",
+  "Dp_Show_More": "Lire la suite…",
+  "Dp_Open_Review": "Ouvrir la critique",
+  "Dp_Characters_And_Staff": "Personnages et équipe",
+  "Dp_Role_Main": "Principal",
+  "Dp_Role_Supporting": "Secondaire",
+  "Dp_Lang_Japanese": "Japonais",
+  "Dp_Lang_English": "Anglais",
+  "Dp_Lang_French": "Français",
+  "Dp_Lang_German": "Allemand",
+  "Dp_Lang_Spanish": "Espagnol",
+  "Dp_Lang_Italian": "Italien",
+  "Dp_Lang_Korean": "Coréen",
+  "Dp_Lang_Portuguese_Br": "Portugais (Brésil)",
+  "Dp_Lang_Mandarin": "Mandarin"
+}

@@ -1,11 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/screens/MAL/detail/sections/section_states.dart';
 import 'package:mywatchlist/services/api/MAL/mal_anime.dart';
+import 'package:mywatchlist/user/preferences/preferences.dart';
+import 'package:mywatchlist/widgets/charts/chart_palette.dart';
+import 'package:mywatchlist/widgets/common/app_colors.dart';
 
 /// List statuses of the members (official MAL API `statistics`): one bar per
-/// status, coloured with the theme roles, share above, label and count below.
+/// status in the list status colours (theme tokens, or the colours picked in
+/// the stats chart preference), share above, label and count below.
 class AnimeStatisticsWidget extends StatelessWidget {
   final Statistics stats;
   const AnimeStatisticsWidget({required this.stats, super.key});
@@ -18,6 +23,12 @@ class AnimeStatisticsWidget extends StatelessWidget {
     return 0.0;
   }
 
+  /// The stats chart colours preference; none (theme colours) without the bloc (tests).
+  static List<int> _chartPreference(BuildContext context) {
+    if (Preferences.bloc == null) return const [];
+    return context.select((PreferencesBloc b) => b.state.general.statsChartColors);
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -26,12 +37,13 @@ class AnimeStatisticsWidget extends StatelessWidget {
     final compact = NumberFormat.compact(locale: locale);
     final percentFormat = NumberFormat.decimalPercentPattern(locale: locale, decimalDigits: 1);
     final status = stats.status;
+    final colors = themedStatusChartColors(AppColors.of(context), _chartPreference(context));
     final bars = <(String, double, Color)>[
-      (S.current.Res_Status_Watching, _toDouble(status.watching), scheme.primary),
-      (S.current.Res_Status_Completed, _toDouble(status.completed), scheme.tertiary),
-      (S.current.Res_Status_On_Hold, _toDouble(status.onHold), scheme.secondary),
-      (S.current.Res_Status_Dropped, _toDouble(status.dropped), scheme.error),
-      (S.current.Res_Status_Plan_To_Watch, _toDouble(status.planToWatch), scheme.outline),
+      (S.current.Res_Status_Watching, _toDouble(status.watching), colors[0]),
+      (S.current.Res_Status_Completed, _toDouble(status.completed), colors[1]),
+      (S.current.Res_Status_On_Hold, _toDouble(status.onHold), colors[2]),
+      (S.current.Res_Status_Dropped, _toDouble(status.dropped), colors[3]),
+      (S.current.Res_Status_Plan_To_Watch, _toDouble(status.planToWatch), colors[4]),
     ];
     final sum = bars.fold<double>(0, (a, b) => a + b.$2);
     if (sum == 0) {

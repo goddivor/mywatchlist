@@ -57,7 +57,14 @@ class ContentDetailedScreen extends StatefulWidget {
 class _ContentDetailedScreenState extends State<ContentDetailedScreen>
     with TickerProviderStateMixin {
   final GlobalKey _listKey = GlobalKey();
-  final AutoScrollController _scroll = AutoScrollController();
+  /// Height covered by the pinned app bar once collapsed (status bar,
+  /// toolbar, tab bar), kept up to date by [build]. A tab tap puts its
+  /// section right under it.
+  double _pinnedExtent = DetailHeader.toolbarHeight + DetailHeader.tabBarHeight;
+
+  late final AutoScrollController _scroll = AutoScrollController(
+    viewportBoundaryGetter: () => Rect.fromLTRB(0, _pinnedExtent, 0, 0),
+  );
 
   /// True while the user scrolls up (the collapsed app bar hides its title).
   final ValueNotifier<bool> _scrollingUp = ValueNotifier(true);
@@ -289,8 +296,25 @@ class _ContentDetailedScreenState extends State<ContentDetailedScreen>
 
   String get _title => resolveDetailTitle(_data, _titleLang);
 
+  /// Scrolls to the section of tab [index], its top right under the pinned
+  /// bar. A section near the top used to be asked to sit in the middle of
+  /// the viewport, which is impossible while the header is expanded, so the
+  /// page did not move.
+  Future<void> _scrollToTab(int index) async {
+    await _scroll.scrollToIndex(index, preferPosition: AutoScrollPosition.begin);
+    // The tapped tab stays selected until the user scrolls again.
+    if (!mounted || !_scroll.hasClients) return;
+    _lastSyncOffset = _scroll.offset;
+    if (_tabController.index != index && index < _tabController.length) {
+      _tabController.index = index;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    _pinnedExtent = MediaQuery.paddingOf(context).top +
+        DetailHeader.toolbarHeight +
+        DetailHeader.tabBarHeight;
     return PopScope(
       canPop: !_showContentEdit,
       onPopInvokedWithResult: (didPop, result) {
@@ -396,10 +420,7 @@ class _ContentDetailedScreenState extends State<ContentDetailedScreen>
       isScrollable: true,
       controller: _tabController,
       tabAlignment: TabAlignment.start,
-      onTap: (index) => _scroll.scrollToIndex(
-        index,
-        preferPosition: AutoScrollPosition.middle,
-      ),
+      onTap: _scrollToTab,
       tabs: [for (final type in _tabTypes) Tab(text: detailTabLabel(type))],
     );
   }

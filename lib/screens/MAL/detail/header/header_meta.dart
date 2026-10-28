@@ -14,13 +14,13 @@ class DetailHeaderMeta extends StatelessWidget {
 
   const DetailHeaderMeta({super.key, required this.data});
 
-  static final NumberFormat _countFormat =
-      NumberFormat.currency(decimalDigits: 0, name: '');
-  static final NumberFormat _ratingFormat = NumberFormat.currency(name: '');
-
   @override
   Widget build(BuildContext context) {
     final s = S.current;
+    // Numbers in the app's language: "2,169" in English, "2 169" in French.
+    final locale = Localizations.localeOf(context).toString();
+    final countFormat = NumberFormat.decimalPattern(locale);
+    final ratingFormat = NumberFormat.decimalPatternDigits(locale: locale, decimalDigits: 2);
     final content = data.content;
     final theme = Theme.of(context);
     final textTheme = theme.textTheme;
@@ -63,7 +63,7 @@ class DetailHeaderMeta extends StatelessWidget {
                 Semantics(
                   label: s.Dh_Rank,
                   child: Text(
-                    content?.rank == null ? '# ?' : '# ${content!.rank}',
+                    content?.rank == null ? '# ?' : '# ${countFormat.format(content!.rank)}',
                     style: textTheme.titleLarge,
                   ),
                 ),
@@ -76,7 +76,7 @@ class DetailHeaderMeta extends StatelessWidget {
                       child: ScoreReveal(
                         iconSize: 24,
                         child: Text(
-                          mean == null ? '?' : _ratingFormat.format(mean),
+                          mean == null ? '?' : ratingFormat.format(mean),
                           style: textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w600),
                         ),
                       ),
@@ -85,7 +85,7 @@ class DetailHeaderMeta extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  '${scoringUsers == null ? '?' : _countFormat.format(scoringUsers)} ${s.Dh_Users}',
+                  '${scoringUsers == null ? '?' : countFormat.format(scoringUsers)} ${s.Dh_Users}',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: textTheme.labelSmall,
@@ -99,10 +99,11 @@ class DetailHeaderMeta extends StatelessWidget {
                 ),
                 fact(data.isAnime ? s.Dh_Aired : s.Dh_Serialization,
                     _seasonOrSerialization(content)),
-                fact(s.Dh_Popularity, '# ${content?.popularity?.toString() ?? '?'}'),
+                fact(s.Dh_Popularity,
+                    '# ${content?.popularity == null ? '?' : countFormat.format(content!.popularity)}'),
                 fact(data.isAnime ? s.Dh_Studios : s.Dh_Authors, _studiosOrAuthors(content),
                     maxLines: 2),
-                fact(s.Dh_Members, _countFormat.format(content?.numListUsers ?? 0)),
+                fact(s.Dh_Members, countFormat.format(content?.numListUsers ?? 0)),
               ],
             ),
           ),
@@ -132,11 +133,17 @@ class DetailHeaderMeta extends StatelessWidget {
 
   String _studiosOrAuthors(MalAnime? content) {
     final names = data.isAnime
-        ? content?.studios?.map((e) => e.name).toList()
-        : content?.authors?.map((e) => e.author.firstName).toList();
-    return nullOrEmpty(names) ? '?' : names!.join(', ');
+        ? content?.studios?.map((e) => e.name.trim()).toList()
+        : content?.authors?.map((e) => authorName(e.author.firstName, e.author.lastName)).toList();
+    final shown = names?.where((n) => n.isNotEmpty).toList();
+    return nullOrEmpty(shown) ? '?' : shown!.join(', ');
   }
 }
+
+/// "First Last" of a MAL author; MAL leaves one of the two empty for
+/// pen names (e.g. "Nabana"), which must not leave a stray comma or space.
+String authorName(String firstName, String lastName) =>
+    [firstName.trim(), lastName.trim()].where((p) => p.isNotEmpty).join(' ');
 
 /// Translated season name from MAL's `winter` / `spring` / `summer` / `fall`;
 /// unknown values are capitalised as they come.
