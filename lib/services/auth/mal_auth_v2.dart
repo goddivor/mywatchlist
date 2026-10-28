@@ -8,14 +8,21 @@ import 'package:flutter_custom_tabs/flutter_custom_tabs.dart' as custom_tabs;
 import 'package:flutter_web_auth_2/flutter_web_auth_2.dart';
 import 'package:http/http.dart' as http;
 import 'package:mywatchlist/constants/constants.dart';
+import 'package:mywatchlist/generated/l10n.dart';
+import 'package:mywatchlist/services/api/MAL/web/mal_web_client.dart';
+import 'package:mywatchlist/services/auth/auth_webview.dart';
 import 'package:mywatchlist/services/auth/mal_authresp.dart';
+import 'package:mywatchlist/services/auth/mal_web_session.dart';
 import 'package:mywatchlist/services/api/MAL/mal_user.dart';
 import 'package:mywatchlist/user/user_mal_v2.dart';
 import 'package:mywatchlist/user/base_user.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// Enhanced MAL authentication with Custom Tabs (mobile) and flutter_web_auth_2 (desktop)
-/// Based on DailyAL implementation with improvements
+/// MAL sign in. On Android it runs in the in-app [AuthWebView] on myanimelist.net: when the
+/// OAuth redirect arrives, the WebView the user signed in with holds MAL's website cookies,
+/// which [MalWebSession] stores next to the tokens (comments and other website features).
+/// "Open in browser" in that page, and a missing context, fall back to Custom Tabs (tokens
+/// only). Desktop uses flutter_web_auth_2.
 class MalAuthV2 {
   final String clientId = Constants.malclientId;
   final String clientSecret = Constants.malClientSecret;
@@ -40,6 +47,7 @@ class MalAuthV2 {
       return false;
     }
 
+    _hadTokens = UserMalV2.instance.accessToken != null;
     UserMalV2.instance.setStatus(AuthStatus.INPROGRESS);
     UserMalV2.instance.notifyAccountChange();
 
@@ -47,11 +55,23 @@ class MalAuthV2 {
       final success = await _oAuthSignIn(context: context);
       return success;
     } catch (e) {
-      print('Sign-in error: $e');
-      UserMalV2.instance.setStatus(AuthStatus.UNAUTHENTICATED);
-      UserMalV2.instance.notifyAccountChange();
+      debugPrint('MAL sign-in error: ${e.runtimeType}');
+      _endWithoutSignIn();
       return false;
     }
+  }
+
+  /// Whether tokens existed when this sign in started (a reconnect from a signed-in app).
+  bool _hadTokens = false;
+
+  /// A sign in that did not finish leaves a signed-in account signed in.
+  void _endWithoutSignIn() {
+    UserMalV2.instance.setStatus(
+      _hadTokens && UserMalV2.instance.accessToken != null
+          ? AuthStatus.AUTHENTICATED
+          : AuthStatus.UNAUTHENTICATED,
+    );
+    UserMalV2.instance.notifyAccountChange();
   }
 
   /// Main OAuth sign-in flow
@@ -72,8 +92,11 @@ class MalAuthV2 {
     if (!kIsWeb && (Platform.isLinux || Platform.isWindows || Platform.isMacOS)) {
       return await _desktopAuth(url, codeChallenge);
     }
-    // Use Custom Tabs for Android
+    // Android: in-app WebView (captures the website session), Custom Tabs as fallback
     else if (!kIsWeb && Platform.isAndroid) {
+      if (context != null && context.mounted) {
+        return await _webViewAuthAndroid(url, codeChallenge, context);
+      }
       return await _mobileAuthAndroid(url, codeChallenge, context);
     }
     // Use WebView for iOS or fallback
@@ -95,7 +118,6 @@ class MalAuthV2 {
         ),
       );
 
-      print('OAuth callback received: $result');
       final uri = Uri.parse(result);
       final code = uri.queryParameters['code'];
 
@@ -113,6 +135,44 @@ class MalAuthV2 {
       UserMalV2.instance.notifyAccountChange();
       return false;
     }
+  }
+
+  /// Android sign in inside [AuthWebView]. Returns true once the page opened (the outcome
+  /// reaches the UI through [UserMalV2]); a closed page restores the previous state.
+  Future<bool> _webViewAuthAndroid(String url, String codeChallenge, BuildContext context) async {
+    final messenger = ScaffoldMessenger.maybeOf(context);
+    final result = await AuthWebView.open(
+      context,
+      url: url,
+      redirectPrefix: redirectUri,
+      title: 'MyAnimeList',
+      allowBrowser: true,
+    );
+    if (result.useBrowser) {
+      if (!context.mounted) {
+        _endWithoutSignIn();
+        return true;
+      }
+      return _mobileAuthAndroid(url, codeChallenge, context);
+    }
+    final code = result.callback?.queryParameters['code'];
+    if (code == null) {
+      _endWithoutSignIn();
+      return true;
+    }
+    final jar = await MalWebSession.instance.beginCapture();
+    final ok = await _exchangeCodeForToken(code, codeChallenge, webSessionJar: jar);
+    if (!ok) {
+      MalWebSession.instance.cancelCapture();
+      _endWithoutSignIn();
+      messenger
+        ?..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(
+          behavior: SnackBarBehavior.floating,
+          content: Text(S.current.Ms_Sign_In_Failed),
+        ));
+    }
+    return true;
   }
 
   /// Android authentication using Custom Tabs
@@ -181,7 +241,11 @@ class MalAuthV2 {
   }
 
   /// Exchange authorization code for access token
-  Future<bool> _exchangeCodeForToken(String code, String codeChallenge) async {
+  Future<bool> _exchangeCodeForToken(
+    String code,
+    String codeChallenge, {
+    Map<String, String>? webSessionJar,
+  }) async {
     try {
       final response = await http.post(
         Uri.parse(tokenEndPoint),
@@ -207,11 +271,19 @@ class MalAuthV2 {
         UserMalV2.instance.notifyAccountChange();
 
         // Fetch user profile data
+        String? name;
         try {
           final userProfile = await MalUser().getUserInfo();
+          name = userProfile.name;
           UserMalV2.instance.setUserInfo(userProfile.name, userProfile.picture);
         } catch (e) {
-          print('Failed to fetch MAL user profile: $e');
+          debugPrint('Failed to fetch MAL user profile: ${e.runtimeType}');
+        }
+
+        // The WebView the user signed in with holds MAL's website cookies.
+        if (webSessionJar != null) {
+          MalWebClient.instance.reset();
+          await MalWebSession.instance.finishCapture(webSessionJar, username: name);
         }
 
         // Clear cached code challenge
@@ -219,13 +291,13 @@ class MalAuthV2 {
 
         return true;
       } else {
-        print('Token exchange failed: ${response.statusCode} - ${response.body}');
+        debugPrint('MAL token exchange failed: ${response.statusCode}');
         UserMalV2.instance.setStatus(AuthStatus.UNAUTHENTICATED);
         UserMalV2.instance.notifyAccountChange();
         return false;
       }
     } catch (e) {
-      print('Error exchanging code for token: $e');
+      debugPrint('MAL token exchange error: ${e.runtimeType}');
       UserMalV2.instance.setStatus(AuthStatus.UNAUTHENTICATED);
       UserMalV2.instance.notifyAccountChange();
       return false;
@@ -263,9 +335,11 @@ class MalAuthV2 {
     await prefs.remove('mal_code_challenge');
   }
 
-  /// Sign out
+  /// Sign out: tokens and the website session go together.
   Future<void> signOut() async {
     UserMalV2.instance.clear();
+    MalWebClient.instance.reset();
+    await MalWebSession.instance.clear();
     await _clearChallengeCode();
   }
 }
