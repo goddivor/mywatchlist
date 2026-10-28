@@ -11,6 +11,8 @@ import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/screens/MAL/contentdetailedscreen.dart';
 import 'package:mywatchlist/screens/MAL/detail/sections/section_states.dart';
 import 'package:mywatchlist/services/api/Jikan/jikan_client.dart';
+import 'package:mywatchlist/services/api/Jikan/jikan_fallbacks.dart';
+import 'package:mywatchlist/services/api/MAL/scrapper/character_page.dart';
 import 'package:mywatchlist/services/api/MAL/mal_anime.dart';
 import 'package:mywatchlist/utils/web_launcher.dart';
 import 'package:mywatchlist/widgets/bookmarks/bookmark_button.dart';
@@ -61,6 +63,10 @@ class _Profile {
   final String? image;
   final List<_Section> sections;
 
+  /// Favorites of the voiced characters when the source gives them (MAL's
+  /// person page does, Jikan does not).
+  final Map<int, int> roleFavorites;
+
   const _Profile({
     required this.name,
     required this.alternateName,
@@ -68,6 +74,7 @@ class _Profile {
     required this.favorites,
     required this.image,
     required this.sections,
+    this.roleFavorites = const {},
   });
 
   _Section? section(_SectionId id) {
@@ -117,7 +124,13 @@ List<_Entry> _entries(
 /// a background isolate: the answer can be hundreds of kilobytes.
 _Profile _parseProfile((String, bool) args) {
   final (body, isCharacter) = args;
-  final data = _map(_map(jsonDecode(body))?['data']) ?? const {};
+  return _profileFromData(
+      _map(_map(jsonDecode(body))?['data']) ?? const {}, isCharacter);
+}
+
+/// Builds the profile from Jikan's `data` object, or from MyAnimeList's page
+/// parsed into the same shape ([MalCharacterPage]).
+_Profile _profileFromData(Map<String, dynamic> data, bool isCharacter) {
   final name = (data['name'] as String?) ?? '';
   String alternate;
   if (isCharacter) {
@@ -168,6 +181,15 @@ _Profile _parseProfile((String, bool) args) {
                 key: 'manga', titleKey: 'title', subtitleKey: 'position'),
           ),
         ];
+  final roleFavorites = <int, int>{};
+  if (!isCharacter && data['voices'] is List) {
+    for (final raw in data['voices'] as List) {
+      final row = _map(raw);
+      final id = _map(row?['character'])?['mal_id'];
+      final fav = row?['favorites'];
+      if (id is int && fav is int) roleFavorites.putIfAbsent(id, () => fav);
+    }
+  }
   return _Profile(
     name: name,
     alternateName: alternate,
@@ -175,6 +197,7 @@ _Profile _parseProfile((String, bool) args) {
     favorites: data['favorites'] as int?,
     image: _jpg(data['images']),
     sections: sections,
+    roleFavorites: roleFavorites,
   );
 }
 
@@ -199,7 +222,9 @@ final Map<int, int> _favoritesCache = {};
 ///
 /// Pass [category] = `'character'` (default) for characters, or `'person'`
 /// for voice actors / staff members. The page is a MyAnimeList screen whatever
-/// tracker is active: the data comes from Jikan by MAL id.
+/// tracker is active: the data comes from Jikan by MAL id, raced against
+/// MyAnimeList's own page ([MalCharacterPage], see [JikanFallbacks.race]:
+/// Jikan gets a 3 s head start and the load ends within about 12 s).
 class CharacterScreen extends StatefulWidget {
   final int id;
   final String category;
@@ -257,10 +282,12 @@ class _CharacterScreenState extends State<CharacterScreen> {
       });
     }
     try {
-      final res = await JikanClient.instance
-          .get(Uri.parse('${Constants.jikanV4}/$_path/${widget.id}/full'));
-      if (res.statusCode != 200) throw StateError('HTTP ${res.statusCode}');
-      final profile = await compute(_parseProfile, (res.body, _isCharacter));
+      final result = await JikanFallbacks.race<_Profile>(
+        jikan: _fromJikan,
+        fallback: _fromMal,
+      );
+      final profile = result.value;
+      _favoritesCache.addAll(profile.roleFavorites);
       if (!mounted) return;
       setState(() {
         _profile = profile;
@@ -272,6 +299,19 @@ class _CharacterScreenState extends State<CharacterScreen> {
       debugPrint('Character page failed: $e');
       if (mounted) setState(() => _failed = true);
     }
+  }
+
+  Future<_Profile> _fromJikan() async {
+    final res = await JikanClient.instance
+        .get(Uri.parse('${Constants.jikanV4}/$_path/${widget.id}/full'));
+    if (res.statusCode != 200) throw StateError('HTTP ${res.statusCode}');
+    return compute(_parseProfile, (res.body, _isCharacter));
+  }
+
+  Future<_Profile> _fromMal() async {
+    final data =
+        await MalCharacterPage.load(widget.id, isCharacter: _isCharacter);
+    return _profileFromData(data, _isCharacter);
   }
 
   /// Extra pictures are a bonus: a failure leaves the main picture alone.
