@@ -108,9 +108,17 @@ void main() {
     expect(centred || atEdge, isTrue);
 
     // Picking another season moves the row only.
-    final other = SeasonType.values[(season.index + 2) % SeasonType.values.length];
+    final other = SeasonType.values.firstWhere((t) {
+      if (t == season) return false;
+      final r = tester.getRect(find.text(seasonLabel(t)));
+      return r.left >= rowBox.left && r.right <= rowBox.right;
+    });
     await tester.tap(find.text(seasonLabel(other)));
     await tester.pumpAndSettle();
     expect(page.offset, 260);
+    // The tap selected it: it is now the raised item of the row.
+    expect(
+        find.ancestor(of: find.text(seasonLabel(other)), matching: find.byType(ShadowButton)),
+        findsOneWidget);
   });
 }
