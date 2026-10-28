@@ -17,6 +17,7 @@ import 'package:mywatchlist/screens/MAL/detail/header/detail_title.dart';
 import 'package:mywatchlist/screens/MAL/detail/header/header_background.dart' show contentPref;
 import 'package:mywatchlist/screens/MAL/detail/header/next_episode.dart';
 import 'package:mywatchlist/screens/MAL/detail/section_frame.dart';
+import 'package:mywatchlist/screens/MAL/detail/sections/featured_section.dart' show FeaturedArticles;
 import 'package:mywatchlist/screens/search/search_history.dart';
 import 'package:mywatchlist/services/api/Jikan/jikan_api.dart';
 import 'package:mywatchlist/services/api/MAL/mal_anime.dart';
@@ -158,6 +159,7 @@ class _ContentDetailedScreenState extends State<ContentDetailedScreen>
         members: content.numListUsers ?? 0,
       ));
       _loadNextEpisode(content.status);
+      _loadFeatured(content.title);
     } catch (e) {
       debugPrint('Error loading MAL details for $_id: $e');
       if (!mounted) return;
@@ -196,6 +198,16 @@ class _ContentDetailedScreenState extends State<ContentDetailedScreen>
     } catch (e) {
       debugPrint('Error loading Jikan videos for $_id: $e');
     }
+  }
+
+  /// Featured articles, loaded here too so a title without any loses its
+  /// whole section (title row and tab) even before the section is built.
+  /// A failure is left to the section, which shows its error with Retry.
+  Future<void> _loadFeatured(String? title) async {
+    try {
+      final result = await FeaturedArticles.load(_id, _data.category, title ?? _data.title);
+      if (mounted && result.featuredArticles.isEmpty) _refreshSections();
+    } catch (_) {}
   }
 
   /// Countdown of an airing anime (LiveChart schedule); once per page.
