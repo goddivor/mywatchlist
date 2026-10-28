@@ -3,6 +3,7 @@
 **Kind** unit · **Priority** P1 · **Group** trackers · **Model** opus
 
 ## Needs done first
+- `home-rows-kinds` (Home OVA/ONA and manhwa/manhua/novel ranking rows (H3) with tracker cases)
 - `kitsu-community` (kitsu-community)
 - `tracker-followups` (Tracker follow-ups: removed rows disappear, Simkl list categories, notifications for every tracker)
 

@@ -66,6 +66,7 @@
         "explore-weekly",
         "bookmarks-everywhere",
         "home-rows",
+        "home-rows-kinds",
         "explore-polish",
         "home-fixes"
       ]
@@ -1449,6 +1450,7 @@
       "artifact": "",
       "priority": "P2",
       "needs": [
+        "home-rows-kinds",
         "ux-explore",
         "ux-search",
         "ux-reviews",
@@ -2176,6 +2178,7 @@
       "artifact": "",
       "priority": "P1",
       "needs": [
+        "home-rows-kinds",
         "kitsu-community",
         "tracker-followups"
       ],
@@ -2261,6 +2264,7 @@
       "artifact": "",
       "priority": "P1",
       "needs": [
+        "home-rows-kinds",
         "simkl-api-compliance",
         "tracker-followups"
       ],
@@ -2659,6 +2663,36 @@
       "states": [],
       "notes": [
         "model: opus"
+      ],
+      "status": "⬜ todo"
+    },
+    {
+      "id": "home-rows-kinds",
+      "title": "Home OVA/ONA and manhwa/manhua/novel ranking rows (H3) with tracker cases",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "home-rows"
+      ],
+      "owns": [
+        "lib/user/MAL/mal_home_page_preferences.dart",
+        "lib/user/requests/requests_bloc.dart",
+        "lib/screens/settings/mal_home_settings.dart",
+        "lib/widgets/Anilist/anilist_home_sections.dart",
+        "lib/widgets/Kitsu/kitsu_rows.dart",
+        "lib/widgets/Simkl/simkl_home_plan.dart",
+        "lib/l10n/units/home-rows/**",
+        "test/units/home-rows/**",
+        "test/units/home-rows-kinds/**"
+      ],
+      "group": "discovery",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: sonnet"
       ],
       "status": "⬜ todo"
     },

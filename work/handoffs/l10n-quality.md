@@ -3,6 +3,7 @@
 **Kind** unit · **Priority** P2 · **Group** release · **Model** sonnet
 
 ## Needs done first
+- `home-rows-kinds` (Home OVA/ONA and manhwa/manhua/novel ranking rows (H3) with tracker cases)
 - `ux-explore` (Explore like DailyAL: tonal buttons, arrow headers, no extra search, no captions)
 - `ux-search` (Search home and results like DailyAL; one season picker)
 - `ux-reviews` (Reviewer tap opens the profile directly; Helpful sort by default)
