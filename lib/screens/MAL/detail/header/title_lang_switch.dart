@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mywatchlist/widgets/common/app_colors.dart';
 import 'package:mywatchlist/constants/constants.dart' show TitleLang;
 import 'package:mywatchlist/generated/l10n.dart';
 
@@ -19,12 +20,13 @@ class TitleLangSwitch extends StatelessWidget {
   Widget build(BuildContext context) {
     final s = S.current;
     final scheme = Theme.of(context).colorScheme;
+    final tokens = AppColors.of(context);
     return Semantics(
       label: s.Dh_Title_Language,
       container: true,
       child: DecoratedBox(
         decoration: BoxDecoration(
-          color: Colors.black.withValues(alpha: .45),
+          color: tokens.imageScrim,
           borderRadius: BorderRadius.circular(14),
         ),
         child: Padding(
@@ -32,9 +34,9 @@ class TitleLangSwitch extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              _segment(scheme, TitleLang.ro, s.Dh_Lang_Romaji, s.Dh_Lang_Romaji_Long),
-              _segment(scheme, TitleLang.en, s.Dh_Lang_English, s.Dh_Lang_English_Long),
-              _segment(scheme, TitleLang.ja, s.Dh_Lang_Japanese, s.Dh_Lang_Japanese_Long),
+              _segment(scheme, tokens, TitleLang.ro, s.Dh_Lang_Romaji, s.Dh_Lang_Romaji_Long),
+              _segment(scheme, tokens, TitleLang.en, s.Dh_Lang_English, s.Dh_Lang_English_Long),
+              _segment(scheme, tokens, TitleLang.ja, s.Dh_Lang_Japanese, s.Dh_Lang_Japanese_Long),
             ],
           ),
         ),
@@ -42,7 +44,7 @@ class TitleLangSwitch extends StatelessWidget {
     );
   }
 
-  Widget _segment(ColorScheme scheme, TitleLang lang, String label, String semantics) {
+  Widget _segment(ColorScheme scheme, AppColors tokens, TitleLang lang, String label, String semantics) {
     final selected = value == lang;
     return Semantics(
       button: true,
@@ -56,7 +58,7 @@ class TitleLangSwitch extends StatelessWidget {
           constraints: const BoxConstraints(minWidth: 34, minHeight: 28),
           child: DecoratedBox(
             decoration: BoxDecoration(
-              color: selected ? scheme.primary : Colors.transparent,
+              color: selected ? scheme.primary : null,
               borderRadius: BorderRadius.circular(12),
             ),
             child: Center(
@@ -65,7 +67,7 @@ class TitleLangSwitch extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
-                  color: selected ? scheme.onPrimary : Colors.white,
+                  color: selected ? scheme.onPrimary : tokens.onImageScrim,
                 ),
               ),
             ),

@@ -4,6 +4,7 @@ import 'dart:ui' as ui;
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:mywatchlist/widgets/common/app_colors.dart';
 import 'package:mywatchlist/widgets/loading/shimmercolor.dart';
 
 /// Decoded sizes are rounded up to a multiple of this many physical pixels, so the same picture
@@ -173,7 +174,8 @@ class AppImage extends StatelessWidget {
     final custom = placeholder;
     if (custom != null) return custom(context);
     if (shimmerPlaceholder) {
-      return const ShimmerColor(ColoredBox(color: Colors.white, child: SizedBox.expand()));
+      return ShimmerColor(ColoredBox(
+          color: AppColors.of(context).shimmerBase, child: const SizedBox.expand()));
     }
     return ColoredBox(
       color: placeholderColor ?? Theme.of(context).colorScheme.surfaceContainerHighest,

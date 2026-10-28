@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:mywatchlist/widgets/common/app_colors.dart';
 import 'package:flutter/services.dart';
 import 'package:mywatchlist/cache/dub_info.dart';
 import 'package:mywatchlist/generated/l10n.dart';
@@ -140,13 +141,14 @@ class _DubStatusBadgeState extends State<DubStatusBadge> {
         final status = info.statusOf(widget.animeId);
         if (status == DubStatus.none) return const SizedBox.shrink();
         final style = info.iconStyle;
+        final tokens = AppColors.of(context);
         return IgnorePointer(
           child: Semantics(
             label: dubStatusLabel(status),
             excludeSemantics: true,
             child: DecoratedBox(
               decoration: BoxDecoration(
-                color: const Color(0x99000000),
+                color: tokens.imageScrim,
                 borderRadius: BorderRadius.circular(widget.radius),
               ),
               child: Padding(
@@ -154,7 +156,7 @@ class _DubStatusBadgeState extends State<DubStatusBadge> {
                 child: Icon(
                   status == DubStatus.partial ? DubIcons.partial(style) : DubIcons.dub(style),
                   size: 14,
-                  color: const Color(0xFFFFFFFF),
+                  color: tokens.onImageScrim,
                 ),
               ),
             ),

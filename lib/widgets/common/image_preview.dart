@@ -4,6 +4,7 @@ import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:mywatchlist/widgets/common/app_colors.dart';
 import 'package:mywatchlist/constants/constants.dart';
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/user/user_preference.dart';
@@ -21,7 +22,8 @@ import 'package:url_launcher/url_launcher.dart';
 
 /// Static scrim behind the image viewer. A BackdropFilter blur here re-blurred the whole screen
 /// on every frame of a pinch or a swipe; a flat dark layer costs nothing (docs/PERFORMANCE.md).
-const Color _viewerScrim = Color(0xB3000000);
+Color _viewerScrim(BuildContext context) =>
+    Theme.of(context).colorScheme.scrim.withValues(alpha: 0.7);
 
 /// Provider for the viewer: cached on disk, decoded no larger than twice the screen (enough
 /// detail to zoom, never a 4000 px banner decoded at full size).
@@ -46,14 +48,12 @@ void zoomInImage(BuildContext context, String url, [bool showButtons = true]) {
           height: MediaQuery.of(context).size.height,
           width: MediaQuery.of(context).size.width,
           child: ColoredBox(
-            color: _viewerScrim,
+            color: _viewerScrim(context),
             child: Stack(
               children: [
                 PhotoView(
                   imageProvider: _viewerImage(context, url),
-                  backgroundDecoration: const BoxDecoration(
-                    color: Colors.transparent,
-                  ),
+                  backgroundDecoration: const BoxDecoration(),
                   loadingBuilder: (context, event) => _imageLoader(event),
                 ),
                 Positioned(
@@ -248,7 +248,7 @@ void zoomInImageList(BuildContext context, List<String> urlList,
             height: MediaQuery.of(context).size.height,
             width: MediaQuery.of(context).size.width,
             child: ColoredBox(
-              color: _viewerScrim,
+              color: _viewerScrim(context),
               child: Stack(
                 children: [
                   PhotoViewGallery.builder(
@@ -261,9 +261,7 @@ void zoomInImageList(BuildContext context, List<String> urlList,
                         initialScale: PhotoViewComputedScale.contained * 0.8,
                       );
                     },
-                    backgroundDecoration: const BoxDecoration(
-                      color: Colors.transparent,
-                    ),
+                    backgroundDecoration: const BoxDecoration(),
                     itemCount: urlList.length,
                     loadingBuilder: (context, event) => _imageLoader(event),
                   ),
@@ -310,8 +308,8 @@ Center _imageLoader(ImageChunkEvent? event) {
         Container(
           width: 40,
           height: 40,
-          decoration: const BoxDecoration(
-            color: Colors.white,
+          decoration: BoxDecoration(
+            color: AppColors.of(context).shimmerBase,
             shape: BoxShape.circle,
           ),
         ),

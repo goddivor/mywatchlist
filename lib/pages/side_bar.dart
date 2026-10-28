@@ -11,6 +11,7 @@ import 'package:mywatchlist/user/user_manager.dart';
 import 'package:mywatchlist/utils/app_routes.dart';
 import 'package:mywatchlist/utils/sidebar_bg_manager.dart';
 import 'package:mywatchlist/utils/sidebar_extension.dart';
+import 'package:mywatchlist/widgets/common/app_colors.dart';
 import 'package:mywatchlist/widgets/common/avatar_widget.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
@@ -291,6 +292,7 @@ class _AppSidebarState extends State<AppSidebar> {
   Widget _buildHeader(
       ThemeData theme, AccountState state, AccountType tracker) {
     final colors = theme.colorScheme;
+    final tokens = AppColors.of(context);
     String? avatarUrl;
     var name = S.current.Sidebar_Guest;
     if (state is AccountLoaded && tracker != AccountType.none) {
@@ -330,12 +332,12 @@ class _AppSidebarState extends State<AppSidebar> {
               ),
             ),
           // Scrim so the name stays readable on any picture (alpha gradient, no blur).
-          const DecoratedBox(
+          DecoratedBox(
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                colors: [Color(0x14000000), Color(0x99000000)],
+                colors: [tokens.imageScrim.withValues(alpha: 0.08), tokens.imageScrim],
               ),
             ),
           ),
@@ -364,7 +366,7 @@ class _AppSidebarState extends State<AppSidebar> {
                   url: avatarUrl,
                   height: 56,
                   width: 56,
-                  borderColor: Colors.white,
+                  borderColor: tokens.onImageScrim,
                   borderWidth: 2,
                 ),
                 const SizedBox(width: 14),
@@ -378,7 +380,7 @@ class _AppSidebarState extends State<AppSidebar> {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: theme.textTheme.titleLarge?.copyWith(
-                          color: Colors.white,
+                          color: tokens.onImageScrim,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
@@ -386,7 +388,7 @@ class _AppSidebarState extends State<AppSidebar> {
                       Text(
                         trackerLabel,
                         style: theme.textTheme.bodyMedium
-                            ?.copyWith(color: Colors.white.withValues(alpha: 0.85)),
+                            ?.copyWith(color: tokens.onImageScrim.withValues(alpha: 0.85)),
                       ),
                     ],
                   ),

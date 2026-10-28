@@ -4,6 +4,7 @@ import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
 import 'package:mywatchlist/widgets/loading/shimmercolor.dart';
 import 'package:mywatchlist/cache/cachemanager.dart';
+import 'package:mywatchlist/widgets/common/app_colors.dart';
 import 'package:mywatchlist/widgets/common/app_image.dart';
 import 'package:mywatchlist/widgets/common/image_preview.dart';
 
@@ -56,15 +57,14 @@ class AvatarWidget extends StatelessWidget {
               fit: fit ?? BoxFit.cover,
               borderRadius: clipRadius,
               placeholder: (context) => _buildShimmerLoader(context, radius),
-              errorAsset: _userFallbackAsset,
+              errorWidget: (_) => PersonPlaceholder(radius: clipRadius),
             )
-          : ClipRRect(
-              borderRadius: clipRadius,
-              child: Image.asset(
-                url ?? _userFallbackAsset,
-                fit: fit,
-              ),
-            ),
+          : url == null
+              ? PersonPlaceholder(radius: clipRadius)
+              : ClipRRect(
+                  borderRadius: clipRadius,
+                  child: Image.asset(url!, fit: fit),
+                ),
     );
 
     return GestureDetector(
@@ -97,14 +97,50 @@ class AvatarWidget extends StatelessWidget {
         decoration: BoxDecoration(
           borderRadius:
               userRoundBorderforLoading! ? BorderRadius.circular(32) : radius,
-          color: Colors.white,
+          color: AppColors.of(context).shimmerBase,
         ),
       ),
     );
   }
 }
 
-const String _userFallbackAsset = 'assets/images/user_dal_old.png';
+/// A missing or broken user picture: a person icon on a tonal circle (or
+/// rounded box with [radius]), the theme's colours in light, dark and black,
+/// like the detail sections' `RoundAvatar`.
+class PersonPlaceholder extends StatelessWidget {
+  final BorderRadius? radius;
+  final String? initials;
+
+  const PersonPlaceholder({super.key, this.radius, this.initials});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final initials = this.initials;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: scheme.secondaryContainer,
+        shape: radius == null ? BoxShape.circle : BoxShape.rectangle,
+        borderRadius: radius,
+      ),
+      child: LayoutBuilder(
+        builder: (context, box) {
+          final side = box.biggest.shortestSide.isFinite ? box.biggest.shortestSide : 40.0;
+          return Center(
+            child: initials == null
+                ? Icon(Icons.person, size: side * 0.55, color: scheme.onSecondaryContainer)
+                : AutoSizeText(
+                    initials,
+                    maxLines: 1,
+                    minFontSize: 10,
+                    style: TextStyle(fontSize: 22, color: scheme.onSecondaryContainer),
+                  ),
+          );
+        },
+      ),
+    );
+  }
+}
 
 /// Network image with an `Ink` decoration (so the enclosing InkWell ripple stays visible),
 /// decoded at the slot's size and shown without fade (DailyAL: `fadeInDuration: Duration.zero`).
@@ -122,19 +158,17 @@ Widget cachedImage(
     fit: effectiveFit,
     placeholder: (context) =>
         _shimmerLoader(context, radius, userRoundBorderforLoading),
-    errorWidget: (context) => Ink(
-      decoration: BoxDecoration(
-        borderRadius: effectiveRadius,
-        image: DecorationImage(
-          fit: effectiveFit,
-          image: AssetImage(
-            (useUserImageOnError
-                ? _userFallbackAsset
-                : "assets/images/anime-collage.jpg"),
+    errorWidget: (context) => useUserImageOnError
+        ? PersonPlaceholder(radius: effectiveRadius)
+        : Ink(
+            decoration: BoxDecoration(
+              borderRadius: effectiveRadius,
+              image: DecorationImage(
+                fit: effectiveFit,
+                image: const AssetImage("assets/images/anime-collage.jpg"),
+              ),
+            ),
           ),
-        ),
-      ),
-    ),
     imageBuilder: (context, imageProvider) => Ink(
       decoration: BoxDecoration(
           borderRadius: effectiveRadius,
@@ -150,7 +184,7 @@ Widget _shimmerLoader(BuildContext context, BorderRadius? radius,
       decoration: BoxDecoration(
         borderRadius:
             userRoundBorderforLoading ? BorderRadius.circular(32) : radius,
-        color: Colors.white,
+        color: AppColors.of(context).shimmerBase,
       ),
     ),
   );
@@ -188,7 +222,7 @@ class AvatarAspect extends StatelessWidget {
     return AspectRatio(
       aspectRatio: aspectRatio,
       child: Material(
-        color: Colors.transparent,
+        type: MaterialType.transparency,
         borderRadius: radius ?? BorderRadius.circular(28),
         child: InkWell(
           onTap: onTap == null
@@ -239,43 +273,18 @@ Widget userImage(BorderRadius? radius, String? url,
   if (useUserImageOnError && username != null) {
     username = username.toLowerCase();
     username = username.substring(0, username.length > 2 ? 2 : 1);
-    return Container(
-      decoration: BoxDecoration(
-        color: randomColor(username),
-        shape: BoxShape.circle,
-      ),
-      child: Center(
-        child: AutoSizeText(
-          username,
-          maxLines: 1,
-          minFontSize: 10,
-          style: TextStyle(
-            fontSize: 22,
-            color: Colors.white,
-          ),
-        ),
-      ),
-    );
+    return PersonPlaceholder(initials: username);
   }
-  return Container(
-    child: Ink(
-      decoration: BoxDecoration(
-        borderRadius: radius ?? BorderRadius.circular(28),
-        image: DecorationImage(
-          fit: BoxFit.cover,
-          image: AssetImage(
-            url ??
-                (useUserImageOnError
-                    ? "assets/images/user-unknown.jpg"
-                    : "assets/images/error_image.png"),
-          ),
-        ),
+  if (url == null && useUserImageOnError) {
+    return PersonPlaceholder(radius: radius ?? BorderRadius.circular(28));
+  }
+  return Ink(
+    decoration: BoxDecoration(
+      borderRadius: radius ?? BorderRadius.circular(28),
+      image: DecorationImage(
+        fit: BoxFit.cover,
+        image: AssetImage(url ?? "assets/images/error_image.png"),
       ),
     ),
   );
-}
-
-Color randomColor(String username) {
-  final cd = username.hashCode;
-  return Color.fromARGB(255, cd % 150, cd % 125, cd % 100);
 }

@@ -7,6 +7,7 @@ import 'package:mywatchlist/screens/seasonal/season_utils.dart';
 import 'package:mywatchlist/screens/seasonal/seasonal_data.dart';
 import 'package:mywatchlist/user/preferences/preferences.dart';
 import 'package:mywatchlist/utils/app_routes.dart';
+import 'package:mywatchlist/widgets/common/app_colors.dart';
 import 'package:mywatchlist/widgets/common/list_sort_filter.dart';
 import 'package:mywatchlist/widgets/common/select/select.dart';
 import 'package:mywatchlist/widgets/loading/shimmercolor.dart';
@@ -14,6 +15,7 @@ import 'package:mywatchlist/widgets/user/list/cards/entry_cards.dart';
 import 'package:mywatchlist/widgets/user/list/cards/entry_parts.dart';
 import 'package:mywatchlist/widgets/user/list/list_entry_view.dart';
 import 'package:mywatchlist/widgets/user/list/list_query.dart';
+import 'package:mywatchlist/widgets/user/list/user_list_tab.dart' show listGridDelegate, listGridGaps, listGridPadding;
 
 /// Every anime of one season with a season/year switcher, sort (score, members, popularity,
 /// title, start date, episodes), filter (type, airing state, genres) and grid or list display.
@@ -277,14 +279,10 @@ class _SeasonalScreenState extends State<SeasonalScreen> {
         )
       else if (display.isGrid)
         SliverPadding(
-          padding: const EdgeInsets.fromLTRB(10, 0, 10, 0),
+          // My List's grid: DailyAL's gaps (#143).
+          padding: listGridPadding(display.subType),
           sliver: SliverGrid.builder(
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: display.gridColumns,
-              mainAxisExtent: display.gridHeight,
-              crossAxisSpacing: 8,
-              mainAxisSpacing: 10,
-            ),
+            gridDelegate: listGridDelegate(display),
             itemCount: visible.length,
             itemBuilder: (context, i) => EntryGridCard(
               key: ValueKey(visible[i].id),
@@ -317,19 +315,22 @@ class _SeasonalScreenState extends State<SeasonalScreen> {
   }
 
   Widget _skeleton() {
+    final gaps = listGridGaps(DisplaySubType.comfortable);
     return SliverPadding(
-      padding: const EdgeInsets.fromLTRB(10, 8, 10, 0),
+      padding: listGridPadding(DisplaySubType.comfortable, top: 8),
       sliver: SliverGrid.builder(
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 3,
           mainAxisExtent: 220,
-          crossAxisSpacing: 8,
-          mainAxisSpacing: 10,
+          crossAxisSpacing: gaps.column,
+          mainAxisSpacing: gaps.row,
         ),
         itemCount: 9,
-        itemBuilder: (_, __) => ShimmerColor(
+        itemBuilder: (context, __) => ShimmerColor(
           DecoratedBox(
-            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(10)),
+            decoration: BoxDecoration(
+                color: AppColors.of(context).shimmerBase,
+                borderRadius: BorderRadius.circular(10)),
           ),
         ),
       ),

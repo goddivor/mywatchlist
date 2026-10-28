@@ -183,7 +183,7 @@ class _VideosWidgetState extends State<VideosWidget> {
                         ),
                         Positioned.fill(
                           child: Material(
-                            color: Colors.transparent,
+                            type: MaterialType.transparency,
                             child: _videoInkWell(tile, borderRadius, useYTIcon),
                           ),
                         ),
@@ -360,7 +360,7 @@ Future<void> showYouTubeVideo({
         return AlertDialog(
           insetPadding: EdgeInsets.zero,
           contentPadding: EdgeInsets.zero,
-          backgroundColor: Colors.black,
+          backgroundColor: Theme.of(context).colorScheme.scrim,
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           content: Stack(
@@ -368,7 +368,7 @@ Future<void> showYouTubeVideo({
               YoutubePlayer(
                 controller: _controller,
                 showVideoProgressIndicator: true,
-                progressIndicatorColor: Colors.red,
+                progressIndicatorColor: Theme.of(context).colorScheme.primary,
               ),
               closeButton,
             ],
