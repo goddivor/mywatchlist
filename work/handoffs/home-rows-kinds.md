@@ -6,6 +6,8 @@
 - `home-rows` (Home rows honour the 30-item slider; OVA/ONA and manhwa/manhua/novel rows)
 
 ## Owns (may create or edit ONLY these)
+- `lib/services/api/Anilist/anilist_discover_service.dart`
+- `test/units/home-rows-kinds/**`
 - `lib/user/MAL/mal_home_page_preferences.dart`
 - `lib/user/requests/requests_bloc.dart`
 - `lib/screens/settings/mal_home_settings.dart`

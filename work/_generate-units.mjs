@@ -875,7 +875,7 @@ const UNITS = [
   {
     id: "home-rows-kinds", title: "Home OVA/ONA and manhwa/manhua/novel ranking rows (H3) with tracker cases", kind: "unit", priority: "P1", group: "discovery", model: "sonnet", ui: true,
     needs: ["home-rows"],
-    owns: ["lib/user/MAL/mal_home_page_preferences.dart", "lib/user/requests/requests_bloc.dart", "lib/screens/settings/mal_home_settings.dart", "lib/widgets/Anilist/anilist_home_sections.dart", "lib/widgets/Kitsu/kitsu_rows.dart", "lib/widgets/Simkl/simkl_home_plan.dart", "lib/l10n/units/home-rows/**", "test/units/home-rows/**"],
+    owns: ["lib/services/api/Anilist/anilist_discover_service.dart", "test/units/home-rows-kinds/**", "lib/user/MAL/mal_home_page_preferences.dart", "lib/user/requests/requests_bloc.dart", "lib/screens/settings/mal_home_settings.dart", "lib/widgets/Anilist/anilist_home_sections.dart", "lib/widgets/Kitsu/kitsu_rows.dart", "lib/widgets/Simkl/simkl_home_plan.dart", "lib/l10n/units/home-rows/**", "test/units/home-rows/**"],
     goal: ["home-rows PR #218 held back H3: restore it with `git revert ed2c93e` (commit 4de52f9 added the 10 DailyAL ranking kinds with titles, icons, strings and tests), then add the cases the new SectionType values need in the three tracker files: AniList formats OVA, ONA, ONE_SHOT, NOVEL and country of origin KR/CN for manhwa/manhua; Kitsu matching subtypes; Simkl has no feed — skip/hide them there. Read PR #218's body.", "Owner rules: replicate DailyAL; no explanatory captions; theme tokens; English + French."],
     dod: ["Tests: each new kind renders on MAL and maps (or is hidden) on AniList, Kitsu, Simkl."],
   },
