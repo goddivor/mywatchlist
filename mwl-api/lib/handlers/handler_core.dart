@@ -34,6 +34,8 @@ class HandlerCore {
       PathMatcher('magazines', _handleMagazines, ['data']),
       PathMatcher('studios', _handleStudios, ['data']),
       PathMatcher('search/all', _handleSearchAll, ['data']),
+      PathMatcher('search/content', _handleContentSearch, ['data']),
+      PathMatcher('companies', _handleCompanies, ['data']),
       PathMatcher('genres', _handleGenres, ['data']),
       PathMatcher('users/search', _handleUserSearch, ['data']),
       PathMatcher('users/about', _handleUserAbout, ['data']),
@@ -329,6 +331,69 @@ class HandlerCore {
       '${Constants.malBaseUrl}/$category.php',
       (doc) => PageParsers.parseMagazines(doc, category),
     );
+    return {'url': uri.path, 'data': result, 'fromCache': false};
+  }
+
+  /// One page of MAL's own search (`anime.php`, `manga.php`, `character.php`,
+  /// `people.php`) with the app's filters, translated by [MalSearchQuery]:
+  /// `category` (`anime`, `manga`, `character`, `person`), `q`, `page` (from
+  /// 1) and the filter keys of [MalSearchQuery.filterKeys] (`genres_in` and
+  /// `genres_out` as `1,2,3`). `data` is a [MalSearchPageHtml]; a text of one
+  /// or two characters answers `tooShort` without asking MAL. A page that is
+  /// not MAL's (challenge, maintenance) is an error, never an empty result.
+  Future<Map<String, dynamic>> _handleContentSearch(
+      PathMatcher path, Uri uri, Map<String, String> params) async {
+    final category = params['category'] ?? 'anime';
+    if (!MalSearchQuery.categories.contains(category)) {
+      throw _missing('category');
+    }
+    final query = params['q'] ?? '';
+    final page = queryParams<int>(uri, 'page', 1)!;
+    if (page < 1) throw _missing('page');
+    if (MalSearchQuery.isTooShort(query)) {
+      return {
+        'url': uri.path,
+        'data': const MalSearchPageHtml(tooShort: true).toJson(),
+        'fromCache': false,
+      };
+    }
+    final filters = <String, Object?>{
+      for (final key in MalSearchQuery.filterKeys)
+        if ((params[key] ?? '').trim().isNotEmpty) key: params[key],
+    };
+    final url = MalSearchQuery.url(
+        category: category, query: query, filters: filters, page: page);
+    final result = await HttpConnect.htmlPage(
+      url.toString(),
+      (doc) => SearchParsers.parseSearchPage(doc, category),
+      okStatuses: const {200, 404},
+      options: HttpConnect.quickRetry,
+    );
+    if (result == null) throw StateError('MyAnimeList search failed: $url');
+    return {'url': uri.path, 'data': result, 'fromCache': false};
+  }
+
+  /// MAL's company directory with logos: without `q`, every company, most
+  /// favorited first (`/company?limit=<offset>`); with `q`, the companies
+  /// matching it (`/company?q=&p=`). 50 per `page` (from 1); `data` is a
+  /// [CompanyPageHtml].
+  Future<Map<String, dynamic>> _handleCompanies(
+      PathMatcher path, Uri uri, Map<String, String> params) async {
+    final query = (params['q'] ?? '').trim();
+    final page = queryParams<int>(uri, 'page', 1)!;
+    if (page < 1) throw _missing('page');
+    final url = query.isEmpty
+        ? Uri.https('myanimelist.net', '/company',
+            {if (page > 1) 'limit': '${(page - 1) * 50}'})
+        : Uri.https('myanimelist.net', '/company',
+            {'q': query, if (page > 1) 'p': '$page'});
+    final result = await HttpConnect.htmlPage(
+      url.toString(),
+      SearchParsers.parseCompanies,
+      okStatuses: const {200, 404},
+      options: HttpConnect.quickRetry,
+    );
+    if (result == null) throw StateError('MyAnimeList companies failed: $url');
     return {'url': uri.path, 'data': result, 'fromCache': false};
   }
 

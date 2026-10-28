@@ -1,0 +1,20 @@
+{
+  "@@locale": "en",
+  "Srs_Offline_Title": "No internet connection",
+  "Srs_Offline_Hint": "Check your Wi-Fi or mobile data, then try again.",
+  "Srs_Source_Title": "MyAnimeList didn’t answer",
+  "Srs_Source_Hint": "Your connection works, but the search sources failed. Try again in a moment.",
+  "Srs_TooShort_Title": "Type at least 3 characters",
+  "Srs_TooShort_Hint": "MyAnimeList only searches 3 characters or more.",
+  "Srs_Load_More_Failed": "Couldn’t load more results",
+  "Srs_Studios_Search_Hint": "Search a studio",
+  "Srs_Studios_Empty": "No studio found",
+  "Srs_Studios_Empty_Hint": "Try another spelling.",
+  "Srs_Studios_Anime_Count": "{count} anime",
+  "@Srs_Studios_Anime_Count": { "placeholders": { "count": { "type": "String" } } },
+  "Srs_Studios_Favorites": "{count} favorites",
+  "@Srs_Studios_Favorites": { "placeholders": { "count": { "type": "String" } } },
+  "Srs_Studios_Open": "Anime of {name}",
+  "@Srs_Studios_Open": { "placeholders": { "name": { "type": "String" } } },
+  "Srs_Studios_Clear": "Clear the search"
+}

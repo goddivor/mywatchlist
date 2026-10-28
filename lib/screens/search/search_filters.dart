@@ -124,6 +124,14 @@ class SearchFilters {
 
   SearchFilters remove(String key) => set(key, null);
 
+  /// The API values by key, display labels left out (what MyAnimeList's search page route
+  /// takes, see `MalSearchQuery`).
+  Map<String, Object?> toApiMap() => {
+        for (final entry in _values.entries)
+          if (entry.key != FilterKey.producerLabel && entry.key != FilterKey.magazineLabel)
+            entry.key: entry.value,
+      };
+
   GenreState genreState(int id) {
     if (genresIn.contains(id)) return GenreState.included;
     if (genresOut.contains(id)) return GenreState.excluded;

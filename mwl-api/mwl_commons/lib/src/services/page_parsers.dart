@@ -300,7 +300,8 @@ class PageParsers {
   }
 
   /// Producers (from `anime.php`) or magazines (from `manga.php`):
-  /// id to name, in MAL's order (most entries first).
+  /// id to name, the 50 with most entries first (MAL's order), then every
+  /// other one of the search form, A to Z.
   ///
   /// Ported from DailyAL `parseMagazines`, which picked the fifth
   /// `.genre-link` block; MAL added a block since, so the block is now found
@@ -321,6 +322,15 @@ class PageParsers {
         name = parts[1].replaceAll('_', ' ').trim();
       }
       if (name.isNotEmpty) result.putIfAbsent(id, () => name);
+    }
+    // The block lists only the 50 biggest; the search form's select lists
+    // every producer (`p`) or magazine (`mid`), A to Z, after them.
+    final select = category == 'anime' ? 'p' : 'mid';
+    for (final option in doc.querySelectorAll('select[name="$select"] option')) {
+      final id = int.tryParse(option.attributes['value'] ?? '');
+      final name = _clean(option.text);
+      if (id == null || id <= 0 || name.isEmpty) continue;
+      result.putIfAbsent(id, () => name);
     }
     return result;
   }

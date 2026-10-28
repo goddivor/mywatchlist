@@ -12,7 +12,9 @@ import 'package:mywatchlist/screens/search/search_home_view.dart';
 import 'package:mywatchlist/screens/search/search_options.dart';
 import 'package:mywatchlist/screens/search/search_queries.dart';
 import 'package:mywatchlist/screens/search/search_service.dart';
+import 'package:mywatchlist/screens/search/search_sources.dart';
 import 'package:mywatchlist/screens/search/search_tiles.dart';
+import 'package:mywatchlist/services/api/Jikan/jikan_client.dart';
 import 'package:mywatchlist/services/api/MAL/mal_anime.dart';
 import 'package:mywatchlist/widgets/MAL/home/animegridcard.dart';
 import 'package:mywatchlist/widgets/common/select/select.dart' show SelectOption, labelOf;
@@ -157,6 +159,9 @@ class _GeneralSearchScreenState extends State<GeneralSearchScreen> with TickerPr
 
   SearchStage _stage = SearchStage.notStarted;
   SearchStage _loadMoreStage = SearchStage.notStarted;
+
+  /// Why the last search failed (shown by the error state).
+  SearchFailureKind _failure = SearchFailureKind.source;
   SearchPage? _page;
   SearchRequest? _request;
   bool _showPanel = false;

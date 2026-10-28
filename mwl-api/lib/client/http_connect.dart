@@ -14,15 +14,20 @@ import 'package:retry/retry.dart';
 /// Pure Dart — no Flutter dependency.
 class HttpConnect {
   static const _options = RetryOptions(maxAttempts: 8);
+
+  /// Two quick attempts: the search routes must fail fast, the app bounds
+  /// the whole call anyway.
+  static const quickRetry = RetryOptions(maxAttempts: 2, delayFactor: Duration(milliseconds: 400));
   static const _retryDuration = Duration(seconds: 10);
 
   /// GET with automatic retry on transient failures.
   static Future<http.Response> retryGet(
     String url,
-    Map<String, String> headers,
-  ) async {
+    Map<String, String> headers, {
+    RetryOptions options = _options,
+  }) async {
     logMwl('hitting -> $url');
-    final response = await _options.retry(
+    final response = await options.retry(
       () => http.get(Uri.parse(url), headers: headers).timeout(_retryDuration),
       retryIf: (e) {
         logMwl('retrying... on $e');
@@ -51,13 +56,19 @@ class HttpConnect {
   /// background isolate so the in-process backend never parses a large MAL
   /// page on the Flutter UI isolate. Where isolates are unavailable (web) or
   /// the parser cannot be sent, it falls back to parsing inline.
+  ///
+  /// [okStatuses] are the statuses whose body is parsed (MAL's search pages
+  /// answer "no titles matched" with a 404 page); [options] bounds the
+  /// retries (default: 8 attempts).
   static Future<T?> htmlPage<T>(
     String url,
     dynamic Function(Document) fromHtml, {
     Map<String, String>? headers,
+    Set<int> okStatuses = const {200},
+    RetryOptions options = _options,
   }) async {
-    final response = await retryGet(url, headers ?? {});
-    if (response.statusCode != 200) {
+    final response = await retryGet(url, headers ?? {}, options: options);
+    if (!okStatuses.contains(response.statusCode)) {
       logMwl('HTML error ${response.statusCode} for $url');
       return null;
     }

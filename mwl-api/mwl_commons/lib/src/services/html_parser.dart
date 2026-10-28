@@ -790,46 +790,36 @@ class HtmlParsers {
     return GenreCategoryList(categories: categories);
   }
 
-  // Parse anime producer/magazine page
+  // Parse anime producer/magazine page (`/anime/producer`, `/manga/magazine`):
+  // one block per first letter (`#`, A…Z), each link "Name (count)".
+  // Names keep their digits and signs ("8bit", "5 Inc."), the count is the
+  // number in the trailing parentheses, and a page with fewer blocks than
+  // letters no longer throws.
   static GenreCategoryList parseProducer(Document document) {
     const characters = '#ABCDEFGHIJKLMNOPQRSTUVWXYZ';
     final types = characters.split('');
+    final trailingCount = RegExp(r'\s*\(([\d,]+)\)\s*$');
 
-    final categories = document
-        .querySelectorAll('.genre-link')
-        .sublist(0, types.length)
-        .asMap()
-        .entries
-        .map((e) {
-      final genres = e.value
-          .querySelectorAll('a')
-          .map((element) {
-            final uri =
-                Uri.tryParse(element.attributes['href'] ?? '');
-            final id =
-                int.tryParse(uri?.pathSegments.elementAt(2) ?? '');
-            final linkText = element.text.trim();
-            final name = linkText.getAlphabets();
-            final count = int.tryParse(
-                linkText.replaceAll(RegExp(r'\D'), ''));
-
-            if (id == null || name.isEmpty) return null;
-
-            return Genre(
-              id: id,
-              name: name,
-              count: count,
-            );
-          })
-          .where((genre) => genre != null)
-          .cast<Genre>()
-          .toList();
-
-      return GenreCategory(
-        type: types[e.key],
-        genres: genres,
-      );
-    }).toList();
+    final blocks = document.querySelectorAll('.genre-link');
+    final categories = <GenreCategory>[];
+    for (var index = 0; index < blocks.length && index < types.length; index++) {
+      final genres = <Genre>[];
+      for (final element in blocks[index].querySelectorAll('a')) {
+        final uri = Uri.tryParse(element.attributes['href'] ?? '');
+        final segments = uri?.pathSegments ?? const <String>[];
+        final id = segments.length > 2 ? int.tryParse(segments[2]) : null;
+        final linkText = element.text.replaceAll(RegExp(r'\s+'), ' ').trim();
+        final match = trailingCount.firstMatch(linkText);
+        final name = (match == null
+                ? linkText
+                : linkText.substring(0, match.start))
+            .trim();
+        final count = int.tryParse((match?.group(1) ?? '').replaceAll(',', ''));
+        if (id == null || name.isEmpty) continue;
+        genres.add(Genre(id: id, name: name, count: count));
+      }
+      categories.add(GenreCategory(type: types[index], genres: genres));
+    }
 
     return GenreCategoryList(categories: categories);
   }

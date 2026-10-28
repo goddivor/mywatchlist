@@ -34,15 +34,25 @@ extension _SearchBody on _GeneralSearchScreenState {
           ],
         );
       case SearchStage.error:
+        final (icon, title, hint) = switch (_failure) {
+          SearchFailureKind.offline => (Icons.wifi_off_rounded, S.current.Srs_Offline_Title, S.current.Srs_Offline_Hint),
+          SearchFailureKind.tooShort => (Icons.short_text_rounded, S.current.Srs_TooShort_Title, S.current.Srs_TooShort_Hint),
+          SearchFailureKind.source => (Icons.cloud_off_rounded, S.current.Srs_Source_Title, S.current.Srs_Source_Hint),
+        };
         return _buildMessage(
-          icon: Icons.wifi_off_rounded,
-          title: S.current.Srch_Error,
-          hint: null,
-          action: FilledButton.tonalIcon(
-            onPressed: () => _runSearch(_request?.query ?? _searchController.text),
-            icon: const Icon(Icons.refresh_rounded),
-            label: Text(S.current.Srch_Retry),
-          ),
+          icon: icon,
+          title: title,
+          hint: hint,
+          action: _failure == SearchFailureKind.tooShort
+              ? null
+              : FilledButton.tonalIcon(
+                  onPressed: () {
+                    JikanClient.instance.resetReachability();
+                    _runSearch(_request?.query ?? _searchController.text);
+                  },
+                  icon: const Icon(Icons.refresh_rounded),
+                  label: Text(S.current.Srch_Retry),
+                ),
         );
     }
   }
@@ -240,16 +250,25 @@ extension _SearchBody on _GeneralSearchScreenState {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: _loadMoreStage == SearchStage.error
-          ? Center(
-              child: TextButton.icon(
-                onPressed: () {
-                  _page?.hasMore = true;
-                  _set(() => _loadMoreStage = SearchStage.notStarted);
-                  _loadMore();
-                },
-                icon: const Icon(Icons.refresh_rounded),
-                label: Text(S.current.Srch_Retry),
-              ),
+          ? Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  S.current.Srs_Load_More_Failed,
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                ),
+                TextButton.icon(
+                  onPressed: () {
+                    JikanClient.instance.resetReachability();
+                    _page?.hasMore = true;
+                    _set(() => _loadMoreStage = SearchStage.notStarted);
+                    _loadMore();
+                  },
+                  icon: const Icon(Icons.refresh_rounded),
+                  label: Text(S.current.Srch_Retry),
+                ),
+              ],
             )
           : OutlinedButton(
               onPressed: _loadMore,

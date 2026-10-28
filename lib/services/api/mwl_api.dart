@@ -701,6 +701,96 @@ class MwlApi {
       _listOf(await _getData('people?page=$page', fromCache: fromCache),
           RankedPersonHtml.fromJson);
 
+  /// Longest wait for one MAL search page or company page. The backend retries on its own,
+  /// so without a bound a dead network keeps the caller waiting for minutes.
+  static const Duration searchPageTimeout = Duration(seconds: 15);
+
+  /// One page (50 rows) of MyAnimeList's own search page, the source that works without
+  /// Jikan: [category] `anime`, `manga`, `character` or `person`; [filters] use the search
+  /// screen's keys and API values (`type: tv`, `producer: 1966`, `genres_in: [1, 2]`…, see
+  /// `MalSearchQuery`); [page] starts at 1. Null when MAL or the backend failed or gave no
+  /// answer within [timeout]; never throws. A text of one or two characters answers
+  /// `tooShort` without asking MAL.
+  Future<MalSearchPageHtml?> searchContentPage({
+    required String category,
+    String query = '',
+    Map<String, Object?> filters = const {},
+    int page = 1,
+    bool fromCache = true,
+    Duration timeout = searchPageTimeout,
+  }) =>
+      fetchSearchPage(
+        () => _getData(
+          'search/content?${_buildQuery(searchContentParams(
+            category: category,
+            query: query,
+            filters: filters,
+            page: page,
+          ))}',
+          fromCache: fromCache,
+        ),
+        timeout: timeout,
+      );
+
+  /// The query of the `search/content` route (lists as `1,2,3`, empty values dropped).
+  @visibleForTesting
+  static Map<String, dynamic> searchContentParams({
+    required String category,
+    String query = '',
+    Map<String, Object?> filters = const {},
+    int page = 1,
+  }) {
+    String? text(Object? value) {
+      if (value == null) return null;
+      final out = value is Iterable ? value.join(',') : '$value';
+      return out.trim().isEmpty ? null : out;
+    }
+
+    return {
+      'category': category,
+      'q': query.trim(),
+      'page': page,
+      for (final key in MalSearchQuery.filterKeys)
+        if (text(filters[key]) case final value?) key: value,
+    };
+  }
+
+  /// [searchContentPage] around any source of the `data` field (tests run it offline).
+  @visibleForTesting
+  static Future<MalSearchPageHtml?> fetchSearchPage(
+    Future<dynamic> Function() getData, {
+    Duration timeout = searchPageTimeout,
+  }) async {
+    try {
+      final data = _mapOf(await getData().timeout(timeout));
+      return data == null ? null : MalSearchPageHtml.fromJson(data);
+    } catch (e) {
+      if (kDebugMode) debugPrint('MwlApi: search page error: $e');
+      return null;
+    }
+  }
+
+  /// One page (50) of MyAnimeList's company directory with logos: every company, most
+  /// favorited first, or those matching [query]. [page] starts at 1. Null when MAL or the
+  /// backend failed or gave no answer within [timeout]; never throws.
+  Future<CompanyPageHtml?> getCompanies({
+    String query = '',
+    int page = 1,
+    bool fromCache = true,
+    Duration timeout = searchPageTimeout,
+  }) async {
+    try {
+      final data = _mapOf(await _getData(
+        'companies?${_buildQuery({'q': query.trim(), 'page': page})}',
+        fromCache: fromCache,
+      ).timeout(timeout));
+      return data == null ? null : CompanyPageHtml.fromJson(data);
+    } catch (e) {
+      if (kDebugMode) debugPrint('MwlApi: companies error: $e');
+      return null;
+    }
+  }
+
   /// Manga magazines: MAL id to name, most entries first.
   Future<Map<int, String>> getMagazines({bool fromCache = true}) =>
       _producers('magazines', fromCache);
