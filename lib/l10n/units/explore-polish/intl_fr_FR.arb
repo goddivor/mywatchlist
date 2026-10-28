@@ -8,7 +8,5 @@
   "Exp_Nsfw_Enable": "Activer NSFW",
   "Exp_Studios": "Studios",
   "Exp_Studios_Caption": "Tous les studios d’animation, avec leur logo et leurs animés",
-  "Exp_Season_Browse": "Parcourir les saisons",
-  "Exp_Season_Schedule": "Programme de la semaine",
   "Exp_Favorites": "{count, plural, one{Dans les favoris de {count} personne} other{Dans les favoris de {count} personnes}}"
 }

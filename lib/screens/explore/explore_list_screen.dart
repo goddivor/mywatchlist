@@ -5,14 +5,15 @@ import 'package:mywatchlist/screens/explore/explore_widgets.dart';
 /// Full-screen, endless version of an Explore strip (recommendations, reviews, interest stacks,
 /// characters, voice actors): one page at a time, the next one asked when the end is reached.
 ///
-/// Pass [grid] for a grid of posters, otherwise each item is a row of [itemExtent] pixels.
+/// Pass [grid] for a grid of posters, otherwise each item is a row of [itemExtent] pixels, or
+/// of its own height when [itemExtent] is null.
 class ExploreListScreen<T> extends StatefulWidget {
   final String title;
 
   /// Items of page [page] (starting at 1); an empty list ends the list.
   final Future<List<T>> Function(int page) loadPage;
   final Widget Function(BuildContext context, T item) itemBuilder;
-  final double itemExtent;
+  final double? itemExtent;
   final SliverGridDelegate? grid;
 
   /// False when [loadPage] gives everything on page 1.
@@ -83,14 +84,7 @@ class _ExploreListScreenState<T> extends State<ExploreListScreen<T>> {
           )
         : SliverPadding(
             padding: const EdgeInsets.symmetric(horizontal: kExplorePadding),
-            sliver: SliverFixedExtentList.builder(
-              itemExtent: widget.itemExtent,
-              itemCount: _items.length,
-              itemBuilder: (context, i) => Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: widget.itemBuilder(context, _items[i]),
-              ),
-            ),
+            sliver: _rows(),
           );
     return Scaffold(
       appBar: AppBar(title: Text(widget.title)),
@@ -103,6 +97,17 @@ class _ExploreListScreenState<T> extends State<ExploreListScreen<T>> {
         ],
       ),
     );
+  }
+
+  Widget _rows() {
+    Widget row(BuildContext context, int i) => Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: widget.itemBuilder(context, _items[i]),
+        );
+    final extent = widget.itemExtent;
+    return extent == null
+        ? SliverList.builder(itemCount: _items.length, itemBuilder: row)
+        : SliverFixedExtentList.builder(itemExtent: extent, itemCount: _items.length, itemBuilder: row);
   }
 
   Widget _footer() {
