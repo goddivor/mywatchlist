@@ -15,6 +15,7 @@
 Plus `PROJECT-STATE.md` (rewrite in place, within its cap) and `docs/DECISIONS.md` (append one line per decision). Anything else you need is a FINDING to report, never an edit.
 
 ## Goal
+- From PR #223: the seasonal picker's seasons row centres itself with Scrollable.ensureVisible, which also scrolls the whole Explore page back up to the picker whenever it rebuilds — centre only within the row (ScrollController of the row), never move the page.
 - UI comparison report docs/ui-check-report-2026-10-28.md: group A items 2-3 (item 1 is fixed separately in fix/explore-crash — keep it); re-measure Explore fluidity with tools/perf/measure-scroll.sh numbers in the PR is for the checker. Read those items and the matching screen sections (screenshots under the checker scratchpad shots/).
 - Owner rules: replicate DailyAL's UI (dailyal-108 file:line given in the report) where MWL is weaker; remove explanatory captions/helper texts DailyAL lacks; regular-weight titles and tonal controls like DailyAL; theme tokens; English + French.
 

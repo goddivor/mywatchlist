@@ -2713,6 +2713,8 @@
         "profile-tabs"
       ],
       "owns": [
+        "lib/services/api/MAL/scrapper/html_parsers.dart",
+        "test/units/explore-crash/**",
         "lib/pages/MAL/mal_explore_page.dart",
         "lib/screens/explore/**",
         "assets/images/explore/**",

@@ -9,6 +9,8 @@
 - `profile-tabs` (Profile tabs (Friends, Clubs, History) never hang: timeout + MAL page fallback)
 
 ## Owns (may create or edit ONLY these)
+- `lib/services/api/MAL/scrapper/html_parsers.dart`
+- `test/units/explore-crash/**`
 - `lib/pages/MAL/mal_explore_page.dart`
 - `lib/screens/explore/**`
 - `assets/images/explore/**`
