@@ -3,9 +3,11 @@
 **Kind** unit · **Priority** P1 · **Group** settings · **Model** opus
 
 ## Needs done first
+- `mal-session` (Optional MAL website session (WebView login, native cookies, CSRF client) + profile comments)
 - `color-sweep` (Colour sweep: hardcoded colours of already-merged screens onto the theme tokens)
 
 ## Owns (may create or edit ONLY these)
+- `lib/screens/settings/accounts_settings.dart`
 - `lib/widgets/forum/post_widget.dart`
 - `lib/widgets/user/list/cards/entry_parts.dart`
 - `lib/widgets/user/list/cards/entry_cards.dart`
@@ -19,6 +21,7 @@
 Plus `PROJECT-STATE.md` (rewrite in place, within its cap) and `docs/DECISIONS.md` (append one line per decision). Anything else you need is a FINDING to report, never an edit.
 
 ## Goal
+- Wire mal-session (PR #220): in Settings > Accounts, the MyAnimeList tile opens `MalSessionSettingsPage` (state, check, disconnect, connect).
 - DailyAL feature-gap audit docs/dal-gap-report-2026-10-28.md: items F1, L2, B1, S1 (detailsExpanded / showOnlyLastQuote switches that do nothing, search history + recently opened in backups, community recommendation Report action). Read those items (DailyAL and MWL file:line, gap, effort) and implement them.
 - Owner rules: replicate DailyAL's UI where MWL's would be weaker; no explanatory captions or helper text DailyAL lacks; theme tokens only; full translatability (English + French).
 

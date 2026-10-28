@@ -3,6 +3,7 @@
 **Kind** unit · **Priority** P1 · **Group** user · **Model** opus
 
 ## Needs done first
+- `mal-session` (Optional MAL website session (WebView login, native cookies, CSRF client) + profile comments)
 - `color-sweep` (Colour sweep: hardcoded colours of already-merged screens onto the theme tokens)
 - `explore-weekly` (Weekly anime per season (MAL broadcast weekday) and Random without Jikan)
 
@@ -22,6 +23,7 @@
 Plus `PROJECT-STATE.md` (rewrite in place, within its cap) and `docs/DECISIONS.md` (append one line per decision). Anything else you need is a FINDING to report, never an edit.
 
 ## Goal
+- Wire mal-session (PR #220): add `UserProfileTab.comments => CommentsSection(username: data.username)` with label `S.current.Ms_Comments_Tab` to the profile tabs, on the owner's and other users' profiles (owner wants it everywhere).
 - Also UI report docs/ui-check-report-2026-10-28.md group D items 9-11 (List tab first for other users, remove U10/U11, label facts, duplicate club rows, DailyAL icon tab strip) and group N item 22 (replicate DailyAL's sidebar items, drop Profile/Stats duplicates).
 - DailyAL feature-gap audit docs/dal-gap-report-2026-10-28.md: items P1, P2, P3, P5, L1 and the profile part of D3. Read those items (DailyAL and MWL file:line, gap, effort) and implement them.
 - Owner rules: replicate DailyAL's UI where MWL's would be weaker; no explanatory captions or helper text DailyAL lacks; theme tokens only; full translatability (English + French).

@@ -658,9 +658,9 @@ const UNITS = [
   },
   {
     id: "profile-lists", title: "Other users' anime/manga lists, weekly tab and sidebar shortcuts like DailyAL", kind: "unit", priority: "P1", group: "user", model: "opus", ui: true,
-    needs: ["color-sweep", "explore-weekly"],
+    needs: ["mal-session", "color-sweep", "explore-weekly"],
     owns: ["lib/screens/user_profile/sections/**", "lib/screens/user_profile/user_profile_view.dart", "lib/screens/user_profile/sections/list_section.dart", "lib/screens/user_profile/sections/weekly_section.dart", "lib/widgets/user/list/mal_user_list_adapter.dart", "lib/widgets/user/profile/user_pop_sheet.dart", "lib/pages/side_bar.dart", "lib/utils/app_routes.dart", "lib/l10n/units/profile-lists/**", "test/units/profile-lists/**"],
-    goal: ["Also UI report docs/ui-check-report-2026-10-28.md group D items 9-11 (List tab first for other users, remove U10/U11, label facts, duplicate club rows, DailyAL icon tab strip) and group N item 22 (replicate DailyAL's sidebar items, drop Profile/Stats duplicates).", "DailyAL feature-gap audit docs/dal-gap-report-2026-10-28.md: items P1, P2, P3, P5, L1 and the profile part of D3. Read those items (DailyAL and MWL file:line, gap, effort) and implement them.", "Owner rules: replicate DailyAL's UI where MWL's would be weaker; no explanatory captions or helper text DailyAL lacks; theme tokens only; full translatability (English + French)."],
+    goal: ["Wire mal-session (PR #220): add `UserProfileTab.comments => CommentsSection(username: data.username)` with label `S.current.Ms_Comments_Tab` to the profile tabs, on the owner's and other users' profiles (owner wants it everywhere).", "Also UI report docs/ui-check-report-2026-10-28.md group D items 9-11 (List tab first for other users, remove U10/U11, label facts, duplicate club rows, DailyAL icon tab strip) and group N item 22 (replicate DailyAL's sidebar items, drop Profile/Stats duplicates).", "DailyAL feature-gap audit docs/dal-gap-report-2026-10-28.md: items P1, P2, P3, P5, L1 and the profile part of D3. Read those items (DailyAL and MWL file:line, gap, effort) and implement them.", "Owner rules: replicate DailyAL's UI where MWL's would be weaker; no explanatory captions or helper text DailyAL lacks; theme tokens only; full translatability (English + French)."],
     dod: ["Checker compares with DailyAL on the owner's network (Jikan down)."],
   },
   {
@@ -700,9 +700,9 @@ const UNITS = [
   },
   {
     id: "small-fixes", title: "Dead settings switches, dub icon on cards and tiles, report recommendation, backup keys", kind: "unit", priority: "P1", group: "settings", model: "opus", ui: true,
-    needs: ["color-sweep"],
-    owns: ["lib/widgets/forum/post_widget.dart", "lib/widgets/user/list/cards/entry_parts.dart", "lib/widgets/user/list/cards/entry_cards.dart", "lib/screens/search/search_tiles.dart", "lib/cache/cachemanager.dart", "lib/user/preferences/notification_preferences.dart", "lib/l10n/units/small-fixes/**", "test/units/small-fixes/**"],
-    goal: ["DailyAL feature-gap audit docs/dal-gap-report-2026-10-28.md: items F1, L2, B1, S1 (detailsExpanded / showOnlyLastQuote switches that do nothing, search history + recently opened in backups, community recommendation Report action). Read those items (DailyAL and MWL file:line, gap, effort) and implement them.", "Owner rules: replicate DailyAL's UI where MWL's would be weaker; no explanatory captions or helper text DailyAL lacks; theme tokens only; full translatability (English + French)."],
+    needs: ["mal-session", "color-sweep"],
+    owns: ["lib/screens/settings/accounts_settings.dart", "lib/widgets/forum/post_widget.dart", "lib/widgets/user/list/cards/entry_parts.dart", "lib/widgets/user/list/cards/entry_cards.dart", "lib/screens/search/search_tiles.dart", "lib/cache/cachemanager.dart", "lib/user/preferences/notification_preferences.dart", "lib/l10n/units/small-fixes/**", "test/units/small-fixes/**"],
+    goal: ["Wire mal-session (PR #220): in Settings > Accounts, the MyAnimeList tile opens `MalSessionSettingsPage` (state, check, disconnect, connect).", "DailyAL feature-gap audit docs/dal-gap-report-2026-10-28.md: items F1, L2, B1, S1 (detailsExpanded / showOnlyLastQuote switches that do nothing, search history + recently opened in backups, community recommendation Report action). Read those items (DailyAL and MWL file:line, gap, effort) and implement them.", "Owner rules: replicate DailyAL's UI where MWL's would be weaker; no explanatory captions or helper text DailyAL lacks; theme tokens only; full translatability (English + French)."],
     dod: ["Checker compares with DailyAL on the owner's network (Jikan down)."],
   },
   {
