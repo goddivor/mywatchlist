@@ -1,20 +1,16 @@
 # Project state — MyWatchList
 
 Cap: 80 lines. Rewrite in place; history lives in git and `docs/DECISIONS.md`.
-
 ## Where we are (2026-10-27)
 - Porting every DailyAL feature (ref `upstream/2026.2.6+108`) into MWL, adapted to BLoC + multi-tracker, redesigning weak UI and fixing bugs on the way.
 - Work is split into 38 units (`work/INDEX.md`), built in parallel with the multi-agent-build tooling (`tools/mab/`, `tools/mab.config`), coordinated on GitHub (goddivor/mywatchlist, base `dev`, `master` owner-only).
-
 ## Gate
 - `tools/heavy.sh tools/verify.sh`: pub get, flutter analyze, flutter test, dart analyze mwl-api (machine-wide lock) (green since `gate-fix`; `flutter test` = offline smoke tests, about 10 s). Test layout: `test/smoke/` + `test/helpers/` (`pumpInApp`, `htmlFixture`, `forbidNetwork`), then `test/units/<unit-id>/` per unit. `verify.sh` first runs `tools/l10n/build.sh` (`S` is a build output, see CLAUDE.md).
 - Localization (`l10n-pipeline`): base ARBs (DailyAL, 11 locales) frozen in `lib/l10n/`; each unit adds keys in `lib/l10n/units/<unit-id>/`; `tools/l10n/build.sh` merges, validates, generates `lib/generated/l10n.dart` + `intl/` (git-ignored).
-
 ## Preferences contract and dependencies (`deps-prefs-contract`)
 - `lib/user/preferences/` (barrel `preferences.dart`): `PreferencesBloc` (state `AppPreferences` = `general`, `content`, `list`, `notifications`), one event per group with a `copyWith` updater, `PreferencesReset`, `PreferencesReloaded`; non-widget read `Preferences.current` / `Preferences.general`…; stored as one JSON per group (`prefs_*_v1`), legacy `timezone_pref` migrated.
 - Language stays in `LanguageBloc`, theme/font/background in `ThemeBloc`, home layout in `HomePreferencesBloc`; `UserPreference` keeps MWL-only device settings.
 - Every dependency of the queued units is in `pubspec.yaml` (pins listed in the PR closing issue #29); manifest has notification, exact alarm, boot, calendar and install-packages permissions, the notification receivers, a FileProvider and the myanimelist.net VIEW filter (`autoVerify=false`, #132); pubspec `version: 2026.10.1+1`, font family `DubStatus`. `main` starts `DeepLinks.start()` next to the OAuth listener; `NotificationService.init()` is called from `main`.
-
 ## App shell (`app-shell`)
 - Cross-unit navigation: `lib/utils/app_routes.dart` (`AppRoutes.openSettings/openSettingsPage(SettingsSection)/openAbout/openBookmarks/openCalendar/openSearch/openUserProfile/openUserStats/openContent/openLogin/openManageAccounts/openSidebar/signInAgain/openFromNotification`); `SettingsSection` (title, description, icon) in `lib/pages/settings/settings_section.dart`.
 - Stubs (`ComingSoonPage`): 9 settings pages, bookmarks, calendar, user profile/stats; their units replace the body.
@@ -75,6 +71,9 @@ Cap: 80 lines. Rewrite in place; history lives in git and `docs/DECISIONS.md`.
 - Tag `yyyy.m.n` (e.g. 2026.10.1) triggers `.github/workflows/release.yml` (also manual with a version): `tools/release/version.sh` validates and writes `yyyy.m.n+code` into the runner's pubspec, `.env` from secrets (empty placeholder otherwise), `tools/l10n/build.sh`, build_runner, analyze, JDK 21, split + universal APK, `.sha1` files, notes from `tools/release/changelog.sh`. Unsigned-secret fallback: throwaway keystore. Pubspec still reads `1.0.0+1` (owner sets the first `yyyy.m.n+code`).
 ## About, backup, storage (`settings-theme-about-backup`)
 - About (`about_settings.dart`): version from package_info, changelog and update check from GitHub releases (`ReleaseService`), prefilled bug/feature issues, source, releases, licences, MAL API terms. Backup (`backup_settings.dart` + `BackupService` in `cache/cachemanager.dart`): save to Downloads or share a JSON, restore with a review sheet (sections, merge/replace). Storage (`storage_settings.dart`): cache sizes and clear buttons, erase local data. `SettingsScaffold`/`SettingsActionTile` live in storage_settings.dart. Downloads page translated. Strings `Abt_*`, `Bkp_*`, `Sto_*`, `Dls_*` (en + fr_FR).
+## AniList pages (`anilist-pages`)
+- Five tabs (`lib/pages/Anilist/`): home (chips, sections of the shared `HomePreferencesBloc`: season, trending, rankings, user list, forum; news/features skipped), explore (search, anime/manga rows via `AsyncSection`, genres), user list (`UserListView` + `AnilistUserListAdapter`: whole list in one request kept 1 min, status/sort on the device, edit through `showTrackerEntryEditor`, +1/-1 through `TrackerSyncService`), profile (shared `ProfileHeader`, stats charts, about, favorites), forum (threads by sort, open on anilist.co).
+- Services (`lib/services/api/Anilist/`): `AnilistGraphql` (public or `sendAuthenticated`, `AnilistSessionExpired`), `AnilistListService` (entries to `ListEntryView`, `malId` = `idMal`, `airingCandidates()` for notifications), `AnilistDiscoverService`, `AnilistProfileService`. Titles without `idMal` open on anilist.co. Strings `Al_*`.
 ## Known big gaps (see inventory)
-- No user list / profile for AniList/Kitsu/Simkl (placeholders); no notifications, share, translation.
+- No user list / profile for Kitsu/Simkl (placeholders); no share, translation.
 - MAL dead session (#71): public MAL reads (seasonal, ranking, details, search, other users' lists, forum) fall back to the client id; `/users/@me`, suggestions and list writes throw `MalSessionExpired`. The UI listens to `MalApi.sessionExpired` (`ValueListenable<bool>`); the visible prompt is still to build (accounts-ux / app-shell); the detail screen shows its own error/retry state.

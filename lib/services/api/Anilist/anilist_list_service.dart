@@ -175,7 +175,10 @@ class AnilistListService {
         _clock().difference(kept.at) < keepFor) {
       return Future.value(kept.entries);
     }
-    return _inFlight[category] ??= _load(category, who).whenComplete(() => _inFlight.remove(category));
+    return _inFlight[category] ??= _load(category, who).whenComplete(() {
+      // A block body: returning the removed future would make it wait for itself.
+      _inFlight.remove(category);
+    });
   }
 
   Future<List<ListEntryView>> _load(String category, String who) async {

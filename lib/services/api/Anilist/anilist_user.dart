@@ -1,45 +1,23 @@
-import 'dart:convert';
-
 import 'package:flutter/foundation.dart';
-import 'package:http/http.dart' as http;
+import 'package:mywatchlist/services/api/Anilist/anilist_graphql.dart';
 import 'package:mywatchlist/services/api/Anilist/anilist_user_prof.dart';
-import 'package:mywatchlist/user/user_anilist_v2.dart';
 
 class AnilistUser {
   static const String userBaseEndPoint = 'https://graphql.anilist.co';
 
-  /// Helper method for authenticated GraphQL requests.
+  /// Authenticated GraphQL request through the account's session (token renewed, one replay on
+  /// 401); answers `{'data': …}`.
   Future<Map<String, dynamic>> _authenticatedGraphqlQuery(
     String query, {
     Map<String, dynamic>? variables,
   }) async {
-    final accessToken = UserAnilistV2.instance.accessToken;
-
-    final response = await http.post(
-      Uri.parse(userBaseEndPoint),
-      headers: {
-        'Authorization': 'Bearer $accessToken',
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
-      body: jsonEncode({
-        'query': query,
-        if (variables != null) 'variables': variables,
-      }),
-    );
-
-    if (response.statusCode == 200) {
-      return json.decode(response.body) as Map<String, dynamic>;
-    } else {
-      debugPrint('AniList GraphQL query failed: ${response.statusCode}');
-      debugPrint('Response body: ${response.body}');
-      throw Exception('AniList GraphQL query failed: ${response.statusCode}');
-    }
+    final data = await AnilistGraphql.instance
+        .query(query, variables: variables ?? const {}, auth: true);
+    return {'data': data};
   }
 
   /// Get the authenticated user's profile information.
   Future<AnilistUserProf> getUserInfo() async {
-    final accessToken = UserAnilistV2.instance.accessToken;
     const query = '''
     query {
       Viewer {
@@ -56,26 +34,8 @@ class AnilistUser {
       }
     }
     ''';
-
-    final response = await http.post(
-      Uri.parse(userBaseEndPoint),
-      headers: {
-        'Authorization': 'Bearer $accessToken',
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
-      body: jsonEncode({'query': query}),
-    );
-
-    debugPrint('AniList getUserInfo response: ${response.statusCode}');
-    if (response.statusCode == 200) {
-      final Map<String, dynamic> responseData = json.decode(response.body);
-      debugPrint('AniList user data: ${responseData['data']}');
-      return AnilistUserProf.fromJson(responseData['data']['Viewer']);
-    } else {
-      debugPrint('AniList getUserInfo error: ${response.body}');
-      throw Exception('Failed to fetch user info');
-    }
+    final response = await _authenticatedGraphqlQuery(query);
+    return AnilistUserProf.fromJson(response['data']['Viewer']);
   }
 
   /// Get a user's media list (anime or manga).
