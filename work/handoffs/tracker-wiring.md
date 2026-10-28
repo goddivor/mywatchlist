@@ -8,6 +8,7 @@
 - `simkl-pages` (Simkl: home, explore, user list, profile (replace placeholders))
 
 ## Owns (may create or edit ONLY these)
+- `lib/widgets/user/list/user_list_view.dart`
 - `lib/services/notifications/notification_service.dart`
 - `lib/services/notifications/**`
 - `lib/utils/app_routes.dart`
@@ -27,6 +28,7 @@ Plus `PROJECT-STATE.md` (rewrite in place, within its cap) and `docs/DECISIONS.m
 - Profile routes: `AppRoutes.openUserProfile` / `openUserStats` (`_hasProfileScreen`) open the real AniList / Kitsu / Simkl profile screens (other users included where the tracker allows it) instead of the stub.
 - Tracker entry editor (lib/widgets/user/sync/**, `showTrackerEntryEditor`): add a confirmed 'Remove from list' action for AniList, Kitsu and Simkl (owner decision).
 - Preference pages: when the active tracker is not MAL, mark MAL-only options (NSFW, priority, airing info, auto dates, MAL statuses…) with a visible translated note (owner decision).
+- UserListView gets a `categories` parameter so trackers without manga (Simkl) hide the Anime/Manga switch cleanly (simkl-pages finding).
 - Never write to the owner's trackers in tests (fakes only).
 
 ## Known bugs to fix in scope

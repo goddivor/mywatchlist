@@ -1544,6 +1544,7 @@
         "simkl-pages"
       ],
       "owns": [
+        "lib/widgets/user/list/user_list_view.dart",
         "lib/services/notifications/notification_service.dart",
         "lib/services/notifications/**",
         "lib/utils/app_routes.dart",

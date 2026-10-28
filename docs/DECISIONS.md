@@ -248,3 +248,4 @@ Append-only, one line per decision: `- YYYY-MM-DD [unit] decision — why`. Earl
 - 2026-10-28 [kitsu-pages] The Kitsu home adds a "Trending" row before the user's sections; the Forum tab says Kitsu has no forum here and opens kitsu.app, since Kitsu's community has no public API that fits.
 - 2026-10-28 [orchestrator] Kitsu Forum tab = a message + link to kitsu.app (no usable forum API); the shared tracker editor gets a confirmed "Remove from list" action (tracker-wiring).
 - 2026-10-28 [orchestrator] In-app update refuses a release without its .sha1 file (never installs an unverified APK).
+- 2026-10-28 [orchestrator] Simkl home leads with "Continue watching" when the saved home layout has no user-list section.

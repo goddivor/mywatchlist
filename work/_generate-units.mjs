@@ -585,12 +585,13 @@ const UNITS = [
   {
     id: "tracker-wiring", title: "AniList / Kitsu / Simkl wiring: notifications, profile routes, remove action, MAL-only notes", kind: "unit", priority: "P1", group: "trackers", model: "sonnet", ui: true,
     needs: ["anilist-pages", "kitsu-pages", "simkl-pages"],
-    owns: ["lib/services/notifications/notification_service.dart", "lib/services/notifications/**", "lib/utils/app_routes.dart", "lib/widgets/user/sync/**", "lib/screens/settings/user_prefs_settings.dart", "lib/screens/settings/anime_manga_settings.dart", "lib/screens/settings/list_prefs_settings.dart", "lib/screens/settings/prefs/**", "test/units/app-shell/app_routes_test.dart"],
+    owns: ["lib/widgets/user/list/user_list_view.dart", "lib/services/notifications/notification_service.dart", "lib/services/notifications/**", "lib/utils/app_routes.dart", "lib/widgets/user/sync/**", "lib/screens/settings/user_prefs_settings.dart", "lib/screens/settings/anime_manga_settings.dart", "lib/screens/settings/list_prefs_settings.dart", "lib/screens/settings/prefs/**", "test/units/app-shell/app_routes_test.dart"],
     goal: [
       "Notifications: when the active tracker is AniList, Kitsu or Simkl, feed the planner with that tracker's Watching / Plan to watch candidates (`AnilistListService.airingCandidates()`, `KitsuLibrary.instance.airingCandidates()`, the Simkl equivalent from simkl-pages) — entries are mapped to MAL ids, so the calendar's AiringSchedule works for them.",
       "Profile routes: `AppRoutes.openUserProfile` / `openUserStats` (`_hasProfileScreen`) open the real AniList / Kitsu / Simkl profile screens (other users included where the tracker allows it) instead of the stub.",
       "Tracker entry editor (lib/widgets/user/sync/**, `showTrackerEntryEditor`): add a confirmed 'Remove from list' action for AniList, Kitsu and Simkl (owner decision).",
       "Preference pages: when the active tracker is not MAL, mark MAL-only options (NSFW, priority, airing info, auto dates, MAL statuses…) with a visible translated note (owner decision).",
+      "UserListView gets a `categories` parameter so trackers without manga (Simkl) hide the Anime/Manga switch cleanly (simkl-pages finding).",
       "Never write to the owner's trackers in tests (fakes only).",
     ],
     dod: ["Checker: switch to AniList on the emulator, open a profile link and a list entry editor (cancel); notifications settings show AniList candidates."],
