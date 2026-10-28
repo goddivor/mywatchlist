@@ -6,6 +6,8 @@
 - `color-sweep` (Colour sweep: hardcoded colours of already-merged screens onto the theme tokens)
 
 ## Owns (may create or edit ONLY these)
+- `lib/services/auth/**`
+- `lib/widgets/auth/**`
 - `android/app/src/main/kotlin/**`
 - `lib/services/api/MAL/web/**`
 - `lib/services/auth/mal_web_session*.dart`
@@ -20,6 +22,7 @@
 Plus `PROJECT-STATE.md` (rewrite in place, within its cap) and `docs/DECISIONS.md` (append one line per decision). Anything else you need is a FINDING to report, never an edit.
 
 ## Goal
+- OWNER DECISION (overrides the separate-screen idea below): the website session is connected AUTOMATICALLY at MAL login. The OAuth flow already runs in our in-app WebView (AuthWebView) on myanimelist.net, where the user types his MAL credentials, so the WebView ends up holding MAL's website cookies: when the OAuth redirect to mywatchlist://callback arrives, read ALL myanimelist.net cookies natively (incl. HttpOnly) from that same WebView and store them with the tokens in FlutterSecureStorage (session data + cookies + csrf when read). If the cookies are missing (e.g. an older login), offer a one-tap reconnect that reopens the same login; the settings screen only shows the session state and a disconnect. Sign-out clears tokens and cookies together. Add lib/services/auth/** files of the MAL OAuth flow to what you may edit.
 - Reports: docs/malclient-report-2026-10-28.md and docs/malclient-fork-report-2026-10-28.md (how MALClient logs in to MAL's website and writes). MAL's official API has no endpoint for comments, forum, messages, friends, clubs, favourites or notifications; MALClient used the website session.
 - Step 0 (foundation): an optional 'Connect MyAnimeList website' screen in settings: in-app WebView opens https://myanimelist.net/login.php (reCAPTCHA → never automate credentials), on landing back on myanimelist.net read ALL cookies natively (Android CookieManager.getCookie via a small MethodChannel in MainActivity, or flutter_inappwebview — justify), store them in FlutterSecureStorage, never log them; a `MalWebClient` (dio or http) that sends the cookies, reads `<meta name='csrf_token'>` from the home page and adds it to every POST form, checks the session with GET /editprofile.php?go=myoptions (200 = valid), and clears on logout/expiry with a clear translated state. OAuth stays the main login.
 - Profile comments: READ them on every profile (no session needed: the comments block on /profile/<name>, desktop UA) as a Comments tab/section like MALClient; POST a comment (POST /addcomment.php form, see reports), reply (area=2) and delete (ajax.inc.php?t=78) when the session is connected; conversation view (/comtocom.php).

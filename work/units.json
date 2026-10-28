@@ -1978,6 +1978,8 @@
         "color-sweep"
       ],
       "owns": [
+        "lib/services/auth/**",
+        "lib/widgets/auth/**",
         "android/app/src/main/kotlin/**",
         "lib/services/api/MAL/web/**",
         "lib/services/auth/mal_web_session*.dart",
