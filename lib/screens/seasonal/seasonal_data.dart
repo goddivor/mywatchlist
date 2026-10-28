@@ -108,14 +108,13 @@ class SeasonalData {
             f,
       ];
 
-  /// Settings used before the user changes anything: best mean score first.
-  static ListViewSettings defaults() {
-    final grid = Preferences.general.defaultDisplayType == DisplayType.grid;
-    return ListViewSettings(
-      sortKey: ListSortKeys.mean,
-      display: ListDisplay(type: grid ? DisplayType.grid : DisplayType.list_vert),
-    );
-  }
+  /// Settings used before the user changes anything: best mean score first, in DailyAL's list
+  /// rows (the user's progress and quick +1 / -1). The grid stays a choice of the display sheet,
+  /// whatever the default display of My List.
+  static ListViewSettings defaults() => const ListViewSettings(
+        sortKey: ListSortKeys.mean,
+        display: ListDisplay(type: DisplayType.list_vert),
+      );
 
   /// Saved settings of [season], or the shared ones when the global seasonal filter is on.
   static String settingsKey(SeasonKey season, {required bool global}) =>

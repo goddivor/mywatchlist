@@ -37,6 +37,13 @@ const int kFirstSeasonYear = 1960;
 /// Newest year the season picker offers (MAL lists next year's announcements).
 int lastSeasonYear([DateTime? now]) => (now ?? DateTime.now()).year + 1;
 
+/// Every season the seasonal screen's tabs offer, newest first (DailyAL's order: Fall, Summer,
+/// Spring, Winter of next year, then of this year, down to [kFirstSeasonYear]).
+List<SeasonKey> seasonTabs([DateTime? now]) => [
+      for (var y = lastSeasonYear(now); y >= kFirstSeasonYear; y--)
+        for (final s in SeasonType.values.reversed) SeasonKey(s, y),
+    ];
+
 /// Translated season name.
 String seasonLabel(SeasonType season) => switch (season) {
       SeasonType.WINTER => S.current.Explore_Season_Winter,
