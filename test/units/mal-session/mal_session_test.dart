@@ -336,6 +336,13 @@ void main() {
   });
 
   group('CommentsSection', () {
+    Future<void> settle(WidgetTester tester) async {
+      for (var i = 0; i < 20; i++) {
+        await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 10)));
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+    }
+
     Widget host(Widget tab) => MaterialApp(
           localizationsDelegates: const [S.delegate],
           supportedLocales: S.delegate.supportedLocales,
@@ -367,8 +374,7 @@ void main() {
         session: session,
         api: pageApi(session, _fixture('profile_anonymous_2026-10.html')),
       )));
-      await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
-      await tester.pumpAndSettle();
+      await settle(tester);
       expect(find.text('Ver_se_s'), findsOneWidget);
       expect(find.text('nilyx'), findsOneWidget);
       expect(find.text(S.current.Ms_Connect_To_Comment), findsOneWidget);
@@ -384,12 +390,11 @@ void main() {
         session: session,
         api: pageApi(session, _fixture('profile_signed_in_reconstructed.html')),
       )));
-      await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
-      await tester.pumpAndSettle();
+      await settle(tester);
       expect(find.byType(TextField), findsOneWidget);
       expect(find.text(S.current.Ms_Connect_To_Comment), findsNothing);
       await tester.tap(find.byIcon(Icons.more_vert).first);
-      await tester.pumpAndSettle();
+      await settle(tester);
       expect(find.text(S.current.Ms_Comment_Delete), findsOneWidget);
       expect(find.text(S.current.Ms_Comment_Reply), findsOneWidget);
       expect(find.text(S.current.Ms_Comment_Conversation), findsOneWidget);
