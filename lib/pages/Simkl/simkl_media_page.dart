@@ -104,9 +104,9 @@ class _SimklMediaPageState extends State<SimklMediaPage> {
   }
 
   Future<void> _loadPage(Future<String?> slug, bool force) async {
-    if (mounted && _page == null) setState(() => _pageLoading = true);
+    if (force && mounted && _page == null) setState(() => _pageLoading = true);
     try {
-      final s = await slug.catchError((_) => null);
+      final s = await slug; // no record, no page: an unknown id is not fetched from simkl.com
       final page = await _service.page(widget.simklId, s, force: force);
       if (mounted) setState(() => _page = page);
     } catch (_) {
