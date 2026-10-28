@@ -133,6 +133,11 @@ class KitsuUserListAdapter extends UserListAdapter {
       ),
     );
     if (saved == null) return const ListEditUnchanged();
+    if (saved.isRemoved) {
+      // Deleted from Kitsu: its library-entry id is gone with it.
+      _entryIds.remove('${entry.category}:${entry.id}');
+      return const ListEditRemoved();
+    }
     final id = saved.entryId;
     if (id != null) _entryIds['${entry.category}:${entry.id}'] = id;
     return ListEditUpdated(applySync(entry, saved, _clock()));

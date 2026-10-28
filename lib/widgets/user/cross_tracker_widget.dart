@@ -108,6 +108,12 @@ class _CrossTrackerWidgetState extends State<CrossTrackerWidget> {
       initial: slot.entry,
     );
     if (saved == null || !mounted) return;
+    if (saved.isRemoved) {
+      // Deleted from the tracker: the card goes back to "not on this list".
+      _controller.clearEntry(tracker);
+      _toast(S.current.Sync_Removed(TrackerSyncService.trackerName(tracker)));
+      return;
+    }
     _controller.applyEntry(tracker, saved);
     _toast(S.current.Sync_Saved(TrackerSyncService.trackerName(tracker)));
   }

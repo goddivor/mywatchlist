@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:mywatchlist/generated/l10n.dart';
-import 'package:mywatchlist/user/preferences/preferences.dart';
 import 'package:mywatchlist/user/user_simkl_v2.dart';
 import 'package:mywatchlist/utils/app_routes.dart';
 import 'package:mywatchlist/widgets/MAL/home/homeappbar.dart';
@@ -21,14 +20,11 @@ class SimklUserPage extends StatefulWidget {
 class _SimklUserPageState extends State<SimklUserPage> {
   final SimklUserListAdapter _adapter = SimklUserListAdapter();
 
+  /// Simkl has a single category, so the list gets no switch (`categories`) and the bar
+  /// names the list instead.
   Widget _title(BuildContext context, Widget categorySwitch) {
-    // The list widget opens on the manga category when the preference says so; keep the switch
-    // then, so the way back to the anime list stays visible.
-    final keepSwitch = Preferences.list.defaultCategory == ListCategory.manga;
     return AppBarHome(
-      titleWidget: keepSwitch
-          ? categorySwitch
-          : Text(S.current.UserList_Anime, style: Theme.of(context).textTheme.titleLarge),
+      titleWidget: Text(S.current.UserList_Anime, style: Theme.of(context).textTheme.titleLarge),
       showAvatar: true,
       showSearch: true,
       showBookmarks: false,
@@ -44,7 +40,11 @@ class _SimklUserPageState extends State<SimklUserPage> {
       body: ListenableBuilder(
         listenable: UserSimklV2.instance,
         builder: (context, _) => simklSignedIn
-            ? UserListView(adapter: _adapter, titleBuilder: _title)
+            ? UserListView(
+                adapter: _adapter,
+                titleBuilder: _title,
+                categories: const ['anime'],
+              )
             : Column(
                 children: [
                   _title(context, const SizedBox.shrink()),

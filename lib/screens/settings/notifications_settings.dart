@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
-import 'package:mywatchlist/constants/constants.dart' show AccountType;
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/screens/settings/prefs/pref_widgets.dart';
 import 'package:mywatchlist/services/notifications/notification_service.dart';
@@ -224,7 +223,7 @@ class _MasterCard extends StatelessWidget {
   }
 }
 
-/// What the reminders are doing: permission problems, MAL needed, progress, count and next.
+/// What the reminders are doing: permission problems, no account, progress, count and next.
 class _Status extends StatelessWidget {
   const _Status({required this.service, required this.permissions, required this.onPermissions});
 
@@ -237,8 +236,9 @@ class _Status extends StatelessWidget {
     final s = S.current;
     final enabled = context.select((PreferencesBloc b) => b.state.notifications.enabled);
     if (!enabled) return const SizedBox.shrink();
-    final malConnected = context.select<UserManager, bool>(
-        (m) => m.isAuthenticated(AccountType.myanimelist));
+    // The account that feeds the reminders (the active tracker, else MyAnimeList) is signed in.
+    final feedConnected = context.select<UserManager, bool>((m) =>
+        m.isAuthenticated(NotificationService.candidateTracker(m.currentTracker, m.isAuthenticated)));
     final permissions = this.permissions;
 
     return ValueListenableBuilder<NotificationSummary>(
@@ -264,11 +264,11 @@ class _Status extends StatelessWidget {
             },
           ));
         }
-        if (!malConnected || summary.needsMal) {
+        if (!feedConnected || summary.needsMal) {
           children.add(_Notice(
             icon: Icons.link_off,
-            message: s.Notif_Needs_Mal,
-            action: s.Notif_Needs_Mal_Action,
+            message: s.Notif_Needs_Account,
+            action: s.Notif_Needs_Account_Action,
             onAction: () => AppRoutes.openSettingsPage(context, SettingsSection.accounts),
           ));
         } else if (summary.running) {
