@@ -23,8 +23,6 @@
   "Smp_Licensors": "Licences",
   "Smp_Network": "Chaîne",
   "Smp_Certification": "Classification",
-  "Smp_Country": "Pays",
-  "Smp_Language": "Langue originale",
   "Smp_Season": "Saison",
   "Smp_Runtime": "Durée d’un épisode",
   "Smp_Status": "Statut",
@@ -89,5 +87,6 @@
   "Smp_Memos": "Mémos",
   "Smp_Memo_Bucket": "{min} à {max} étoiles",
   "Smp_Add_To_List": "Ajouter à la liste",
-  "Smp_View_All": "Tout afficher"
+  "Smp_View_All": "Tout afficher",
+  "Smp_Empty": "Rien pour l’instant"
 }

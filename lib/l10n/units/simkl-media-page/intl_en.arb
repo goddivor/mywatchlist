@@ -64,8 +64,6 @@
   "Smp_Licensors": "Licensors",
   "Smp_Network": "Network",
   "Smp_Certification": "Age rating",
-  "Smp_Country": "Country",
-  "Smp_Language": "Original language",
   "Smp_Season": "Season",
   "Smp_Runtime": "Episode length",
   "Smp_Status": "Status",
@@ -204,5 +202,6 @@
     }
   },
   "Smp_Add_To_List": "Add to list",
-  "Smp_View_All": "View all"
+  "Smp_View_All": "View all",
+  "Smp_Empty": "Nothing here yet"
 }

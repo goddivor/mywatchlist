@@ -3,47 +3,36 @@ import 'package:intl/intl.dart';
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/services/api/SimKl/simkl_discover_service.dart';
 import 'package:mywatchlist/services/api/SimKl/simkl_models.dart';
-import 'package:mywatchlist/utils/app_routes.dart';
-import 'package:mywatchlist/utils/web_launcher.dart' show launchWebView;
+import 'package:mywatchlist/pages/Simkl/simkl_media_page.dart';
 import 'package:mywatchlist/widgets/common/app_image.dart';
 import 'package:mywatchlist/widgets/loading/shimmercolor.dart';
 
-/// Opens a Simkl title: the app's own detail screen when its MyAnimeList id is known (asked to
-/// Simkl when the answer did not carry it), Simkl's page otherwise.
+/// Opens a Simkl title on the app's native Simkl page (Simkl's own data only; the page keeps
+/// "Open on MyAnimeList" in its menu when the title has a MyAnimeList id).
 Future<void> openSimklMedia(
   BuildContext context,
   SimklMedia media, {
   SimklDiscoverService? service,
-}) async {
-  var mal = media.malId;
-  if (mal == null) {
-    final navigator = Navigator.of(context, rootNavigator: true);
-    final messenger = ScaffoldMessenger.maybeOf(context);
-    showDialog<void>(
-      context: context,
-      barrierDismissible: false,
-      useRootNavigator: true,
-      builder: (_) => const PopScope(
-        canPop: false,
-        child: Center(child: CircularProgressIndicator()),
-      ),
+}) =>
+    openSimklTitle(
+      context,
+      simklId: media.simklId,
+      slug: media.slug,
+      title: media.title,
+      posterUrl: media.posterUrl,
     );
-    try {
-      mal = await (service ?? SimklDiscoverService.instance).malIdOf(media.simklId);
-    } catch (_) {
-      mal = null;
-    }
-    if (navigator.mounted) navigator.pop();
-    if (mal == null) {
-      if (!context.mounted) return;
-      messenger?.showSnackBar(SnackBar(content: Text(S.current.Sk_No_Mal_Id)));
-      await launchWebView(SimklImages.page(media.simklId, media.slug), context: context);
-      return;
-    }
-  }
-  if (!context.mounted) return;
-  await AppRoutes.openContent(context, id: mal, category: 'anime');
-}
+
+/// Opens the native Simkl page of [simklId]; [title] and [posterUrl] show while it loads.
+Future<void> openSimklTitle(
+  BuildContext context, {
+  required int simklId,
+  String? slug,
+  String? title,
+  String? posterUrl,
+}) =>
+    Navigator.of(context).push(MaterialPageRoute<void>(
+      builder: (_) => SimklMediaPage(simklId: simklId, slug: slug, title: title, posterUrl: posterUrl),
+    ));
 
 /// A poster card of the discover rows and grids: cover, a two-line title, and the rating or the
 /// air time under it.
