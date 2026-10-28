@@ -1,25 +1,36 @@
 import 'package:flutter/material.dart';
 import 'package:mywatchlist/constants/constants.dart' show DisplaySubType;
-import 'package:mywatchlist/enums.dart';
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/screens/explore/explore_widgets.dart';
 import 'package:mywatchlist/screens/seasonal/season_utils.dart';
 import 'package:mywatchlist/screens/seasonal/seasonal_data.dart';
 import 'package:mywatchlist/screens/weekly/weekly_schedule_screen.dart';
+import 'package:mywatchlist/user/list_cache/list_status_cache.dart';
 import 'package:mywatchlist/user/preferences/preferences.dart';
+import 'package:mywatchlist/user/user_mal_v2.dart';
 import 'package:mywatchlist/utils/app_routes.dart';
 import 'package:mywatchlist/widgets/common/app_colors.dart';
 import 'package:mywatchlist/widgets/common/list_sort_filter.dart';
-import 'package:mywatchlist/widgets/common/select/select.dart';
 import 'package:mywatchlist/widgets/loading/shimmercolor.dart';
 import 'package:mywatchlist/widgets/user/list/cards/entry_cards.dart';
 import 'package:mywatchlist/widgets/user/list/cards/entry_parts.dart';
 import 'package:mywatchlist/widgets/user/list/list_entry_view.dart';
 import 'package:mywatchlist/widgets/user/list/list_query.dart';
+import 'package:mywatchlist/widgets/user/list/mal_user_list_adapter.dart';
+import 'package:mywatchlist/widgets/user/list/user_list_adapter.dart';
 import 'package:mywatchlist/widgets/user/list/user_list_tab.dart' show listGridDelegate, listGridGaps, listGridPadding;
 
-/// Every anime of one season with a season/year switcher, sort (score, members, popularity,
-/// title, start date, episodes), filter (type, airing state, genres) and grid or list display.
+/// Downloads every anime of a season ([SeasonalData.load] by default).
+typedef SeasonLoader = Future<List<ListEntryView>> Function(SeasonKey season, {bool force});
+
+/// Every anime of one season (DailyAL's seasonal screen): "Seasonal" with a faded season picture
+/// and a scrollable tab per season, newest first; sort (score, members, popularity, title, start
+/// date, episodes), filter (type, airing state, genres) and list or grid display.
+///
+/// The list rows are DailyAL's: the user's MyAnimeList progress with quick +1 / -1 and a long
+/// press for the edit sheet. The seasons and list statuses come from MyAnimeList, so the writes
+/// go to MyAnimeList too, and only while a MyAnimeList account is signed in (whatever tracker
+/// is active); otherwise the rows only open the detail page.
 ///
 /// The whole season is downloaded once (cached ten minutes), then sorted and filtered on the
 /// device. With the "global seasonal filter" preference on, one sort/filter/display is shared by
@@ -30,14 +41,34 @@ class SeasonalScreen extends StatefulWidget {
   /// Sort key to start with (a [ListSortKeys] value), when the caller wants e.g. most followed.
   final String? initialSortKey;
 
-  const SeasonalScreen({super.key, required this.initial, this.initialSortKey});
+  /// Season download, list writes, MyAnimeList sign-in and status cache; tests pass fakes.
+  final SeasonLoader? loader;
+  final UserListAdapter? adapter;
+  final bool Function()? malSignedIn;
+  final ListStatusCache? cache;
+
+  const SeasonalScreen({
+    super.key,
+    required this.initial,
+    this.initialSortKey,
+    @visibleForTesting this.loader,
+    @visibleForTesting this.adapter,
+    @visibleForTesting this.malSignedIn,
+    @visibleForTesting this.cache,
+  });
 
   @override
   State<SeasonalScreen> createState() => _SeasonalScreenState();
 }
 
-class _SeasonalScreenState extends State<SeasonalScreen> {
+class _SeasonalScreenState extends State<SeasonalScreen> with SingleTickerProviderStateMixin {
   late SeasonKey _season = widget.initial;
+  late final List<SeasonKey> _tabs = _tabsWith(widget.initial);
+  late final TabController _tabController = TabController(
+    length: _tabs.length,
+    initialIndex: _tabs.indexOf(widget.initial),
+    vsync: this,
+  );
   ListViewSettings _settings = SeasonalData.defaults();
   List<ListEntryView>? _entries;
   List<ListEntryView> _visible = const [];
@@ -46,14 +77,36 @@ class _SeasonalScreenState extends State<SeasonalScreen> {
   /// Bumped on each season change so a slow answer of a previous season is ignored.
   int _generation = 0;
 
+  late final UserListAdapter _adapter = widget.adapter ?? MalUserListAdapter();
+  late final ListStatusCache _cache = widget.cache ?? ListStatusCache.instance;
   final ValueNotifier<Set<int>> _busy = ValueNotifier(const {});
-  late final EntryActions _actions = EntryActions(
-    onOpen: (e) => AppRoutes.openContent(context, id: e.id),
-    onEdit: null,
-    onStep: null,
-    canStep: (_) => false,
-    busy: _busy,
-  );
+  late final EntryActions _actions = _signedIn()
+      ? EntryActions(
+          onOpen: (e) => _adapter.open(context, e),
+          onEdit: _edit,
+          onStep: _step,
+          canStep: _adapter.canStep,
+          busy: _busy,
+        )
+      : EntryActions(
+          onOpen: (e) => _adapter.open(context, e),
+          onEdit: null,
+          onStep: null,
+          canStep: (_) => false,
+          busy: _busy,
+        );
+
+  bool _signedIn() =>
+      (widget.malSignedIn ?? () => UserMalV2.instance.accessToken != null)();
+
+  /// The tabs, plus [season] at its place when it is outside the usual range.
+  static List<SeasonKey> _tabsWith(SeasonKey season) {
+    final tabs = seasonTabs();
+    if (tabs.contains(season)) return tabs;
+    final order = season.year * 4 + season.season.index;
+    final at = tabs.indexWhere((t) => t.year * 4 + t.season.index < order);
+    return tabs..insert(at < 0 ? tabs.length : at, season);
+  }
 
   @override
   void initState() {
@@ -63,6 +116,7 @@ class _SeasonalScreenState extends State<SeasonalScreen> {
 
   @override
   void dispose() {
+    _tabController.dispose();
     _busy.dispose();
     super.dispose();
   }
@@ -79,7 +133,8 @@ class _SeasonalScreenState extends State<SeasonalScreen> {
       saved = saved.copyWith(sortKey: widget.initialSortKey);
     }
     try {
-      final entries = await SeasonalData.load(season, force: force);
+      final load = widget.loader ?? SeasonalData.load;
+      final entries = await load(season, force: force);
       if (!mounted || generation != _generation) return;
       setState(() {
         _settings = saved;
@@ -102,10 +157,9 @@ class _SeasonalScreenState extends State<SeasonalScreen> {
     _visible = sortEntries(filtered, _settings.sortKey, _settings.direction);
   }
 
-  void _go(int delta) {
-    final next = _season.shifted(delta);
-    if (next.year < kFirstSeasonYear || next.year > lastSeasonYear()) return;
-    _openSeason(next);
+  void _onTab(int index) {
+    final season = _tabs[index];
+    if (season != _season) _openSeason(season);
   }
 
   Future<void> _openSortFilter() async {
@@ -118,33 +172,98 @@ class _SeasonalScreenState extends State<SeasonalScreen> {
       ),
     );
     if (result == null || !mounted || result == _settings) return;
+    _applySettings(result);
+  }
+
+  void _applySettings(ListViewSettings value) {
     setState(() {
-      _settings = result;
+      _settings = value;
       _recompute();
     });
-    SeasonalData.writeSettings(_season, result);
+    SeasonalData.writeSettings(_season, value);
+  }
+
+  // List writes (MyAnimeList) -------------------------------------------------
+
+  Future<void> _edit(ListEntryView entry) async {
+    final result = await _adapter.edit(context, entry);
+    if (!mounted) return;
+    switch (result) {
+      case ListEditUpdated(entry: final saved):
+        _replace(saved);
+      case ListEditRemoved():
+        _replace(entry.copyWith(clearStatus: true, score: 0, progress: 0));
+      case ListEditUnchanged():
+        break;
+    }
+  }
+
+  Future<void> _step(ListEntryView entry, int delta) async {
+    if (_busy.value.contains(entry.id)) return;
+    _busy.value = {..._busy.value, entry.id};
+    try {
+      final saved = await _adapter.step(entry, delta);
+      if (mounted) _replace(saved);
+    } catch (e) {
+      if (!mounted) return;
+      final expired = _adapter.isSessionExpired(e);
+      ScaffoldMessenger.maybeOf(context)?.showSnackBar(SnackBar(
+        content: Text(expired ? S.current.UserList_Session_Expired : S.current.UserList_Update_Failed),
+        action: expired
+            ? SnackBarAction(
+                label: S.current.UserList_Sign_In_Again,
+                onPressed: () => _adapter.signInAgain(context))
+            : null,
+      ));
+    } finally {
+      _busy.value = {..._busy.value}..remove(entry.id);
+    }
+  }
+
+  /// Puts the saved [entry] in place of the old one. The season list is the one held by the
+  /// season cache, so a later visit within ten minutes shows the change too.
+  void _replace(ListEntryView entry) {
+    final entries = _entries;
+    if (entries == null) return;
+    final i = entries.indexWhere((e) => e.id == entry.id);
+    if (i < 0) return;
+    setState(() {
+      entries[i] = entry;
+      _recompute();
+    });
+    final status = entry.status;
+    if (status == null) {
+      _cache.remove(entry.id, category: entry.category, tracker: _adapter.tracker);
+    } else {
+      _cache.put(
+        entry.id,
+        CachedListStatus(
+            status: status.malValue(isAnime: entry.isAnime),
+            score: entry.score,
+            progress: entry.progress),
+        category: entry.category,
+        tracker: _adapter.tracker,
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
     final filterCount = _settings.filter.activeCount;
-    final iconStyle = IconButton.styleFrom(backgroundColor: scheme.surface.withValues(alpha: 0.65));
+    final top = MediaQuery.paddingOf(context).top;
     return Scaffold(
       body: RefreshIndicator(
         onRefresh: () => _openSeason(_season, force: true),
-        edgeOffset: 120,
+        edgeOffset: top + kToolbarHeight + kTextTabBarHeight,
         child: CustomScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
             SliverAppBar(
               pinned: true,
-              expandedHeight: 190,
-              title: Text('${S.current.Seasonal} · ${_season.label}'),
+              title: Text(S.current.Seasonal),
               actions: [
                 if (_entries != null)
                   IconButton(
-                    style: iconStyle,
                     tooltip: S.current.Filter,
                     onPressed: _openSortFilter,
                     icon: Badge(
@@ -154,13 +273,11 @@ class _SeasonalScreenState extends State<SeasonalScreen> {
                     ),
                   ),
                 IconButton(
-                  style: iconStyle,
                   tooltip: S.current.Search,
                   onPressed: () => AppRoutes.openSearch(context),
                   icon: const Icon(Icons.search_rounded),
                 ),
                 IconButton(
-                  style: iconStyle,
                   tooltip: S.current.WeeklyAnime,
                   onPressed: () =>
                       AppRoutes.push<void>(context, WeeklyScheduleScreen(season: _season)),
@@ -168,47 +285,25 @@ class _SeasonalScreenState extends State<SeasonalScreen> {
                 ),
                 const SizedBox(width: 4),
               ],
-              flexibleSpace: FlexibleSpaceBar(
-                background: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    Image.asset(seasonImage(_season.season), fit: BoxFit.cover, cacheWidth: 900),
-                    // Fades into the page colour under the switcher; a static gradient, no blur.
-                    DecoratedBox(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          stops: const [0.4, 1],
-                          colors: [scheme.surface.withValues(alpha: 0), scheme.surface],
-                        ),
-                      ),
-                    ),
-                    Align(
-                      alignment: AlignmentDirectional.bottomStart,
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(kExplorePadding, 0, kExplorePadding, 64),
-                        child: Row(
-                          children: [
-                            Icon(seasonIcon(_season.season), size: 30, color: scheme.primary),
-                            const SizedBox(width: 10),
-                            Text(
-                              _season.label,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .headlineSmall
-                                  ?.copyWith(fontWeight: FontWeight.w800),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+              // DailyAL's faded season picture, drawn at 20 % through the image paint (no layer).
+              flexibleSpace: Image.asset(
+                seasonImage(_season.season),
+                key: ValueKey(_season.season),
+                fit: BoxFit.cover,
+                width: double.infinity,
+                height: double.infinity,
+                cacheWidth: 900,
+                opacity: const AlwaysStoppedAnimation(0.2),
+                excludeFromSemantics: true,
               ),
-              bottom: PreferredSize(
-                preferredSize: const Size.fromHeight(56),
-                child: _Switcher(season: _season, onGo: _go, onPick: _openSeason),
+              bottom: TabBar(
+                controller: _tabController,
+                isScrollable: true,
+                tabAlignment: TabAlignment.start,
+                indicatorSize: TabBarIndicatorSize.label,
+                dividerColor: Colors.transparent,
+                onTap: _onTab,
+                tabs: [for (final s in _tabs) Tab(text: s.label)],
               ),
             ),
             ..._body(context),
@@ -251,33 +346,18 @@ class _SeasonalScreenState extends State<SeasonalScreen> {
     final locale = Localizations.localeOf(context).toString();
     final visible = _visible;
     return [
-      SliverToBoxAdapter(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(kExplorePadding, 4, kExplorePadding, 8),
-          child: Row(
-            children: [
-              Expanded(
-                child: Text(S.current.Seasonal_Count(visible.length),
-                    style: Theme.of(context).textTheme.labelLarge),
-              ),
-              if (!_settings.filter.isEmpty)
-                TextButton(
-                  onPressed: () {
-                    setState(() {
-                      _settings = _settings.copyWith(filter: ListFilter.none);
-                      _recompute();
-                    });
-                    SeasonalData.writeSettings(_season, _settings);
-                  },
-                  child: Text(S.current.Seasonal_Clear_Filters),
-                ),
-            ],
-          ),
-        ),
-      ),
+      const SliverToBoxAdapter(child: SizedBox(height: 4)),
       if (visible.isEmpty)
         SliverToBoxAdapter(
-          child: SectionMessage(icon: Icons.filter_alt_off_rounded, text: S.current.Seasonal_No_Match),
+          child: Column(
+            children: [
+              SectionMessage(icon: Icons.filter_alt_off_rounded, text: S.current.Seasonal_No_Match),
+              TextButton(
+                onPressed: () => _applySettings(_settings.copyWith(filter: ListFilter.none)),
+                child: Text(S.current.Seasonal_Clear_Filters),
+              ),
+            ],
+          ),
         )
       else if (display.isGrid)
         SliverPadding(
@@ -316,7 +396,27 @@ class _SeasonalScreenState extends State<SeasonalScreen> {
     ];
   }
 
+  /// Placeholders in the layout the season will be shown in.
   Widget _skeleton() {
+    final shimmer = ShimmerColor(
+      DecoratedBox(
+        decoration: BoxDecoration(
+            color: AppColors.of(context).shimmerBase, borderRadius: BorderRadius.circular(10)),
+      ),
+    );
+    if (!_settings.display.isGrid) {
+      final subType = _settings.display.subType == DisplaySubType.custom
+          ? DisplaySubType.comfortable
+          : _settings.display.subType;
+      return SliverFixedExtentList.builder(
+        itemExtent: listRowExtent(subType),
+        itemCount: 6,
+        itemBuilder: (context, _) => Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          child: shimmer,
+        ),
+      );
+    }
     final gaps = listGridGaps(DisplaySubType.comfortable);
     return SliverPadding(
       padding: listGridPadding(DisplaySubType.comfortable, top: 8),
@@ -328,69 +428,7 @@ class _SeasonalScreenState extends State<SeasonalScreen> {
           mainAxisSpacing: gaps.row,
         ),
         itemCount: 9,
-        itemBuilder: (context, __) => ShimmerColor(
-          DecoratedBox(
-            decoration: BoxDecoration(
-                color: AppColors.of(context).shimmerBase,
-                borderRadius: BorderRadius.circular(10)),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Previous / next season buttons around season and year pickers.
-class _Switcher extends StatelessWidget {
-  final SeasonKey season;
-  final ValueChanged<int> onGo;
-  final ValueChanged<SeasonKey> onPick;
-
-  const _Switcher({required this.season, required this.onGo, required this.onPick});
-
-  @override
-  Widget build(BuildContext context) {
-    final years = [
-      for (var y = lastSeasonYear(); y >= kFirstSeasonYear; y--) SelectOption<int>(y, '$y'),
-    ];
-    return SizedBox(
-      height: 56,
-      child: Row(
-        children: [
-          IconButton(
-            tooltip: S.current.Seasonal_Previous,
-            onPressed: () => onGo(-1),
-            icon: const Icon(Icons.chevron_left_rounded),
-          ),
-          Expanded(
-            child: Center(
-              child: SelectButton<SeasonType>(
-                title: S.current.Seasonal_Season,
-                options: [
-                  for (final s in SeasonType.values)
-                    SelectOption<SeasonType>(s, seasonLabel(s), icon: seasonIcon(s)),
-                ],
-                selected: season.season,
-                onChanged: (s) => onPick(SeasonKey(s, season.year)),
-              ),
-            ),
-          ),
-          Expanded(
-            child: Center(
-              child: SelectButton<int>(
-                title: S.current.Seasonal_Year,
-                options: years,
-                selected: season.year,
-                onChanged: (y) => onPick(SeasonKey(season.season, y)),
-              ),
-            ),
-          ),
-          IconButton(
-            tooltip: S.current.Seasonal_Next,
-            onPressed: () => onGo(1),
-            icon: const Icon(Icons.chevron_right_rounded),
-          ),
-        ],
+        itemBuilder: (context, _) => shimmer,
       ),
     );
   }
