@@ -189,5 +189,7 @@
   "Prof_Bg_Set_Done": "Arrière-plan du profil mis à jour.",
   "Prof_Bg_Removed": "Arrière-plan du profil retiré.",
   "Prof_Bg_Error": "Impossible de modifier l’arrière-plan.",
-  "Prof_Bg_Local_Note": "L’arrière-plan est enregistré uniquement sur cet appareil."
+  "Prof_Bg_Local_Note": "L’arrière-plan est enregistré uniquement sur cet appareil.",
+  "Prof_Last_Online": "Dernière connexion",
+  "Prof_Online_Now": "En ligne"
 }

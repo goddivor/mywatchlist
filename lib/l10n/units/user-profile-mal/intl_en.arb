@@ -189,5 +189,7 @@
   "Prof_Bg_Set_Done": "Profile background updated.",
   "Prof_Bg_Removed": "Profile background removed.",
   "Prof_Bg_Error": "Couldn’t update the background.",
-  "Prof_Bg_Local_Note": "The background is saved on this device only."
+  "Prof_Bg_Local_Note": "The background is saved on this device only.",
+  "Prof_Last_Online": "Last online",
+  "Prof_Online_Now": "Online now"
 }

@@ -4,6 +4,7 @@ import 'package:mywatchlist/services/api/MAL/mal_user_prof.dart';
 import 'package:mywatchlist/services/api/MAL/scrapper/user_friends.dart';
 import 'package:mywatchlist/services/api/MAL/scrapper/user_history.dart';
 import 'package:mywatchlist/services/api/MAL/scrapper/user_anime_statistics.dart';
+import 'package:mywatchlist/services/api/MAL/scrapper/user_profile_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 Map<String, dynamic> jikanFull({String name = 'neo'}) => {
@@ -127,14 +128,23 @@ void main() {
   group('UserProfileRepository.load', () {
     late int jikanCalls;
     late bool jikanFails;
+    late int pageCalls;
+    late Object? pageError;
 
     setUp(() {
       jikanCalls = 0;
       jikanFails = false;
+      pageCalls = 0;
+      pageError = Exception('offline');
       UserProfileRepository.instance.jikanFull = (name) async {
         jikanCalls++;
         if (jikanFails) throw Exception('offline');
         return jikanFull(name: name);
+      };
+      UserProfileRepository.instance.malPage = (name) async {
+        pageCalls++;
+        if (pageError != null) throw pageError!;
+        return {...jikanFull(name: name), 'mal_id': 7, 'last_online': 'Now'};
       };
     });
 
@@ -152,14 +162,43 @@ void main() {
       expect(jikanCalls, 2);
     });
 
-    test('falls back to the cache when the network fails, then reports unavailable', () async {
+    test('falls back to the cache when the network fails, then reports a network error',
+        () async {
       final repo = UserProfileRepository.instance;
       await repo.load('trinity');
       jikanFails = true;
       final stale = await repo.load('trinity', forceRefresh: true);
       expect(stale.username, 'trinity');
 
-      await expectLater(repo.load('unknown'), throwsA(isA<UserProfileUnavailable>()));
+      // Neither source answered: a connection problem, not "doesn't exist".
+      await expectLater(repo.load('unknown'), throwsA(isA<UserProfileUnreachable>()));
+    });
+
+    test('MAL\'s profile page answers when Jikan does not', () async {
+      jikanFails = true;
+      pageError = null;
+      final data = await UserProfileRepository.instance.load('Dorcas_x', forceRefresh: true);
+      expect(pageCalls, 1);
+      expect(data.id, 7);
+      expect(data.lastOnline, 'Now');
+      expect(data.anime.totalEntries, 45);
+    });
+
+    test('only a real 404 reads as a missing profile', () async {
+      jikanFails = true;
+      pageError = const MalProfileNotFound('ghost');
+      await expectLater(
+        UserProfileRepository.instance.load('ghost', forceRefresh: true),
+        throwsA(isA<UserProfileUnavailable>()),
+      );
+    });
+
+    test('watch() errors with the network cause when nothing can be shown', () async {
+      jikanFails = true;
+      await expectLater(
+        UserProfileRepository.instance.watch('nobody', forceRefresh: true),
+        emitsError(isA<UserProfileUnreachable>()),
+      );
     });
   });
 

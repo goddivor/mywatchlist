@@ -10,12 +10,31 @@ import 'package:mywatchlist/widgets/common/image_preview.dart';
 import 'package:mywatchlist/widgets/user/profile/profile_background.dart';
 
 /// Formats an ISO date from the profile data as a short localized date; null when it cannot
-/// be read.
+/// be read. A day without its year ("--01-31", a birthday from MAL's page) reads "Jan 31".
 String? formatProfileDate(String? iso, {bool withDay = true}) {
+  final dayMonth = iso == null ? null : RegExp(r'^--(\d{2})-(\d{2})$').firstMatch(iso);
+  if (dayMonth != null) {
+    if (!withDay) return null;
+    final month = int.parse(dayMonth.group(1)!);
+    final day = int.parse(dayMonth.group(2)!);
+    if (month < 1 || month > 12 || day < 1 || day > 31) return null;
+    return DateFormat.MMMd().format(DateTime(2000, month, day));
+  }
   final date = iso == null ? null : DateTime.tryParse(iso);
   if (date == null) return null;
   final format = withDay ? DateFormat.yMMMd() : DateFormat.yMMM();
   return format.format(date.toLocal());
+}
+
+/// When a user was last online: an ISO time (Jikan) as a localized date and time, MAL's
+/// "Now" translated, any other text of MAL's page ("5 minutes ago") as MAL gives it.
+String? formatProfileLastOnline(String? raw) {
+  final text = raw?.trim();
+  if (text == null || text.isEmpty) return null;
+  if (text.toLowerCase() == 'now') return S.current.Prof_Online_Now;
+  final date = DateTime.tryParse(text);
+  if (date == null) return text;
+  return DateFormat.yMMMd().add_jm().format(date.toLocal());
 }
 
 /// Avatar, name and key numbers of a profile.

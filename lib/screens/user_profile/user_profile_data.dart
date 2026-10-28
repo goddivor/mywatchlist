@@ -1,9 +1,15 @@
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
 import 'package:mywatchlist/cache/cached_user_profile.dart';
-import 'package:mywatchlist/services/api/Jikan/jikan_api.dart';
+import 'package:mywatchlist/constants/constants.dart' show Constants;
+import 'package:mywatchlist/services/api/Jikan/jikan_client.dart';
+import 'package:mywatchlist/services/api/Jikan/jikan_fallbacks.dart';
 import 'package:mywatchlist/services/api/MAL/mal_user.dart';
 import 'package:mywatchlist/services/api/MAL/mal_user_prof.dart';
 import 'package:mywatchlist/services/api/MAL/scrapper/user_anime_statistics.dart';
+import 'package:mywatchlist/services/api/MAL/scrapper/user_profile_page.dart';
 import 'package:mywatchlist/user/user_mal_v2.dart';
 
 /// One favorite shown in the Favorites tab.
@@ -110,6 +116,17 @@ class UserProfileData {
   final String? location;
   final String? birthday;
   final String? joined;
+
+  /// When the user was last online: an ISO time from Jikan, or MAL's own text ("Now",
+  /// "Jul 3, 2:03 PM", "5 minutes ago") from the profile page.
+  final String? lastOnline;
+
+  /// The "about me" HTML read from the profile page, when that page answered; the About tab
+  /// shows it without asking again.
+  final String? about;
+
+  /// Whether [about] comes from MAL's "modern" about-me layout.
+  final bool aboutModern;
   final ListStats anime;
   final ListStats manga;
 
@@ -129,6 +146,9 @@ class UserProfileData {
     this.location,
     this.birthday,
     this.joined,
+    this.lastOnline,
+    this.about,
+    this.aboutModern = false,
     this.anime = const ListStats(),
     this.manga = const ListStats(),
     this.animeDays = const [],
@@ -150,6 +170,9 @@ class UserProfileData {
         location: location,
         birthday: birthday,
         joined: joined,
+        lastOnline: lastOnline,
+        about: about,
+        aboutModern: aboutModern,
         anime: anime,
         manga: manga ?? this.manga,
         animeDays: animeDays,
@@ -167,6 +190,9 @@ class UserProfileData {
         location: json['location'] as String?,
         birthday: json['birthday'] as String?,
         joined: json['joined'] as String?,
+        lastOnline: json['lastOnline'] as String?,
+        about: json['about'] as String?,
+        aboutModern: json['aboutModern'] == true,
         anime: ListStats.fromJson(json['anime'] as Map<String, dynamic>?),
         manga: ListStats.fromJson(json['manga'] as Map<String, dynamic>?),
         animeDays: [
@@ -183,6 +209,9 @@ class UserProfileData {
         'location': location,
         'birthday': birthday,
         'joined': joined,
+        'lastOnline': lastOnline,
+        'about': about,
+        'aboutModern': aboutModern,
         'anime': anime.toJson(),
         'manga': manga.toJson(),
         'animeDays': animeDays,
@@ -190,7 +219,7 @@ class UserProfileData {
       };
 }
 
-/// The profile does not exist, is private, or neither source answered.
+/// The profile does not exist: MyAnimeList (or Jikan) answered 404.
 class UserProfileUnavailable implements Exception {
   final String username;
   const UserProfileUnavailable(this.username);
@@ -199,18 +228,66 @@ class UserProfileUnavailable implements Exception {
   String toString() => 'UserProfileUnavailable($username)';
 }
 
+/// Neither Jikan nor MAL's profile page answered (network, timeout, unreadable page), and
+/// nothing is cached: shown as a connection error, never as "doesn't exist".
+class UserProfileUnreachable implements Exception {
+  final String username;
+  final Object? cause;
+  const UserProfileUnreachable(this.username, [this.cause]);
+
+  @override
+  String toString() => 'UserProfileUnreachable($username, $cause)';
+}
+
 /// Loads [UserProfileData]: the official API for the signed-in user (fresher numbers, days
-/// per status) completed by Jikan (manga numbers, favorites), Jikan alone for everybody else.
-/// A fresh disk entry short-circuits the network; a stale one is served when it fails.
+/// per status) completed by the full profile (manga numbers, favorites), the full profile
+/// alone for everybody else. The full profile comes from Jikan raced against MAL's own
+/// profile page ([JikanFallbacks.race]: Jikan gets a 3 s head start, 12 s at most), so it
+/// loads where Jikan is unreachable. A fresh disk entry short-circuits the network; a stale
+/// one is served when it fails.
 class UserProfileRepository {
   UserProfileRepository._();
 
   static final UserProfileRepository instance = UserProfileRepository._();
 
-  /// Replaced by tests.
+  /// Jikan's `users/{name}/full`; throws [MalProfileNotFound] on a 404. Replaced by tests.
   @visibleForTesting
-  Future<Map<String, dynamic>> Function(String username) jikanFull =
-      (name) => JikanApi().getUserFullProfile(name);
+  Future<Map<String, dynamic>> Function(String username) jikanFull = _jikanFull;
+
+  /// MAL's profile page in the Jikan shape ([MalProfilePage.fetch]). Replaced by tests.
+  @visibleForTesting
+  Future<Map<String, dynamic>> Function(String username) malPage =
+      (name) => MalProfilePage.fetch(name);
+
+  static Future<Map<String, dynamic>> _jikanFull(String name) async {
+    final url = Uri.parse('${Constants.jikanV4}/users/${Uri.encodeComponent(name)}/full');
+    final response = await JikanClient.instance.get(url);
+    if (response.statusCode == 404) throw MalProfileNotFound(name);
+    if (response.statusCode != 200) {
+      throw http.ClientException('Jikan answered ${response.statusCode}', url);
+    }
+    final data = (jsonDecode(response.body) as Map)['data'];
+    if (data is! Map) throw FormatException('No profile in the Jikan answer for $name');
+    return Map<String, dynamic>.from(data);
+  }
+
+  /// The full profile of [name] from whichever of Jikan and MAL's page answers first.
+  /// Throws [UserProfileUnavailable] when a source answered 404, [UserProfileUnreachable]
+  /// when neither answered.
+  Future<Map<String, dynamic>> _fullProfile(String name) async {
+    try {
+      final result = await JikanFallbacks.race<Map<String, dynamic>>(
+        jikan: () => jikanFull(name),
+        fallback: () => malPage(name),
+      );
+      return result.value;
+    } on NoSourceAnswered catch (e) {
+      if (e.jikanError is MalProfileNotFound || e.fallbackError is MalProfileNotFound) {
+        throw UserProfileUnavailable(name);
+      }
+      throw UserProfileUnreachable(name, e);
+    }
+  }
 
   @visibleForTesting
   Future<MalUserProf> Function() malSelf =
@@ -249,16 +326,18 @@ class UserProfileRepository {
     if (name == null) throw const UserProfileUnavailable('');
 
     Map<String, dynamic>? full;
+    Object? fullError;
     try {
-      full = await jikanFull(name);
+      full = await _fullProfile(name);
     } catch (e) {
-      if (kDebugMode) debugPrint('UserProfileRepository: Jikan failed for $name: $e');
+      fullError = e;
+      if (kDebugMode) debugPrint('UserProfileRepository: full profile failed for $name: $e');
     }
 
     if (mal == null && full == null) {
       final stale = await CachedUserProfile.instance.read(name);
       if (stale != null) return UserProfileData.fromJson(stale.json);
-      throw UserProfileUnavailable(name);
+      throw fullError ?? UserProfileUnreachable(name);
     }
 
     final data = merge(name, mal: mal, jikan: full);
@@ -266,10 +345,10 @@ class UserProfileRepository {
     return data;
   }
 
-  /// Like [load], but never waits for Jikan before showing something: emits the official MAL
-  /// data of the signed-in user (or a cached profile) at once with [ProfileExtras.loading],
-  /// then the profile merged with Jikan when (if) it answers. Jikan has its own 12 s timeout
-  /// and circuit breaker, so the second value comes quickly either way.
+  /// Like [load], but never waits for the full profile before showing something: emits the
+  /// official MAL data of the signed-in user (or a cached profile) at once with
+  /// [ProfileExtras.loading], then the merged profile when Jikan or MAL's page answers
+  /// (12 s at most).
   ///
   /// A fresh cached profile is emitted alone, without any request (unless [forceRefresh]).
   /// The stream errors only when nothing at all can be shown.
@@ -321,14 +400,16 @@ class UserProfileRepository {
     if (first != null) yield first;
 
     Map<String, dynamic>? full;
+    Object? fullError;
     try {
-      full = await jikanFull(name);
+      full = await _fullProfile(name);
     } catch (e) {
-      if (kDebugMode) debugPrint('UserProfileRepository: Jikan failed for $name: $e');
+      fullError = e;
+      if (kDebugMode) debugPrint('UserProfileRepository: full profile failed for $name: $e');
     }
 
     if (full == null) {
-      if (first == null) throw UserProfileUnavailable(name);
+      if (first == null) throw fullError ?? UserProfileUnreachable(name);
       // Keep what is shown; the Jikan part is either the cached one or missing.
       yield first.withExtras(stale != null ? ProfileExtras.ready : ProfileExtras.unavailable);
       return;
@@ -363,6 +444,9 @@ class UserProfileRepository {
       location: clean(mal?.location) ?? clean(jikan?['location'] as String?),
       birthday: mal?.birthday?.toIso8601String() ?? clean(jikan?['birthday'] as String?),
       joined: clean(mal?.joinedAt) ?? clean(jikan?['joined'] as String?),
+      lastOnline: clean(jikan?['last_online'] as String?),
+      about: clean(jikan?['about'] as String?),
+      aboutModern: jikan?['about_modern'] == true,
       anime: hasMalStats ? ListStats.fromMalAnime(malStats) : stats.anime,
       manga: stats.manga,
       animeDays: hasMalStats

@@ -88,6 +88,8 @@ void main() {
 
   group('watch', () {
     final repo = UserProfileRepository.instance;
+    // MAL's profile page (raced with Jikan) is offline in these tests.
+    setUp(() => repo.malPage = (_) async => throw Exception('offline'));
 
     test('shows the official MAL data before Jikan answers, then merges it', () async {
       final jikan = Completer<Map<String, dynamic>>();
@@ -118,11 +120,11 @@ void main() {
       expect(values.last.anime.meanScore, 8.9);
     });
 
-    test('another user without Jikan nor cache is an error', () async {
+    test('another user without Jikan nor cache is a network error', () async {
       repo.jikanFull = (_) async => throw Exception('offline');
       await expectLater(
         repo.watch('nobody', forceRefresh: true).toList(),
-        throwsA(isA<UserProfileUnavailable>()),
+        throwsA(isA<UserProfileUnreachable>()),
       );
     });
   });
