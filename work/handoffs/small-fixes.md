@@ -30,6 +30,7 @@
 Plus `PROJECT-STATE.md` (rewrite in place, within its cap) and `docs/DECISIONS.md` (append one line per decision). Anything else you need is a FINDING to report, never an edit.
 
 ## Goal
+- From simkl-auth-v2 PR #234: in Settings > Accounts, when `UserSimklV2.instance.canUpgradeToV2` is true, offer a one-tap 'Reconnect Simkl' that calls `SimklAuthV2().handleSignIn`.
 - From profile-lists PR #231: remove the 'Friends since' text from friend rows entirely (owner rule, U11) in lib/screens/user_profile/sections/friends_section.dart and update test/units/profile-tabs/profile_tabs_test.dart:299.
 - From ux-home PR #229: requests_bloc.dart current-season row still asks sort=anime_score — sort by members like DailyAL; news card titles regular weight (lib/widgets/MAL/home/news_widget.dart, not ExtraBold); home settings row 'Anime News' → 'News' (Hw_Sec_News in lib/l10n/units/home-wiring/).
 - Owner rule (no captions DailyAL lacks): remove the edit sheet's 'of 64' episode hint and '10 · Masterpiece' score hint (lib/widgets/user/edit/edit_fields.dart), and update the edit-sheet unit tests that pin them.

@@ -8,6 +8,7 @@
 - `tracker-followups` (Tracker follow-ups: removed rows disappear, Simkl list categories, notifications for every tracker)
 
 ## Owns (may create or edit ONLY these)
+- `lib/services/api/SimKl/simkl_client.dart`
 - `lib/services/api/SimKl/simkl_list_service.dart`
 - `lib/services/api/SimKl/simkl_user.dart`
 - `lib/widgets/Simkl/simkl_user_list_adapter.dart`
@@ -21,6 +22,7 @@
 Plus `PROJECT-STATE.md` (rewrite in place, within its cap) and `docs/DECISIONS.md` (append one line per decision). Anything else you need is a FINDING to report, never an edit.
 
 ## Goal
+- From simkl-auth-v2 PR #234: make the shared SimklClient default to `() => UserSimklV2.instance.apiClientId` (lib/services/api/SimKl/simkl_client.dart) so V2 tokens use the V2 client id.
 - Kitsu/Simkl audit docs/kitsu-simkl-report-2026-10-28.md, unit `simkl-list-sync`: `/sync/activities` gating + `date_from` incremental pulls (B8), community score badge and sort (B7), continue watching with playback (B10) Read the matching report items (endpoints, sample responses, selectors, risks) and implement them.
 - Owner decision: a Kitsu/Simkl account shows only its own tracker's data (never MAL news/forum); scraping the tracker's own site for extra data is welcome. Replicate DailyAL/MALClient UI conventions where MWL would be weaker; no explanatory captions; theme tokens; English + French. Never write to the owner's tracker accounts in tests (fakes/fixtures only).
 
