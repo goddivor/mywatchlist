@@ -1,0 +1,7 @@
+{
+  "@@locale": "fr_FR",
+  "StackPolish_Created": "Créée le {date}",
+  "@StackPolish_Created": { "placeholders": { "date": { "type": "String" } } },
+  "StackPolish_Updated": "Mise à jour le {date}",
+  "@StackPolish_Updated": { "placeholders": { "date": { "type": "String" } } }
+}
