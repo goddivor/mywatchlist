@@ -3,6 +3,7 @@
 **Kind** unit · **Priority** P2 · **Group** release · **Model** sonnet
 
 ## Needs done first
+- `mal-hub-wiring` (MAL notifications: bell, sidebar entry, background polling when the app is closed, settings switches)
 - `anilist-client-limits` (anilist-client-limits)
 - `anilist-list-fidelity` (anilist-list-fidelity)
 - `anilist-people-pages` (anilist-people-pages)

@@ -50,7 +50,8 @@
         "sync-dialog",
         "profile-lists",
         "mal-notifications",
-        "mal-messages"
+        "mal-messages",
+        "mal-hub-wiring"
       ]
     },
     {
@@ -1471,6 +1472,7 @@
       "artifact": "",
       "priority": "P2",
       "needs": [
+        "mal-hub-wiring",
         "anilist-client-limits",
         "anilist-list-fidelity",
         "anilist-people-pages",
@@ -3395,6 +3397,40 @@
       "states": [],
       "notes": [
         "model: sonnet"
+      ],
+      "status": "⬜ todo"
+    },
+    {
+      "id": "mal-hub-wiring",
+      "title": "MAL notifications: bell, sidebar entry, background polling when the app is closed, settings switches",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P0",
+      "needs": [
+        "mal-notifications",
+        "ux-home",
+        "mal-messages"
+      ],
+      "owns": [
+        "lib/widgets/MAL/home/homeappbar.dart",
+        "lib/pages/side_bar.dart",
+        "pubspec.yaml",
+        "lib/main.dart",
+        "docs/STACK.md",
+        "lib/screens/settings/notifications_settings.dart",
+        "lib/services/api/MAL/web/mal_web_client.dart",
+        "android/app/src/main/AndroidManifest.xml",
+        "lib/l10n/units/mal-hub-wiring/**",
+        "test/units/mal-hub-wiring/**",
+        "test/units/mal-hub-wiring/**"
+      ],
+      "group": "user",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
       ],
       "status": "⬜ todo"
     },
