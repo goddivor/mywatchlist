@@ -44,15 +44,12 @@ class SimklAuthV2 {
     return (name: profile.name, avatar: profile.avatar);
   }
 
-  /// Whether tokens existed when this sign in started (a reconnect of a signed-in account).
-  bool _hadTokens = false;
-
-  /// A sign in that did not finish leaves a still-working session signed in.
+  /// A sign in that did not finish leaves a still-working session signed in. The redirect may
+  /// reach another instance than the one that opened the browser (Android: `main.dart`), so this
+  /// looks at the stored session, not at what this instance saw.
   void _endWithoutSignIn() {
     final user = UserSimklV2.instance;
-    user.setStatus(_hadTokens && user.accessToken != null
-        ? AuthStatus.AUTHENTICATED
-        : AuthStatus.UNAUTHENTICATED);
+    user.setStatus(user.accessToken != null ? AuthStatus.AUTHENTICATED : AuthStatus.UNAUTHENTICATED);
     user.notifyAccountChange();
   }
 
@@ -62,7 +59,6 @@ class SimklAuthV2 {
     final user = UserSimklV2.instance;
     if (user.getStatus() == AuthStatus.INPROGRESS) return false; // double tap
 
-    _hadTokens = user.accessToken != null;
     user.setStatus(AuthStatus.INPROGRESS);
     user.notifyAccountChange();
 
