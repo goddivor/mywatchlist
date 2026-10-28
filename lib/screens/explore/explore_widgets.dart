@@ -13,7 +13,8 @@ const double kExplorePadding = 16;
 String compactCount(BuildContext context, num value) =>
     NumberFormat.compact(locale: Localizations.localeOf(context).toString()).format(value);
 
-/// Title row of a section, with an optional "View all" button.
+/// Title row of a section (DailyAL's `_titleWidget`): a regular-weight title and, when the
+/// section has a full list, an arrow button that opens it.
 class ExploreSectionHeader extends StatelessWidget {
   final String title;
   final VoidCallback? onViewAll;
@@ -24,30 +25,28 @@ class ExploreSectionHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Padding(
-      padding: const EdgeInsets.fromLTRB(kExplorePadding, 24, kExplorePadding - 4, 10),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(
-              title,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
-            ),
-          ),
-          if (onViewAll != null)
-            TextButton(
-              onPressed: onViewAll,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(S.current.View_All),
-                  const SizedBox(width: 2),
-                  const Icon(Icons.chevron_right_rounded, size: 20),
-                ],
+      // The arrow keeps the row as tall as DailyAL's; a header without it gets the same height.
+      padding: const EdgeInsetsDirectional.fromSTEB(kExplorePadding, 20, kExplorePadding - 8, 6),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: kMinInteractiveDimension),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.titleLarge,
               ),
             ),
-        ],
+            if (onViewAll != null)
+              IconButton(
+                onPressed: onViewAll,
+                tooltip: S.current.View_All,
+                icon: const Icon(Icons.arrow_forward_outlined),
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -202,8 +201,7 @@ class ExploreTile extends StatelessWidget {
                   label,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                      color: textColor, fontWeight: FontWeight.w600, fontSize: 13, height: 1.15),
+                  style: TextStyle(color: textColor, fontSize: 14, height: 1.15),
                 ),
                 if (caption != null)
                   Text(caption!,
@@ -275,7 +273,7 @@ class PosterTile extends StatelessWidget {
             Text(title,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w600)),
+                style: theme.textTheme.bodySmall),
             if (subtitle != null)
               Text(subtitle!,
                   maxLines: 1,
@@ -393,11 +391,9 @@ class ExplorePictureCard extends StatelessWidget {
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
             textAlign: TextAlign.center,
+            // DailyAL's card title: regular weight, 15.
             style: TextStyle(
-                color: hidden ? scheme.onSurface : foreground,
-                fontWeight: FontWeight.w700,
-                fontSize: 14,
-                height: 1.15),
+                color: hidden ? scheme.onSurface : foreground, fontSize: 15, height: 1.15),
           ),
           if (caption != null) ...[
             const SizedBox(height: 2),
