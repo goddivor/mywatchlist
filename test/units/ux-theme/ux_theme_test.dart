@@ -37,7 +37,8 @@ void main() {
 
     await tester.scrollUntilVisible(find.text(S.current.Select_bg), 200,
         scrollable: find.byType(Scrollable).first);
-    expect(tester.getSize(find.text(S.current.Select_bg)).height, lessThan(30));
+    // The title used to share the row with a Spacer and got half of it (3 lines on a phone).
+    expect(tester.getSize(find.text(S.current.Select_bg)).width, greaterThan(200));
     await tester.runAsync(bloc.close);
   });
 }
