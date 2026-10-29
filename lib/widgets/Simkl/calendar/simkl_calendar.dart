@@ -267,7 +267,9 @@ class _SimklCalendarPageState extends State<SimklCalendarPage> {
     try {
       final saved = await (widget.listService ?? SimklListService.instance).setProgress(entry, n);
       final next = _future.then((d) => (d.$1, {...d.$2, saved.id: saved}));
-      if (mounted) setState(() => _future = next);
+      if (mounted) setState(() {
+        _future = next;
+      });
       messenger?.showSnackBar(SnackBar(content: Text(S.current.Sdp_Marked_Watched(n))));
     } catch (_) {
       messenger?.showSnackBar(SnackBar(content: Text(S.current.Sk_Edit_Failed)));

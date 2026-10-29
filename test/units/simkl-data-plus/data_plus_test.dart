@@ -83,6 +83,11 @@ class _FakeAccountBloc extends Fake implements AccountBloc {
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
+  setUpAll(() async {
+    await initializeDateFormatting('en');
+    await S.load(const Locale('en'));
+  });
+
   group('CDN fields', () {
     test('trending keeps watchers, drop rate, rank, network and episode total', () {
       final items = parseSimklTrending(fixture('trending_week_100.json'));
@@ -144,7 +149,7 @@ void main() {
         },
       ]);
       final cdn = SimklCdn(
-        get: (uri, headers) async => http.Response(body, 200),
+        get: (uri, headers) async => http.Response.bytes(utf8.encode(body), 200),
         clientId: () => 'cid',
         appVersion: () async => '1.0.0',
       );
@@ -357,6 +362,16 @@ void main() {
           profileImageUrl: null,
           availableAccounts: [Account(name: 'me', typeAcc: AccountType.simkl, imageUrl: '')],
         );
+      final keep = SimklDiscoverService.instance;
+      addTearDown(() => SimklDiscoverService.instance = keep);
+      SimklDiscoverService.instance = SimklDiscoverService(
+        cdn: SimklCdn(
+          get: (uri, headers) async => http.Response.bytes(utf8.encode('{}'), 200),
+          clientId: () => 'cid',
+          appVersion: () async => '1.0.0',
+        ),
+        signedIn: () => false,
+      );
       await tester.pumpWidget(BlocProvider<AccountBloc>.value(
         value: bloc,
         child: MaterialApp(
@@ -403,7 +418,7 @@ void main() {
         },
       });
       final cdn = SimklCdn(
-        get: (uri, headers) async => http.Response(calendar, 200),
+        get: (uri, headers) async => http.Response.bytes(utf8.encode(calendar), 200),
         clientId: () => 'cid',
         appVersion: () async => '1.0.0',
       );
