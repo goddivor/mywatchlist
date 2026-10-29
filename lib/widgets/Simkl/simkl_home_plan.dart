@@ -23,8 +23,8 @@ class SimklHomeBlock {
 
 /// The Simkl home rows for the shared home preferences (the sections the user enabled, in their
 /// order): MyAnimeList-only kinds (news, features, manga rankings, forum) have no Simkl
-/// counterpart and are skipped, the anime rankings become the closest Simkl list, and each Simkl
-/// list shows once.
+/// counterpart and are skipped, the anime rankings become the closest Simkl list (top score is
+/// Simkl's Best anime), and each Simkl list shows once.
 ///
 /// "Continue watching" follows the user list section; preferences saved without one show it
 /// first, so the row exists out of the box.
@@ -50,8 +50,9 @@ List<SimklHomeBlock> simklHomePlan(List<HomeSectionPreference> sections) {
         add(SimklFeed.premieres, section);
       case SectionType.topAnimeAiring:
         add(SimklFeed.airing, section);
-      case SectionType.suggested:
       case SectionType.topScore:
+        add(SimklFeed.best, section);
+      case SectionType.suggested:
       case SectionType.topFavorites:
       case SectionType.topPopular:
       case SectionType.topAnimeTV:

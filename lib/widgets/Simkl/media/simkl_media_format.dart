@@ -1,6 +1,7 @@
 import 'package:intl/intl.dart';
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/services/api/SimKl/simkl_detail_models.dart';
+import 'package:mywatchlist/user/preferences/preferences.dart';
 import 'package:mywatchlist/widgets/user/list/list_query.dart' show mediaTypeLabel;
 
 /// Locale-aware wording of the Simkl title page. Simkl's own words (English day names, status
@@ -38,17 +39,69 @@ abstract final class SimklFormat {
     return DateFormat.EEEE(_locale).format(DateTime(2024, 1, d));
   }
 
-  /// "Sunday at 23:15 (Asia/Tokyo)".
-  static String? airs(SimklAirs? airs) {
+  /// UTC offset, in minutes, of the zones Simkl prints for airing slots that never change with
+  /// daylight saving time. Other zones are shown as Simkl gives them.
+  static const _fixedOffsets = {
+    'asia/tokyo': 540,
+    'japan': 540,
+    'asia/seoul': 540,
+    'asia/shanghai': 480,
+    'asia/hong_kong': 480,
+    'asia/taipei': 480,
+    'asia/singapore': 480,
+    'asia/bangkok': 420,
+    'asia/jakarta': 420,
+    'asia/manila': 480,
+    'asia/kolkata': 330,
+    'utc': 0,
+    'gmt': 0,
+    'etc/utc': 0,
+  };
+
+  /// "Sunday at 23:15 (JST)": the airing slot Simkl prints in its own zone (`Asia/Tokyo`),
+  /// moved to the time zone setting ([zone]; [localOffset] is the device offset, a test seam).
+  /// A zone this app cannot convert exactly is shown as Simkl gives it.
+  static String? airs(SimklAirs? airs, {TimezonePref? zone, Duration Function()? localOffset}) {
     if (airs == null || airs.isEmpty) return null;
-    final day = weekday(airs.day);
-    final time = airs.time;
-    final base = day != null && time != null
-        ? S.current.Smp_Airs_Value(day, time)
-        : (day ?? time ?? '');
-    final zone = airs.timezone;
-    return zone == null ? base : '$base ($zone)';
+    var day = airs.day;
+    var time = airs.time;
+    var label = airs.timezone;
+    final from = _fixedOffsets[airs.timezone?.trim().toLowerCase()];
+    final clock = RegExp(r'^(\d{1,2}):(\d{2})').firstMatch(time ?? '');
+    final dayNumber = _days[day?.trim().toLowerCase()];
+    if (from != null && clock != null) {
+      final preference = zone ?? Preferences.content.timezone;
+      final to = switch (preference) {
+        TimezonePref.utc => 0,
+        TimezonePref.jst => 540,
+        TimezonePref.local => (localOffset ?? () => DateTime.now().timeZoneOffset)().inMinutes,
+      };
+      var minutes = int.parse(clock.group(1)!) * 60 + int.parse(clock.group(2)!) + to - from;
+      var shift = 0;
+      while (minutes < 0) {
+        minutes += 1440;
+        shift--;
+      }
+      while (minutes >= 1440) {
+        minutes -= 1440;
+        shift++;
+      }
+      time = '${(minutes ~/ 60).toString().padLeft(2, '0')}:${(minutes % 60).toString().padLeft(2, '0')}';
+      if (dayNumber != null) day = _dayName((dayNumber - 1 + shift) % 7 + 1);
+      label = switch (preference) {
+        TimezonePref.utc => 'UTC',
+        TimezonePref.jst => 'JST',
+        TimezonePref.local => null,
+      };
+    }
+    final dayText = weekday(day);
+    final base = dayText != null && time != null
+        ? S.current.Smp_Airs_Value(dayText, time)
+        : (dayText ?? time ?? '');
+    return label == null ? base : '$base ($label)';
   }
+
+  static String _dayName(int weekday) => _days.entries.firstWhere((e) => e.value == weekday).key;
 
   /// "2019-04-06" → "6 avr. 2019".
   static String? isoDate(String? iso) {

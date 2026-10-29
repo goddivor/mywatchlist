@@ -50,12 +50,12 @@ void main() {
       final service = SimklListService(client: fake.client, clock: () => now, owner: () => 'me');
       await service.anime();
       await service.anime();
-      expect(fake.seen, hasLength(1));
+      expect(fake.seen.where((r) => r.url.path == '/sync/all-items/anime'), hasLength(1));
       await service.anime(force: true);
-      expect(fake.seen, hasLength(2));
+      expect(fake.seen.where((r) => r.url.path == '/sync/all-items/anime'), hasLength(2));
       now = now.add(const Duration(minutes: 10));
       await service.anime();
-      expect(fake.seen, hasLength(3), reason: 'older than the ttl');
+      expect(fake.seen.where((r) => r.url.path == '/sync/all-items/anime'), hasLength(3), reason: 'older than the ttl');
     });
 
     test('another account never sees the kept list', () async {
@@ -65,7 +65,7 @@ void main() {
       await service.anime();
       who = 'b';
       await service.anime();
-      expect(fake.seen, hasLength(2));
+      expect(fake.seen.where((r) => r.url.path == '/sync/all-items/anime'), hasLength(2));
     });
 
     test('save sends the status and the score together, and removes a score with its own call', () async {

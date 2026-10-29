@@ -66,7 +66,7 @@ class SimklClient {
     DateTime Function()? now,
   })  : _auth = auth ?? UserSimklV2.instance.sendAuthenticated,
         _publicGet = publicGet ?? _defaultGet,
-        _clientId = clientId ?? (() => Constants.simklClientId),
+        _clientId = clientId ?? (() => UserSimklV2.instance.apiClientId),
         _appVersion = appVersion ?? _packageVersion,
         _now = now ?? DateTime.now;
 

@@ -23,7 +23,8 @@ void main() {
       const SimklHomeBlock(SimklFeed.premieres, 8),
       const SimklHomeBlock(null, 10),
       const SimklHomeBlock(SimklFeed.airing, 15),
-      const SimklHomeBlock(SimklFeed.trending, 12),
+      const SimklHomeBlock(SimklFeed.best, 12),
+      const SimklHomeBlock(SimklFeed.trending, 15),
     ]);
   });
 

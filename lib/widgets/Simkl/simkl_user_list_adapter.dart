@@ -2,11 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:mywatchlist/constants/constants.dart' show AccountType;
 import 'package:mywatchlist/services/api/SimKl/simkl_client.dart';
 import 'package:mywatchlist/services/api/SimKl/simkl_list_service.dart';
-import 'package:mywatchlist/services/api/SimKl/simkl_models.dart';
 import 'package:mywatchlist/user/user_simkl_v2.dart';
 import 'package:mywatchlist/utils/app_routes.dart';
-import 'package:mywatchlist/utils/web_launcher.dart' show launchWebView;
 import 'package:mywatchlist/widgets/Simkl/simkl_edit_sheet.dart';
+import 'package:mywatchlist/widgets/Simkl/simkl_media_widgets.dart' show openSimklTitle;
 import 'package:mywatchlist/widgets/common/list_sort_filter.dart';
 import 'package:mywatchlist/widgets/user/list/list_entry_view.dart';
 import 'package:mywatchlist/widgets/user/list/list_query.dart';
@@ -39,10 +38,11 @@ class SimklUserListAdapter extends UserListAdapter {
   @override
   List<ListSortOption> sortOptions(String category) => [
         for (final option in standardSortOptions(isAnime: true))
-          // Simkl has no priority, members, popularity, mean or air dates by day.
+          // Simkl has no priority, members, popularity or air dates by day.
           if (const {
             ListSortKeys.updated,
             ListSortKeys.score,
+            ListSortKeys.mean,
             ListSortKeys.title,
             ListSortKeys.progress,
             ListSortKeys.unseen,
@@ -98,13 +98,8 @@ class SimklUserListAdapter extends UserListAdapter {
 
   @override
   void open(BuildContext context, ListEntryView entry) {
-    final mal = entry.malId;
-    if (mal != null) {
-      AppRoutes.openContent(context, id: mal, category: 'anime');
-    } else {
-      // No MyAnimeList id to show the app's own detail screen: Simkl's page.
-      launchWebView(SimklImages.page(entry.id), context: context);
-    }
+    // The native Simkl page, whatever the title's other ids are.
+    openSimklTitle(context, simklId: entry.id, title: entry.title, posterUrl: entry.imageUrl);
   }
 
   @override

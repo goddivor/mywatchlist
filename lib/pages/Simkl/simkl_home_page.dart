@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mywatchlist/constants/constants.dart' show getTileSizeValues;
 import 'package:mywatchlist/generated/l10n.dart';
+import 'package:mywatchlist/services/api/SimKl/simkl_client.dart' show SimklSessionExpired;
 import 'package:mywatchlist/services/api/SimKl/simkl_discover_service.dart';
 import 'package:mywatchlist/services/api/SimKl/simkl_list_service.dart';
 import 'package:mywatchlist/services/api/SimKl/simkl_models.dart';
@@ -163,7 +164,7 @@ class _ContinueWatching extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SectionHeader(title: S.of(context).Sk_Continue_Watching),
-          HomeAsync<List<SimklMedia>>(
+          HomeAsync<List<_ContinueItem>>(
             cacheKey: _key,
             maxAge: const Duration(minutes: 3),
             refresh: refresh,
@@ -171,10 +172,39 @@ class _ContinueWatching extends StatelessWidget {
             loading: SimklRowSkeleton(cardWidth: cardWidth),
             builder: (context, items) => items.isEmpty
                 ? HomeMessage(icon: Icons.play_circle_outline_rounded, text: S.of(context).Sk_Continue_Empty)
-                : SimklPosterRow(
-                    items: items,
-                    cardWidth: cardWidth,
-                    onTap: (media) => openSimklMedia(context, media),
+                : SizedBox(
+                    height: SimklPosterRow.heightFor(context, cardWidth),
+                    child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.symmetric(horizontal: 15),
+                      itemCount: items.length,
+                      separatorBuilder: (_, __) => const SizedBox(width: 10),
+                      itemBuilder: (context, i) {
+                        final item = items[i];
+                        final card = SimklPosterCard(
+                          media: item.media,
+                          width: cardWidth,
+                          onTap: () => openSimklMedia(context, item.media),
+                        );
+                        final resume = item.resume;
+                        if (resume == null) return card;
+                        // Where the paused session stopped, along the bottom of the cover.
+                        return Stack(
+                          children: [
+                            card,
+                            Positioned(
+                              left: 6,
+                              right: 6,
+                              top: cardWidth * SimklPosterCard.aspect - 10,
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(2),
+                                child: LinearProgressIndicator(value: resume, minHeight: 3),
+                              ),
+                            ),
+                          ],
+                        );
+                      },
+                    ),
                   ),
           ),
         ],
@@ -182,8 +212,18 @@ class _ContinueWatching extends StatelessWidget {
     );
   }
 
-  static Future<List<SimklMedia>> _load(int limit) async {
-    final all = await SimklListService.instance.anime(force: false);
+  /// Paused sessions first (the episode they stopped in, and how far), then the titles being
+  /// watched, most recent first. Sessions are optional: Simkl failing to answer them leaves
+  /// the list alone.
+  static Future<List<_ContinueItem>> _load(int limit) async {
+    final service = SimklListService.instance;
+    final all = await service.anime(force: false);
+    var sessions = const <SimklPlayback>[];
+    try {
+      sessions = await service.playback();
+    } on SimklSessionExpired {
+      rethrow;
+    } catch (_) {}
     final watching = [
       for (final e in all)
         if (e.status == ListEntryStatus.current) e,
@@ -193,8 +233,25 @@ class _ContinueWatching extends StatelessWidget {
         if (x == null) return y == null ? 0 : 1;
         return y == null ? -1 : y.compareTo(x);
       });
-    return [
-      for (final e in watching.take(limit))
+    final items = <_ContinueItem>[];
+    final seen = <int>{};
+    for (final p in sessions) {
+      if (!seen.add(p.simklId)) continue;
+      final known = all.where((e) => e.id == p.simklId).firstOrNull;
+      items.add(_ContinueItem(
+        SimklMedia(
+          simklId: p.simklId,
+          malId: p.malId ?? known?.malId,
+          title: p.title,
+          posterUrl: p.posterUrl ?? known?.imageUrl,
+          episode: p.episode,
+        ),
+        p.progress > 0 ? p.progress / 100 : null,
+      ));
+    }
+    for (final e in watching) {
+      if (!seen.add(e.id)) continue;
+      items.add(_ContinueItem(
         SimklMedia(
           simklId: e.id,
           malId: e.malId,
@@ -202,6 +259,17 @@ class _ContinueWatching extends StatelessWidget {
           posterUrl: e.imageUrl,
           episode: e.progress + 1 > (e.total > 0 ? e.total : 1 << 30) ? null : e.progress + 1,
         ),
-    ];
+        null,
+      ));
+    }
+    return items.take(limit).toList();
   }
+}
+
+/// One "Continue watching" card: the title and, for a paused session, how far it got (0-1).
+class _ContinueItem {
+  final SimklMedia media;
+  final double? resume;
+
+  const _ContinueItem(this.media, this.resume);
 }
