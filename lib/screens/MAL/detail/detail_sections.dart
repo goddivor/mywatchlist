@@ -127,17 +127,8 @@ abstract final class DetailSections {
   };
 
   /// The user's visible section order for this category (contract pref).
-  /// A section the saved preference does not list yet ([TabType.Episodes], added
-  /// after the contract) is shown after Related until the contract lists it.
-  static List<TabType> order(DetailData data, [ContentPreferences? prefs]) {
-    final p = prefs ?? Preferences.content;
-    final tabs = p.visibleTabs(manga: data.isManga);
-    final listed = (data.isManga ? p.mangaTabs : p.animeTabs)
-        .any((t) => t.tabType == TabType.Episodes);
-    if (listed || data.isManga) return tabs;
-    final at = tabs.indexOf(TabType.Related);
-    return [...tabs]..insert(at == -1 ? tabs.length.clamp(0, 1) : at + 1, TabType.Episodes);
-  }
+  static List<TabType> order(DetailData data, [ContentPreferences? prefs]) =>
+      (prefs ?? Preferences.content).visibleTabs(manga: data.isManga);
 
   /// Sections to show, in order. [order] defaults to the saved preference.
   static List<DetailSection> build(DetailData data, {List<TabType>? order}) {
