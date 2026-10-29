@@ -182,6 +182,17 @@ class CustomEntryCard extends StatelessWidget {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.primary));
+      case CustomizableFieldType.time_left:
+        final left = entry.timeLeft;
+        if (left == null || left == Duration.zero) return const SizedBox.shrink();
+        return Row(mainAxisSize: MainAxisSize.min, children: [
+          Icon(Icons.hourglass_bottom_rounded, size: 13, color: muted?.color),
+          const SizedBox(width: 3),
+          Flexible(
+            child: Text(S.current.Ltf_Time_Left_Value(formatListDuration(left)),
+                maxLines: 1, overflow: TextOverflow.ellipsis, style: muted),
+          ),
+        ]);
     }
   }
 

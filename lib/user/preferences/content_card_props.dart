@@ -24,6 +24,9 @@ enum CustomizableFieldType {
   edit_btn,
   airing_date,
   next_episode_full_counter,
+
+  /// MWL: time still to watch ("5 h 20 min left"), anime still to watch only.
+  time_left,
 }
 
 /// Localized name and description of each field, for the card editor.
@@ -46,6 +49,7 @@ extension CustomizableFieldTypeText on CustomizableFieldType {
         CustomizableFieldType.airing_date => S.current.Card_Field_Airing_Date,
         CustomizableFieldType.next_episode_full_counter =>
           S.current.Card_Field_Next_Episode_Full,
+        CustomizableFieldType.time_left => S.current.Ltf_Field_Time_Left,
       };
 
   String get description => switch (this) {
@@ -67,6 +71,7 @@ extension CustomizableFieldTypeText on CustomizableFieldType {
         CustomizableFieldType.airing_date => S.current.Card_Field_Airing_Date_Desc,
         CustomizableFieldType.next_episode_full_counter =>
           S.current.Card_Field_Next_Episode_Full_Desc,
+        CustomizableFieldType.time_left => S.current.Ltf_Field_Time_Left_Desc,
       };
 }
 
@@ -244,5 +249,9 @@ const List<CustomizableField> defaultCustomizableFields = [
   CustomizableField(
       type: CustomizableFieldType.airing_date,
       position: FieldPosition(top: 65, left: 100),
+      hidden: true),
+  CustomizableField(
+      type: CustomizableFieldType.time_left,
+      position: FieldPosition(top: 95, left: 100),
       hidden: true),
 ];
