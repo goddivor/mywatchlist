@@ -2433,6 +2433,9 @@
         "tracker-followups"
       ],
       "owns": [
+        "test/units/simkl-pages/service_test.dart",
+        "test/units/simkl-pages/adapter_and_sheet_test.dart",
+        "lib/pages/Simkl/simkl_home_page.dart",
         "lib/widgets/Simkl/simkl_home_plan.dart",
         "test/units/simkl-pages/home_plan_test.dart",
         "lib/widgets/Simkl/media/**",
