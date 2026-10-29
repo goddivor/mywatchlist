@@ -205,7 +205,9 @@ void main() {
     });
     await pump(tester, anime(fake));
     await tester.tap(find.byTooltip('View all').first);
-    await tester.pumpAndSettle();
+    // The list keeps a spinner while more pages exist: it never settles.
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
     expect(find.text('Episode 1'), findsOneWidget);
     expect(fake.requests.any((r) => r.body.contains('"after":"MTI"')), isTrue,
         reason: 'the list asks for the page after the 12 the title page holds');
