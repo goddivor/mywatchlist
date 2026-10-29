@@ -209,11 +209,34 @@ class MalNotificationsHub extends ChangeNotifier {
       notifyListeners();
       return false;
     }
+    _confirmedRead.addAll(ids);
     onItemsRead?.call(ids);
     return true;
   }
 
-  Future<bool> markAllRead() => markRead(_items);
+  /// Marks every unread notification read. MAL's page lists at most 25 unread at a time, so
+  /// after each batch the hub is read again and the next unread ones are marked, until none
+  /// is left (at most [_markAllRounds] batches).
+  Future<bool> markAllRead() async {
+    var ok = await markRead(_items);
+    for (var round = 0; ok && round < _markAllRounds; round++) {
+      final feed = await refresh(quiet: true);
+      if (feed == null) break;
+      // What MAL accepted stays read even if a stale page still lists it as unread.
+      _items = [for (final i in _items) _confirmedRead.contains(i.id) ? i.copyWith(isRead: true) : i];
+      _syncUnread();
+      notifyListeners();
+      final pending = [for (final i in _items) if (!i.isRead) i];
+      if (pending.isEmpty) break;
+      ok = await markRead(pending);
+    }
+    return ok;
+  }
+
+  static const int _markAllRounds = 20;
+
+  /// Ids MAL confirmed read in this session (a page fetched just after can still list them).
+  final Set<String> _confirmedRead = {};
 
   /// Accepts or declines a friend request, then marks it read.
   Future<bool> answerFriendRequest(MalNotificationItem item, {required bool accept}) async {
