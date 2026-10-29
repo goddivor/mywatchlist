@@ -306,8 +306,9 @@ class MalApi {
     String category = "anime",
     List<String>? fields,
   }) async {
-    String endpoint =
-        category == "anime" ? animeSuggestedEndPoint : mangaSuggestedEndPoint;
+    // MAL v2 documents no manga suggestions: answer empty at once, no failing call.
+    if (category != "anime") return SearchResult();
+    String endpoint = animeSuggestedEndPoint;
     String url = '$endpoint?limit=$limit&offset=$offset';
 
     if (fields != null && fields.isNotEmpty) {
