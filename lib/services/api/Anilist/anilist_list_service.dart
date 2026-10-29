@@ -2,8 +2,8 @@ import 'package:flutter/foundation.dart';
 import 'package:mywatchlist/services/api/Anilist/anilist_graphql.dart';
 import 'package:mywatchlist/services/api/Anilist/anilist_list_write.dart';
 import 'package:mywatchlist/services/api/Anilist/anilist_media.dart';
+import 'package:mywatchlist/services/api/Anilist/anilist_profile_service.dart';
 import 'package:mywatchlist/services/notifications/notification_models.dart';
-import 'package:mywatchlist/user/preferences/preferences.dart';
 import 'package:mywatchlist/user/user_anilist_v2.dart';
 import 'package:mywatchlist/widgets/user/list/list_entry_view.dart';
 import 'package:mywatchlist/widgets/user/sync/sync_entry.dart' show SyncDates;
@@ -363,18 +363,24 @@ class AnilistListService {
     String? Function()? owner,
     DateTime Function()? clock,
     String Function()? titleLang,
+    Future<String> Function()? accountTitleLang,
     this.keepFor = const Duration(minutes: 1),
   })  : _client = client,
         _owner = owner ?? (() => UserAnilistV2.instance.username),
         _clock = clock ?? DateTime.now,
-        _titleLang = titleLang ?? (() => Preferences.general.preferredTitle.name);
+        _titleLang = titleLang,
+        _accountTitleLang =
+            accountTitleLang ?? (() => AnilistProfileService.instance.accountTitleLang());
 
   static AnilistListService instance = AnilistListService();
 
   final AnilistGraphql? _client;
   final String? Function() _owner;
   final DateTime Function() _clock;
-  final String Function() _titleLang;
+
+  /// Fixed title language (tests); when null the account's own AniList title language is used.
+  final String Function()? _titleLang;
+  final Future<String> Function() _accountTitleLang;
   final Duration keepFor;
 
   final Map<String, _KeptList> _kept = {};
@@ -436,6 +442,8 @@ class AnilistListService {
   Future<List<ListEntryView>> _load(String category, String who) async {
     final name = who.isNotEmpty ? who : await _viewerName();
     final isAnime = category != 'manga';
+    final fixed = _titleLang;
+    final titleLang = fixed != null ? fixed() : await _accountTitleLang();
     final byMedia = <int, AnilistRow>{};
     var options = const AnilistListOptions();
     var chunk = 1;
@@ -465,7 +473,7 @@ class AnilistListService {
         if (list is! Map || list['entries'] is! List) continue;
         // A custom list repeats entries of the main ones: keyed by media, the last wins.
         for (final row in parseAnilistRows(list['entries'] as List,
-            category: category, titleLang: _titleLang())) {
+            category: category, titleLang: titleLang)) {
           byMedia[row.view.id] = row;
         }
       }

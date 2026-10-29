@@ -173,15 +173,34 @@ class AppImage extends StatelessWidget {
   Widget _buildPlaceholder(BuildContext context) {
     final custom = placeholder;
     if (custom != null) return custom(context);
+    final Widget box;
     if (shimmerPlaceholder) {
-      return ShimmerColor(ColoredBox(
+      box = ShimmerColor(ColoredBox(
           color: AppColors.of(context).shimmerBase, child: const SizedBox.expand()));
+    } else {
+      box = ColoredBox(
+        color: placeholderColor ?? Theme.of(context).colorScheme.surfaceContainerHighest,
+        child: const SizedBox.expand(),
+      );
     }
-    return ColoredBox(
-      color: placeholderColor ?? Theme.of(context).colorScheme.surfaceContainerHighest,
-      child: const SizedBox.expand(),
+    // `SizedBox.expand` has no size of its own: in an unbounded height (a list item, a column
+    // in a scroll view) it would ask for infinity. Size it from the width then, as a poster.
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.hasBoundedHeight) return box;
+        if (!constraints.hasBoundedWidth) return const SizedBox.shrink();
+        return SizedBox(
+          width: constraints.maxWidth,
+          height: constraints.maxWidth * placeholderAspect,
+          child: box,
+        );
+      },
     );
   }
+
+  /// Height / width of the default placeholder when the slot's height is unbounded (a poster).
+  @visibleForTesting
+  static const double placeholderAspect = 1.5;
 
   Widget _buildError(BuildContext context, double? slotWidth, double? slotHeight) {
     final custom = errorWidget;

@@ -16,8 +16,20 @@ import 'package:mywatchlist/widgets/forum/forum_common.dart' show ForumMessage, 
 /// menu also opens the latest reviews and the new thread editor.
 ///
 /// With [mediaId] it is the forum of one title (no Activity tab).
+///
+/// With [standalone] it is a page of its own: a real app bar with a back button instead of
+/// the home bar (which, pushed over a page, would cover it). Use it for a pushed page, such as
+/// a title's forum or the home "view all".
 class AnilistForumPage extends StatefulWidget {
-  const AnilistForumPage({super.key, this.service, this.initialTab = 0, this.mediaId});
+  const AnilistForumPage({
+    super.key,
+    this.service,
+    this.initialTab = 0,
+    this.mediaId,
+    this.standalone = false,
+  });
+
+  final bool standalone;
 
   final AnilistSocialService? service;
 
@@ -62,38 +74,54 @@ class _AnilistForumPageState extends State<AnilistForumPage> with SingleTickerPr
     final s = S.of(context);
     final scheme = Theme.of(context).colorScheme;
     final single = widget.mediaId != null;
+    final standalone = widget.standalone;
+    final menu = PopupMenuButton<_ForumAction>(
+      icon: Icon(Icons.more_vert, color: scheme.onSurfaceVariant),
+      onSelected: _menu,
+      itemBuilder: (_) => [
+        if (!single)
+          PopupMenuItem(value: _ForumAction.reviews, child: Text(s.Als_Latest_Reviews)),
+        if (_service.signedIn)
+          PopupMenuItem(value: _ForumAction.newThread, child: Text(s.Als_New_Thread)),
+      ],
+    );
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: standalone ? null : Colors.transparent,
+      appBar: standalone
+          ? AppBar(
+              title: Text(s.Al_Forum_Title),
+              actions: [menu],
+              bottom: single
+                  ? null
+                  : TabBar(
+                      controller: _tabs,
+                      tabs: [Tab(text: s.Als_Tab_Forum), Tab(text: s.Als_Activity)],
+                    ),
+            )
+          : null,
       body: Column(
         children: [
-          AppBarHome(
-            title: s.Al_Forum_Title,
-            showSearch: false,
-            showBookmarks: false,
-            showCalendar: false,
-          ),
-          Row(
-            children: [
-              Expanded(
-                child: single
-                    ? const SizedBox(height: 8)
-                    : TabBar(
-                        controller: _tabs,
-                        tabs: [Tab(text: s.Als_Tab_Forum), Tab(text: s.Als_Activity)],
-                      ),
-              ),
-              PopupMenuButton<_ForumAction>(
-                icon: Icon(Icons.more_vert, color: scheme.onSurfaceVariant),
-                onSelected: _menu,
-                itemBuilder: (_) => [
-                  if (!single)
-                    PopupMenuItem(value: _ForumAction.reviews, child: Text(s.Als_Latest_Reviews)),
-                  if (_service.signedIn)
-                    PopupMenuItem(value: _ForumAction.newThread, child: Text(s.Als_New_Thread)),
-                ],
-              ),
-            ],
-          ),
+          if (!standalone) ...[
+            AppBarHome(
+              title: s.Al_Forum_Title,
+              showSearch: false,
+              showBookmarks: false,
+              showCalendar: false,
+            ),
+            Row(
+              children: [
+                Expanded(
+                  child: single
+                      ? const SizedBox(height: 8)
+                      : TabBar(
+                          controller: _tabs,
+                          tabs: [Tab(text: s.Als_Tab_Forum), Tab(text: s.Als_Activity)],
+                        ),
+                ),
+                menu,
+              ],
+            ),
+          ],
           Expanded(
             child: TabBarView(
               controller: _tabs,
