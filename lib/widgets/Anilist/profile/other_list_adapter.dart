@@ -3,12 +3,15 @@ import 'package:mywatchlist/constants/constants.dart' show AccountType;
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/services/api/Anilist/anilist_graphql.dart';
 import 'package:mywatchlist/services/api/Anilist/anilist_list_service.dart';
+import 'package:mywatchlist/services/api/Anilist/anilist_list_write.dart' show AnilistScoreFormat;
 import 'package:mywatchlist/services/api/Anilist/anilist_media.dart';
 import 'package:mywatchlist/services/api/Anilist/anilist_profile_service.dart';
 import 'package:mywatchlist/user/base_user.dart';
 import 'package:mywatchlist/user/user_anilist_v2.dart';
 import 'package:mywatchlist/utils/app_routes.dart';
 import 'package:mywatchlist/widgets/Anilist/social/anilist_links.dart' show openAnilistTitle;
+import 'package:mywatchlist/widgets/Anilist/list/anilist_list_look.dart'
+    show anilistPercentText, anilistUserScoreText;
 import 'package:mywatchlist/widgets/common/list_sort_filter.dart';
 import 'package:mywatchlist/widgets/user/list/list_entry_view.dart';
 import 'package:mywatchlist/widgets/user/list/list_query.dart';
@@ -65,7 +68,18 @@ class AnilistOtherListSource {
   ''';
 
   final Map<String, Future<List<ListEntryView>>> _lists = {};
+  final Map<String, AnilistScoreFormat> _formats = {};
+  final Map<String, Map<int, int>> _rawScores = {};
   final Map<String, Future<Map<int, AnilistMine>>> _mine = {};
+
+  /// The score format that user chose for [category] (`mediaListOptions.scoreFormat`), once the
+  /// list is loaded; AniList's default (POINT_10) before.
+  AnilistScoreFormat scoreFormatOf(String category) =>
+      _formats[category] ?? AnilistScoreFormat.point10;
+
+  /// The exact 0-100 score of the title [mediaId] on that user's list (0 = unscored), null when
+  /// unknown.
+  int? rawScoreOf(String category, int mediaId) => _rawScores[category]?[mediaId];
 
   /// Every entry of [category] (`anime` | `manga`) the user shows.
   Future<List<ListEntryView>> all(String category, {bool force = false}) {
@@ -82,6 +96,7 @@ class AnilistOtherListSource {
   Future<List<ListEntryView>> _load(String category) async {
     final titleLang = await _profile.accountTitleLang();
     final byMedia = <int, ListEntryView>{};
+    final raws = <int, int>{};
     var chunk = 1;
     while (true) {
       final data = await _gql.query('''
@@ -89,6 +104,7 @@ class AnilistOtherListSource {
           MediaListCollection(userName: \$name, type: \$type, chunk: \$chunk,
               perChunk: \$perChunk, forceSingleCompletedList: true) {
             hasNextChunk
+            ${chunk == 1 ? 'user { mediaListOptions { scoreFormat } }' : ''}
             lists { entries { $_entryFields } }
           }
         }
@@ -100,16 +116,21 @@ class AnilistOtherListSource {
       }, auth: signedIn);
       final collection = data['MediaListCollection'];
       if (collection is! Map) break;
+      final user = collection['user'];
+      final options = user is Map ? user['mediaListOptions'] : null;
+      if (options is Map) _formats[category] = AnilistScoreFormat.parse(options['scoreFormat']);
       for (final list in (collection['lists'] as List? ?? const [])) {
         if (list is! Map || list['entries'] is! List) continue;
         for (final row in parseAnilistRows(list['entries'] as List,
             category: category, titleLang: titleLang)) {
           byMedia[row.view.id] = row.view;
+          raws[row.view.id] = row.detail.scoreRaw;
         }
       }
       if (collection['hasNextChunk'] != true || chunk >= 40) break;
       chunk++;
     }
+    _rawScores[category] = raws;
     return List.unmodifiable(byMedia.values);
   }
 
@@ -203,6 +224,17 @@ class AnilistReadOnlyListAdapter extends UserListAdapter {
   @override
   String? apiSort(String category, String sortKey, SortDirection direction) => null;
 
+  /// That user's score in the score format they chose (stars, a face, 0-100...), from the exact
+  /// 0-100 value AniList keeps.
+  @override
+  ListScoreText? userScore(ListEntryView entry) => anilistUserScoreText(
+      source.rawScoreOf(entry.category, entry.id) ?? entry.score * 10,
+      source.scoreFormatOf(entry.category));
+
+  /// AniList's community score as a percentage (`82%`).
+  @override
+  ListScoreText? meanScore(ListEntryView entry) => anilistPercentText(entry);
+
   @override
   Future<ListPage> fetch({
     required String category,
@@ -255,7 +287,19 @@ class AnilistReadOnlyListAdapter extends UserListAdapter {
 class AnilistCompareLook extends ListEntryLook {
   final Map<int, AnilistMine> mine;
 
-  const AnilistCompareLook(this.mine);
+  /// The look of the list the cards belong to: scores keep that user's format and the
+  /// community percentage in compare mode.
+  final ListEntryLook? base;
+
+  const AnilistCompareLook(this.mine, {this.base});
+
+  @override
+  ListScoreText? userScore(ListEntryView entry) =>
+      base?.userScore(entry) ?? super.userScore(entry);
+
+  @override
+  ListScoreText? meanScore(ListEntryView entry) =>
+      base?.meanScore(entry) ?? super.meanScore(entry);
 
   @override
   List<ListCardBadge> cardBadges(ListEntryView entry) {

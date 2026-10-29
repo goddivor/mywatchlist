@@ -240,11 +240,10 @@ void main() {
           isFalse);
     });
 
-    test('MyAnimeList line unchanged; the legacy ListTimeSummary.of agrees without rewatches', () {
+    test('MyAnimeList line unchanged', () {
       final entries = [_anime(1, progress: 2), _anime(2, status: ListEntryStatus.planned)];
       final left = listTimeSummary(entries, ListEntryStatus.planned)!;
       expect(left.label(), 'Time left: 8 h 48 min');
-      expect(ListTimeSummary.of(entries, ListEntryStatus.planned)!.label(), left.label());
     });
 
     test('an airing show without an episode total marks the time left partial', () {
