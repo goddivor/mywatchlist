@@ -378,8 +378,13 @@ class AnilistFeedsService {
         perPage,
         staff ? 'staff' : 'characters',
         '${birthday ? 'isBirthday: true, ' : ''}sort: [FAVOURITES_DESC]',
-        AnilistPersonRef.fields,
+        // `languageV2` (in AnilistPersonRef.fields) exists on Staff only: a Character asking
+        // it fails the whole request.
+        staff ? AnilistPersonRef.fields : characterFields,
       );
+
+  /// What a character card needs ([AnilistPersonRef.fromJson] reads it).
+  static const String characterFields = 'id name { userPreferred full native } image { medium } favourites';
 
   /// The latest reviews of [mediaType] (`ANIME` | `MANGA`).
   static String reviewsPart(String mediaType, {int perPage = 12}) => _page(
@@ -464,7 +469,10 @@ class AnilistFeedsService {
     final future = _fetch(parts, authParts).then((feed) {
       _kept[key] = (feed: feed, at: _clock());
       return feed;
-    }).whenComplete(() => _loading.remove(key));
+    }).whenComplete(() {
+      // A block body: `remove` returns this very future, which whenComplete would await.
+      _loading.remove(key);
+    });
     return _loading[key] = future;
   }
 
