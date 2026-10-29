@@ -137,6 +137,7 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage>
           ],
         ),
         if (supported) const _MalHubGroup(),
+        if (supported) const _AnilistGroup(),
         PrefGroup(
           title: s.Notif_Sec_Look,
           children: [
@@ -232,6 +233,36 @@ class _MalHubGroup extends StatelessWidget {
           onChanged: (v) async {
             await messages.setPush(v);
             await after();
+          },
+        ),
+      ],
+    );
+  }
+}
+
+/// The AniList switch: "N new AniList notifications" from the background job while the app
+/// is closed. Only with an AniList account; needs the master switch.
+class _AnilistGroup extends StatelessWidget {
+  const _AnilistGroup();
+
+  @override
+  Widget build(BuildContext context) {
+    final signedIn = context.select<UserManager, bool>((m) => m.isAuthenticated(AccountType.anilist));
+    if (!signedIn) return const SizedBox.shrink();
+    final s = S.current;
+    final master = context.select((PreferencesBloc b) => b.state.notifications.enabled);
+    final notifier = AnilistBackgroundNotifier.instance;
+    return PrefGroup(
+      title: s.Ahx_Settings_Section,
+      children: [
+        _MalSwitch(
+          icon: Icons.notifications_none_rounded,
+          title: s.Ahx_Switch_Push,
+          value: notifier.push,
+          enabled: master,
+          onChanged: (v) async {
+            await notifier.setPush(v);
+            await MalBackgroundPolling.instance.sync();
           },
         ),
       ],
