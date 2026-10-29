@@ -1,0 +1,9 @@
+{
+  "@@locale": "en",
+  "Mhw_Section": "MyAnimeList",
+  "Mhw_Switch_Hub": "Notifications",
+  "Mhw_Switch_Friends": "Friends' activity",
+  "Mhw_Switch_Messages": "Private messages",
+  "Mhw_Message_From": "{sender} sent you a message",
+  "@Mhw_Message_From": { "placeholders": { "sender": { "type": "String" } } }
+}

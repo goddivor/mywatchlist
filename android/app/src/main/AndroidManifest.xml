@@ -10,6 +10,10 @@
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"/>
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
 
+    <!-- MAL notifications while the app is closed (workmanager): the plugin's own manifest adds
+         the WorkManager services and the foreground-service permissions it needs, and WorkManager
+         re-registers the periodic job after a reboot by itself; nothing else is declared here. -->
+
     <!-- Calendar (add_2_calendar): add an airing episode to the device calendar. -->
     <uses-permission android:name="android.permission.READ_CALENDAR"/>
     <uses-permission android:name="android.permission.WRITE_CALENDAR"/>
