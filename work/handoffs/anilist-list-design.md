@@ -7,6 +7,8 @@
 - `anilist-media-page` (anilist-media-page)
 
 ## Owns (may create or edit ONLY these)
+- `test/units/mal-list-time/list_time_test.dart`
+- `lib/widgets/user/list/list_entry_view.dart`
 - `lib/pages/Anilist/anilist_user_page.dart`
 - `lib/widgets/Anilist/list/**`
 - `lib/widgets/Anilist/anilist_user_list_adapter.dart`
@@ -17,6 +19,7 @@
 Plus `PROJECT-STATE.md` (rewrite in place, within its cap) and `docs/DECISIONS.md` (append one line per decision). Anything else you need is a FINDING to report, never an edit.
 
 ## Goal
+- From tracker-list-hooks (#315): override AnilistUserListAdapter.userScore / communityScore with the account's score format (POINT_100, POINT_10_DECIMAL, POINT_10, POINT_5 stars, POINT_3 faces) and percentages for the community score (checker batch 4: AniList cards always show 0-10); move anilist_list_view.dart:719 and test/units/mal-list-time/list_time_test.dart to listTimeSummary, then delete ListTimeSummary.of.
 - Redesign the AniList list (My List and other users' lists) from the AniList part of docs/tracker-ui-references.md, sections 'My List' and 'Score display rules': custom lists, the user's score format everywhere, the label rail (format · 'Ep N in Xd' · 'N behind' · status), title scores as percentages.
 - Owner rule 2026-10-29: each tracker is its own app; DailyAL's UI is the reference for MAL only. Follow the matching section of docs/tracker-ui-references.md (recommended block order and the data field behind each block); own files and own layout; every item opens this tracker's native page. No explanatory captions; theme tokens; English + French; fakes only in tests.
 

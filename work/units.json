@@ -3642,6 +3642,8 @@
         "anilist-media-page"
       ],
       "owns": [
+        "test/units/mal-list-time/list_time_test.dart",
+        "lib/widgets/user/list/list_entry_view.dart",
         "lib/pages/Anilist/anilist_user_page.dart",
         "lib/widgets/Anilist/list/**",
         "lib/widgets/Anilist/anilist_user_list_adapter.dart",
