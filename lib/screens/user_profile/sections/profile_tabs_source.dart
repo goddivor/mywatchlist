@@ -611,7 +611,7 @@ ProfilePage<InterestStack> parseProfileStacksPage((String, int) args) {
 }
 
 /// The entries of `/blog/<name>`: a date header, a bold title, the text and a footer with
-/// the comment count, as siblings.
+/// the comment count, as siblings. The categories sidebar is not a post.
 List<ProfileBlogPost> parseProfileBlogPage(String body) {
   final doc = _profileDocument(body);
   final posts = <ProfileBlogPost>[];
@@ -632,7 +632,9 @@ List<ProfileBlogPost> parseProfileBlogPage(String body) {
         text = node;
       }
     }
-    if (title.isEmpty && text == null) continue;
+    // A post has a bold title or a "Posted by" footer; the sidebar's "Categories" block is a
+    // normal_header too, followed only by its links.
+    if (title.isEmpty && footer == null) continue;
     final comments = footer?.querySelector('a[href*="eid="]');
     final href = comments?.attributes['href'] ?? '';
     posts.add(ProfileBlogPost(
