@@ -1,0 +1,13 @@
+{
+  "@@locale": "en",
+  "Skp_Time_Spent": "Time spent",
+  "Skp_Left_To_Watch": "Left to watch",
+  "Skp_Top_Rated": "Top rated by me",
+  "Skp_Lists": "Lists",
+  "Skp_Dur_Days_Hours": "{days}d {hours}h",
+  "@Skp_Dur_Days_Hours": { "placeholders": { "days": { "type": "int" }, "hours": { "type": "int" } } },
+  "Skp_Dur_Hours_Mins": "{hours}h {mins}m",
+  "@Skp_Dur_Hours_Mins": { "placeholders": { "hours": { "type": "int" }, "mins": { "type": "int" } } },
+  "Skp_Dur_Mins": "{mins}m",
+  "@Skp_Dur_Mins": { "placeholders": { "mins": { "type": "int" } } }
+}
