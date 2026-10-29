@@ -2,11 +2,14 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart' show MissingPluginException;
 import 'package:html_unescape/html_unescape_small.dart';
 import 'package:http/http.dart' as http;
 import 'package:mywatchlist/screens/user_profile/sections/profile_tabs_source.dart';
 import 'package:mywatchlist/services/api/MAL/scrapper/user_friends.dart';
 import 'package:mywatchlist/services/api/MAL/web/mal_web_client.dart';
+import 'package:mywatchlist/services/api/MAL/web/mal_web_form_submitter.dart';
+import 'package:mywatchlist/services/auth/mal_web_session.dart' show NativeWebViewCookies;
 
 // ---------------------------------------------------------------------------
 // MAL's notification hub (https://myanimelist.net/notification)
@@ -411,11 +414,23 @@ MalNotificationFeed? parseRequestItems(String body) {
 /// items read, answer friend requests. Endpoints and bodies follow MAL's own script
 /// (`NotificationContainerMixin`): JSON `{notification_ids: [...]}` with the page's
 /// `csrf_token` added to the JSON, as MAL's `ajaxPrefilter` does.
+///
+/// The three writes are sent from MAL's real `/notification` page in the invisible WebView
+/// ([MalWebFormSubmitter.postFromPage]), with MAL's own `$.ajax`, so they behave exactly
+/// like the site. Plain HTTP ([MalWebClient.postJson]) is only the fallback when there is no
+/// WebView on the platform.
 class MalNotificationsApi {
   /// [httpClient] is no longer used (every request goes through [client]); kept so the
-  /// existing callers still compile.
-  MalNotificationsApi({MalWebClient? client, http.Client Function()? httpClient})
-      : _clientOverride = client;
+  /// existing callers still compile. [webView] forces the WebView path on or off (default:
+  /// on where the platform has a WebView).
+  MalNotificationsApi({
+    MalWebClient? client,
+    http.Client Function()? httpClient,
+    MalWebFormSubmitter? submitter,
+    bool? webView,
+  })  : _clientOverride = client,
+        _submitterOverride = submitter,
+        _webView = webView ?? (submitter != null || NativeWebViewCookies.supported);
 
   static MalNotificationsApi instance = MalNotificationsApi();
 
@@ -430,8 +445,18 @@ class MalNotificationsApi {
   static bool parseInline = false;
 
   final MalWebClient? _clientOverride;
+  final MalWebFormSubmitter? _submitterOverride;
+  MalWebFormSubmitter? _ownSubmitter;
+  bool _webView;
 
   MalWebClient get client => _clientOverride ?? MalWebClient.instance;
+
+  /// The WebView sender: the one given, else one on [client] (the shared one by default).
+  MalWebFormSubmitter get submitter =>
+      _submitterOverride ??
+      (_clientOverride == null
+          ? MalWebFormSubmitter.instance
+          : (_ownSubmitter ??= MalWebFormSubmitter(client: _clientOverride)));
 
   /// The hub, newest first. Throws [MalWebNoSession] without a website session,
   /// [MalWebSessionExpired] when MAL sends the request to its login page, and
@@ -473,36 +498,89 @@ class MalNotificationsApi {
   Future<bool> denyFriendRequests(Iterable<MalNotificationItem> items) =>
       _postIds(denyPath, [for (final i in items) i.rawId]);
 
+  /// Sends `{notification_ids: ids}` to [path]: from MAL's page in the WebView when there is
+  /// one, else as plain HTTP. True only when MAL answers `{"success": true}`.
+  Future<bool> _postIds(String path, List<Object> ids) async {
+    if (ids.isEmpty) return true;
+    if (_webView) {
+      try {
+        return await _postFromPage(path, ids);
+      } on MissingPluginException catch (e) {
+        _unavailable(e);
+      } on UnimplementedError catch (e) {
+        _unavailable(e);
+      }
+    }
+    return _postHttp(path, ids);
+  }
+
+  /// The platform has no WebView after all: plain HTTP from now on.
+  void _unavailable(Object error) {
+    debugPrint('MAL notifications: no WebView ($error), plain HTTP instead');
+    _webView = false;
+  }
+
+  Future<bool> _postFromPage(String path, List<Object> ids) async {
+    final answer = await submitter.postFromPage(MalWebAjax(
+      page: Uri.parse('${MalWebClient.base}$pagePath'),
+      path: path,
+      body: {'notification_ids': ids},
+    ));
+    final status = answer.status;
+    final body = answer.body;
+    if (status >= 200 && status < 300) {
+      if (accepted(body)) return true;
+      // The XHR followed a redirect to the login page.
+      if (_looksLoggedOut(body)) {
+        await client.sessionExpired();
+        throw const MalWebSessionExpired();
+      }
+      _logRefusal(path, status, body);
+      return false;
+    }
+    _logRefusal(path, status, body);
+    throw MalWebActionFailed(statusCode: status);
+  }
+
   /// One JSON POST through [MalWebClient.postJson], which adds the page's `csrf_token`,
   /// fetches it again once when MAL refuses it and turns a login redirect into
   /// [MalWebSessionExpired]. Any other redirect is a refusal.
-  Future<bool> _postIds(String path, List<Object> ids) async {
-    if (ids.isEmpty) return true;
+  Future<bool> _postHttp(String path, List<Object> ids) async {
     final response = await client.postJson(
       path,
       {'notification_ids': ids},
       referer: '${MalWebClient.base}$pagePath',
     );
     final status = response.statusCode;
-    if (status >= 300 && status < 400) return false;
-    if (status != 200) throw MalWebActionFailed(statusCode: status);
-    return _accepted(response.body);
+    if (status >= 300 && status < 400) {
+      _logRefusal(path, status, response.body);
+      return false;
+    }
+    if (status != 200) {
+      _logRefusal(path, status, response.body);
+      throw MalWebActionFailed(statusCode: status);
+    }
+    if (accepted(response.body)) return true;
+    _logRefusal(path, status, response.body);
+    return false;
   }
 
-  /// MAL answers `true`, or an object; an `errors` / `error` key is a refusal.
-  static bool _accepted(String body) {
+  static void _logRefusal(String path, int status, String body) {
     final text = body.trim();
-    if (text.isEmpty) return true;
+    debugPrint('MAL notifications: $path refused ($status) '
+        '${text.length > 200 ? text.substring(0, 200) : text}');
+  }
+
+  /// MAL accepted the write: a JSON object with `success: true` (what MAL answers, checked
+  /// on the site 2026-10-29). Anything else (an HTML page, an empty body, `errors`) is a
+  /// refusal.
+  @visibleForTesting
+  static bool accepted(String body) {
     try {
-      final decoded = jsonDecode(text);
-      if (decoded is bool) return decoded;
-      if (decoded is Map) {
-        if (decoded['errors'] != null || decoded['error'] != null) return false;
-        return true;
-      }
-      return true;
+      final decoded = jsonDecode(body.trim());
+      return decoded is Map && decoded['success'] == true;
     } on FormatException {
-      return text.contains('true');
+      return false;
     }
   }
 }

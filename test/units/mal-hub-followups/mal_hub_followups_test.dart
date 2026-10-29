@@ -224,7 +224,7 @@ void main() {
       final session = await _connected();
       final a = api(session, (r) async {
         if (r.method == 'GET') return http.Response("<meta name='csrf_token' content='tok1'>", 200);
-        return http.Response('true', 200);
+        return http.Response('{"success":true}', 200);
       });
       expect(await a.markRead([item('11'), item('12')]), isTrue);
       final posts = sent.where((r) => r.method == 'POST').toList();

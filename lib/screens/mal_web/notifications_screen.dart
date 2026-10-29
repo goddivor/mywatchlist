@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/main.dart' show appNavigatorKey;
+import 'package:mywatchlist/services/api/MAL/web/mal_web_form_submitter.dart' show MalWebFormHost;
 import 'package:mywatchlist/services/auth/mal_auth_v2.dart';
 import 'package:mywatchlist/services/notifications/mal_hub.dart';
 import 'package:mywatchlist/services/notifications/mal_hub_poller.dart';
@@ -128,12 +129,15 @@ class _MalNotificationsScreenState extends State<MalNotificationsScreen> with Si
           ],
         ),
       ),
-      body: TabBarView(
-        controller: _tabs,
-        children: [
-          _HubTab(hub: _hub, onFailed: () => _snack(S.current.Ms_Action_Failed)),
-          _FriendsTab(hub: _hub),
-        ],
+      // Mark read and friend requests are sent from MAL's page in an invisible WebView.
+      body: MalWebFormHost(
+        child: TabBarView(
+          controller: _tabs,
+          children: [
+            _HubTab(hub: _hub, onFailed: () => _snack(S.current.Ms_Action_Failed)),
+            _FriendsTab(hub: _hub),
+          ],
+        ),
       ),
     );
   }
