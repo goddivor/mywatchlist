@@ -4,7 +4,7 @@ import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/user/accounts/account_status.dart';
 import 'package:mywatchlist/user/language/language_bloc.dart';
 import 'package:mywatchlist/user/trackers/models/tracker_model.dart';
-import 'package:mywatchlist/user/trackers/widgets/tracker_tile.dart';
+import 'package:mywatchlist/user/accounts/widgets/account_tile.dart';
 import 'package:mywatchlist/widgets/common/logout_dialog.dart';
 
 import '../../helpers/pump_app.dart';
@@ -20,7 +20,7 @@ void main() {
           VoidCallback? onSignOut}) =>
       SizedBox(
         width: 380,
-        child: TrackerTile(
+        child: AccountTile(
           info: TrackerInfo.aniList,
           status: status,
           username: 'neo',

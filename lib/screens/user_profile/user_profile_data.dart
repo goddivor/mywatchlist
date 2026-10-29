@@ -117,8 +117,9 @@ class UserProfileData {
   final String? birthday;
   final String? joined;
 
-  /// The account's time zone and Supporter status; only the official API gives them, so only
-  /// for the signed-in user.
+  /// The account's time zone (only the official API gives it, so only for the signed-in
+  /// user) and Supporter status (official API for the signed-in user, MAL's profile page
+  /// for everybody else).
   final String? timezone;
   final bool isSupporter;
 
@@ -458,7 +459,7 @@ class UserProfileRepository {
       birthday: mal?.birthday?.toIso8601String() ?? clean(jikan?['birthday'] as String?),
       joined: clean(mal?.joinedAt) ?? clean(jikan?['joined'] as String?),
       timezone: clean(mal?.timezone),
-      isSupporter: mal?.isSupporter ?? false,
+      isSupporter: mal?.isSupporter ?? (jikan?['is_supporter'] == true),
       lastOnline: clean(jikan?['last_online'] as String?),
       about: clean(jikan?['about'] as String?),
       aboutModern: jikan?['about_modern'] == true,
