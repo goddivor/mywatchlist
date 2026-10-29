@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:mywatchlist/constants/constants.dart' show AccountType;
-import 'package:mywatchlist/generated/l10n.dart';
+import 'package:mywatchlist/services/api/Kitsu/kitsu_graphql.dart' show KitsuMediaKind;
 import 'package:mywatchlist/services/api/Kitsu/kitsu_http.dart';
 import 'package:mywatchlist/services/api/Kitsu/kitsu_library.dart';
 import 'package:mywatchlist/services/tracker_sync_service.dart';
 import 'package:mywatchlist/user/preferences/preferences.dart';
 import 'package:mywatchlist/user/user_kitsu_v2.dart';
 import 'package:mywatchlist/utils/app_routes.dart';
+import 'package:mywatchlist/widgets/Kitsu/kitsu_open.dart';
 import 'package:mywatchlist/widgets/common/list_sort_filter.dart';
 import 'package:mywatchlist/widgets/user/edit/edit_rules.dart';
 import 'package:mywatchlist/widgets/user/edit/list_entry.dart';
@@ -97,15 +98,14 @@ class KitsuUserListAdapter extends UserListAdapter {
 
   @override
   void open(BuildContext context, ListEntryView entry) {
-    final mal = entry.malId;
-    if (mal == null) {
-      // The detail screens are MyAnimeList screens: a title Kitsu maps to no MAL page has none.
-      ScaffoldMessenger.maybeOf(context)
-        ?..hideCurrentSnackBar()
-        ..showSnackBar(SnackBar(content: Text(S.current.Kitsu_No_Mal_Match)));
-      return;
-    }
-    AppRoutes.openContent(context, id: mal, category: entry.category);
+    // The native Kitsu page: every title opens, mapped to MyAnimeList or not.
+    openKitsuTitle(
+      context,
+      kind: entry.isAnime ? KitsuMediaKind.anime : KitsuMediaKind.manga,
+      id: '${entry.id}',
+      title: entry.title,
+      posterUrl: entry.largeImageUrl ?? entry.imageUrl,
+    );
   }
 
   Future<String?> _entryIdOf(ListEntryView entry) async {

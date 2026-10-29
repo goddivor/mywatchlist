@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/pages/Kitsu/kitsu_browse_screen.dart';
+import 'package:mywatchlist/pages/Kitsu/kitsu_media_page.dart' as title_page;
+import 'package:mywatchlist/services/api/Kitsu/kitsu_graphql.dart';
+import 'package:mywatchlist/services/api/Kitsu/kitsu_media_detail.dart';
 import 'package:mywatchlist/services/api/Kitsu/kitsu_catalog.dart';
 
 import 'kitsu_fakes.dart';
@@ -39,7 +44,11 @@ void main() {
     expect(fake.requests.single.url.queryParameters['sort'], 'ratingRank');
   });
 
-  testWidgets('a title without a MyAnimeList page says so on tap', (tester) async {
+  testWidgets('a title without a MyAnimeList page still opens its Kitsu page on tap', (tester) async {
+    final detail = KitsuMediaDetailService.instance;
+    addTearDown(() => KitsuMediaDetailService.instance = detail);
+    KitsuMediaDetailService.instance = KitsuMediaDetailService(
+        graphql: KitsuGraphql(client: MockClient((_) async => http.Response('{}', 503))));
     final fake = FakeKitsu((r) async => jsonResponse({
           'data': [animeResource(2, 'Dungeon Meshi')],
           'included': mappingsOf(2),
@@ -51,7 +60,9 @@ void main() {
     await tester.pump();
     await tester.tap(find.text('Dungeon Meshi'));
     await tester.pump();
-    expect(find.text(S.current.Kitsu_No_Mal_Match), findsOneWidget);
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(find.byType(title_page.KitsuMediaPage), findsOneWidget);
+    expect(find.text(S.current.Kitsu_No_Mal_Match), findsNothing);
   });
 
   testWidgets('a failed first page offers a retry', (tester) async {

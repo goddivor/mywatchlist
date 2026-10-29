@@ -1,0 +1,33 @@
+{
+ "data": {
+  "findMangaById": {
+   "chapters": {
+    "totalCount": 2027,
+    "pageInfo": {
+     "hasNextPage": true,
+     "endCursor": "Mw"
+    },
+    "nodes": [
+     {
+      "id": "1885288",
+      "number": 1,
+      "releasedAt": null,
+      "thumbnail": null
+     },
+     {
+      "id": "1885289",
+      "number": 2,
+      "releasedAt": null,
+      "thumbnail": null
+     },
+     {
+      "id": "1885488",
+      "number": 3,
+      "releasedAt": null,
+      "thumbnail": null
+     }
+    ]
+   }
+  }
+ }
+}
