@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_widget_from_html_core/flutter_widget_from_html_core.dart';
-import 'package:mywatchlist/constants/constants.dart';
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/utils/web_launcher.dart';
+import 'package:mywatchlist/widgets/Kitsu/profile/kitsu_profile_rows.dart' show kitsuTimeAgo;
 import 'package:mywatchlist/widgets/common/app_image.dart';
 
 /// A round avatar with the author's initial when there is no picture.
@@ -166,7 +166,7 @@ class KitsuByline extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: theme.textTheme.titleSmall),
-              if (at != null) Text(displayTimeAgo(at!), style: muted),
+              if (at != null) Text(kitsuTimeAgo(at), style: muted),
             ],
           ),
         ),
@@ -217,18 +217,24 @@ class KitsuStateMessage extends StatelessWidget {
   final String title;
   final String? actionLabel;
   final VoidCallback? onAction;
+
+  /// Sits right under what is above (a search field) instead of floating in the middle of the
+  /// space left, which read as a large empty band.
+  final bool top;
   const KitsuStateMessage({
     super.key,
     required this.icon,
     required this.title,
     this.actionLabel,
     this.onAction,
+    this.top = false,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Center(
+    return Align(
+      alignment: top ? Alignment.topCenter : Alignment.center,
       child: Padding(
         padding: const EdgeInsets.all(32),
         child: Column(

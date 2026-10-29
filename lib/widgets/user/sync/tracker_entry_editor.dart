@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mywatchlist/constants/constants.dart';
 import 'package:mywatchlist/generated/l10n.dart';
+import 'package:mywatchlist/services/api/Kitsu/kitsu_catalog.dart' show KitsuRatingSystem;
 import 'package:mywatchlist/services/tracker_sync_service.dart';
+import 'package:mywatchlist/widgets/Kitsu/media/kitsu_rating.dart';
 import 'package:mywatchlist/widgets/common/select/select_date.dart';
 import 'package:mywatchlist/widgets/user/edit/edit_labels.dart';
 import 'package:mywatchlist/widgets/user/sync/sync_entry.dart';
@@ -15,6 +17,15 @@ double scoreStepOf(AccountType tracker) => switch (tracker) {
       AccountType.kitsu => 0.5,
       _ => 1,
     };
+
+/// A 0-10 [score] moved to what Kitsu stores in [system]: the nearest step of the account's
+/// rating system, as a 0-10 score (`ratingTwenty / 2`). Simple keeps four values (1, 4, 7, 10),
+/// Regular half stars (whole points), Advanced half points from 1. 0 stays "no rating".
+double kitsuScoreIn(double score, KitsuRatingSystem system) {
+  if (score <= 0) return 0;
+  final twenty = KitsuRating.snap((score * 2).round().clamp(2, 20), system);
+  return twenty / 2;
+}
 
 /// Edits the user's entry on [tracker] itself (status, score, progress and
 /// dates), and creates it when the media is not on the list yet. Pops the
@@ -58,7 +69,11 @@ class TrackerEntryEditor extends StatefulWidget {
     required this.category,
     this.initial,
     this.allowRemove = true,
+    this.kitsuSystem,
   });
+
+  /// The Kitsu account's rating system, for tests; the app reads the account's.
+  final KitsuRatingSystem? kitsuSystem;
 
   /// Offers "Remove from list" (only when [initial] says the entry exists).
   final bool allowRemove;
@@ -87,6 +102,8 @@ class _TrackerEntryEditorState extends State<TrackerEntryEditor> {
   bool get _isAnime => widget.category == 'anime';
   bool get _simkl => widget.tracker == AccountType.simkl;
   double get _step => scoreStepOf(widget.tracker);
+  bool get _kitsu => widget.tracker == AccountType.kitsu;
+  KitsuRatingSystem get _system => widget.kitsuSystem ?? KitsuRating.current;
 
   List<String> get _statuses => _isAnime
       ? const [
@@ -118,6 +135,7 @@ class _TrackerEntryEditorState extends State<TrackerEntryEditor> {
   }
 
   double _snap(double v) {
+    if (_kitsu) return kitsuScoreIn(v, _system);
     final snapped = (v / _step).round() * _step;
     return double.parse(snapped.clamp(0, 10).toStringAsFixed(1));
   }
@@ -300,7 +318,69 @@ class _TrackerEntryEditorState extends State<TrackerEntryEditor> {
                 ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
       );
 
+  /// Kitsu: the score in the account's rating system, four faces, half stars or half points.
+  Widget _kitsuScoreRow(ThemeData theme) {
+    final system = _system;
+    final steps = KitsuRating.steps(system);
+    final twenty = (_score * 2).round();
+    final label = switch (system) {
+      KitsuRatingSystem.simple => S.current.Kf_Sync_Rating_Simple,
+      KitsuRatingSystem.regular => S.current.Kf_Sync_Rating_Regular,
+      KitsuRatingSystem.advanced => S.current.Kf_Sync_Rating_Advanced,
+    };
+    final Widget control;
+    if (system == KitsuRatingSystem.simple) {
+      control = Wrap(
+        spacing: 8,
+        runSpacing: 4,
+        children: [
+          ChoiceChip(
+            label: Text(S.current.Kf_Sync_Rating_None),
+            selected: _score <= 0,
+            onSelected: _saving ? null : (_) => setState(() => _score = 0),
+          ),
+          for (var i = 0; i < steps.length; i++)
+            ChoiceChip(
+              avatar: Icon(KitsuRating.simpleIcon(i), size: 18),
+              label: Text(KitsuRating.simpleLabel(i)),
+              selected: _score > 0 && KitsuRating.simpleIndex(twenty) == i,
+              onSelected: _saving ? null : (_) => setState(() => _score = steps[i] / 2),
+            ),
+        ],
+      );
+    } else {
+      // Slider position 0 is "no rating", position n the n-th step of the system.
+      final position = _score <= 0 ? 0 : steps.indexOf(KitsuRating.snap(twenty, system)) + 1;
+      control = Slider(
+        value: position.toDouble(),
+        max: steps.length.toDouble(),
+        divisions: steps.length,
+        label: position == 0 ? null : KitsuRating.text(steps[position - 1], system),
+        onChanged: _saving
+            ? null
+            : (v) => setState(() => _score = v.round() == 0 ? 0 : steps[v.round() - 1] / 2),
+      );
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Expanded(child: _label(theme, label)),
+            if (system != KitsuRatingSystem.simple)
+              Text(
+                _score > 0 ? KitsuRating.text(twenty, system) : S.current.Sync_No_Score,
+                style: theme.textTheme.titleSmall?.copyWith(color: theme.colorScheme.primary),
+              ),
+          ],
+        ),
+        control,
+      ],
+    );
+  }
+
   Widget _scoreRow(ThemeData theme) {
+    if (_kitsu) return _kitsuScoreRow(theme);
     final divisions = (10 / _step).round();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

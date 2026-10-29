@@ -92,11 +92,15 @@ class _KitsuGroupsListState extends State<KitsuGroupsList> with AutomaticKeepAli
         title: s.Kc_Error_Title,
         actionLabel: s.Kc_Retry,
         onAction: _reset,
+        top: true,
       );
     } else if (!_loaded) {
-      body = const Center(child: CircularProgressIndicator());
+      body = const Align(
+        alignment: Alignment.topCenter,
+        child: Padding(padding: EdgeInsets.all(32), child: CircularProgressIndicator()),
+      );
     } else if (_groups.isEmpty) {
-      body = KitsuStateMessage(icon: Icons.groups_outlined, title: s.Kc_Empty);
+      body = KitsuStateMessage(icon: Icons.groups_outlined, title: s.Kc_Empty, top: true);
     } else {
       body = RefreshIndicator(
         onRefresh: _reset,

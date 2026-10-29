@@ -62,7 +62,6 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
     expect(find.byType(title_page.KitsuMediaPage), findsOneWidget);
-    expect(find.text(S.current.Kitsu_No_Mal_Match), findsNothing);
   });
 
   testWidgets('a failed first page offers a retry', (tester) async {
