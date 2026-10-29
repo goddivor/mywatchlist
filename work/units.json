@@ -58,7 +58,8 @@
         "kitsu-polish",
         "mal-polish",
         "mal-polish-2",
-        "mal-friends-feed"
+        "mal-friends-feed",
+        "mal-pm-composer"
       ]
     },
     {
@@ -3969,6 +3970,35 @@
       "states": [],
       "notes": [
         "model: sonnet"
+      ],
+      "status": "⬜ todo"
+    },
+    {
+      "id": "mal-pm-composer",
+      "title": "MAL messages: WhatsApp-style formatting, photo upload to catbox.moe, BBCode rendering in threads",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "mal-web-recaptcha"
+      ],
+      "owns": [
+        "lib/screens/mal_web/compose_message_screen.dart",
+        "lib/screens/mal_web/message_thread_screen.dart",
+        "lib/widgets/mal_web/message_tiles.dart",
+        "lib/widgets/mal_web/message_composer/**",
+        "lib/services/upload/**",
+        "lib/l10n/units/mal-pm-composer/**",
+        "test/units/mal-pm-composer/**",
+        "test/units/mal-pm-composer/**"
+      ],
+      "group": "user",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
       ],
       "status": "⬜ todo"
     },

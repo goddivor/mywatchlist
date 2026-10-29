@@ -1175,6 +1175,16 @@ UI directive applies: compare DAL and MWL, keep the better, improve it.
 Deliver with the PR procedure of the brief.
 ```
 
+## mal-pm-composer
+
+```text
+Unit mal-pm-composer — MAL messages: WhatsApp-style formatting, photo upload to catbox.moe, BBCode rendering in threads.
+Read work/handoffs/mal-pm-composer.md fully, then the DAL reference files it lists, then the MWL files you own.
+Build exactly the Goal, inside the Owns list. Heavy commands only through tools/heavy.sh; never run flutter build or touch the emulator.
+UI directive applies: compare DAL and MWL, keep the better, improve it.
+Deliver with the PR procedure of the brief.
+```
+
 ## explore-polish
 
 ```text
