@@ -1,0 +1,83 @@
+{
+  "@@locale": "en",
+  "Tc_Channel_Watching": "{tracker} · New episodes (Watching)",
+  "@Tc_Channel_Watching": {
+    "placeholders": {
+      "tracker": {
+        "type": "String"
+      }
+    }
+  },
+  "Tc_Channel_Watching_Desc": "New episodes of the anime you are watching on {tracker}",
+  "@Tc_Channel_Watching_Desc": {
+    "placeholders": {
+      "tracker": {
+        "type": "String"
+      }
+    }
+  },
+  "Tc_Channel_Plan": "{tracker} · Plan to watch starts airing",
+  "@Tc_Channel_Plan": {
+    "placeholders": {
+      "tracker": {
+        "type": "String"
+      }
+    }
+  },
+  "Tc_Channel_Plan_Desc": "Anime of your {tracker} Plan to watch list that start airing",
+  "@Tc_Channel_Plan_Desc": {
+    "placeholders": {
+      "tracker": {
+        "type": "String"
+      }
+    }
+  },
+  "Tc_Channel_Inbox": "{tracker} · Notifications",
+  "@Tc_Channel_Inbox": {
+    "placeholders": {
+      "tracker": {
+        "type": "String"
+      }
+    }
+  },
+  "Tc_Channel_Inbox_Desc": "Your {tracker} notifications",
+  "@Tc_Channel_Inbox_Desc": {
+    "placeholders": {
+      "tracker": {
+        "type": "String"
+      }
+    }
+  },
+  "Tc_Channel_Friends": "{tracker} · Friends' activity",
+  "@Tc_Channel_Friends": {
+    "placeholders": {
+      "tracker": {
+        "type": "String"
+      }
+    }
+  },
+  "Tc_Channel_Friends_Desc": "What your {tracker} friends add and update",
+  "@Tc_Channel_Friends_Desc": {
+    "placeholders": {
+      "tracker": {
+        "type": "String"
+      }
+    }
+  },
+  "Tc_Channel_Messages": "{tracker} · Messages",
+  "@Tc_Channel_Messages": {
+    "placeholders": {
+      "tracker": {
+        "type": "String"
+      }
+    }
+  },
+  "Tc_Channel_Messages_Desc": "New private messages on {tracker}",
+  "@Tc_Channel_Messages_Desc": {
+    "placeholders": {
+      "tracker": {
+        "type": "String"
+      }
+    }
+  }
+}
