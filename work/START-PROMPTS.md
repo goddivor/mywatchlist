@@ -1085,6 +1085,16 @@ Build exactly the Goal, inside the Owns list. Heavy commands only through tools/
 Deliver with the PR procedure of the brief.
 ```
 
+## simkl-data-plus
+
+```text
+Unit simkl-data-plus — Simkl: full CDN fields, next_to_watch_info, external ids, title language, calendar route, check-in.
+Read work/handoffs/simkl-data-plus.md fully, then the DAL reference files it lists, then the MWL files you own.
+Build exactly the Goal, inside the Owns list. Heavy commands only through tools/heavy.sh; never run flutter build or touch the emulator.
+UI directive applies: compare DAL and MWL, keep the better, improve it.
+Deliver with the PR procedure of the brief.
+```
+
 ## explore-polish
 
 ```text

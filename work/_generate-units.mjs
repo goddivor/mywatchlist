@@ -1083,6 +1083,13 @@ const UNITS = [
     dod: ["Tests: the submitter fills subject/message and reads goodresult/badresult; send and reply use it; avatars resolved; plain writes unchanged."],
   },
   {
+    id: "simkl-data-plus", title: "Simkl: full CDN fields, next_to_watch_info, external ids, title language, calendar route, check-in", kind: "unit", priority: "P1", group: "trackers", model: "sonnet", ui: true,
+    needs: ["simkl-redesign"],
+    owns: ["lib/services/api/SimKl/**", "lib/pages/Simkl/**", "lib/widgets/Simkl/**", "lib/utils/app_routes.dart", "lib/l10n/units/simkl-data-plus/**", "test/units/simkl-data-plus/**"],
+    goal: ["Findings from simkl-redesign (#298): (1) simkl_cdn.dart _media() drops watcher counts, drop rate, rank, fanart, finale flag, network and episode total from the CDN feeds: parse them so the trending watcher counts, carousel fanart and real Premiere/Finale badges show (the UI already renders them when present). (2) SimklListService requests and parses next_to_watch_info and uses it instead of the on-device computation. (3) SimklTitle keeps every external id (AniList, Kitsu, IMDb, TMDB, AniDB…) for a link row on the title page; UserProfSimkl reads anime_title_language and titles follow it. (4) The home app bar's calendar icon routes Simkl accounts to SimklCalendarPage (AppRoutes.openCalendar). (5) Check-in ('Watching now'): /scrobble/checkin service + the title page action, and long-press to mark watched in the calendar.", "Owner rule: each tracker is its own app; design per the Simkl part of docs/tracker-ui-references.md. Respect Simkl's API limits. Never write to the owner's Simkl account from tests: fakes only."],
+    dod: ["Tests on saved Simkl responses: CDN fields parsed, next_to_watch_info used, ids row, calendar route, check-in request (fake)."],
+  },
+  {
     id: "explore-polish", title: "Explore: DailyAL images on category and genre cards, explicit genres, recommendations/stacks fallbacks, favourites badges", kind: "unit", priority: "P1", group: "discovery", model: "opus", ui: true,
     needs: ["search-sources", "explore-seasonal", "home-wiring", "profile-tabs"],
     owns: ["lib/services/api/MAL/scrapper/html_parsers.dart", "test/units/explore-crash/**", "lib/pages/MAL/mal_explore_page.dart", "lib/screens/explore/**", "assets/images/explore/**", "pubspec.yaml", "lib/cache/top_characters.dart"],
