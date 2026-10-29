@@ -104,8 +104,8 @@ class _AnilistCharacterPageState extends State<AnilistCharacterPage> {
           ],
           bottom: TabBar(tabs: [
             Tab(text: s.Alp_Info),
-            Tab(text: s.Anime),
-            Tab(text: s.Manga),
+            Tab(text: s.Alp_Anime),
+            Tab(text: s.Alp_Manga),
           ]),
         ),
         body: TabBarView(

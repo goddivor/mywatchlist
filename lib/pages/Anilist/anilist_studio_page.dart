@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/services/api/Anilist/anilist_actions.dart';
 import 'package:mywatchlist/services/api/Anilist/anilist_people_service.dart';
@@ -122,7 +121,7 @@ class _AnilistStudioPageState extends State<AnilistStudioPage> {
                 children: [
                   Icon(Icons.favorite, size: 16, color: theme.colorScheme.error),
                   const SizedBox(width: 6),
-                  Text(s.Alp_Favourites_Count(NumberFormat.decimalPattern().format(studio.favourites))),
+                  Text(s.Alp_Favourites_Count(studio.favourites)),
                 ],
               ),
             ),

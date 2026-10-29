@@ -62,5 +62,8 @@
   "Alp_Role_Background": "Background",
   "Alp_Lang_Japanese": "Japanese",
   "Alp_Lang_English": "English",
-  "Alp_Lang_Korean": "Korean"
+  "Alp_Lang_Korean": "Korean",
+  "Alp_Anime": "Anime",
+  "Alp_Manga": "Manga",
+  "Alp_Retry": "Retry"
 }

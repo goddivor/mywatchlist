@@ -38,5 +38,8 @@
   "Alp_Role_Background": "Figurant",
   "Alp_Lang_Japanese": "Japonais",
   "Alp_Lang_English": "Anglais",
-  "Alp_Lang_Korean": "Coréen"
+  "Alp_Lang_Korean": "Coréen",
+  "Alp_Anime": "Anime",
+  "Alp_Manga": "Manga",
+  "Alp_Retry": "Réessayer"
 }

@@ -193,7 +193,7 @@ class AnilistPersonHeader extends StatelessWidget {
                     Icon(Icons.favorite, size: 16, color: scheme.error),
                     const SizedBox(width: 6),
                     Text(
-                      S.of(context).Alp_Favourites_Count(NumberFormat.decimalPattern().format(favourites)),
+                      S.of(context).Alp_Favourites_Count(favourites),
                       style: theme.textTheme.bodyMedium,
                     ),
                   ],
@@ -609,7 +609,7 @@ class _AnilistPagedListState<T> extends State<AnilistPagedList<T>> with Automati
       return ListView(
         children: [
           if (widget.header != null) widget.header!,
-          const SizedBox(height: 480, child: ForumSkeleton(count: 6, rowHeight: 80)),
+          const SizedBox(height: 480, child: ForumSkeleton(count: 5, rowHeight: 80)),
         ],
       );
     }
@@ -635,7 +635,7 @@ class _AnilistPagedListState<T> extends State<AnilistPagedList<T>> with Automati
         if (i == rows.length) {
           if (_error != null) {
             return Center(
-              child: TextButton(onPressed: _loadMore, child: Text(S.of(context).Retry)),
+              child: TextButton(onPressed: _loadMore, child: Text(S.of(context).Alp_Retry)),
             );
           }
           return SizedBox(

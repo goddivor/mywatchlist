@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/pages/Anilist/anilist_character_page.dart';
 import 'package:mywatchlist/pages/Anilist/anilist_staff_page.dart';
@@ -194,12 +195,14 @@ AnilistPeopleService _service({
     sender: (body, {required auth}) async {
       final decoded = jsonDecode(body) as Map<String, dynamic>;
       reads?.add(decoded);
-      return http.Response(jsonEncode({'data': _answer(decoded)}), 200);
+      return http.Response(jsonEncode({'data': _answer(decoded)}), 200,
+          headers: const {'content-type': 'application/json; charset=utf-8'});
     },
     mutationSender: (body, {required auth}) async {
       final decoded = jsonDecode(body) as Map<String, dynamic>;
       writes?.add(decoded);
-      return http.Response(jsonEncode({'data': _answer(decoded)}), 200);
+      return http.Response(jsonEncode({'data': _answer(decoded)}), 200,
+          headers: const {'content-type': 'application/json; charset=utf-8'});
     },
   );
   return AnilistPeopleService(client: client, actions: AnilistActions(client: client), signedIn: signedIn);
@@ -215,6 +218,7 @@ Widget _app(Widget home) => MaterialApp(
 void main() {
   setUpAll(() async {
     forbidNetwork();
+    await initializeDateFormatting('en');
     await S.load(const Locale('en'));
   });
 
@@ -339,10 +343,14 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Sendai'), findsOneWidget);
       await tester.tap(find.text('Voice roles'));
-      await tester.pumpAndSettle();
+      for (var i = 0; i < 8; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
       expect(find.text('Spike Spiegel'), findsOneWidget);
       await tester.tap(find.text('Staff roles'));
-      await tester.pumpAndSettle();
+      for (var i = 0; i < 8; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
       expect(find.text('Director'), findsOneWidget);
     });
 
