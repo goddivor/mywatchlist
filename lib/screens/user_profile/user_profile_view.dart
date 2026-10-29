@@ -5,6 +5,7 @@ import 'package:mwl_commons/mwl_commons.dart' show UserAboutHtml;
 import 'package:mywatchlist/cache/bookmarks.dart' show BookmarkKind;
 import 'package:mywatchlist/constants/constants.dart' show AccountType;
 import 'package:mywatchlist/generated/l10n.dart';
+import 'package:mywatchlist/screens/mal_web/compose_message_screen.dart' show openComposeMalMessage;
 import 'package:mywatchlist/screens/user_profile/sections/about_section.dart';
 import 'package:mywatchlist/screens/user_profile/sections/clubs_section.dart';
 import 'package:mywatchlist/screens/user_profile/sections/comments_section.dart';
@@ -299,17 +300,24 @@ class _ProfileBodyState extends State<_ProfileBody> with SingleTickerProviderSta
                       icon: Icons.edit_outlined,
                       onTap: () => openLink(context, 'https://myanimelist.net/editprofile.php'),
                     )
-                  else if (data.id != 0)
+                  else ...[
                     AppBarMenuItem(
-                      label: s.Prof_Report_Action,
-                      icon: Icons.flag_outlined,
-                      onTap: () => reportUser(
-                        context,
-                        userId: data.id,
-                        username: data.username,
-                        pictureUrl: data.pictureUrl,
-                      ),
+                      label: s.Pm_Message,
+                      icon: Icons.mail_outline_rounded,
+                      onTap: () => openComposeMalMessage(context, to: data.username),
                     ),
+                    if (data.id != 0)
+                      AppBarMenuItem(
+                        label: s.Prof_Report_Action,
+                        icon: Icons.flag_outlined,
+                        onTap: () => reportUser(
+                          context,
+                          userId: data.id,
+                          username: data.username,
+                          pictureUrl: data.pictureUrl,
+                        ),
+                      ),
+                  ],
                 ],
               ),
             ],

@@ -18,6 +18,10 @@ import 'package:mywatchlist/services/api/MAL/scrapper/mal_scrapper.dart';
 import 'package:mywatchlist/services/auth/mal_auth_v2.dart';
 import 'package:mywatchlist/services/auth/anilist_auth_v2.dart';
 import 'package:mywatchlist/services/auth/simkl_auth_v2.dart';
+import 'package:mywatchlist/constants/constants.dart' show AccountType;
+import 'package:mywatchlist/services/api/MAL/web/mal_messages_api.dart';
+import 'package:mywatchlist/services/notifications/mal_hub_poller.dart';
+import 'package:mywatchlist/services/notifications/notification_backend.dart' show PluginNotificationBackend;
 import 'package:mywatchlist/services/notifications/notification_service.dart';
 import 'package:mywatchlist/user/user_manager.dart';
 import 'package:app_links/app_links.dart';
@@ -40,6 +44,7 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:workmanager/workmanager.dart';
 
 /// Global UserManager instance (POO architecture for multi-tracker)
 late UserManager userManager;
@@ -72,6 +77,8 @@ void main() async {
 
   // Airing notifications: plugin start and the notification that launched the app (never
   // throws), then follow the notification preferences to reschedule when they change.
+  // The poller also looks at the MAL inbox (private messages) each time it polls.
+  MalHubPoller.instance = MalHubMessagesPoller();
   await NotificationService.instance.init();
   NotificationService.instance.bindPreferences(preferencesBloc.stream);
 
@@ -81,6 +88,9 @@ void main() async {
   // Initialize UserManager (POO architecture with BaseUser inheritance)
   userManager = UserManager.instance;
   await userManager.initializeAllUsers();
+
+  // MAL notifications and messages while the app is closed (Android WorkManager, every 30 min).
+  unawaited(MalBackgroundPolling.instance.start(preferencesBloc.stream, userManager));
 
   // Initialize API clients
   final jikanApi = JikanApi(); // Jikan REST client
@@ -318,4 +328,286 @@ class _MyWatchListAppState extends State<MyWatchListApp> {
 /// Restarts the application using Phoenix
 void restartApp(BuildContext context) {
   Phoenix.rebirth(context);
+}
+
+
+// ---------------------------------------------------------------------------------------------
+// MAL hub in the background
+// ---------------------------------------------------------------------------------------------
+
+/// Unique name and task name of the periodic WorkManager job.
+const String malHubWorkerName = 'com.teen.mywatchlist.mal_hub_poll';
+const String malHubWorkerTask = 'mal_hub_poll';
+
+/// How often the job runs (Android's own minimum is 15 minutes).
+const Duration malHubWorkerFrequency = Duration(minutes: 30);
+
+/// Entry point of the background isolate started by WorkManager.
+@pragma('vm:entry-point')
+void malHubCallbackDispatcher() {
+  Workmanager().executeTask((task, inputData) async {
+    await runMalHubWorker();
+    // Never "retry": the next period comes in 30 minutes anyway.
+    return true;
+  });
+}
+
+/// One background round: rebuilds what the poller needs in a bare isolate (preferences, the
+/// MAL session, the language, the notification plugin), then polls with `force`. Never throws.
+Future<void> runMalHubWorker({
+  Future<SharedPreferences> Function()? storage,
+  MalHubPoller? poller,
+}) async {
+  try {
+    WidgetsFlutterBinding.ensureInitialized();
+    final prefs = await (storage ?? SharedPreferences.getInstance)();
+    // The app process wrote the switches: read the file again, not this isolate's copy.
+    await prefs.reload();
+    await UserManager.instance.mal.loadFromPreferences();
+    final language = LanguageBloc(prefs: prefs);
+    await language.applyCurrent();
+    await language.close();
+    final store = PreferencesStore(prefs);
+    final round = poller ?? MalHubMessagesPoller(readPrefs: () => store.read().notifications);
+    if (round is MalHubMessagesPoller) await round.loadSwitches(prefs);
+    MalHubPoller.instance = round;
+    if (poller == null) await PluginNotificationBackend().init((_) {});
+    await MalHubPoller.instance.poll(force: true);
+  } catch (e) {
+    debugPrint('MAL hub worker: $e');
+  }
+}
+
+/// The part of WorkManager the app uses (a fake in tests).
+abstract class MalHubScheduler {
+  bool get isSupported;
+  Future<void> register();
+  Future<void> cancel();
+}
+
+class WorkmanagerMalHubScheduler implements MalHubScheduler {
+  bool _initialized = false;
+
+  @override
+  bool get isSupported => !kIsWeb && Platform.isAndroid;
+
+  Future<void> _init() async {
+    if (_initialized) return;
+    await Workmanager().initialize(malHubCallbackDispatcher);
+    _initialized = true;
+  }
+
+  @override
+  Future<void> register() async {
+    await _init();
+    await Workmanager().registerPeriodicTask(
+      malHubWorkerName,
+      malHubWorkerTask,
+      frequency: malHubWorkerFrequency,
+      existingWorkPolicy: ExistingPeriodicWorkPolicy.keep,
+      // Battery friendly: only with a network, and not while the battery is low.
+      constraints: Constraints(networkType: NetworkType.connected, requiresBatteryNotLow: true),
+    );
+  }
+
+  @override
+  Future<void> cancel() async {
+    await _init();
+    await Workmanager().cancelByUniqueName(malHubWorkerName);
+  }
+}
+
+/// Keeps the background job registered exactly while it can be useful: the notification
+/// master switch is on, a MyAnimeList account is signed in and at least one of the MAL
+/// switches (hub, friends, messages) is on.
+class MalBackgroundPolling {
+  MalBackgroundPolling({MalHubScheduler? scheduler, bool Function()? wanted})
+      : _scheduler = scheduler ?? WorkmanagerMalHubScheduler(),
+        _wanted = wanted ?? _defaultWanted;
+
+  static MalBackgroundPolling instance = MalBackgroundPolling();
+
+  final MalHubScheduler _scheduler;
+  final bool Function() _wanted;
+  bool? _registered;
+
+  bool get isRegistered => _registered == true;
+
+  static bool _defaultWanted() {
+    final poller = MalHubPoller.instance;
+    return Preferences.current.notifications.enabled &&
+        UserManager.instance.isAuthenticated(AccountType.myanimelist) &&
+        (poller.pushHub.value || poller.pushFriends.value || MalMessagesWatcher.instance.push.value);
+  }
+
+  /// Registers the job at start and follows what decides it.
+  Future<void> start(Stream<AppPreferences> preferences, Listenable accounts) async {
+    if (!_scheduler.isSupported) return;
+    try {
+      final poller = MalHubPoller.instance;
+      if (poller is MalHubMessagesPoller) {
+        await poller.loadSwitches(await SharedPreferences.getInstance());
+      }
+    } catch (_) {}
+    preferences.listen((_) => unawaited(sync()));
+    accounts.addListener(() => unawaited(sync()));
+    await sync();
+  }
+
+  /// Registers or cancels the job to match [_wanted]. Never throws.
+  Future<void> sync() async {
+    if (!_scheduler.isSupported) return;
+    final wanted = _wanted();
+    if (_registered == wanted) return;
+    try {
+      if (wanted) {
+        await _scheduler.register();
+      } else {
+        await _scheduler.cancel();
+      }
+      _registered = wanted;
+    } catch (e) {
+      debugPrint('MAL hub worker registration: $e');
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------------------------
+// MAL private messages in the poller
+// ---------------------------------------------------------------------------------------------
+
+/// Looks at the first page of the MAL inbox, refreshes the unread count of the badges and
+/// raises a phone notification for each unread message not seen before.
+class MalMessagesWatcher {
+  MalMessagesWatcher({
+    MalMessagesApi? api,
+    MalHubNotifier? notifier,
+    bool Function()? mayNotify,
+    bool Function()? canRead,
+    Future<SharedPreferences> Function()? storage,
+    this.maxPerRun = 5,
+  })  : _api = api,
+        _notifier = notifier,
+        _mayNotify = mayNotify ?? (() => Preferences.current.notifications.enabled),
+        _canRead = canRead ?? (() => UserManager.instance.isAuthenticated(AccountType.myanimelist)),
+        _storage = storage ?? SharedPreferences.getInstance;
+
+  static MalMessagesWatcher instance = MalMessagesWatcher();
+
+  static const String seenKey = 'mal_pm_seen_v1';
+  static const String pushKey = 'mal_pm_push_v1';
+
+  final MalMessagesApi? _api;
+  final MalHubNotifier? _notifier;
+  final bool Function() _mayNotify;
+  final bool Function() _canRead;
+  final Future<SharedPreferences> Function() _storage;
+  final int maxPerRun;
+
+  /// The settings switch (on by default).
+  final ValueNotifier<bool> push = ValueNotifier<bool>(true);
+
+  Future<int>? _checking;
+
+  MalMessagesApi get api => _api ?? MalMessagesApi.instance;
+  MalHubNotifier get notifier => _notifier ?? MalHubPoller.instance.notifier;
+
+  Future<void> load() async {
+    try {
+      push.value = (await _storage()).getBool(pushKey) ?? true;
+    } catch (_) {}
+  }
+
+  Future<void> setPush(bool value) async {
+    push.value = value;
+    try {
+      await (await _storage()).setBool(pushKey, value);
+    } catch (_) {}
+  }
+
+  /// One look at the inbox; calls made during a look share it. Returns how many messages
+  /// were notified. Never throws.
+  Future<int> check() => _checking ??= _check().whenComplete(() => _checking = null);
+
+  Future<int> _check() async {
+    try {
+      if (!_canRead()) return 0;
+      final page = await api.inbox(); // also refreshes MalMessagesApi.unread
+      final prefs = await _storage();
+      final stored = prefs.getStringList(seenKey);
+      final seen = {...?stored};
+      final ids = [for (final m in page.messages) '${m.id}'];
+      await prefs.setStringList(seenKey, {...ids, ...seen}.take(200).toList());
+      // The first look only remembers what is there.
+      if (stored == null) return 0;
+      final fresh = [
+        for (final m in page.messages)
+          if (!m.isRead && !seen.contains('${m.id}')) m,
+      ];
+      if (fresh.isEmpty || !push.value || !_mayNotify() || !await notifier.allowed()) return 0;
+      final s = S.current;
+      final notifications = [
+        for (final m in fresh.take(maxPerRun))
+          HubSystemNotification(
+            id: 0x60000000 | (m.id & 0x0FFFFFFF),
+            title: s.Mhw_Message_From(m.counterpart),
+            body: m.subject,
+            payload: '${MalHubPayload.prefix}|${m.url}',
+          ),
+      ];
+      await notifier.show(MalHubChannel.hub, notifications);
+      return notifications.length;
+    } catch (e) {
+      debugPrint('MAL messages check: $e');
+      return 0;
+    }
+  }
+}
+
+/// [MalHubPoller] that also looks at the private messages each time it polls (every 30
+/// minutes in the app, and in the background job).
+class MalHubMessagesPoller extends MalHubPoller {
+  MalHubMessagesPoller({
+    super.hub,
+    super.notifier,
+    NotificationPreferences Function()? readPrefs,
+    Future<SharedPreferences> Function()? storage,
+    super.clock,
+    MalMessagesWatcher? watcher,
+  })  : _watcher = watcher,
+        _readPrefsForWatcher = readPrefs ?? (() => Preferences.current.notifications),
+        _store = storage ?? SharedPreferences.getInstance,
+        super(readPrefs: readPrefs ?? (() => Preferences.current.notifications), storage: storage);
+
+  final MalMessagesWatcher? _watcher;
+  final NotificationPreferences Function() _readPrefsForWatcher;
+  final Future<SharedPreferences> Function() _store;
+
+  late final MalMessagesWatcher watcher = _watcher ??
+      (identical(MalHubPoller.instance, this)
+          ? MalMessagesWatcher.instance
+          : MalMessagesWatcher(
+              notifier: notifier,
+              mayNotify: () => _readPrefsForWatcher().enabled,
+              storage: _store,
+            ));
+
+  /// Reads the three switches from [prefs] (the background isolate does not run [start]).
+  Future<void> loadSwitches(SharedPreferences prefs) async {
+    pushHub.value = prefs.getBool(MalHubPoller.pushHubKey) ?? true;
+    pushFriends.value = prefs.getBool(MalHubPoller.pushFriendsKey) ?? true;
+    watcher.push.value = prefs.getBool(MalMessagesWatcher.pushKey) ?? true;
+  }
+
+  @override
+  Future<void> start() async {
+    await watcher.load();
+    return super.start();
+  }
+
+  @override
+  Future<void> poll({bool force = false}) async {
+    await super.poll(force: force);
+    await watcher.check();
+  }
 }

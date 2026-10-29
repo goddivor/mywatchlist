@@ -8,6 +8,7 @@ import 'package:mywatchlist/user/trackers/models/tracker_model.dart';
 import 'package:mywatchlist/utils/app_routes.dart';
 import 'package:mywatchlist/widgets/common/avatar_widget.dart';
 import 'package:mywatchlist/widgets/home/account_switcher_sheet.dart';
+import 'package:mywatchlist/widgets/mal_web/notification_tiles.dart' show MalNotificationsBell;
 
 /// The header of the home tabs: logo (or [titleWidget]), the shortcut buttons and the account
 /// avatar.
@@ -26,6 +27,9 @@ class AppBarHome extends StatelessWidget implements PreferredSizeWidget {
   final bool showBookmarks;
   final bool showCalendar;
   final bool showSettings;
+
+  /// The MyAnimeList notification bell (hidden for the other trackers).
+  final bool showNotifications;
   final bool transparent;
   final Color? backgroundColor;
   final VoidCallback? onSearchTap;
@@ -43,6 +47,7 @@ class AppBarHome extends StatelessWidget implements PreferredSizeWidget {
     this.showBookmarks = true,
     this.showCalendar = true,
     this.showSettings = false,
+    this.showNotifications = true,
     this.transparent = false,
     this.backgroundColor,
     this.onSearchTap,
@@ -103,7 +108,7 @@ class AppBarHome extends StatelessWidget implements PreferredSizeWidget {
   }
 
   Widget _buildActionButtons(BuildContext context, ThemeData theme) {
-    if (!(showSearch || showBookmarks || showCalendar || showSettings)) {
+    if (!(showSearch || showBookmarks || showCalendar || showSettings || showNotifications)) {
       return const SizedBox.shrink();
     }
     final s = S.current;
@@ -128,6 +133,14 @@ class AppBarHome extends StatelessWidget implements PreferredSizeWidget {
                 icon: Icons.calendar_today_outlined,
                 tooltip: s.Hw_Calendar,
                 onTap: onCalendarTap ?? () => AppRoutes.openCalendar(context),
+              ),
+            // The MyAnimeList hub: only when the active account is MyAnimeList.
+            if (showNotifications)
+              BlocSelector<AccountBloc, AccountState, bool>(
+                selector: (state) =>
+                    state is AccountLoaded && state.selectedAccountType == AccountType.myanimelist,
+                builder: (context, isMal) =>
+                    isMal ? const MalNotificationsBell() : const SizedBox.shrink(),
               ),
             if (showSettings)
               _BarButton(

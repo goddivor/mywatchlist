@@ -12,6 +12,8 @@ import 'package:mywatchlist/user/user_manager.dart';
 import 'package:mywatchlist/utils/app_routes.dart';
 import 'package:mywatchlist/utils/sidebar_bg_manager.dart';
 import 'package:mywatchlist/utils/sidebar_extension.dart';
+import 'package:mywatchlist/widgets/mal_web/message_tiles.dart' show malMessagesSidebarItem;
+import 'package:mywatchlist/widgets/mal_web/notification_tiles.dart' show malNotificationsSidebarItem;
 import 'package:mywatchlist/widgets/common/app_colors.dart';
 import 'package:mywatchlist/widgets/common/avatar_widget.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -224,6 +226,18 @@ class _AppSidebarState extends State<AppSidebar> {
                 title: S.current.AnimeCalendar,
                 onTap: () => _go(AppRoutes.openCalendar),
               ),
+              // MyAnimeList's website features: notifications hub and private messages.
+              if (signedIn && tracker == AccountType.myanimelist)
+                for (final item in [
+                  malNotificationsSidebarItem(context),
+                  malMessagesSidebarItem(context),
+                ])
+                  _SidebarTile(
+                    icon: item.icon,
+                    title: item.title,
+                    trailing: item.trailing,
+                    onTap: () => _go((_) => item.onTap()),
+                  ),
               for (final item in widget.extraItems)
                 _SidebarTile(
                   icon: item.icon,

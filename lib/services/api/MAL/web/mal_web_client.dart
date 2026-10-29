@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert' show jsonEncode;
 
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
@@ -226,6 +227,46 @@ class MalWebClient {
           ..headers.addAll(_headers(withSession: true, referer: referer ?? '$base/', ajax: true))
           ..headers['Content-Type'] = 'application/x-www-form-urlencoded; charset=UTF-8'
           ..bodyFields = {...fields, 'csrf_token': token};
+        return _send(request);
+      });
+      if (response.isRedirect || (response.statusCode >= 300 && response.statusCode < 400)) {
+        if (isLoginRedirect(response.headers['location'])) {
+          await _expire();
+          throw const MalWebSessionExpired();
+        }
+        return response;
+      }
+      final refused = response.statusCode == 400 || response.statusCode == 403;
+      if (refused && attempt == 0) {
+        token = await csrfToken(refresh: true);
+        continue;
+      }
+      return response;
+    }
+    throw const MalWebActionFailed();
+  }
+
+  /// POSTs a JSON body to MAL, as its own scripts do (`ajaxPrefilter` adds the page's
+  /// `csrf_token` to JSON bodies): [body] plus the token, the session's cookies, the AJAX
+  /// headers. Same rules as [postForm]: a refused token (400/403) is fetched again and the
+  /// request sent once more, a redirect to the login page is [MalWebSessionExpired], other
+  /// redirects are returned as they are.
+  Future<http.Response> postJson(
+    String path,
+    Map<String, Object?> body, {
+    String? referer,
+  }) async {
+    await session.ensureLoaded();
+    if (!session.isConnected) throw const MalWebNoSession();
+    var token = await csrfToken();
+    for (var attempt = 0; attempt < 2; attempt++) {
+      final response = await _serial(() async {
+        final request = http.Request('POST', _uri(path))
+          ..followRedirects = false
+          ..headers.addAll(_headers(withSession: true, referer: referer ?? '$base/', ajax: true))
+          ..headers['Accept'] = 'application/json, text/javascript, */*; q=0.01'
+          ..headers['Content-Type'] = 'application/json'
+          ..body = jsonEncode({...body, 'csrf_token': token});
         return _send(request);
       });
       if (response.isRedirect || (response.statusCode >= 300 && response.statusCode < 400)) {

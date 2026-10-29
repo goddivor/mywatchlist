@@ -1,8 +1,12 @@
+import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
+import 'package:mywatchlist/constants/constants.dart' show AccountType;
 import 'package:mywatchlist/generated/l10n.dart';
+import 'package:mywatchlist/main.dart' show MalBackgroundPolling, MalMessagesWatcher;
 import 'package:mywatchlist/screens/settings/prefs/pref_widgets.dart';
+import 'package:mywatchlist/services/notifications/mal_hub_poller.dart';
 import 'package:mywatchlist/services/notifications/notification_service.dart';
 import 'package:mywatchlist/user/preferences/preferences.dart';
 import 'package:mywatchlist/user/user_manager.dart';
@@ -132,6 +136,7 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage>
             ),
           ],
         ),
+        if (supported) const _MalHubGroup(),
         PrefGroup(
           title: s.Notif_Sec_Look,
           children: [
@@ -177,6 +182,89 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage>
           ),
         ),
       ],
+    );
+  }
+}
+
+/// The MyAnimeList switches (hub, friends' activity, private messages): what the app, and the
+/// background job when it is closed, may notify. Only with a MyAnimeList account; all of them
+/// need the master switch.
+class _MalHubGroup extends StatelessWidget {
+  const _MalHubGroup();
+
+  @override
+  Widget build(BuildContext context) {
+    final signedIn = context.select<UserManager, bool>((m) => m.isAuthenticated(AccountType.myanimelist));
+    if (!signedIn) return const SizedBox.shrink();
+    final s = S.current;
+    final master = context.select((PreferencesBloc b) => b.state.notifications.enabled);
+    final poller = MalHubPoller.instance;
+    final messages = MalMessagesWatcher.instance;
+    Future<void> after() => MalBackgroundPolling.instance.sync();
+    return PrefGroup(
+      title: s.Mhw_Section,
+      children: [
+        _MalSwitch(
+          icon: Icons.notifications_none_rounded,
+          title: s.Mhw_Switch_Hub,
+          value: poller.pushHub,
+          enabled: master,
+          onChanged: (v) async {
+            await poller.setPushHub(v);
+            await after();
+          },
+        ),
+        _MalSwitch(
+          icon: Icons.people_outline_rounded,
+          title: s.Mhw_Switch_Friends,
+          value: poller.pushFriends,
+          enabled: master,
+          onChanged: (v) async {
+            await poller.setPushFriends(v);
+            await after();
+          },
+        ),
+        _MalSwitch(
+          icon: Icons.mail_outline_rounded,
+          title: s.Mhw_Switch_Messages,
+          value: messages.push,
+          enabled: master,
+          onChanged: (v) async {
+            await messages.setPush(v);
+            await after();
+          },
+        ),
+      ],
+    );
+  }
+}
+
+class _MalSwitch extends StatelessWidget {
+  const _MalSwitch({
+    required this.icon,
+    required this.title,
+    required this.value,
+    required this.enabled,
+    required this.onChanged,
+  });
+
+  final IconData icon;
+  final String title;
+  final ValueListenable<bool> value;
+  final bool enabled;
+  final Future<void> Function(bool) onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<bool>(
+      valueListenable: value,
+      builder: (context, on, _) => SwitchListTile(
+        contentPadding: const EdgeInsetsDirectional.fromSTEB(16, 4, 12, 4),
+        secondary: PrefIcon(icon),
+        title: Text(title),
+        value: on,
+        onChanged: enabled ? onChanged : null,
+      ),
     );
   }
 }
