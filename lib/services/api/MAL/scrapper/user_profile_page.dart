@@ -181,7 +181,8 @@ List<Map<String, dynamic>> _favorites(Document doc, String blockId, String path,
 }
 
 /// The profile page parsed into the shape of a Jikan `users/{name}/full` payload, plus the
-/// page's "about me" (`about`, HTML, and `about_modern`) and the raw "Last Online" text.
+/// page's "about me" (`about`, HTML, and `about_modern`), the raw "Last Online" text and
+/// `is_supporter` (the page shows the Supporter mark).
 /// Null when [body] is not a profile page. Top level so `compute` can run it.
 Map<String, dynamic>? parseMalProfilePage(String body) {
   final doc = html.parse(body);
@@ -219,6 +220,9 @@ Map<String, dynamic>? parseMalProfilePage(String body) {
     'images': {
       'jpg': {'image_url': _image(side.querySelector('.user-image img'))},
     },
+    // The Supporter mark of the profile's own status list (`.icon-supporter`); the same
+    // class on commenters further down the page must not count.
+    'is_supporter': side.querySelector('ul.user-status .icon-supporter') != null,
     'last_online': status['last online'],
     'gender': status['gender'],
     'birthday': malProfileDate(status['birthday']),

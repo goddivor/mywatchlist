@@ -3,6 +3,8 @@ import 'package:flutter/semantics.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mywatchlist/constants/constants.dart';
 import 'package:mywatchlist/generated/l10n.dart';
+import 'package:mywatchlist/screens/mal_web/notifications_screen.dart' show MalNotificationsScreen;
+import 'package:mywatchlist/services/notifications/mal_hub.dart' show MalNotificationsHub;
 import 'package:mywatchlist/user/accounts/account_bloc.dart';
 import 'package:mywatchlist/user/trackers/models/tracker_model.dart';
 import 'package:mywatchlist/utils/app_routes.dart';
@@ -140,7 +142,7 @@ class AppBarHome extends StatelessWidget implements PreferredSizeWidget {
                 selector: (state) =>
                     state is AccountLoaded && state.selectedAccountType == AccountType.myanimelist,
                 builder: (context, isMal) =>
-                    isMal ? const MalNotificationsBell() : const SizedBox.shrink(),
+                    isMal ? const MalBellWithLabel() : const SizedBox.shrink(),
               ),
             if (showSettings)
               _BarButton(
@@ -251,3 +253,29 @@ class _AccountAvatar extends StatelessWidget {
     );
   }
 }
+
+/// The MAL bell with a spoken label that carries the count ("Notifications, 25 unread"):
+/// the badge alone would be read as a bare number.
+class MalBellWithLabel extends StatelessWidget {
+  const MalBellWithLabel({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<int>(
+      valueListenable: MalNotificationsHub.instance.unread,
+      child: const MalNotificationsBell(),
+      builder: (context, count, bell) => Semantics(
+        container: true,
+        button: true,
+        excludeSemantics: true,
+        label: bellSemanticsLabel(count),
+        onTap: () => MalNotificationsScreen.open(context),
+        child: bell,
+      ),
+    );
+  }
+}
+
+/// What a screen reader says for the bell with [unread] notifications.
+String bellSemanticsLabel(int unread) =>
+    unread > 0 ? S.current.Mpl_Bell_Unread(unread) : S.current.Mn_Title;

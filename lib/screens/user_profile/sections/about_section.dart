@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mywatchlist/cache/cached_user_profile.dart';
 import 'package:flutter_widget_from_html_core/flutter_widget_from_html_core.dart';
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/screens/user_profile/sections/profile_tab.dart';
@@ -6,6 +7,7 @@ import 'package:mywatchlist/services/api/mwl_api.dart';
 import 'package:mywatchlist/utils/web_launcher.dart';
 import 'package:mywatchlist/widgets/common/app_image.dart';
 import 'package:mywatchlist/widgets/common/image_preview.dart';
+import 'package:mywatchlist/widgets/user/profile/profile_header.dart' show timeZoneLabel;
 import 'package:mywatchlist/widgets/user/profile/profile_states.dart';
 import 'package:mwl_commons/mwl_commons.dart' show UserAboutHtml;
 
@@ -17,7 +19,18 @@ class AboutSection extends StatelessWidget {
   final bool isSelf;
   final UserAboutHtml? fromPage;
 
-  const AboutSection({super.key, required this.username, required this.isSelf, this.fromPage});
+  /// The account's IANA time zone (`America/Los_Angeles`); only the official API gives it,
+  /// so only for the signed-in user. When null on your own profile, the cached profile is
+  /// asked.
+  final String? timezone;
+
+  const AboutSection({
+    super.key,
+    required this.username,
+    required this.isSelf,
+    this.fromPage,
+    this.timezone,
+  });
 
   static const String _editUrl = 'https://myanimelist.net/editprofile.php';
   static const String _modernEditUrl =
@@ -43,6 +56,10 @@ class AboutSection extends StatelessWidget {
         onAction: isSelf ? () => openLink(context, _editUrl) : null,
       ),
       slivers: (context, about) => [
+        if (isSelf)
+          SliverToBoxAdapter(
+            child: AboutTimeZone(username: username, timezone: timezone),
+          ),
         SliverToBoxAdapter(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
@@ -96,6 +113,58 @@ class AboutSection extends StatelessWidget {
             ),
           ),
       ],
+    );
+  }
+}
+
+/// The labelled "Time zone" line at the top of your About block. Hidden while unknown.
+class AboutTimeZone extends StatefulWidget {
+  final String username;
+  final String? timezone;
+
+  const AboutTimeZone({super.key, required this.username, this.timezone});
+
+  @override
+  State<AboutTimeZone> createState() => _AboutTimeZoneState();
+}
+
+class _AboutTimeZoneState extends State<AboutTimeZone> {
+  String? _zone;
+
+  @override
+  void initState() {
+    super.initState();
+    _zone = widget.timezone;
+    if (timeZoneLabel(_zone) == null) _fromCache();
+  }
+
+  Future<void> _fromCache() async {
+    final entry = await CachedUserProfile.instance.read(widget.username);
+    final zone = entry?.json['timezone'];
+    if (!mounted || zone is! String) return;
+    setState(() => _zone = zone);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final label = timeZoneLabel(_zone);
+    if (label == null) return const SizedBox.shrink();
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+      child: Row(
+        children: [
+          Icon(Icons.schedule_rounded, size: 18, color: theme.colorScheme.onSurfaceVariant),
+          const SizedBox(width: 8),
+          Text(
+            S.of(context).Mpl_Time_Zone,
+            style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+          ),
+          Flexible(
+            child: Text(label, style: theme.textTheme.bodyMedium, overflow: TextOverflow.ellipsis),
+          ),
+        ],
+      ),
     );
   }
 }

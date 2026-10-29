@@ -160,7 +160,6 @@ class ProfileHeaderBand extends StatelessWidget {
     final details = [
       if (joined != null) s.Prof_Joined(joined),
       if (entries > 0) s.Prof_Entry_Count(entries),
-      if (timeZoneLabel(data.timezone) case final zone?) s.FixMalB4_Time_Zone(zone),
     ].join(' · ');
 
     return Stack(
