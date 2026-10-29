@@ -355,7 +355,8 @@ void malHubCallbackDispatcher() {
 }
 
 /// One background round: rebuilds what the poller needs in a bare isolate (preferences, the
-/// MAL session, the language, the notification plugin), then polls with `force`. Never throws.
+/// MAL session, the language, the notification plugin), then polls the hub (the job's period
+/// is the hub's); the friends' feeds keep their own 3 h interval. Never throws.
 Future<void> runMalHubWorker({
   Future<SharedPreferences> Function()? storage,
   MalHubPoller? poller,
@@ -374,7 +375,7 @@ Future<void> runMalHubWorker({
     if (round is MalHubMessagesPoller) await round.loadSwitches(prefs);
     MalHubPoller.instance = round;
     if (poller == null) await PluginNotificationBackend().init((_) {});
-    await MalHubPoller.instance.poll(force: true);
+    await MalHubPoller.instance.poll(forceHub: true);
   } catch (e) {
     debugPrint('MAL hub worker: $e');
   }

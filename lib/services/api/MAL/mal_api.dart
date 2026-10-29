@@ -191,7 +191,7 @@ class MalApi {
     // MAL answers 400 to ranking_type=ona: Jikan (Tenrai when it is down) serves it.
     if (category == "anime" && rankingType == RankingType.ONA) {
       return JikanApi().getTopAnimeResult(
-          type: 'ona', limit: limit, offset: offset);
+          type: 'ona', limit: limit, offset: offset, sfw: !Preferences.general.nsfw);
     }
     // Get the ranking type name using enum
     String rankingTypeValue = (category == "anime"
@@ -1071,7 +1071,8 @@ class MalApi {
       return JikanApi().getTopAnimeResult(
           type: u.queryParameters['type'] ?? 'ona',
           limit: size,
-          offset: (page - 1) * size);
+          offset: (page - 1) * size,
+          sfw: u.queryParameters['sfw'] == 'true');
     }
 
     final response = await _get(url);

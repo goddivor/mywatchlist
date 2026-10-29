@@ -242,9 +242,10 @@ class MalHubPoller with WidgetsBindingObserver {
     NotificationPreferences Function()? readPrefs,
     Future<SharedPreferences> Function()? storage,
     DateTime Function()? clock,
+    bool Function()? malSignedIn,
     this.interval = const Duration(minutes: 30),
     this.friendsInterval = const Duration(hours: 3),
-    this.firstDelay = const Duration(seconds: 30),
+    this.firstDelay = const Duration(seconds: 5),
     this.firstRunWindow = const Duration(days: 3),
     this.friendsWindow = const Duration(days: 7),
     this.maxPerRun = 10,
@@ -252,13 +253,16 @@ class MalHubPoller with WidgetsBindingObserver {
         _notifier = notifier ?? PluginMalHubNotifier(),
         _readPrefs = readPrefs ?? (() => Preferences.current.notifications),
         _storage = storage ?? SharedPreferences.getInstance,
-        _clock = clock ?? DateTime.now;
+        _clock = clock ?? DateTime.now,
+        _malSignedIn =
+            malSignedIn ?? (() => UserManager.instance.isAuthenticated(AccountType.myanimelist));
 
   static MalHubPoller instance = MalHubPoller();
 
   static const String seenKey = 'mal_hub_seen_v1';
   static const String shownKey = 'mal_hub_shown_v1';
   static const String lastPollKey = 'mal_hub_last_poll_v1';
+  static const String unreadKey = 'mal_hub_unread_v1';
   static const String friendsSeenKey = 'mal_friends_seen_v1';
   static const String friendsLastPollKey = 'mal_friends_last_poll_v1';
   static const String pushHubKey = 'mal_hub_push_v1';
@@ -269,6 +273,7 @@ class MalHubPoller with WidgetsBindingObserver {
   final NotificationPreferences Function() _readPrefs;
   final Future<SharedPreferences> Function() _storage;
   final DateTime Function() _clock;
+  final bool Function() _malSignedIn;
 
   final Duration interval;
   final Duration friendsInterval;
@@ -291,18 +296,41 @@ class MalHubPoller with WidgetsBindingObserver {
 
   bool get isStarted => _started;
 
-  /// Starts polling (called once by `NotificationService.init`). Never throws.
+  /// The storage, read again from disk: the background job writes the same keys from another
+  /// isolate, and a stale copy would notify its items a second time and drop its seen ids.
+  Future<SharedPreferences> _fresh() async {
+    final prefs = await _storage();
+    try {
+      await prefs.reload();
+    } catch (_) {}
+    return prefs;
+  }
+
+  /// Starts polling (called once by `NotificationService.init`). The bell shows the last known
+  /// unread count at once, and the first round, [firstDelay] later, reads the hub whatever the
+  /// time of the last poll (the background job may have polled a minute ago, which does not
+  /// fill this process' hub). Never throws.
   Future<void> start() async {
     if (_started || !_notifier.isSupported) return;
     _started = true;
     try {
-      final prefs = await _storage();
+      final prefs = await _fresh();
       pushHub.value = prefs.getBool(pushHubKey) ?? true;
       pushFriends.value = prefs.getBool(pushFriendsKey) ?? true;
+      restoreUnread(prefs);
     } catch (_) {}
     hub.onItemsRead = _cancelShown;
     WidgetsBinding.instance.addObserver(this);
-    _schedule(firstDelay);
+    _schedule(firstDelay, forceHub: true);
+  }
+
+  /// Puts the unread count saved by the last hub poll on the bell while the hub has not been
+  /// read in this process (a MyAnimeList account must be signed in).
+  @visibleForTesting
+  void restoreUnread(SharedPreferences prefs) {
+    if (!_malSignedIn() || hub.loadedAt != null || hub.unread.value != 0) return;
+    final saved = prefs.getInt(unreadKey) ?? 0;
+    if (saved > 0) hub.unread.value = saved;
   }
 
   Future<void> setPushHub(bool value) => _setSwitch(pushHub, pushHubKey, value);
@@ -315,11 +343,11 @@ class MalHubPoller with WidgetsBindingObserver {
     } catch (_) {}
   }
 
-  void _schedule(Duration delay) {
+  void _schedule(Duration delay, {bool forceHub = false}) {
     _timer?.cancel();
     if (!_foreground) return;
     _timer = Timer(delay, () async {
-      await poll();
+      await poll(forceHub: forceHub);
       _schedule(interval);
     });
   }
@@ -348,16 +376,19 @@ class MalHubPoller with WidgetsBindingObserver {
     _schedule(wait);
   }
 
-  /// One polling round: the hub when due (or [force]), then the friends when due. Calls
-  /// made during a round share it. Never throws.
-  Future<void> poll({bool force = false}) =>
-      _polling ??= _poll(force).whenComplete(() => _polling = null);
+  /// One polling round: the hub when due (or [force] / [forceHub]), then the friends when due
+  /// (or [force]). The background job passes [forceHub]: its own period is the hub's, while
+  /// the friends' pages (up to 40 feeds) keep their [friendsInterval]. Calls made during a
+  /// round share it. Never throws.
+  Future<void> poll({bool force = false, bool forceHub = false}) =>
+      _polling ??= _poll(force, forceHub || force).whenComplete(() => _polling = null);
 
-  Future<void> _poll(bool force) async {
+  Future<void> _poll(bool force, bool forceHub) async {
     try {
       final now = _clock();
+      await _fresh();
       final last = await _readTime(lastPollKey);
-      if (force || last == null || now.difference(last) >= interval - const Duration(minutes: 1)) {
+      if (forceHub || last == null || now.difference(last) >= interval - const Duration(minutes: 1)) {
         await pollHub();
       }
       final lastFriends = await _readTime(friendsLastPollKey);
@@ -373,11 +404,12 @@ class MalHubPoller with WidgetsBindingObserver {
 
   /// Reads the hub and notifies its new unread items. Returns how many were notified.
   Future<int> pollHub() async {
-    final prefs = await _storage();
     final feed = await hub.refresh(quiet: true);
+    final prefs = await _fresh();
     if (feed == null) return 0;
     await prefs.setInt(lastPollKey, _clock().millisecondsSinceEpoch);
     final all = feed.all;
+    await prefs.setInt(unreadKey, all.where((i) => !i.isRead).length);
     final stored = prefs.getStringList(seenKey);
     final seen = {...?stored};
     final first = stored == null;
@@ -420,8 +452,8 @@ class MalHubPoller with WidgetsBindingObserver {
   /// last check. The first check only remembers what is there. Returns how many were notified.
   Future<int> pollFriends() async {
     if (!pushFriends.value || !_mayNotify) return 0;
-    final prefs = await _storage();
     final rows = await hub.loadActivity(force: true, quiet: true);
+    final prefs = await _fresh();
     if (rows == null) return 0;
     await prefs.setInt(friendsLastPollKey, _clock().millisecondsSinceEpoch);
     final stored = prefs.getStringList(friendsSeenKey);
@@ -555,6 +587,10 @@ class MalMessagesWatcher {
       if (!_canRead()) return 0;
       final page = await api.inbox(); // also refreshes MalMessagesApi.unread
       final prefs = await _storage();
+      // The background job writes the same list from another isolate.
+      try {
+        await prefs.reload();
+      } catch (_) {}
       final stored = prefs.getStringList(seenKey);
       final seen = {...?stored};
       final ids = [for (final m in page.messages) '${m.id}'];
@@ -594,6 +630,7 @@ class MalHubMessagesPoller extends MalHubPoller {
     NotificationPreferences Function()? readPrefs,
     Future<SharedPreferences> Function()? storage,
     super.clock,
+    super.malSignedIn,
     MalMessagesWatcher? watcher,
   })  : _watcher = watcher,
         _readPrefsForWatcher = readPrefs ?? (() => Preferences.current.notifications),
@@ -627,8 +664,8 @@ class MalHubMessagesPoller extends MalHubPoller {
   }
 
   @override
-  Future<void> poll({bool force = false}) async {
-    await super.poll(force: force);
+  Future<void> poll({bool force = false, bool forceHub = false}) async {
+    await super.poll(force: force, forceHub: forceHub);
     await watcher.check();
   }
 }

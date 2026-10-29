@@ -155,10 +155,15 @@ class _ComposeMalMessageScreenState extends State<ComposeMalMessageScreen> {
                       padding: EdgeInsets.all(14),
                       child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)),
                     )
-                  : IconButton(
-                      tooltip: s.Pm_Send,
-                      icon: const Icon(Icons.send_rounded),
-                      onPressed: _session.isConnected ? _send : null,
+                  // Its own listener: the Scaffold is the cached child of the builder above,
+                  // so the button follows the session when the gate connects it.
+                  : ListenableBuilder(
+                      listenable: _session,
+                      builder: (context, _) => IconButton(
+                        tooltip: s.Pm_Send,
+                        icon: const Icon(Icons.send_rounded),
+                        onPressed: _session.isConnected ? _send : null,
+                      ),
                     ),
             ),
           ],

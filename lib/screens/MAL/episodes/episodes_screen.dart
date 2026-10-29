@@ -103,10 +103,8 @@ class EpisodeTile extends StatelessWidget {
     final scheme = theme.colorScheme;
     final colors = AppColors.of(context);
     final e = episode;
-    final meta = <String>[
-      if (episodeDate(context, e).isNotEmpty) episodeDate(context, e),
-      if (e.replies > 0) '${e.replies}',
-    ];
+    final date = episodeDate(context, e);
+    final metaStyle = theme.textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant);
     return ListTile(
       onTap: () => showEpisodeSheet(context, animeId, e),
       leading: SizedBox(
@@ -121,7 +119,18 @@ class EpisodeTile extends StatelessWidget {
         spacing: 8,
         crossAxisAlignment: WrapCrossAlignment.center,
         children: [
-          if (meta.isNotEmpty) Text(meta.join('  ·  ')),
+          if (date.isNotEmpty) Text(date, style: metaStyle),
+          if (e.replies > 0)
+            Semantics(
+              label: S.of(context).FixMalB4_Episode_Replies(e.replies),
+              excludeSemantics: true,
+              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                Icon(Icons.forum_outlined, size: 14, color: scheme.onSurfaceVariant),
+                const SizedBox(width: 3),
+                Text(NumberFormat.decimalPattern(Localizations.localeOf(context).toString())
+                    .format(e.replies), style: metaStyle),
+              ]),
+            ),
           if (e.filler) _Tag(S.of(context).Ep_Filler, colors.warning),
           if (e.recap) _Tag(S.of(context).Ep_Recap, colors.warning),
         ],

@@ -264,19 +264,27 @@ class JikanApi {
   /// Largest page Jikan's `/top/anime` serves.
   static const int topPageSize = 25;
 
+  /// `GET /top/anime?type=&limit=&page=`, with `sfw=true` when adult entries are left out
+  /// (Jikan reads the flag; it is not sent otherwise).
+  static Uri topAnimeUrl({required String type, required int limit, required int page, bool sfw = false}) =>
+      Uri.parse('${Constants.jikanTopAnime}?type=$type&limit=$limit&page=$page${sfw ? '&sfw=true' : ''}');
+
   /// One page of `GET /top/anime?type=` as a [SearchResult] (the shape of a MAL
   /// ranking), paged by [offset] (offset ~/ limit + 1). `paging.next` is the
   /// Jikan URL of the following page, loaded by `MalApi.getContentListPage`.
   /// Goes through [JikanClient], so Tenrai answers when Jikan is down.
+  ///
+  /// [sfw] leaves out the adult entries (Rx), as MAL's `nsfw=0` does for its own rankings;
+  /// the next page keeps the choice.
   Future<SearchResult> getTopAnimeResult({
     required String type,
     int limit = topPageSize,
     int offset = 0,
+    bool sfw = false,
   }) async {
     final size = limit.clamp(1, topPageSize);
     final page = offset ~/ size + 1;
-    final url = Uri.parse(
-        '${Constants.jikanTopAnime}?type=$type&limit=$size&page=$page');
+    final url = topAnimeUrl(type: type, limit: size, page: page, sfw: sfw);
     final response = await JikanClient.instance.get(url);
     if (response.statusCode != 200) {
       throw Exception('Failed to load top anime ($type)');
@@ -287,8 +295,7 @@ class JikanApi {
         .toList();
     final hasNext =
         (body['pagination'] as Map<String, dynamic>?)?['has_next_page'] == true;
-    final next = Uri.parse(
-        '${Constants.jikanTopAnime}?type=$type&limit=$size&page=${page + 1}');
+    final next = topAnimeUrl(type: type, limit: size, page: page + 1, sfw: sfw);
     return SearchResult(
       data: data,
       paging: hasNext ? Paging(next: next.toString()) : Paging(),

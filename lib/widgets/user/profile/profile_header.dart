@@ -160,7 +160,7 @@ class ProfileHeaderBand extends StatelessWidget {
     final details = [
       if (joined != null) s.Prof_Joined(joined),
       if (entries > 0) s.Prof_Entry_Count(entries),
-      if (data.timezone != null) data.timezone!,
+      if (timeZoneLabel(data.timezone) case final zone?) s.FixMalB4_Time_Zone(zone),
     ].join(' · ');
 
     return Stack(
@@ -320,4 +320,13 @@ class _Picture extends StatelessWidget {
       errorBuilder: (_, __, ___) => ColoredBox(color: cs.surfaceContainerHighest),
     );
   }
+}
+
+/// The place of an IANA time zone, as people read it: `America/Los_Angeles` gives
+/// `Los Angeles`, `America/Argentina/Buenos_Aires` gives `Buenos Aires`; `UTC` stays. Null for
+/// an empty zone.
+String? timeZoneLabel(String? zone) {
+  final z = zone?.trim() ?? '';
+  if (z.isEmpty) return null;
+  return z.split('/').last.replaceAll('_', ' ');
 }

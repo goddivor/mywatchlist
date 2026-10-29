@@ -285,8 +285,13 @@ MalMessagesPage? parseMessagesPage(String raw, {bool sent = false}) {
     final m = parseMessageRow(row, sent: sent);
     if (m != null && seen.add(m.id)) out.add(m);
   }
-  final empty = out.isEmpty && (raw.contains('You have 0 messages') || rows.isEmpty);
-  return MalMessagesPage(out, isEmpty: empty);
+  if (out.isEmpty) {
+    // Rows MAL sent but none could be read, or no row without MAL's "0 messages" text: the
+    // markup changed, which is an error, not an empty box.
+    if (!raw.contains('You have 0 messages')) return null;
+    return const MalMessagesPage([], isEmpty: true);
+  }
+  return MalMessagesPage(out);
 }
 
 final DateFormat _malDate = DateFormat('MMM d, yyyy h:mm a', 'en_US');
@@ -467,9 +472,19 @@ void checkSendAnswer(http.Response response) {
   }
 }
 
-/// MAL's answer page to a form sent through [MalWebFormSubmitter]: `goodresult` (or any page
-/// that is not the form again) is a sent message; `badresult` a refusal with MAL's text; the
-/// form shown again without a reason a refusal too.
+/// MAL's answer to a form sent through [MalWebFormSubmitter] could not be read as sent nor as
+/// refused: the message may have gone, so the user checks the sent box before sending again.
+class MalWebSendUnconfirmed implements Exception {
+  const MalWebSendUnconfirmed();
+  @override
+  String toString() => 'MalWebSendUnconfirmed';
+}
+
+/// MAL's answer page to a form sent through [MalWebFormSubmitter]. Sent: MAL's `goodresult`
+/// box, or a redirect to a messages page that is not the form (the sent box, the inbox, the
+/// thread). Refused: its `badresult` box (with MAL's text), or the form shown again. Anything
+/// else at the compose address is [MalWebSendUnconfirmed], never taken for a sent message.
+/// Without an address (some WebViews give none), a page without the form counts as sent.
 void checkSendPage(MalWebFormResult result) {
   final doc = html.parse(result.html);
   final bad = doc.querySelector('.badresult') ?? doc.querySelector('.badresult-text');
@@ -479,6 +494,13 @@ void checkSendPage(MalWebFormResult result) {
   }
   if (doc.querySelector('.goodresult') != null) return;
   if (doc.querySelector('textarea[name=message]') != null) throw const MalWebActionFailed();
+  final url = result.url;
+  if (url == null) return;
+  // The inbox, the sent box or a thread: MAL redirected after sending.
+  final host = url.host.toLowerCase();
+  final onMal = host.isEmpty || host == 'myanimelist.net' || host == 'www.myanimelist.net';
+  if (onMal && url.path == '/mymessages.php' && url.queryParameters['go'] != 'send') return;
+  throw const MalWebSendUnconfirmed();
 }
 
 /// The users of MAL's `/search/prefix.json?type=user` answer.
@@ -560,6 +582,15 @@ class MalMessagesApi {
   /// Unread messages of the inbox's first page (MAL lists unread first), for a badge.
   static final ValueNotifier<int> unread = ValueNotifier<int>(0);
 
+  /// Unread messages opened or deleted since the inbox was last read: each one lowers
+  /// [unread] once, however often its thread is refreshed.
+  final Set<int> _readSinceInbox = {};
+
+  void _markRead(MalMessage message) {
+    if (message.isRead || !_readSinceInbox.add(message.id)) return;
+    if (unread.value > 0) unread.value = unread.value - 1;
+  }
+
   /// Tests parse on the calling isolate (`compute` needs a real event loop).
   @visibleForTesting
   static bool parseInline = false;
@@ -596,7 +627,10 @@ class MalMessagesApi {
   /// One inbox page from [offset] (`?go=&show=`, 20 rows).
   Future<MalMessagesPage> inbox({int offset = 0}) async {
     final page = await _box('/mymessages.php?go=&show=$offset', sent: false);
-    if (offset == 0) unread.value = page.unread;
+    if (offset == 0) {
+      unread.value = page.unread;
+      _readSinceInbox.clear();
+    }
     return page;
   }
 
@@ -618,7 +652,7 @@ class MalMessagesApi {
       body,
     );
     if (parsed == null) throw const FormatException('Not a MAL message page');
-    if (!message.isRead && unread.value > 0) unread.value = unread.value - 1;
+    _markRead(message);
     return parsed;
   }
 
@@ -668,7 +702,7 @@ class MalMessagesApi {
       referer: '${MalWebClient.base}/mymessages.php${message.isSent ? '?go=sent' : ''}',
     );
     checkWriteAnswer(response);
-    if (!message.isRead && unread.value > 0) unread.value = unread.value - 1;
+    _markRead(message);
   }
 
   List<MalUserSuggestion>? _friends;
