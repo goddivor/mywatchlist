@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:mywatchlist/constants/constants.dart' show AccountType, showToast;
 import 'package:mywatchlist/generated/l10n.dart';
@@ -120,9 +119,9 @@ Future<void> openAnilistLink(BuildContext context, String url, {AnilistSocialSer
     case AnilistLinkKind.comment:
       return openAnilistThread(context, link.threadId!, commentId: link.id);
     case AnilistLinkKind.activity:
-      return openAnilistActivity(context, link.id);
+      await openAnilistActivity(context, link.id);
     case AnilistLinkKind.review:
-      return openAnilistReview(context, link.id);
+      await openAnilistReview(context, link.id);
     case AnilistLinkKind.character:
     case AnilistLinkKind.staff:
     case AnilistLinkKind.studio:

@@ -14,8 +14,9 @@ import 'package:mywatchlist/widgets/Anilist/social/anilist_thread_composer.dart'
 import 'package:mywatchlist/widgets/forum/forum_common.dart'
     show ForumMessage, ForumSkeleton, ForumStatChip;
 
-/// Opens the AniList forum thread [id]; with [commentId] that comment and its replies come
-/// first (links to `/forum/thread/<id>/comment/<commentId>`).
+/// Opens the AniList forum thread [id]; [commentId] (links to
+/// `/forum/thread/<id>/comment/<commentId>`) is highlighted once its page is loaded (AniList
+/// cannot fetch one comment by id).
 Future<void> openAnilistThread(BuildContext context, int id, {int? commentId}) =>
     AppRoutes.push<void>(context, AnilistThreadPage(threadId: id, commentId: commentId));
 
@@ -60,21 +61,11 @@ class _AnilistThreadPageState extends State<AnilistThreadPage> {
     final generation = ++_generation;
     setState(() => _error = null);
     try {
-      final linked = widget.commentId;
-      final results = await Future.wait([
-        _service.thread(widget.threadId),
-        if (linked != null) _service.comment(linked).catchError((_) => null),
-      ]);
+      final (thread, page) = await _service.thread(widget.threadId);
       if (!mounted || generation != _generation) return;
-      final (thread, page) =
-          results.first as (AnilistThreadDetail, AnilistSocialPage<AnilistComment>);
-      final first = results.length > 1 ? results[1] as AnilistComment? : null;
       setState(() {
         _thread = thread;
-        _comments = [
-          if (first != null) first,
-          ...page.items.where((c) => c.id != first?.id),
-        ];
+        _comments = page.items;
         _page = 1;
         _hasNext = page.hasNext && page.items.isNotEmpty;
         _moreError = null;
@@ -163,9 +154,27 @@ class _AnilistThreadPageState extends State<AnilistThreadPage> {
 
   Future<void> _edit(AnilistComment comment) async {
     final s = S.of(context);
-    final source =
-        await runAnilistWrite(context, () => _service.commentSource(comment.id), service: _service);
-    if (source == null || !mounted) return;
+    // A record, so "not found" (null inside) differs from a failed call (null record).
+    final found = await runAnilistWrite(
+      context,
+      () async => (await _service.commentSource(widget.threadId, comment.id),),
+      service: _service,
+    );
+    if (found == null || !mounted) return;
+    final source = found.$1;
+    if (source == null) {
+      // Not reachable through the API (a reply under someone else's comment): edit on the site.
+      ScaffoldMessenger.maybeOf(context)?.showSnackBar(SnackBar(
+        content: Text(s.Al_Load_Failed),
+        action: SnackBarAction(
+          label: s.Open_In_Browser,
+          onPressed: () => openLink(context,
+              'https://anilist.co/forum/thread/${widget.threadId}/comment/${comment.id}',
+              confirm: false),
+        ),
+      ));
+      return;
+    }
     await showAnilistComposer(
       context,
       title: s.Edit,

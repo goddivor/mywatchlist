@@ -9,8 +9,9 @@ import 'package:mywatchlist/user/user_anilist_v2.dart';
 
 export 'package:mywatchlist/services/api/Anilist/anilist_actions.dart'
     show AnilistLikeable, AnilistLikeState;
-export 'package:mywatchlist/services/api/Anilist/anilist_discover_service.dart'
-    show AnilistThread, AnilistThreadPage;
+// The page type of `threads()` (AnilistThreadPage) is not re-exported: the name is also the
+// thread page widget.
+export 'package:mywatchlist/services/api/Anilist/anilist_discover_service.dart' show AnilistThread;
 
 DateTime? _time(Object? seconds) => seconds is num
     ? DateTime.fromMillisecondsSinceEpoch(seconds.toInt() * 1000)
@@ -784,15 +785,6 @@ class AnilistSocialService {
     return _commentsOf(data['Page']);
   }
 
-  /// One comment and its replies (`/forum/thread/<t>/comment/<id>` links).
-  Future<AnilistComment?> comment(int id) async {
-    final data = await _read('''
-      query (\$id: Int) { Page(perPage: 1) { threadComments(id: \$id) { ${AnilistComment.fields} } } }
-    ''', {'id': id});
-    final page = _commentsOf(data['Page']);
-    return page.items.isEmpty ? null : page.items.first;
-  }
-
   static AnilistSocialPage<AnilistComment> _commentsOf(Object? page) {
     final rows = page is Map ? page['threadComments'] : null;
     return AnilistSocialPage(
@@ -1149,18 +1141,37 @@ class AnilistSocialService {
     return a is Map ? _str(a['text']) : '';
   }
 
-  /// The markdown of the user's own forum comment [id].
-  Future<String> commentSource(int id) async {
-    final data = await _gql.query(
-      r'query ($id: Int) { Page(perPage: 1) { threadComments(id: $id) { comment(asHtml: false) } } }',
-      variables: {'id': id},
-      auth: true,
-    );
-    final page = data['Page'];
-    final rows = page is Map ? page['threadComments'] : null;
-    return rows is List && rows.isNotEmpty && rows.first is Map
-        ? _str((rows.first as Map)['comment'])
-        : '';
+  /// The markdown of the user's own forum comment [id] of thread [threadId], null when it
+  /// cannot be found.
+  ///
+  /// AniList ignores `id` in `threadComments` and `ThreadComment` (checked 2026-10-29: any id
+  /// answers the thread's first comment), so this walks the user's own comments of the thread,
+  /// newest first (with the replies under them), at most [maxPages] pages of 50.
+  Future<String?> commentSource(int threadId, int id, {int maxPages = 4}) async {
+    final viewer = await viewerId();
+    if (viewer == null) return null;
+    for (var page = 1; page <= maxPages; page++) {
+      final data = await _gql.query(r'''
+        query ($threadId: Int, $userId: Int, $page: Int) {
+          Page(page: $page, perPage: 50) {
+            pageInfo { hasNextPage }
+            threadComments(threadId: $threadId, userId: $userId, sort: ID_DESC) {
+              id comment(asHtml: false) childComments
+            }
+          }
+        }
+      ''', variables: {'threadId': threadId, 'userId': viewer, 'page': page}, auth: true);
+      final pageData = data['Page'];
+      final rows = pageData is Map ? pageData['threadComments'] : null;
+      for (final row in (rows is List ? rows : const [])) {
+        if (row is! Map) continue;
+        for (final c in AnilistComment.fromJson(row).flattened) {
+          if (c.id == id) return c.html;
+        }
+      }
+      if (!_hasNext(pageData)) break;
+    }
+    return null;
   }
 
   /// The markdown of the user's own activity reply [id].
