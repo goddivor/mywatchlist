@@ -215,7 +215,18 @@ class KitsuUnitCard extends StatelessWidget {
   final KitsuMediaKind kind;
   final bool volume;
 
-  const KitsuUnitCard({super.key, required this.unit, required this.kind, this.volume = false});
+  /// The user's progress has reached it: a tick on the thumbnail.
+  final bool watched;
+  final VoidCallback? onTap;
+
+  const KitsuUnitCard({
+    super.key,
+    required this.unit,
+    required this.kind,
+    this.volume = false,
+    this.watched = false,
+    this.onTap,
+  });
 
   static const double width = 190;
 
@@ -231,21 +242,30 @@ class KitsuUnitCard extends StatelessWidget {
       if (unit.releasedAt != null) KitsuMediaFormat.date(unit.releasedAt),
       if (unit.length != null && unit.length! > 0) KitsuMediaFormat.minutes(unit.length!),
     ].join(' · ');
-    return SizedBox(
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(10),
+      child: SizedBox(
       width: width,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          AppImage(
-            url: unit.thumbnail?.url,
-            width: width,
-            height: width * 9 / 16,
-            borderRadius: BorderRadius.circular(10),
-            placeholderColor: scheme.surfaceContainerHighest,
-            errorWidget: (_) => ColoredBox(
-              color: scheme.surfaceContainerHighest,
-              child: Center(child: Icon(Icons.image_outlined, color: scheme.onSurfaceVariant)),
-            ),
+          Stack(
+            children: [
+              AppImage(
+                url: unit.thumbnail?.url,
+                width: width,
+                height: width * 9 / 16,
+                borderRadius: BorderRadius.circular(10),
+                placeholderColor: scheme.surfaceContainerHighest,
+                errorWidget: (_) => ColoredBox(
+                  color: scheme.surfaceContainerHighest,
+                  child: Center(child: Icon(Icons.image_outlined, color: scheme.onSurfaceVariant)),
+                ),
+              ),
+              if (watched)
+                PositionedDirectional(top: 6, end: 6, child: KitsuWatchedTick(label: S.current.Kr_Watched)),
+            ],
           ),
           const SizedBox(height: 6),
           Text(name, maxLines: 1, overflow: TextOverflow.ellipsis, style: theme.textTheme.labelLarge),
@@ -260,6 +280,30 @@ class KitsuUnitCard extends StatelessWidget {
             ),
         ],
       ),
+      ),
+    );
+  }
+}
+
+/// The round "watched" tick drawn on an episode thumbnail or at the end of its row.
+class KitsuWatchedTick extends StatelessWidget {
+  final String label;
+  final double size;
+
+  const KitsuWatchedTick({super.key, required this.label, this.size = 22});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Semantics(
+      label: label,
+      child: DecoratedBox(
+        decoration: BoxDecoration(color: scheme.primary, shape: BoxShape.circle),
+        child: Padding(
+          padding: const EdgeInsets.all(2),
+          child: Icon(Icons.check_rounded, size: size - 4, color: scheme.onPrimary),
+        ),
+      ),
     );
   }
 }
@@ -269,7 +313,11 @@ class KitsuUnitRow extends StatelessWidget {
   final KitsuUnit unit;
   final KitsuMediaKind kind;
 
-  const KitsuUnitRow({super.key, required this.unit, required this.kind});
+  /// The user's progress has reached it: a tick at the end of the row.
+  final bool watched;
+  final VoidCallback? onTap;
+
+  const KitsuUnitRow({super.key, required this.unit, required this.kind, this.watched = false, this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -279,7 +327,9 @@ class KitsuUnitRow extends StatelessWidget {
       if (unit.releasedAt != null) KitsuMediaFormat.date(unit.releasedAt),
       if (unit.length != null && unit.length! > 0) KitsuMediaFormat.minutes(unit.length!),
     ].join(' · ');
-    return Padding(
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
       padding: const EdgeInsets.symmetric(horizontal: kitsuPagePadding, vertical: 6),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -315,7 +365,12 @@ class KitsuUnitRow extends StatelessWidget {
               ],
             ),
           ),
+          if (watched) ...[
+            const SizedBox(width: 8),
+            KitsuWatchedTick(label: S.current.Kr_Watched),
+          ],
         ],
+      ),
       ),
     );
   }

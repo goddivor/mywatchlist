@@ -3,11 +3,12 @@ import 'package:mywatchlist/constants/constants.dart' show AccountType;
 import 'package:mywatchlist/services/api/Kitsu/kitsu_graphql.dart' show KitsuMediaKind;
 import 'package:mywatchlist/services/api/Kitsu/kitsu_http.dart';
 import 'package:mywatchlist/services/api/Kitsu/kitsu_library.dart';
-import 'package:mywatchlist/services/tracker_sync_service.dart';
 import 'package:mywatchlist/user/preferences/preferences.dart';
 import 'package:mywatchlist/user/user_kitsu_v2.dart';
 import 'package:mywatchlist/utils/app_routes.dart';
 import 'package:mywatchlist/widgets/Kitsu/kitsu_open.dart';
+import 'package:mywatchlist/widgets/Kitsu/media/kitsu_entry_sheet.dart';
+import 'package:mywatchlist/widgets/Kitsu/media/kitsu_my_library.dart';
 import 'package:mywatchlist/widgets/common/list_sort_filter.dart';
 import 'package:mywatchlist/widgets/user/edit/edit_rules.dart';
 import 'package:mywatchlist/widgets/user/edit/list_entry.dart';
@@ -15,7 +16,6 @@ import 'package:mywatchlist/widgets/user/list/list_entry_view.dart';
 import 'package:mywatchlist/widgets/user/list/list_query.dart';
 import 'package:mywatchlist/widgets/user/list/user_list_adapter.dart';
 import 'package:mywatchlist/widgets/user/sync/sync_entry.dart';
-import 'package:mywatchlist/widgets/user/sync/tracker_entry_editor.dart';
 
 /// The signed-in user's Kitsu library for the tracker-agnostic list widgets (`UserListView`).
 ///
@@ -86,14 +86,40 @@ class KitsuUserListAdapter extends UserListAdapter {
     return result.page;
   }
 
+  /// The five counts in one request, as the site's library sidebar reads them
+  /// (`meta.statusCounts`); one request per status only when Kitsu leaves that object out.
   @override
   Future<Map<ListEntryStatus, int>?> statusCounts(String category) async {
     try {
-      return await _library.statusCounts(isAnime: category == 'anime');
+      final json = await _library.http.getJson('/library-entries',
+          query: {
+            'filter[userId]': await _library.userId(),
+            'filter[kind]': category == 'anime' ? 'anime' : 'manga',
+            'page[limit]': '1',
+            'fields[libraryEntries]': 'status',
+          },
+          auth: true);
+      return parseStatusCounts(json) ?? await _library.statusCounts(isAnime: category == 'anime');
     } catch (e) {
       debugPrint('KitsuUserListAdapter.statusCounts failed (${e.runtimeType})');
       return null;
     }
+  }
+
+  /// The counts of a library answer's `meta.statusCounts`, null when it has none. A status
+  /// Kitsu leaves out counts 0.
+  @visibleForTesting
+  static Map<ListEntryStatus, int>? parseStatusCounts(Map<String, dynamic> json) {
+    final counts = (json['meta'] as Map?)?['statusCounts'];
+    if (counts is! Map) return null;
+    int n(String key) => (counts[key] as num?)?.toInt() ?? 0;
+    return {
+      ListEntryStatus.current: n('current'),
+      ListEntryStatus.planned: n('planned'),
+      ListEntryStatus.completed: n('completed'),
+      ListEntryStatus.onHold: n('onHold'),
+      ListEntryStatus.dropped: n('dropped'),
+    };
   }
 
   @override
@@ -143,16 +169,37 @@ class KitsuUserListAdapter extends UserListAdapter {
     return ListEditUpdated(applySync(entry, saved, _clock()));
   }
 
+  /// Kitsu's own edit sheet (Kitsu wording, the account's rating system, rewatches, notes,
+  /// private), its answer turned into the [SyncEntry] the list applies.
   static Future<SyncEntry?> _openEditor(
-      BuildContext context, ListEntryView entry, SyncEntry initial) {
-    return showTrackerEntryEditor(
+      BuildContext context, ListEntryView entry, SyncEntry initial) async {
+    final result = await showKitsuEntrySheet(
       context,
-      service: TrackerSyncService.instance,
-      tracker: AccountType.kitsu,
-      trackerId: '${entry.id}',
-      malId: entry.malId ?? 0,
-      category: entry.category,
-      initial: initial,
+      kind: entry.isAnime ? KitsuMediaKind.anime : KitsuMediaKind.manga,
+      mediaId: '${entry.id}',
+      title: entry.title,
+      total: entry.total,
+    );
+    return switch (result) {
+      null => null,
+      KitsuEntryRemoved() => SyncEntry.removed,
+      KitsuEntrySaved(entry: final saved) => syncOf(saved, isAnime: entry.isAnime),
+    };
+  }
+
+  /// [entry] as the list's [SyncEntry] (score on 0-10, dates as `yyyy-mm-dd`).
+  @visibleForTesting
+  static SyncEntry syncOf(KitsuMyEntry entry, {required bool isAnime}) {
+    String? day(DateTime? d) => d == null ? null : d.toIso8601String().substring(0, 10);
+    return SyncEntry(
+      status: entry.status.malValue(isAnime: isAnime),
+      score: entry.isRated ? entry.rating! / 2 : null,
+      progress: entry.progress,
+      startDate: day(entry.startedAt),
+      finishDate: day(entry.finishedAt),
+      repeat: entry.reconsuming ? 1 : 0,
+      notes: entry.notes,
+      entryId: entry.id,
     );
   }
 

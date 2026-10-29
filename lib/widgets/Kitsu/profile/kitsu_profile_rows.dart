@@ -2,21 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:mywatchlist/constants/constants.dart' show displayTimeAgo;
 import 'package:mywatchlist/services/api/Kitsu/kitsu_graphql.dart';
 import 'package:mywatchlist/generated/l10n.dart';
-import 'package:mywatchlist/utils/web_launcher.dart';
+import 'package:mywatchlist/widgets/Kitsu/kitsu_open.dart';
 import 'package:mywatchlist/widgets/user/list/list_entry_view.dart' show ListEntryStatus;
 import 'package:mywatchlist/widgets/common/app_image.dart';
 
-/// Opens a Kitsu title from the profile. The profile never goes through the MyAnimeList pages:
-/// each tracker is its own app. Until the native Kitsu title page (unit `kitsu-media-page`) is
-/// merged this opens the title on kitsu.app; swap [opener] for `openKitsuTitle` then (one line).
+/// Opens a Kitsu title from the profile on its native Kitsu page (`openKitsuTitle`): the
+/// profile never goes through the MyAnimeList pages, each tracker is its own app. Tests replace
+/// [opener].
 class KitsuTitleLinks {
   const KitsuTitleLinks._();
 
   static void Function(BuildContext context, KitsuMediaKind kind, String id, String? slug) opener =
-      _openOnSite;
+      _openNative;
 
-  static void _openOnSite(BuildContext context, KitsuMediaKind kind, String id, String? slug) {
-    launchWebView('https://kitsu.app/${kind.path}/${slug ?? id}', context: context);
+  static void _openNative(BuildContext context, KitsuMediaKind kind, String id, String? slug) {
+    openKitsuTitle(context, kind: kind, id: id, slug: slug);
   }
 
   static void open(BuildContext context, KitsuMediaRef ref) =>

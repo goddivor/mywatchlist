@@ -2,27 +2,37 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:mywatchlist/constants/constants.dart' show AccountType;
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/pages/Kitsu/kitsu_browse_screen.dart';
 import 'package:mywatchlist/screens/MAL/detail/sections/section_states.dart';
 import 'package:mywatchlist/services/api/Kitsu/kitsu_catalog.dart' show KitsuMediaQuery;
 import 'package:mywatchlist/services/api/Kitsu/kitsu_graphql.dart';
 import 'package:mywatchlist/services/api/Kitsu/kitsu_media_detail.dart';
+import 'package:mywatchlist/user/user_manager.dart';
 import 'package:mywatchlist/utils/app_routes.dart';
 import 'package:mywatchlist/utils/web_launcher.dart' show launchWebView;
 import 'package:mywatchlist/widgets/Kitsu/feed/kitsu_media_discussion_page.dart';
 import 'package:mywatchlist/widgets/Kitsu/media/kitsu_media_cards.dart';
 import 'package:mywatchlist/widgets/Kitsu/media/kitsu_media_format.dart';
 import 'package:mywatchlist/widgets/Kitsu/media/kitsu_media_header.dart';
+import 'package:mywatchlist/widgets/Kitsu/media/kitsu_library_box.dart';
 import 'package:mywatchlist/widgets/Kitsu/media/kitsu_media_parts.dart';
+import 'package:mywatchlist/widgets/Kitsu/media/kitsu_my_library.dart';
+import 'package:mywatchlist/widgets/Kitsu/media/kitsu_unit_sheet.dart';
 import 'package:mywatchlist/widgets/Kitsu/media/kitsu_paged_screen.dart';
 import 'package:share_plus/share_plus.dart';
 
-/// Native Kitsu title page: only Kitsu's own data (owner rule for Kitsu accounts), anonymous
-/// and read-only. One request returns the record with the first page of every section; the
-/// rating histogram is a second request and its section is simply absent when it fails. A
-/// section Kitsu has nothing for is not shown. "Open on MyAnimeList" stays in the menu when
-/// Kitsu maps the title to MyAnimeList.
+/// Native Kitsu title page: only Kitsu's own data (owner rule for Kitsu accounts). One
+/// anonymous request returns the record with the first page of every section; the rating
+/// histogram is a second request and its section is simply absent when it fails. A section
+/// Kitsu has nothing for is not shown. "Open on MyAnimeList" stays in the menu when Kitsu maps
+/// the title to MyAnimeList.
+///
+/// With a Kitsu account signed in, the user's side is read separately (`KitsuMyTitle`): the
+/// library box under the header (status, rating in the account's system, progress with +1,
+/// reaction, edit), the favourite heart, watched ticks on the episodes and "watched up to here"
+/// in the episode sheet. Nothing is written without a tap.
 class KitsuMediaPage extends StatefulWidget {
   final KitsuMediaKind kind;
 
@@ -35,6 +45,12 @@ class KitsuMediaPage extends StatefulWidget {
   final String? posterUrl;
   final KitsuMediaDetailService? service;
 
+  /// The user's library and favourites; defaults to [KitsuMyLibrary.instance].
+  final KitsuMyLibrary? library;
+
+  /// Whether to read the user's side; defaults to "a Kitsu account is signed in".
+  final bool? signedIn;
+
   const KitsuMediaPage({
     super.key,
     required this.kind,
@@ -43,6 +59,8 @@ class KitsuMediaPage extends StatefulWidget {
     this.title,
     this.posterUrl,
     this.service,
+    this.library,
+    this.signedIn,
   }) : assert(id != null || slug != null, 'give an id or a slug');
 
   @override
@@ -58,8 +76,26 @@ class _KitsuMediaPageState extends State<KitsuMediaPage> {
   KitsuMediaDetail? _detail;
   KitsuRatingFrequencies? _ratings;
   bool _ratingsLoading = true;
+  KitsuMyTitle? _my;
 
   KitsuMediaKind get _kind => widget.kind;
+
+  bool get _signedIn => widget.signedIn ?? UserManager.instance.isAuthenticated(AccountType.kitsu);
+
+  /// Starts reading the user's side of [d] once (signed in only).
+  void _startMine(KitsuMediaDetail d) {
+    if (_my != null || !_signedIn) return;
+    final anime = d.kind == KitsuMediaKind.anime;
+    final total = (anime ? d.episodeCount : d.chapterCount) ?? 0;
+    _my = KitsuMyTitle(kind: d.kind, mediaId: d.id, total: total, service: widget.library);
+    unawaited(_my!.load());
+  }
+
+  @override
+  void dispose() {
+    _my?.dispose();
+    super.dispose();
+  }
 
   @override
   void initState() {
@@ -68,6 +104,7 @@ class _KitsuMediaPageState extends State<KitsuMediaPage> {
     _detail = _service.peek<KitsuMediaDetail>(KitsuMediaDetailService.detailKey(_kind, key));
     if (_detail != null) {
       _phase = _Phase.ready;
+      _startMine(_detail!);
       _ratings = _service.peek<KitsuRatingFrequencies>(KitsuMediaDetailService.ratingsKey(_kind, _detail!.id));
       _ratingsLoading = _ratings == null;
     }
@@ -85,6 +122,7 @@ class _KitsuMediaPageState extends State<KitsuMediaPage> {
       setState(() {
         _detail = found;
         _phase = _Phase.ready;
+        _startMine(found);
       });
       unawaited(_loadRatings(found.id, force));
     } catch (_) {
@@ -115,6 +153,8 @@ class _KitsuMediaPageState extends State<KitsuMediaPage> {
         title: ref.titles.display,
         posterUrl: ref.poster?.url,
         service: widget.service,
+        library: widget.library,
+        signedIn: widget.signedIn,
       ));
 
   @override
@@ -132,6 +172,7 @@ class _KitsuMediaPageState extends State<KitsuMediaPage> {
               expandedHeight: KitsuMediaHeader.extent(context) - MediaQuery.paddingOf(context).top,
               title: _CollapsedTitle(name),
               actions: [
+                if (_my != null) KitsuFavouriteButton(my: _my!),
                 IconButton(
                   tooltip: S.current.Kmp_Open_On_Kitsu,
                   icon: const Icon(Icons.open_in_browser),
@@ -227,6 +268,23 @@ class _KitsuMediaPageState extends State<KitsuMediaPage> {
   List<Widget> _sections(BuildContext context, KitsuMediaDetail d) {
     final out = <Widget>[];
     final anime = d.kind == KitsuMediaKind.anime;
+    final my = _my;
+    final title = d.titles.display;
+
+    if (my != null) out.add(KitsuLibraryBox(my: my, title: title));
+    final next = d.nextRelease;
+    if (next != null && next.isAfter(DateTime.now())) {
+      out.add(my == null
+          ? KitsuNextEpisodeLine(release: next, isAnime: anime)
+          : ListenableBuilder(
+              listenable: my,
+              builder: (context, _) => KitsuNextEpisodeLine(
+                release: next,
+                isAnime: anime,
+                number: my.entry == null ? null : my.progress + 1,
+              ),
+            ));
+    }
 
     if (d.description != null || d.categories.isNotEmpty) {
       out.add(KitsuSection(
@@ -278,13 +336,26 @@ class _KitsuMediaPageState extends State<KitsuMediaPage> {
           title: anime ? S.current.Kmp_Episodes : S.current.Kmp_Chapters,
           first: d.units,
           load: (page) => _service.units(_kind, d.id, page),
-          itemBuilder: (context, u) => KitsuUnitRow(unit: u, kind: _kind),
+          itemBuilder: (context, u) => KitsuUnitRow(
+            unit: u,
+            kind: _kind,
+            watched: _watched(u),
+            onTap: () => _openUnit(context, d, u),
+          ),
         )),
-        child: KitsuStrip(
-          height: KitsuUnitCard.heightFor(context),
-          itemCount: d.units.nodes.length,
-          itemBuilder: (context, i) => KitsuUnitCard(unit: d.units.nodes[i], kind: _kind),
-        ),
+        child: _mine((context) => KitsuStrip(
+              height: KitsuUnitCard.heightFor(context),
+              itemCount: d.units.nodes.length,
+              itemBuilder: (context, i) {
+                final u = d.units.nodes[i];
+                return KitsuUnitCard(
+                  unit: u,
+                  kind: _kind,
+                  watched: _watched(u),
+                  onTap: () => _openUnit(context, d, u),
+                );
+              },
+            )),
       ));
     }
     if (d.volumes.isNotEmpty) {
@@ -408,6 +479,26 @@ class _KitsuMediaPageState extends State<KitsuMediaPage> {
 
     return out;
   }
+
+  /// [builder] rebuilt when the user's entry changes (once, when signed out).
+  Widget _mine(WidgetBuilder builder) {
+    final my = _my;
+    if (my == null) return Builder(builder: builder);
+    return ListenableBuilder(listenable: my, builder: (context, _) => builder(context));
+  }
+
+  bool _watched(KitsuUnit u) {
+    final my = _my;
+    return my != null && my.entry != null && my.progress >= u.number;
+  }
+
+  void _openUnit(BuildContext context, KitsuMediaDetail d, KitsuUnit u) => showKitsuUnitSheet(
+        context,
+        unit: u,
+        kind: d.kind,
+        mediaTitle: d.titles.display,
+        my: _my,
+      );
 
   void _openDiscussion(KitsuMediaDetail d) =>
       _push(KitsuMediaDiscussionPage(kind: d.kind, mediaId: d.id, title: d.titles.display));
