@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/foundation.dart';
 import 'package:html/dom.dart';
 import 'package:html/parser.dart' as html_parser;
@@ -131,6 +133,9 @@ class MalEpisodesPage {
 
   static final Map<String, EpisodesPage> _cache = {};
 
+  /// Jikan's last page of each anime, read along with its episodes.
+  static final Map<int, int> _jikanLastPage = {};
+
   /// Restores the real network access and empties the cache (tests).
   @visibleForTesting
   static void reset() {
@@ -138,6 +143,7 @@ class MalEpisodesPage {
     jikanPage = _jikanPage;
     parseInline = false;
     _cache.clear();
+    _jikanLastPage.clear();
   }
 
   /// Page of [animeId] starting at [offset]. Throws only when neither MAL nor
@@ -162,7 +168,7 @@ class MalEpisodesPage {
     final extra = await jikan;
     if (page == null) {
       if (extra != null && extra.isNotEmpty) {
-        page = _fromJikan(extra, offset);
+        page = _fromJikan(extra, offset, lastPage: _jikanLastPage[animeId]);
       } else if (error != null) {
         throw error;
       } else {
@@ -208,10 +214,17 @@ class MalEpisodesPage {
     );
   }
 
-  static EpisodesPage _fromJikan(List<AnimeEpisode> jikan, int offset) {
+  /// A Jikan page of 100 episodes is MAL's page at the same offset. Without Jikan's last page,
+  /// a full page offers the next one.
+  static EpisodesPage _fromJikan(List<AnimeEpisode> jikan, int offset, {int? lastPage}) {
+    final last = lastPage != null && lastPage > 0
+        ? (lastPage - 1) * pageSize
+        : jikan.length >= pageSize
+            ? offset + pageSize
+            : offset;
     return EpisodesPage(
       offset: offset,
-      offsets: [offset],
+      offsets: everyOffset(math.max(last, offset)),
       episodes: [
         for (final j in jikan)
           if (j.malId != null)
@@ -241,15 +254,23 @@ class MalEpisodesPage {
   static Future<List<AnimeEpisode>> _jikanPage(int animeId, int page) async {
     final response =
         await JikanApi().getAnimeEpisodes(animeId, page: page).timeout(timeout);
+    final last = response.pagination.lastVisiblePage;
+    if (last != null) _jikanLastPage[animeId] = last;
     return response.data;
   }
 }
+
+/// Offsets of every page from the first to [last] (0, 100, 200…).
+List<int> everyOffset(int last) => [
+      for (var o = 0; o <= last; o += MalEpisodesPage.pageSize) o,
+    ];
 
 EpisodesPage _parseEpisodeListIn((String, int) args) =>
     parseEpisodeList(args.$1, offset: args.$2);
 
 final RegExp _topicIdRe = RegExp(r'topicid=(\d+)');
-final RegExp _totalRe = RegExp(r'\((\d+)\s*/\s*(?:\d+|\?)\)');
+/// "(26/26)", "(1,180/Unknown)", "(3/?)": the first number is the episodes MAL lists.
+final RegExp _totalRe = RegExp(r'\(([\d,]+)\s*/\s*(?:[\d,]+|\?|Unknown)\)');
 final RegExp _offsetRe = RegExp(r'offset=(\d+)');
 
 int? _topicId(String? url) {
@@ -309,16 +330,22 @@ EpisodesPage parseEpisodeList(String body, {int offset = 0}) {
   final total = _totalRe
       .firstMatch(_text(document.querySelector('h2.h2_overwrite')?.parent))
       ?.group(1);
-  final offsets = <int>{offset};
+  final count = total == null ? null : int.tryParse(total.replaceAll(',', ''));
+  // MAL's pager only links the pages around the current one and the last one ("1 - 100,
+  // 101 - 200, 201 - 300, 1101 - 1180"): every page up to the last is offered.
+  var last = offset;
   for (final a in document.querySelectorAll('.pagination a.link')) {
     final o = _offsetRe.firstMatch(a.attributes['href'] ?? '')?.group(1);
-    if (o != null) offsets.add(int.parse(o));
+    if (o != null) last = math.max(last, int.parse(o));
+  }
+  if (count != null && count > 0) {
+    last = math.max(last, (count - 1) ~/ MalEpisodesPage.pageSize * MalEpisodesPage.pageSize);
   }
   return EpisodesPage(
     episodes: episodes,
-    total: total == null ? null : int.tryParse(total),
+    total: count,
     offset: offset,
-    offsets: offsets.toList()..sort(),
+    offsets: everyOffset(last),
   );
 }
 
