@@ -18,6 +18,7 @@ import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/screens/MAL/detail/detail_data.dart';
 import 'package:mywatchlist/screens/MAL/detail/sections/adaptations_section.dart';
 import 'package:mywatchlist/screens/MAL/detail/sections/characters_section.dart';
+import 'package:mywatchlist/screens/MAL/detail/sections/episodes_section.dart';
 import 'package:mywatchlist/screens/MAL/detail/sections/featured_section.dart';
 import 'package:mywatchlist/screens/MAL/detail/sections/forums_section.dart';
 import 'package:mywatchlist/screens/MAL/detail/sections/interest_stacks_section.dart';
@@ -97,6 +98,7 @@ String detailTabLabel(TabType type) {
     TabType.Stats => s.Dh_Tab_Stats,
     TabType.ScoreStats => s.Dh_Tab_Score_Stats,
     TabType.More_Info => s.Dh_Tab_More_Info,
+    TabType.Episodes => s.Ep_Tab_Episodes,
   };
 }
 
@@ -121,11 +123,21 @@ abstract final class DetailSections {
     TabType.Stats: statsSection,
     TabType.ScoreStats: scoreStatsSection,
     TabType.More_Info: moreInfoSection,
+    TabType.Episodes: episodesSection,
   };
 
   /// The user's visible section order for this category (contract pref).
-  static List<TabType> order(DetailData data, [ContentPreferences? prefs]) =>
-      (prefs ?? Preferences.content).visibleTabs(manga: data.isManga);
+  /// A section the saved preference does not list yet ([TabType.Episodes], added
+  /// after the contract) is shown after Related until the contract lists it.
+  static List<TabType> order(DetailData data, [ContentPreferences? prefs]) {
+    final p = prefs ?? Preferences.content;
+    final tabs = p.visibleTabs(manga: data.isManga);
+    final listed = (data.isManga ? p.mangaTabs : p.animeTabs)
+        .any((t) => t.tabType == TabType.Episodes);
+    if (listed || data.isManga) return tabs;
+    final at = tabs.indexOf(TabType.Related);
+    return [...tabs]..insert(at == -1 ? tabs.length.clamp(0, 1) : at + 1, TabType.Episodes);
+  }
 
   /// Sections to show, in order. [order] defaults to the saved preference.
   static List<DetailSection> build(DetailData data, {List<TabType>? order}) {
