@@ -6,13 +6,17 @@ import 'package:mywatchlist/services/api/Kitsu/kitsu_http.dart';
 import 'package:mywatchlist/services/api/Kitsu/kitsu_graphql.dart' show KitsuProfileSummary;
 import 'package:mywatchlist/services/api/Kitsu/kitsu_social.dart';
 import 'package:mywatchlist/services/api/Kitsu/kitsu_profile.dart';
+import 'package:mywatchlist/user/base_user.dart' show AuthStatus;
 import 'package:mywatchlist/user/preferences/preferences.dart';
+import 'package:mywatchlist/user/user_kitsu_v2.dart';
 import 'package:mywatchlist/utils/web_launcher.dart';
 import 'package:mywatchlist/widgets/Kitsu/profile/kitsu_about_extras.dart';
 import 'package:mywatchlist/widgets/Kitsu/profile/kitsu_category_donut.dart';
 import 'package:mywatchlist/widgets/Kitsu/profile/kitsu_profile_rows.dart' show kitsuStatusLabel;
 import 'package:mywatchlist/widgets/Kitsu/profile/kitsu_activity_tab.dart';
 import 'package:mywatchlist/widgets/Kitsu/profile/kitsu_favourites_tab.dart';
+import 'package:mywatchlist/widgets/Kitsu/profile/kitsu_follow_button.dart';
+import 'package:mywatchlist/widgets/Kitsu/profile/kitsu_groups_tab.dart';
 import 'package:mywatchlist/widgets/Kitsu/profile/kitsu_list_tab.dart';
 import 'package:mywatchlist/widgets/Kitsu/profile/kitsu_people.dart';
 import 'package:mywatchlist/widgets/Kitsu/profile/kitsu_posts_tab.dart';
@@ -41,7 +45,11 @@ class KitsuProfileView extends StatefulWidget {
   /// Loads the profile; replaced by tests.
   final Future<KitsuProfile> Function(String? userId)? loader;
 
-  const KitsuProfileView({super.key, this.userId, this.showBack = false, this.loader});
+  /// Whether a Kitsu account is signed in (the Follow button needs one); replaced by tests.
+  final bool Function()? signedIn;
+
+  const KitsuProfileView(
+      {super.key, this.userId, this.showBack = false, this.loader, this.signedIn});
 
   @override
   State<KitsuProfileView> createState() => _KitsuProfileViewState();
@@ -71,7 +79,15 @@ class _KitsuProfileViewState extends State<KitsuProfileView> {
       future: _future,
       builder: (context, snapshot) {
         final data = snapshot.data;
-        if (data != null) return _Loaded(profile: data, isSelf: widget.userId == null, showBack: widget.showBack);
+        if (data != null) {
+          final signedIn = widget.signedIn ?? () => UserKitsuV2.instance.status == AuthStatus.AUTHENTICATED;
+          return _Loaded(
+            profile: data,
+            isSelf: widget.userId == null,
+            showBack: widget.showBack,
+            canFollow: widget.userId != null && signedIn(),
+          );
+        }
         final body = snapshot.hasError
             ? _ErrorView(error: snapshot.error!, onRetry: _retry)
             : ProfileLoading(label: S.of(context).Kitsu_Prof_Loading);
@@ -118,8 +134,10 @@ class _Loaded extends StatefulWidget {
   final KitsuProfile profile;
   final bool isSelf;
   final bool showBack;
+  final bool canFollow;
 
-  const _Loaded({required this.profile, required this.isSelf, required this.showBack});
+  const _Loaded(
+      {required this.profile, required this.isSelf, required this.showBack, required this.canFollow});
 
   @override
   State<_Loaded> createState() => _LoadedState();
@@ -141,12 +159,16 @@ class _LoadedState extends State<_Loaded> {
     final profile = widget.profile;
     final slug = profile.handle;
     return DefaultTabController(
-      length: widget.isSelf ? 6 : 7,
+      length: widget.isSelf ? 7 : 8,
       child: Scaffold(
         backgroundColor: Colors.transparent,
         body: NestedScrollView(
           headerSliverBuilder: (context, _) => [
-            SliverToBoxAdapter(child: _Header(profile: profile)),
+            SliverToBoxAdapter(
+                child: _Header(
+                    profile: profile,
+                    canFollow: widget.canFollow,
+                    libraryTab: widget.isSelf ? 0 : 7)),
             SliverOverlapAbsorber(
               handle: NestedScrollView.sliverOverlapAbsorberHandleFor(context),
               sliver: SliverAppBar(
@@ -176,6 +198,7 @@ class _LoadedState extends State<_Loaded> {
                     Tab(text: s.Kitsu_Tab_Activity),
                     Tab(text: s.Kitsu_Tab_Reactions),
                     Tab(text: s.Kitsu_Tab_Posts),
+                    Tab(text: s.Kf_Tab_Groups),
                     if (!widget.isSelf) Tab(text: s.Kitsu_Tab_List),
                   ],
                 ),
@@ -191,6 +214,7 @@ class _LoadedState extends State<_Loaded> {
               KitsuReactionsTab(slug: slug),
               KitsuPostsTab(
                   slug: slug, pinned: () async => (await _loadSummary())?.pinnedPost),
+              KitsuGroupsTab(userId: profile.id),
               if (!widget.isSelf) KitsuListTab(slug: slug),
             ],
           ),
@@ -202,8 +226,12 @@ class _LoadedState extends State<_Loaded> {
 
 class _Header extends StatelessWidget {
   final KitsuProfile profile;
+  final bool canFollow;
 
-  const _Header({required this.profile});
+  /// Index of the tab that holds the user's library (the List tab, or Stats on one's own profile).
+  final int libraryTab;
+
+  const _Header({required this.profile, required this.canFollow, required this.libraryTab});
 
   static const double _cover = 150;
   static const double _avatar = 88;
@@ -224,7 +252,6 @@ class _Header extends StatelessWidget {
     final entries = profile.anime.totalEntries + profile.manga.totalEntries;
     final details = [
       if (joined != null) s.Prof_Joined(joined),
-      if (entries > 0) s.Prof_Entry_Count(entries),
     ].join(' · ');
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -271,10 +298,17 @@ class _Header extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(profile.name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700)),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(profile.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700)),
+                  ),
+                  if (canFollow) KitsuFollowButton(userId: profile.id),
+                ],
+              ),
               if (details.isNotEmpty)
                 Text(details,
                     style: theme.textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant)),
@@ -291,6 +325,11 @@ class _Header extends StatelessWidget {
                     label: s.Kitsu_Following(profile.following),
                     onTap: () => _openPeople(context, followers: false),
                   ),
+                  if (entries > 0)
+                    _Counter(
+                      label: s.Kf_Library_Count(entries),
+                      onTap: () => DefaultTabController.maybeOf(context)?.animateTo(libraryTab),
+                    ),
                 ],
               ),
             ],

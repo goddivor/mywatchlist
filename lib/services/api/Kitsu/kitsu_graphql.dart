@@ -777,6 +777,29 @@ class KitsuRatingFrequencies {
   /// All 19 steps 2..20 in order, zeros included, ready for a bar chart.
   List<int> get steps => [for (var s = 2; s <= 20; s++) this[s]];
 
+  /// The histogram folded into [buckets] bars of a user's rating system, worst first: 4 (Simple:
+  /// steps 2-5, 6-11, 12-16, 17-20, the faces of `KitsuRating.simpleIndex`), 10 (Regular: whole
+  /// stars, an odd step goes to the lower half star) or 19 (Advanced: unchanged). Any other
+  /// count gives the 19 steps.
+  List<int> rebucket(int buckets) {
+    if (buckets != 4 && buckets != 10) return steps;
+    final out = List<int>.filled(buckets, 0);
+    counts.forEach((step, count) {
+      if (step < 2 || step > 20) return;
+      final i = buckets == 10
+          ? (step ~/ 2) - 1
+          : step <= 5
+              ? 0
+              : step <= 11
+                  ? 1
+                  : step <= 16
+                      ? 2
+                      : 3;
+      out[i] += count;
+    });
+    return out;
+  }
+
   static KitsuRatingFrequencies parse(Map<String, dynamic> document) {
     final raw = _map(_map(_map(document['data'])?['attributes'])?['ratingFrequencies']);
     final counts = <int, int>{};
@@ -1268,13 +1291,14 @@ class KitsuGroupPage {
 // The client
 // ---------------------------------------------------------------------------
 
-/// The one place that talks to the Kitsu GraphQL API (read-only).
+/// The one place that talks to the Kitsu GraphQL API.
 ///
 /// Anonymous requests cover everything public (titles, posts, public profiles). Pass
 /// `auth: true` to send the user's token through `UserKitsuV2.sendAuthenticated`, which refreshes
 /// an expiring token and replays once after a 401: no call builds its own Bearer header. Feeds,
 /// groups and the rating histogram are not in the GraphQL schema, so they go through [KitsuHttp]
-/// (JSON:API). Nothing here ever mutates.
+/// (JSON:API). Reads are the default; the library and favourite mutations of the signed-in user
+/// (`KitsuMyLibrary`) go through `execute(auth: true)`, only on the viewer's tap.
 class KitsuGraphql {
   KitsuGraphql({KitsuAuthSender? auth, http.Client? client, KitsuHttp? rest})
       : _authOverride = auth,
