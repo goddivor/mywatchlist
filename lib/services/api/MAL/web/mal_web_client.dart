@@ -177,6 +177,10 @@ class MalWebClient {
     await session.markExpired();
   }
 
+  /// MAL sent a page of the session to its login (seen outside this client, e.g. in the
+  /// WebView of a protected form): the session is marked expired.
+  Future<void> sessionExpired() => _expire();
+
   /// Whether MAL still accepts the session. Checked at most every [maxAge] unless [force].
   /// Throws [MalWebNoSession] without a session; network errors are rethrown (a network
   /// failure never drops the session).

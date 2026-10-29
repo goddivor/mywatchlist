@@ -2,7 +2,9 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:mywatchlist/generated/l10n.dart';
+import 'package:mywatchlist/screens/mal_web/mal_web_form_errors.dart';
 import 'package:mywatchlist/services/api/MAL/web/mal_messages_api.dart';
+import 'package:mywatchlist/services/api/MAL/web/mal_web_form_submitter.dart';
 import 'package:mywatchlist/services/auth/mal_web_session.dart';
 import 'package:mywatchlist/utils/app_routes.dart';
 import 'package:mywatchlist/widgets/forum/forum_common.dart';
@@ -108,7 +110,7 @@ class _ComposeMalMessageScreenState extends State<ComposeMalMessageScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _sending = false);
-      showMessageSnack(context, messageErrorText(e));
+      showMessageSnack(context, malFormErrorText(e));
     }
   }
 
@@ -161,9 +163,11 @@ class _ComposeMalMessageScreenState extends State<ComposeMalMessageScreen> {
             ),
           ],
         ),
-        body: MalSessionGate(
-          session: _session,
-          connected: (context) => _fields(context),
+        body: MalWebFormHost(
+          child: MalSessionGate(
+            session: _session,
+            connected: (context) => _fields(context),
+          ),
         ),
       ),
     );

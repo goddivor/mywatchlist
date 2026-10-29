@@ -156,6 +156,7 @@ class _MessageBoxState extends State<_MessageBox> with AutomaticKeepAliveClientM
     try {
       final page = await _fetch(0);
       if (!mounted || generation != _generation) return;
+      widget.api.prefetchPictures(page.messages);
       setState(() {
         _items = page.messages;
         _hasMore = page.messages.length >= MalMessagesApi.pageSize;
@@ -181,6 +182,7 @@ class _MessageBoxState extends State<_MessageBox> with AutomaticKeepAliveClientM
     try {
       final page = await _fetch(_items.length);
       if (!mounted || generation != _generation) return;
+      widget.api.prefetchPictures(page.messages);
       final known = {for (final m in _items) m.id};
       final fresh = page.messages.where((m) => known.add(m.id)).toList();
       setState(() {

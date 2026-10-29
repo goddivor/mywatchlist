@@ -4,7 +4,9 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/services/api/MAL/web/mal_messages_api.dart';
+import 'package:mywatchlist/screens/mal_web/mal_web_form_errors.dart';
 import 'package:mywatchlist/services/api/MAL/web/mal_web_client.dart';
+import 'package:mywatchlist/services/api/MAL/web/mal_web_form_submitter.dart';
 import 'package:mywatchlist/services/auth/mal_web_session.dart';
 import 'package:mywatchlist/utils/web_launcher.dart';
 import 'package:mywatchlist/widgets/forum/forum_common.dart';
@@ -56,6 +58,8 @@ class _MalMessageThreadScreenState extends State<MalMessageThreadScreen> {
     try {
       final thread = await _api.thread(widget.message);
       if (!mounted) return;
+      final other = thread.counterpart.isNotEmpty ? thread.counterpart : widget.message.counterpart;
+      _api.pictures.prefetch([other], known: {other: thread.avatarUrl ?? widget.message.avatarUrl});
       setState(() {
         _thread = thread;
         _loading = false;
@@ -90,7 +94,7 @@ class _MalMessageThreadScreenState extends State<MalMessageThreadScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _sending = false);
-      showMessageSnack(context, messageErrorText(e));
+      showMessageSnack(context, malFormErrorText(e));
     }
   }
 
@@ -164,7 +168,7 @@ class _MalMessageThreadScreenState extends State<MalMessageThreadScreen> {
           ),
         ],
       ),
-      body: MalSessionGate(session: _session, connected: _content),
+      body: MalWebFormHost(child: MalSessionGate(session: _session, connected: _content)),
     );
   }
 

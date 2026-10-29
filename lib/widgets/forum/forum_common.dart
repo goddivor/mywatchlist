@@ -39,6 +39,33 @@ void openForumUser(BuildContext context, String? username) {
   AppRoutes.openUserPop(context, tracker: AccountType.myanimelist, username: username);
 }
 
+/// MAL user pictures known by name, for avatars drawn without a URL (the message list, whose
+/// rows have no picture in MAL's markup). The messages screens fill it from each user's
+/// profile; an avatar with no URL shows the known picture as soon as it arrives.
+abstract final class ForumAvatarPictures {
+  static final Map<String, ValueNotifier<String?>> _byName = {};
+
+  static String _key(String name) => name.trim().toLowerCase();
+
+  /// The notifier of [name]'s picture (null until known).
+  static ValueNotifier<String?> of(String name) => _byName.putIfAbsent(_key(name), () => ValueNotifier<String?>(null));
+
+  /// The picture known for [name], or null.
+  static String? lookup(String? name) {
+    if (name == null || name.trim().isEmpty) return null;
+    return _byName[_key(name)]?.value;
+  }
+
+  /// Records [url] as [name]'s picture (an empty URL is ignored).
+  static void remember(String? name, String? url) {
+    if (name == null || name.trim().isEmpty || url == null || url.trim().isEmpty) return;
+    of(name).value = url.trim();
+  }
+
+  @visibleForTesting
+  static void clear() => _byName.clear();
+}
+
 /// A round user picture: a clean circle (clip, no shadow, no border box) with the user's
 /// initials while it loads or when there is no picture. Tapping opens the quick profile sheet.
 class ForumAvatar extends StatelessWidget {
@@ -61,8 +88,18 @@ class ForumAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
     final name = username?.trim() ?? '';
+    if ((url == null || url!.isEmpty) && !selected && name.isNotEmpty) {
+      return ValueListenableBuilder<String?>(
+        valueListenable: ForumAvatarPictures.of(name),
+        builder: (context, known, _) => _build(context, name, known),
+      );
+    }
+    return _build(context, name, url);
+  }
+
+  Widget _build(BuildContext context, String name, String? url) {
+    final scheme = Theme.of(context).colorScheme;
     final initials = Center(
       child: Text(
         name.isEmpty ? '?' : name.characters.take(2).toString().toUpperCase(),
@@ -83,7 +120,7 @@ class ForumAvatar extends StatelessWidget {
     } else {
       content = ColoredBox(
         color: scheme.surfaceContainerHighest,
-        child: url == null || url!.isEmpty
+        child: url == null || url.isEmpty
             ? initials
             : AppImage(
                 url: url,
