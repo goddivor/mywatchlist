@@ -35,8 +35,10 @@ String kitsuStatusLabel(ListEntryStatus status, {required bool isAnime}) {
   };
 }
 
-/// "3 days ago" for [date], empty when unknown.
-String kitsuTimeAgo(DateTime? date) => date == null ? '' : displayTimeAgo(date.toLocal());
+/// "3 days ago" for [date], empty when unknown. The shared `displayTimeAgo` writes "2  minutes
+/// ago" (two spaces) for minutes and seconds: the runs of spaces are folded here.
+String kitsuTimeAgo(DateTime? date) =>
+    date == null ? '' : displayTimeAgo(date.toLocal()).replaceAll(RegExp(r'\s+'), ' ').trim();
 
 /// A poster on the left, a title and up to two lines of text on the right: the row of the
 /// activity, reactions and list tabs.

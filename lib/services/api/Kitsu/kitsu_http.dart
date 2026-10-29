@@ -87,6 +87,29 @@ class KitsuHttp {
     return decode(response);
   }
 
+  /// POST [path] with a JSON:API [body] as the signed-in user. Not idempotent: a transient
+  /// failure is not replayed, so a follow is never created twice.
+  Future<Map<String, dynamic>> postJson(String path, Map<String, dynamic> body) async {
+    final url = uri(path);
+    final response = await _authed(
+      (client, token) => client.post(url,
+          headers: {..._headers, 'Authorization': 'Bearer $token'}, body: jsonEncode(body)),
+      idempotent: false,
+    );
+    return decode(response);
+  }
+
+  /// DELETE [path] as the signed-in user (Kitsu answers 204 with no body).
+  Future<void> deleteJson(String path) async {
+    final url = uri(path);
+    final response = await _authed(
+      (client, token) =>
+          client.delete(url, headers: {..._headers, 'Authorization': 'Bearer $token'}),
+      idempotent: true,
+    );
+    await decode(response);
+  }
+
   Future<http.Response> _authed(
     Future<http.Response> Function(http.Client client, String token) send, {
     bool? idempotent,
@@ -103,8 +126,10 @@ class KitsuHttp {
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw KitsuHttpError(response.statusCode);
     }
-    if (response.body.isEmpty) return const {};
-    final body = response.body;
+    if (response.bodyBytes.isEmpty) return const {};
+    // Kitsu sends `application/vnd.api+json` with no charset, which `response.body` reads as
+    // Latin-1 ("KaiyÅ«"): the bytes are always UTF-8.
+    final body = utf8.decode(response.bodyBytes, allowMalformed: true);
     final decoded = body.length > 32 * 1024 ? await compute(_decode, body) : _decode(body);
     return decoded;
   }

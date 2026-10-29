@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:mywatchlist/services/api/Kitsu/kitsu_media.dart';
+import 'package:mywatchlist/widgets/Kitsu/kitsu_media_row.dart' show KitsuPercentBadge;
 import 'package:mywatchlist/widgets/Kitsu/kitsu_open.dart';
-import 'package:mywatchlist/widgets/common/app_colors.dart';
 import 'package:mywatchlist/widgets/common/app_image.dart';
 
-/// A poster tile of the Kitsu catalogue (browse grid, favorites): cover, mean score badge, the
+/// A poster tile of the Kitsu catalogue (browse grid, favorites): cover, Kitsu's community score as a percentage ("88%", never a score out of 10), the
 /// title on two lines and the type with the year. A tap opens the title's Kitsu page.
 class KitsuMediaTile extends StatelessWidget {
   final KitsuMedia media;
@@ -41,7 +40,6 @@ class KitsuMediaTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-    final tokens = AppColors.of(context);
     final score = media.meanScore;
     return InkWell(
       onTap: () => openKitsuMedia(context, media),
@@ -63,27 +61,7 @@ class KitsuMediaTile extends StatelessWidget {
                   PositionedDirectional(
                     top: 6,
                     end: 6,
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        color: tokens.imageScrim.withValues(alpha: AppColors.imageScrimOpacity),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.star_rounded, size: 14, color: tokens.onImageScrim),
-                            const SizedBox(width: 2),
-                            Text(
-                              NumberFormat('0.0').format(score),
-                              style: theme.textTheme.labelSmall
-                                  ?.copyWith(color: tokens.onImageScrim, fontWeight: FontWeight.w700),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
+                    child: KitsuPercentBadge(percent: score * 10),
                   ),
               ],
             ),

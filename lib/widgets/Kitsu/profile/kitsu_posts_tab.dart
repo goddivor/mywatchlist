@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/services/api/Kitsu/kitsu_graphql.dart';
 import 'package:mywatchlist/services/api/Kitsu/kitsu_social.dart';
-import 'package:mywatchlist/utils/web_launcher.dart';
+import 'package:mywatchlist/pages/Kitsu/kitsu_post_page.dart';
 import 'package:mywatchlist/widgets/Kitsu/profile/kitsu_paged_tab.dart';
 import 'package:mywatchlist/widgets/Kitsu/profile/kitsu_profile_rows.dart';
 
@@ -88,7 +88,8 @@ class _KitsuPostCardState extends State<KitsuPostCard> {
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
-        onTap: () => launchWebView('https://kitsu.app/posts/${post.id}', context: context),
+        onTap: () => Navigator.of(context).push(
+            MaterialPageRoute<void>(builder: (_) => KitsuPostPage(postId: post.id))),
         child: Padding(
           padding: const EdgeInsets.all(14),
           child: Column(

@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:mywatchlist/services/api/Kitsu/kitsu_catalog.dart';
+import 'package:mywatchlist/services/api/Kitsu/kitsu_graphql.dart' show KitsuGroup;
 import 'package:mywatchlist/services/api/Kitsu/kitsu_http.dart';
 import 'package:mywatchlist/services/api/Kitsu/kitsu_library.dart';
 import 'package:mywatchlist/services/api/Kitsu/kitsu_media.dart';
@@ -17,6 +18,7 @@ class KitsuMediaStats {
   final Duration time;
 
   /// Share of Kitsu users this one is ahead of (0-100) on time spent, `null` when Kitsu gave none.
+  /// Kitsu answers a fraction (0.99): [KitsuProfiles.percentOfFraction] turns it into 99.
   final double? timePercentile;
 
   /// Titles per category, most frequent first.
@@ -207,6 +209,70 @@ class KitsuProfiles {
     return catalog.byIds(ids, isAnime: isAnime);
   }
 
+  /// A Kitsu percentile as a 0-100 figure. Kitsu answers a 0-1 fraction (`0.99` is 99%); a value
+  /// above 1 can only already be a percentage and is kept.
+  @visibleForTesting
+  static double percentOfFraction(double value) => (value <= 1 ? value * 100 : value).clamp(0, 100).toDouble();
+
+  /// The id of the follow of [userId] by the signed-in user, `null` when not following.
+  Future<String?> followId(String userId) async {
+    final me = await library.userId();
+    final json = await http.getJson('/follows',
+        query: {
+          'filter[follower]': me,
+          'filter[followed]': userId,
+          'fields[follows]': 'createdAt',
+          'page[limit]': '1',
+        },
+        auth: true);
+    final data = KitsuDocument.from(json).data;
+    return data.isEmpty ? null : '${data.first['id']}';
+  }
+
+  /// Follows [userId] as the signed-in user and answers the new follow's id. Only a viewer's tap
+  /// calls this.
+  Future<String> follow(String userId) async {
+    final me = await library.userId();
+    final json = await http.postJson('/follows', {
+      'data': {
+        'type': 'follows',
+        'relationships': {
+          'follower': {
+            'data': {'type': 'users', 'id': me}
+          },
+          'followed': {
+            'data': {'type': 'users', 'id': userId}
+          },
+        },
+      },
+    });
+    final data = KitsuDocument.from(json).data;
+    if (data.isEmpty) throw const KitsuHttpError(502);
+    return '${data.first['id']}';
+  }
+
+  /// Stops following: deletes the follow [followId]. Only a viewer's tap calls this.
+  Future<void> unfollow(String followId) => http.deleteJson('/follows/$followId');
+
+  /// The groups user [userId] belongs to, in the order Kitsu lists them.
+  Future<List<KitsuGroup>> groups(String userId) async {
+    final json = await http.getJson('/group-members', query: {
+      'filter[query_user]': userId,
+      'include': 'group',
+      'fields[groupMembers]': 'group',
+      'fields[groups]': 'name,slug,membersCount,tagline,lastActivityAt,nsfw,avatar',
+      'page[limit]': '20',
+    });
+    final doc = KitsuDocument.from(json);
+    final groups = <KitsuGroup>[];
+    for (final member in doc.data) {
+      final group = doc.related(member, 'group');
+      final parsed = group == null ? null : KitsuGroup.parse(group);
+      if (parsed != null) groups.add(parsed);
+    }
+    return groups;
+  }
+
   @visibleForTesting
   static KitsuProfile parse(Map<String, dynamic> user, KitsuDocument doc) {
     final a = kitsuAttrs(user);
@@ -237,7 +303,7 @@ class KitsuProfiles {
           completed = (data['completed'] as num?)?.toInt() ?? 0;
           time = Duration(seconds: (data['time'] as num?)?.toInt() ?? 0);
           final p = data['percentiles'];
-          percentile = p is Map && p['time'] is num ? (p['time'] as num).toDouble() : null;
+          percentile = p is Map && p['time'] is num ? percentOfFraction((p['time'] as num).toDouble()) : null;
         } else if (kind.endsWith('category-breakdown')) {
           final cats = data['categories'];
           if (cats is Map) {
