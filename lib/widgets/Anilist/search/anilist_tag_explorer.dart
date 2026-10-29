@@ -242,7 +242,7 @@ class _TagListState extends State<_TagList> {
                 return ListTile(
                   dense: true,
                   title: Text(
-                    hidden ? s.Als_Spoiler : tag.name,
+                    hidden ? s.Asf_Spoiler : tag.name,
                     style: hidden ? TextStyle(color: cs.onSurfaceVariant, fontStyle: FontStyle.italic) : null,
                   ),
                   leading: widget.picking
