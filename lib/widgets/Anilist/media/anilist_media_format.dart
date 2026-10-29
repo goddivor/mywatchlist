@@ -85,7 +85,7 @@ abstract final class AnilistMediaFormat {
     final v = hex?.replaceFirst('#', '');
     if (v == null || v.length != 6) return null;
     final rgb = int.tryParse(v, radix: 16);
-    return rgb == null ? null : Color(0xFF000000 | rgb);
+    return rgb == null ? null : Color.fromARGB(255, (rgb >> 16) & 0xff, (rgb >> 8) & 0xff, rgb & 0xff);
   }
 }
 
