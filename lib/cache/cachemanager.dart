@@ -340,6 +340,15 @@ abstract final class BackupService {
     'mal_home_preferences',
     'cross_tracker_enabled',
     'accent_season_v1',
+    // Search history, recently opened titles and the search display choice
+    // (lib/screens/search/search_history.dart).
+    'search_query_history',
+    'search_recent_anime',
+    'search_recent_manga',
+    'search_display_type',
+    'search_display_sub_type',
+    'search_grid_axis_count',
+    'search_grid_height',
   };
 
   /// Settings that travel with a backup (key prefixes): list views, seasonal views and
