@@ -3102,6 +3102,8 @@
         "anilist-social"
       ],
       "owns": [
+        "lib/widgets/Anilist/search/anilist_search_links.dart",
+        "lib/widgets/Anilist/search/anilist_result_tiles.dart",
         "lib/widgets/Anilist/social/anilist_links.dart",
         "lib/widgets/Anilist/anilist_user_list_adapter.dart",
         "lib/pages/Anilist/anilist_media_page.dart",

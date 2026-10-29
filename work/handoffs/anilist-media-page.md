@@ -8,6 +8,8 @@
 - `anilist-social` (anilist-social)
 
 ## Owns (may create or edit ONLY these)
+- `lib/widgets/Anilist/search/anilist_search_links.dart`
+- `lib/widgets/Anilist/search/anilist_result_tiles.dart`
 - `lib/widgets/Anilist/social/anilist_links.dart`
 - `lib/widgets/Anilist/anilist_user_list_adapter.dart`
 - `lib/pages/Anilist/anilist_media_page.dart`
@@ -23,6 +25,7 @@
 Plus `PROJECT-STATE.md` (rewrite in place, within its cap) and `docs/DECISIONS.md` (append one line per decision). Anything else you need is a FINDING to report, never an edit.
 
 ## Goal
+- From anilist-search-filters (#297): switch openAnilistSearchTitle (lib/widgets/Anilist/search/anilist_search_links.dart) to your native page; openAnilistMedia in anilist_media_card.dart must stop opening the MAL page; the search edit pencil (editAnilistSearchEntry) uses showAnilistEntryEditor from anilist-list-fidelity instead of the shared tracker editor.
 - From anilist-social (#291): make openAnilistTitle (lib/widgets/Anilist/social/anilist_links.dart, owns it) open your native page; reuse AnilistForumPage(mediaId:), AnilistReviewsFeed(mediaId:) and the rateRecommendation service for the recommendation vote buttons.
 - Owner bug 2026-10-29: AniList list rows open the MAL detail page (or anilist.co when unmapped). Every AniList entry point (list adapter open(), home cards, search results, related, recommendations, people pages) opens the native AniList title page, mapped to MAL or not; one helper (openAnilistTitle) used everywhere.
 - Audit docs/anilist-report-2026-10-28.md, unit `anilist-media-page`: A1-A21: native AniList title page with its own layout from the AniList section of docs/tracker-ui-references.md (banner + cover header, AniList-style score/rank/stats, tags, relations, streaming episodes; do not reuse the MAL detail layout), "Open on MyAnimeList", favourite heart, my entry through `showAnilistEntryEditor`, reviews section → `AnilistReviewPage`, characters / staff / studios → people pages, recommendation votes and submit; `openAnilistMedia` now always opens this page Read the matching report items (queries/endpoints, samples, file:line) and implement them.
