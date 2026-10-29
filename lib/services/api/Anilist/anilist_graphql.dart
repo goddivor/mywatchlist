@@ -101,9 +101,17 @@ class AnilistRateLimiter {
 
   /// Waits until one request may be sent, and takes its token.
   Future<void> acquire() {
-    final turn = _queue.then((_) => _take());
-    _queue = turn.catchError((Object _) {});
-    return turn;
+    // The caller is released before the next waiter's turn starts: callers resume in order.
+    final ticket = Completer<void>();
+    _queue = _queue.then((_) async {
+      try {
+        await _take();
+        ticket.complete();
+      } catch (e, st) {
+        ticket.completeError(e, st);
+      }
+    });
+    return ticket.future;
   }
 
   Future<void> _take() async {
