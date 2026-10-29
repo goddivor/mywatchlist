@@ -1,0 +1,191 @@
+{
+ "data": {
+  "genres": [
+   "Action",
+   "Adventure",
+   "Comedy",
+   "Drama",
+   "Ecchi",
+   "Fantasy",
+   "Hentai",
+   "Horror",
+   "Mahou Shoujo",
+   "Mecha",
+   "Music",
+   "Mystery",
+   "Psychological",
+   "Romance",
+   "Sci-Fi",
+   "Slice of Life",
+   "Sports",
+   "Supernatural",
+   "Thriller"
+  ],
+  "tags": [
+   {
+    "id": 206,
+    "name": "4-koma",
+    "description": "A manga in the 'yonkoma' format, which consists of four equal-sized panels arranged in a vertical strip.",
+    "category": "Technical",
+    "isGeneralSpoiler": false,
+    "isAdult": false
+   },
+   {
+    "id": 147,
+    "name": "Afterlife",
+    "description": "Partly or completely set in the afterlife.",
+    "category": "Setting-Universe",
+    "isGeneralSpoiler": true,
+    "isAdult": false
+   },
+   {
+    "id": 138,
+    "name": "Age Gap",
+    "description": "Prominently features romantic relations between people with a significant age difference.",
+    "category": "Theme-Romance",
+    "isGeneralSpoiler": true,
+    "isAdult": false
+   },
+   {
+    "id": 146,
+    "name": "Alternate Universe",
+    "description": "Features multiple alternate universes in the same series.",
+    "category": "Setting-Universe",
+    "isGeneralSpoiler": true,
+    "isAdult": false
+   },
+   {
+    "id": 104,
+    "name": "Anti-Hero",
+    "description": "Features a protagonist who lacks conventional heroic attributes and may be considered a borderline villain.",
+    "category": "Cast-Main Cast",
+    "isGeneralSpoiler": false,
+    "isAdult": false
+   },
+   {
+    "id": 154,
+    "name": "Body Swapping",
+    "description": "Centers around individuals swapping bodies with one another.",
+    "category": "Theme-Fantasy",
+    "isGeneralSpoiler": true,
+    "isAdult": false
+   },
+   {
+    "id": 598,
+    "name": "Elf",
+    "description": "Prominently features a character who is an elf.",
+    "category": "Cast-Traits",
+    "isGeneralSpoiler": false,
+    "isAdult": false
+   },
+   {
+    "id": 98,
+    "name": "Female Protagonist",
+    "description": "Main character is female.",
+    "category": "Cast-Main Cast",
+    "isGeneralSpoiler": false,
+    "isAdult": false
+   },
+   {
+    "id": 244,
+    "name": "Isekai",
+    "description": "Features a character from a modern-day setting being transported into an alternate world and has to adapt to their new surroundings.",
+    "category": "Theme-Fantasy",
+    "isGeneralSpoiler": false,
+    "isAdult": false
+   },
+   {
+    "id": 81,
+    "name": "Iyashikei",
+    "description": "Primary aim is to heal the audience through serene depictions of characters' daily lives.",
+    "category": "Theme-Slice of Life",
+    "isGeneralSpoiler": false,
+    "isAdult": false
+   },
+   {
+    "id": 137,
+    "name": "Large Breasts",
+    "description": "Features a character with larger-than-average breasts.",
+    "category": "Sexual Content",
+    "isGeneralSpoiler": false,
+    "isAdult": true
+   },
+   {
+    "id": 100,
+    "name": "Nudity",
+    "description": "Features a character wearing no clothing or exposing intimate body parts.",
+    "category": "Cast-Traits",
+    "isGeneralSpoiler": false,
+    "isAdult": false
+   },
+   {
+    "id": 243,
+    "name": "Reincarnation",
+    "description": "Features a character being born again after death, typically as another person or in another world.",
+    "category": "Theme-Other",
+    "isGeneralSpoiler": true,
+    "isAdult": false
+   },
+   {
+    "id": 96,
+    "name": "Time Manipulation",
+    "description": "Prominently features time-traveling or other time-warping phenomena.",
+    "category": "Theme-Sci-Fi",
+    "isGeneralSpoiler": true,
+    "isAdult": false
+   }
+  ],
+  "anime": [
+   {
+    "id": 5,
+    "site": "Crunchyroll",
+    "icon": "https://s4.anilist.co/file/anilistcdn/link/icon/5-AWN2pVlluCOO.png",
+    "language": null
+   },
+   {
+    "id": 20,
+    "site": "HIDIVE",
+    "icon": "https://s4.anilist.co/file/anilistcdn/link/icon/20-3nWxygrjVM5A.png",
+    "language": null
+   },
+   {
+    "id": 10,
+    "site": "Netflix",
+    "icon": "https://s4.anilist.co/file/anilistcdn/link/icon/10-rVGPom8RCiwH.png",
+    "language": null
+   }
+  ],
+  "manga": [
+   {
+    "id": 56,
+    "site": "Bomtoon",
+    "icon": "https://s4.anilist.co/file/anilistcdn/link/icon/56-u9diLpFBG1Ut.png",
+    "language": "Korean"
+   },
+   {
+    "id": 202,
+    "site": "Bomtoon",
+    "icon": "https://s4.anilist.co/file/anilistcdn/link/icon/202-igXw29yFzqEy.png",
+    "language": "Chinese"
+   },
+   {
+    "id": 272,
+    "site": "Comikey",
+    "icon": "https://s4.anilist.co/file/anilistcdn/link/icon/272-HHPrqwqb8ZFw.png",
+    "language": "Portuguese"
+   },
+   {
+    "id": 157,
+    "site": "Comikey",
+    "icon": "https://s4.anilist.co/file/anilistcdn/link/icon/157-ZeuWQfyzx2wh.png",
+    "language": "English"
+   },
+   {
+    "id": 159,
+    "site": "INKR",
+    "icon": "https://s4.anilist.co/file/anilistcdn/link/icon/159-4G7ZQohexrXV.png",
+    "language": "English"
+   }
+  ]
+ }
+}

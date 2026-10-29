@@ -1,0 +1,118 @@
+{
+ "data": {
+  "Page": {
+   "pageInfo": {
+    "hasNextPage": true
+   },
+   "media": [
+    {
+     "id": 154587,
+     "idMal": 52991,
+     "type": "ANIME",
+     "format": "TV",
+     "status": "FINISHED",
+     "episodes": 28,
+     "chapters": null,
+     "volumes": null,
+     "duration": 24,
+     "genres": [
+      "Adventure",
+      "Drama",
+      "Fantasy"
+     ],
+     "seasonYear": 2023,
+     "popularity": 494191,
+     "favourites": 56469,
+     "weightedScore": 91,
+     "isAdult": false,
+     "title": {
+      "romaji": "Sousou no Frieren",
+      "english": "Frieren: Beyond Journey’s End",
+      "native": "葬送のフリーレン"
+     },
+     "coverImage": {
+      "large": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/bx154587-qQTzQnEJJ3oB.jpg",
+      "extraLarge": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx154587-qQTzQnEJJ3oB.jpg"
+     },
+     "bannerImage": "https://s4.anilist.co/file/anilistcdn/media/anime/banner/154587-ivXNJ23SM1xB.jpg",
+     "nextAiringEpisode": null,
+     "startDate": {
+      "year": 2023
+     }
+    },
+    {
+     "id": 136430,
+     "idMal": 49387,
+     "type": "ANIME",
+     "format": "TV",
+     "status": "FINISHED",
+     "episodes": 24,
+     "chapters": null,
+     "volumes": null,
+     "duration": 26,
+     "genres": [
+      "Action",
+      "Adventure",
+      "Drama"
+     ],
+     "seasonYear": 2023,
+     "popularity": 281546,
+     "favourites": 15645,
+     "weightedScore": 88,
+     "isAdult": false,
+     "title": {
+      "romaji": "VINLAND SAGA SEASON 2",
+      "english": "Vinland Saga Season 2",
+      "native": "ヴィンランド・サガ SEASON2"
+     },
+     "coverImage": {
+      "large": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/bx136430-gsBsJjA7hGh9.jpg",
+      "extraLarge": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx136430-gsBsJjA7hGh9.jpg"
+     },
+     "bannerImage": "https://s4.anilist.co/file/anilistcdn/media/anime/banner/136430-ktoFZnyubhHg.jpg",
+     "nextAiringEpisode": null,
+     "startDate": {
+      "year": 2023
+     }
+    },
+    {
+     "id": 19,
+     "idMal": 19,
+     "type": "ANIME",
+     "format": "TV",
+     "status": "FINISHED",
+     "episodes": 74,
+     "chapters": null,
+     "volumes": null,
+     "duration": 24,
+     "genres": [
+      "Drama",
+      "Horror",
+      "Mystery",
+      "Psychological",
+      "Thriller"
+     ],
+     "seasonYear": 2004,
+     "popularity": 349030,
+     "favourites": 24766,
+     "weightedScore": 88,
+     "isAdult": false,
+     "title": {
+      "romaji": "MONSTER",
+      "english": "Monster",
+      "native": "MONSTER"
+     },
+     "coverImage": {
+      "large": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/bx19-gtMC64182sm4.jpg",
+      "extraLarge": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx19-gtMC64182sm4.jpg"
+     },
+     "bannerImage": "https://s4.anilist.co/file/anilistcdn/media/anime/banner/19-kJhwsB0Z97tL.jpg",
+     "nextAiringEpisode": null,
+     "startDate": {
+      "year": 2004
+     }
+    }
+   ]
+  }
+ }
+}
