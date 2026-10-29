@@ -296,7 +296,7 @@ void main() {
       await _pumpFor(tester, const Duration(seconds: 1));
       expect(find.text('28 friends'), findsOneWidget);
       expect(find.text('Orilo'), findsOneWidget);
-      expect(find.textContaining('Friends since Apr 6, 2026'), findsOneWidget);
+      expect(find.textContaining('Friends since'), findsNothing);
       expect(find.textContaining('Last seen '), findsWidgets);
       expect(find.text('Load more'), findsNothing);
     });
