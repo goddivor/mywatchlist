@@ -222,10 +222,7 @@ class _KitsuBrowseScreenState extends State<KitsuBrowseScreen> {
           sliver: SliverGrid.builder(
             gridDelegate: KitsuMediaTile.gridDelegate(width),
             itemCount: _items.length,
-            itemBuilder: (context, i) => KitsuMediaTile(
-              key: ValueKey('${_items[i].category}:${_items[i].id}'),
-              media: _items[i],
-            ),
+            itemBuilder: (context, i) => KitsuMediaRow.tile(_items[i]),
           ),
         ),
         SliverToBoxAdapter(

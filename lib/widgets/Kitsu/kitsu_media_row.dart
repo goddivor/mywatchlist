@@ -4,6 +4,7 @@ import 'package:mywatchlist/services/api/Kitsu/kitsu_catalog.dart';
 import 'package:mywatchlist/services/api/Kitsu/kitsu_media.dart';
 import 'package:mywatchlist/widgets/Kitsu/kitsu_media_tile.dart';
 import 'package:mywatchlist/widgets/MAL/home/section_header.dart';
+import 'package:mywatchlist/widgets/common/app_colors.dart';
 import 'package:mywatchlist/widgets/home/home_sections.dart';
 import 'package:mywatchlist/widgets/loading/loadingcard.dart';
 
@@ -83,13 +84,44 @@ class KitsuMediaRow extends StatelessWidget {
           separatorBuilder: (context, index) => const SizedBox(width: 10),
           itemBuilder: (context, i) => SizedBox(
             width: cardWidth,
-            child: KitsuMediaTile(
-              key: ValueKey('${items[i].category}:${items[i].id}'),
-              media: items[i],
-            ),
+            child: tile(items[i]),
           ),
         ),
       );
+
+  /// A Kitsu tile with the community score as Kitsu writes it ("88%", small, in the corner)
+  /// instead of a score out of 10.
+  static Widget tile(KitsuMedia media) {
+    final score = media.meanScore;
+    final plain = KitsuMedia(
+      id: media.id,
+      isAnime: media.isAnime,
+      title: media.title,
+      otherTitles: media.otherTitles,
+      posterUrl: media.posterUrl,
+      largePosterUrl: media.largePosterUrl,
+      subtype: media.subtype,
+      releaseState: media.releaseState,
+      userCount: media.userCount,
+      popularityRank: media.popularityRank,
+      ratingRank: media.ratingRank,
+      total: media.total,
+      totalVolumes: media.totalVolumes,
+      startDate: media.startDate,
+      endDate: media.endDate,
+      synopsis: media.synopsis,
+      malId: media.malId,
+    );
+    final key = ValueKey('${media.category}:${media.id}');
+    if (score == null) return KitsuMediaTile(key: key, media: plain);
+    return Stack(
+      key: key,
+      children: [
+        Positioned.fill(child: KitsuMediaTile(media: plain)),
+        PositionedDirectional(top: 6, end: 6, child: KitsuPercentBadge(percent: score * 10)),
+      ],
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -137,5 +169,37 @@ class KitsuMediaRow extends StatelessWidget {
           ? HomeMessage(icon: Icons.inbox_outlined, text: S.current.Hw_Empty_Items)
           : cards(items),
     ));
+  }
+}
+
+/// Kitsu's community score on a poster: "88%" on the picture scrim.
+class KitsuPercentBadge extends StatelessWidget {
+  final double percent;
+
+  const KitsuPercentBadge({super.key, required this.percent});
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = AppColors.of(context);
+    final text = '${percent.round()}%';
+    return IgnorePointer(
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: tokens.imageScrim.withValues(alpha: AppColors.imageScrimOpacity),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+          child: Text(
+            text,
+            semanticsLabel: S.current.Kr_Community_Score(text),
+            style: Theme.of(context)
+                .textTheme
+                .labelSmall
+                ?.copyWith(color: tokens.onImageScrim, fontWeight: FontWeight.w700),
+          ),
+        ),
+      ),
+    );
   }
 }

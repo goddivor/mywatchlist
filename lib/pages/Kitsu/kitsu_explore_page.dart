@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:mywatchlist/constants/constants.dart' show HomePageTileSize, getTileSizeValues;
+import 'package:mywatchlist/constants/constants.dart' show AccountType, HomePageTileSize, getTileSizeValues;
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/pages/Kitsu/kitsu_browse_screen.dart';
 import 'package:mywatchlist/services/api/Kitsu/kitsu_catalog.dart';
+import 'package:mywatchlist/services/api/Kitsu/kitsu_graphql.dart' show KitsuCategory;
+import 'package:mywatchlist/services/api/Kitsu/kitsu_library.dart';
 import 'package:mywatchlist/services/api/Kitsu/kitsu_media.dart' show KitsuMedia;
+import 'package:mywatchlist/user/user_manager.dart';
 import 'package:mywatchlist/utils/app_routes.dart';
 import 'package:mywatchlist/widgets/Kitsu/kitsu_open.dart';
 import 'package:mywatchlist/widgets/Kitsu/kitsu_media_row.dart';
@@ -11,9 +14,10 @@ import 'package:mywatchlist/widgets/MAL/home/homeappbar.dart';
 import 'package:mywatchlist/widgets/MAL/home/section_header.dart';
 import 'package:mywatchlist/widgets/home/home_sections.dart';
 
-/// The Kitsu Explore tab: a search bar (the Kitsu catalogue), an Anime / Manga switch, then
-/// trending, top rated, most popular, what is airing or publishing now, what is coming, and the
-/// biggest categories. Each row has its own "View all" grid.
+/// The Kitsu Explore tab in the order of kitsu.app's explore page: a search bar (the Kitsu
+/// catalogue), an Anime / Manga switch, "Surprise me" (any title, or one of the user's own
+/// "Want to watch" when signed in), then trending this week, airing now, upcoming, highest
+/// rated, most popular and the biggest categories. Each row has its own "View all" grid.
 class KitsuExplorePage extends StatefulWidget {
   const KitsuExplorePage({super.key});
 
@@ -26,25 +30,34 @@ class _KitsuExplorePageState extends State<KitsuExplorePage> {
   int _refresh = 0;
   bool _picking = false;
 
-  /// Opens a random title of the current kind (the "Surprise me" button).
-  Future<void> _surprise() async {
+  /// Opens a random title of the current kind: any title of the catalogue, or with [planned]
+  /// one of the user's own "Want to watch" (or "Want to read") list.
+  Future<void> _surprise({bool planned = false}) async {
     if (_picking) return;
     setState(() => _picking = true);
+    final isAnime = _isAnime;
     KitsuMedia? pick;
+    var failed = false;
     try {
-      pick = await KitsuCatalog.instance.randomMedia(isAnime: _isAnime);
+      pick = planned
+          ? await KitsuCatalog.instance.randomPlanned(await KitsuLibrary.instance.userId(), isAnime: isAnime)
+          : await KitsuCatalog.instance.randomMedia(isAnime: isAnime, needsMalPage: false);
     } catch (_) {
-      pick = null;
+      failed = true;
     }
     if (!mounted) return;
     setState(() => _picking = false);
     if (pick != null) {
       openKitsuMedia(context, pick);
-    } else {
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(SnackBar(content: Text(S.current.Kitsu_Surprise_Failed)));
+      return;
     }
+    final s = S.current;
+    final message = planned && !failed
+        ? (isAnime ? s.Kr_Planned_Empty : s.Kr_Planned_Empty_Manga)
+        : s.Kitsu_Surprise_Failed;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(message)));
   }
 
   Future<void> _onRefresh() async {
@@ -119,17 +132,29 @@ class _KitsuExplorePageState extends State<KitsuExplorePage> {
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
-                child: Align(
-                  alignment: AlignmentDirectional.centerStart,
-                  child: FilledButton.tonalIcon(
-                    onPressed: _picking ? null : _surprise,
-                    icon: _picking
-                        ? const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2))
-                        : const Icon(Icons.casino_outlined, size: 18),
-                    label: Text(s.Kitsu_Surprise_Me),
+                child: ListenableBuilder(
+                  listenable: UserManager.instance,
+                  builder: (context, _) => Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      FilledButton.tonalIcon(
+                        onPressed: _picking ? null : () => _surprise(),
+                        icon: _picking
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(strokeWidth: 2))
+                            : const Icon(Icons.casino_outlined, size: 18),
+                        label: Text(s.Kitsu_Surprise_Me),
+                      ),
+                      if (UserManager.instance.isAuthenticated(AccountType.kitsu))
+                        OutlinedButton.icon(
+                          onPressed: _picking ? null : () => _surprise(planned: true),
+                          icon: const Icon(Icons.bookmark_outline_rounded, size: 18),
+                          label: Text(isAnime ? s.Kr_Surprise_Planned : s.Kr_Surprise_Planned_Manga),
+                        ),
+                    ],
                   ),
                 ),
               ),
@@ -147,14 +172,6 @@ class _KitsuExplorePageState extends State<KitsuExplorePage> {
               ),
             ),
             SliverToBoxAdapter(
-              child: row('top', s.Kitsu_Row_Top_Rated,
-                  KitsuMediaQuery(isAnime: isAnime, sort: 'ratingRank')),
-            ),
-            SliverToBoxAdapter(
-              child: row('popular', s.Kitsu_Row_Popular,
-                  KitsuMediaQuery(isAnime: isAnime, sort: 'popularityRank')),
-            ),
-            SliverToBoxAdapter(
               child: row(
                   'now',
                   isAnime ? s.Kitsu_Row_Airing : s.Kitsu_Row_Publishing,
@@ -169,6 +186,14 @@ class _KitsuExplorePageState extends State<KitsuExplorePage> {
                       isAnime: isAnime,
                       filters: const {'status': 'upcoming'},
                       sort: '-userCount')),
+            ),
+            SliverToBoxAdapter(
+              child: row('top', s.Kitsu_Row_Top_Rated,
+                  KitsuMediaQuery(isAnime: isAnime, sort: 'ratingRank')),
+            ),
+            SliverToBoxAdapter(
+              child: row('popular', s.Kitsu_Row_Popular,
+                  KitsuMediaQuery(isAnime: isAnime, sort: 'popularityRank')),
             ),
             SliverToBoxAdapter(child: SectionHeader(title: s.Kitsu_Categories)),
             SliverToBoxAdapter(

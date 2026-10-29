@@ -7,7 +7,7 @@ import 'package:mywatchlist/pages/Kitsu/kitsu_post_page.dart';
 import 'package:mywatchlist/pages/Kitsu/kitsu_user_page.dart';
 import 'package:mywatchlist/services/api/Kitsu/kitsu_catalog.dart';
 import 'package:mywatchlist/services/api/Kitsu/kitsu_feed.dart';
-import 'package:mywatchlist/services/api/Kitsu/kitsu_graphql.dart' show KitsuFeedPost;
+import 'package:mywatchlist/services/api/Kitsu/kitsu_graphql.dart' show KitsuCategory, KitsuFeedPost;
 import 'package:mywatchlist/services/api/Kitsu/kitsu_library.dart';
 import 'package:mywatchlist/services/api/Kitsu/kitsu_media.dart' show KitsuMedia;
 import 'package:mywatchlist/user/MAL/mal_home_page_preferences.dart';
@@ -23,13 +23,15 @@ import 'package:mywatchlist/widgets/home/home_sections.dart';
 import 'package:mywatchlist/widgets/loading/loadingcard.dart';
 import 'package:mywatchlist/widgets/user/list/list_entry_view.dart';
 
-/// The Kitsu home tab: trending anime, what the people the user follows are watching (signed in
-/// only, hidden when empty), then the sections of the user's home layout that Kitsu can fill
-/// (news from the Kitsu News Network group, seasonal, upcoming, top rated, favorites, popular,
-/// airing, formats, manga and the user's own list). Suggestions, features and the forum have no
-/// Kitsu source and are skipped.
+/// The Kitsu home tab, in the order of Kitsu's own dashboard and explore page: the Quick update
+/// carousel (signed in: the titles being watched with their next episode and a one-tap "✓
+/// Episode N"), trending this week, what the people the user follows are watching, trending in
+/// two of the user's favourite categories (signed in, hidden when none), then the sections of
+/// the user's home layout that Kitsu can fill (news from the Kitsu News Network group, seasonal,
+/// upcoming, top rated, favorites, popular, airing, formats, manga and the user's own list), and
+/// the site's latest reactions. Suggestions, features and the forum have no Kitsu source.
 ///
-/// Every title is drawn as a Kitsu tile, mapped to MyAnimeList or not.
+/// Every title is drawn as a Kitsu tile with Kitsu's percentage and opens its Kitsu page.
 class KitsuHomePage extends StatefulWidget {
   const KitsuHomePage({super.key});
 
@@ -115,6 +117,14 @@ class _KitsuHomePageState extends State<KitsuHomePage> {
                   title: const AppBarHome(transparent: true, showSettings: true),
                 ),
                 SliverToBoxAdapter(
+                  child: ListenableBuilder(
+                    listenable: UserManager.instance,
+                    builder: (context, _) => UserManager.instance.isAuthenticated(AccountType.kitsu)
+                        ? KitsuQuickUpdateRow(refresh: _refresh)
+                        : const SizedBox.shrink(),
+                  ),
+                ),
+                SliverToBoxAdapter(
                   child: KitsuMediaRow(
                     cacheKey: 'kitsu:trending:anime',
                     title: S.current.Kitsu_Trending,
@@ -144,11 +154,22 @@ class _KitsuHomePageState extends State<KitsuHomePage> {
                           ),
                   ),
                 ),
+                SliverToBoxAdapter(
+                  child: ListenableBuilder(
+                    listenable: UserManager.instance,
+                    builder: (context, _) => UserManager.instance.isAuthenticated(AccountType.kitsu)
+                        ? _FavouriteCategoryRows(cardWidth: cardWidth, cardHeight: cardHeight, refresh: _refresh)
+                        : const SizedBox.shrink(),
+                  ),
+                ),
                 SliverList.builder(
                   itemCount: sections.length,
                   itemBuilder: (context, i) => RepaintBoundary(
                     child: _section(context, sections[i], cardWidth, cardHeight),
                   ),
+                ),
+                SliverToBoxAdapter(
+                  child: KitsuReactionsRow(title: S.current.Kr_Recent_Reactions, refresh: _refresh),
                 ),
                 const SliverToBoxAdapter(child: SizedBox(height: 24)),
               ],
@@ -186,6 +207,59 @@ class _KitsuHomePageState extends State<KitsuHomePage> {
       refresh: _refresh,
       onViewAll: () =>
           AppRoutes.push<void>(context, KitsuBrowseScreen(title: title, query: query)),
+    );
+  }
+}
+
+/// "Trending in <category>" for two of the categories the user marked as favourite on Kitsu,
+/// drawn at random once per load as the site's explore page does. Nothing when there are none.
+class _FavouriteCategoryRows extends StatelessWidget {
+  final double cardWidth;
+  final double cardHeight;
+  final int refresh;
+
+  const _FavouriteCategoryRows({required this.cardWidth, required this.cardHeight, required this.refresh});
+
+  @override
+  Widget build(BuildContext context) {
+    return HomeAsync<List<KitsuCategory>>(
+      cacheKey: 'kitsu:favourite-categories',
+      maxAge: const Duration(hours: 6),
+      refresh: refresh,
+      load: () async {
+        try {
+          final id = await KitsuLibrary.instance.userId();
+          final all = [...await KitsuCatalog.instance.favouriteCategories(id)]..shuffle();
+          return all.take(2).toList();
+        } catch (_) {
+          return const <KitsuCategory>[];
+        }
+      },
+      loading: const SizedBox.shrink(),
+      builder: (context, categories) => Column(
+        children: [
+          for (final c in categories)
+            KitsuMediaRow(
+              key: ValueKey('fav-category:${c.id}'),
+              cacheKey: 'kitsu:trending:category:${c.id}:anime',
+              title: S.current.Kitsu_Trending_In(c.title),
+              isAnime: true,
+              load: () => KitsuCatalog.instance.trendingInCategory(c.id, isAnime: true),
+              cardWidth: cardWidth,
+              cardHeight: cardHeight,
+              refresh: refresh,
+              hideWhenEmpty: true,
+              onViewAll: () => AppRoutes.push<void>(
+                context,
+                KitsuBrowseScreen(
+                  title: c.title,
+                  trendingCategoryId: c.id,
+                  query: KitsuMediaQuery(isAnime: true, filters: {'categories': c.slug}, sort: 'popularityRank'),
+                ),
+              ),
+            ),
+        ],
+      ),
     );
   }
 }

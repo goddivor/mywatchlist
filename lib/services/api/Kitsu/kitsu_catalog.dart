@@ -1,5 +1,8 @@
+import 'dart:math';
+
 import 'package:flutter/foundation.dart';
-import 'package:mywatchlist/services/api/Kitsu/kitsu_graphql.dart' show KitsuGraphql, KitsuMediaKind;
+import 'package:mywatchlist/services/api/Kitsu/kitsu_graphql.dart'
+    show KitsuAuthor, KitsuCategory, KitsuGraphql, KitsuImage, KitsuMediaKind, KitsuMediaRef, KitsuReaction, KitsuTitles;
 import 'package:mywatchlist/services/api/Kitsu/kitsu_http.dart';
 import 'package:mywatchlist/services/api/Kitsu/kitsu_media.dart';
 import 'package:mywatchlist/user/preferences/preferences.dart';
@@ -59,23 +62,11 @@ class KitsuMediaQuery {
   String get key => '${isAnime ? 'a' : 'm'}|${(filters.entries.map((e) => '${e.key}=${e.value}').toList()..sort()).join('&')}|$sort|$text';
 }
 
-/// A page of [KitsuMedia].
-class KitsuMediaPage {
+/// A page of [KitsuMedia] (named apart from the title page widget `KitsuMediaPage`).
+class KitsuCatalogPage {
   final List<KitsuMedia> items;
   final bool hasMore;
-  const KitsuMediaPage(this.items, {required this.hasMore});
-}
-
-/// A Kitsu category (genre or theme) with its size.
-@immutable
-class KitsuCategory {
-  final String id;
-  final String title;
-  final String slug;
-  final int mediaCount;
-
-  const KitsuCategory(
-      {required this.id, required this.title, required this.slug, required this.mediaCount});
+  const KitsuCatalogPage(this.items, {required this.hasMore});
 }
 
 /// Kitsu's score display setting: 5 stars in whole steps, half steps, or 19 steps.
@@ -170,11 +161,11 @@ class KitsuCatalog {
   void clearAccountPrefs() => _account = null;
 
   /// One page of [query].
-  Future<KitsuMediaPage> page(KitsuMediaQuery query, {int limit = maxPage, int offset = 0}) async {
+  Future<KitsuCatalogPage> page(KitsuMediaQuery query, {int limit = maxPage, int offset = 0}) async {
     final json = await http.getJson(query.path,
         query: query.params(limit: limit.clamp(1, maxPage), offset: offset));
     final doc = KitsuDocument.from(json);
-    return KitsuMediaPage(parse(doc, isAnime: query.isAnime, titleLang: _titleLang),
+    return KitsuCatalogPage(parse(doc, isAnime: query.isAnime, titleLang: _titleLang),
         hasMore: doc.hasNext);
   }
 
@@ -216,9 +207,11 @@ class KitsuCatalog {
     return byIds(_nodeIds(response.data['localTrending']), isAnime: isAnime);
   }
 
-  /// A random title that opens (Kitsu maps it to a MyAnimeList page), or null after [tries]
-  /// attempts without one. Adult titles are never drawn.
-  Future<KitsuMedia?> randomMedia({required bool isAnime, int tries = 4}) async {
+  /// A random title, or null after [tries] attempts without one. Adult titles are never drawn.
+  /// With [needsMalPage] (the default, kept for callers that open MyAnimeList) a title Kitsu maps
+  /// to no MyAnimeList page is drawn again; the Kitsu screens pass false since every title opens
+  /// its native Kitsu page.
+  Future<KitsuMedia?> randomMedia({required bool isAnime, int tries = 4, bool needsMalPage = true}) async {
     final kind = isAnime ? KitsuMediaKind.anime : KitsuMediaKind.manga;
     for (var i = 0; i < tries; i++) {
       final response = await graphql.execute(
@@ -228,7 +221,7 @@ class KitsuCatalog {
       final id = node is Map ? '${node['id']}' : null;
       if (id == null) continue;
       final found = await byIds([id], isAnime: isAnime);
-      if (found.isNotEmpty && found.first.malId != null) return found.first;
+      if (found.isNotEmpty && (!needsMalPage || found.first.malId != null)) return found.first;
     }
     return null;
   }
@@ -259,19 +252,133 @@ class KitsuCatalog {
     final json = await http.getJson('/categories', query: {
       'sort': '-totalMediaCount',
       'filter[nsfw]': 'false',
-      'fields[categories]': 'title,slug,totalMediaCount',
+      'fields[categories]': 'title,slug',
       'page[limit]': '${limit.clamp(1, maxPage)}',
     });
     return [
       for (final r in KitsuDocument.from(json).data)
-        if (kitsuAttrs(r)['slug'] is String)
-          KitsuCategory(
-            id: '${r['id']}',
-            title: '${kitsuAttrs(r)['title'] ?? kitsuAttrs(r)['slug']}',
-            slug: kitsuAttrs(r)['slug'] as String,
-            mediaCount: (kitsuAttrs(r)['totalMediaCount'] as num?)?.toInt() ?? 0,
-          ),
+        if (_category(r) case final c?) c,
     ];
+  }
+
+  static KitsuCategory? _category(Map<String, dynamic> r) {
+    final a = kitsuAttrs(r);
+    final slug = a['slug'];
+    if (slug is! String || slug.isEmpty) return null;
+    return KitsuCategory(id: '${r['id']}', slug: slug, title: '${a['title'] ?? slug}');
+  }
+
+  /// The categories user [userId] marked as favourite on Kitsu (empty when none).
+  Future<List<KitsuCategory>> favouriteCategories(String userId) async {
+    final json = await http.getJson('/category-favorites', query: {
+      'filter[userId]': userId,
+      'include': 'category',
+      'fields[categories]': 'title,slug',
+      'page[limit]': '20',
+    });
+    final doc = KitsuDocument.from(json);
+    return [
+      for (final r in doc.data)
+        if (doc.related(r, 'category') case final res?)
+          if (_category(res) case final c?) c,
+    ];
+  }
+
+  /// A random title of user [userId]'s "Want to watch" (or "Want to read") list, or null when
+  /// it is empty. Two requests: the count, then the entry at a random place.
+  Future<KitsuMedia?> randomPlanned(String userId, {required bool isAnime, Random? random}) async {
+    final kind = isAnime ? 'anime' : 'manga';
+    Map<String, String> base(int limit, int offset) => {
+          'filter[userId]': userId,
+          'filter[kind]': kind,
+          'filter[status]': 'planned',
+          'page[limit]': '$limit',
+          'page[offset]': '$offset',
+        };
+    final counted = await http.getJson('/library-entries',
+        query: {...base(1, 0), 'fields[libraryEntries]': 'status'}, auth: true);
+    final count = ((counted['meta'] as Map?)?['count'] as num?)?.toInt() ?? 0;
+    if (count <= 0) return null;
+    final offset = (random ?? Random()).nextInt(count);
+    final json = await http.getJson('/library-entries',
+        query: {
+          ...base(1, offset),
+          'fields[libraryEntries]': 'status,$kind',
+          'include': '$kind,$kind.mappings',
+          'fields[$kind]': fields(isAnime),
+          'fields[mappings]': 'externalSite,externalId',
+        },
+        auth: true);
+    final doc = KitsuDocument.from(json);
+    for (final r in doc.data) {
+      final media = doc.related(r, kind);
+      if (media != null) return KitsuMedia.fromResource(media, doc, titleLang: _titleLang, isAnime: isAnime);
+    }
+    return null;
+  }
+
+  /// The newest reactions of the whole site, with their author and title.
+  Future<List<KitsuReaction>> recentReactions({int limit = 10}) async {
+    final json = await http.getJson('/media-reactions', query: {
+      'sort': '-createdAt',
+      'include': 'user,anime,manga',
+      'fields[mediaReactions]': 'reaction,upVotesCount,createdAt,user,anime,manga',
+      'fields[users]': 'name,slug,avatar',
+      'fields[anime]': 'canonicalTitle,titles,slug,posterImage',
+      'fields[manga]': 'canonicalTitle,titles,slug,posterImage',
+      'page[limit]': '${limit.clamp(1, maxPage)}',
+    });
+    return parseReactions(KitsuDocument.from(json));
+  }
+
+  /// Parses a `/media-reactions` document that included `user`, `anime` and `manga`.
+  @visibleForTesting
+  static List<KitsuReaction> parseReactions(KitsuDocument doc) {
+    KitsuImage? image(Object? v, String size) {
+      if (v is! Map) return null;
+      final url = v[size] ?? v['original'];
+      return url is String && url.isNotEmpty ? KitsuImage(url) : null;
+    }
+
+    final out = <KitsuReaction>[];
+    for (final r in doc.data) {
+      final a = kitsuAttrs(r);
+      final text = a['reaction'];
+      final user = doc.related(r, 'user');
+      final anime = doc.related(r, 'anime');
+      final media = anime ?? doc.related(r, 'manga');
+      if (text is! String || text.trim().isEmpty || user == null || media == null) continue;
+      final u = kitsuAttrs(user);
+      final m = kitsuAttrs(media);
+      final titles = m['titles'] is Map ? m['titles'] as Map : const {};
+      String? str(Object? v) => v is String && v.isNotEmpty ? v : null;
+      out.add(KitsuReaction(
+        id: '${r['id']}',
+        text: text.trim(),
+        progress: (a['progress'] as num?)?.toInt() ?? 0,
+        createdAt: DateTime.tryParse('${a['createdAt']}'),
+        likes: (a['upVotesCount'] as num?)?.toInt() ?? 0,
+        author: KitsuAuthor(
+          id: '${user['id']}',
+          name: str(u['name']) ?? '?',
+          slug: str(u['slug']),
+          avatar: image(u['avatar'], 'small'),
+        ),
+        media: KitsuMediaRef(
+          kind: anime != null ? KitsuMediaKind.anime : KitsuMediaKind.manga,
+          id: '${media['id']}',
+          slug: str(m['slug']),
+          titles: KitsuTitles(
+            canonical: str(m['canonicalTitle']),
+            romanized: str(titles['en_jp']),
+            translated: str(titles['en']),
+            original: str(titles['ja_jp']),
+          ),
+          poster: image(m['posterImage'], 'small'),
+        ),
+      ));
+    }
+    return out;
   }
 
   @visibleForTesting
