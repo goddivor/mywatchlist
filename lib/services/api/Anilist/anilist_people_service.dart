@@ -107,6 +107,11 @@ class AnilistPersonRef {
   static const String fields =
       'id name { userPreferred full native } image { medium } languageV2 favourites';
 
+  /// [fields] for a character node: `Character` has no `languageV2`, and asking it makes
+  /// AniList reject the whole request.
+  static const String characterFields =
+      'id name { userPreferred full native } image { medium } favourites';
+
   static AnilistPersonRef? fromJson(Object? json) {
     if (json is! Map) return null;
     final id = _int(json['id']);
@@ -672,7 +677,7 @@ class AnilistPeopleService {
       query (\$page: Int, \$perPage: Int) {
         Page(page: \$page, perPage: \$perPage) {
           pageInfo { hasNextPage }
-          $field($args) { ${AnilistPersonRef.fields} }
+          $field($args) { ${field == 'characters' ? AnilistPersonRef.characterFields : AnilistPersonRef.fields} }
         }
       }
     ''', {'page': page, 'perPage': perPage});
