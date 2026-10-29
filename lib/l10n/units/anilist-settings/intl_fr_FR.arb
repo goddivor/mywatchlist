@@ -1,0 +1,142 @@
+{
+  "@@locale": "fr_FR",
+  "Als_Title": "Réglages AniList",
+  "Als_Sign_In_Heading": "Réglages AniList",
+  "Als_Sign_In_Hint": "Connectez-vous à AniList pour les modifier",
+  "Als_Load_Failed": "Impossible de charger vos réglages AniList",
+  "Als_Save_Failed": "AniList n’a pas enregistré la modification",
+  "Als_Retry": "Réessayer",
+  "Als_Group_Titles": "Titres",
+  "Als_Group_Lists": "Listes",
+  "Als_Group_Adult": "Contenu adulte",
+  "Als_Group_Notifications": "Notifications",
+  "Als_Group_Activity": "Activité",
+  "Als_Group_Profile": "Profil",
+  "Als_Title_Language": "Langue des titres",
+  "Als_Tl_Romaji": "Romaji",
+  "Als_Tl_English": "Anglais",
+  "Als_Tl_Native": "Japonais",
+  "Als_Tl_Romaji_Styl": "Romaji (stylisé)",
+  "Als_Tl_English_Styl": "Anglais (stylisé)",
+  "Als_Tl_Native_Styl": "Japonais (stylisé)",
+  "Als_Staff_Language": "Noms du staff et des personnages",
+  "Als_Sl_Western": "Romaji, ordre occidental",
+  "Als_Sl_Romaji": "Romaji",
+  "Als_Sl_Native": "Japonais",
+  "Als_Score_Format": "Format des notes",
+  "Als_Sf_100": "100 points (55/100)",
+  "Als_Sf_10_Decimal": "10 points décimal (5,5/10)",
+  "Als_Sf_10": "10 points (5/10)",
+  "Als_Sf_5": "5 étoiles",
+  "Als_Sf_3": "3 smileys",
+  "Als_Row_Order": "Trier les listes par",
+  "Als_Ro_Score": "Note",
+  "Als_Ro_Title": "Titre",
+  "Als_Ro_Updated": "Dernière mise à jour",
+  "Als_Ro_Id": "Date d’ajout",
+  "Als_Anime_Lists": "Listes d’anime",
+  "Als_Manga_Lists": "Listes de manga",
+  "Als_Advanced_Scoring": "Notation avancée",
+  "Als_Split_Completed": "Séparer les terminés par format",
+  "Als_Custom_Lists": "Listes personnalisées",
+  "Als_Add_List": "Ajouter une liste",
+  "Als_List_Name": "Nom de la liste",
+  "Als_Delete_List_Title": "Supprimer « {name} » ?",
+  "@Als_Delete_List_Title": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "Als_Delete_List_Body": "Les titres restent dans votre liste mais quittent cette liste personnalisée.",
+  "Als_Scoring_Categories": "Catégories de notation",
+  "Als_Add_Category": "Ajouter une catégorie",
+  "Als_Category_Name": "Nom de la catégorie",
+  "Als_Adult_Display": "Afficher le contenu adulte",
+  "Als_Adult_Search": "Inclure dans la recherche",
+  "Als_Adult_Quick": "Inclure dans la recherche rapide",
+  "Als_Adult_Activities": "Afficher les activités adultes",
+  "Als_Airing": "Notifications de diffusion",
+  "Als_Notif_Types": "Types de notifications",
+  "Als_Nt_AIRING": "Épisode diffusé",
+  "Als_Nt_FOLLOWING": "Nouvel abonné",
+  "Als_Nt_ACTIVITY_MESSAGE": "Message d’activité",
+  "Als_Nt_ACTIVITY_REPLY": "Réponse à une activité",
+  "Als_Nt_ACTIVITY_REPLY_SUBSCRIBED": "Réponse à une activité suivie",
+  "Als_Nt_ACTIVITY_MENTION": "Mention dans une activité",
+  "Als_Nt_ACTIVITY_LIKE": "J’aime sur une activité",
+  "Als_Nt_ACTIVITY_REPLY_LIKE": "J’aime sur une réponse",
+  "Als_Nt_THREAD_COMMENT_MENTION": "Mention dans un fil",
+  "Als_Nt_THREAD_COMMENT_REPLY": "Réponse dans un fil",
+  "Als_Nt_THREAD_SUBSCRIBED": "Commentaire d’un fil suivi",
+  "Als_Nt_THREAD_LIKE": "J’aime sur un fil",
+  "Als_Nt_THREAD_COMMENT_LIKE": "J’aime sur un commentaire",
+  "Als_Nt_RELATED_MEDIA_ADDITION": "Titre lié ajouté",
+  "Als_Nt_MEDIA_DATA_CHANGE": "Données d’un titre modifiées",
+  "Als_Nt_MEDIA_MERGE": "Titre fusionné",
+  "Als_Nt_MEDIA_DELETION": "Titre supprimé",
+  "Als_Nt_MEDIA_SUBMISSION_UPDATE": "Mise à jour d’une soumission de titre",
+  "Als_Nt_STAFF_SUBMISSION_UPDATE": "Mise à jour d’une soumission de staff",
+  "Als_Nt_CHARACTER_SUBMISSION_UPDATE": "Mise à jour d’une soumission de personnage",
+  "Als_Timezone": "Fuseau horaire",
+  "Als_Timezone_None": "Non défini",
+  "Als_Merge_Time": "Fusionner les activités",
+  "Als_Mt_Never": "Jamais",
+  "Als_Mt_Minutes": "{n} min",
+  "@Als_Mt_Minutes": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "Als_Mt_Hours": "{n} h",
+  "@Als_Mt_Hours": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "Als_Mt_Days": "{n} j",
+  "@Als_Mt_Days": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "Als_Mt_Weeks": "{n} sem.",
+  "@Als_Mt_Weeks": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "Als_Mt_Always": "Toujours",
+  "Als_Restrict_Messages": "Seuls mes abonnements peuvent m’écrire",
+  "Als_Disable_Activity": "Masquer l’activité de liste pour",
+  "Als_St_CURRENT": "En cours",
+  "Als_St_PLANNING": "Prévu",
+  "Als_St_COMPLETED": "Terminé",
+  "Als_St_DROPPED": "Abandonné",
+  "Als_St_PAUSED": "En pause",
+  "Als_St_REPEATING": "Revisionnage",
+  "Als_About": "À propos",
+  "Als_About_Empty": "Rien d’écrit pour l’instant",
+  "Als_About_Edit": "Modifier la présentation",
+  "Als_About_Write": "Écrire",
+  "Als_About_Hint": "Le markdown, les spoilers et les images fonctionnent comme sur AniList",
+  "Als_Preview_Failed": "Impossible d’afficher l’aperçu",
+  "Als_Profile_Color": "Couleur du profil",
+  "Als_Color_blue": "Bleu",
+  "Als_Color_purple": "Violet",
+  "Als_Color_pink": "Rose",
+  "Als_Color_orange": "Orange",
+  "Als_Color_red": "Rouge",
+  "Als_Color_green": "Vert",
+  "Als_Color_gray": "Gris",
+  "Als_Donator_Badge": "Texte du badge de donateur"
+}
