@@ -1125,6 +1125,26 @@ UI directive applies: compare DAL and MWL, keep the better, improve it.
 Deliver with the PR procedure of the brief.
 ```
 
+## kitsu-polish
+
+```text
+Unit kitsu-polish — Kitsu polish: Quick update carousel, exact ratings and reactions in the library, histogram buckets, grid short words, status filter wording.
+Read work/handoffs/kitsu-polish.md fully, then the DAL reference files it lists, then the MWL files you own.
+Build exactly the Goal, inside the Owns list. Heavy commands only through tools/heavy.sh; never run flutter build or touch the emulator.
+UI directive applies: compare DAL and MWL, keep the better, improve it.
+Deliver with the PR procedure of the brief.
+```
+
+## mal-polish
+
+```text
+Unit mal-polish — MAL polish: Accounts caption, MAL session from its tile, active account after the website login, bell label, Clubs row, Supporter badge for others, time zone in About.
+Read work/handoffs/mal-polish.md fully, then the DAL reference files it lists, then the MWL files you own.
+Build exactly the Goal, inside the Owns list. Heavy commands only through tools/heavy.sh; never run flutter build or touch the emulator.
+UI directive applies: compare DAL and MWL, keep the better, improve it.
+Deliver with the PR procedure of the brief.
+```
+
 ## explore-polish
 
 ```text

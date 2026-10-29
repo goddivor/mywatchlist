@@ -54,7 +54,9 @@
         "mal-hub-wiring",
         "mal-hub-followups",
         "list-time-followups",
-        "mal-web-recaptcha"
+        "mal-web-recaptcha",
+        "kitsu-polish",
+        "mal-polish"
       ]
     },
     {
@@ -3806,6 +3808,68 @@
         "test/units/anilist-polish/**"
       ],
       "group": "trackers",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: sonnet"
+      ],
+      "status": "⬜ todo"
+    },
+    {
+      "id": "kitsu-polish",
+      "title": "Kitsu polish: Quick update carousel, exact ratings and reactions in the library, histogram buckets, grid short words, status filter wording",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "kitsu-finish",
+        "tracker-list-hooks"
+      ],
+      "owns": [
+        "lib/widgets/Kitsu/kitsu_rows.dart",
+        "lib/pages/Kitsu/kitsu_home_page.dart",
+        "lib/widgets/Kitsu/media/**",
+        "lib/services/api/Kitsu/kitsu_library.dart",
+        "lib/widgets/Kitsu/kitsu_user_list_adapter.dart",
+        "lib/widgets/common/list_sort_filter.dart",
+        "lib/l10n/units/kitsu-polish/**",
+        "test/units/kitsu-polish/**",
+        "test/units/kitsu-polish/**"
+      ],
+      "group": "user",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: sonnet"
+      ],
+      "status": "⬜ todo"
+    },
+    {
+      "id": "mal-polish",
+      "title": "MAL polish: Accounts caption, MAL session from its tile, active account after the website login, bell label, Clubs row, Supporter badge for others, time zone in About",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "mal-hub-followups"
+      ],
+      "owns": [
+        "lib/screens/manage_accounts_page.dart",
+        "lib/user/accounts/**",
+        "lib/widgets/MAL/home/homeappbar.dart",
+        "lib/screens/MAL/detail/sections/forums_section.dart",
+        "lib/services/api/MAL/scrapper/user_profile_page.dart",
+        "lib/screens/user_profile/sections/about_section.dart",
+        "lib/widgets/user/profile/profile_header.dart",
+        "lib/l10n/units/mal-polish/**",
+        "test/units/mal-polish/**",
+        "test/units/mal-polish/**"
+      ],
+      "group": "user",
       "dropped": null,
       "skills": [],
       "states": [],
