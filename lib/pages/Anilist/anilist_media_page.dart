@@ -89,6 +89,16 @@ class AnilistMediaPageState extends State<AnilistMediaPage> with SingleTickerPro
   AnilistMediaDetail? _detail;
   bool _stepping = false;
 
+  /// Height of the banner at the top of the page; the cover overlaps its bottom edge.
+  static const double _bannerHeight = 200;
+
+  /// 0 over the banner, 1 once it scrolled under the top bar (the bar turns opaque).
+  double _barOpacity = 0;
+
+  /// The tab bar scrolled under the top bar: the top bar shows the tabs itself.
+  bool _tabsUnderBar = false;
+  final GlobalKey _tabBarKey = GlobalKey();
+
   String _language = 'JAPANESE';
   AnilistPager<AnilistCastEdge>? _characters;
   AnilistPager<AnilistStaffEdge>? _staff;
@@ -127,8 +137,7 @@ class AnilistMediaPageState extends State<AnilistMediaPage> with SingleTickerPro
     final id = widget.id;
     switch (tab) {
       case AnilistMediaTab.characters:
-        return _characters ??=
-            AnilistPager((page) => _service.characters(id, page: page, language: _language));
+        return _characters ??= AnilistPager((page) => _service.characters(id, page: page, language: _language));
       case AnilistMediaTab.staff:
         return _staff ??= AnilistPager((page) => _service.staff(id, page: page));
       case AnilistMediaTab.relations:
@@ -282,9 +291,29 @@ class AnilistMediaPageState extends State<AnilistMediaPage> with SingleTickerPro
   // ------------------------------------------------------------------ build
 
   bool _nearEnd(ScrollNotification n) {
-    if (n.metrics.axis == Axis.vertical && n.metrics.extentAfter < 600) _pagerOf(_tab)?.loadMore();
+    if (n.metrics.axis != Axis.vertical || n.depth != 0) return false;
+    if (n.metrics.extentAfter < 600) _pagerOf(_tab)?.loadMore();
+    final barHeight = MediaQuery.paddingOf(context).top + kToolbarHeight;
+    final opacity = (n.metrics.pixels / (_bannerHeight - barHeight)).clamp(0.0, 1.0);
+    final box = _tabBarKey.currentContext?.findRenderObject() as RenderBox?;
+    final under = box != null && box.attached && box.localToGlobal(Offset.zero).dy <= barHeight;
+    if (opacity != _barOpacity || under != _tabsUnderBar) {
+      setState(() {
+        _barOpacity = opacity;
+        _tabsUnderBar = under;
+      });
+    }
     return false;
   }
+
+  TabBar _tabBar(S s) => TabBar(
+        controller: _tabs,
+        isScrollable: true,
+        tabAlignment: TabAlignment.start,
+        tabs: [
+          for (final t in AnilistMediaTab.values) Tab(text: _tabLabel(s, t)),
+        ],
+      );
 
   @override
   Widget build(BuildContext context) {
@@ -296,41 +325,68 @@ class AnilistMediaPageState extends State<AnilistMediaPage> with SingleTickerPro
       backgroundColor: scheme.surface.withValues(alpha: 0.72),
       foregroundColor: scheme.onSurface,
     );
-    final appBar = SliverAppBar(
-      pinned: true,
-      expandedHeight: 200,
-      leading: IconButton(
-        style: buttonStyle,
-        tooltip: MaterialLocalizations.of(context).backButtonTooltip,
-        icon: const BackButtonIcon(),
-        onPressed: () => Navigator.of(context).maybePop(),
-      ),
-      title: _CollapsedTitle(name),
-      actions: [
-        if (d != null)
-          IconButton(
-            style: buttonStyle,
-            tooltip: d.isFavourite ? s.Alp_Remove_Favourite : s.Alp_Add_Favourite,
-            icon: Icon(d.isFavourite ? Icons.favorite : Icons.favorite_border,
-                color: d.isFavourite ? scheme.error : null),
-            onPressed: _toggleFavourite,
-          ),
-        PopupMenuButton<String>(
-          style: buttonStyle,
-          onSelected: _menu,
-          itemBuilder: (_) => [
-            PopupMenuItem(value: 'share', child: Text(s.Share)),
-            PopupMenuItem(value: 'anilist', child: Text(s.Amp_Open_Anilist)),
-            if (d?.malId != null) PopupMenuItem(value: 'mal', child: Text(s.Amp_Open_Mal)),
-            PopupMenuItem(value: 'copy', child: Text(s.Amp_Copy_Title)),
+    final barHeight = MediaQuery.paddingOf(context).top + kToolbarHeight;
+    // Over the page, not a sliver: a pinned app bar would paint over the cover that
+    // overlaps the banner. It turns opaque once the banner scrolled under it.
+    final topBar = Material(
+      color: scheme.surface.withValues(alpha: _barOpacity),
+      elevation: _tabsUnderBar ? 2 : 0,
+      child: SafeArea(
+        bottom: false,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(
+              height: kToolbarHeight,
+              child: Row(
+                children: [
+                  const SizedBox(width: 4),
+                  IconButton(
+                    style: buttonStyle,
+                    tooltip: MaterialLocalizations.of(context).backButtonTooltip,
+                    icon: const BackButtonIcon(),
+                    onPressed: () => Navigator.of(context).maybePop(),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: AnimatedOpacity(
+                      opacity: _barOpacity >= 1 ? 1 : 0,
+                      duration: const Duration(milliseconds: 150),
+                      child: Text(name,
+                          maxLines: 1, overflow: TextOverflow.ellipsis, style: Theme.of(context).textTheme.titleLarge),
+                    ),
+                  ),
+                  if (d != null)
+                    IconButton(
+                      style: buttonStyle,
+                      tooltip: d.isFavourite ? s.Alp_Remove_Favourite : s.Alp_Add_Favourite,
+                      icon: Icon(d.isFavourite ? Icons.favorite : Icons.favorite_border,
+                          color: d.isFavourite ? scheme.error : null),
+                      onPressed: _toggleFavourite,
+                    ),
+                  PopupMenuButton<String>(
+                    style: buttonStyle,
+                    onSelected: _menu,
+                    itemBuilder: (_) => [
+                      PopupMenuItem(value: 'share', child: Text(s.Share)),
+                      PopupMenuItem(value: 'anilist', child: Text(s.Amp_Open_Anilist)),
+                      if (d?.malId != null) PopupMenuItem(value: 'mal', child: Text(s.Amp_Open_Mal)),
+                      PopupMenuItem(value: 'copy', child: Text(s.Amp_Copy_Title)),
+                    ],
+                  ),
+                  const SizedBox(width: 4),
+                ],
+              ),
+            ),
+            if (_tabsUnderBar && d != null) Align(alignment: AlignmentDirectional.centerStart, child: _tabBar(s)),
           ],
         ),
-        const SizedBox(width: 4),
-      ],
-      flexibleSpace: FlexibleSpaceBar(
-        collapseMode: CollapseMode.pin,
-        background: AnilistMediaBanner(bannerUrl: d?.bannerUrl, coverUrl: d?.coverLargeUrl ?? d?.coverUrl, coverColor: d?.coverColor),
       ),
+    );
+    final banner = SizedBox(
+      height: _bannerHeight,
+      child: AnilistMediaBanner(
+          bannerUrl: d?.bannerUrl, coverUrl: d?.coverLargeUrl ?? d?.coverUrl, coverColor: d?.coverColor),
     );
     return Scaffold(
       floatingActionButton: d == null
@@ -342,42 +398,52 @@ class AnilistMediaPageState extends State<AnilistMediaPage> with SingleTickerPro
                   ? s.Amp_Add_To_List
                   : AnilistLabels.listStatus(d.entry!.status!, anime: d.isAnime)),
             ),
-      body: RefreshIndicator(
-        edgeOffset: 120,
-        onRefresh: () => _load(force: true),
-        child: NotificationListener<ScrollNotification>(
-          onNotification: _nearEnd,
-          child: CustomScrollView(
-            slivers: [
-              appBar,
-              ...switch (_phase) {
-                _Phase.ready => _body(context, d!),
-                _Phase.loading => [
-                    SliverToBoxAdapter(child: _Placeholder(title: name, coverUrl: widget.coverUrl)),
-                    const SliverToBoxAdapter(
-                        child: Padding(padding: EdgeInsets.all(32), child: Center(child: CircularProgressIndicator()))),
-                  ],
-                _Phase.failed => [
-                    SliverToBoxAdapter(
-                      child: AnilistTabMessage(
-                        text: s.Amp_Load_Failed,
-                        onRetry: () {
-                          setState(() => _phase = _Phase.loading);
-                          _load(force: true);
-                        },
-                      ),
-                    ),
-                  ],
-                _Phase.notFound => [SliverToBoxAdapter(child: AnilistTabMessage(text: s.Amp_Not_Found))],
-              },
-            ],
+      body: Stack(
+        children: [
+          RefreshIndicator(
+            edgeOffset: barHeight,
+            onRefresh: () => _load(force: true),
+            child: NotificationListener<ScrollNotification>(
+              onNotification: _nearEnd,
+              child: CustomScrollView(
+                slivers: [
+                  ...switch (_phase) {
+                    _Phase.ready => _body(context, d!, banner),
+                    _Phase.loading => [
+                        SliverToBoxAdapter(child: banner),
+                        SliverToBoxAdapter(child: _Placeholder(title: name, coverUrl: widget.coverUrl)),
+                        const SliverToBoxAdapter(
+                            child: Padding(
+                                padding: EdgeInsets.all(32), child: Center(child: CircularProgressIndicator()))),
+                      ],
+                    _Phase.failed => [
+                        SliverToBoxAdapter(child: SizedBox(height: barHeight)),
+                        SliverToBoxAdapter(
+                          child: AnilistTabMessage(
+                            text: s.Amp_Load_Failed,
+                            onRetry: () {
+                              setState(() => _phase = _Phase.loading);
+                              _load(force: true);
+                            },
+                          ),
+                        ),
+                      ],
+                    _Phase.notFound => [
+                        SliverToBoxAdapter(child: SizedBox(height: barHeight)),
+                        SliverToBoxAdapter(child: AnilistTabMessage(text: s.Amp_Not_Found)),
+                      ],
+                  },
+                ],
+              ),
+            ),
           ),
-        ),
+          Positioned(top: 0, left: 0, right: 0, child: topBar),
+        ],
       ),
     );
   }
 
-  List<Widget> _body(BuildContext context, AnilistMediaDetail d) {
+  List<Widget> _body(BuildContext context, AnilistMediaDetail d, Widget banner) {
     final s = S.of(context);
     final scheme = Theme.of(context).colorScheme;
     final continueEpisode = d.continueEpisode;
@@ -386,9 +452,10 @@ class AnilistMediaPageState extends State<AnilistMediaPage> with SingleTickerPro
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            // Banner and header in one box: the cover overlapping the banner paints over it.
+            banner,
             AnilistMediaHeader(detail: d),
-            if (d.entry != null)
-              AnilistMyEntryCard(detail: d, onEdit: _edit, onPlusOne: _plusOne, busy: _stepping),
+            if (d.entry != null) AnilistMyEntryCard(detail: d, onEdit: _edit, onPlusOne: _plusOne, busy: _stepping),
             if (continueEpisode != null) AnilistContinueCard(episode: continueEpisode),
             if (d.description != null) AnilistSynopsis(html: d.description!),
             if (d.genres.isNotEmpty) AnilistGenreChips(detail: d),
@@ -396,17 +463,12 @@ class AnilistMediaPageState extends State<AnilistMediaPage> with SingleTickerPro
           ],
         ),
       ),
-      SliverPersistentHeader(
-        pinned: true,
-        delegate: _TabBarDelegate(
+      SliverToBoxAdapter(
+        child: ColoredBox(
           color: scheme.surface,
-          tabBar: TabBar(
-            controller: _tabs,
-            isScrollable: true,
-            tabAlignment: TabAlignment.start,
-            tabs: [
-              for (final t in AnilistMediaTab.values) Tab(text: _tabLabel(s, t)),
-            ],
+          child: Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: KeyedSubtree(key: _tabBarKey, child: _tabBar(s)),
           ),
         ),
       ),
@@ -491,48 +553,6 @@ class _Placeholder extends StatelessWidget {
           Expanded(child: Text(title, style: Theme.of(context).textTheme.titleLarge)),
         ],
       ),
-    );
-  }
-}
-
-class _TabBarDelegate extends SliverPersistentHeaderDelegate {
-  _TabBarDelegate({required this.tabBar, required this.color});
-
-  final TabBar tabBar;
-  final Color color;
-
-  @override
-  double get minExtent => tabBar.preferredSize.height;
-
-  @override
-  double get maxExtent => tabBar.preferredSize.height;
-
-  @override
-  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) =>
-      ColoredBox(color: color, child: tabBar);
-
-  @override
-  bool shouldRebuild(_TabBarDelegate old) => old.tabBar != tabBar || old.color != color;
-}
-
-/// The title in the app bar once the banner is folded away.
-class _CollapsedTitle extends StatelessWidget {
-  const _CollapsedTitle(this.text);
-
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    final settings = context.dependOnInheritedWidgetOfExactType<FlexibleSpaceBarSettings>();
-    var visible = true;
-    if (settings != null) {
-      final range = settings.maxExtent - settings.minExtent;
-      visible = range <= 0 || (settings.currentExtent - settings.minExtent) / range < 0.15;
-    }
-    return AnimatedOpacity(
-      opacity: visible ? 1 : 0,
-      duration: const Duration(milliseconds: 150),
-      child: Text(text, maxLines: 1, overflow: TextOverflow.ellipsis),
     );
   }
 }
