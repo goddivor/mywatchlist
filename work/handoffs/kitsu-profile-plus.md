@@ -20,7 +20,7 @@ Plus `PROJECT-STATE.md` (rewrite in place, within its cap) and `docs/DECISIONS.m
 
 ## Goal
 - Kitsu/Simkl audit docs/kitsu-simkl-report-2026-10-28.md, unit `kitsu-profile-plus`: Profile tabs Activity (C1), Reactions (C2), Posts (C3), followers/following lists (C4), favourite characters/people (C6), social links and counters (C7), other users' list (C9), user search (C8) Read the matching report items (endpoints, sample responses, selectors, risks) and implement them.
-- Owner decision: a Kitsu/Simkl account shows only its own tracker's data (never MAL news/forum); scraping the tracker's own site for extra data is welcome. Replicate DailyAL/MALClient UI conventions where MWL would be weaker; no explanatory captions; theme tokens; English + French. Never write to the owner's tracker accounts in tests (fakes/fixtures only).
+- Owner decision: a Kitsu/Simkl account shows only its own tracker's data (never MAL news/forum); scraping the tracker's own site for extra data is welcome. Each tracker is its own app (owner, 2026-10-29): design this tracker's screens from its own data and from the popular third-party apps built on it (docs/tracker-ui-references.md), in their own files; DailyAL's UI is the reference for MAL screens only. Every item of this tracker (list rows, home cards, search results, related, recommendations) opens this tracker's native page, never the MAL page, mapped or not; no explanatory captions; theme tokens; English + French. Never write to the owner's tracker accounts in tests (fakes/fixtures only).
 
 ## Known bugs to fix in scope
 - none

@@ -23,7 +23,7 @@ Plus `PROJECT-STATE.md` (rewrite in place, within its cap) and `docs/DECISIONS.m
 
 ## Goal
 - Audit docs/anilist-report-2026-10-28.md, unit `anilist-social`: F0-F9: AniList HTML renderer (spoilers, embeds, in-app `anilist.co` links), forum filters, thread page with comment tree, reply / like / subscribe, activity feed page (Following / Global), activity page with replies, status composer with preview, likes sheet, review page with votes and review composer, reviews feed; the Forum tab gets Forum / Activity tabs Read the matching report items (queries/endpoints, samples, file:line) and implement them.
-- Owner rules: every tracker gets everything its API allows (never capped at MAL); replicate DailyAL's UI conventions where MWL would be weaker; no explanatory captions; theme tokens; English + French. Never write to the owner's accounts in tests (fakes).
+- Owner rules: every tracker gets everything its API allows (never capped at MAL); Each tracker is its own app (owner, 2026-10-29): design this tracker's screens from its own data and from the popular third-party apps built on it (docs/tracker-ui-references.md), in their own files; DailyAL's UI is the reference for MAL screens only. Every item of this tracker (list rows, home cards, search results, related, recommendations) opens this tracker's native page, never the MAL page, mapped or not; no explanatory captions; theme tokens; English + French. Never write to the owner's accounts in tests (fakes).
 
 ## Known bugs to fix in scope
 - none

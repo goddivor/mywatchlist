@@ -22,7 +22,7 @@ Plus `PROJECT-STATE.md` (rewrite in place, within its cap) and `docs/DECISIONS.m
 ## Goal
 - From ux-search PR #276: AniList search result rows match the DailyAL row of MediaTile (#rank, star score with members, type and length, regular-weight title, edit pencil).
 - Audit docs/anilist-report-2026-10-28.md, unit `anilist-search-filters`: C1-C9: `AnilistMediaQuery` gains every filter, filter sheet, 36 sorts, tabs for characters / staff / studios / users, genres and tags from the API (cached a day), tag explorer, account adult option Read the matching report items (queries/endpoints, samples, file:line) and implement them.
-- Owner rules: every tracker gets everything its API allows (never capped at MAL); replicate DailyAL's UI conventions where MWL would be weaker; no explanatory captions; theme tokens; English + French. Never write to the owner's accounts in tests (fakes).
+- Owner rules: every tracker gets everything its API allows (never capped at MAL); Each tracker is its own app (owner, 2026-10-29): design this tracker's screens from its own data and from the popular third-party apps built on it (docs/tracker-ui-references.md), in their own files; DailyAL's UI is the reference for MAL screens only. Every item of this tracker (list rows, home cards, search results, related, recommendations) opens this tracker's native page, never the MAL page, mapped or not; no explanatory captions; theme tokens; English + French. Never write to the owner's accounts in tests (fakes).
 
 ## Known bugs to fix in scope
 - none

@@ -21,7 +21,7 @@ Plus `PROJECT-STATE.md` (rewrite in place, within its cap) and `docs/DECISIONS.m
 
 ## Goal
 - Kitsu/Simkl audit docs/kitsu-simkl-report-2026-10-28.md, unit `simkl-media-page`: Native Simkl title page: B1 full record (ratings, rank, drop rate, trailers, air time, recommendations with %, relations, studios), B2 episodes, scraped watcher distribution (C1), counters (C7), reviews with sub-scores (C3), comments (C4), memos (C5), tags and links (C9); HTML parsed off the UI isolate, cached, sections hidden when a selector fails Read the matching report items (endpoints, sample responses, selectors, risks) and implement them.
-- Owner decision: a Kitsu/Simkl account shows only its own tracker's data (never MAL news/forum); scraping the tracker's own site for extra data is welcome. Replicate DailyAL/MALClient UI conventions where MWL would be weaker; no explanatory captions; theme tokens; English + French. Never write to the owner's tracker accounts in tests (fakes/fixtures only).
+- Owner decision: a Kitsu/Simkl account shows only its own tracker's data (never MAL news/forum); scraping the tracker's own site for extra data is welcome. Each tracker is its own app (owner, 2026-10-29): design this tracker's screens from its own data and from the popular third-party apps built on it (docs/tracker-ui-references.md), in their own files; DailyAL's UI is the reference for MAL screens only. Every item of this tracker (list rows, home cards, search results, related, recommendations) opens this tracker's native page, never the MAL page, mapped or not; no explanatory captions; theme tokens; English + French. Never write to the owner's tracker accounts in tests (fakes/fixtures only).
 
 ## Known bugs to fix in scope
 - none

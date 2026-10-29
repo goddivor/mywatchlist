@@ -2156,6 +2156,7 @@
         "tracker-followups"
       ],
       "owns": [
+        "lib/widgets/Kitsu/kitsu_user_list_adapter.dart",
         "lib/pages/Kitsu/kitsu_media_page.dart",
         "lib/services/api/Kitsu/kitsu_media_detail.dart",
         "lib/widgets/Kitsu/media/**",
@@ -3095,6 +3096,7 @@
         "anilist-social"
       ],
       "owns": [
+        "lib/widgets/Anilist/anilist_user_list_adapter.dart",
         "lib/pages/Anilist/anilist_media_page.dart",
         "lib/services/api/Anilist/anilist_media_detail.dart",
         "lib/widgets/Anilist/media/**",
