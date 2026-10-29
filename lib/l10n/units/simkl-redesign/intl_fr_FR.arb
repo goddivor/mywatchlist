@@ -1,0 +1,23 @@
+{
+  "@@locale": "fr_FR",
+  "Skr_On_Simkl": "sur Simkl",
+  "Skr_Next_To_Watch": "À regarder ensuite",
+  "Skr_Next_Episode": "Prochain épisode",
+  "Skr_Last_Aired": "Dernière diffusion",
+  "Skr_Mark_Watched": "Marquer l’ép. {number} comme vu",
+  "Skr_Watched": "Vu",
+  "Skr_My_Rating": "Ma note",
+  "Skr_Rate": "Noter",
+  "Skr_Up_Next": "À suivre",
+  "Skr_My_Shows": "Mes séries",
+  "Skr_All_Anime": "Tous les animés",
+  "Skr_Premiere": "Première",
+  "Skr_Finale": "Final",
+  "Skr_Calendar": "Calendrier",
+  "Skr_Now_Watching": "En cours",
+  "Skr_Watch_Time": "Temps de visionnage",
+  "Skr_Episodes_Left": "{count, plural, =1{1 épisode restant} other{{count} épisodes restants}}",
+  "Skr_Watchers": "{formatted} spectateurs",
+  "Skr_Community": "Communauté",
+  "Skr_Yesterday": "Hier"
+}

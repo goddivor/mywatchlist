@@ -14,10 +14,10 @@ import 'package:mywatchlist/user/preferences/preferences.dart';
 import 'package:mywatchlist/user/user_simkl_v2.dart';
 import 'package:mywatchlist/utils/app_routes.dart';
 import 'package:mywatchlist/utils/web_launcher.dart' show launchWebView;
+import 'package:mywatchlist/widgets/Simkl/media/simkl_media_format.dart' show SimklFormat;
 import 'package:mywatchlist/widgets/charts/chart_card.dart';
 import 'package:mywatchlist/widgets/charts/chart_palette.dart';
 import 'package:mywatchlist/widgets/charts/score_stack_chart.dart';
-import 'package:mywatchlist/widgets/charts/status_bar_chart.dart';
 import 'package:mywatchlist/widgets/common/app_colors.dart';
 import 'package:mywatchlist/widgets/common/app_image.dart';
 import 'package:mywatchlist/widgets/user/list/list_entry_view.dart';
@@ -38,6 +38,9 @@ class SimklProfileData {
   /// The user's 9 and 10 rated titles, best first.
   final List<ListEntryView> topRated;
 
+  /// Episodes watched per list status.
+  final Map<ListEntryStatus, int> episodesByStatus;
+
   const SimklProfileData(
     this.account,
     this.stats, {
@@ -45,6 +48,7 @@ class SimklProfileData {
     this.nowWatching,
     this.lists = const [],
     this.topRated = const [],
+    this.episodesByStatus = const {},
   });
 }
 
@@ -56,6 +60,16 @@ List<ListEntryView> simklTopRated(List<ListEntryView> list, {int limit = 20}) {
       return (b.updatedAt ?? DateTime(0)).compareTo(a.updatedAt ?? DateTime(0));
     });
   return top.take(limit).toList();
+}
+
+/// Episodes watched per list status.
+Map<ListEntryStatus, int> simklEpisodesByStatus(List<ListEntryView> list) {
+  final out = <ListEntryStatus, int>{};
+  for (final e in list) {
+    final s = e.status;
+    if (s != null) out[s] = (out[s] ?? 0) + e.progress;
+  }
+  return out;
 }
 
 /// `3d 4h`, `5h 20m` or `45m` in the app language.
@@ -108,6 +122,7 @@ Future<SimklProfileData> loadSimklProfile({
     nowWatching: cover,
     lists: custom,
     topRated: simklTopRated(list),
+    episodesByStatus: simklEpisodesByStatus(list),
   );
 }
 
@@ -213,13 +228,16 @@ class _ProfileBody extends StatelessWidget {
       s.Prof_Status_Plan_Watch,
     ];
     final number = NumberFormat.decimalPattern();
+    final watch = data.watch;
     return CustomScrollView(
       physics: const AlwaysScrollableScrollPhysics(),
       slivers: [
         SliverToBoxAdapter(child: _Header(data: data, showBack: showBack)),
+        // Simkl's unit is time: watch time, what is left and the last seven days come first.
+        if (watch != null && !watch.isEmpty) SliverToBoxAdapter(child: _TimeBlock(watch: watch)),
         SliverToBoxAdapter(
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(12, 4, 12, 4),
+            padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
             child: Row(
               children: [
                 Expanded(child: _StatTile(label: s.Prof_Entries_Label, value: number.format(stats.entries))),
@@ -238,23 +256,6 @@ class _ProfileBody extends StatelessWidget {
             ),
           ),
         ),
-        if (data.watch != null && !data.watch!.isEmpty)
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(12, 4, 12, 4),
-              child: Row(
-                children: [
-                  Expanded(child: _StatTile(label: s.Skp_Time_Spent, value: simklDuration(data.watch!.totalMins))),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: _StatTile(label: s.Skp_Left_To_Watch, value: simklDuration(data.watch!.leftMins)),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(child: _StatTile(label: s.Last_Week, value: simklDuration(data.watch!.lastWeekMins))),
-                ],
-              ),
-            ),
-          ),
         if (stats.entries == 0)
           SliverToBoxAdapter(
             child: Padding(
@@ -271,21 +272,11 @@ class _ProfileBody extends StatelessWidget {
           )
         else ...[
           SliverToBoxAdapter(
-            child: ChartCard(
-              title: s.Prof_Chart_Anime_Title,
-              child: StatusBarChart(
-                values: [for (final status in SimklListStats.statusOrder) (stats.byStatus[status] ?? 0).toDouble()],
-                labels: labels,
-                colors: colors,
-                formatValue: (v) => number.format(v.round()),
-              ),
-              footer: Wrap(
-                spacing: 14,
-                runSpacing: 4,
-                children: [
-                  for (var i = 0; i < labels.length; i++) LegendDot(color: colors[i], label: labels[i]),
-                ],
-              ),
+            child: _StatusBreakdown(
+              counts: [for (final status in SimklListStats.statusOrder) stats.byStatus[status] ?? 0],
+              episodes: [for (final status in SimklListStats.statusOrder) data.episodesByStatus[status] ?? 0],
+              labels: labels,
+              colors: colors,
             ),
           ),
           if (stats.scoreByStatus.isNotEmpty)
@@ -382,7 +373,29 @@ class _Header extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(name, style: theme.textTheme.headlineSmall, maxLines: 1, overflow: TextOverflow.ellipsis),
+                      Row(
+                        children: [
+                          Flexible(
+                            child: Text(name, style: theme.textTheme.headlineSmall, maxLines: 1, overflow: TextOverflow.ellipsis),
+                          ),
+                          if (account != null && simklIsPaid(account.accountType)) ...[
+                            const SizedBox(width: 8),
+                            DecoratedBox(
+                              decoration: BoxDecoration(
+                                color: scheme.tertiaryContainer,
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                                child: Text(
+                                  account.accountType.toUpperCase(),
+                                  style: theme.textTheme.labelSmall?.copyWith(color: scheme.onTertiaryContainer),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
                       if (details.isNotEmpty)
                         Text(
                           details,
@@ -399,6 +412,11 @@ class _Header extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(8, 12, 8, 0),
               child: Text(account.bio, style: theme.textTheme.bodyMedium),
             ),
+          if (cover != null && cover.title.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(8, 14, 8, 0),
+              child: _NowWatchingCard(cover: cover),
+            ),
         ],
       ),
     );
@@ -407,19 +425,7 @@ class _Header extends StatelessWidget {
     return Stack(
       children: [
         Positioned.fill(
-          child: ExcludeSemantics(
-            child: GestureDetector(
-              onTap: cover.simklId == null
-                  ? null
-                  : () => openSimklTitle(
-                        context,
-                        simklId: cover.simklId!,
-                        title: cover.title,
-                        posterUrl: cover.posterUrl,
-                      ),
-              child: _Cover(url: cover.coverUrl, fade: theme.scaffoldBackgroundColor),
-            ),
-          ),
+          child: ExcludeSemantics(child: _Cover(url: cover.coverUrl, fade: theme.scaffoldBackgroundColor)),
         ),
         header,
       ],
@@ -628,6 +634,167 @@ class _RecentTile extends StatelessWidget {
       onTap: () {
         openSimklTitle(context, simklId: entry.id, title: entry.title, posterUrl: entry.imageUrl);
       },
+    );
+  }
+}
+
+/// "Now watching": the last title the user watched, on the header (tap = its Simkl page).
+class _NowWatchingCard extends StatelessWidget {
+  final SimklNowWatching cover;
+
+  const _NowWatchingCard({required this.cover});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final id = cover.simklId;
+    return Material(
+      color: scheme.surfaceContainerHigh,
+      borderRadius: BorderRadius.circular(14),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(14),
+        onTap: id == null
+            ? null
+            : () => openSimklTitle(context, simklId: id, title: cover.title, posterUrl: cover.posterUrl),
+        child: Padding(
+          padding: const EdgeInsets.all(8),
+          child: Row(
+            children: [
+              AppImage(
+                url: cover.posterUrl,
+                width: 36,
+                height: 54,
+                borderRadius: BorderRadius.circular(6),
+                placeholderColor: scheme.surfaceContainerHighest,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(S.of(context).Skr_Now_Watching,
+                        style: theme.textTheme.labelMedium?.copyWith(color: scheme.primary)),
+                    Text(cover.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: theme.textTheme.titleSmall),
+                  ],
+                ),
+              ),
+              if (id != null) Icon(Icons.chevron_right_rounded, color: scheme.onSurfaceVariant),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Watch time (big), what is left to watch (episodes and time) and the last seven days.
+class _TimeBlock extends StatelessWidget {
+  final SimklWatchStats watch;
+
+  const _TimeBlock({required this.watch});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final s = S.of(context);
+    Widget cell(String label, String value, [String? extra]) => Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label, style: theme.textTheme.labelMedium?.copyWith(color: scheme.onSurfaceVariant)),
+              Text(value, style: theme.textTheme.titleMedium),
+              if (extra != null)
+                Text(extra, style: theme.textTheme.labelSmall?.copyWith(color: scheme.onSurfaceVariant)),
+            ],
+          ),
+        );
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 4, 12, 4),
+      child: Card(
+        margin: EdgeInsets.zero,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(s.Skr_Watch_Time, style: theme.textTheme.labelLarge?.copyWith(color: scheme.primary)),
+              Text(simklDuration(watch.totalMins), style: theme.textTheme.displaySmall),
+              const SizedBox(height: 12),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  cell(
+                    s.Skp_Left_To_Watch,
+                    simklDuration(watch.leftMins),
+                    watch.leftEpisodes > 0 ? s.Skr_Episodes_Left(watch.leftEpisodes) : null,
+                  ),
+                  const SizedBox(width: 12),
+                  cell(s.Last_Week, simklDuration(watch.lastWeekMins)),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Entries per list status as one stacked bar, then a row per status: count and episodes.
+class _StatusBreakdown extends StatelessWidget {
+  final List<int> counts;
+  final List<int> episodes;
+  final List<String> labels;
+  final List<Color> colors;
+
+  const _StatusBreakdown({required this.counts, required this.episodes, required this.labels, required this.colors});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final total = counts.fold<int>(0, (a, b) => a + b);
+    return ChartCard(
+      title: S.of(context).Prof_Chart_Anime_Title,
+      child: Column(
+        children: [
+          if (total > 0)
+            ClipRRect(
+              borderRadius: BorderRadius.circular(6),
+              child: SizedBox(
+                height: 14,
+                child: Row(children: [
+                  for (var i = 0; i < counts.length; i++)
+                    if (counts[i] > 0)
+                      Expanded(flex: counts[i], child: ColoredBox(color: colors[i % colors.length])),
+                ]),
+              ),
+            ),
+          const SizedBox(height: 10),
+          for (var i = 0; i < counts.length; i++)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 3),
+              child: Row(
+                children: [
+                  Icon(Icons.circle, size: 10, color: colors[i % colors.length]),
+                  const SizedBox(width: 8),
+                  Expanded(child: Text(labels[i], style: theme.textTheme.bodyMedium)),
+                  if (episodes[i] > 0)
+                    Padding(
+                      padding: const EdgeInsets.only(right: 12),
+                      child: Text(
+                        S.current.Smp_Episodes_Short(episodes[i]),
+                        style: theme.textTheme.labelMedium?.copyWith(color: scheme.onSurfaceVariant),
+                      ),
+                    ),
+                  Text(SimklFormat.count(counts[i]), style: theme.textTheme.titleSmall),
+                ],
+              ),
+            ),
+        ],
+      ),
     );
   }
 }

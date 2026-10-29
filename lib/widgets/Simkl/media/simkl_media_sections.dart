@@ -173,14 +173,35 @@ class SimklWatchersView extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: simklPagePadding + 10),
       child: Column(
         children: [
+          if (total > 0) ...[
+            ClipRRect(
+              borderRadius: BorderRadius.circular(6),
+              child: SizedBox(
+                height: 14,
+                child: Row(
+                  children: [
+                    for (final b in watchers.buckets)
+                      if (b.users > 0)
+                        Expanded(
+                          flex: (b.users * 1000 / total).round().clamp(1, 1000),
+                          child: ColoredBox(color: colors.status(_tone(b.status)).color),
+                        ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 14),
+          ],
           for (final b in watchers.buckets)
             Padding(
-              padding: const EdgeInsets.only(bottom: 10),
+              padding: const EdgeInsets.only(bottom: 8),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     children: [
+                      Icon(Icons.circle, size: 10, color: colors.status(_tone(b.status)).color),
+                      const SizedBox(width: 8),
                       Expanded(child: Text(SimklFormat.watcherStatus(b.status), style: theme.textTheme.bodyMedium)),
                       Text(
                         b.percent == null
@@ -189,16 +210,6 @@ class SimklWatchersView extends StatelessWidget {
                         style: theme.textTheme.labelMedium?.copyWith(color: scheme.onSurfaceVariant),
                       ),
                     ],
-                  ),
-                  const SizedBox(height: 4),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(4),
-                    child: LinearProgressIndicator(
-                      value: total <= 0 ? 0 : (b.users / total).clamp(0.0, 1.0),
-                      minHeight: 6,
-                      color: colors.status(_tone(b.status)).color,
-                      backgroundColor: scheme.surfaceContainerHighest,
-                    ),
                   ),
                 ],
               ),
@@ -342,11 +353,17 @@ class SimklTrailerCard extends StatelessWidget {
 class SimklEpisodeCard extends StatelessWidget {
   final SimklEpisode episode;
   final VoidCallback? onTap;
+
+  /// The user has watched it: a tick on the still.
+  final bool watched;
+
+  /// Air time not reached yet: the still is dimmed and the date stays.
+  final bool upcoming;
   static const double width = 200;
   static double heightFor(BuildContext context) =>
       width * 9 / 16 + 8 + MediaQuery.textScalerOf(context).scale(56);
 
-  const SimklEpisodeCard({super.key, required this.episode, this.onTap});
+  const SimklEpisodeCard({super.key, required this.episode, this.onTap, this.watched = false, this.upcoming = false});
 
   @override
   Widget build(BuildContext context) {
@@ -364,19 +381,12 @@ class SimklEpisodeCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            AppImage(
+            SimklEpisodeStill(
               url: episode.imageUrl,
               width: width,
               height: width * 9 / 16,
-              borderRadius: BorderRadius.circular(12),
-              placeholderColor: scheme.surfaceContainerHighest,
-              errorWidget: (_) => DecoratedBox(
-                decoration: BoxDecoration(
-                  color: scheme.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Center(child: Icon(Icons.movie_outlined, color: scheme.onSurfaceVariant)),
-              ),
+              watched: watched,
+              upcoming: upcoming || !episode.aired,
             ),
             const SizedBox(height: 8),
             Text(heading, maxLines: 1, overflow: TextOverflow.ellipsis, style: theme.textTheme.labelLarge),
@@ -387,11 +397,13 @@ class SimklEpisodeCard extends StatelessWidget {
               style: theme.textTheme.bodySmall,
             ),
             Text(
-              !episode.aired
-                  ? S.current.Smp_Not_Aired
-                  : date == null
-                      ? ''
-                      : SimklFormat.episodeDate(date),
+              date != null && (upcoming || !episode.aired)
+                  ? SimklFormat.dateClock(date)
+                  : !episode.aired
+                      ? S.current.Smp_Not_Aired
+                      : date == null
+                          ? ''
+                          : SimklFormat.episodeDate(date),
               maxLines: 1,
               style: theme.textTheme.labelSmall?.copyWith(color: scheme.onSurfaceVariant),
             ),
@@ -408,11 +420,14 @@ class SimklLinkedCard extends StatelessWidget {
   final SimklLinkedTitle item;
   final String? caption;
   final VoidCallback onTap;
+
+  /// The user's progress on it ("3 / 12"), on the poster.
+  final String? badge;
   static const double width = 112;
   static double heightFor(BuildContext context) =>
       width * 1.5 + 6 + MediaQuery.textScalerOf(context).scale(56);
 
-  const SimklLinkedCard({super.key, required this.item, required this.onTap, this.caption});
+  const SimklLinkedCard({super.key, required this.item, required this.onTap, this.caption, this.badge});
 
   @override
   Widget build(BuildContext context) {
@@ -429,12 +444,34 @@ class SimklLinkedCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              AppImage(
-                url: item.posterUrl,
-                width: width,
-                height: width * 1.5,
-                borderRadius: BorderRadius.circular(10),
-                placeholderColor: scheme.surfaceContainerHighest,
+              Stack(
+                children: [
+                  AppImage(
+                    url: item.posterUrl,
+                    width: width,
+                    height: width * 1.5,
+                    borderRadius: BorderRadius.circular(10),
+                    placeholderColor: scheme.surfaceContainerHighest,
+                  ),
+                  if (badge != null)
+                    Positioned(
+                      left: 6,
+                      bottom: 6,
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          color: AppColors.of(context).imageScrim,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          child: Text(
+                            badge!,
+                            style: theme.textTheme.labelSmall?.copyWith(color: AppColors.of(context).onImageScrim),
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
               ),
               const SizedBox(height: 6),
               Text(item.title, maxLines: 2, overflow: TextOverflow.ellipsis, style: theme.textTheme.labelLarge),
@@ -809,6 +846,74 @@ class SimklBlockSkeleton extends StatelessWidget {
           decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(12)),
           child: SizedBox(height: height, width: double.infinity),
         ),
+      ),
+    );
+  }
+}
+
+/// An episode still: the picture (or a film mark), dimmed while it has not aired, with a tick
+/// once the user watched it. Dimming is an alpha colour over the picture (no `Opacity`).
+class SimklEpisodeStill extends StatelessWidget {
+  final String? url;
+  final double width;
+  final double height;
+  final bool watched;
+  final bool upcoming;
+  final double radius;
+
+  const SimklEpisodeStill({
+    super.key,
+    required this.url,
+    required this.width,
+    required this.height,
+    this.watched = false,
+    this.upcoming = false,
+    this.radius = 12,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final colors = AppColors.of(context);
+    final shape = BorderRadius.circular(radius);
+    return SizedBox(
+      width: width,
+      height: height,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          AppImage(
+            url: url,
+            width: width,
+            height: height,
+            borderRadius: shape,
+            placeholderColor: scheme.surfaceContainerHighest,
+            errorWidget: (_) => DecoratedBox(
+              decoration: BoxDecoration(color: scheme.surfaceContainerHighest, borderRadius: shape),
+              child: Center(child: Icon(Icons.movie_outlined, color: scheme.onSurfaceVariant)),
+            ),
+          ),
+          if (upcoming)
+            DecoratedBox(
+              decoration: BoxDecoration(color: scheme.surface.withValues(alpha: 0.6), borderRadius: shape),
+              child: Center(child: Icon(Icons.schedule_rounded, color: scheme.onSurface)),
+            ),
+          if (watched)
+            Positioned(
+              right: 6,
+              top: 6,
+              child: Semantics(
+                label: S.current.Skr_Watched,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(color: colors.success.color, shape: BoxShape.circle),
+                  child: Padding(
+                    padding: const EdgeInsets.all(3),
+                    child: Icon(Icons.check_rounded, size: 16, color: colors.success.onColor),
+                  ),
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }

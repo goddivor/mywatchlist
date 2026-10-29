@@ -13,8 +13,10 @@ import 'package:mywatchlist/utils/web_launcher.dart' show launchWebView;
 import 'package:mywatchlist/widgets/Simkl/media/simkl_media_format.dart';
 import 'package:mywatchlist/widgets/Simkl/media/simkl_media_header.dart';
 import 'package:mywatchlist/widgets/Simkl/media/simkl_media_lists.dart';
+import 'package:mywatchlist/widgets/Simkl/media/simkl_media_progress.dart';
 import 'package:mywatchlist/widgets/Simkl/media/simkl_media_sections.dart';
 import 'package:mywatchlist/widgets/Simkl/simkl_edit_sheet.dart';
+import 'package:mywatchlist/widgets/common/app_colors.dart';
 import 'package:mywatchlist/widgets/user/list/list_entry_view.dart';
 import 'package:mywatchlist/widgets/user/list/user_list_adapter.dart';
 import 'package:share_plus/share_plus.dart';
@@ -39,6 +41,9 @@ class SimklMediaPage extends StatefulWidget {
   /// The signed-in user's list, for the list button (tests pass a fake; null = Simkl's).
   final SimklListService? listService;
 
+  /// Clock of the next-episode card (tests).
+  final DateTime Function()? now;
+
   const SimklMediaPage({
     super.key,
     required this.simklId,
@@ -47,6 +52,7 @@ class SimklMediaPage extends StatefulWidget {
     this.posterUrl,
     this.service,
     this.listService,
+    this.now,
   });
 
   @override
@@ -65,6 +71,10 @@ class _SimklMediaPageState extends State<SimklMediaPage> {
   bool _pageLoading = true;
   ListEntryView? _entry;
   bool _listKnown = false;
+  bool _marking = false;
+
+  /// The user's list by Simkl id (progress badges on related titles).
+  Map<int, ListEntryView> _byId = const {};
 
   bool get _signedIn => UserSimklV2.instance.getStatus() == AuthStatus.AUTHENTICATED;
 
@@ -123,6 +133,7 @@ class _SimklMediaPageState extends State<SimklMediaPage> {
       final found = list.where((e) => e.id == widget.simklId).firstOrNull;
       if (mounted) setState(() {
         _entry = found;
+        _byId = {for (final e in list) e.id: e};
         _listKnown = true;
       });
     } catch (_) {
@@ -141,6 +152,7 @@ class _SimklMediaPageState extends State<SimklMediaPage> {
           posterUrl: item.posterUrl,
           service: widget.service,
           listService: widget.listService,
+          now: widget.now,
         ),
       ));
 
@@ -177,33 +189,53 @@ class _SimklMediaPageState extends State<SimklMediaPage> {
   Widget build(BuildContext context) {
     final t = _title;
     final name = t?.title ?? widget.title ?? '';
-    final fab = _signedIn && _listKnown && t != null ? _listButton(context) : null;
+    final hasFanart = t?.fanartUrl != null;
+    final top = MediaQuery.paddingOf(context).top;
+    final canPop = Navigator.of(context).canPop();
     return Scaffold(
-      floatingActionButton: fab,
       body: RefreshIndicator(
-        edgeOffset: SimklMediaHeader.extent(context) * 0.3,
+        edgeOffset: kToolbarHeight + top,
         onRefresh: () => _load(force: true),
         child: CustomScrollView(
           slivers: [
             SliverAppBar(
               pinned: true,
-              expandedHeight: SimklMediaHeader.extent(context) - MediaQuery.paddingOf(context).top,
+              automaticallyImplyLeading: false,
+              leading: canPop
+                  ? SimklHeroButton(
+                      icon: Icons.arrow_back,
+                      tooltip: MaterialLocalizations.of(context).backButtonTooltip,
+                      onPressed: () => Navigator.of(context).maybePop(),
+                    )
+                  : null,
+              expandedHeight: hasFanart ? SimklMediaHero.extent(context, hasFanart: true) - top : null,
               title: _CollapsedTitle(name),
               actions: [
-                IconButton(
+                SimklHeroButton(
                   tooltip: S.current.Smp_Open_On_Simkl,
-                  icon: const Icon(Icons.open_in_browser),
+                  icon: Icons.open_in_browser,
                   onPressed: () => launchWebView(_pageUrl, context: context),
                 ),
                 _menu(context),
+                const SizedBox(width: 4),
               ],
-              flexibleSpace: FlexibleSpaceBar(
-                collapseMode: CollapseMode.pin,
-                background: SimklMediaHeader(title: t, fallbackTitle: name, fallbackPoster: widget.posterUrl),
+              flexibleSpace: hasFanart
+                  ? FlexibleSpaceBar(
+                      collapseMode: CollapseMode.parallax,
+                      background: SimklMediaHero(fanartUrl: t!.fanartUrl),
+                    )
+                  : null,
+            ),
+            SliverToBoxAdapter(
+              child: SimklTitleBlock(
+                title: t,
+                fallbackTitle: name,
+                fallbackPoster: widget.posterUrl,
+                overlap: hasFanart,
               ),
             ),
             ..._body(context),
-            const SliverToBoxAdapter(child: SizedBox(height: 96)),
+            SliverToBoxAdapter(child: SizedBox(height: 32 + MediaQuery.paddingOf(context).bottom)),
           ],
         ),
       ),
@@ -212,7 +244,9 @@ class _SimklMediaPageState extends State<SimklMediaPage> {
 
   Widget _menu(BuildContext context) {
     final mal = _title?.malId;
+    final colors = AppColors.of(context);
     return PopupMenuButton<String>(
+      style: IconButton.styleFrom(backgroundColor: colors.imageScrim, foregroundColor: colors.onImageScrim),
       onSelected: (v) {
         switch (v) {
           case 'mal':
@@ -243,30 +277,27 @@ class _SimklMediaPageState extends State<SimklMediaPage> {
     );
   }
 
-  Widget _listButton(BuildContext context) {
-    final status = _entry?.status;
-    if (status == null) {
-      return FloatingActionButton.extended(
-        onPressed: _editList,
-        icon: const Icon(Icons.add),
-        label: Text(S.current.Smp_Add_To_List),
-      );
+  Future<void> _markWatched(int number) async {
+    final entry = _entry;
+    if (entry == null || _marking) return;
+    setState(() => _marking = true);
+    try {
+      final saved = await (widget.listService ?? SimklListService.instance).setProgress(entry, number);
+      if (mounted) setState(() => _entry = saved);
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.maybeOf(context)?.showSnackBar(SnackBar(content: Text(S.current.Sk_Edit_Failed)));
+      }
+    } finally {
+      if (mounted) setState(() => _marking = false);
     }
-    final role = status.colors(context);
-    return FloatingActionButton.extended(
-      onPressed: _editList,
-      backgroundColor: role.container,
-      foregroundColor: role.onContainer,
-      icon: Icon(status.icon),
-      label: Text(status.label(isAnime: true)),
-    );
   }
 
   List<Widget> _body(BuildContext context) {
     switch (_phase) {
       case _Phase.loading:
         return const [
-          SliverToBoxAdapter(child: SimklBlockSkeleton(height: 110)),
+          SliverToBoxAdapter(child: SimklBlockSkeleton(height: 58)),
           SliverToBoxAdapter(child: SimklBlockSkeleton(height: 180)),
         ];
       case _Phase.notFound:
@@ -297,25 +328,38 @@ class _SimklMediaPageState extends State<SimklMediaPage> {
     }
   }
 
+  /// The user's progress on a linked title ("3 / 12"), when it is on the list.
+  String? _badge(SimklLinkedTitle item) {
+    final e = _byId[item.simklId];
+    if (e == null || e.status == null) return null;
+    return e.total > 0 ? '${e.progress} / ${e.total}' : '${e.progress}';
+  }
+
+  /// Block order of the Simkl reference (docs/tracker-ui-references.md, Simkl § 2.3): ratings,
+  /// my status, next episode, synopsis, trailers, episodes, audience, related titles, then the
+  /// community and the information table.
   List<Widget> _sections(BuildContext context, SimklTitle t) {
     final page = _page;
     final counters = page?.counters;
     final reviews = page?.reviews;
     final episodes = _episodes;
-    final out = <Widget>[];
+    final entry = _entry;
+    final now = widget.now?.call() ?? DateTime.now();
+    final out = <Widget>[SimklRatingStrip(title: t)];
 
-    final countersRow = <SimklCounter>[
-      if (counters?.reactions != null && counters!.reactions! > 0)
-        SimklCounter(Icons.emoji_emotions_outlined, S.current.Smp_Reactions_Count(counters.reactions!, SimklFormat.count(counters.reactions!)),
-            () => launchWebView(_pageUrl, context: context)),
-      if (counters?.reviews != null && counters!.reviews! > 0)
-        SimklCounter(Icons.rate_review_outlined, S.current.Smp_Reviews_Count(counters.reviews!, SimklFormat.count(counters.reviews!)), _openReviews),
-      if (counters?.comments != null && counters!.comments! > 0)
-        SimklCounter(Icons.forum_outlined, S.current.Smp_Comments_Count(counters.comments!, SimklFormat.count(counters.comments!)), _openComments),
-      if (counters?.memos != null && counters!.memos! > 0)
-        SimklCounter(Icons.sticky_note_2_outlined, S.current.Smp_Memos_Count(counters.memos!, SimklFormat.count(counters.memos!)), _openMemos),
-    ];
-    if (countersRow.isNotEmpty) out.add(SimklCountersRow(countersRow));
+    if (_signedIn && _listKnown) {
+      out.add(SimklMyStatusBar(entry: entry, total: t.totalEpisodes ?? 0, onEdit: _editList));
+    }
+    final next = simklNextUp(title: t, episodes: episodes, entry: entry, now: now);
+    if (next != null) {
+      out.add(SimklNextEpisodeCard(
+        next: next,
+        now: now,
+        marking: _marking,
+        onMark: next.episode == null ? null : () => _markWatched(next.episode!),
+        onOpenSequel: next.sequel == null ? null : () => _openTitle(next.sequel!),
+      ));
+    }
 
     if (t.overview != null || t.genres.isNotEmpty) {
       out.add(SimklSection(
@@ -325,19 +369,12 @@ class _SimklMediaPageState extends State<SimklMediaPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              if (t.overview != null) SimklExpandableText(t.overview!),
-              if (t.genres.isNotEmpty) ...[const SizedBox(height: 10), SimklChips(t.genres)],
+              if (t.genres.isNotEmpty) ...[SimklChips(t.genres), const SizedBox(height: 10)],
+              if (t.overview != null) SimklExpandableText(t.overview!, maxLines: 4),
             ],
           ),
         ),
       ));
-    }
-
-    final watchers = page?.watchers;
-    if (watchers != null) {
-      out.add(SimklSection(title: S.current.Smp_Watchers, child: SimklWatchersView(watchers)));
-    } else if (_pageLoading) {
-      out.add(const SimklBlockSkeleton(height: 150));
     }
 
     if (t.trailers.isNotEmpty) {
@@ -355,6 +392,7 @@ class _SimklMediaPageState extends State<SimklMediaPage> {
     }
 
     if (episodes != null && episodes.isNotEmpty) {
+      // The user's next episode first in view: the strip starts a little before it.
       out.add(SimklSection(
         title: S.current.Smp_Episodes,
         onViewAll: _openEpisodes,
@@ -363,10 +401,19 @@ class _SimklMediaPageState extends State<SimklMediaPage> {
           itemCount: episodes.length.clamp(0, 30),
           itemBuilder: (context, i) => SimklEpisodeCard(
             episode: episodes[i],
+            watched: _isWatched(episodes[i]),
+            upcoming: episodes[i].date?.isAfter(now) ?? false,
             onTap: () => _openEpisode(episodes[i]),
           ),
         ),
       ));
+    }
+
+    final watchers = page?.watchers;
+    if (watchers != null) {
+      out.add(SimklSection(title: S.current.Smp_Watchers, child: SimklWatchersView(watchers)));
+    } else if (_pageLoading) {
+      out.add(const SimklBlockSkeleton(height: 150));
     }
 
     void linked(String title, List<SimklLinkedTitle> items, String? Function(SimklLinkedTitle) caption) {
@@ -379,6 +426,7 @@ class _SimklMediaPageState extends State<SimklMediaPage> {
           itemBuilder: (context, i) => SimklLinkedCard(
             item: items[i],
             caption: caption(items[i]),
+            badge: _badge(items[i]),
             onTap: () => _openTitle(items[i]),
           ),
         ),
@@ -395,8 +443,22 @@ class _SimklMediaPageState extends State<SimklMediaPage> {
     });
     linked(S.current.Smp_Similar, t.similar, (r) => r.year?.toString());
 
+    final countersRow = <SimklCounter>[
+      if (counters?.reactions != null && counters!.reactions! > 0)
+        SimklCounter(Icons.emoji_emotions_outlined, S.current.Smp_Reactions_Count(counters.reactions!, SimklFormat.count(counters.reactions!)),
+            () => launchWebView(_pageUrl, context: context)),
+      if (counters?.reviews != null && counters!.reviews! > 0)
+        SimklCounter(Icons.rate_review_outlined, S.current.Smp_Reviews_Count(counters.reviews!, SimklFormat.count(counters.reviews!)), _openReviews),
+      if (counters?.comments != null && counters!.comments! > 0)
+        SimklCounter(Icons.forum_outlined, S.current.Smp_Comments_Count(counters.comments!, SimklFormat.count(counters.comments!)), _openComments),
+      if (counters?.memos != null && counters!.memos! > 0)
+        SimklCounter(Icons.sticky_note_2_outlined, S.current.Smp_Memos_Count(counters.memos!, SimklFormat.count(counters.memos!)), _openMemos),
+    ];
+    if (countersRow.isNotEmpty) {
+      out.add(SimklSection(title: S.current.Skr_Community, child: SimklCountersRow(countersRow)));
+    }
+
     if (reviews != null && reviews.items.isNotEmpty) {
-      final more = (counters?.reviews ?? 0) > reviews.items.length;
       out.add(SimklSection(
         title: S.current.Smp_Reviews,
         onViewAll: _openReviews,
@@ -409,7 +471,6 @@ class _SimklMediaPageState extends State<SimklMediaPage> {
               itemCount: reviews.items.length,
               itemBuilder: (context, i) => SimklReviewCard(review: reviews.items[i], onOpen: _openReviews),
             ),
-            if (more) const SizedBox(height: 4),
           ],
         ),
       ));
@@ -432,6 +493,13 @@ class _SimklMediaPageState extends State<SimklMediaPage> {
     return out;
   }
 
+  bool _isWatched(SimklEpisode e) {
+    final entry = _entry;
+    final n = e.number;
+    if (entry == null || entry.status == null || n == null || e.isSpecial) return false;
+    return n <= entry.progress;
+  }
+
   Widget _info(BuildContext context, SimklTitle t, SimklTitlePage? page) {
     final studios = page?.studios?.isNotEmpty == true ? page!.studios! : t.studios;
     final rows = <(String, String?)>[
@@ -447,8 +515,6 @@ class _SimklMediaPageState extends State<SimklMediaPage> {
       (S.current.Smp_Producers, page?.producers?.join(', ')),
       (S.current.Smp_Licensors, page?.licensors?.join(', ')),
       (S.current.Smp_Certification, t.certification),
-      (S.current.Smp_Mal, t.malRating == null ? null : _ratingText(t.malRating!)),
-      (S.current.Smp_Imdb, t.imdbRating == null ? null : _ratingText(t.imdbRating!)),
       (S.current.Smp_Alt_Titles, t.altTitles.isEmpty ? null : t.altTitles.join('\n')),
     ];
     final tags = page?.tags ?? const <String>[];
@@ -474,9 +540,6 @@ class _SimklMediaPageState extends State<SimklMediaPage> {
     );
   }
 
-  static String _ratingText(SimklRating r) =>
-      r.votes == null ? SimklFormat.score(r.rating) : '${SimklFormat.score(r.rating)} (${SimklFormat.votes(r.votes!)})';
-
   void _openEpisode(SimklEpisode e) {
     final n = e.number;
     final url = n != null && !e.isSpecial ? '$_pageUrl/episode-$n/' : _pageUrl;
@@ -489,7 +552,12 @@ class _SimklMediaPageState extends State<SimklMediaPage> {
       title: S.current.Smp_Episodes,
       initial: episodes,
       load: ({bool force = false}) => _service.episodes(widget.simklId, force: force),
-      itemBuilder: (context, e) => SimklEpisodeRow(episode: e, onTap: () => _openEpisode(e)),
+      itemBuilder: (context, e) => SimklEpisodeRow(
+        episode: e,
+        watched: _isWatched(e),
+        upcoming: e.date?.isAfter(DateTime.now()) ?? false,
+        onTap: () => _openEpisode(e),
+      ),
     ));
   }
 

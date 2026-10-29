@@ -176,4 +176,41 @@ abstract final class SimklFormat {
         SimklReviewAspect.character => S.current.Smp_Character,
         SimklReviewAspect.enjoyment => S.current.Smp_Enjoyment,
       };
+
+  /// [utc] in the time zone setting (local, JST or UTC); [zone] is a test seam.
+  static DateTime inZone(DateTime utc, {TimezonePref? zone}) => switch (zone ?? Preferences.content.timezone) {
+        TimezonePref.utc => utc.toUtc(),
+        TimezonePref.jst => utc.toUtc().add(const Duration(hours: 9)),
+        TimezonePref.local => utc.toLocal(),
+      };
+
+  /// "23:15" in the time zone setting.
+  static String clock(DateTime utc, {TimezonePref? zone}) => DateFormat.Hm(_locale).format(inZone(utc, zone: zone));
+
+  /// "Sun 23:15" in the time zone setting.
+  static String dayClock(DateTime utc, {TimezonePref? zone}) =>
+      DateFormat('E HH:mm', _locale).format(inZone(utc, zone: zone));
+
+  /// "6 avr. 2019 23:30" in the time zone setting.
+  static String dateClock(DateTime utc, {TimezonePref? zone}) {
+    final t = inZone(utc, zone: zone);
+    return '${DateFormat.yMMMd(_locale).format(t)} ${DateFormat.Hm(_locale).format(t)}';
+  }
+
+  /// "in 2 d 4 h", "in 3 h 10 min", "in 5 min" from [now] to [at]; null once [at] is past.
+  static String? countdown(DateTime at, DateTime now) {
+    final wait = at.toUtc().difference(now.toUtc());
+    if (wait.isNegative) return null;
+    if (wait.inDays > 0) return S.current.UserList_In_Days_Hours(wait.inDays, wait.inHours % 24);
+    if (wait.inHours > 0) return S.current.UserList_In_Hours_Minutes(wait.inHours, wait.inMinutes % 60);
+    return S.current.UserList_In_Minutes(wait.inMinutes < 1 ? 1 : wait.inMinutes);
+  }
+
+  /// "1d 22h" / "11h 0m" / "25m" for a number of minutes.
+  static String minutes(int mins) {
+    final s = S.current;
+    if (mins >= 1440) return s.Skp_Dur_Days_Hours(mins ~/ 1440, (mins % 1440) ~/ 60);
+    if (mins >= 60) return s.Skp_Dur_Hours_Mins(mins ~/ 60, mins % 60);
+    return s.Skp_Dur_Mins(mins);
+  }
 }
