@@ -3,11 +3,20 @@ import 'package:intl/intl.dart';
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/screens/user_profile/sections/profile_tab.dart' show ProfileTabScroll;
 import 'package:mywatchlist/services/api/Kitsu/kitsu_http.dart';
-import 'package:mywatchlist/services/api/Kitsu/kitsu_media.dart';
+import 'package:mywatchlist/services/api/Kitsu/kitsu_graphql.dart' show KitsuProfileSummary;
+import 'package:mywatchlist/services/api/Kitsu/kitsu_social.dart';
 import 'package:mywatchlist/services/api/Kitsu/kitsu_profile.dart';
 import 'package:mywatchlist/user/preferences/preferences.dart';
 import 'package:mywatchlist/utils/web_launcher.dart';
-import 'package:mywatchlist/widgets/Kitsu/kitsu_media_tile.dart';
+import 'package:mywatchlist/widgets/Kitsu/profile/kitsu_about_extras.dart';
+import 'package:mywatchlist/widgets/Kitsu/profile/kitsu_category_donut.dart';
+import 'package:mywatchlist/widgets/Kitsu/profile/kitsu_profile_rows.dart' show kitsuStatusLabel;
+import 'package:mywatchlist/widgets/Kitsu/profile/kitsu_activity_tab.dart';
+import 'package:mywatchlist/widgets/Kitsu/profile/kitsu_favourites_tab.dart';
+import 'package:mywatchlist/widgets/Kitsu/profile/kitsu_list_tab.dart';
+import 'package:mywatchlist/widgets/Kitsu/profile/kitsu_people.dart';
+import 'package:mywatchlist/widgets/Kitsu/profile/kitsu_posts_tab.dart';
+import 'package:mywatchlist/widgets/Kitsu/profile/kitsu_reactions_tab.dart';
 import 'package:mywatchlist/widgets/charts/chart_card.dart';
 import 'package:mywatchlist/widgets/charts/chart_palette.dart';
 import 'package:mywatchlist/widgets/charts/status_bar_chart.dart';
@@ -18,8 +27,10 @@ import 'package:mywatchlist/widgets/user/profile/profile_header.dart' show forma
 import 'package:mywatchlist/widgets/user/profile/profile_states.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-/// A Kitsu profile: a header (cover, avatar, name, followers) over a pinned bar with three lazily
-/// built tabs, Stats (list counts by status, time spent, top categories), About and Favorites.
+/// A Kitsu profile: a header (cover, avatar, name, followers and following that open their lists)
+/// over a pinned bar with lazily built tabs: Stats (list counts by status, time spent, top
+/// categories), About (text, counters, social links), Favorites (anime, manga, characters,
+/// people), Activity, Reactions, Posts and, on another user's profile, their List.
 ///
 /// [userId] null is the signed-in user. Without a [Scaffold] of its own so it can sit in the
 /// home shell as well as in a pushed page ([showBack]).
@@ -103,7 +114,7 @@ class _ErrorView extends StatelessWidget {
   }
 }
 
-class _Loaded extends StatelessWidget {
+class _Loaded extends StatefulWidget {
   final KitsuProfile profile;
   final bool isSelf;
   final bool showBack;
@@ -111,10 +122,26 @@ class _Loaded extends StatelessWidget {
   const _Loaded({required this.profile, required this.isSelf, required this.showBack});
 
   @override
+  State<_Loaded> createState() => _LoadedState();
+}
+
+class _LoadedState extends State<_Loaded> {
+  Future<KitsuProfileSummary?>? _summary;
+
+  /// The GraphQL header (social links, pinned post), asked once and only when a tab needs it. A
+  /// failure is a missing block, not an error screen.
+  Future<KitsuProfileSummary?> _loadSummary() => _summary ??= KitsuSocial.instance
+      .summary(widget.profile.handle)
+      .then<KitsuProfileSummary?>((v) => v)
+      .catchError((Object _) => null);
+
+  @override
   Widget build(BuildContext context) {
     final s = S.of(context);
+    final profile = widget.profile;
+    final slug = profile.handle;
     return DefaultTabController(
-      length: 3,
+      length: widget.isSelf ? 6 : 7,
       child: Scaffold(
         backgroundColor: Colors.transparent,
         body: NestedScrollView(
@@ -124,9 +151,15 @@ class _Loaded extends StatelessWidget {
               handle: NestedScrollView.sliverOverlapAbsorberHandleFor(context),
               sliver: SliverAppBar(
                 pinned: true,
-                automaticallyImplyLeading: showBack,
+                automaticallyImplyLeading: widget.showBack,
                 title: Text(profile.name, maxLines: 1, overflow: TextOverflow.ellipsis),
                 actions: [
+                  IconButton(
+                    tooltip: s.Kitsu_User_Search_Tooltip,
+                    icon: const Icon(Icons.person_search_outlined),
+                    onPressed: () => Navigator.of(context).push(
+                        MaterialPageRoute<void>(builder: (_) => const KitsuUserSearchPage())),
+                  ),
                   IconButton(
                     tooltip: s.Kitsu_Open_Profile,
                     icon: const Icon(Icons.open_in_new_rounded),
@@ -134,10 +167,16 @@ class _Loaded extends StatelessWidget {
                   ),
                 ],
                 bottom: TabBar(
+                  isScrollable: true,
+                  tabAlignment: TabAlignment.start,
                   tabs: [
                     Tab(text: s.Kitsu_Tab_Stats),
                     Tab(text: s.Kitsu_Tab_About),
                     Tab(text: s.Kitsu_Tab_Favorites),
+                    Tab(text: s.Kitsu_Tab_Activity),
+                    Tab(text: s.Kitsu_Tab_Reactions),
+                    Tab(text: s.Kitsu_Tab_Posts),
+                    if (!widget.isSelf) Tab(text: s.Kitsu_Tab_List),
                   ],
                 ),
               ),
@@ -146,8 +185,13 @@ class _Loaded extends StatelessWidget {
           body: TabBarView(
             children: [
               _StatsTab(profile: profile),
-              _AboutTab(profile: profile, isSelf: isSelf),
-              _FavoritesTab(profile: profile),
+              _AboutTab(profile: profile, isSelf: widget.isSelf, summary: _loadSummary),
+              KitsuFavouritesTab(profile: profile),
+              KitsuActivityTab(slug: slug),
+              KitsuReactionsTab(slug: slug),
+              KitsuPostsTab(
+                  slug: slug, pinned: () async => (await _loadSummary())?.pinnedPost),
+              if (!widget.isSelf) KitsuListTab(slug: slug),
             ],
           ),
         ),
@@ -163,6 +207,12 @@ class _Header extends StatelessWidget {
 
   static const double _cover = 150;
   static const double _avatar = 88;
+
+  void _openPeople(BuildContext context, {required bool followers}) {
+    Navigator.of(context).push(MaterialPageRoute<void>(
+      builder: (_) => KitsuPeoplePage(slug: profile.handle, followers: followers),
+    ));
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -233,14 +283,40 @@ class _Header extends StatelessWidget {
                 spacing: 16,
                 runSpacing: 4,
                 children: [
-                  Text(s.Kitsu_Followers(profile.followers), style: theme.textTheme.labelLarge),
-                  Text(s.Kitsu_Following(profile.following), style: theme.textTheme.labelLarge),
+                  _Counter(
+                    label: s.Kitsu_Followers(profile.followers),
+                    onTap: () => _openPeople(context, followers: true),
+                  ),
+                  _Counter(
+                    label: s.Kitsu_Following(profile.following),
+                    onTap: () => _openPeople(context, followers: false),
+                  ),
                 ],
               ),
             ],
           ),
         ),
       ],
+    );
+  }
+}
+
+/// A follower or following count that opens the matching list.
+class _Counter extends StatelessWidget {
+  final String label;
+  final VoidCallback onTap;
+
+  const _Counter({required this.label, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(4),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Text(label, style: Theme.of(context).textTheme.labelLarge),
+      ),
     );
   }
 }
@@ -318,6 +394,16 @@ class _StatsTabState extends State<_StatsTab> with AutomaticKeepAliveClientMixin
             ),
           ),
         ),
+        if (stats.timePercentile != null)
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Text(
+                s.Kitsu_Stat_Percentile(stats.timePercentile!.round().toString()),
+                style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+              ),
+            ),
+          ),
         if (stats.totalEntries > 0)
           SliverToBoxAdapter(
             child: ChartCard(
@@ -329,7 +415,7 @@ class _StatsTabState extends State<_StatsTab> with AutomaticKeepAliveClientMixin
                     (stats.statusCounts[status] ?? 0).toDouble(),
                 ],
                 labels: [
-                  for (final status in ListEntryStatus.values) status.label(isAnime: _anime),
+                  for (final status in ListEntryStatus.values) kitsuStatusLabel(status, isAnime: _anime),
                 ],
                 colors: colors,
               ),
@@ -347,10 +433,10 @@ class _StatsTabState extends State<_StatsTab> with AutomaticKeepAliveClientMixin
           SliverToBoxAdapter(
             child: ChartCard(
               title: s.Kitsu_Chart_Categories,
-              child: _CategoryBars(
-                  items: stats.categories.take(10).toList(), color: colors.first),
+              child: KitsuCategoryDonut(items: stats.categories),
             ),
           ),
+        SliverToBoxAdapter(child: KitsuRecentActivity(slug: widget.profile.handle)),
       ],
     );
   }
@@ -379,54 +465,6 @@ class _Figure extends StatelessWidget {
   }
 }
 
-class _CategoryBars extends StatelessWidget {
-  final List<MapEntry<String, int>> items;
-  final Color color;
-
-  const _CategoryBars({required this.items, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final max = items.fold<int>(1, (a, b) => b.value > a ? b.value : a);
-    final number = NumberFormat.decimalPattern();
-    return Column(
-      children: [
-        for (final item in items)
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 5),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(item.key,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: theme.textTheme.bodyMedium),
-                    ),
-                    Text(number.format(item.value), style: theme.textTheme.labelLarge),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(4),
-                  child: LinearProgressIndicator(
-                    value: (item.value / max).clamp(0.0, 1.0),
-                    minHeight: 6,
-                    color: color,
-                    backgroundColor: color.withValues(alpha: 0.12),
-                  ),
-                ),
-              ],
-            ),
-          ),
-      ],
-    );
-  }
-}
-
 // ---------------------------------------------------------------------------
 // About
 // ---------------------------------------------------------------------------
@@ -434,8 +472,9 @@ class _CategoryBars extends StatelessWidget {
 class _AboutTab extends StatefulWidget {
   final KitsuProfile profile;
   final bool isSelf;
+  final Future<KitsuProfileSummary?> Function() summary;
 
-  const _AboutTab({required this.profile, required this.isSelf});
+  const _AboutTab({required this.profile, required this.isSelf, required this.summary});
 
   @override
   State<_AboutTab> createState() => _AboutTabState();
@@ -490,6 +529,9 @@ class _AboutTabState extends State<_AboutTab> with AutomaticKeepAliveClientMixin
           ],
         ),
         SliverToBoxAdapter(
+          child: KitsuAboutExtras(profile: p, summary: widget.summary),
+        ),
+        SliverToBoxAdapter(
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Align(
@@ -501,105 +543,6 @@ class _AboutTabState extends State<_AboutTab> with AutomaticKeepAliveClientMixin
               ),
             ),
           ),
-        ),
-      ],
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Favorites
-// ---------------------------------------------------------------------------
-
-class _FavoritesTab extends StatefulWidget {
-  final KitsuProfile profile;
-
-  const _FavoritesTab({required this.profile});
-
-  @override
-  State<_FavoritesTab> createState() => _FavoritesTabState();
-}
-
-class _FavoritesTabState extends State<_FavoritesTab> with AutomaticKeepAliveClientMixin {
-  bool _anime = true;
-  final Map<bool, Future<List<KitsuMedia>>> _futures = {};
-
-  @override
-  bool get wantKeepAlive => true;
-
-  Future<List<KitsuMedia>> _future(bool anime) => _futures.putIfAbsent(
-      anime, () => KitsuProfiles.instance.favorites(widget.profile.id, isAnime: anime));
-
-  @override
-  Widget build(BuildContext context) {
-    super.build(context);
-    final s = S.of(context);
-    final width = MediaQuery.sizeOf(context).width;
-    return ProfileTabScroll(
-      storageKey: 'kitsu_favorites_${widget.profile.id}',
-      slivers: [
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(12, 14, 12, 6),
-            child: SegmentedButton<bool>(
-              showSelectedIcon: false,
-              segments: [
-                ButtonSegment(value: true, label: Text(s.Prof_Anime)),
-                ButtonSegment(value: false, label: Text(s.Prof_Manga)),
-              ],
-              selected: {_anime},
-              onSelectionChanged: (v) => setState(() => _anime = v.first),
-            ),
-          ),
-        ),
-        FutureBuilder<List<KitsuMedia>>(
-          key: ValueKey('kitsu_fav_$_anime'),
-          future: _future(_anime),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState != ConnectionState.done) {
-              return const SliverToBoxAdapter(
-                child: Padding(padding: EdgeInsets.all(32), child: ProfileLoading()),
-              );
-            }
-            if (snapshot.hasError) {
-              return SliverToBoxAdapter(
-                child: SizedBox(
-                  height: 260,
-                  child: ProfileMessage(
-                    icon: Icons.cloud_off_outlined,
-                    title: s.Prof_Error_Title,
-                    body: s.Prof_Error_Body,
-                    actionLabel: s.Prof_Retry,
-                    onAction: () => setState(() {
-                      _futures.remove(_anime);
-                    }),
-                  ),
-                ),
-              );
-            }
-            final items = snapshot.data ?? const [];
-            if (items.isEmpty) {
-              return SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.all(32),
-                  child: Text(s.Kitsu_Favorites_Empty,
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.bodyMedium),
-                ),
-              );
-            }
-            return SliverPadding(
-              padding: const EdgeInsets.all(12),
-              sliver: SliverGrid.builder(
-                gridDelegate: KitsuMediaTile.gridDelegate(width),
-                itemCount: items.length,
-                itemBuilder: (context, i) => KitsuMediaTile(
-                  key: ValueKey('${items[i].category}:${items[i].id}'),
-                  media: items[i],
-                ),
-              ),
-            );
-          },
         ),
       ],
     );
