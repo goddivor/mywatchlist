@@ -69,9 +69,17 @@ class _AnilistThreadPageState extends State<AnilistThreadPage> {
         _page = 1;
         _hasNext = page.hasNext && page.items.isNotEmpty;
         _moreError = null;
+        // A page asked before this refresh is dropped when it answers (older generation), so
+        // its spinner is cleared here or the next page would never be asked.
+        _loadingMore = false;
       });
     } catch (e) {
-      if (mounted && generation == _generation) setState(() => _error = e);
+      if (mounted && generation == _generation) {
+        setState(() {
+          _error = e;
+          _loadingMore = false;
+        });
+      }
     }
   }
 
