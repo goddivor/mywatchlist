@@ -329,7 +329,7 @@ class AnilistMediaPageState extends State<AnilistMediaPage> with SingleTickerPro
       ],
       flexibleSpace: FlexibleSpaceBar(
         collapseMode: CollapseMode.pin,
-        background: AnilistMediaBanner(bannerUrl: d?.bannerUrl, coverColor: d?.coverColor),
+        background: AnilistMediaBanner(bannerUrl: d?.bannerUrl, coverUrl: d?.coverLargeUrl ?? d?.coverUrl, coverColor: d?.coverColor),
       ),
     );
     return Scaffold(

@@ -1,3 +1,5 @@
+import 'dart:ui' show ImageFilter;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mywatchlist/generated/l10n.dart';
@@ -11,12 +13,13 @@ import 'package:mywatchlist/widgets/common/app_colors.dart';
 import 'package:mywatchlist/widgets/common/app_image.dart';
 import 'package:mywatchlist/widgets/common/image_preview.dart' show zoomInImage;
 
-/// The banner behind the app bar: `bannerImage`, else the cover's colour (or the theme's)
-/// in a gradient, fading into the page.
+/// The banner behind the app bar: `bannerImage`, else the cover blurred and zoomed to fill
+/// it (as the AniList apps do), else the cover's colour; it fades into the page.
 class AnilistMediaBanner extends StatelessWidget {
-  const AnilistMediaBanner({super.key, this.bannerUrl, this.coverColor});
+  const AnilistMediaBanner({super.key, this.bannerUrl, this.coverUrl, this.coverColor});
 
   final String? bannerUrl;
+  final String? coverUrl;
   final String? coverColor;
 
   @override
@@ -29,16 +32,19 @@ class AnilistMediaBanner extends StatelessWidget {
       children: [
         if (bannerUrl != null)
           AppImage(url: bannerUrl, placeholderColor: accent, errorWidget: (_) => ColoredBox(color: accent))
-        else
-          DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [accent, scheme.surface],
+        else if (coverUrl != null)
+          ClipRect(
+            child: ImageFiltered(
+              imageFilter: ImageFilter.blur(sigmaX: 18, sigmaY: 18, tileMode: TileMode.clamp),
+              child: AppImage(
+                url: coverUrl,
+                placeholderColor: accent,
+                errorWidget: (_) => ColoredBox(color: accent),
               ),
             ),
-          ),
+          )
+        else
+          ColoredBox(color: accent),
         // Keeps the app bar icons readable on any picture, then melts into the page.
         DecoratedBox(
           decoration: BoxDecoration(
