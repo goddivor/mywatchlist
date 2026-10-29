@@ -11,7 +11,6 @@ import 'package:mywatchlist/main.dart' as app show MalMessagesWatcher, MalHubMes
 import 'package:mywatchlist/screens/mal_web/message_thread_screen.dart';
 import 'package:mywatchlist/screens/mal_web/messages_screen.dart';
 import 'package:mywatchlist/services/api/MAL/web/mal_messages_api.dart';
-import 'package:mywatchlist/services/api/MAL/web/mal_notifications_api.dart';
 import 'package:mywatchlist/services/api/MAL/web/mal_web_client.dart';
 import 'package:mywatchlist/services/auth/mal_web_session.dart';
 import 'package:mywatchlist/services/notifications/mal_hub.dart';
