@@ -191,14 +191,22 @@ class _SearchFilterPanelState extends State<SearchFilterPanel> with TickerProvid
             child: Row(
               children: [
                 TextButton(onPressed: _reset, child: Text(S.current.Srch_Reset)),
-                const Spacer(),
-                TextButton(onPressed: widget.onClose, child: Text(S.current.Srch_Close)),
-                const SizedBox(width: 8),
-                FilledButton(
-                  onPressed: () => widget.onApply(SearchPanelResult(_category, _filters, _display)),
-                  child: Text(_filters.activeCount > 0
-                      ? S.current.Srch_Apply_Count(_filters.activeCount)
-                      : S.current.Srch_Apply),
+                // A wrap, not a row: "Apply (2)" next to Close overflows a narrow phone.
+                Expanded(
+                  child: Wrap(
+                    alignment: WrapAlignment.end,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    spacing: 8,
+                    children: [
+                      TextButton(onPressed: widget.onClose, child: Text(S.current.Srch_Close)),
+                      FilledButton(
+                        onPressed: () => widget.onApply(SearchPanelResult(_category, _filters, _display)),
+                        child: Text(_filters.activeCount > 0
+                            ? S.current.Srch_Apply_Count(_filters.activeCount)
+                            : S.current.Srch_Apply),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),

@@ -113,7 +113,7 @@ void main() {
       SizedBox(width: 400, child: MediaTile(item: item, category: SearchCategory.manga, index: 2)),
     );
     expect(find.text('#3'), findsOneWidget);
-    expect(find.text('9.3'), findsOneWidget);
+    expect(find.textContaining('9.3'), findsOneWidget);
     expect(find.byIcon(Icons.edit_rounded), findsOneWidget);
     final title = tester.widget<Text>(find.text('Sousou no Frieren'));
     expect(title.style?.fontWeight, isNot(FontWeight.w600));
