@@ -127,8 +127,8 @@ void main() {
     await _pump(tester, service);
 
     expect(find.text('Completed'), findsOneWidget);
-    expect(find.text('10 · Masterpiece'), findsOneWidget);
-    expect(find.text('of 64'), findsOneWidget);
+    expect(find.text('10 · Masterpiece'), findsNothing);
+    expect(find.text('of 64'), findsNothing);
     final bar = find.byKey(const ValueKey('edit-episode-bar'));
     expect(bar, findsOneWidget);
 
@@ -292,7 +292,7 @@ void main() {
     await tester.tap(find.text('Plus d’options'));
     await tester.pumpAndSettle();
     expect(find.text('Terminé'), findsOneWidget);
-    expect(find.text('sur 64'), findsOneWidget);
+    expect(find.text('sur 64'), findsNothing);
     expect(find.text('Revisionnage'), findsOneWidget);
     for (final english in [
       'Completed',

@@ -16,7 +16,8 @@ class SmallSpinner extends StatelessWidget {
       );
 }
 
-/// Caption above a field, with an optional trailing hint and action.
+/// Caption above a field, with an optional trailing action. [hint] is accepted for the
+/// callers that still pass it but is never drawn (DailyAL has no such caption).
 class FieldCaption extends StatelessWidget {
   final String label;
   final String? hint;
@@ -37,17 +38,6 @@ class FieldCaption extends StatelessWidget {
               style: theme.textTheme.labelLarge,
             ),
           ),
-          if (hint != null) ...[
-            const SizedBox(width: 6),
-            Flexible(
-              child: Text(
-                hint!,
-                overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.labelMedium
-                    ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-              ),
-            ),
-          ],
           if (action != null) ...[const Spacer(), action!],
         ],
       ),
