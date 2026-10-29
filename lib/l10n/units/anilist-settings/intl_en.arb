@@ -1,0 +1,142 @@
+{
+  "@@locale": "en",
+  "Als_Title": "AniList settings",
+  "Als_Sign_In_Heading": "AniList settings",
+  "Als_Sign_In_Hint": "Sign in to AniList to change them",
+  "Als_Load_Failed": "Could not load your AniList settings",
+  "Als_Save_Failed": "AniList did not save the change",
+  "Als_Retry": "Retry",
+  "Als_Group_Titles": "Titles",
+  "Als_Group_Lists": "Lists",
+  "Als_Group_Adult": "Adult content",
+  "Als_Group_Notifications": "Notifications",
+  "Als_Group_Activity": "Activity",
+  "Als_Group_Profile": "Profile",
+  "Als_Title_Language": "Title language",
+  "Als_Tl_Romaji": "Romaji",
+  "Als_Tl_English": "English",
+  "Als_Tl_Native": "Native",
+  "Als_Tl_Romaji_Styl": "Romaji (stylised)",
+  "Als_Tl_English_Styl": "English (stylised)",
+  "Als_Tl_Native_Styl": "Native (stylised)",
+  "Als_Staff_Language": "Staff and character names",
+  "Als_Sl_Western": "Romaji, Western order",
+  "Als_Sl_Romaji": "Romaji",
+  "Als_Sl_Native": "Native",
+  "Als_Score_Format": "Score format",
+  "Als_Sf_100": "100 points (55/100)",
+  "Als_Sf_10_Decimal": "10 points decimal (5.5/10)",
+  "Als_Sf_10": "10 points (5/10)",
+  "Als_Sf_5": "5 stars",
+  "Als_Sf_3": "3 smileys",
+  "Als_Row_Order": "Sort lists by",
+  "Als_Ro_Score": "Score",
+  "Als_Ro_Title": "Title",
+  "Als_Ro_Updated": "Last updated",
+  "Als_Ro_Id": "Date added",
+  "Als_Anime_Lists": "Anime lists",
+  "Als_Manga_Lists": "Manga lists",
+  "Als_Advanced_Scoring": "Advanced scoring",
+  "Als_Split_Completed": "Split completed by format",
+  "Als_Custom_Lists": "Custom lists",
+  "Als_Add_List": "Add a list",
+  "Als_List_Name": "List name",
+  "Als_Delete_List_Title": "Delete “{name}”?",
+  "@Als_Delete_List_Title": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "Als_Delete_List_Body": "Titles stay on your list but leave this custom list.",
+  "Als_Scoring_Categories": "Scoring categories",
+  "Als_Add_Category": "Add a category",
+  "Als_Category_Name": "Category name",
+  "Als_Adult_Display": "Display adult content",
+  "Als_Adult_Search": "Include in search",
+  "Als_Adult_Quick": "Include in quick search",
+  "Als_Adult_Activities": "Display adult activities",
+  "Als_Airing": "Airing notifications",
+  "Als_Notif_Types": "Notification types",
+  "Als_Nt_AIRING": "Episode aired",
+  "Als_Nt_FOLLOWING": "New follower",
+  "Als_Nt_ACTIVITY_MESSAGE": "Activity message",
+  "Als_Nt_ACTIVITY_REPLY": "Activity reply",
+  "Als_Nt_ACTIVITY_REPLY_SUBSCRIBED": "Reply to a followed activity",
+  "Als_Nt_ACTIVITY_MENTION": "Activity mention",
+  "Als_Nt_ACTIVITY_LIKE": "Activity like",
+  "Als_Nt_ACTIVITY_REPLY_LIKE": "Reply like",
+  "Als_Nt_THREAD_COMMENT_MENTION": "Thread mention",
+  "Als_Nt_THREAD_COMMENT_REPLY": "Thread reply",
+  "Als_Nt_THREAD_SUBSCRIBED": "Followed thread comment",
+  "Als_Nt_THREAD_LIKE": "Thread like",
+  "Als_Nt_THREAD_COMMENT_LIKE": "Thread comment like",
+  "Als_Nt_RELATED_MEDIA_ADDITION": "Related title added",
+  "Als_Nt_MEDIA_DATA_CHANGE": "Title data changed",
+  "Als_Nt_MEDIA_MERGE": "Title merged",
+  "Als_Nt_MEDIA_DELETION": "Title deleted",
+  "Als_Nt_MEDIA_SUBMISSION_UPDATE": "Title submission update",
+  "Als_Nt_STAFF_SUBMISSION_UPDATE": "Staff submission update",
+  "Als_Nt_CHARACTER_SUBMISSION_UPDATE": "Character submission update",
+  "Als_Timezone": "Timezone",
+  "Als_Timezone_None": "Not set",
+  "Als_Merge_Time": "Merge activities",
+  "Als_Mt_Never": "Never",
+  "Als_Mt_Minutes": "{n} min",
+  "@Als_Mt_Minutes": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "Als_Mt_Hours": "{n} h",
+  "@Als_Mt_Hours": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "Als_Mt_Days": "{n} d",
+  "@Als_Mt_Days": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "Als_Mt_Weeks": "{n} wk",
+  "@Als_Mt_Weeks": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "Als_Mt_Always": "Always",
+  "Als_Restrict_Messages": "Only people I follow can message me",
+  "Als_Disable_Activity": "Hide list activity for",
+  "Als_St_CURRENT": "Watching or reading",
+  "Als_St_PLANNING": "Planning",
+  "Als_St_COMPLETED": "Completed",
+  "Als_St_DROPPED": "Dropped",
+  "Als_St_PAUSED": "Paused",
+  "Als_St_REPEATING": "Repeating",
+  "Als_About": "About",
+  "Als_About_Empty": "Nothing written yet",
+  "Als_About_Edit": "Edit about",
+  "Als_About_Write": "Write",
+  "Als_About_Hint": "Markdown, spoilers and images work as on AniList",
+  "Als_Preview_Failed": "Could not render the preview",
+  "Als_Profile_Color": "Profile colour",
+  "Als_Color_blue": "Blue",
+  "Als_Color_purple": "Purple",
+  "Als_Color_pink": "Pink",
+  "Als_Color_orange": "Orange",
+  "Als_Color_red": "Red",
+  "Als_Color_green": "Green",
+  "Als_Color_gray": "Gray",
+  "Als_Donator_Badge": "Donator badge text"
+}
