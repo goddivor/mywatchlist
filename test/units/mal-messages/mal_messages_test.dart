@@ -12,11 +12,14 @@ import 'package:mywatchlist/screens/mal_web/message_thread_screen.dart';
 import 'package:mywatchlist/screens/mal_web/messages_screen.dart';
 import 'package:mywatchlist/services/api/MAL/web/mal_messages_api.dart';
 import 'package:mywatchlist/services/api/MAL/web/mal_web_client.dart';
+import 'package:mywatchlist/services/api/MAL/web/mal_web_form_submitter.dart';
 import 'package:mywatchlist/services/auth/mal_authresp.dart';
 import 'package:mywatchlist/services/auth/mal_web_session.dart';
 import 'package:mywatchlist/user/user_mal_v2.dart';
 import 'package:mywatchlist/widgets/mal_web/message_tiles.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import '../mal-web-recaptcha/fake_mal_web_page.dart';
 
 String _fixture(String name) => File('test/units/mal-messages/fixtures/$name').readAsStringSync();
 
@@ -80,8 +83,22 @@ class _FakeMal {
       );
 }
 
+/// Every MAL form goes through a fake page; no picture is fetched.
+late FakeMalWebPages _pages;
+
+MalWebFormSubmitter _submitter(MalWebClient client) =>
+    MalWebFormSubmitter(client: client, pageFactory: _pages, pollInterval: Duration.zero);
+
 void main() {
   setUp(() {
+    _pages = FakeMalWebPages();
+    MalWebFormSubmitter.instance = MalWebFormSubmitter(pageFactory: _pages, pollInterval: Duration.zero);
+    MalUserPictures.instance = MalUserPictures(
+      gap: Duration.zero,
+      readCache: (_) async => null,
+      writeCache: (_, __) async {},
+      fetch: (url) async => http.Response('', 404),
+    );
     FlutterSecureStorage.setMockInitialValues({});
     SharedPreferences.setMockInitialValues({});
     MalMessagesApi.parseInline = true;
@@ -210,27 +227,32 @@ void main() {
       expect(MalMessagesApi.unread.value, 1);
     });
 
-    test('send, reply and delete post MAL\'s forms with the csrf token', () async {
+    test('send and reply go through MAL\'s page; delete posts with the csrf token', () async {
       final mal = _FakeMal();
-      final api = MalMessagesApi(client: mal.client(await _connected()));
+      final session = await _connected();
+      final client = mal.client(session);
+      final api = MalMessagesApi(
+        client: client,
+        submitter: MalWebFormSubmitter(client: client, pageFactory: _pages, pollInterval: Duration.zero),
+      );
       await api.send(to: ' Kineta ', subject: ' Hi ', body: '[i]Hello[/i]\r\nthere');
-      final send = mal.sent.last;
-      expect(send.method, 'POST');
-      expect(send.url.toString(), 'https://myanimelist.net/mymessages.php?go=send&toname=Kineta');
-      expect(send.bodyFields, {
+      expect(mal.sent.where((r) => r.method == 'POST'), isEmpty);
+      expect(_pages.last.loaded.toString(), 'https://myanimelist.net/mymessages.php?go=send&toname=Kineta');
+      expect(_pages.last.filled, {
+        'toname': 'Kineta',
         'subject': 'Hi',
         'message': '[i]Hello[/i]\nthere',
-        'sendmessage': 'Send Message',
-        'csrf_token': 'fixture0token0000000000000000000000000000',
+        'action_type': '',
       });
+      expect(_pages.last.submitted, isTrue);
 
       final thread = parseMessageThread(_fixture('read_reconstructed.html'),
           subject: 'Frieren rewatch', counterpart: 'Kineta', me: 'goddivor')!;
       await api.reply(thread, 'Sure');
-      expect(mal.sent.last.url.toString(),
+      expect(_pages.last.loaded.toString(),
           'https://myanimelist.net/mymessages.php?go=send&replyid=90000003&threadid=70000001&toname=Kineta');
-      expect(mal.sent.last.bodyFields['subject'], 'Re: Frieren rewatch');
-      expect(mal.sent.last.bodyFields['message'], 'Sure');
+      expect(_pages.last.filled['subject'], 'Re: Frieren rewatch');
+      expect(_pages.last.filled['message'], 'Sure');
 
       mal.onPost = (_) => http.Response('', 200);
       final sentBox = parseMessagesPage(_fixture('sent_reconstructed.html'), sent: true)!;
@@ -244,8 +266,13 @@ void main() {
     });
 
     test('MAL\'s refusal is reported with its text', () async {
-      final mal = _FakeMal()..onPost = (_) => _page(_fixture('send_refused_reconstructed.html'));
-      final api = MalMessagesApi(client: mal.client(await _connected()));
+      final mal = _FakeMal();
+      final client = mal.client(await _connected());
+      final pages = FakeMalWebPages(() => FakeMalWebPage(answer: _fixture('send_refused_reconstructed.html')));
+      final api = MalMessagesApi(
+        client: client,
+        submitter: MalWebFormSubmitter(client: client, pageFactory: pages, pollInterval: Duration.zero),
+      );
       expect(
         () => api.send(to: 'nobody', subject: 'Hi', body: 'Hello'),
         throwsA(isA<MalWebActionFailed>().having((e) => e.message, 'message', 'This user does not exist.')),
@@ -337,7 +364,7 @@ void main() {
       );
       await tester.pumpWidget(app(MalMessageThreadScreen(
         message: message,
-        api: MalMessagesApi(client: mal.client(session)),
+        api: MalMessagesApi(client: mal.client(session), submitter: _submitter(mal.client(session))),
         session: session,
       )));
       await settle(tester);
@@ -349,8 +376,8 @@ void main() {
       await tester.pump();
       await tester.tap(find.byIcon(Icons.send_rounded));
       await settle(tester);
-      expect(mal.sent.last.method, 'POST');
-      expect(mal.sent.last.bodyFields['message'], 'Count me in');
+      expect(_pages.last.submitted, isTrue);
+      expect(_pages.last.filled['message'], 'Count me in');
       expect(find.byType(MalMessageBubble), findsNWidgets(4));
     });
 
@@ -358,7 +385,11 @@ void main() {
       late MalWebSession session;
       await tester.runAsync(() async => session = await _connected());
       final mal = _FakeMal();
-      final api = MalMessagesApi(client: mal.client(session), friends: (_) async => const []);
+      final api = MalMessagesApi(
+        client: mal.client(session),
+        friends: (_) async => const [],
+        submitter: _submitter(mal.client(session)),
+      );
       await tester.pumpWidget(app(ComposeMalMessageScreen(to: 'Kineta', api: api, session: session)));
       await settle(tester);
       expect(find.text('Kineta'), findsOneWidget);
@@ -367,16 +398,15 @@ void main() {
       await settle(tester);
       expect(find.text(S.current.Pm_Subject_Required), findsOneWidget);
       expect(find.text(S.current.Pm_Body_Required), findsOneWidget);
-      expect(mal.sent.where((r) => r.method == 'POST'), isEmpty);
+      expect(_pages.pages, isEmpty);
 
       final fields = find.byType(TextFormField);
       await tester.enterText(fields.at(1), 'Hello');
       await tester.enterText(fields.at(2), 'See you [b]Saturday[/b]');
       await tester.tap(find.byIcon(Icons.send_rounded));
       await settle(tester);
-      final post = mal.sent.lastWhere((r) => r.method == 'POST');
-      expect(post.url.toString(), 'https://myanimelist.net/mymessages.php?go=send&toname=Kineta');
-      expect(post.bodyFields['message'], 'See you [b]Saturday[/b]');
+      expect(_pages.last.loaded.toString(), 'https://myanimelist.net/mymessages.php?go=send&toname=Kineta');
+      expect(_pages.last.filled['message'], 'See you [b]Saturday[/b]');
     });
   });
 }

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
@@ -5,11 +6,14 @@ import 'package:html/dom.dart';
 import 'package:html/parser.dart' as html;
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
+import 'package:mywatchlist/cache/cachemanager.dart';
 import 'package:mywatchlist/screens/user_profile/sections/profile_tabs_source.dart';
 import 'package:mywatchlist/services/api/MAL/web/mal_web_client.dart';
+import 'package:mywatchlist/services/api/MAL/web/mal_web_form_submitter.dart';
 import 'package:mywatchlist/services/api/MAL/web/profile_comments_api.dart' show checkWriteAnswer;
 import 'package:mywatchlist/services/auth/mal_web_session.dart';
 import 'package:mywatchlist/user/user_mal_v2.dart';
+import 'package:mywatchlist/widgets/forum/forum_common.dart' show ForumAvatarPictures;
 
 /// One row of the MAL inbox or sent box (`mymessages.php`).
 @immutable
@@ -37,6 +41,9 @@ class MalMessage {
   /// The `box` MAL's delete script posts with the id (`data-json.type`, 1 = inbox).
   final int box;
 
+  /// The other person's picture, when the row shows one.
+  final String? avatarUrl;
+
   const MalMessage({
     required this.id,
     required this.counterpart,
@@ -48,6 +55,7 @@ class MalMessage {
     this.threadId,
     this.replyId,
     int? box,
+    this.avatarUrl,
   }) : box = box ?? (isSent ? 2 : 1);
 
   MalMessage copyWith({bool? isRead, int? threadId, int? replyId}) => MalMessage(
@@ -61,6 +69,7 @@ class MalMessage {
         threadId: threadId ?? this.threadId,
         replyId: replyId ?? this.replyId,
         box: box,
+        avatarUrl: avatarUrl,
       );
 
   /// The page of this message on MAL.
@@ -163,6 +172,28 @@ String _text(Node? n) => _clean(n?.text);
 
 int? _int(String? s) => s == null ? null : int.tryParse(s);
 
+/// A user picture of MAL's markup (`data-src` of lazy images, then `src`); null for a
+/// placeholder (spacer, question mark, inline data).
+String? _picture(Element? img) {
+  if (img == null) return null;
+  for (final key in const ['data-src', 'data-srcset', 'src']) {
+    var v = img.attributes[key]?.trim();
+    if (v == null || v.isEmpty) continue;
+    v = v.split(RegExp(r'\s+')).first;
+    if (v.startsWith('data:') || v.endsWith('spacer.gif') || v.contains('questionmark')) continue;
+    if (v.startsWith('//')) v = 'https:$v';
+    if (v.startsWith('/')) v = '${MalWebClient.base}$v';
+    return v;
+  }
+  return null;
+}
+
+/// The user's picture on their MAL profile page (`.user-image img`), or null.
+String? parseProfilePicture(String raw) {
+  final doc = html.parse(raw);
+  return _picture(doc.querySelector('.user-image img') ?? doc.querySelector('.user-profile .user-image img'));
+}
+
 /// Not a MAL page (challenge, maintenance, the login form).
 bool _isMalPage(Document doc) =>
     doc.querySelector('#content') != null || doc.querySelector('#contentWrapper') != null;
@@ -227,6 +258,7 @@ MalMessage? parseMessageRow(Element row, {required bool sent}) {
   }
 
   return MalMessage(
+    avatarUrl: _picture(row.querySelector('img')),
     id: id,
     counterpart: counterpart,
     subject: subject,
@@ -405,13 +437,12 @@ MalMessageThread? parseMessageThread(String raw, {String? subject, String? count
   final other = toname ??
       counterpart ??
       messages.map((m) => m.sender).firstWhere((s) => s.isNotEmpty && !isMine(s), orElse: () => '');
-  final avatar = doc.querySelector('td.dialog-avatar img');
-  final src = avatar?.attributes['data-src'] ?? avatar?.attributes['src'];
+  final src = _picture(doc.querySelector('td.dialog-avatar img'));
   final pageSubject = _text(doc.querySelector('.dialog-subject') ?? doc.querySelector('td.dialog-text .fw-b'));
   return MalMessageThread(
     subject: (subject != null && subject.isNotEmpty) ? subject : pageSubject,
     counterpart: other,
-    avatarUrl: (src == null || src.isEmpty || src.startsWith('data:')) ? null : src,
+    avatarUrl: src,
     messages: List.unmodifiable(messages),
     threadId: threadId,
     replyId: replyId,
@@ -434,6 +465,20 @@ void checkSendAnswer(http.Response response) {
   if (doc.querySelector('textarea[name=message]') != null) {
     throw MalWebActionFailed(statusCode: code);
   }
+}
+
+/// MAL's answer page to a form sent through [MalWebFormSubmitter]: `goodresult` (or any page
+/// that is not the form again) is a sent message; `badresult` a refusal with MAL's text; the
+/// form shown again without a reason a refusal too.
+void checkSendPage(MalWebFormResult result) {
+  final doc = html.parse(result.html);
+  final bad = doc.querySelector('.badresult') ?? doc.querySelector('.badresult-text');
+  if (bad != null) {
+    final text = _text(bad);
+    throw MalWebActionFailed(message: text.isEmpty ? null : text);
+  }
+  if (doc.querySelector('.goodresult') != null) return;
+  if (doc.querySelector('textarea[name=message]') != null) throw const MalWebActionFailed();
 }
 
 /// The users of MAL's `/search/prefix.json?type=user` answer.
@@ -478,15 +523,37 @@ String messageBody(String text) => text.replaceAll('\r\n', '\n').replaceAll('\r'
 /// `mal-session`. Every call needs the session; a login redirect marks it expired
 /// ([MalWebSessionExpired]).
 class MalMessagesApi {
-  MalMessagesApi({MalWebClient? client, Future<List<MalUserSuggestion>> Function(String me)? friends})
-      : _clientOverride = client,
-        _friendsOverride = friends;
+  MalMessagesApi({
+    MalWebClient? client,
+    Future<List<MalUserSuggestion>> Function(String me)? friends,
+    MalWebFormSubmitter? submitter,
+    MalUserPictures? pictures,
+  })  : _clientOverride = client,
+        _friendsOverride = friends,
+        _submitterOverride = submitter,
+        _picturesOverride = pictures;
 
   static MalMessagesApi instance = MalMessagesApi();
 
   final MalWebClient? _clientOverride;
   final Future<List<MalUserSuggestion>> Function(String me)? _friendsOverride;
   MalWebClient get client => _clientOverride ?? MalWebClient.instance;
+
+  final MalWebFormSubmitter? _submitterOverride;
+
+  /// Sends MAL's message form from its own page (reCAPTCHA v3 protects it).
+  MalWebFormSubmitter get submitter => _submitterOverride ?? MalWebFormSubmitter.instance;
+
+  final MalUserPictures? _picturesOverride;
+
+  /// The pictures of the people in the boxes and threads.
+  MalUserPictures get pictures => _picturesOverride ?? MalUserPictures.instance;
+
+  /// Starts reading the pictures of [messages]' people (their rows' own first).
+  void prefetchPictures(Iterable<MalMessage> messages) => pictures.prefetch(
+        messages.map((m) => m.counterpart),
+        known: {for (final m in messages) if (m.avatarUrl != null) m.counterpart: m.avatarUrl},
+      );
 
   static const int pageSize = 20;
 
@@ -555,20 +622,31 @@ class MalMessagesApi {
     return parsed;
   }
 
-  /// Sends a new message to [to] (MAL's compose form: `subject`, `message`, `sendmessage`,
-  /// plus the session's `csrf_token`).
+  /// The fields of MAL's message form (`subject`, `message`, `action_type` empty = Send, as
+  /// opposed to `preview`). The form is MAL's `recaptcha-form`: its script adds the reCAPTCHA
+  /// v3 token and `csrf_token` itself.
+  static MalWebForm messageForm(String path, {required String subject, required String body, String? to}) =>
+      MalWebForm(
+        page: Uri.parse('${MalWebClient.base}$path'),
+        fields: {
+          if (to != null) 'toname': to,
+          'subject': subject,
+          'message': messageBody(body),
+          'action_type': '',
+        },
+        required: const {'subject', 'message'},
+      );
+
+  /// Sends a new message to [to] through MAL's compose page (`go=send&toname=`).
   Future<void> send({required String to, required String subject, required String body}) async {
     await _requireSession();
     final name = to.trim();
-    final response = await client.postForm(
-      '/mymessages.php?go=send&toname=${Uri.encodeQueryComponent(name)}',
-      {'subject': subject.trim(), 'message': messageBody(body), 'sendmessage': 'Send Message'},
-      referer: '${MalWebClient.base}/mymessages.php?go=send&toname=${Uri.encodeQueryComponent(name)}',
-    );
-    checkSendAnswer(response);
+    final path = '/mymessages.php?go=send&toname=${Uri.encodeQueryComponent(name)}';
+    final result = await submitter.submit(messageForm(path, subject: subject.trim(), body: body, to: name));
+    checkSendPage(result);
   }
 
-  /// Replies in [thread] (same form, with MAL's `replyid` and `threadid`).
+  /// Replies in [thread] through MAL's reply page (`replyid`, `threadid`, `toname`).
   Future<void> reply(MalMessageThread thread, String body) async {
     final replyId = thread.replyId;
     final threadId = thread.threadId;
@@ -576,12 +654,8 @@ class MalMessagesApi {
     await _requireSession();
     final to = Uri.encodeQueryComponent(thread.counterpart);
     final path = '/mymessages.php?go=send&replyid=$replyId&threadid=$threadId&toname=$to';
-    final response = await client.postForm(
-      path,
-      {'subject': replySubject(thread.subject), 'message': messageBody(body), 'sendmessage': 'Send Message'},
-      referer: '${MalWebClient.base}$path',
-    );
-    checkSendAnswer(response);
+    final result = await submitter.submit(messageForm(path, subject: replySubject(thread.subject), body: body));
+    checkSendPage(result);
   }
 
   /// Deletes [message] from its box, as MAL's Delete link does
@@ -629,6 +703,99 @@ class MalMessagesApi {
     if (response.statusCode != 200) return const [];
     return _parse(parseUserPrefix, response.body);
   }
+}
+
+/// MAL user pictures by name, for the message rows (MAL's inbox has none): read from each
+/// user's public profile page (no session, its own queue so the messages are never held
+/// behind it), kept for 7 days, and published to [ForumAvatarPictures].
+class MalUserPictures {
+  MalUserPictures({
+    Future<http.Response> Function(Uri url)? fetch,
+    Future<String?> Function(String name)? readCache,
+    Future<void> Function(String name, String url)? writeCache,
+    this.gap = const Duration(milliseconds: 400),
+  })  : _fetch = fetch ?? _get,
+        _readCache = readCache ?? _cacheRead,
+        _writeCache = writeCache ?? _cacheWrite;
+
+  static MalUserPictures instance = MalUserPictures();
+
+  static const String cacheService = 'mal-user-picture';
+
+  final Future<http.Response> Function(Uri url) _fetch;
+  final Future<String?> Function(String name) _readCache;
+  final Future<void> Function(String name, String url) _writeCache;
+  final Duration gap;
+
+  final Map<String, Future<String?>> _known = {};
+  Future<void> _queue = Future.value();
+
+  static Future<http.Response> _get(Uri url) => http.get(url, headers: {
+        'User-Agent': MalWebClient.userAgent,
+        'Accept-Language': 'en-US,en;q=0.9',
+      }).timeout(const Duration(seconds: 15));
+
+  static Future<String?> _cacheRead(String name) =>
+      CacheManager.instance.getValueForServiceAutoExpire(cacheService, name, 7 * 24 * 60 * 60);
+
+  static Future<void> _cacheWrite(String name, String url) =>
+      CacheManager.instance.setValueForServiceAutoExpireIn(cacheService, name, url);
+
+  /// [name]'s picture (null when the profile has none or cannot be read). Asked once per name.
+  Future<String?> of(String name) {
+    final key = name.trim().toLowerCase();
+    if (key.isEmpty) return Future.value();
+    return _known.putIfAbsent(key, () => _resolve(name.trim(), key));
+  }
+
+  /// Resolves the pictures of [names] in the background; [known] are pictures already read
+  /// from MAL's markup (name to URL).
+  void prefetch(Iterable<String> names, {Map<String, String?> known = const {}}) {
+    known.forEach((name, url) {
+      if (url == null || url.isEmpty) return;
+      ForumAvatarPictures.remember(name, url);
+      _known.putIfAbsent(name.trim().toLowerCase(), () => Future.value(url));
+    });
+    for (final name in names) {
+      if (ForumAvatarPictures.lookup(name) != null) continue;
+      unawaited(of(name).then((url) => ForumAvatarPictures.remember(name, url), onError: (_) {}));
+    }
+  }
+
+  Future<String?> _resolve(String name, String key) async {
+    try {
+      final cached = await _readCache(key);
+      if (cached != null && cached.isNotEmpty) return cached;
+    } catch (_) {
+      // No cache: read the profile.
+    }
+    final done = Completer<String?>();
+    _queue = _queue.then((_) async {
+      try {
+        final response = await _fetch(Uri.parse('${MalWebClient.base}/profile/${Uri.encodeComponent(name)}'));
+        final url = response.statusCode != 200
+            ? null
+            : MalMessagesApi.parseInline
+                ? parseProfilePicture(response.body)
+                : await compute(parseProfilePicture, response.body);
+        if (url != null) {
+          try {
+            await _writeCache(key, url);
+          } catch (_) {
+            // Kept in memory only.
+          }
+        }
+        done.complete(url);
+      } catch (_) {
+        done.complete(null);
+      }
+      if (gap > Duration.zero) await Future<void>.delayed(gap);
+    });
+    return done.future;
+  }
+
+  @visibleForTesting
+  void reset() => _known.clear();
 }
 
 MalMessagesPage? _parseInbox(String raw) => parseMessagesPage(raw);
