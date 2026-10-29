@@ -20,6 +20,7 @@ Future<void> showMoreInfoModal(BuildContext context, DetailData data) {
         child: MoreInfoWidget(
           anime: content,
           additionalTitles: data.html?['additionalTitles'],
+          html: data.html,
           horizPadding: 10,
           category: data.category,
           isModal: true,
