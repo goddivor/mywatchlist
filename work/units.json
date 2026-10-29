@@ -3212,9 +3212,13 @@
       "priority": "P1",
       "needs": [
         "ux-home",
-        "jikan-leftovers"
+        "jikan-leftovers",
+        "mal-episodes"
       ],
       "owns": [
+        "lib/user/preferences/content_preferences.dart",
+        "test/units/detail-split/detail_sections_test.dart",
+        "lib/widgets/user/contenteditwidget.dart",
         "mwl-api/mwl_commons/lib/src/model/html/anime_detailed_html.dart",
         "mwl-api/mwl_commons/lib/src/services/html_parser.dart",
         "mwl-api/test/fixtures/anime_php.html",
