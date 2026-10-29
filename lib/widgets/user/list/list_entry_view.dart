@@ -218,6 +218,24 @@ class ListEntryView {
   final String? listFinishDate;
   final List<String> tags;
 
+  /// How many times the user rewatched (reread) it.
+  final int timesRewatched;
+
+  /// Average length of one episode in seconds (0 = unknown, always 0 for manga).
+  final int episodeSeconds;
+
+  /// First season of the anime (`winter`…`fall`) and its year, from MAL `start_season`.
+  final String? startSeason;
+  final int? startSeasonYear;
+
+  /// MAL age rating (`g`, `pg`, `pg_13`, `r`, `r+`, `rx`) and original material (`manga`…).
+  final String? ageRating;
+  final String? source;
+
+  /// Studio names (anime) and author names (manga).
+  final List<String> studios;
+  final List<String> authors;
+
   const ListEntryView({
     required this.id,
     this.malId,
@@ -248,6 +266,14 @@ class ListEntryView {
     this.listStartDate,
     this.listFinishDate,
     this.tags = const [],
+    this.timesRewatched = 0,
+    this.episodeSeconds = 0,
+    this.startSeason,
+    this.startSeasonYear,
+    this.ageRating,
+    this.source,
+    this.studios = const [],
+    this.authors = const [],
   });
 
   bool get isAnime => category == 'anime';
@@ -286,6 +312,26 @@ class ListEntryView {
     return unseen > 0 ? unseen : 0;
   }
 
+  /// Time still to watch: the episodes after [progress] at the average length, or null
+  /// when the entry is not on the "to watch" side of the list (completed, dropped, no
+  /// status) or its length or episode total is unknown.
+  Duration? get timeLeft {
+    if (!isAnime || episodeSeconds <= 0 || total <= 0) return null;
+    return switch (status) {
+      ListEntryStatus.current ||
+      ListEntryStatus.onHold ||
+      ListEntryStatus.planned =>
+        Duration(seconds: (total - progress).clamp(0, total) * episodeSeconds),
+      _ => null,
+    };
+  }
+
+  /// Time already watched: [progress] episodes at the average length, or null when unknown.
+  Duration? get timeWatched {
+    if (!isAnime || episodeSeconds <= 0 || status == null) return null;
+    return Duration(seconds: progress * episodeSeconds);
+  }
+
   ListEntryView copyWith({
     ListEntryStatus? status,
     bool clearStatus = false,
@@ -298,6 +344,7 @@ class ListEntryView {
     String? listStartDate,
     String? listFinishDate,
     List<String>? tags,
+    int? timesRewatched,
   }) =>
       ListEntryView(
         id: id,
@@ -329,6 +376,14 @@ class ListEntryView {
         listStartDate: listStartDate ?? this.listStartDate,
         listFinishDate: listFinishDate ?? this.listFinishDate,
         tags: tags ?? this.tags,
+        timesRewatched: timesRewatched ?? this.timesRewatched,
+        episodeSeconds: episodeSeconds,
+        startSeason: startSeason,
+        startSeasonYear: startSeasonYear,
+        ageRating: ageRating,
+        source: source,
+        studios: studios,
+        authors: authors,
       );
 
   @override
@@ -343,10 +398,68 @@ class ListEntryView {
       other.repeating == repeating &&
       other.priority == priority &&
       other.updatedAt == updatedAt &&
+      other.timesRewatched == timesRewatched &&
       other.title == title &&
       other.imageUrl == imageUrl;
 
   @override
   int get hashCode => Object.hash(id, category, status, score, progress,
-      progressVolumes, repeating, priority, updatedAt, title, imageUrl);
+      progressVolumes, repeating, priority, updatedAt, timesRewatched, title, imageUrl);
+}
+
+/// Which time a list header shows: what is left to watch, or what was watched.
+enum ListTimeKind { left, watched }
+
+/// The time line of a list tab ("Plan to watch: 41 days").
+@immutable
+class ListTimeSummary {
+  final ListTimeKind kind;
+  final Duration total;
+
+  /// True when more entries are still to load, so [total] can only grow.
+  final bool partial;
+
+  const ListTimeSummary(this.kind, this.total, {this.partial = false});
+
+  /// Time of [entries] of the tab [status]: the time left for the tabs of titles still to
+  /// watch (watching, on hold, plan to watch), the time watched for the others and for "All".
+  /// Null for manga, or when no entry has a known length.
+  static ListTimeSummary? of(
+    Iterable<ListEntryView> entries,
+    ListEntryStatus? status, {
+    bool partial = false,
+  }) {
+    final kind = switch (status) {
+      ListEntryStatus.current ||
+      ListEntryStatus.onHold ||
+      ListEntryStatus.planned =>
+        ListTimeKind.left,
+      _ => ListTimeKind.watched,
+    };
+    var seconds = 0;
+    for (final e in entries) {
+      final d = kind == ListTimeKind.left ? e.timeLeft : e.timeWatched;
+      if (d != null) seconds += d.inSeconds;
+    }
+    if (seconds <= 0) return null;
+    return ListTimeSummary(kind, Duration(seconds: seconds), partial: partial);
+  }
+
+  /// The translated line ("Time left: 41 d 3 h").
+  String label() {
+    final time = formatListDuration(total) + (partial ? '+' : '');
+    return kind == ListTimeKind.left
+        ? S.current.ListTime_Left(time)
+        : S.current.ListTime_Watched(time);
+  }
+}
+
+/// "41 d 3 h", "5 h 20 min" or "12 min": the two largest units of [d].
+String formatListDuration(Duration d) {
+  final days = d.inDays;
+  final hours = d.inHours % 24;
+  final minutes = d.inMinutes % 60;
+  if (days > 0) return S.current.ListTime_Days_Hours(days, hours);
+  if (d.inHours > 0) return S.current.ListTime_Hours_Minutes(d.inHours, minutes);
+  return S.current.ListTime_Minutes(d.inMinutes < 1 ? 1 : d.inMinutes);
 }

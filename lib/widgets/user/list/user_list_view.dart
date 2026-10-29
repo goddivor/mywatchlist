@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:mywatchlist/constants/constants.dart' show DisplaySubType;
+import 'package:mywatchlist/constants/constants.dart' show AccountType, DisplaySubType;
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/user/list_cache/list_status_cache.dart';
 import 'package:mywatchlist/user/preferences/preferences.dart';
@@ -16,6 +16,8 @@ import 'package:mywatchlist/widgets/user/list/list_view_store.dart';
 import 'package:mywatchlist/widgets/user/list/user_list_adapter.dart';
 import 'package:mywatchlist/widgets/user/list/user_list_controller.dart';
 import 'package:mywatchlist/widgets/user/list/user_list_tab.dart';
+
+const double _timeLineHeight = 24;
 
 /// Status tabs in display order; null = "All".
 const List<ListEntryStatus?> userListTabs = [
@@ -77,6 +79,10 @@ class _UserListViewState extends State<UserListView> with SingleTickerProviderSt
 
   UserListAdapter get _adapter => widget.adapter;
   bool get _isAnime => _category == 'anime';
+
+  /// Whether the header carries the "time left" line: anime lists of a tracker whose adapter
+  /// fills `ListEntryView.episodeSeconds` (MyAnimeList's `average_episode_duration`).
+  bool get _showsTime => _isAnime && _adapter.tracker == AccountType.myanimelist;
   ListViewSettings get _current => _settings[_category] ?? ListViewStore.defaults(_category);
 
   @override
@@ -393,8 +399,10 @@ class _UserListViewState extends State<UserListView> with SingleTickerProviderSt
           // actions list Flutter adds its own ☰ next to the header's avatar.
           actions: const [SizedBox.shrink()],
           bottom: PreferredSize(
-            preferredSize: const Size.fromHeight(46 + 48),
-            child: _ready ? _header(theme) : const SizedBox(height: 94),
+            preferredSize: Size.fromHeight(46 + 48 + (_showsTime ? _timeLineHeight : 0)),
+            child: _ready
+                ? _header(theme)
+                : SizedBox(height: 94 + (_showsTime ? _timeLineHeight : 0)),
           ),
         ),
       ],
@@ -448,6 +456,14 @@ class _UserListViewState extends State<UserListView> with SingleTickerProviderSt
           ),
         ),
         SizedBox(height: 48, child: _toolbar(theme)),
+        if (_showsTime)
+          SizedBox(
+            height: _timeLineHeight,
+            child: _TimeLine(
+              tabs: _tabs,
+              controllerOf: (status) => _controllerFor(_category, status),
+            ),
+          ),
       ],
     );
   }
@@ -568,6 +584,48 @@ class _TabLabel extends StatelessWidget {
               ),
             ],
           ],
+        );
+      },
+    );
+  }
+}
+
+/// "Time left: 41 d 3 h" under the toolbar: follows the visible tab and its controller.
+class _TimeLine extends StatelessWidget {
+  final TabController tabs;
+  final UserListTabController Function(ListEntryStatus? status) controllerOf;
+
+  const _TimeLine({required this.tabs, required this.controllerOf});
+
+  @override
+  Widget build(BuildContext context) {
+    return ListenableBuilder(
+      listenable: tabs,
+      builder: (context, _) {
+        final status = userListTabs[tabs.index];
+        return ListenableBuilder(
+          listenable: controllerOf(status),
+          builder: (context, _) {
+            final c = controllerOf(status);
+            final summary = c.isStarted
+                ? ListTimeSummary.of(c.entries, status, partial: c.hasMore)
+                : null;
+            if (summary == null) return const SizedBox.shrink();
+            final theme = Theme.of(context);
+            return Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: Padding(
+                padding: const EdgeInsetsDirectional.only(start: 16, end: 16),
+                child: Text(
+                  summary.label(),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.labelMedium
+                      ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                ),
+              ),
+            );
+          },
         );
       },
     );
