@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:mywatchlist/services/api/Anilist/anilist_graphql.dart';
+import 'package:mywatchlist/services/api/Anilist/anilist_list_write.dart';
 import 'package:mywatchlist/services/api/Anilist/anilist_media.dart';
 import 'package:mywatchlist/services/notifications/notification_models.dart';
 import 'package:mywatchlist/user/preferences/preferences.dart';
@@ -48,15 +49,246 @@ String? anilistMediaType(String? format) => switch (format) {
       _ => format?.toLowerCase(),
     };
 
+/// AniList's own list fields of one entry, beyond what the shared [ListEntryView] carries:
+/// the exact score, Rewatching, notes, priority 0-5, private, hidden, custom lists, advanced
+/// scores and the list dates. Kept by [AnilistListService] next to each row; the AniList
+/// editor reads and writes these.
+@immutable
+class AnilistListEntry {
+  /// The list entry id (DeleteMediaListEntry, UpdateMediaListEntries) and the media id.
+  final int entryId;
+  final int mediaId;
+
+  /// `anime` or `manga`.
+  final String category;
+
+  /// Raw `MediaListStatus` (CURRENT, REPEATING, COMPLETED, PAUSED, DROPPED, PLANNING).
+  final String? status;
+
+  /// Score on AniList's raw 0-100 scale (0 = not scored), whatever the user's format.
+  final int scoreRaw;
+  final int progress;
+  final int progressVolumes;
+  final int repeat;
+
+  /// AniList's priority, 0 (none) to 5.
+  final int priority;
+  final bool private;
+  final bool hiddenFromStatusLists;
+  final String notes;
+
+  /// Names of the custom lists the entry is on.
+  final List<String> customLists;
+
+  /// Advanced score per category name (the user's own categories).
+  final Map<String, double> advancedScores;
+  final String? startedAt;
+  final String? completedAt;
+  final DateTime? createdAt;
+  final DateTime? updatedAt;
+
+  /// Raw media `format` (TV, MOVIE, MANGA…), for the completed sections split by format.
+  final String? format;
+
+  const AnilistListEntry({
+    required this.entryId,
+    required this.mediaId,
+    required this.category,
+    this.status,
+    this.scoreRaw = 0,
+    this.progress = 0,
+    this.progressVolumes = 0,
+    this.repeat = 0,
+    this.priority = 0,
+    this.private = false,
+    this.hiddenFromStatusLists = false,
+    this.notes = '',
+    this.customLists = const [],
+    this.advancedScores = const {},
+    this.startedAt,
+    this.completedAt,
+    this.createdAt,
+    this.updatedAt,
+    this.format,
+  });
+
+  bool get isAnime => category == 'anime';
+  bool get isRepeating => status == 'REPEATING';
+
+  /// Reads one `MediaList` of AniList (the list read or a write's answer). The raw score is
+  /// `scoreRaw` (`score(format: POINT_100)`), else the 0-10 `score` times ten.
+  static AnilistListEntry fromJson(Map<dynamic, dynamic> json,
+      {required String category, int? mediaId, String? format}) {
+    int toInt(Object? v) => v is num ? v.toInt() : 0;
+    DateTime? time(Object? v) =>
+        v is num && v > 0 ? DateTime.fromMillisecondsSinceEpoch(v.toInt() * 1000) : null;
+    final raw = json['scoreRaw'];
+    final score = json['score'];
+    final media = json['media'];
+    return AnilistListEntry(
+      entryId: toInt(json['id']),
+      mediaId: mediaId ??
+          (json['mediaId'] is num
+              ? toInt(json['mediaId'])
+              : media is Map
+                  ? toInt(media['id'])
+                  : 0),
+      category: category,
+      status: json['status'] is String ? json['status'] as String : null,
+      scoreRaw: raw is num
+          ? raw.round().clamp(0, 100)
+          : score is num
+              ? (score * 10).round().clamp(0, 100)
+              : 0,
+      progress: toInt(json['progress']),
+      progressVolumes: toInt(json['progressVolumes']),
+      repeat: toInt(json['repeat']),
+      priority: toInt(json['priority']).clamp(0, 5),
+      private: json['private'] == true,
+      hiddenFromStatusLists: json['hiddenFromStatusLists'] == true,
+      notes: json['notes'] is String ? json['notes'] as String : '',
+      customLists: customListsOf(json['customLists']),
+      advancedScores: advancedScoresOf(json['advancedScores']),
+      startedAt: SyncDates.fromFuzzy(json['startedAt']),
+      completedAt: SyncDates.fromFuzzy(json['completedAt']),
+      createdAt: time(json['createdAt']),
+      updatedAt: time(json['updatedAt']),
+      format: format ?? (media is Map && media['format'] is String ? media['format'] as String : null),
+    );
+  }
+
+  /// The custom lists an entry is on: `customLists(asArray: true)` answers
+  /// `[{name, enabled}]`, without `asArray` it is `{name: enabled}`.
+  static List<String> customListsOf(Object? value) => [
+        if (value is List)
+          for (final e in value)
+            if (e is Map && e['enabled'] == true && e['name'] is String) e['name'] as String,
+        if (value is Map)
+          for (final e in value.entries)
+            if (e.value == true && e.key is String) e.key as String,
+      ];
+
+  static Map<String, double> advancedScoresOf(Object? value) => {
+        if (value is Map)
+          for (final e in value.entries)
+            if (e.key is String && e.value is num) e.key as String: (e.value as num).toDouble(),
+      };
+
+  /// The entry after a write: the fields AniList answered, the media format kept.
+  AnilistListEntry merge(Map<String, dynamic> saved) =>
+      AnilistListEntry.fromJson(saved, category: category, mediaId: mediaId, format: format);
+}
+
+/// The list settings of the account for one category (`MediaListOptions`).
+@immutable
+class AnilistListOptions {
+  final AnilistScoreFormat scoreFormat;
+
+  /// Default row order of the account (`score`, `title`, `updatedAt`, `id`).
+  final String? rowOrder;
+
+  /// Section names in the user's order (status sections and custom lists).
+  final List<String> sectionOrder;
+  final bool splitCompletedSectionByFormat;
+  final List<String> customLists;
+  final List<String> advancedScoring;
+  final bool advancedScoringEnabled;
+
+  const AnilistListOptions({
+    this.scoreFormat = AnilistScoreFormat.point10,
+    this.rowOrder,
+    this.sectionOrder = const [],
+    this.splitCompletedSectionByFormat = false,
+    this.customLists = const [],
+    this.advancedScoring = const [],
+    this.advancedScoringEnabled = false,
+  });
+
+  /// Advanced scores are shown: enabled, with categories, in a format that has them.
+  bool get showsAdvanced =>
+      advancedScoringEnabled && advancedScoring.isNotEmpty && scoreFormat.allowsAdvanced;
+
+  /// Reads `mediaListOptions` for [isAnime] (`animeList` / `mangaList`).
+  static AnilistListOptions fromJson(Object? json, {required bool isAnime}) {
+    if (json is! Map) return const AnilistListOptions();
+    final type = json[isAnime ? 'animeList' : 'mangaList'];
+    List<String> names(Object? v) => [
+          if (v is List)
+            for (final s in v)
+              if (s is String && s.trim().isNotEmpty) s,
+        ];
+    return AnilistListOptions(
+      scoreFormat: AnilistScoreFormat.parse(json['scoreFormat']),
+      rowOrder: json['rowOrder'] is String ? json['rowOrder'] as String : null,
+      sectionOrder: type is Map ? names(type['sectionOrder']) : const [],
+      splitCompletedSectionByFormat:
+          type is Map && type['splitCompletedSectionByFormat'] == true,
+      customLists: type is Map ? names(type['customLists']) : const [],
+      advancedScoring: type is Map ? names(type['advancedScoring']) : const [],
+      advancedScoringEnabled: type is Map && type['advancedScoringEnabled'] == true,
+    );
+  }
+}
+
+/// [detail]'s list fields on the shared row [view]: status (Rewatching = Watching with the
+/// repeat badge), score on 0-10, progress, priority folded to three levels, dates.
+ListEntryView anilistApplyDetail(ListEntryView view, AnilistListEntry detail) => ListEntryView(
+      id: view.id,
+      malId: view.malId,
+      category: view.category,
+      title: view.title,
+      otherTitles: view.otherTitles,
+      imageUrl: view.imageUrl,
+      largeImageUrl: view.largeImageUrl,
+      mediaType: view.mediaType,
+      releaseState: view.releaseState,
+      meanScore: view.meanScore,
+      members: view.members,
+      scoringUsers: view.scoringUsers,
+      popularity: view.popularity,
+      total: view.total,
+      totalVolumes: view.totalVolumes,
+      genres: view.genres,
+      releaseStart: view.releaseStart,
+      releaseEnd: view.releaseEnd,
+      broadcast: view.broadcast,
+      tags: view.tags,
+      // Built anew rather than copied: a date or a status cleared on AniList is cleared here.
+      status: anilistStatus(detail.status),
+      score: (detail.scoreRaw / 10).round().clamp(0, 10),
+      progress: detail.progress,
+      progressVolumes: view.isAnime ? 0 : detail.progressVolumes,
+      repeating: detail.isRepeating,
+      priority: anilistPriorityLevel(detail.priority),
+      listStartDate: detail.startedAt,
+      listFinishDate: detail.completedAt,
+      updatedAt: detail.updatedAt ?? view.updatedAt,
+    );
+
+/// AniList's priority 0-5 as the shared low / medium / high.
+int anilistPriorityLevel(int priority) => priority >= 4
+    ? 2
+    : priority >= 2
+        ? 1
+        : 0;
+
+/// One row of an AniList list: the shared view and AniList's own fields.
+typedef AnilistRow = ({ListEntryView view, AnilistListEntry detail});
+
 /// The list entries of one AniList answer, as the shared list widgets draw them.
 /// [titleLang] is a `TitleLang` name.
 @visibleForTesting
 List<ListEntryView> parseAnilistEntries(List<dynamic> entries,
+        {required String category, required String titleLang}) =>
+    [for (final r in parseAnilistRows(entries, category: category, titleLang: titleLang)) r.view];
+
+/// The rows of one AniList answer: shared view and AniList fields.
+List<AnilistRow> parseAnilistRows(List<dynamic> entries,
     {required String category, required String titleLang}) {
   final isAnime = category == 'anime';
   String? text(Object? v) => v is String && v.trim().isNotEmpty ? v.trim() : null;
   int toInt(Object? v) => v is num ? v.toInt() : 0;
-  final out = <ListEntryView>[];
+  final out = <AnilistRow>[];
   for (final item in entries) {
     if (item is! Map) continue;
     final mediaRaw = item['media'];
@@ -80,9 +312,9 @@ List<ListEntryView> parseAnilistEntries(List<dynamic> entries,
         for (final s in synonyms)
           if (text(s) != null) text(s)!,
     ];
-    final score = item['score'];
-    final updated = item['updatedAt'];
-    out.add(ListEntryView(
+    final detail = AnilistListEntry.fromJson(item,
+        category: category, mediaId: media.id, format: media.format);
+    final base = ListEntryView(
       id: media.id,
       malId: media.malId,
       category: category,
@@ -103,23 +335,8 @@ List<ListEntryView> parseAnilistEntries(List<dynamic> entries,
       releaseStart: SyncDates.fromFuzzy(mediaRaw['startDate']),
       releaseEnd: SyncDates.fromFuzzy(mediaRaw['endDate']),
       broadcast: slot,
-      status: anilistStatus(text(item['status'])),
-      score: score is num ? score.round().clamp(0, 10).toInt() : 0,
-      progress: toInt(item['progress']),
-      progressVolumes: isAnime ? 0 : toInt(item['progressVolumes']),
-      repeating: item['status'] == 'REPEATING',
-      // AniList priority is 0-5 on the entry; the shared view keeps low / medium / high.
-      priority: toInt(item['priority']) >= 4
-          ? 2
-          : toInt(item['priority']) >= 2
-              ? 1
-              : 0,
-      updatedAt: updated is num && updated > 0
-          ? DateTime.fromMillisecondsSinceEpoch(updated.toInt() * 1000)
-          : null,
-      listStartDate: SyncDates.fromFuzzy(item['startedAt']),
-      listFinishDate: SyncDates.fromFuzzy(item['completedAt']),
-    ));
+    );
+    out.add((view: anilistApplyDetail(base, detail), detail: detail));
   }
   return out;
 }
@@ -147,7 +364,7 @@ class AnilistListService {
   final String Function() _titleLang;
   final Duration keepFor;
 
-  final Map<String, ({DateTime at, String owner, List<ListEntryView> entries})> _kept = {};
+  final Map<String, _KeptList> _kept = {};
   final Map<String, Future<List<ListEntryView>>> _inFlight = {};
 
   AnilistGraphql get _gql => _client ?? AnilistGraphql.instance;
@@ -156,9 +373,20 @@ class AnilistListService {
 
   static const int _perChunk = 500;
 
+  static const String _optionFields =
+      'advancedScoring advancedScoringEnabled customLists sectionOrder '
+      'splitCompletedSectionByFormat';
+
+  /// The account's list settings, asked with the first chunk only.
+  static const String _userFields = 'user { mediaListOptions { scoreFormat rowOrder '
+      'animeList { $_optionFields } mangaList { $_optionFields } } }';
+
   static const String _entryFields = '''
-    id status progress progressVolumes repeat priority updatedAt
+    id status progress progressVolumes repeat priority private notes hiddenFromStatusLists
+    updatedAt createdAt
+    scoreRaw: score(format: POINT_100)
     score(format: POINT_10_DECIMAL)
+    customLists(asArray: true) advancedScores
     startedAt { year month day }
     completedAt { year month day }
     media { ${AnilistMedia.fields} volumes synonyms
@@ -181,9 +409,19 @@ class AnilistListService {
     });
   }
 
+  /// AniList's own fields of the row [mediaId] of [category], once the list is loaded.
+  AnilistListEntry? detailOf(String category, int mediaId) =>
+      _kept[category]?.details[mediaId];
+
+  /// The account's list settings for [category] (score format, sections, custom lists,
+  /// advanced scoring), once the list is loaded.
+  AnilistListOptions? optionsOf(String category) => _kept[category]?.options;
+
   Future<List<ListEntryView>> _load(String category, String who) async {
     final name = who.isNotEmpty ? who : await _viewerName();
-    final byMedia = <int, ListEntryView>{};
+    final isAnime = category != 'manga';
+    final byMedia = <int, AnilistRow>{};
+    var options = const AnilistListOptions();
     var chunk = 1;
     while (true) {
       final data = await _gql.query('''
@@ -191,31 +429,42 @@ class AnilistListService {
           MediaListCollection(userName: \$name, type: \$type, chunk: \$chunk,
               perChunk: \$perChunk, forceSingleCompletedList: true) {
             hasNextChunk
+            ${chunk == 1 ? _userFields : ''}
             lists { entries { $_entryFields } }
           }
         }
       ''', variables: {
         'name': name,
-        'type': category == 'manga' ? 'MANGA' : 'ANIME',
+        'type': isAnime ? 'ANIME' : 'MANGA',
         'chunk': chunk,
         'perChunk': _perChunk,
       }, auth: true);
       final collection = data['MediaListCollection'];
       if (collection is! Map) break;
+      final user = collection['user'];
+      if (user is Map && user['mediaListOptions'] != null) {
+        options = AnilistListOptions.fromJson(user['mediaListOptions'], isAnime: isAnime);
+      }
       for (final list in (collection['lists'] as List? ?? const [])) {
         if (list is! Map || list['entries'] is! List) continue;
         // A custom list repeats entries of the main ones: keyed by media, the last wins.
-        for (final e in parseAnilistEntries(list['entries'] as List,
+        for (final row in parseAnilistRows(list['entries'] as List,
             category: category, titleLang: _titleLang())) {
-          byMedia[e.id] = e;
+          byMedia[row.view.id] = row;
         }
       }
       if (collection['hasNextChunk'] != true || chunk >= 40) break;
       chunk++;
     }
-    final entries = List<ListEntryView>.unmodifiable(byMedia.values);
-    _kept[category] = (at: _clock(), owner: who, entries: entries);
-    return entries;
+    final kept = _KeptList(
+      at: _clock(),
+      owner: who,
+      entries: List.unmodifiable([for (final r in byMedia.values) r.view]),
+      details: {for (final r in byMedia.values) r.view.id: r.detail},
+      options: options,
+    );
+    _kept[category] = kept;
+    return kept.entries;
   }
 
   Future<String> _viewerName() async {
@@ -226,8 +475,8 @@ class AnilistListService {
   }
 
   /// Keeps [entry] (saved just now) in the kept list of its category, so the other tabs
-  /// see it without another request. [entry] null status = removed.
-  void put(ListEntryView entry, {bool removed = false}) {
+  /// see it without another request; [detail] replaces its AniList fields when given.
+  void put(ListEntryView entry, {bool removed = false, AnilistListEntry? detail}) {
     final kept = _kept[entry.category];
     if (kept == null) return;
     final next = [
@@ -235,8 +484,19 @@ class AnilistListService {
         if (e.id != entry.id) e else if (!removed) entry,
     ];
     if (!removed && !next.any((e) => e.id == entry.id)) next.insert(0, entry);
-    _kept[entry.category] =
-        (at: kept.at, owner: kept.owner, entries: List.unmodifiable(next));
+    final details = {...kept.details};
+    if (removed) {
+      details.remove(entry.id);
+    } else if (detail != null) {
+      details[entry.id] = detail;
+    }
+    _kept[entry.category] = _KeptList(
+      at: kept.at,
+      owner: kept.owner,
+      entries: List.unmodifiable(next),
+      details: details,
+      options: kept.options,
+    );
   }
 
   /// Forgets the kept lists (after an edit or a sign out).
@@ -295,4 +555,21 @@ class AnilistListService {
           ),
     ];
   }
+}
+
+/// One category's list as loaded: rows, AniList fields per media id, list settings.
+class _KeptList {
+  final DateTime at;
+  final String owner;
+  final List<ListEntryView> entries;
+  final Map<int, AnilistListEntry> details;
+  final AnilistListOptions options;
+
+  const _KeptList({
+    required this.at,
+    required this.owner,
+    required this.entries,
+    required this.details,
+    required this.options,
+  });
 }
