@@ -278,12 +278,22 @@ String fillScript(MalWebForm form) => '(function(){${_findFormJs(form)}'
     'el.dispatchEvent(new Event("change",{bubbles:true}));}'
     'return JSON.stringify({missing:missing});})()';
 
-/// Clicks MAL's own submit button (its script listens to the form's submit).
+/// Set on the form's window by [submitScript]: a document that still has it is the form page,
+/// not MAL's answer.
+const String submittedMarker = '__mwlSubmitted';
+
+/// `"1"` while the page shown is the document the form was sent from.
+@visibleForTesting
+const String stillSubmittedScript = 'window.$submittedMarker===true?"1":"0"';
+
+/// Clicks MAL's own submit button (its script listens to the form's submit); marks the
+/// document so the answer can be told apart from a late load of the form page.
 @visibleForTesting
 String submitScript(MalWebForm form) => '(function(){${_findFormJs(form)}'
     'if(!f)return JSON.stringify({clicked:false});'
     'var b=f.querySelector(${jsonEncode(form.submitSelector)})'
     '||f.querySelector(\'input[type=submit]:not([name=preview]),button[type=submit]\');'
+    'window.$submittedMarker=true;'
     'setTimeout(function(){if(b){b.click();}else if(f.requestSubmit){f.requestSubmit();}else{f.submit();}},0);'
     'return JSON.stringify({clicked:true});})()';
 
@@ -313,6 +323,9 @@ class WebViewMalWebPage implements MalWebPage {
   final WebViewController _controller;
   late final Future<void> _ready;
   Completer<void>? _pending;
+
+  /// The form was sent: a finished load counts only once the document is a new one.
+  bool _awaitingAnswer = false;
   late final Widget _view = WebViewWidget(controller: _controller);
 
   Future<void> _init() async {
@@ -326,11 +339,7 @@ class WebViewMalWebPage implements MalWebPage {
             ? NavigationDecision.navigate
             : NavigationDecision.prevent;
       },
-      onPageFinished: (url) {
-        final pending = _pending;
-        _pending = null;
-        if (pending != null && !pending.isCompleted) pending.complete();
-      },
+      onPageFinished: (url) => unawaited(_finished()),
       onWebResourceError: (error) {
         if (error.isForMainFrame == false) return;
         final pending = _pending;
@@ -340,6 +349,23 @@ class WebViewMalWebPage implements MalWebPage {
         }
       },
     ));
+  }
+
+  /// A load finished. After the click, a document that still carries [submittedMarker] is
+  /// the form page itself (a late or repeated finish), not MAL's answer: keep waiting.
+  Future<void> _finished() async {
+    if (_awaitingAnswer) {
+      try {
+        final still = await _controller.runJavaScriptReturningResult(stillSubmittedScript);
+        if (decodeJsResult(still)?.toString() == '1') return;
+      } catch (_) {
+        // No script on this document: a new page.
+      }
+      _awaitingAnswer = false;
+    }
+    final pending = _pending;
+    _pending = null;
+    if (pending != null && !pending.isCompleted) pending.complete();
   }
 
   Future<Object?> _run(String script) async {
@@ -401,8 +427,12 @@ class WebViewMalWebPage implements MalWebPage {
 
   @override
   Future<void> submit(MalWebForm form) async {
+    _awaitingAnswer = true;
     final result = await _run(submitScript(form));
-    if (result is Map && result['clicked'] == false) throw const MalWebFormMissing();
+    if (result is Map && result['clicked'] == false) {
+      _awaitingAnswer = false;
+      throw const MalWebFormMissing();
+    }
   }
 
   @override

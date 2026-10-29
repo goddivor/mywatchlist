@@ -65,6 +65,8 @@ class MalMessageTile extends StatelessWidget {
     final unread = !message.isRead;
     final strong = unread ? FontWeight.w700 : FontWeight.w500;
     final date = message.date;
+    final hasSubject = message.subject.trim().isNotEmpty;
+    final subject = hasSubject ? message.subject : message.preview;
     return InkWell(
       onTap: onTap,
       onLongPress: onLongPress,
@@ -101,33 +103,36 @@ class MalMessageTile extends StatelessWidget {
                       ],
                     ],
                   ),
-                  const SizedBox(height: 2),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          message.subject,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            fontWeight: unread ? FontWeight.w600 : null,
-                            color: scheme.onSurface,
+                  // No subject: the start of the body takes its line (no blank line).
+                  if (subject.isNotEmpty || unread) ...[
+                    const SizedBox(height: 2),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            subject,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              fontWeight: unread ? FontWeight.w600 : null,
+                              color: scheme.onSurface,
+                            ),
                           ),
                         ),
-                      ),
-                      if (unread)
-                        Semantics(
-                          label: S.of(context).Pm_Unread,
-                          child: Container(
-                            width: 8,
-                            height: 8,
-                            margin: const EdgeInsetsDirectional.only(start: 8),
-                            decoration: BoxDecoration(color: scheme.primary, shape: BoxShape.circle),
+                        if (unread)
+                          Semantics(
+                            label: S.of(context).Pm_Unread,
+                            child: Container(
+                              width: 8,
+                              height: 8,
+                              margin: const EdgeInsetsDirectional.only(start: 8),
+                              decoration: BoxDecoration(color: scheme.primary, shape: BoxShape.circle),
+                            ),
                           ),
-                        ),
-                    ],
-                  ),
-                  if (message.preview.isNotEmpty)
+                      ],
+                    ),
+                  ],
+                  if (hasSubject && message.preview.isNotEmpty)
                     Text(
                       message.preview,
                       maxLines: 1,
