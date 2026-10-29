@@ -117,6 +117,11 @@ class UserProfileData {
   final String? birthday;
   final String? joined;
 
+  /// The account's time zone and Supporter status; only the official API gives them, so only
+  /// for the signed-in user.
+  final String? timezone;
+  final bool isSupporter;
+
   /// When the user was last online: an ISO time from Jikan, or MAL's own text ("Now",
   /// "Jul 3, 2:03 PM", "5 minutes ago") from the profile page.
   final String? lastOnline;
@@ -146,6 +151,8 @@ class UserProfileData {
     this.location,
     this.birthday,
     this.joined,
+    this.timezone,
+    this.isSupporter = false,
     this.lastOnline,
     this.about,
     this.aboutModern = false,
@@ -170,6 +177,8 @@ class UserProfileData {
         location: location,
         birthday: birthday,
         joined: joined,
+        timezone: timezone,
+        isSupporter: isSupporter,
         lastOnline: lastOnline,
         about: about,
         aboutModern: aboutModern,
@@ -190,6 +199,8 @@ class UserProfileData {
         location: json['location'] as String?,
         birthday: json['birthday'] as String?,
         joined: json['joined'] as String?,
+        timezone: json['timezone'] as String?,
+        isSupporter: json['isSupporter'] == true,
         lastOnline: json['lastOnline'] as String?,
         about: json['about'] as String?,
         aboutModern: json['aboutModern'] == true,
@@ -209,6 +220,8 @@ class UserProfileData {
         'location': location,
         'birthday': birthday,
         'joined': joined,
+        'timezone': timezone,
+        'isSupporter': isSupporter,
         'lastOnline': lastOnline,
         'about': about,
         'aboutModern': aboutModern,
@@ -291,7 +304,7 @@ class UserProfileRepository {
 
   @visibleForTesting
   Future<MalUserProf> Function() malSelf =
-      () => MalUser().getUserInfo(fields: const ['anime_statistics']);
+      () => MalUser().getUserInfo(fields: const ['anime_statistics', 'time_zone', 'is_supporter']);
 
   /// The signed-in user's MAL name, when known without a request.
   static String? get ownUsername {
@@ -444,6 +457,8 @@ class UserProfileRepository {
       location: clean(mal?.location) ?? clean(jikan?['location'] as String?),
       birthday: mal?.birthday?.toIso8601String() ?? clean(jikan?['birthday'] as String?),
       joined: clean(mal?.joinedAt) ?? clean(jikan?['joined'] as String?),
+      timezone: clean(mal?.timezone),
+      isSupporter: mal?.isSupporter ?? false,
       lastOnline: clean(jikan?['last_online'] as String?),
       about: clean(jikan?['about'] as String?),
       aboutModern: jikan?['about_modern'] == true,

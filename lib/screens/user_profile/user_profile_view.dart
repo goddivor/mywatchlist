@@ -13,6 +13,7 @@ import 'package:mywatchlist/screens/user_profile/sections/favorites_section.dart
 import 'package:mywatchlist/screens/user_profile/sections/friends_section.dart';
 import 'package:mywatchlist/screens/user_profile/sections/history_section.dart';
 import 'package:mywatchlist/screens/user_profile/sections/list_section.dart';
+import 'package:mywatchlist/screens/user_profile/sections/reviews_section.dart';
 import 'package:mywatchlist/screens/user_profile/sections/stats_section.dart';
 import 'package:mywatchlist/screens/user_profile/sections/weekly_section.dart';
 import 'package:mywatchlist/screens/user_profile/user_profile_data.dart';
@@ -29,7 +30,21 @@ import 'package:mywatchlist/widgets/user/profile/report_user.dart';
 
 /// The tabs of a profile, in display order. [list] is only on another user's profile (first,
 /// like DailyAL), [weekly] only on your own.
-enum UserProfileTab { list, stats, friends, clubs, about, favorites, history, comments, weekly }
+enum UserProfileTab {
+  list,
+  stats,
+  friends,
+  clubs,
+  about,
+  favorites,
+  history,
+  comments,
+  reviews,
+  recommendations,
+  stacks,
+  blog,
+  weekly,
+}
 
 /// The tabs shown on a profile ([isSelf] = the signed-in user's).
 List<UserProfileTab> profileTabsFor({required bool isSelf}) => [
@@ -231,6 +246,10 @@ class _ProfileBodyState extends State<_ProfileBody> with SingleTickerProviderSta
         ),
       UserProfileTab.history => HistorySection(username: data.username),
       UserProfileTab.comments => CommentsSection(username: data.username),
+      UserProfileTab.reviews => ReviewsSection(username: data.username),
+      UserProfileTab.recommendations => RecommendationsSection(username: data.username),
+      UserProfileTab.stacks => StacksSection(username: data.username),
+      UserProfileTab.blog => BlogSection(username: data.username),
       UserProfileTab.weekly => const WeeklySection(),
     };
   }
@@ -380,6 +399,10 @@ class _CollapsedTitle extends StatelessWidget {
       UserProfileTab.favorites => (s.Prof_Tab_Favorites, Icons.favorite_rounded),
       UserProfileTab.history => (s.Prof_Tab_History, Icons.history_rounded),
       UserProfileTab.comments => (s.Ms_Comments_Tab, Icons.forum_rounded),
+      UserProfileTab.reviews => (s.Reviews, Icons.rate_review_rounded),
+      UserProfileTab.recommendations => (s.Recommendations, Icons.thumbs_up_down_rounded),
+      UserProfileTab.stacks => (s.Interest_Stacks, Icons.collections_bookmark_rounded),
+      UserProfileTab.blog => (s.Mpe_Tab_Blog, Icons.article_rounded),
       UserProfileTab.weekly => (s.Pl_Tab_Weekly, Icons.weekend_rounded),
     };
 

@@ -160,6 +160,7 @@ class ProfileHeaderBand extends StatelessWidget {
     final details = [
       if (joined != null) s.Prof_Joined(joined),
       if (entries > 0) s.Prof_Entry_Count(entries),
+      if (data.timezone != null) data.timezone!,
     ].join(' · ');
 
     return Stack(
@@ -193,14 +194,24 @@ class ProfileHeaderBand extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        data.username,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.textTheme.titleLarge?.copyWith(
-                          color: nameColor,
-                          fontWeight: FontWeight.w700,
-                        ),
+                      Row(
+                        children: [
+                          Flexible(
+                            child: Text(
+                              data.username,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.textTheme.titleLarge?.copyWith(
+                                color: nameColor,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                          if (data.isSupporter) ...[
+                            const SizedBox(width: 8),
+                            _SupporterBadge(label: s.Mpe_Supporter),
+                          ],
+                        ],
                       ),
                       if (details.isNotEmpty) ...[
                         const SizedBox(height: 4),
@@ -219,6 +230,42 @@ class ProfileHeaderBand extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// The "Supporter" mark next to the name, on the tonal container colours so it reads on the
+/// surface and on a picture alike.
+class _SupporterBadge extends StatelessWidget {
+  final String label;
+
+  const _SupporterBadge({required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: cs.tertiaryContainer,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.workspace_premium_rounded, size: 14, color: cs.onTertiaryContainer),
+            const SizedBox(width: 4),
+            Text(
+              label,
+              style: Theme.of(context)
+                  .textTheme
+                  .labelSmall
+                  ?.copyWith(color: cs.onTertiaryContainer, fontWeight: FontWeight.w600),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
