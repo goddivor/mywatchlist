@@ -1037,6 +1037,15 @@ UI directive applies: compare DAL and MWL, keep the better, improve it.
 Deliver with the PR procedure of the brief.
 ```
 
+## mal-ona-ranking
+
+```text
+Unit mal-ona-ranking — Top ONA through Jikan/Tenrai (MAL rejects ranking_type=ona); drop the anime_id list sort.
+Read work/handoffs/mal-ona-ranking.md fully, then the DAL reference files it lists, then the MWL files you own.
+Build exactly the Goal, inside the Owns list. Heavy commands only through tools/heavy.sh; never run flutter build or touch the emulator.
+Deliver with the PR procedure of the brief.
+```
+
 ## explore-polish
 
 ```text

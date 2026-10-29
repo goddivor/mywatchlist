@@ -151,6 +151,7 @@
         "mal-list-xml",
         "mal-web-writes-2",
         "mal-api-small",
+        "mal-ona-ranking",
         "tracker-wiring"
       ]
     },
@@ -3505,6 +3506,33 @@
         "test/units/list-time-followups/**"
       ],
       "group": "user",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "⬜ todo"
+    },
+    {
+      "id": "mal-ona-ranking",
+      "title": "Top ONA through Jikan/Tenrai (MAL rejects ranking_type=ona); drop the anime_id list sort",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "mal-api-small"
+      ],
+      "owns": [
+        "lib/services/api/MAL/mal_api.dart",
+        "lib/enums.dart",
+        "lib/services/api/Jikan/jikan_api.dart",
+        "test/units/mal-ona-ranking/**",
+        "lib/l10n/units/mal-ona-ranking/**",
+        "test/units/mal-ona-ranking/**"
+      ],
+      "group": "trackers",
       "dropped": null,
       "skills": [],
       "states": [],

@@ -1048,6 +1048,13 @@ const UNITS = [
     dod: ["Tests: the time-left field renders; each filter narrows the list; the rewatch badge shows for N > 0; the time line shows for a non-MAL adapter that fills durations."],
   },
   {
+    id: "mal-ona-ranking", title: "Top ONA through Jikan/Tenrai (MAL rejects ranking_type=ona); drop the anime_id list sort", kind: "unit", priority: "P1", group: "trackers", model: "opus", ui: false,
+    needs: ["mal-api-small"],
+    owns: ["lib/services/api/MAL/mal_api.dart", "lib/enums.dart", "lib/services/api/Jikan/jikan_api.dart", "test/units/mal-ona-ranking/**"],
+    goal: ["A7 check run by the orchestrator on 2026-10-29 with MWL's client id: GET /v2/anime/ranking?ranking_type=ona answers 400 'invalid ranking_type', and /v2/users/{u}/animelist?sort=anime_id answers 400 'invalid sort order' (manga ranking_type=lightnovels answers 200, keep it). Make every RankingType.ONA ranking (home row topAnimeOna, Explore rankings, the detail 'ONA' link, search by ranking) load from Jikan/Tenrai top anime with type=ona through the JikanSource selector (Jikan with Tenrai fallback), mapped to the same SearchResult/Anime shape with paging (offset → page). Remove AnimeListSort.animeId and its mapping (unused, rejected by MAL).", "Offline tests with saved Jikan responses; no write anywhere."],
+    dod: ["Tests: the ONA ranking request goes to the Jikan source with type=ona and maps to SearchResult with next-page paging; no MAL ranking request carries ranking_type=ona."],
+  },
+  {
     id: "explore-polish", title: "Explore: DailyAL images on category and genre cards, explicit genres, recommendations/stacks fallbacks, favourites badges", kind: "unit", priority: "P1", group: "discovery", model: "opus", ui: true,
     needs: ["search-sources", "explore-seasonal", "home-wiring", "profile-tabs"],
     owns: ["lib/services/api/MAL/scrapper/html_parsers.dart", "test/units/explore-crash/**", "lib/pages/MAL/mal_explore_page.dart", "lib/screens/explore/**", "assets/images/explore/**", "pubspec.yaml", "lib/cache/top_characters.dart"],
