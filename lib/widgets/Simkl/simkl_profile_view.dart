@@ -6,6 +6,8 @@ import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/services/api/SimKl/simkl_client.dart';
 import 'package:mywatchlist/services/api/SimKl/simkl_list_service.dart';
 import 'package:mywatchlist/services/api/SimKl/simkl_models.dart';
+import 'package:mywatchlist/services/api/SimKl/simkl_stats_service.dart';
+import 'package:mywatchlist/widgets/Simkl/simkl_media_widgets.dart' show openSimklTitle, openSimklMedia;
 import 'package:mywatchlist/services/api/SimKl/simkl_user.dart';
 import 'package:mywatchlist/services/api/SimKl/simkl_user_prof.dart';
 import 'package:mywatchlist/user/preferences/preferences.dart';
@@ -27,7 +29,41 @@ class SimklProfileData {
   final UserProfSimkl? account;
   final SimklListStats stats;
 
-  const SimklProfileData(this.account, this.stats);
+  /// Watch time, "now watching" cover and custom lists: each null/empty when Simkl did not
+  /// answer (they never hide the rest of the profile).
+  final SimklWatchStats? watch;
+  final SimklNowWatching? nowWatching;
+  final List<SimklCustomList> lists;
+
+  /// The user's 9 and 10 rated titles, best first.
+  final List<ListEntryView> topRated;
+
+  const SimklProfileData(
+    this.account,
+    this.stats, {
+    this.watch,
+    this.nowWatching,
+    this.lists = const [],
+    this.topRated = const [],
+  });
+}
+
+/// The titles scored 9 or 10, highest score then latest activity first.
+List<ListEntryView> simklTopRated(List<ListEntryView> list, {int limit = 20}) {
+  final top = [...list.where((e) => e.score >= 9)]..sort((a, b) {
+      final byScore = b.score.compareTo(a.score);
+      if (byScore != 0) return byScore;
+      return (b.updatedAt ?? DateTime(0)).compareTo(a.updatedAt ?? DateTime(0));
+    });
+  return top.take(limit).toList();
+}
+
+/// `3d 4h`, `5h 20m` or `45m` in the app language.
+String simklDuration(int mins) {
+  final s = S.current;
+  if (mins >= 1440) return s.Skp_Dur_Days_Hours(mins ~/ 1440, (mins % 1440) ~/ 60);
+  if (mins >= 60) return s.Skp_Dur_Hours_Mins(mins ~/ 60, mins % 60);
+  return s.Skp_Dur_Mins(mins);
 }
 
 /// Loads the Simkl profile. The account call may fail without hiding the stats (the name and
@@ -35,6 +71,7 @@ class SimklProfileData {
 Future<SimklProfileData> loadSimklProfile({
   SimklUser? user,
   SimklListService? lists,
+  SimklStatsService? extras,
   bool force = false,
 }) async {
   final accountFuture = (user ?? SimklUser()).getUserInfo().then<UserProfSimkl?>((a) => a).catchError(
@@ -45,7 +82,33 @@ Future<SimklProfileData> loadSimklProfile({
   );
   final list = await (lists ?? SimklListService.instance).anime(force: force);
   final account = await accountFuture;
-  return SimklProfileData(account, SimklListStats.from(list));
+  final id = account?.accountId ?? 0;
+  SimklWatchStats? watch;
+  SimklNowWatching? cover;
+  var custom = const <SimklCustomList>[];
+  if (id > 0) {
+    // Optional extras, one after the other (Simkl rate-limits): a failure only hides its block.
+    final service = extras ?? SimklStatsService.instance;
+    Future<T?> tryGet<T>(Future<T> Function() call) async {
+      try {
+        return await call();
+      } catch (_) {
+        return null;
+      }
+    }
+
+    watch = await tryGet<SimklWatchStats?>(() => service.watchStats(id));
+    cover = await tryGet<SimklNowWatching?>(() => service.nowWatching(id));
+    if (simklIsPaid(account!.accountType)) custom = await tryGet(() => service.customLists(id)) ?? const [];
+  }
+  return SimklProfileData(
+    account,
+    SimklListStats.from(list),
+    watch: watch,
+    nowWatching: cover,
+    lists: custom,
+    topRated: simklTopRated(list),
+  );
 }
 
 /// The signed-in user's Simkl profile: header, key numbers, a bar per list status, the score
@@ -175,6 +238,23 @@ class _ProfileBody extends StatelessWidget {
             ),
           ),
         ),
+        if (data.watch != null && !data.watch!.isEmpty)
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(12, 4, 12, 4),
+              child: Row(
+                children: [
+                  Expanded(child: _StatTile(label: s.Skp_Time_Spent, value: simklDuration(data.watch!.totalMins))),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _StatTile(label: s.Skp_Left_To_Watch, value: simklDuration(data.watch!.leftMins)),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(child: _StatTile(label: s.Last_Week, value: simklDuration(data.watch!.lastWeekMins))),
+                ],
+              ),
+            ),
+          ),
         if (stats.entries == 0)
           SliverToBoxAdapter(
             child: Padding(
@@ -216,16 +296,19 @@ class _ProfileBody extends StatelessWidget {
                 child: ScoreStackChart(scoreByStatus: stats.scoreByStatus, labels: labels, colors: colors),
               ),
             ),
-          if (stats.recent.isNotEmpty) ...[
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
-                child: Semantics(
-                  header: true,
-                  child: Text(s.Sk_Profile_Recent, style: Theme.of(context).textTheme.titleMedium),
-                ),
-              ),
+          if (data.topRated.isNotEmpty) ...[
+            SliverToBoxAdapter(child: _SectionTitle(s.Skp_Top_Rated)),
+            SliverToBoxAdapter(child: _TopRatedRow(entries: data.topRated)),
+          ],
+          if (data.lists.isNotEmpty) ...[
+            SliverToBoxAdapter(child: _SectionTitle(s.Skp_Lists)),
+            SliverList.builder(
+              itemCount: data.lists.length,
+              itemBuilder: (context, i) => _CustomListTile(list: data.lists[i]),
             ),
+          ],
+          if (stats.recent.isNotEmpty) ...[
+            SliverToBoxAdapter(child: _SectionTitle(s.Sk_Profile_Recent)),
             SliverList.builder(
               itemCount: stats.recent.length,
               itemBuilder: (context, i) => _RecentTile(entry: stats.recent[i]),
@@ -261,7 +344,8 @@ class _Header extends StatelessWidget {
       if (account != null && account.location.isNotEmpty) account.location,
     ].join(' · ');
     final accountId = account?.accountId ?? 0;
-    return Padding(
+    final cover = data.nowWatching;
+    final header = Padding(
       padding: const EdgeInsets.fromLTRB(8, 8, 8, 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -316,6 +400,172 @@ class _Header extends StatelessWidget {
               child: Text(account.bio, style: theme.textTheme.bodyMedium),
             ),
         ],
+      ),
+    );
+    if (cover == null) return header;
+    // The cover of what the user watches now, faded into the page (plain alpha gradient, no blur).
+    return Stack(
+      children: [
+        Positioned.fill(
+          child: ExcludeSemantics(
+            child: GestureDetector(
+              onTap: cover.simklId == null
+                  ? null
+                  : () => openSimklTitle(
+                        context,
+                        simklId: cover.simklId!,
+                        title: cover.title,
+                        posterUrl: cover.posterUrl,
+                      ),
+              child: _Cover(url: cover.coverUrl, fade: theme.scaffoldBackgroundColor),
+            ),
+          ),
+        ),
+        header,
+      ],
+    );
+  }
+}
+
+/// A picture fading to [fade] at the bottom (alpha gradient over the picture).
+class _Cover extends StatelessWidget {
+  final String url;
+  final Color fade;
+
+  const _Cover({required this.url, required this.fade});
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        AppImage(url: url, width: 600, height: 240, fit: BoxFit.cover),
+        DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [fade.withValues(alpha: 0.55), fade.withValues(alpha: 0.85), fade],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _SectionTitle extends StatelessWidget {
+  final String text;
+
+  const _SectionTitle(this.text);
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+        child: Semantics(header: true, child: Text(text, style: Theme.of(context).textTheme.titleMedium)),
+      );
+}
+
+class _TopRatedRow extends StatelessWidget {
+  final List<ListEntryView> entries;
+
+  const _TopRatedRow({required this.entries});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return SizedBox(
+      height: 190,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        itemCount: entries.length,
+        itemBuilder: (context, i) {
+          final e = entries[i];
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(8),
+              onTap: () => openSimklTitle(context, simklId: e.id, title: e.title, posterUrl: e.imageUrl),
+              child: SizedBox(
+                width: 100,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    AppImage(
+                      url: e.imageUrl,
+                      width: 100,
+                      height: 142,
+                      borderRadius: BorderRadius.circular(8),
+                      placeholderColor: theme.colorScheme.surfaceContainerHighest,
+                    ),
+                    const SizedBox(height: 4),
+                    Text('★ ${e.score}  ${e.title}', maxLines: 2, overflow: TextOverflow.ellipsis, style: theme.textTheme.labelMedium),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _CustomListTile extends StatelessWidget {
+  final SimklCustomList list;
+
+  const _CustomListTile({required this.list});
+
+  @override
+  Widget build(BuildContext context) => ListTile(
+        leading: const Icon(Icons.list_alt_rounded),
+        title: Text(list.name, maxLines: 1, overflow: TextOverflow.ellipsis),
+        trailing: list.count > 0 ? Text('${list.count}') : null,
+        onTap: () => showModalBottomSheet<void>(
+          context: context,
+          isScrollControlled: true,
+          showDragHandle: true,
+          builder: (_) => _ListItemsSheet(list: list),
+        ),
+      );
+}
+
+class _ListItemsSheet extends StatelessWidget {
+  final SimklCustomList list;
+
+  const _ListItemsSheet({required this.list});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return SizedBox(
+      height: MediaQuery.sizeOf(context).height * 0.7,
+      child: FutureBuilder<List<SimklMedia>>(
+        future: SimklStatsService.instance.listItems(list.id),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState != ConnectionState.done) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          final items = snapshot.data ?? const <SimklMedia>[];
+          if (snapshot.hasError || items.isEmpty) {
+            return Center(child: Icon(Icons.inbox_outlined, color: theme.colorScheme.onSurfaceVariant));
+          }
+          return ListView.builder(
+            itemCount: items.length,
+            itemBuilder: (context, i) => ListTile(
+              leading: AppImage(
+                url: items[i].posterUrl,
+                width: 40,
+                height: 56,
+                borderRadius: BorderRadius.circular(6),
+                placeholderColor: theme.colorScheme.surfaceContainerHighest,
+              ),
+              title: Text(items[i].title, maxLines: 2, overflow: TextOverflow.ellipsis),
+              onTap: () => openSimklMedia(context, items[i]),
+            ),
+          );
+        },
       ),
     );
   }
@@ -376,8 +626,7 @@ class _RecentTile extends StatelessWidget {
       title: Text(entry.title, maxLines: 2, overflow: TextOverflow.ellipsis),
       subtitle: Text(subtitle),
       onTap: () {
-        final mal = entry.malId;
-        if (mal != null) AppRoutes.openContent(context, id: mal, category: 'anime');
+        openSimklTitle(context, simklId: entry.id, title: entry.title, posterUrl: entry.imageUrl);
       },
     );
   }

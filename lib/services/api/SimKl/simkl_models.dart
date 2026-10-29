@@ -43,6 +43,8 @@ abstract final class SimklImages {
 
 int? _int(Object? v) => v is num ? v.toInt() : (v is String ? int.tryParse(v) : null);
 double? _double(Object? v) => v is num ? v.toDouble() : (v is String ? double.tryParse(v) : null);
+double? _percent(Object? v) =>
+    v is num ? v.toDouble() : (v is String ? double.tryParse(v.replaceAll('%', '').replaceAll(',', '.').trim()) : null);
 String? _text(Object? v) => v is String && v.trim().isNotEmpty ? v.trim() : null;
 
 /// One title of a Simkl discover or search answer (trending, premieres, airing, search).
@@ -61,6 +63,12 @@ class SimklMedia {
   final String? animeType;
   final List<String> genres;
 
+  /// Feed answers (trending, best): users who watched the title, the share who dropped it
+  /// (percent) and Simkl's rank, the way DailyAL cards show members and rank.
+  final int? watchers;
+  final double? dropRate;
+  final int? rank;
+
   /// Airing answers: the episode number and its air time.
   final int? episode;
   final DateTime? airDate;
@@ -76,6 +84,9 @@ class SimklMedia {
     this.overview,
     this.animeType,
     this.genres = const [],
+    this.watchers,
+    this.dropRate,
+    this.rank,
     this.episode,
     this.airDate,
   });
@@ -115,6 +126,9 @@ class SimklMedia {
       overview: _text(m['overview']),
       animeType: _text(m['anime_type']),
       genres: genres is List ? [for (final g in genres) if (g is String && g.isNotEmpty) g] : const [],
+      watchers: _int(m['watched']) ?? _int(m['watchers']),
+      dropRate: _percent(m['drop_rate'] ?? m['droprate']),
+      rank: _int(m['rank']),
       episode: episode is Map ? _int(episode['episode']) : _int(episode),
       airDate: DateTime.tryParse(_text(m['date']) ?? '')?.toUtc(),
     );
