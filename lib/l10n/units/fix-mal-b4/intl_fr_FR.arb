@@ -1,0 +1,6 @@
+{
+  "@@locale": "fr_FR",
+  "FixMalB4_Episode_Replies": "{count, plural, =1{1 réponse} other{{count} réponses}}",
+  "FixMalB4_Time_Zone": "Fuseau horaire : {zone}",
+  "FixMalB4_Send_Unconfirmed": "MyAnimeList n’a pas confirmé l’envoi du message. Vérifiez vos messages envoyés avant de le renvoyer."
+}

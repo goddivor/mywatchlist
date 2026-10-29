@@ -1,0 +1,20 @@
+{
+  "@@locale": "en",
+  "FixMalB4_Episode_Replies": "{count, plural, =1{1 reply} other{{count} replies}}",
+  "@FixMalB4_Episode_Replies": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "FixMalB4_Time_Zone": "Time zone: {zone}",
+  "@FixMalB4_Time_Zone": {
+    "placeholders": {
+      "zone": {
+        "type": "String"
+      }
+    }
+  },
+  "FixMalB4_Send_Unconfirmed": "MyAnimeList did not confirm the message. Check your sent messages before sending it again."
+}
