@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mywatchlist/constants/constants.dart' show AccountType;
 import 'package:mywatchlist/pages/Anilist/anilist_activity_page.dart';
 import 'package:mywatchlist/pages/Anilist/anilist_character_page.dart';
+import 'package:mywatchlist/pages/Anilist/anilist_media_page.dart';
 import 'package:mywatchlist/pages/Anilist/anilist_review_page.dart';
 import 'package:mywatchlist/pages/Anilist/anilist_staff_page.dart';
 import 'package:mywatchlist/pages/Anilist/anilist_studio_page.dart';
@@ -86,13 +87,19 @@ AnilistLink? parseAnilistLink(String url) {
   return null;
 }
 
-/// The one place every social screen opens an AniList title ([category] `anime` | `manga`,
-/// AniList [id]). Owner rule (2026-10-29): an AniList title never opens the MAL page. Until
-/// `anilist-media-page` ships the native title page (`openAnilistTitle`), it opens the title
-/// on anilist.co; switch this body to that page then, nothing else changes.
-Future<void> openAnilistTitle(BuildContext context, {required String category, required int id}) =>
-    openLink(context, 'https://anilist.co/${category == 'manga' ? 'manga' : 'anime'}/$id',
-        confirm: false);
+/// The one place every AniList entry point opens a title ([category] `anime` | `manga`,
+/// AniList [id]): list rows, home and explore cards, search results, people pages, social
+/// screens, notifications. Owner rule (2026-10-29): it is always the native AniList title
+/// page, never the MyAnimeList one, whether AniList maps the title to MyAnimeList or not.
+/// [title] and [coverUrl] show while the page loads.
+Future<void> openAnilistTitle(
+  BuildContext context, {
+  required String category,
+  required int id,
+  String? title,
+  String? coverUrl,
+}) =>
+    openAnilistMediaPage(context, id: id, title: title, coverUrl: coverUrl);
 
 /// Opens an AniList profile inside the app.
 Future<void> openAnilistUser(BuildContext context, String? name) async {

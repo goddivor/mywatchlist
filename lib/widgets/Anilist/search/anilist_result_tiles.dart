@@ -3,14 +3,15 @@ import 'package:intl/intl.dart';
 import 'package:mywatchlist/constants/constants.dart' show AccountType;
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/services/api/Anilist/anilist_discover_service.dart';
-import 'package:mywatchlist/services/tracker_sync_service.dart';
+import 'package:mywatchlist/services/api/Anilist/anilist_media_detail.dart';
+import 'package:mywatchlist/widgets/Anilist/list/anilist_entry_editor.dart';
+import 'package:mywatchlist/widgets/Anilist/media/anilist_media_entry.dart';
 import 'package:mywatchlist/widgets/Anilist/search/anilist_labels.dart';
+import 'package:mywatchlist/widgets/Anilist/social/anilist_social_ui.dart' show anilistErrorText;
 import 'package:mywatchlist/widgets/Anilist/search/anilist_search_links.dart';
 import 'package:mywatchlist/widgets/common/app_colors.dart';
 import 'package:mywatchlist/widgets/common/app_image.dart';
 import 'package:mywatchlist/widgets/user/sync/sync_entry.dart';
-import 'package:mywatchlist/widgets/user/sync/tracker_clients.dart';
-import 'package:mywatchlist/widgets/user/sync/tracker_entry_editor.dart';
 
 /// The colour of an AniList score (0-100), anilist.co's scale: under 50 red, under 75 amber,
 /// else green.
@@ -100,25 +101,48 @@ class AnilistStatusBadge extends StatelessWidget {
   }
 }
 
-/// Opens the tracker editor on [item]'s entry (or a new one) and answers the title with the
-/// saved entry, null when nothing changed. The one AniList edit path of the search, so
-/// `anilist-list-fidelity`'s own editor replaces it here.
-Future<AnilistSearchMedia?> editAnilistSearchEntry(BuildContext context, AnilistSearchMedia item,
-    {TrackerSyncService? service}) async {
-  final anime = item.media.isAnime;
-  final initial = item.entry == null ? null : AnilistEntryClient.parseEntry(item.entry!.json, anime);
-  final saved = await showTrackerEntryEditor(
-    context,
-    service: service ?? TrackerSyncService.instance,
-    tracker: AccountType.anilist,
-    trackerId: '${item.id}',
-    malId: item.media.malId ?? 0,
-    category: item.media.category,
-    initial: initial,
-  );
-  if (saved == null) return null;
-  if (saved.isRemoved) return item.withEntry(null);
-  return item.withEntry(anilistEntryOf(saved, fallbackId: item.entry?.id ?? 0));
+/// Opens AniList's own editor (`showAnilistEntryEditor`, every field of
+/// `SaveMediaListEntry`) on [item]: the whole entry and the account's list settings are read
+/// first (one request), then the sheet opens. Answers the title with the saved entry, null
+/// when nothing changed or the read failed (its message in a snackbar).
+Future<AnilistSearchMedia?> editAnilistSearchEntry(
+  BuildContext context,
+  AnilistSearchMedia item, {
+  AnilistMediaDetailService? service,
+  Future<AnilistEditResult?> Function(BuildContext context, AnilistEditTarget target)? editor,
+}) async {
+  final messenger = ScaffoldMessenger.maybeOf(context);
+  final AnilistEditTarget target;
+  try {
+    target = await (service ?? AnilistMediaDetailService.instance).editTarget(item.id);
+  } catch (e) {
+    messenger
+      ?..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(anilistErrorText(e))));
+    return null;
+  }
+  if (!context.mounted) return null;
+  final result = await editAnilistTitleEntry(context, target, editor: editor);
+  switch (result) {
+    case null:
+      return null;
+    case AnilistEditRemoved():
+      return item.withEntry(null);
+    case AnilistEditSaved(detail: final d):
+      final status = d.status;
+      if (status == null) return item.withEntry(null);
+      return item.withEntry(AnilistListEntry(id: d.entryId, status: status, json: {
+        'id': d.entryId,
+        'status': status,
+        'score': d.scoreRaw / 10,
+        'progress': d.progress,
+        'progressVolumes': d.progressVolumes,
+        'repeat': d.repeat,
+        'notes': d.notes,
+        'startedAt': SyncDates.toFuzzy(d.startedAt),
+        'completedAt': SyncDates.toFuzzy(d.completedAt),
+      }));
+  }
 }
 
 /// [saved] as the entry a result row keeps (and the editor reads next time).
@@ -172,7 +196,8 @@ class AnilistResultRow extends StatelessWidget {
     final members = m.popularity ?? 0;
     final typeLine = anilistTypeLine(item);
     return InkWell(
-      onTap: () => openAnilistSearchTitle(context, category: m.category, id: m.id),
+      onTap: () => openAnilistSearchTitle(context,
+          category: m.category, id: m.id, title: m.title, coverUrl: m.coverUrl),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         child: SizedBox(
@@ -267,7 +292,8 @@ class AnilistResultCard extends StatelessWidget {
     final m = item.media;
     return InkWell(
       borderRadius: BorderRadius.circular(12),
-      onTap: () => openAnilistSearchTitle(context, category: m.category, id: m.id),
+      onTap: () => openAnilistSearchTitle(context,
+          category: m.category, id: m.id, title: m.title, coverUrl: m.coverUrl),
       child: Padding(
         padding: const EdgeInsets.all(4),
         child: Column(

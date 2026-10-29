@@ -226,7 +226,7 @@ class AnilistOverview extends StatelessWidget {
       ],
       const SizedBox(height: 96),
     ];
-    return ListView(padding: EdgeInsets.zero, children: children);
+    return SliverList.list(children: children);
   }
 
   Widget _all(BuildContext context, AnilistMediaTab tab) => TextButton(

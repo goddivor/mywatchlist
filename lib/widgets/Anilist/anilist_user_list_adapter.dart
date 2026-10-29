@@ -51,11 +51,12 @@ class AnilistUserListAdapter extends UserListAdapter {
         _clock = clock ?? DateTime.now,
         _editor = editor,
         _anilistEditor = anilistEditor,
-        _opener = opener ?? openAnilistTitle;
+        _opener = opener;
 
-  /// Opens a row's title (tests replace it). Owner rule: an AniList row opens the AniList
-  /// title ([openAnilistTitle]), never the MyAnimeList page, even when AniList knows its MAL id.
-  final Future<void> Function(BuildContext context, {required String category, required int id})
+  /// Opens a row's title (tests replace it). Owner rule: an AniList row opens the native
+  /// AniList title page ([openAnilistTitle]), never the MyAnimeList page, even when AniList
+  /// knows its MAL id.
+  final Future<void> Function(BuildContext context, {required String category, required int id})?
       _opener;
 
   /// Test hook in the shared editor's terms (status, score, progress, dates).
@@ -179,8 +180,15 @@ class AnilistUserListAdapter extends UserListAdapter {
   }
 
   @override
-  void open(BuildContext context, ListEntryView entry) =>
-      _opener(context, category: entry.category, id: entry.id);
+  void open(BuildContext context, ListEntryView entry) {
+    final opener = _opener;
+    if (opener != null) {
+      opener(context, category: entry.category, id: entry.id);
+    } else {
+      openAnilistTitle(context,
+          category: entry.category, id: entry.id, title: entry.title, coverUrl: entry.imageUrl);
+    }
+  }
 
   static SyncEntry _syncEntryOf(ListEntryView e, AnilistListEntry? d) => SyncEntry(
         status: e.status?.malValue(isAnime: e.isAnime),

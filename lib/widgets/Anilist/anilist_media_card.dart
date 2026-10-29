@@ -2,23 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/services/api/Anilist/anilist_media.dart';
-import 'package:mywatchlist/utils/app_routes.dart';
-import 'package:mywatchlist/utils/web_launcher.dart';
-import 'package:mywatchlist/widgets/common/app_colors.dart';
+import 'package:mywatchlist/widgets/Anilist/social/anilist_links.dart' show openAnilistTitle;
+import 'package:mywatchlist/widgets/Anilist/search/anilist_result_tiles.dart' show anilistScoreRole;
 import 'package:mywatchlist/widgets/common/app_image.dart';
 
-/// Opens [media]: the detail screen when AniList links it to MyAnimeList (the detail screen
-/// reads MAL), its anilist.co page otherwise.
+/// Opens [media] on the native AniList title page ([openAnilistTitle]), mapped to
+/// MyAnimeList or not.
 void openAnilistMedia(BuildContext context, AnilistMedia media) {
-  final malId = media.malId;
-  if (malId != null) {
-    AppRoutes.openContent(context, id: malId, category: media.category);
-  } else {
-    openLink(context, media.url);
-  }
+  openAnilistTitle(context,
+      category: media.category, id: media.id, title: media.title, coverUrl: media.coverUrl);
 }
 
-/// A cover with its title, the AniList score on the cover and, for an airing anime, the
+/// A cover with its title, the AniList score on the cover (AniList's own `82%`, on
+/// anilist.co's red / amber / green scale) and, for an airing anime, the
 /// next episode. Fixed size so a row never measures its cards.
 class AnilistMediaCard extends StatelessWidget {
   final AnilistMedia media;
@@ -36,7 +32,6 @@ class AnilistMediaCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
-    final score = AppColors.of(context).score;
     final next = media.nextEpisode;
     return SizedBox(
       width: width,
@@ -68,10 +63,11 @@ class AnilistMediaCard extends StatelessWidget {
                         top: 6,
                         left: 6,
                         child: _Badge(
-                          background: score.container,
-                          foreground: score.onContainer,
-                          icon: Icons.star_rounded,
-                          label: NumberFormat('0.0').format(media.score),
+                          background: anilistScoreRole(context, (media.score! * 10).round()).container,
+                          foreground: anilistScoreRole(context, (media.score! * 10).round()).onContainer,
+                          icon: Icons.sentiment_satisfied_alt_rounded,
+                          label: NumberFormat.percentPattern(Intl.getCurrentLocale())
+                              .format(media.score! / 10),
                         ),
                       ),
                     if (next != null)
