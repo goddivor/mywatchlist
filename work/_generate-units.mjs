@@ -847,7 +847,7 @@ const UNITS = [
   {
     id: "ux-theme", title: "Theme settings without captions or preview card", kind: "unit", priority: "P1", group: "settings", model: "opus", ui: true,
     needs: [],
-    owns: ["lib/screens/settings/theme_settings.dart", "lib/l10n/units/ux-theme/**", "test/units/ux-theme/**"],
+    owns: ["lib/screens/settings/theme_settings.dart", "lib/l10n/units/ux-theme/**", "test/units/ux-theme/**", "test/units/theme-seasons/theme_seasons_test.dart"],
     goal: ["UI comparison report docs/ui-check-report-2026-10-28.md: group J item 18. Read those items and the matching screen sections (screenshots under the checker scratchpad shots/).", "Owner rules: replicate DailyAL's UI (dailyal-108 file:line given in the report) where MWL is weaker; remove explanatory captions/helper texts DailyAL lacks; regular-weight titles and tonal controls like DailyAL; theme tokens; English + French."],
     dod: ["Checker: side by side with DailyAL on the same theme."],
   },

@@ -9,6 +9,7 @@
 - `lib/screens/settings/theme_settings.dart`
 - `lib/l10n/units/ux-theme/**`
 - `test/units/ux-theme/**`
+- `test/units/theme-seasons/theme_seasons_test.dart`
 - `test/units/ux-theme/**`
 
 Plus `PROJECT-STATE.md` (rewrite in place, within its cap) and `docs/DECISIONS.md` (append one line per decision). Anything else you need is a FINDING to report, never an edit.
