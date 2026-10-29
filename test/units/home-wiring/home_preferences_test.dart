@@ -74,11 +74,11 @@ void main() {
           type: SectionType.seasonNow, season: SeasonType.FALL, year: 2026);
 
       await LanguageBloc.apply('en');
-      expect(news.getDisplayTitle(), 'Anime News');
+      expect(news.getDisplayTitle(), 'News');
       expect(season.getDisplayTitle(), 'Fall 2026 Anime');
 
       await LanguageBloc.apply('fr_FR');
-      expect(news.getDisplayTitle(), 'Actualités anime');
+      expect(news.getDisplayTitle(), 'Actualités');
       expect(season.getDisplayTitle(), 'Saison Automne 2026');
       await LanguageBloc.apply('en');
     });
