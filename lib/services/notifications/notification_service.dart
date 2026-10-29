@@ -123,7 +123,7 @@ class NotificationService {
   final bool pollMalHub;
 
   /// Opens a tapped MAL hub notification (`malhub:` payloads, see [MalHubPayload]); the
-  /// other payloads go to [onOpen].
+  /// other payloads, private messages included, go to [onOpen].
   final void Function(String payload) _openHubPayload;
 
   /// Last scheduling run (shared pref, milliseconds since epoch).
@@ -199,9 +199,14 @@ class NotificationService {
     return payload;
   }
 
+  /// A MAL hub payload opened by [_openHubPayload]; a private message's payload (thread,
+  /// inbox) is an app route instead and goes to [onOpen] (`AppRoutes.openFromNotification`).
+  static bool _isHubOnly(String payload) =>
+      MalHubPayload.isHub(payload) && MalHubPayload.messageLink(payload) == null;
+
   void _handleTap(String? payload) {
     if (payload == null || payload.isEmpty) return;
-    if (MalHubPayload.isHub(payload)) {
+    if (_isHubOnly(payload)) {
       if (onOpen == null) {
         _pendingTap = payload;
       } else {
@@ -223,7 +228,7 @@ class NotificationService {
     final open = onOpen;
     if (payload == null || open == null) return;
     _pendingTap = null;
-    if (MalHubPayload.isHub(payload)) {
+    if (_isHubOnly(payload)) {
       _openHubPayload(payload);
       return;
     }

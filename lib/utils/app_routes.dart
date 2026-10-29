@@ -9,6 +9,8 @@ import 'package:mywatchlist/screens/MAL/contentdetailedscreen.dart';
 import 'package:mywatchlist/screens/bookmarks_screen.dart';
 import 'package:mywatchlist/screens/calendar/calendar_screen.dart';
 import 'package:mywatchlist/screens/home_screen.dart';
+import 'package:mywatchlist/screens/mal_web/message_thread_screen.dart';
+import 'package:mywatchlist/screens/mal_web/messages_screen.dart';
 import 'package:mywatchlist/screens/manage_accounts_page.dart';
 import 'package:mywatchlist/screens/search/general_search_screen.dart';
 import 'package:mywatchlist/screens/search/search_filters.dart';
@@ -27,9 +29,11 @@ import 'package:mywatchlist/screens/settings/storage_settings.dart';
 import 'package:mywatchlist/screens/settings/theme_settings.dart';
 import 'package:mywatchlist/screens/settings/user_prefs_settings.dart';
 import 'package:mywatchlist/screens/user_profile/user_profile_screen.dart';
+import 'package:mywatchlist/services/api/MAL/web/mal_messages_api.dart' show MalMessage;
 import 'package:mywatchlist/services/auth/anilist_auth_v2.dart';
 import 'package:mywatchlist/services/auth/mal_auth_v2.dart';
 import 'package:mywatchlist/services/auth/simkl_auth_v2.dart';
+import 'package:mywatchlist/services/notifications/mal_hub_poller.dart' show MalHubPayload;
 import 'package:mywatchlist/user/base_user.dart' show AuthStatus;
 import 'package:mywatchlist/user/user_anilist_v2.dart';
 import 'package:mywatchlist/user/user_kitsu_v2.dart';
@@ -185,6 +189,29 @@ abstract final class AppRoutes {
         ContentDetailedScreen(node: null, id: id, category: category),
       );
 
+  /// Opens the MyAnimeList private messages on the inbox, or on the sent box with [sent].
+  static Future<void> openMalMessages(BuildContext context, {bool sent = false}) =>
+      push<void>(context, MalMessagesScreen(initialTab: sent ? 1 : 0));
+
+  /// Opens the thread of MyAnimeList message [id] (a message of the sent box with [sent]).
+  /// Only the id is known (a notification, a link): subject and names come from the page.
+  static Future<void> openMalMessage(BuildContext context,
+          {required int id, bool sent = false, int? threadId}) =>
+      push<void>(
+        context,
+        MalMessageThreadScreen(
+          message: MalMessage(
+            id: id,
+            counterpart: '',
+            subject: '',
+            // An inbox message reached from its notification is unread: reading it lowers the badge.
+            isRead: sent,
+            isSent: sent,
+            threadId: threadId,
+          ),
+        ),
+      );
+
   /// Opens the login screen (tracker picker), replacing nothing.
   static Future<void> openLogin(BuildContext context) =>
       Navigator.of(context).pushNamed<void>('/login');
@@ -236,6 +263,10 @@ abstract final class AppRoutes {
         await openCalendar(context);
       case NotificationRouteKind.bookmarks:
         await openBookmarks(context);
+      case NotificationRouteKind.malMessage:
+        await openMalMessage(context, id: route.id!, sent: route.sent, threadId: route.threadId);
+      case NotificationRouteKind.malMessages:
+        await openMalMessages(context, sent: route.sent);
     }
   }
 
@@ -256,18 +287,28 @@ abstract final class AppRoutes {
   }
 }
 
-enum NotificationRouteKind { content, calendar, bookmarks }
+enum NotificationRouteKind { content, calendar, bookmarks, malMessage, malMessages }
 
 /// Destination encoded in a local notification payload.
 ///
 /// Format (plain string, what `flutter_local_notifications` carries): `anime:<malId>`,
-/// `manga:<malId>`, `calendar` or `bookmarks`. The notifications unit writes these.
+/// `manga:<malId>`, `calendar` or `bookmarks`. The notifications unit writes these. A MAL hub
+/// payload pointing to `mymessages.php` (see [MalHubPayload.messageLink]) is a private
+/// message thread (`go=read&id=`) or a message box (inbox, `go=sent`).
 class NotificationRoute {
   final NotificationRouteKind kind;
   final String? category;
+
+  /// The MAL id of the content, or of the message.
   final int? id;
 
-  const NotificationRoute._(this.kind, {this.category, this.id});
+  /// A message (or box) of the sent box.
+  final bool sent;
+
+  /// The message's thread, when the payload has it.
+  final int? threadId;
+
+  const NotificationRoute._(this.kind, {this.category, this.id, this.sent = false, this.threadId});
 
   /// Payload for the detail screen of [category] (`anime` | `manga`) [id].
   static String contentPayload(String category, int id) => '$category:$id';
@@ -281,6 +322,14 @@ class NotificationRoute {
     }
     if (value == 'bookmarks') {
       return const NotificationRoute._(NotificationRouteKind.bookmarks);
+    }
+    if (MalHubPayload.isHub(value)) {
+      final link = MalHubPayload.messageLink(value);
+      if (link == null) return null;
+      return link.isThread
+          ? NotificationRoute._(NotificationRouteKind.malMessage,
+              id: link.id, sent: link.sent, threadId: link.threadId)
+          : NotificationRoute._(NotificationRouteKind.malMessages, sent: link.sent);
     }
     final parts = value.split(':');
     if (parts.length != 2) return null;
