@@ -6,6 +6,7 @@
 - `anilist-client-limits` (anilist-client-limits)
 
 ## Owns (may create or edit ONLY these)
+- `lib/widgets/Anilist/social/anilist_links.dart`
 - `lib/pages/Anilist/anilist_character_page.dart`
 - `lib/pages/Anilist/anilist_staff_page.dart`
 - `lib/pages/Anilist/anilist_studio_page.dart`
@@ -20,6 +21,7 @@
 Plus `PROJECT-STATE.md` (rewrite in place, within its cap) and `docs/DECISIONS.md` (append one line per decision). Anything else you need is a FINDING to report, never an edit.
 
 ## Goal
+- From anilist-social (#291): switch character, staff and studio links in openAnilistLink (lib/widgets/Anilist/social/anilist_links.dart) to your native pages (owns it).
 - Audit docs/anilist-report-2026-10-28.md, unit `anilist-people-pages`: B1-B7: character, staff (voice / staff roles, on-my-list filter), studio pages with favourite toggle; birthday and top-characters loaders for the home Read the matching report items (queries/endpoints, samples, file:line) and implement them.
 - Owner rules: every tracker gets everything its API allows (never capped at MAL); Each tracker is its own app (owner, 2026-10-29): design this tracker's screens from its own data and from the popular third-party apps built on it (docs/tracker-ui-references.md), in their own files; DailyAL's UI is the reference for MAL screens only. Every item of this tracker (list rows, home cards, search results, related, recommendations) opens this tracker's native page, never the MAL page, mapped or not; no explanatory captions; theme tokens; English + French. Never write to the owner's accounts in tests (fakes).
 

@@ -2944,6 +2944,7 @@
         "anilist-client-limits"
       ],
       "owns": [
+        "lib/widgets/Anilist/social/anilist_links.dart",
         "lib/pages/Anilist/anilist_character_page.dart",
         "lib/pages/Anilist/anilist_staff_page.dart",
         "lib/pages/Anilist/anilist_studio_page.dart",
@@ -3100,6 +3101,7 @@
         "anilist-social"
       ],
       "owns": [
+        "lib/widgets/Anilist/social/anilist_links.dart",
         "lib/widgets/Anilist/anilist_user_list_adapter.dart",
         "lib/pages/Anilist/anilist_media_page.dart",
         "lib/services/api/Anilist/anilist_media_detail.dart",
