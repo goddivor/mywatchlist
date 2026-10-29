@@ -6,6 +6,10 @@
 - `anilist-client-limits` (anilist-client-limits)
 
 ## Owns (may create or edit ONLY these)
+- `lib/services/api/Anilist/anilist_user.dart`
+- `lib/services/api/Anilist/anilist_api.dart`
+- `lib/widgets/user/sync/tracker_clients.dart`
+- `lib/services/tracker_sync_service.dart`
 - `lib/services/api/Anilist/anilist_list_service.dart`
 - `lib/services/api/Anilist/anilist_list_write.dart`
 - `lib/widgets/Anilist/anilist_user_list_adapter.dart`
@@ -20,6 +24,7 @@
 Plus `PROJECT-STATE.md` (rewrite in place, within its cap) and `docs/DECISIONS.md` (append one line per decision). Anything else you need is a FINDING to report, never an edit.
 
 ## Goal
+- Findings from anilist-client-limits (#270): send SaveMediaListEntry / DeleteMediaListEntry in anilist_user.dart through AnilistGraphql.mutate() (not query()); route the AniList calls of tracker_clients.dart (sync writes) and anilist_api.dart through AnilistGraphql so they share the rate limiter; read the score with AnilistMedia.scoreOf / weightedScore instead of averageScore in tracker_sync_service.dart and anilist_api.dart.
 - Audit docs/anilist-report-2026-10-28.md, unit `anilist-list-fidelity`: Findings 3-5 and H1-H12: score in the user's format, +1 keeps the score, Rewatching, notes / repeat / priority / private / hidden / custom lists / advanced scores read, custom list tabs, section order, AniList sorts, bulk edit; an AniList entry editor (`showAnilistEntryEditor`) with its own `SaveMediaListEntry` (all 16 fields) replacing the shared tracker editor for AniList rows; `open` calls `openAnilistMedia` Read the matching report items (queries/endpoints, samples, file:line) and implement them.
 - Owner rules: every tracker gets everything its API allows (never capped at MAL); replicate DailyAL's UI conventions where MWL would be weaker; no explanatory captions; theme tokens; English + French. Never write to the owner's accounts in tests (fakes).
 

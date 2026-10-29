@@ -2896,6 +2896,10 @@
         "anilist-client-limits"
       ],
       "owns": [
+        "lib/services/api/Anilist/anilist_user.dart",
+        "lib/services/api/Anilist/anilist_api.dart",
+        "lib/widgets/user/sync/tracker_clients.dart",
+        "lib/services/tracker_sync_service.dart",
         "lib/services/api/Anilist/anilist_list_service.dart",
         "lib/services/api/Anilist/anilist_list_write.dart",
         "lib/widgets/Anilist/anilist_user_list_adapter.dart",
