@@ -175,6 +175,7 @@ class _CardLayoutEditorState extends State<CardLayoutEditor> {
         meanScore: 8.42,
         members: 512000,
         total: 24,
+        episodeSeconds: 24 * 60,
         genres: const ['Action', 'Fantasy'],
         releaseStart: DateTime.now().subtract(const Duration(days: 40)).toIso8601String().substring(0, 10),
         broadcast: const BroadcastSlot(DateTime.saturday, 23 * 60),

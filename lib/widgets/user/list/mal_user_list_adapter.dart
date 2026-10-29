@@ -79,12 +79,19 @@ class MalUserListAdapter extends UserListAdapter {
   static const String nodeFields = 'id,title,main_picture,alternative_titles,mean,'
       'num_list_users,num_scoring_users,popularity,status,media_type,genres,'
       'start_date,end_date';
+
+  /// Anime only: length of an episode (time left per entry and tab), first season, age
+  /// rating, source material and studios (filters), rewatch count (badge).
   static const String animeFields = '$nodeFields,num_episodes,broadcast,'
+      'average_episode_duration,start_season,rating,source,studios,'
       'list_status{status,score,num_episodes_watched,is_rewatching,updated_at,'
-      'priority,start_date,finish_date,tags}';
+      'priority,start_date,finish_date,tags,num_times_rewatched}';
+
+  /// Manga only: authors (filter), reread count.
   static const String mangaFields = '$nodeFields,num_chapters,num_volumes,'
+      'authors{first_name,last_name},'
       'list_status{status,score,num_chapters_read,num_volumes_read,is_rereading,'
-      'updated_at,priority,start_date,finish_date,tags}';
+      'updated_at,priority,start_date,finish_date,tags,num_times_reread}';
 
   @override
   AccountType get tracker => AccountType.myanimelist;
@@ -319,6 +326,7 @@ class MalUserListAdapter extends UserListAdapter {
         startDate: e.listStartDate,
         finishDate: e.listFinishDate,
         tags: e.tags,
+        timesRepeated: e.timesRewatched,
       );
 
   /// [view] with the list fields of [entry] (saved just now, at [now]).
@@ -336,6 +344,7 @@ class MalUserListAdapter extends UserListAdapter {
         listStartDate: entry.startDate,
         listFinishDate: entry.finishDate,
         tags: entry.tags,
+        timesRewatched: entry.timesRepeated,
       );
 }
 
@@ -395,6 +404,14 @@ ListEntryView _entryFromMal(Map node, Map ls,
       : const <String>[];
   final broadcast = node['broadcast'];
   final tags = ls['tags'];
+  final season = node['start_season'];
+  final seasonYear = season is Map ? toIntOrNull(season['year']) : null;
+  List<String> names(Object? list, String Function(Map) name) => list is List
+      ? [
+          for (final x in list)
+            if (x is Map && name(x).isNotEmpty) name(x),
+        ]
+      : const <String>[];
   return ListEntryView(
     id: toInt(node['id']),
     malId: toInt(node['id']),
@@ -432,5 +449,23 @@ ListEntryView _entryFromMal(Map node, Map ls,
     tags: tags is List
         ? [for (final t in tags) if (t is String && t.trim().isNotEmpty) t]
         : const [],
+    timesRewatched: toInt(isAnime ? ls['num_times_rewatched'] : ls['num_times_reread']),
+    episodeSeconds: isAnime ? toInt(node['average_episode_duration']) : 0,
+    startSeason: season is Map && seasonYear != null ? text(season['season']) : null,
+    startSeasonYear: seasonYear,
+    ageRating: isAnime ? text(node['rating']) : null,
+    source: isAnime ? text(node['source']) : null,
+    studios: isAnime ? names(node['studios'], (m) => text(m['name']) ?? '') : const [],
+    authors: isAnime
+        ? const []
+        : names(
+            node['authors'],
+            (m) {
+              final person = m['node'];
+              if (person is! Map) return '';
+              return [text(person['first_name']), text(person['last_name'])]
+                  .whereType<String>()
+                  .join(' ');
+            }),
   );
 }
