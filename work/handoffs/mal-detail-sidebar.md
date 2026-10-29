@@ -27,6 +27,7 @@
 Plus `PROJECT-STATE.md` (rewrite in place, within its cap) and `docs/DECISIONS.md` (append one line per decision). Anything else you need is a FINDING to report, never an edit.
 
 ## Goal
+- (mal-episodes) show the next episode to watch ("Next: ep N", from the episode list and the user's progress) in the detail header (header_meta.dart).
 - Findings: (mal-episodes) add the Episodes section to the default anime detail tabs in content_preferences.dart, right after Related, and update detail_sections_test.dart; existing users who never customised the order also get it. (small-fixes) remove the dead hint computation passed to FieldCaption in contenteditwidget.dart.
 - Audit docs/mal-api-report-2026-10-28.md, unit `mal-detail-sidebar`: W2, W7, A3, A8 Read the matching report items (queries/endpoints, samples, file:line) and implement them.
 - Owner rules: every tracker gets everything its API allows (never capped at MAL); replicate DailyAL's UI conventions where MWL would be weaker; no explanatory captions; theme tokens; English + French. Never write to the owner's accounts in tests (fakes).
