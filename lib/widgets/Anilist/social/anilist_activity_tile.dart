@@ -133,6 +133,8 @@ class AnilistActivityTile extends StatelessWidget {
           ScaffoldMessenger.maybeOf(context)
               ?.showSnackBar(SnackBar(content: Text(s.Als_Link_Copied)));
         }
+      case _ActivityAction.open:
+        await _open(context);
       case _ActivityAction.browser:
         await openLink(context, activity.url, confirm: false);
     }
@@ -162,6 +164,8 @@ class AnilistActivityTile extends StatelessWidget {
         if (_mine && a.kind == AnilistActivityKind.text)
           PopupMenuItem(value: _ActivityAction.edit, child: Text(s.Edit)),
         if (_mine) PopupMenuItem(value: _ActivityAction.delete, child: Text(s.Delete)),
+        if (openable)
+          PopupMenuItem(value: _ActivityAction.open, child: Text(s.Apo_Open_Activity)),
         PopupMenuItem(value: _ActivityAction.copyLink, child: Text(s.Als_Copy_Link)),
         PopupMenuItem(value: _ActivityAction.browser, child: Text(s.Open_In_Browser)),
       ],
@@ -243,7 +247,7 @@ class AnilistActivityTile extends StatelessWidget {
   }
 }
 
-enum _ActivityAction { subscribe, pin, edit, delete, copyLink, browser }
+enum _ActivityAction { subscribe, pin, edit, delete, open, copyLink, browser }
 
 class _ListUpdate extends StatelessWidget {
   const _ListUpdate({required this.activity});
