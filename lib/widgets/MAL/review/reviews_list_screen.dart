@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mywatchlist/constants/constants.dart' show AccountType;
-import 'package:mywatchlist//generated/l10n.dart';
+import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/screens/MAL/detail/sections/section_states.dart';
 import 'package:mywatchlist/services/api/Jikan/jikan_anime_review.dart';
 import 'package:mywatchlist/services/api/MAL/web/review_write_api.dart';
