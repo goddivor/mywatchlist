@@ -15,7 +15,8 @@ import 'package:mywatchlist/services/api/MAL/models/forum/forum_models.dart';
 import 'package:mywatchlist/services/api/MAL/models/mal_user_search.dart';
 import 'package:mywatchlist/services/api/MAL/scrapper/anime_news_featured.dart';
 import 'package:mywatchlist/utils/app_routes.dart';
-import 'package:mywatchlist/widgets/MAL/home/animegridcard.dart' show userCountFormat, ratingFormat;
+import 'package:mywatchlist/widgets/MAL/home/animegridcard.dart'
+    show userCountFormat, ratingFormat, showContentEditSheet;
 import 'package:mywatchlist/widgets/common/app_colors.dart';
 import 'package:mywatchlist/widgets/common/app_image.dart';
 import 'package:mywatchlist/widgets/common/dub_icon.dart';
@@ -107,24 +108,31 @@ class SearchThumb extends StatelessWidget {
 /// How much an anime / manga list row shows.
 enum MediaTileSize { compact, comfortable, spacious }
 
-/// An anime or manga result row: cover, title, type and length, score and members (and status and
-/// synopsis in the spacious size).
+/// An anime or manga result row as DailyAL draws it: `#rank` and the score with its member count
+/// on top, the title (regular weight) under them, the type and length, and a pencil on the
+/// right that opens the edit sheet. The spacious size adds the status and the synopsis.
 class MediaTile extends StatelessWidget {
   final Anime item;
   final String category;
   final MediaTileSize size;
+
+  /// Position in the result list (0 based): the `#rank` shown. Without it the title's own MAL
+  /// rank is shown when there is one.
+  final int? index;
 
   const MediaTile({
     super.key,
     required this.item,
     required this.category,
     this.size = MediaTileSize.comfortable,
+    this.index,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final muted = theme.colorScheme.onSurfaceVariant;
+    final compact = size == MediaTileSize.compact;
     final (double w, double h) = switch (size) {
       MediaTileSize.compact => (40.0, 56.0),
       MediaTileSize.comfortable => (80.0, 112.0),
@@ -136,25 +144,30 @@ class MediaTile extends StatelessWidget {
       if (length != null) length,
       if (size == MediaTileSize.spacious && item.status != null) item.status!.replaceAll('_', ' '),
     ].join(' · ');
+    final rank = index != null ? index! + 1 : item.rank;
+    final editable = !compact && (category == SearchCategory.anime || category == SearchCategory.manga);
 
     final meta = Row(
       children: [
+        if (rank != null && rank > 0 && !compact) ...[
+          Text('#$rank', style: theme.textTheme.titleMedium),
+          const SizedBox(width: 8),
+        ],
         if (item.score > 0) ...[
           Icon(Icons.star_rounded, size: 16, color: AppColors.of(context).score.color),
           const SizedBox(width: 2),
-          Text(
-            ratingFormat.format(item.score),
-            style: theme.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w600),
-          ),
+          Text(ratingFormat.format(item.score), style: theme.textTheme.bodySmall),
         ],
-        if (item.score > 0 && item.members > 0) Text('  ·  ', style: theme.textTheme.bodySmall),
         if (item.members > 0)
           Flexible(
-            child: Text(
-              S.current.Srch_Members(userCountFormat.format(item.members)),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: theme.textTheme.bodySmall?.copyWith(color: muted),
+            child: Padding(
+              padding: const EdgeInsetsDirectional.only(start: 4),
+              child: Text(
+                '(${userCountFormat.format(item.members)})',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.labelSmall?.copyWith(color: muted),
+              ),
             ),
           ),
       ],
@@ -163,14 +176,14 @@ class MediaTile extends StatelessWidget {
     return InkWell(
       onTap: () => openMedia(context, item, category),
       child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 12, vertical: size == MediaTileSize.compact ? 4 : 6),
+        padding: EdgeInsets.symmetric(horizontal: 12, vertical: compact ? 4 : 6),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Stack(
               children: [
                 SearchThumb(url: item.imageUrl, width: w, height: h),
-                if (category == SearchCategory.anime && size != MediaTileSize.compact)
+                if (category == SearchCategory.anime && !compact)
                   PositionedDirectional(
                     top: 4,
                     end: 4,
@@ -185,14 +198,14 @@ class MediaTile extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    if (!compact) ...[meta, const SizedBox(height: 4)],
                     Text(
                       item.title,
-                      maxLines: size == MediaTileSize.compact ? 2 : 2,
+                      maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: (size == MediaTileSize.spacious
-                              ? theme.textTheme.titleMedium
-                              : theme.textTheme.titleSmall)
-                          ?.copyWith(fontWeight: FontWeight.w600),
+                      style: size == MediaTileSize.spacious
+                          ? theme.textTheme.titleMedium
+                          : theme.textTheme.titleSmall,
                     ),
                     if (typeLine.isNotEmpty) ...[
                       const SizedBox(height: 4),
@@ -206,20 +219,25 @@ class MediaTile extends StatelessWidget {
                     const Spacer(),
                     if (size == MediaTileSize.spacious &&
                         item.synopsis != null &&
-                        item.synopsis!.isNotEmpty) ...[
+                        item.synopsis!.isNotEmpty)
                       Text(
                         item.synopsis!,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: theme.textTheme.bodySmall?.copyWith(color: muted),
                       ),
-                      const SizedBox(height: 6),
-                    ],
-                    meta,
+                    if (compact) meta,
                   ],
                 ),
               ),
             ),
+            if (editable)
+              IconButton(
+                tooltip: S.current.Edit,
+                icon: const Icon(Icons.edit_rounded),
+                visualDensity: VisualDensity.compact,
+                onPressed: () => showContentEditSheet(context, category, item),
+              ),
           ],
         ),
       ),
@@ -292,7 +310,7 @@ class EntityTile extends StatelessWidget {
                       title,
                       maxLines: titleLines,
                       overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+                      style: theme.textTheme.titleSmall,
                     ),
                     if (subtitle != null && subtitle!.isNotEmpty) ...[
                       const SizedBox(height: 2),
@@ -386,7 +404,7 @@ class ForumTopicTile extends StatelessWidget {
         topic.title ?? '',
         maxLines: 2,
         overflow: TextOverflow.ellipsis,
-        style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+        style: theme.textTheme.titleSmall,
       ),
       subtitle: Padding(
         padding: const EdgeInsets.only(top: 4),
@@ -589,7 +607,7 @@ class ArticleTile extends StatelessWidget {
                       item.title,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+                      style: theme.textTheme.titleSmall,
                     ),
                     if (item.text.isNotEmpty) ...[
                       const SizedBox(height: 4),

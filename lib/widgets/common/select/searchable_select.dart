@@ -43,8 +43,8 @@ Future<T?> showSearchableSelect<T>(
   );
 }
 
-/// Body of [showSearchableSelect]: a search field, the option count and the
-/// filtered options. Give it a bounded height (sheet, dialog, Expanded).
+/// Body of [showSearchableSelect]: a search field and the filtered options, the
+/// current value (checked) first. Give it a bounded height (sheet, dialog, Expanded).
 class SearchableSelect<T> extends StatefulWidget {
   final List<SelectOption<T>> options;
   final T? selected;
@@ -89,9 +89,16 @@ class _SearchableSelectState<T> extends State<SearchableSelect<T>> {
     _visible = _filter(_query.text);
   }
 
+  /// The options for [query]. With no query the current value comes first, so a long list
+  /// opens on what is selected instead of hiding it far down.
   List<SelectOption<T>> _filter(String query) {
     final needle = foldForSearch(query.trim());
-    if (needle.isEmpty) return widget.options;
+    if (needle.isEmpty) {
+      final current = widget.selected;
+      final at = current == null ? -1 : widget.options.indexWhere((o) => o.value == current);
+      if (at <= 0) return widget.options;
+      return [widget.options[at], ...widget.options.take(at), ...widget.options.skip(at + 1)];
+    }
     return [
       for (var i = 0; i < widget.options.length; i++)
         if (_keys[i].contains(needle)) widget.options[i],
@@ -144,14 +151,6 @@ class _SearchableSelectState<T> extends State<SearchableSelect<T>> {
             ),
           ),
         ),
-        if (_visible.isNotEmpty)
-          Padding(
-            padding: const EdgeInsets.fromLTRB(24, 8, 24, 4),
-            child: Text(
-              S.current.Kit_Options_Count(_visible.length),
-              style: theme.textTheme.labelMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-            ),
-          ),
         Expanded(
           child: _visible.isEmpty
               ? Center(

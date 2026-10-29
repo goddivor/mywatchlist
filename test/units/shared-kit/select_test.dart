@@ -68,11 +68,12 @@ void main() {
     await tester.tap(find.text('open'));
     await tester.pumpAndSettle();
     expect(find.byType(SearchableSelect<int>), findsOneWidget);
-    expect(find.text('40 options'), findsOneWidget);
+    expect(find.text('Genre 5'), findsOneWidget);
 
     await tester.enterText(find.byType(TextField), 'shonen');
     await tester.pump();
-    expect(find.text('1 option'), findsOneWidget);
+    expect(find.text('Genre 5'), findsNothing);
+    expect(find.text('Shōnen'), findsOneWidget);
     await tester.tap(find.text('Shōnen'));
     await tester.pumpAndSettle();
     expect(picked, 33);
