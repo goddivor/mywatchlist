@@ -49,7 +49,7 @@ this brief, then your unit's start prompt and handoff. Follow all three strictly
 - Inventory of MWL vs DAL with known bugs: `work/inventory/*.md`. Pins: `docs/STACK.md`.
 
 ## Deliver
-1. `git fetch origin && git rebase origin/dev`.
+1. `git fetch origin && git rebase origin/dev`. On a conflict in `docs/DECISIONS.md` or `PROJECT-STATE.md`, keep both sides (delete the markers), `git add` the file and `GIT_EDITOR=true git rebase --continue`. Then `git status` must show a clean tree on your branch, never "rebase in progress", before you run the gate.
 2. Run the gate `tools/heavy.sh tools/verify.sh` in the worktree; keep its last lines for the PR body.
 3. `git diff --name-only origin/dev...HEAD` shows only your Owns files plus the two state files.
 4. `git push -u origin unit/<UNIT_ID>` (only your branch, never `--force` on another).
