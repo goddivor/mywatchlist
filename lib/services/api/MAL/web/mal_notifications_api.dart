@@ -412,9 +412,10 @@ MalNotificationFeed? parseRequestItems(String body) {
 /// (`NotificationContainerMixin`): JSON `{notification_ids: [...]}` with the page's
 /// `csrf_token` added to the JSON, as MAL's `ajaxPrefilter` does.
 class MalNotificationsApi {
+  /// [httpClient] is no longer used (every request goes through [client]); kept so the
+  /// existing callers still compile.
   MalNotificationsApi({MalWebClient? client, http.Client Function()? httpClient})
-      : _clientOverride = client,
-        _httpClient = httpClient ?? http.Client.new;
+      : _clientOverride = client;
 
   static MalNotificationsApi instance = MalNotificationsApi();
 
@@ -429,7 +430,6 @@ class MalNotificationsApi {
   static bool parseInline = false;
 
   final MalWebClient? _clientOverride;
-  final http.Client Function() _httpClient;
 
   MalWebClient get client => _clientOverride ?? MalWebClient.instance;
 
@@ -473,31 +473,20 @@ class MalNotificationsApi {
   Future<bool> denyFriendRequests(Iterable<MalNotificationItem> items) =>
       _postIds(denyPath, [for (final i in items) i.rawId]);
 
+  /// One JSON POST through [MalWebClient.postJson], which adds the page's `csrf_token`,
+  /// fetches it again once when MAL refuses it and turns a login redirect into
+  /// [MalWebSessionExpired]. Any other redirect is a refusal.
   Future<bool> _postIds(String path, List<Object> ids) async {
     if (ids.isEmpty) return true;
-    final session = client.session;
-    await session.ensureLoaded();
-    if (!session.isConnected) throw const MalWebNoSession();
-    var token = await client.csrfToken();
-    for (var attempt = 0; attempt < 2; attempt++) {
-      final response = await _postJson(path, {'notification_ids': ids, 'csrf_token': token});
-      final status = response.statusCode;
-      if (status >= 300 && status < 400) {
-        if (isLoginRedirect(response.headers['location'])) {
-          await session.markExpired();
-          client.reset();
-          throw const MalWebSessionExpired();
-        }
-        return false;
-      }
-      if ((status == 400 || status == 403) && attempt == 0) {
-        token = await client.csrfToken(refresh: true);
-        continue;
-      }
-      if (status != 200) throw MalWebActionFailed(statusCode: status);
-      return _accepted(response.body);
-    }
-    return false;
+    final response = await client.postJson(
+      path,
+      {'notification_ids': ids},
+      referer: '${MalWebClient.base}$pagePath',
+    );
+    final status = response.statusCode;
+    if (status >= 300 && status < 400) return false;
+    if (status != 200) throw MalWebActionFailed(statusCode: status);
+    return _accepted(response.body);
   }
 
   /// MAL answers `true`, or an object; an `errors` / `error` key is a refusal.
@@ -516,35 +505,7 @@ class MalNotificationsApi {
       return text.contains('true');
     }
   }
-
-  Future<http.Response> _postJson(String path, Map<String, Object> body) async {
-    final cookie = client.session.cookieHeader;
-    final request = http.Request('POST', Uri.parse('${MalWebClient.base}$path'))
-      ..followRedirects = false
-      ..headers.addAll({
-        'User-Agent': MalWebClient.userAgent,
-        'Accept': 'application/json, text/javascript, */*; q=0.01',
-        'Accept-Language': 'en-US,en;q=0.9',
-        'Content-Type': 'application/json',
-        'X-Requested-With': 'XMLHttpRequest',
-        'Origin': MalWebClient.base,
-        'Referer': '${MalWebClient.base}$pagePath',
-        if (cookie != null) 'Cookie': cookie,
-      })
-      ..body = jsonEncode(body);
-    final sender = _httpClient();
-    try {
-      final streamed = await sender.send(request).timeout(client.timeout);
-      final response = await _fromStream(streamed).timeout(client.timeout);
-      await client.session.applySetCookie(response.headers['set-cookie']);
-      return response;
-    } finally {
-      sender.close();
-    }
-  }
 }
-
-Future<http.Response> _fromStream(http.StreamedResponse streamed) => http.Response.fromStream(streamed);
 
 // ---------------------------------------------------------------------------
 // Friends' list updates (rss.php?type=rw / rm), not part of MAL's notifications
