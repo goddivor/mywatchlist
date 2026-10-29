@@ -54,3 +54,9 @@ List<AccountType> expiredTrackers([UserManager? users]) => [
       for (final t in kTrackers)
         if (trackerStatus(t, users) == TrackerStatus.needsSignIn) t,
     ];
+
+/// Trackers whose sign in is running right now, in display order.
+List<AccountType> connectingTrackers([UserManager? users]) => [
+      for (final t in kTrackers)
+        if (trackerStatus(t, users) == TrackerStatus.connecting) t,
+    ];

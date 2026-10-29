@@ -116,6 +116,8 @@ class AccountBloc extends Bloc<AccountEvent, AccountState> {
 
   List<AccountType> get _expiredNow => expiredTrackers(_users);
 
+  List<AccountType> get _connectingNow => connectingTrackers(_users);
+
   List<AccountType> get _knownConnected => state is AccountLoaded
       ? [
           for (final a in (state as AccountLoaded).availableAccounts)
@@ -131,6 +133,7 @@ class AccountBloc extends Bloc<AccountEvent, AccountState> {
       current: saved,
       connected: _connectedNow,
       expired: _expiredNow,
+      connecting: _connectingNow,
     );
     _publish(emit, selected);
     if (selected != saved) await _persist(selected);
@@ -165,6 +168,7 @@ class AccountBloc extends Bloc<AccountEvent, AccountState> {
           current: current,
           connected: connected,
           expired: _expiredNow,
+          connecting: _connectingNow,
         );
     _publish(emit, selected);
     if (selected != current) await _persist(selected);

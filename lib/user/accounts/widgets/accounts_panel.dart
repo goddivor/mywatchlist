@@ -3,10 +3,12 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mywatchlist/constants/constants.dart';
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/user/accounts/account_bloc.dart';
+import 'package:mywatchlist/screens/settings/mal_session_settings.dart';
 import 'package:mywatchlist/user/accounts/account_status.dart';
+import 'package:mywatchlist/user/accounts/widgets/account_tile.dart';
+import 'package:mywatchlist/utils/app_routes.dart';
 import 'package:mywatchlist/user/trackers/models/tracker_model.dart';
 import 'package:mywatchlist/user/trackers/provider/tracker_actions.dart';
-import 'package:mywatchlist/user/trackers/widgets/tracker_tile.dart';
 import 'package:mywatchlist/user/user_manager.dart';
 
 /// The account list every account screen shares: the signed-in accounts (tap one to make
@@ -27,12 +29,17 @@ class AccountsPanel extends StatelessWidget {
   /// Show a snackbar naming the account that became active.
   final bool confirmSwitch;
 
+  /// Adds "MyAnimeList website" (the website session page) to the MyAnimeList tile's menu.
+  /// Settings > Accounts turns it on; the switcher and the sign in screens do not.
+  final bool malSessionEntry;
+
   const AccountsPanel({
     super.key,
     this.header,
     this.onSwitched,
     this.padding = const EdgeInsets.fromLTRB(16, 8, 16, 24),
     this.confirmSwitch = true,
+    this.malSessionEntry = false,
   });
 
   void _switch(BuildContext context, AccountType tracker) {
@@ -80,7 +87,7 @@ class AccountsPanel extends StatelessWidget {
               status == TrackerStatus.needsSignIn;
           return Padding(
             padding: const EdgeInsets.only(bottom: 10),
-            child: TrackerTile(
+            child: AccountTile(
               key: ValueKey(tracker),
               info: info,
               status: status,
@@ -93,6 +100,15 @@ class AccountsPanel extends StatelessWidget {
               onSignOut: hasAccount
                   ? () => TrackerActions.signOut(context, tracker)
                   : null,
+              menuEntries: [
+                if (malSessionEntry && hasAccount && tracker == AccountType.myanimelist)
+                  AccountMenuEntry(
+                    icon: Icons.language,
+                    label: S.current.Ms_Settings_Title,
+                    onTap: () =>
+                        AppRoutes.push<void>(context, const MalSessionSettingsPage()),
+                  ),
+              ],
             ),
           );
         }
