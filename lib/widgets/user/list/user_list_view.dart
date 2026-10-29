@@ -266,8 +266,9 @@ class _UserListViewState extends State<UserListView> with SingleTickerProviderSt
   Future<void> _step(ListEntryView entry, int delta) async {
     if (_busy.value.contains(entry.id)) return;
     _busy.value = {..._busy.value, entry.id};
+    ListEntryView? saved;
     try {
-      final saved = await _adapter.step(entry, delta);
+      saved = await _adapter.step(entry, delta);
       if (mounted) _applyChange(saved, old: entry);
     } catch (e) {
       if (!mounted) return;
@@ -283,6 +284,10 @@ class _UserListViewState extends State<UserListView> with SingleTickerProviderSt
     } finally {
       _busy.value = {..._busy.value}..remove(entry.id);
     }
+    // The tracker's follow-up (Kitsu's rating after the last episode), once the row is free.
+    if (saved == null || !mounted) return;
+    final followed = await _adapter.afterStep(context, saved, before: entry);
+    if (followed != null && mounted) _applyChange(followed, old: saved);
   }
 
   void _applyChange(ListEntryView entry, {ListEntryView? old}) {
@@ -449,7 +454,9 @@ class _UserListViewState extends State<UserListView> with SingleTickerProviderSt
               for (final status in userListTabs) Tab(child: _TabLabel(
                 key: ValueKey('label-$_category-${status?.name ?? 'all'}'),
                 controller: _controllerFor(_category, status),
-                label: status?.label(isAnime: _isAnime) ?? S.current.UserList_All,
+                label: status == null
+                    ? S.current.UserList_All
+                    : _adapter.statusLabel(status, isAnime: _isAnime),
                 countFromProfile: _profileCount(status),
               )),
             ],

@@ -5,6 +5,7 @@ import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/widgets/common/app_colors.dart';
 import 'package:mywatchlist/widgets/common/score_reveal.dart';
 import 'package:mywatchlist/widgets/user/list/cards/entry_parts.dart';
+import 'package:mywatchlist/widgets/user/list/list_entry_look.dart';
 import 'package:mywatchlist/widgets/user/list/list_entry_view.dart';
 
 /// Fixed height of a list row per sub type (lets the list skip layout work).
@@ -100,6 +101,8 @@ class EntryListTile extends StatelessWidget {
                       const SizedBox(width: 6),
                       RewatchPill(entry: entry, short: true),
                     ],
+                    const SizedBox(width: 6),
+                    EntryCardBadges(entry: entry, short: true),
                   ],
                 ),
               ],
@@ -117,7 +120,6 @@ class EntryListTile extends StatelessWidget {
 
   Widget _rich(BuildContext context, {required bool spacious}) {
     final theme = Theme.of(context);
-    final muted = theme.colorScheme.onSurfaceVariant;
     final coverW = spacious ? 112.0 : 84.0;
     final coverH = spacious ? 160.0 : 120.0;
     final airing = style.showAiringInfo || spacious ? airingText(entry, now, locale) : null;
@@ -126,6 +128,7 @@ class EntryListTile extends StatelessWidget {
       if (style.showPriority && entry.priority > 0) PriorityPill(priority: entry.priority),
       if (entry.timesRewatched > 0) RewatchPill(entry: entry),
       MeanScore(entry: entry, showMembers: spacious),
+      EntryCardBadges(entry: entry),
     ];
     return Padding(
       padding: const EdgeInsets.all(4),
@@ -153,44 +156,21 @@ class EntryListTile extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const SizedBox(height: 2),
-                Wrap(
-                  spacing: 6,
-                  runSpacing: 4,
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  children: badges,
-                ),
-                const SizedBox(height: 4),
-                Text(entry.title,
-                    maxLines: spacious ? 3 : 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.titleSmall?.copyWith(height: 1.2)),
-                const SizedBox(height: 2),
-                Text(
-                  spacious && entry.genres.isNotEmpty
-                      ? '${mediaLine(entry)}\n${entry.genres.take(4).join(', ')}'
-                      : mediaLine(entry),
-                  maxLines: spacious ? 2 : 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.bodySmall?.copyWith(color: muted),
-                ),
-                if (airing != null) ...[
-                  const SizedBox(height: 2),
-                  Row(
-                    children: [
-                      Icon(Icons.schedule_rounded, size: 13, color: theme.colorScheme.primary),
-                      const SizedBox(width: 4),
-                      Expanded(
-                        child: Text(airing,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: theme.textTheme.bodySmall
-                                ?.copyWith(color: theme.colorScheme.primary)),
-                      ),
-                    ],
+                // The row has a fixed height: the top block gives up title lines, then the
+                // airing line, then the media line rather than overflow (two-line titles at
+                // large text sizes).
+                Expanded(
+                  child: _RowInfo(
+                    badges: badges,
+                    title: entry.title,
+                    titleLines: spacious ? 3 : 2,
+                    media: spacious && entry.genres.isNotEmpty
+                        ? '${mediaLine(entry)}\n${entry.genres.take(4).join(', ')}'
+                        : mediaLine(entry),
+                    mediaLines: spacious ? 2 : 1,
+                    airing: airing,
                   ),
-                ],
-                const Spacer(),
+                ),
                 Row(
                   children: [
                     MyScore(entry: entry),
@@ -214,6 +194,113 @@ class EntryListTile extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+/// The top of a list row: badges (one line, extra ones hidden), the title, the media line and
+/// the airing line, fitted to the height the row leaves: the title keeps as many lines as fit
+/// (at least one), then the airing line and the media line go when even that is too tall.
+class _RowInfo extends StatelessWidget {
+  final List<Widget> badges;
+  final String title;
+  final int titleLines;
+  final String media;
+  final int mediaLines;
+  final String? airing;
+
+  const _RowInfo({
+    required this.badges,
+    required this.title,
+    required this.titleLines,
+    required this.media,
+    required this.mediaLines,
+    required this.airing,
+  });
+
+  static double _lineHeight(TextStyle? style, TextScaler scaler) {
+    final painter = TextPainter(
+      text: TextSpan(text: 'Ag', style: style),
+      textScaler: scaler,
+      textDirection: TextDirection.ltr,
+      maxLines: 1,
+    )..layout();
+    final h = painter.height;
+    painter.dispose();
+    return h;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scaler = MediaQuery.textScalerOf(context);
+    final muted = theme.colorScheme.onSurfaceVariant;
+    final titleStyle = theme.textTheme.titleSmall?.copyWith(height: 1.2);
+    final mediaStyle = theme.textTheme.bodySmall?.copyWith(color: muted);
+    final airingStyle = theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.primary);
+    final pillStyle = const TextStyle(fontSize: 10.5, height: 1.2);
+    final badgeHeight = [
+      _lineHeight(pillStyle, scaler) + 4,
+      _lineHeight(theme.textTheme.labelMedium, scaler),
+      15.0,
+    ].reduce((a, b) => a > b ? a : b);
+    return LayoutBuilder(builder: (context, box) {
+      final titleLine = _lineHeight(titleStyle, scaler);
+      final mediaLine = _lineHeight(mediaStyle, scaler);
+      final airingLine = _lineHeight(airingStyle, scaler) + 2;
+      var room = box.maxHeight - 2 - badgeHeight - 4 - 2;
+      var showAiring = airing != null;
+      var lines = mediaLines;
+      int titleFit() => ((room - lines * mediaLine - (showAiring ? airingLine : 0)) / titleLine)
+          .floor()
+          .clamp(0, titleLines);
+      if (titleFit() < 1) showAiring = false;
+      while (titleFit() < 1 && lines > 0) {
+        lines--;
+      }
+      final shownTitle = titleFit().clamp(1, titleLines);
+      // Rounding never paints an overflow stripe: the block clips to the row instead.
+      return UnconstrainedBox(
+        constrainedAxis: Axis.horizontal,
+        alignment: AlignmentDirectional.topStart,
+        clipBehavior: Clip.hardEdge,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 2),
+            SizedBox(
+              height: badgeHeight,
+              child: Wrap(
+                spacing: 6,
+                runSpacing: 4,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                clipBehavior: Clip.hardEdge,
+                children: badges,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(title, maxLines: shownTitle, overflow: TextOverflow.ellipsis, style: titleStyle),
+            const SizedBox(height: 2),
+            if (lines > 0)
+              Text(media,
+                  maxLines: lines, overflow: TextOverflow.ellipsis, style: mediaStyle),
+            if (showAiring) ...[
+              const SizedBox(height: 2),
+              Row(
+                children: [
+                  Icon(Icons.schedule_rounded, size: 13, color: theme.colorScheme.primary),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Text(airing!,
+                        maxLines: 1, overflow: TextOverflow.ellipsis, style: airingStyle),
+                  ),
+                ],
+              ),
+            ],
+          ],
+        ),
+      );
+    });
   }
 }
 
@@ -283,6 +370,7 @@ class EntryGridCard extends StatelessWidget {
   Widget _cover(BuildContext context, {required BorderRadius rounded, List<Widget> extra = const []}) {
     final airing = style.showAiringInfo ? airingText(entry, now, Localizations.localeOf(context).toString()) : null;
     final tokens = AppColors.of(context);
+    final look = ListEntryLookScope.of(context);
     return Stack(
       fit: StackFit.expand,
       children: [
@@ -320,7 +408,9 @@ class EntryGridCard extends StatelessWidget {
           start: 5,
           child: EntryDubBadge(entry: entry),
         ),
-        if ((style.showPriority && entry.priority > 0) || entry.timesRewatched > 0)
+        if ((style.showPriority && entry.priority > 0) ||
+            entry.timesRewatched > 0 ||
+            look.cardBadges(entry).isNotEmpty)
           PositionedDirectional(
             bottom: 5,
             start: 5,
@@ -331,7 +421,11 @@ class EntryGridCard extends StatelessWidget {
                   PriorityPill(priority: entry.priority),
                   const SizedBox(width: 4),
                 ],
-                RewatchPill(entry: entry, short: true),
+                if (entry.timesRewatched > 0) ...[
+                  RewatchPill(entry: entry, short: true),
+                  const SizedBox(width: 4),
+                ],
+                EntryCardBadges(entry: entry, short: true),
               ],
             ),
           ),
@@ -384,13 +478,13 @@ class EntryGridCard extends StatelessWidget {
   Widget _compact(BuildContext context) {
     final tokens = AppColors.of(context);
     final radius = BorderRadius.circular(gridCardRadius);
-    final mean = entry.meanScore;
+    final mean = ListEntryLookScope.of(context).meanScore(entry);
     final members = entry.members;
-    final hasMean = mean != null && mean > 0;
+    final hasMean = mean != null;
     final hasMembers = members != null && members > 0;
     final format = NumberFormat.compact(locale: Intl.getCurrentLocale());
     final meanText = [
-      if (hasMean) mean.toStringAsFixed(2),
+      if (mean != null) mean.text,
       if (hasMembers) format.format(members),
     ].join(' | ');
     final onEdit = actions.onEdit == null ? null : _edit;
@@ -476,6 +570,7 @@ class GridCardBar extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     const radius = BorderRadius.vertical(bottom: Radius.circular(gridCardRadius));
     final status = entry.status;
+    final look = ListEntryLookScope.of(context);
     final role = status?.colors(context);
     final chipForeground = role?.onContainer ?? scheme.onSurface;
     return SizedBox(
@@ -501,7 +596,7 @@ class GridCardBar extends StatelessWidget {
                 button: onEdit != null,
                 label: status == null
                     ? S.current.UserList_Edit_Entry
-                    : '${status.label(isAnime: entry.isAnime)}, ${S.current.UserList_Edit_Entry}',
+                    : '${look.statusLabel(status, isAnime: entry.isAnime)}, ${S.current.UserList_Edit_Entry}',
                 excludeSemantics: true,
                 child: Container(
                   height: gridCardBarHeight,
@@ -517,7 +612,7 @@ class GridCardBar extends StatelessWidget {
                     children: [
                       if (status != null) ...[
                         Text(
-                          status.shortLabel(isAnime: entry.isAnime),
+                          look.statusShortLabel(status, isAnime: entry.isAnime),
                           maxLines: 1,
                           style: TextStyle(
                               fontSize: 12, height: 1.2, fontWeight: FontWeight.w600, color: chipForeground),
@@ -551,16 +646,25 @@ class GridEditButton extends StatelessWidget {
     final role = entry.status?.colors(context);
     final background = role?.container ?? scheme.surfaceContainerHighest;
     final foreground = role?.onContainer ?? scheme.onSurface;
-    final scored = entry.status != null && entry.score > 0;
+    final score = entry.status == null ? null : ListEntryLookScope.of(context).userScore(entry);
     final hidden = scoreHiddenOf(context);
-    final Widget child = scored && !hidden
-        ? Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.star, size: 16, color: foreground),
-              Text('${entry.score}',
-                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: foreground)),
-            ],
+    final scored = score != null && !hidden;
+    final Widget child = scored
+        ? Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(score.icon ?? Icons.star, size: 16, color: foreground),
+                Flexible(
+                  child: Text(score.text,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: foreground)),
+                ),
+              ],
+            ),
           )
         : Icon(Icons.edit, size: 16, color: foreground);
     const shape = BorderRadiusDirectional.only(
@@ -569,11 +673,15 @@ class GridEditButton extends StatelessWidget {
     );
     return Semantics(
       button: true,
-      label: S.current.UserList_Edit_Entry,
+      label: scored
+          ? '${score.spoken ?? score.text}, ${S.current.UserList_Edit_Entry}'
+          : S.current.UserList_Edit_Entry,
       excludeSemantics: true,
-      child: SizedBox(
-        width: scored && !hidden ? 40 : 30,
-        height: 30,
+      child: ConstrainedBox(
+        // DailyAL's 40 dp with a score; a longer one ("8/10", "Good") widens up to 72 dp.
+        constraints: scored
+            ? const BoxConstraints(minWidth: 40, maxWidth: 72, minHeight: 30, maxHeight: 30)
+            : const BoxConstraints.tightFor(width: 30, height: 30),
         child: Material(
           color: background,
           borderRadius: shape,

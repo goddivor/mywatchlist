@@ -8,6 +8,7 @@ import 'package:mywatchlist/widgets/common/app_colors.dart';
 import 'package:mywatchlist/widgets/common/app_image.dart';
 import 'package:mywatchlist/widgets/common/dub_icon.dart';
 import 'package:mywatchlist/widgets/common/score_reveal.dart';
+import 'package:mywatchlist/widgets/user/list/list_entry_look.dart';
 import 'package:mywatchlist/widgets/user/list/list_entry_view.dart';
 import 'package:mywatchlist/widgets/user/list/list_query.dart';
 
@@ -135,12 +136,14 @@ class EntryPill extends StatelessWidget {
               Icon(icon, size: 11, color: foreground),
               const SizedBox(width: 3),
             ],
-            Text(
-              label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                  fontSize: 10.5, height: 1.2, fontWeight: FontWeight.w600, color: foreground),
+            Flexible(
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                    fontSize: 10.5, height: 1.2, fontWeight: FontWeight.w600, color: foreground),
+              ),
             ),
           ],
         ),
@@ -161,7 +164,7 @@ class StatusPill extends StatelessWidget {
     return EntryPill(
       label: entry.repeating
           ? (entry.isAnime ? S.current.Edit_Rewatching : S.current.Edit_Rereading)
-          : status.label(isAnime: entry.isAnime),
+          : ListEntryLookScope.of(context).statusLabel(status, isAnime: entry.isAnime),
       icon: entry.repeating ? Icons.replay_rounded : null,
       background: status.colors(context).container,
       foreground: status.colors(context).onContainer,
@@ -365,32 +368,34 @@ class MeanScore extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final mean = entry.meanScore;
-    final known = mean != null && mean > 0;
-    if (!known && !dashWhenUnknown) return const SizedBox.shrink();
+    final mean = ListEntryLookScope.of(context).meanScore(entry);
+    if (mean == null && !dashWhenUnknown) return const SizedBox.shrink();
     final theme = Theme.of(context);
     final members = entry.members;
+    final row = Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(mean?.icon ?? Icons.star_rounded,
+            size: fontSize + 3, color: AppColors.of(context).score.color),
+        const SizedBox(width: 2),
+        Flexible(
+          child: Text(mean?.text ?? '-',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.labelMedium?.copyWith(fontSize: fontSize)),
+        ),
+        if (showMembers && members != null && members > 0) ...[
+          const SizedBox(width: 4),
+          Text('(${NumberFormat.compact().format(members)})',
+              style: theme.textTheme.labelSmall
+                  ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+        ],
+      ],
+    );
+    final spoken = mean?.spoken;
     return ScoreReveal(
       iconSize: fontSize + 2,
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.star_rounded, size: fontSize + 3, color: AppColors.of(context).score.color),
-          const SizedBox(width: 2),
-          Flexible(
-            child: Text(known ? mean.toStringAsFixed(2) : '-',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.labelMedium?.copyWith(fontSize: fontSize)),
-          ),
-          if (showMembers && members != null && members > 0) ...[
-            const SizedBox(width: 4),
-            Text('(${NumberFormat.compact().format(members)})',
-                style: theme.textTheme.labelSmall
-                    ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
-          ],
-        ],
-      ),
+      child: spoken == null ? row : Semantics(label: spoken, excludeSemantics: true, child: row),
     );
   }
 }
@@ -408,9 +413,9 @@ class MyScore extends StatelessWidget {
   Widget build(BuildContext context) {
     if (entry.status == null) return const SizedBox.shrink();
     final theme = Theme.of(context);
-    final scored = entry.score > 0;
+    final score = ListEntryLookScope.of(context).userScore(entry);
     return Semantics(
-      label: scored ? S.current.UserList_My_Score_Value(entry.score) : S.current.UserList_Not_Scored,
+      label: score == null ? S.current.UserList_Not_Scored : (score.spoken ?? score.text),
       excludeSemantics: true,
       child: ScoreReveal(
         iconSize: fontSize + 1,
@@ -418,14 +423,74 @@ class MyScore extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.person_rounded, size: fontSize + 1, color: color ?? theme.colorScheme.primary),
+            Icon(score?.icon ?? Icons.person_rounded,
+                size: fontSize + 1, color: color ?? theme.colorScheme.primary),
             const SizedBox(width: 2),
-            Text(scored ? '${entry.score}' : '–',
-                style: theme.textTheme.labelLarge
-                    ?.copyWith(fontSize: fontSize, fontWeight: FontWeight.w700, color: color)),
+            Flexible(
+              child: Text(score?.text ?? '–',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.labelLarge
+                      ?.copyWith(fontSize: fontSize, fontWeight: FontWeight.w700, color: color)),
+            ),
           ],
         ),
       ),
+    );
+  }
+}
+
+/// The tracker's own marks of [entry] ([ListEntryLook.cardBadges], the user's Kitsu
+/// reaction). [short] draws the icons alone (grid covers, compact rows); the full text is
+/// in a tooltip and for screen readers either way.
+class EntryCardBadges extends StatelessWidget {
+  final ListEntryView entry;
+  final bool short;
+
+  /// Widest a labelled badge gets before its text is cut.
+  final double maxWidth;
+
+  const EntryCardBadges({super.key, required this.entry, this.short = false, this.maxWidth = 180});
+
+  @override
+  Widget build(BuildContext context) {
+    final badges = ListEntryLookScope.of(context).cardBadges(entry);
+    if (badges.isEmpty) return const SizedBox.shrink();
+    final scheme = Theme.of(context).colorScheme;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        for (var i = 0; i < badges.length; i++) ...[
+          if (i > 0) const SizedBox(width: 4),
+          Tooltip(
+            message: badges[i].detail,
+            child: Semantics(
+              label: badges[i].detail,
+              excludeSemantics: true,
+              child: short
+                  ? DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: scheme.secondaryContainer,
+                        borderRadius: const BorderRadius.all(Radius.circular(6)),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(3),
+                        child: Icon(badges[i].icon, size: 12, color: scheme.onSecondaryContainer),
+                      ),
+                    )
+                  : ConstrainedBox(
+                      constraints: BoxConstraints(maxWidth: maxWidth),
+                      child: EntryPill(
+                        label: badges[i].label,
+                        icon: badges[i].icon,
+                        background: scheme.secondaryContainer,
+                        foreground: scheme.onSecondaryContainer,
+                      ),
+                    ),
+            ),
+          ),
+        ],
+      ],
     );
   }
 }

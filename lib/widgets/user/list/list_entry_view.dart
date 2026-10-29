@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/widgets/calendar/airing_schedule.dart';
 import 'package:mywatchlist/widgets/common/app_colors.dart';
+import 'package:mywatchlist/widgets/user/list/list_query.dart' show listTimeSummary;
 
 /// Status of an entry in a user list, the same for every tracker.
 ///
@@ -326,6 +327,17 @@ class ListEntryView {
     };
   }
 
+  /// True for an entry on the "to watch" side whose episode total is still unknown (an airing
+  /// show with `num_episodes` = 0): its time left cannot be counted, so a time line that leaves
+  /// it out is only a lower bound.
+  bool get hasUnknownTimeLeft =>
+      isAnime &&
+      episodeSeconds > 0 &&
+      total <= 0 &&
+      (status == ListEntryStatus.current ||
+          status == ListEntryStatus.onHold ||
+          status == ListEntryStatus.planned);
+
   /// Time already watched: [progress] episodes at the average length, or null when unknown.
   Duration? get timeWatched {
     if (!isAnime || episodeSeconds <= 0 || status == null) return null;
@@ -421,29 +433,15 @@ class ListTimeSummary {
 
   const ListTimeSummary(this.kind, this.total, {this.partial = false});
 
-  /// Time of [entries] of the tab [status]: the time left for the tabs of titles still to
-  /// watch (watching, on hold, plan to watch), the time watched for the others and for "All".
-  /// Null for manga, or when no entry has a known length.
+  /// The time line of [entries] in the tab [status]: an alias of [listTimeSummary] (rewatches
+  /// counted in the time watched), kept for the AniList list view until it calls
+  /// [listTimeSummary] itself. One rule for every tracker.
   static ListTimeSummary? of(
     Iterable<ListEntryView> entries,
     ListEntryStatus? status, {
     bool partial = false,
-  }) {
-    final kind = switch (status) {
-      ListEntryStatus.current ||
-      ListEntryStatus.onHold ||
-      ListEntryStatus.planned =>
-        ListTimeKind.left,
-      _ => ListTimeKind.watched,
-    };
-    var seconds = 0;
-    for (final e in entries) {
-      final d = kind == ListTimeKind.left ? e.timeLeft : e.timeWatched;
-      if (d != null) seconds += d.inSeconds;
-    }
-    if (seconds <= 0) return null;
-    return ListTimeSummary(kind, Duration(seconds: seconds), partial: partial);
-  }
+  }) =>
+      listTimeSummary(entries, status, partial: partial);
 
   /// The translated line ("Time left: 41 d 3 h").
   String label() {
