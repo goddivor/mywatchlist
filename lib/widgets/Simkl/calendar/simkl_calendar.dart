@@ -23,9 +23,9 @@ class SimklAiring {
   /// Episode 1: the title premieres.
   bool get premiere => media.episode == 1;
 
-  /// The last episode of the user's entry (Simkl's `finale_type` is not in the parsed calendar,
-  /// so a finale is known only for titles of the list with a known total).
+  /// Simkl's `finale_type` of the calendar file, else the last episode of the user's entry.
   bool get finale {
+    if (media.finale) return true;
     final e = entry;
     final n = media.episode;
     return e != null && n != null && e.total > 0 && n == e.total && n > 1;
@@ -97,9 +97,12 @@ class SimklBadge extends StatelessWidget {
 class SimklAiringTile extends StatelessWidget {
   final SimklAiring airing;
   final VoidCallback onTap;
+
+  /// Long press: mark the aired episode watched (only given for a listed, aired episode).
+  final VoidCallback? onLongPress;
   final DateTime? now;
 
-  const SimklAiringTile({super.key, required this.airing, required this.onTap, this.now});
+  const SimklAiringTile({super.key, required this.airing, required this.onTap, this.onLongPress, this.now});
 
   @override
   Widget build(BuildContext context) {
@@ -116,6 +119,7 @@ class SimklAiringTile extends StatelessWidget {
     );
     return InkWell(
       onTap: onTap,
+      onLongPress: onLongPress,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 6),
         child: Row(
@@ -227,6 +231,49 @@ class _SimklCalendarPageState extends State<SimklCalendarPage> {
     } catch (_) {}
   }
 
+  /// A listed title whose episode has aired and is past the viewer's progress.
+  bool _canMark(SimklAiring a) {
+    final e = a.entry;
+    final n = a.media.episode;
+    final at = a.media.airDate;
+    return e != null &&
+        e.status != null &&
+        n != null &&
+        n > e.progress &&
+        at != null &&
+        !at.isAfter((widget.now ?? DateTime.now)());
+  }
+
+  /// Long press: asks, then marks the episode (and those before it) watched through the list
+  /// service. Only on the viewer's confirmation.
+  Future<void> _markWatched(SimklAiring a) async {
+    final entry = a.entry;
+    final n = a.media.episode;
+    if (entry == null || n == null) return;
+    final ok = await showModalBottomSheet<bool>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) => SafeArea(
+        child: ListTile(
+          leading: const Icon(Icons.check_rounded),
+          title: Text(S.current.Skr_Mark_Watched(n)),
+          subtitle: Text(a.media.title, maxLines: 1, overflow: TextOverflow.ellipsis),
+          onTap: () => Navigator.of(context).pop(true),
+        ),
+      ),
+    );
+    if (ok != true || !mounted) return;
+    final messenger = ScaffoldMessenger.maybeOf(context);
+    try {
+      final saved = await (widget.listService ?? SimklListService.instance).setProgress(entry, n);
+      final next = _future.then((d) => (d.$1, {...d.$2, saved.id: saved}));
+      if (mounted) setState(() => _future = next);
+      messenger?.showSnackBar(SnackBar(content: Text(S.current.Sdp_Marked_Watched(n))));
+    } catch (_) {
+      messenger?.showSnackBar(SnackBar(content: Text(S.current.Sk_Edit_Failed)));
+    }
+  }
+
   String _dayLabel(DateTime d) {
     final diff = d.difference(_today).inDays;
     if (diff == 0) return S.current.Scf_Window_Today;
@@ -302,6 +349,7 @@ class _SimklCalendarPageState extends State<SimklCalendarPage> {
                     airing: items[i],
                     now: widget.now?.call(),
                     onTap: () => openSimklMedia(context, items[i].media),
+                    onLongPress: _canMark(items[i]) ? () => _markWatched(items[i]) : null,
                   ),
                 );
               },

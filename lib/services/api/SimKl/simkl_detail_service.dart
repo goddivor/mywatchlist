@@ -5,6 +5,7 @@ import 'package:mywatchlist/services/api/SimKl/scrapper/simkl_page_parser.dart';
 import 'package:mywatchlist/services/api/SimKl/scrapper/simkl_web_client.dart';
 import 'package:mywatchlist/services/api/SimKl/simkl_client.dart';
 import 'package:mywatchlist/services/api/SimKl/simkl_detail_models.dart';
+import 'package:mywatchlist/services/api/SimKl/simkl_title_language.dart';
 
 /// Simkl has no title with this id (`GET /anime/{id}` answered `[]`).
 class SimklTitleNotFound implements Exception {
@@ -108,7 +109,7 @@ class SimklDetailService {
   /// The full record. Throws [SimklTitleNotFound] for an unknown id.
   Future<SimklTitle> title(int id, {bool force = false}) => _cached(titleKey(id), () async {
         final data = await _client.getPublic('/anime/$id');
-        final title = SimklTitle.fromJson(data, fallbackId: id);
+        final title = SimklTitle.fromJson(data, fallbackId: id, language: SimklTitlePreference.language);
         if (title == null) throw SimklTitleNotFound(id);
         return title;
       }, force: force);

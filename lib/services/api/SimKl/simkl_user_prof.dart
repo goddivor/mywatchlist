@@ -1,3 +1,5 @@
+import 'package:mywatchlist/services/api/SimKl/simkl_title_language.dart';
+
 /// The signed-in Simkl user (`GET /users/settings`). Every field is optional on Simkl's side.
 class UserProfSimkl {
   final String name;
@@ -12,6 +14,9 @@ class UserProfSimkl {
   final String accountType;
   final bool isConnectedToFacebook;
 
+  /// `anime_title_language` of the settings (kept wherever Simkl puts it).
+  final SimklTitleLanguage titleLanguage;
+
   UserProfSimkl({
     required this.name,
     this.joinedAt,
@@ -24,6 +29,7 @@ class UserProfSimkl {
     this.timezone = '',
     this.accountType = '',
     this.isConnectedToFacebook = false,
+    this.titleLanguage = SimklTitleLanguage.english,
   });
 
   factory UserProfSimkl.fromJson(Map<String, dynamic> json) {
@@ -43,6 +49,9 @@ class UserProfSimkl {
       timezone: text(account['timezone']),
       accountType: text(account['type']),
       isConnectedToFacebook: connections['facebook'] == true,
+      titleLanguage: SimklTitleLanguage.parse(
+        json['anime_title_language'] ?? user['anime_title_language'] ?? account['anime_title_language'],
+      ),
     );
   }
 }

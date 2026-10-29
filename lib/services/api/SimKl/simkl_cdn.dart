@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:mywatchlist/constants/constants.dart';
 import 'package:mywatchlist/services/api/SimKl/simkl_client.dart' show SimklClient, SimklHttpError;
 import 'package:mywatchlist/services/api/SimKl/simkl_models.dart';
+import 'package:mywatchlist/services/api/SimKl/simkl_title_language.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 /// The period of a Simkl trending file.
@@ -86,17 +87,23 @@ class SimklCdn {
       _cached('trending_${window.file}', trendingTtl, () async {
         final body = await _fetch('/discover/trending/anime/${window.file}_100.json');
         return _parse(parseSimklTrending, body);
-      });
+      }).then(_titled);
 
   /// Every episode of the calendar file, by air time; each item carries its episode number and
   /// air date ([SimklMedia.episode], [SimklMedia.airDate], UTC).
   Future<List<SimklMedia>> calendar() => _cached('calendar', calendarTtl, () async {
         final body = await _fetch('/calendar/v2/anime.json');
         return _parse(parseSimklCalendar, body);
-      });
+      }).then(_titled);
 
   /// The calendar episodes airing on the local day of [day].
   Future<List<SimklMedia>> airingOn(DateTime day) async => episodesOn(await calendar(), day);
+
+  /// The items titled for the Simkl profile's language (the kept answers stay as Simkl sent them).
+  static List<SimklMedia> _titled(List<SimklMedia> items) {
+    final lang = SimklTitlePreference.language;
+    return lang == SimklTitleLanguage.english ? items : [for (final m in items) m.retitled(lang)];
+  }
 
   /// Forgets the kept answers (pull to refresh).
   void invalidate() => _kept.clear();
@@ -171,6 +178,15 @@ SimklMedia? _media(Map<Object?, Object?> raw) {
     overview: overview == null || overview.isEmpty ? null : overview,
     animeType: media.animeType,
     genres: media.genres,
+    watchers: media.watchers,
+    dropRate: media.dropRate,
+    rank: media.rank,
+    fanartUrl: media.fanartUrl,
+    network: media.network,
+    totalEpisodes: media.totalEpisodes,
+    titleRomaji: media.titleRomaji,
+    titleNative: media.titleNative,
+    finale: media.finale,
     episode: media.episode,
     airDate: media.airDate,
   );
@@ -212,6 +228,7 @@ List<SimklMedia> parseSimklCalendar(String body) {
       ...meta,
       'ids': {...?(meta['ids'] as Map?), 'simkl_id': id},
       'date': date,
+      'finale_type': entry['finale_type'],
       'episode': number,
     });
     if (media != null) items.add(media);
