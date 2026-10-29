@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mywatchlist/services/api/Kitsu/kitsu_catalog.dart';
 import 'package:mywatchlist/services/api/Kitsu/kitsu_feed.dart';
 import 'package:mywatchlist/services/api/Kitsu/kitsu_graphql.dart' show KitsuFeedPost;
+import 'package:mywatchlist/services/api/Kitsu/kitsu_media.dart' show KitsuMedia;
 import 'package:mywatchlist/widgets/Kitsu/feed/kitsu_feed_parts.dart';
 import 'package:mywatchlist/widgets/MAL/home/section_header.dart';
 import 'package:mywatchlist/widgets/home/home_sections.dart';
@@ -80,6 +81,25 @@ KitsuMediaQuery? kitsuQueryForSection(HomeSectionPreference section) {
       return null;
   }
 }
+
+/// The tile model of a list entry: Kitsu's own title, mapped to MyAnimeList or not.
+KitsuMedia kitsuEntryToMedia(ListEntryView entry) => KitsuMedia(
+      id: entry.id,
+      isAnime: entry.isAnime,
+      title: entry.title,
+      posterUrl: entry.imageUrl ?? entry.largeImageUrl,
+      largePosterUrl: entry.largeImageUrl ?? entry.imageUrl,
+      subtype: entry.mediaType,
+      releaseState: entry.releaseState,
+      meanScore: entry.meanScore,
+      userCount: entry.members ?? 0,
+      popularityRank: entry.popularity,
+      total: entry.total,
+      totalVolumes: entry.totalVolumes,
+      startDate: entry.releaseStart,
+      endDate: entry.releaseEnd,
+      malId: entry.malId,
+    );
 
 /// The home-card model of a list entry; null when Kitsu maps its title to no MyAnimeList page.
 Anime? kitsuEntryToAnime(ListEntryView entry) {

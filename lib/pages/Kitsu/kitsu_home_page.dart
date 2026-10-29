@@ -9,7 +9,7 @@ import 'package:mywatchlist/services/api/Kitsu/kitsu_catalog.dart';
 import 'package:mywatchlist/services/api/Kitsu/kitsu_feed.dart';
 import 'package:mywatchlist/services/api/Kitsu/kitsu_graphql.dart' show KitsuFeedPost;
 import 'package:mywatchlist/services/api/Kitsu/kitsu_library.dart';
-import 'package:mywatchlist/services/api/MAL/mal_anime.dart' show Anime;
+import 'package:mywatchlist/services/api/Kitsu/kitsu_media.dart' show KitsuMedia;
 import 'package:mywatchlist/user/MAL/mal_home_page_preferences.dart';
 import 'package:mywatchlist/user/MAL/mal_home_preferences_bloc.dart';
 import 'package:mywatchlist/user/user_manager.dart';
@@ -17,7 +17,6 @@ import 'package:mywatchlist/utils/app_routes.dart';
 import 'package:mywatchlist/widgets/Kitsu/feed/kitsu_feed_list.dart';
 import 'package:mywatchlist/widgets/Kitsu/kitsu_media_row.dart';
 import 'package:mywatchlist/widgets/Kitsu/kitsu_rows.dart';
-import 'package:mywatchlist/widgets/MAL/home/contentlistwidget.dart';
 import 'package:mywatchlist/widgets/MAL/home/homeappbar.dart';
 import 'package:mywatchlist/widgets/MAL/home/section_header.dart';
 import 'package:mywatchlist/widgets/home/home_sections.dart';
@@ -30,7 +29,7 @@ import 'package:mywatchlist/widgets/user/list/list_entry_view.dart';
 /// airing, formats, manga and the user's own list). Suggestions, features and the forum have no
 /// Kitsu source and are skipped.
 ///
-/// Every title opens the MyAnimeList detail screen of its MyAnimeList id (Kitsu mappings).
+/// Every title is drawn as a Kitsu tile, mapped to MyAnimeList or not.
 class KitsuHomePage extends StatefulWidget {
   const KitsuHomePage({super.key});
 
@@ -244,7 +243,7 @@ class _UserListRow extends StatelessWidget {
   Widget _loaded() {
     final category = section.userCategory;
     final status = ListEntryStatus.fromMal(section.userStatus);
-    return HomeAsync<List<Anime>>(
+    return HomeAsync<List<KitsuMedia>>(
       cacheKey: 'kitsu:userlist:$category:${status?.name ?? 'all'}:${section.itemCount}',
       maxAge: Duration(hours: section.cacheDurationHours),
       refresh: refresh,
@@ -256,10 +255,7 @@ class _UserListRow extends StatelessWidget {
           limit: section.itemCount,
           sort: '-progressedAt',
         );
-        return [
-          for (final e in page.page.entries)
-            if (kitsuEntryToAnime(e) != null) kitsuEntryToAnime(e)!,
-        ];
+        return [for (final e in page.page.entries) kitsuEntryToMedia(e)];
       },
       loading: loadingCardList(
         containerHeight: cardHeight,
@@ -272,13 +268,9 @@ class _UserListRow extends StatelessWidget {
         if (items.isEmpty) {
           return HomeMessage(icon: Icons.inbox_outlined, text: S.current.Hw_Empty_List);
         }
-        return ContentListWidget(
-          category: category,
+        return KitsuMediaRow.cards(
           items: items,
-          height: cardHeight,
-          padding: const EdgeInsets.all(8),
-          tileWidth: cardWidth,
-          tileHeight: cardHeight,
+          cardWidth: cardWidth,
         );
       },
     );

@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/services/api/Kitsu/kitsu_catalog.dart';
 import 'package:mywatchlist/services/api/Kitsu/kitsu_media.dart';
-import 'package:mywatchlist/services/api/MAL/mal_anime.dart' show Anime;
-import 'package:mywatchlist/widgets/MAL/home/contentlistwidget.dart';
+import 'package:mywatchlist/widgets/Kitsu/kitsu_media_tile.dart';
 import 'package:mywatchlist/widgets/MAL/home/section_header.dart';
 import 'package:mywatchlist/widgets/home/home_sections.dart';
 import 'package:mywatchlist/widgets/loading/loadingcard.dart';
@@ -11,8 +10,8 @@ import 'package:mywatchlist/widgets/loading/loadingcard.dart';
 /// A horizontal row of Kitsu titles with its header: the cards of the home sections, fed by the
 /// Kitsu catalogue.
 ///
-/// A title Kitsu maps to no MyAnimeList page cannot open a detail screen, so only the mapped
-/// ones are drawn (a row of 20 usually keeps 19 or 20). The answer is kept in memory for
+/// Every title is drawn, mapped to MyAnimeList or not: Kitsu is its own app, and a tap opens the
+/// title through the Kitsu tile. The answer is kept in memory for
 /// [maxAge] like the other home sections (cleared by a pull to refresh through [refresh]).
 class KitsuMediaRow extends StatelessWidget {
   final String cacheKey;
@@ -74,6 +73,24 @@ class KitsuMediaRow extends StatelessWidget {
         onViewAll: onViewAll,
       );
 
+  /// The horizontal strip of Kitsu tiles shared by every row of the Kitsu home.
+  static Widget cards({required List<KitsuMedia> items, required double cardWidth}) => SizedBox(
+        height: cardWidth * 1.5 + KitsuMediaTile.textHeight + 8,
+        child: ListView.separated(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.fromLTRB(12, 4, 12, 4),
+          itemCount: items.length,
+          separatorBuilder: (context, index) => const SizedBox(width: 10),
+          itemBuilder: (context, i) => SizedBox(
+            width: cardWidth,
+            child: KitsuMediaTile(
+              key: ValueKey('${items[i].category}:${items[i].id}'),
+              media: items[i],
+            ),
+          ),
+        ),
+      );
+
   @override
   Widget build(BuildContext context) {
     final header = SectionHeader(title: title, onTap: onViewAll);
@@ -91,21 +108,11 @@ class KitsuMediaRow extends StatelessWidget {
       itemCount: itemCount > 8 ? 8 : itemCount,
       listPadding: const EdgeInsets.all(8),
     );
-    Widget cards(List<Anime> items) => ContentListWidget(
-          category: isAnime ? 'anime' : 'manga',
-          items: items,
-          height: cardHeight,
-          padding: const EdgeInsets.all(8),
-          tileWidth: cardWidth,
-          tileHeight: cardHeight,
-        );
-    Future<List<Anime>> loadCards() async => [
-          for (final m in await load())
-            if (m.toAnime() != null) m.toAnime()!,
-        ];
+    Widget cards(List<KitsuMedia> items) => KitsuMediaRow.cards(items: items, cardWidth: cardWidth);
+    Future<List<KitsuMedia>> loadCards() => load();
 
     if (hideWhenEmpty) {
-      return HomeAsync<List<Anime>>(
+      return HomeAsync<List<KitsuMedia>>(
         cacheKey: cacheKey,
         maxAge: maxAge,
         refresh: refresh,
@@ -113,14 +120,14 @@ class KitsuMediaRow extends StatelessWidget {
           try {
             return await loadCards();
           } catch (_) {
-            return const <Anime>[];
+            return const <KitsuMedia>[];
           }
         },
         loading: section(loading),
         builder: (context, items) => items.isEmpty ? const SizedBox.shrink() : section(cards(items)),
       );
     }
-    return section(HomeAsync<List<Anime>>(
+    return section(HomeAsync<List<KitsuMedia>>(
       cacheKey: cacheKey,
       maxAge: maxAge,
       refresh: refresh,

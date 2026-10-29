@@ -11,7 +11,10 @@ import 'package:mywatchlist/services/api/Kitsu/kitsu_catalog.dart';
 import 'package:mywatchlist/services/api/Kitsu/kitsu_feed.dart';
 import 'package:mywatchlist/services/api/Kitsu/kitsu_graphql.dart' show KitsuGraphql;
 import 'package:mywatchlist/services/api/Kitsu/kitsu_http.dart';
+import 'package:mywatchlist/services/api/Kitsu/kitsu_media.dart';
 import 'package:mywatchlist/user/MAL/mal_home_page_preferences.dart';
+import 'package:mywatchlist/widgets/Kitsu/kitsu_media_row.dart';
+import 'package:mywatchlist/widgets/Kitsu/kitsu_media_tile.dart';
 import 'package:mywatchlist/widgets/Kitsu/kitsu_rows.dart';
 import 'package:mywatchlist/widgets/home/home_sections.dart';
 
@@ -263,6 +266,38 @@ void main() {
       await pump(tester, KitsuFeed(client: fake.graphql), (_) {});
       expect(find.text('News'), findsNothing);
       expect(find.byType(KitsuNewsCard), findsNothing);
+    });
+  });
+
+  group('KitsuMediaRow', () {
+    testWidgets('keeps a title Kitsu maps to no MyAnimeList page', (tester) async {
+      HomeSectionCache.clear();
+      await tester.pumpWidget(MaterialApp(
+        localizationsDelegates: const [
+          S.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: S.delegate.supportedLocales,
+        home: Scaffold(
+          body: KitsuMediaRow(
+            cacheKey: 'test:unmapped',
+            title: 'Row',
+            isAnime: true,
+            cardWidth: 100,
+            cardHeight: 150,
+            load: () async => const [
+              KitsuMedia(id: 1, isAnime: true, title: 'Mapped', malId: 5),
+              KitsuMedia(id: 2, isAnime: true, title: 'Unmapped'),
+            ],
+          ),
+        ),
+      ));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
+      expect(find.byType(KitsuMediaTile), findsNWidgets(2));
+      expect(find.text('Unmapped'), findsOneWidget);
     });
   });
 }
