@@ -1041,6 +1041,13 @@ const UNITS = [
     dod: ["Tests: the message payload routes to the thread screen; notification POSTs go through postJson; behaviour of the poller unchanged."],
   },
   {
+    id: "list-time-followups", title: "My List: time left card field, season/studio/author/rating filters, rewatch badge, time line for every tracker", kind: "unit", priority: "P1", group: "user", model: "opus", ui: true,
+    needs: ["mal-list-time", "anilist-list-fidelity"],
+    owns: ["lib/user/preferences/content_card_props.dart", "lib/widgets/user/list/cards/**", "lib/widgets/user/list/list_query.dart", "lib/widgets/user/list/user_list_view.dart", "lib/widgets/user/list/user_list_adapter.dart", "lib/widgets/user/list/card_layout_editor.dart", "lib/widgets/user/list/user_list_tab.dart", "lib/l10n/units/list-time-followups/**", "test/units/list-time-followups/**"],
+    goal: ["Findings from mal-list-time (PR #278): (1) a 'time left' field in the card layout editor: a new CustomizableFieldType in content_card_props.dart rendered in cards/custom_entry_card.dart; (2) list filters by season, studio, author and rating in list_query.dart and the list filter sheet, from the ListEntryView fields mal-list-time added; (3) a 'rewatched xN' / 'reread xN' badge on the list cards; (4) count rewatches in 'Time watched'; (5) show the time line for every tracker whose adapter fills the duration (replace the tracker == myanimelist check in user_list_view.dart with a flag on the adapter base class).", "Replicate DailyAL's UI where it has the feature; no captions DailyAL lacks."],
+    dod: ["Tests: the time-left field renders; each filter narrows the list; the rewatch badge shows for N > 0; the time line shows for a non-MAL adapter that fills durations."],
+  },
+  {
     id: "explore-polish", title: "Explore: DailyAL images on category and genre cards, explicit genres, recommendations/stacks fallbacks, favourites badges", kind: "unit", priority: "P1", group: "discovery", model: "opus", ui: true,
     needs: ["search-sources", "explore-seasonal", "home-wiring", "profile-tabs"],
     owns: ["lib/services/api/MAL/scrapper/html_parsers.dart", "test/units/explore-crash/**", "lib/pages/MAL/mal_explore_page.dart", "lib/screens/explore/**", "assets/images/explore/**", "pubspec.yaml", "lib/cache/top_characters.dart"],

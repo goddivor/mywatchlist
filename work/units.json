@@ -52,7 +52,8 @@
         "mal-notifications",
         "mal-messages",
         "mal-hub-wiring",
-        "mal-hub-followups"
+        "mal-hub-followups",
+        "list-time-followups"
       ]
     },
     {
@@ -3470,6 +3471,38 @@
         "lib/l10n/units/mal-hub-followups/**",
         "test/units/mal-hub-followups/**",
         "test/units/mal-hub-followups/**"
+      ],
+      "group": "user",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "⬜ todo"
+    },
+    {
+      "id": "list-time-followups",
+      "title": "My List: time left card field, season/studio/author/rating filters, rewatch badge, time line for every tracker",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "mal-list-time",
+        "anilist-list-fidelity"
+      ],
+      "owns": [
+        "lib/user/preferences/content_card_props.dart",
+        "lib/widgets/user/list/cards/**",
+        "lib/widgets/user/list/list_query.dart",
+        "lib/widgets/user/list/user_list_view.dart",
+        "lib/widgets/user/list/user_list_adapter.dart",
+        "lib/widgets/user/list/card_layout_editor.dart",
+        "lib/widgets/user/list/user_list_tab.dart",
+        "lib/l10n/units/list-time-followups/**",
+        "test/units/list-time-followups/**",
+        "test/units/list-time-followups/**"
       ],
       "group": "user",
       "dropped": null,

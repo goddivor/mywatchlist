@@ -1027,6 +1027,16 @@ Build exactly the Goal, inside the Owns list. Heavy commands only through tools/
 Deliver with the PR procedure of the brief.
 ```
 
+## list-time-followups
+
+```text
+Unit list-time-followups — My List: time left card field, season/studio/author/rating filters, rewatch badge, time line for every tracker.
+Read work/handoffs/list-time-followups.md fully, then the DAL reference files it lists, then the MWL files you own.
+Build exactly the Goal, inside the Owns list. Heavy commands only through tools/heavy.sh; never run flutter build or touch the emulator.
+UI directive applies: compare DAL and MWL, keep the better, improve it.
+Deliver with the PR procedure of the brief.
+```
+
 ## explore-polish
 
 ```text
