@@ -41,6 +41,7 @@ this brief, then your unit's start prompt and handoff. Follow all three strictly
 ## Machine load (owner's rule — strict)
 - You WRITE CODE. You never run `flutter build`, `flutter run`, `adb` or the emulator: the checker does that, alone on the machine.
 - Every heavy command (`flutter analyze`, `flutter test`, `dart analyze`, `flutter pub get`, `tools/verify.sh`, `tools/l10n/build.sh`) goes through the machine-wide lock: `tools/heavy.sh <command>`. If another agent holds it, you wait — that is expected.
+- New string keys: use a prefix unique to your unit (not another unit's, e.g. `Als_` is taken by anilist-social), and before the PR rerun `grep -rn '"<Key>"' lib/l10n` after rebasing on origin/dev: a key defined in two fragments fails the l10n build in the merge gate.
 - First thing in a new worktree: `tools/heavy.sh bash -c 'flutter pub get && tools/l10n/build.sh'` (a fresh worktree has no packages and no generated `S`: without it analyze reports hundreds of false errors). `pub get` rewrites `macos/Flutter/GeneratedPluginRegistrant.swift`: `git checkout` it, never commit it.
 - Wait for a heavy command with the Bash tool's `run_in_background: true` (you are notified when it exits, however long the lock queue is), never with a Monitor or a timed watcher: those expire after 30 minutes and leave you idle while the command is still queued.
 - While iterating, analyze only your own files (`tools/heavy.sh dart analyze lib/<your paths>`), at most once per significant step. The full gate `tools/heavy.sh tools/verify.sh` once, at the end, before pushing.
