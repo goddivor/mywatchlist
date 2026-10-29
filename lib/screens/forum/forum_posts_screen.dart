@@ -4,6 +4,9 @@ import 'package:mywatchlist/cache/bookmarks.dart';
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/services/api/MAL/mal_forum_api.dart';
 import 'package:mywatchlist/services/api/MAL/models/forum/forum_models.dart';
+import 'package:mywatchlist/services/api/MAL/web/forum_poll_api.dart';
+import 'package:mywatchlist/services/api/MAL/web/mal_web_client.dart';
+import 'package:mywatchlist/widgets/mal_web/message_tiles.dart' show messageErrorText, showMessageSnack;
 import 'package:mywatchlist/utils/web_launcher.dart';
 import 'package:mywatchlist/widgets/bookmarks/bookmark_button.dart';
 import 'package:mywatchlist/widgets/common/app_bar_menu.dart';
@@ -214,7 +217,14 @@ class _ForumPostsScreenState extends State<ForumPostsScreen> {
           )
         else ...[
           if (_data?.poll != null)
-            SliverToBoxAdapter(child: _PollCard(poll: _data!.poll!)),
+            SliverToBoxAdapter(
+              child: _PollCard(
+                key: ValueKey('poll-${topic?.id}'),
+                poll: _data!.poll!,
+                topicId: topic?.id,
+                onVoted: _fetchTopicData,
+              ),
+            ),
           PostWidgetBuilder(
             key: ValueKey('$_pageIndex-$_newestFirst-${_data.hashCode}'),
             postList: posts,
@@ -423,10 +433,89 @@ class _PageSelector extends StatelessWidget implements PreferredSizeWidget {
 }
 
 /// The poll of a topic: each option with its share of the votes.
-class _PollCard extends StatelessWidget {
-  const _PollCard({required this.poll});
+class _PollCard extends StatefulWidget {
+  const _PollCard({super.key, required this.poll, this.topicId, this.onVoted});
 
   final ForumTopicPoll poll;
+  final int? topicId;
+
+  /// Called once MAL accepted a vote: the topic is read again to show the new results.
+  final VoidCallback? onVoted;
+
+  @override
+  State<_PollCard> createState() => _PollCardState();
+}
+
+class _PollCardState extends State<_PollCard> {
+  List<PollVoteOption> _ballot = const [];
+  bool _voting = false;
+
+  ForumTopicPoll get poll => widget.poll;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadBallot();
+  }
+
+  /// A signed-in member who has not voted gets MAL's vote buttons on the topic page; anyone
+  /// else (signed out, voted, closed poll) just sees the results.
+  Future<void> _loadBallot() async {
+    final topicId = widget.topicId;
+    if (topicId == null || poll.close == true) return;
+    final session = MalWebClient.instance.session;
+    await session.ensureLoaded();
+    if (!session.isConnected) return;
+    try {
+      final ballot = await ForumPollApi.instance.voteOptions(topicId);
+      if (mounted) setState(() => _ballot = ballot);
+    } catch (_) {
+      // Results only.
+    }
+  }
+
+  /// The vote button that matches [option]: same text, else same position when MAL lists as
+  /// many buttons as the poll has options.
+  PollVoteOption? _voteFor(int index, ForumTopicOptions option) {
+    if (_ballot.isEmpty) return null;
+    final text = (option.text ?? '').trim().toLowerCase();
+    for (final candidate in _ballot) {
+      if (candidate.text.toLowerCase() == text) return candidate;
+    }
+    final count = poll.options?.length ?? 0;
+    return count == _ballot.length ? _ballot[index] : null;
+  }
+
+  Future<void> _vote(PollVoteOption choice, String label) async {
+    final topicId = widget.topicId;
+    if (topicId == null || _voting) return;
+    final s = S.current;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        content: Text(s.Mww_Poll_Vote_Confirm(label)),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: Text(s.Cancel)),
+          FilledButton(onPressed: () => Navigator.pop(context, true), child: Text(s.Mww_Poll_Vote)),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    setState(() => _voting = true);
+    try {
+      await ForumPollApi.instance.vote(topicId, choice.id);
+      if (!mounted) return;
+      setState(() {
+        _ballot = const [];
+        _voting = false;
+      });
+      widget.onVoted?.call();
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _voting = false);
+      showMessageSnack(context, messageErrorText(e));
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -467,14 +556,29 @@ class _PollCard extends StatelessWidget {
           ),
           childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
           children: [
-            for (final option in options)
-              Padding(
+            for (var i = 0; i < options.length; i++)
+              _optionRow(context, i, options[i], total),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _optionRow(BuildContext context, int index, ForumTopicOptions option, int total) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final choice = _voteFor(index, option);
+    final row = Padding(
                 padding: const EdgeInsets.symmetric(vertical: 6),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
                       children: [
+                        if (choice != null) ...[
+                          Icon(Icons.radio_button_unchecked, size: 18, color: scheme.primary),
+                          const SizedBox(width: 8),
+                        ],
                         Expanded(
                           child: Text(
                             option.text ?? '',
@@ -499,10 +603,11 @@ class _PollCard extends StatelessWidget {
                     ),
                   ],
                 ),
-              ),
-          ],
-        ),
-      ),
+              );
+    if (choice == null) return row;
+    return InkWell(
+      onTap: _voting ? null : () => _vote(choice, option.text ?? choice.text),
+      child: row,
     );
   }
 }

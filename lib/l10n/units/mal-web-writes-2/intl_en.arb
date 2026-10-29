@@ -1,0 +1,8 @@
+{
+  "@@locale": "en",
+  "Mww_Poll_Vote": "Vote",
+  "Mww_Poll_Vote_Confirm": "Vote for \"{option}\"?",
+  "@Mww_Poll_Vote_Confirm": { "placeholders": { "option": { "type": "String" } } },
+  "Mww_Review_Write": "Write a review",
+  "Mww_Recommend_Make": "Recommend a similar title"
+}
