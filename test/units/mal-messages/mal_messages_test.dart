@@ -86,6 +86,9 @@ class _FakeMal {
 /// Every MAL form goes through a fake page; no picture is fetched.
 late FakeMalWebPages _pages;
 
+MalWebFormSubmitter _submitter(MalWebClient client) =>
+    MalWebFormSubmitter(client: client, pageFactory: _pages, pollInterval: Duration.zero);
+
 void main() {
   setUp(() {
     _pages = FakeMalWebPages();
@@ -361,7 +364,7 @@ void main() {
       );
       await tester.pumpWidget(app(MalMessageThreadScreen(
         message: message,
-        api: MalMessagesApi(client: mal.client(session)),
+        api: MalMessagesApi(client: mal.client(session), submitter: _submitter(mal.client(session))),
         session: session,
       )));
       await settle(tester);
@@ -382,7 +385,11 @@ void main() {
       late MalWebSession session;
       await tester.runAsync(() async => session = await _connected());
       final mal = _FakeMal();
-      final api = MalMessagesApi(client: mal.client(session), friends: (_) async => const []);
+      final api = MalMessagesApi(
+        client: mal.client(session),
+        friends: (_) async => const [],
+        submitter: _submitter(mal.client(session)),
+      );
       await tester.pumpWidget(app(ComposeMalMessageScreen(to: 'Kineta', api: api, session: session)));
       await settle(tester);
       expect(find.text('Kineta'), findsOneWidget);
