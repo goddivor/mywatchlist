@@ -13,6 +13,7 @@ DetailSection? moreInfoSection(DetailData data) {
     MoreInfoWidget(
       anime: content,
       additionalTitles: data.html?['additionalTitles'],
+      html: data.html,
       horizPadding: detailHorizPadding,
       category: data.category,
     ),
