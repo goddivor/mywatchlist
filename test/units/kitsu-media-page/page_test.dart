@@ -7,6 +7,7 @@ import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/pages/Kitsu/kitsu_media_page.dart';
 import 'package:mywatchlist/services/api/Kitsu/kitsu_graphql.dart';
 import 'package:mywatchlist/user/language/language_bloc.dart';
+import 'package:mywatchlist/widgets/Kitsu/media/kitsu_paged_screen.dart';
 import 'package:mywatchlist/user/preferences/preferences.dart';
 import 'package:mywatchlist/utils/web_launcher.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -208,7 +209,8 @@ void main() {
     // The list keeps a spinner while more pages exist: it never settles.
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
-    expect(find.text('Episode 1'), findsOneWidget);
+    expect(find.text('Episode 1'), findsWidgets);
+    expect(find.byType(KitsuPagedScreen<KitsuUnit>), findsOneWidget);
     expect(fake.requests.any((r) => r.body.contains('"after":"MTI"')), isTrue,
         reason: 'the list asks for the page after the 12 the title page holds');
   });
