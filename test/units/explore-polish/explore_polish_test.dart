@@ -188,17 +188,11 @@ void main() {
       semantics.dispose();
     });
 
-    testWidgets('the explicit genres card hides its picture with NSFW off', (tester) async {
+    testWidgets('the explicit genres card is not listed with NSFW off', (tester) async {
       await pumpInApp(tester, const SizedBox(width: 400, child: GenresRow(category: 'anime')));
-      expect(find.text(S.current.Explore_Genre_Explicit), findsOneWidget);
-      expect(find.text(S.current.Exp_Nsfw_Hidden), findsOneWidget);
-      expect(find.byIcon(Icons.eighteen_up_rating_rounded), findsOneWidget);
-      await tester.tap(find.byType(ExplorePictureCard).at(1));
-      await tester.pumpAndSettle();
-      expect(find.text(S.current.Exp_Nsfw_Title), findsOneWidget);
-      await tester.tap(find.text(S.current.Cancel));
-      await tester.pumpAndSettle();
-      expect(find.text(S.current.Exp_Nsfw_Title), findsNothing);
+      expect(find.text(S.current.Explore_Genre_Explicit), findsNothing);
+      expect(find.byType(ExplorePictureCard), findsWidgets);
+      expect(find.byIcon(Icons.eighteen_up_rating_rounded), findsNothing);
     });
 
     for (final locale in ['en', 'fr_FR']) {

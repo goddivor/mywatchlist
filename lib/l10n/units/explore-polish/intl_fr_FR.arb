@@ -2,10 +2,6 @@
   "@@locale": "fr_FR",
   "Exp_Genre_Count": "{count, plural, one{1 genre} other{{count} genres}}",
   "Exp_Genre_Titles": "{count} titres",
-  "Exp_Nsfw_Hidden": "Masqués (NSFW désactivé)",
-  "Exp_Nsfw_Title": "Afficher le contenu pour adultes ?",
-  "Exp_Nsfw_Body": "Les genres explicites sont masqués tant que l’option NSFW est désactivée. L’activer affiche aussi les titres pour adultes dans la recherche, les classements et les saisons. Vous pourrez la désactiver dans les paramètres.",
-  "Exp_Nsfw_Enable": "Activer NSFW",
   "Exp_Studios": "Studios",
   "Exp_Studios_Caption": "Tous les studios d’animation, avec leur logo et leurs animés",
   "Exp_Favorites": "{count, plural, one{Dans les favoris de {count} personne} other{Dans les favoris de {count} personnes}}"
