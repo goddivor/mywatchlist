@@ -20,6 +20,8 @@ import 'package:mywatchlist/services/api/Jikan/jikan_personfull.dart';
 import 'package:mywatchlist/services/api/Jikan/jikan_producer.dart';
 import 'package:mywatchlist/services/api/Jikan/jikan_producerfull.dart';
 import 'package:mywatchlist/services/api/MAL/mal_anime.dart';
+import 'package:mywatchlist/services/api/MAL/models/paging.dart';
+import 'package:mywatchlist/services/api/MAL/models/search_result.dart';
 
 enum AnimeForumFilter {
   all,
@@ -257,6 +259,41 @@ class JikanApi {
     } else {
       throw Exception('Failed to load current season data');
     }
+  }
+
+  /// Largest page Jikan's `/top/anime` serves.
+  static const int topPageSize = 25;
+
+  /// One page of `GET /top/anime?type=` as a [SearchResult] (the shape of a MAL
+  /// ranking), paged by [offset] (offset ~/ limit + 1). `paging.next` is the
+  /// Jikan URL of the following page, loaded by `MalApi.getContentListPage`.
+  /// Goes through [JikanClient], so Tenrai answers when Jikan is down.
+  Future<SearchResult> getTopAnimeResult({
+    required String type,
+    int limit = topPageSize,
+    int offset = 0,
+  }) async {
+    final size = limit.clamp(1, topPageSize);
+    final page = offset ~/ size + 1;
+    final url = Uri.parse(
+        '${Constants.jikanTopAnime}?type=$type&limit=$size&page=$page');
+    final response = await JikanClient.instance.get(url);
+    if (response.statusCode != 200) {
+      throw Exception('Failed to load top anime ($type)');
+    }
+    final body = json.decode(response.body) as Map<String, dynamic>;
+    final data = (body['data'] as List<dynamic>? ?? [])
+        .map((a) => Anime.fromJikanJson(a as Map<String, dynamic>))
+        .toList();
+    final hasNext =
+        (body['pagination'] as Map<String, dynamic>?)?['has_next_page'] == true;
+    final next = Uri.parse(
+        '${Constants.jikanTopAnime}?type=$type&limit=$size&page=${page + 1}');
+    return SearchResult(
+      data: data,
+      paging: hasNext ? Paging(next: next.toString()) : Paging(),
+      url: url.toString(),
+    );
   }
 
   Future<List<Anime>> getTopManga(

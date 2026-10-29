@@ -9,6 +9,8 @@ import 'dart:convert';
 
 import 'package:mywatchlist/constants/constants.dart';
 import 'package:mywatchlist/enums.dart';
+import 'package:mywatchlist/services/api/Jikan/jikan_api.dart';
+import 'package:mywatchlist/services/api/Jikan/jikan_client.dart';
 import 'package:mywatchlist/services/api/MAL/mal_anime.dart';
 import 'package:mywatchlist/services/api/MAL/mal_connect.dart';
 import 'package:mywatchlist/services/api/MAL/models/paging.dart';
@@ -41,7 +43,6 @@ enum AnimeListSort {
   listUpdatedAt,
   animeTitle,
   animeStartDate,
-  animeId,
 }
 
 enum MangaListStatus {
@@ -187,6 +188,11 @@ class MalApi {
     String category = "anime",
     List<String>? fields,
   }) async {
+    // MAL answers 400 to ranking_type=ona: Jikan (Tenrai when it is down) serves it.
+    if (category == "anime" && rankingType == RankingType.ONA) {
+      return JikanApi().getTopAnimeResult(
+          type: 'ona', limit: limit, offset: offset);
+    }
     // Get the ranking type name using enum
     String rankingTypeValue = (category == "anime"
         ? rankingMap[rankingType]
@@ -742,8 +748,6 @@ class MalApi {
         return 'anime_title';
       case AnimeListSort.animeStartDate:
         return 'anime_start_date';
-      case AnimeListSort.animeId:
-        return 'anime_id';
     }
   }
 
@@ -1057,6 +1061,18 @@ class MalApi {
       {bool next = true}) async {
     final url = next ? page.next : page.previous;
     if (url == null) return SearchResult();
+
+    // A Jikan page (the ONA ranking) is not a MAL URL.
+    if (JikanClient.instance.source?.isJikan(Uri.parse(url)) ?? false) {
+      final u = Uri.parse(url);
+      final size = int.tryParse(u.queryParameters['limit'] ?? '') ??
+          JikanApi.topPageSize;
+      final page = int.tryParse(u.queryParameters['page'] ?? '') ?? 1;
+      return JikanApi().getTopAnimeResult(
+          type: u.queryParameters['type'] ?? 'ona',
+          limit: size,
+          offset: (page - 1) * size);
+    }
 
     final response = await _get(url);
 
