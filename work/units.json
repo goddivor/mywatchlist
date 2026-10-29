@@ -53,7 +53,8 @@
         "mal-messages",
         "mal-hub-wiring",
         "mal-hub-followups",
-        "list-time-followups"
+        "list-time-followups",
+        "mal-web-recaptcha"
       ]
     },
     {
@@ -3640,6 +3641,39 @@
         "test/units/anilist-list-design/**"
       ],
       "group": "trackers",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "⬜ todo"
+    },
+    {
+      "id": "mal-web-recaptcha",
+      "title": "MAL writes protected by reCAPTCHA go through an invisible WebView; user pictures in messages",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P0",
+      "needs": [
+        "mal-hub-followups"
+      ],
+      "owns": [
+        "lib/services/api/MAL/web/mal_web_form_submitter.dart",
+        "lib/services/api/MAL/web/mal_web_client.dart",
+        "lib/services/api/MAL/web/mal_messages_api.dart",
+        "lib/services/api/MAL/web/profile_comments_api.dart",
+        "lib/services/api/MAL/web/mal_notifications_api.dart",
+        "lib/screens/mal_web/**",
+        "lib/widgets/forum/forum_common.dart",
+        "lib/l10n/units/mal-web-recaptcha/**",
+        "test/units/mal-web-recaptcha/**",
+        "test/units/mal-messages/**",
+        "test/units/mal-session/**",
+        "test/units/mal-web-recaptcha/**"
+      ],
+      "group": "user",
       "dropped": null,
       "skills": [],
       "states": [],
