@@ -1,0 +1,218 @@
+{
+  "@@locale": "en",
+  "Amp_Tab_Overview": "Overview",
+  "Amp_Tab_Relations": "Relations",
+  "Amp_Tab_Social": "Social",
+  "Amp_Next_Episode": "Ep {episode} in {time}",
+  "@Amp_Next_Episode": {
+    "placeholders": {
+      "episode": {
+        "type": "int"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "Amp_Behind": "{count} behind",
+  "@Amp_Behind": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "Amp_Adult": "18+",
+  "Amp_Average": "Average",
+  "Amp_Mean": "Mean",
+  "Amp_Rank_Rated_All": "#{rank} Highest rated all time",
+  "@Amp_Rank_Rated_All": {
+    "placeholders": {
+      "rank": {
+        "type": "int"
+      }
+    }
+  },
+  "Amp_Rank_Popular_All": "#{rank} Most popular all time",
+  "@Amp_Rank_Popular_All": {
+    "placeholders": {
+      "rank": {
+        "type": "int"
+      }
+    }
+  },
+  "Amp_Rank_Rated_Year": "#{rank} Highest rated {year}",
+  "@Amp_Rank_Rated_Year": {
+    "placeholders": {
+      "rank": {
+        "type": "int"
+      },
+      "year": {
+        "type": "int"
+      }
+    }
+  },
+  "Amp_Rank_Popular_Year": "#{rank} Most popular {year}",
+  "@Amp_Rank_Popular_Year": {
+    "placeholders": {
+      "rank": {
+        "type": "int"
+      },
+      "year": {
+        "type": "int"
+      }
+    }
+  },
+  "Amp_Rank_Rated_Season": "#{rank} Highest rated {season} {year}",
+  "@Amp_Rank_Rated_Season": {
+    "placeholders": {
+      "rank": {
+        "type": "int"
+      },
+      "season": {
+        "type": "String"
+      },
+      "year": {
+        "type": "int"
+      }
+    }
+  },
+  "Amp_Rank_Popular_Season": "#{rank} Most popular {season} {year}",
+  "@Amp_Rank_Popular_Season": {
+    "placeholders": {
+      "rank": {
+        "type": "int"
+      },
+      "season": {
+        "type": "String"
+      },
+      "year": {
+        "type": "int"
+      }
+    }
+  },
+  "Amp_Open_Anilist": "Open on AniList",
+  "Amp_Open_Mal": "Open on MyAnimeList",
+  "Amp_Copy_Title": "Copy title",
+  "Amp_Copied": "Copied",
+  "Amp_Add_To_List": "Add to list",
+  "Amp_Plus_One": "Add one",
+  "Amp_Started": "Started {date}",
+  "@Amp_Started": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "Amp_Completed": "Completed {date}",
+  "@Amp_Completed": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "Amp_Continue_Watching": "Continue watching",
+  "Amp_Show_More": "Show more",
+  "Amp_Show_Less": "Show less",
+  "Amp_Format": "Format",
+  "Amp_Country": "Country",
+  "Amp_Producers": "Producers",
+  "Amp_Hashtag": "Hashtag",
+  "Amp_Licensed": "Licensed",
+  "Amp_Yes": "Yes",
+  "Amp_No": "No",
+  "Amp_Information": "Information",
+  "Amp_Titles": "Titles",
+  "Amp_Romaji": "Romaji",
+  "Amp_Native": "Native",
+  "Amp_Show_Spoilers": "Show spoilers",
+  "Amp_Hide_Spoilers": "Hide spoilers",
+  "Amp_More_Tags": "{count} more",
+  "@Amp_More_Tags": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "Amp_Trailer": "Trailer",
+  "Amp_Where_To_Watch": "Where to watch",
+  "Amp_Links": "Links",
+  "Amp_Recommend": "Recommend a title",
+  "Amp_Recommend_Search": "Search a title",
+  "Amp_Recommend_Done": "Recommendation sent",
+  "Amp_Vote_Up": "Good recommendation",
+  "Amp_Vote_Down": "Bad recommendation",
+  "Amp_Rankings": "Rankings",
+  "Amp_Status_Distribution": "Status distribution",
+  "Amp_Score_Distribution": "Score distribution",
+  "Amp_Recent_Activity": "Recent activity",
+  "Amp_Following": "Following",
+  "Amp_Forum_Threads": "Forum threads",
+  "Amp_All_Threads": "All threads",
+  "Amp_No_Following": "Nobody you follow has this title",
+  "Amp_Not_Found": "This title is not on AniList",
+  "Amp_Load_Failed": "The title could not be loaded",
+  "Amp_No_Characters": "No characters",
+  "Amp_No_Staff": "No staff",
+  "Amp_No_Recommendations": "No recommendations yet",
+  "Amp_No_Relations": "No related titles",
+  "Amp_No_Stats": "No statistics yet",
+  "Amp_Voice_Language": "Voice actors",
+  "Amp_Time_Days": "{days}d {hours}h",
+  "@Amp_Time_Days": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      },
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
+  "Amp_Time_Hours": "{hours}h {minutes}m",
+  "@Amp_Time_Hours": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "Amp_Time_Minutes": "{minutes}m",
+  "@Amp_Time_Minutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "Amp_Progress": "{progress} / {total}",
+  "@Amp_Progress": {
+    "placeholders": {
+      "progress": {
+        "type": "int"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "Amp_Rel_ADAPTATION": "Adaptation",
+  "Amp_Rel_PREQUEL": "Prequel",
+  "Amp_Rel_SEQUEL": "Sequel",
+  "Amp_Rel_PARENT": "Parent story",
+  "Amp_Rel_SIDE_STORY": "Side story",
+  "Amp_Rel_CHARACTER": "Character",
+  "Amp_Rel_SUMMARY": "Summary",
+  "Amp_Rel_ALTERNATIVE": "Alternative",
+  "Amp_Rel_SPIN_OFF": "Spin-off",
+  "Amp_Rel_OTHER": "Other",
+  "Amp_Rel_SOURCE": "Source",
+  "Amp_Rel_COMPILATION": "Compilation",
+  "Amp_Rel_CONTAINS": "Contains"
+}

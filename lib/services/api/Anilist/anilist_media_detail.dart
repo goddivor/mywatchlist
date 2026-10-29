@@ -854,6 +854,47 @@ class AnilistMediaDetail {
   static int? _positive(Object? v) => v is num && v > 0 ? v.toInt() : null;
 }
 
+/// A title as the AniList editor edits it: totals, the user's entry and list settings.
+@immutable
+class AnilistEditTarget {
+  final int id;
+  final int? malId;
+  final String category;
+  final String title;
+  final String? coverUrl;
+  final String? format;
+  final int total;
+  final int totalVolumes;
+  final AnilistListEntry? entry;
+  final AnilistListOptions options;
+
+  const AnilistEditTarget({
+    required this.id,
+    required this.category,
+    required this.title,
+    this.malId,
+    this.coverUrl,
+    this.format,
+    this.total = 0,
+    this.totalVolumes = 0,
+    this.entry,
+    this.options = const AnilistListOptions(),
+  });
+
+  factory AnilistEditTarget.of(AnilistMediaDetail d) => AnilistEditTarget(
+        id: d.id,
+        malId: d.malId,
+        category: d.category,
+        title: d.title,
+        coverUrl: d.coverUrl,
+        format: d.format,
+        total: d.total,
+        totalVolumes: d.volumes ?? 0,
+        entry: d.entry,
+        options: d.listOptions ?? const AnilistListOptions(),
+      );
+}
+
 /// A page of a title's characters or staff.
 @immutable
 class AnilistPeoplePage<T> {
@@ -943,6 +984,23 @@ class AnilistMediaDetailService {
       }, variables: {
         'id': GqlVar('Int', id)
       }, auth: auth);
+
+  /// What the AniList editor needs for title [id] (signed in): the title's totals, the
+  /// user's whole entry and their list settings, in one request. For editors opened outside
+  /// the page (search results).
+  Future<AnilistEditTarget> editTarget(int id) async {
+    final result = await _gql.batch({
+      'media': 'Media(id: \$id) { id idMal type format episodes chapters volumes '
+          'title { userPreferred } coverImage { large } '
+          'mediaListEntry { ${AnilistListWrite.entryFields} } }',
+      'viewer': _viewer,
+    }, variables: {
+      'id': GqlVar('Int', id)
+    }, auth: true);
+    final media = result.require('media');
+    final d = AnilistMediaDetail.fromJson(media, viewer: result['viewer']);
+    return AnilistEditTarget.of(d);
+  }
 
   /// A page of the characters of title [id], voice actors in [language] (`StaffLanguage`).
   Future<AnilistPeoplePage<AnilistCastEdge>> characters(int id,
