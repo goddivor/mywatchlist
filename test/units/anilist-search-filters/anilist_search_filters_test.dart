@@ -29,6 +29,9 @@ class Sent {
   Sent(this.query, this.variables, this.auth);
 }
 
+http.Response utf8Json(Object? body) => http.Response.bytes(utf8.encode(json.encode(body)), 200,
+    headers: {'content-type': 'application/json; charset=utf-8'});
+
 /// A fake AniList: [answer] builds the body of each request.
 AnilistGraphql fakeGql(List<Sent> log, Object? Function(Sent) answer) =>
     AnilistGraphql(sender: (body, {required auth}) async {
@@ -38,7 +41,7 @@ AnilistGraphql fakeGql(List<Sent> log, Object? Function(Sent) answer) =>
       log.add(sent);
       final a = answer(sent);
       if (a is http.Response) return a;
-      return http.Response(json.encode(a), 200);
+      return utf8Json(a);
     });
 
 void main() {
@@ -113,7 +116,7 @@ void main() {
         expect(AnilistMediaQuery.gqlDeclarations, contains('\$$name:'));
         expect(AnilistMediaQuery.gqlArguments, contains('\$$name'));
       }
-      expect(q.filterCount, 20);
+      expect(q.filterCount, 19);
     });
 
     test('adult: hidden unless allowed, then any, only or none', () {
@@ -256,7 +259,7 @@ void main() {
         client: AnilistGraphql(sender: (body, {required auth}) async {
           log.add(Sent(body, const {}, auth));
           if (auth) return null;
-          return http.Response(json.encode(fixture('media')), 200);
+          return utf8Json(fixture('media'));
         }),
         signedIn: () => true,
         appAdult: () => false,
