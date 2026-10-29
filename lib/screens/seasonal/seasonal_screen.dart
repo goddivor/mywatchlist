@@ -47,6 +47,9 @@ class SeasonalScreen extends StatefulWidget {
   final bool Function()? malSignedIn;
   final ListStatusCache? cache;
 
+  /// Ids of the season's continuing shows ([SeasonalData.continuingIds] by default).
+  final Set<int> Function(SeasonKey season)? continuingIds;
+
   const SeasonalScreen({
     super.key,
     required this.initial,
@@ -55,6 +58,7 @@ class SeasonalScreen extends StatefulWidget {
     @visibleForTesting this.adapter,
     @visibleForTesting this.malSignedIn,
     @visibleForTesting this.cache,
+    @visibleForTesting this.continuingIds,
   });
 
   @override
@@ -142,7 +146,7 @@ class _SeasonalScreenState extends State<SeasonalScreen> with SingleTickerProvid
       setState(() {
         _settings = saved;
         _group = group;
-        _continuing = SeasonalData.continuingIds(season);
+        _continuing = (widget.continuingIds ?? SeasonalData.continuingIds)(season);
         _entries = entries;
         _recompute();
       });
@@ -156,9 +160,14 @@ class _SeasonalScreenState extends State<SeasonalScreen> with SingleTickerProvid
     }
   }
 
+  /// The group actually applied: a season without leftovers has no New / Continuing split (and no
+  /// chips), so a saved "Continuing" or "New" choice shows the whole season there instead of an
+  /// empty screen the user cannot leave.
+  SeasonGroup get _effectiveGroup => _continuing.isEmpty ? SeasonGroup.all : _group;
+
   void _recompute() {
     final entries = _entries ?? const [];
-    final grouped = switch (_group) {
+    final grouped = switch (_effectiveGroup) {
       SeasonGroup.all => entries,
       SeasonGroup.fresh => [for (final e in entries) if (!_continuing.contains(e.id)) e],
       SeasonGroup.continuing => [for (final e in entries) if (_continuing.contains(e.id)) e],
@@ -213,7 +222,7 @@ class _SeasonalScreenState extends State<SeasonalScreen> with SingleTickerProvid
                 padding: const EdgeInsets.only(right: 8),
                 child: ChoiceChip(
                   label: Text(label(g)),
-                  selected: _group == g,
+                  selected: _effectiveGroup == g,
                   onSelected: (_) => _setGroup(g),
                 ),
               ),
@@ -221,6 +230,15 @@ class _SeasonalScreenState extends State<SeasonalScreen> with SingleTickerProvid
         ),
       ),
     );
+  }
+
+  /// "Clear filters": drops the filters and goes back to the whole season.
+  void _clearFilters() {
+    if (_group != SeasonGroup.all) {
+      _group = SeasonGroup.all;
+      SeasonalData.writeGroup(SeasonGroup.all);
+    }
+    _applySettings(_settings.copyWith(filter: ListFilter.none));
   }
 
   void _applySettings(ListViewSettings value) {
@@ -333,16 +351,20 @@ class _SeasonalScreenState extends State<SeasonalScreen> with SingleTickerProvid
                 ),
                 const SizedBox(width: 4),
               ],
-              // DailyAL's faded season picture, drawn at 20 % through the image paint (no layer).
-              flexibleSpace: Image.asset(
-                seasonImage(_season.season),
-                key: ValueKey(_season.season),
-                fit: BoxFit.cover,
-                width: double.infinity,
-                height: double.infinity,
-                cacheWidth: 900,
-                opacity: const AlwaysStoppedAnimation(0.2),
-                excludeFromSemantics: true,
+              // DailyAL's faded season picture, drawn at 20 % through the image paint (no layer),
+              // in its own repaint boundary so the scrolling grid under the pinned bar does not
+              // paint the picture again on every frame.
+              flexibleSpace: RepaintBoundary(
+                child: Image.asset(
+                  seasonImage(_season.season),
+                  key: ValueKey(_season.season),
+                  fit: BoxFit.cover,
+                  width: double.infinity,
+                  height: double.infinity,
+                  cacheWidth: 900,
+                  opacity: const AlwaysStoppedAnimation(0.2),
+                  excludeFromSemantics: true,
+                ),
               ),
               bottom: TabBar(
                 controller: _tabController,
@@ -401,7 +423,7 @@ class _SeasonalScreenState extends State<SeasonalScreen> with SingleTickerProvid
             children: [
               SectionMessage(icon: Icons.filter_alt_off_rounded, text: S.current.Seasonal_No_Match),
               TextButton(
-                onPressed: () => _applySettings(_settings.copyWith(filter: ListFilter.none)),
+                onPressed: _clearFilters,
                 child: Text(S.current.Seasonal_Clear_Filters),
               ),
             ],

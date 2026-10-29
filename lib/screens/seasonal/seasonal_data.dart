@@ -23,7 +23,7 @@ ListEntryView entryFromAnime(Anime a) {
     malId: a.id,
     category: 'anime',
     title: a.title,
-    imageUrl: a.imageUrl.isEmpty ? null : a.imageUrl,
+    imageUrl: a.imageUrl.isEmpty ? null : mediumCover(a.imageUrl),
     largeImageUrl: a.imageUrl.isEmpty ? null : a.imageUrl,
     mediaType: a.mediaType,
     releaseState: ReleaseState.fromMal(a.status),
@@ -44,6 +44,16 @@ ListEntryView entryFromAnime(Anime a) {
     priority: ls?.priority ?? 0,
     updatedAt: DateTime.tryParse(ls?.updatedAt ?? ''),
   );
+}
+
+final RegExp _malLargeCover = RegExp(r'^(https://cdn\.myanimelist\.net/images/.*\d)l(\.(?:jpe?g|webp))$');
+
+/// The medium picture of a MyAnimeList cover from its large one (`…/138006l.jpg` gives
+/// `…/138006.jpg`, MAL's `main_picture.medium`). `Anime` keeps only the large picture, which list
+/// rows would download and decode at about four times the pixels they show; other URLs are kept.
+String mediumCover(String url) {
+  final m = _malLargeCover.firstMatch(url);
+  return m == null ? url : '${m[1]}${m[2]}';
 }
 
 /// Which part of a season the screen shows: everything, the shows that start in it, or the
