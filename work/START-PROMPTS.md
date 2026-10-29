@@ -1046,6 +1046,36 @@ Build exactly the Goal, inside the Owns list. Heavy commands only through tools/
 Deliver with the PR procedure of the brief.
 ```
 
+## simkl-redesign
+
+```text
+Unit simkl-redesign — Simkl screens redesigned from the Simkl UI reference: title page, home, explore/calendar, profile, list rows.
+Read work/handoffs/simkl-redesign.md fully, then the DAL reference files it lists, then the MWL files you own.
+Build exactly the Goal, inside the Owns list. Heavy commands only through tools/heavy.sh; never run flutter build or touch the emulator.
+UI directive applies: compare DAL and MWL, keep the better, improve it.
+Deliver with the PR procedure of the brief.
+```
+
+## kitsu-redesign
+
+```text
+Unit kitsu-redesign — Kitsu home, explore and library redesigned from the Kitsu UI reference.
+Read work/handoffs/kitsu-redesign.md fully, then the DAL reference files it lists, then the MWL files you own.
+Build exactly the Goal, inside the Owns list. Heavy commands only through tools/heavy.sh; never run flutter build or touch the emulator.
+UI directive applies: compare DAL and MWL, keep the better, improve it.
+Deliver with the PR procedure of the brief.
+```
+
+## anilist-list-design
+
+```text
+Unit anilist-list-design — AniList list and list rows redesigned from the AniList UI reference.
+Read work/handoffs/anilist-list-design.md fully, then the DAL reference files it lists, then the MWL files you own.
+Build exactly the Goal, inside the Owns list. Heavy commands only through tools/heavy.sh; never run flutter build or touch the emulator.
+UI directive applies: compare DAL and MWL, keep the better, improve it.
+Deliver with the PR procedure of the brief.
+```
+
 ## explore-polish
 
 ```text

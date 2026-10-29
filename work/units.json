@@ -152,6 +152,9 @@
         "mal-web-writes-2",
         "mal-api-small",
         "mal-ona-ranking",
+        "simkl-redesign",
+        "kitsu-redesign",
+        "anilist-list-design",
         "tracker-wiring"
       ]
     },
@@ -3536,6 +3539,98 @@
         "test/units/mal-ona-ranking/**",
         "lib/l10n/units/mal-ona-ranking/**",
         "test/units/mal-ona-ranking/**"
+      ],
+      "group": "trackers",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "⬜ todo"
+    },
+    {
+      "id": "simkl-redesign",
+      "title": "Simkl screens redesigned from the Simkl UI reference: title page, home, explore/calendar, profile, list rows",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "simkl-list-sync"
+      ],
+      "owns": [
+        "lib/pages/Simkl/simkl_media_page.dart",
+        "lib/pages/Simkl/simkl_home_page.dart",
+        "lib/pages/Simkl/simkl_explore_page.dart",
+        "lib/pages/Simkl/simkl_user_profile_page.dart",
+        "lib/pages/Simkl/simkl_user_page.dart",
+        "lib/widgets/Simkl/**",
+        "lib/l10n/units/simkl-redesign/**",
+        "test/units/simkl-redesign/**",
+        "test/units/simkl-redesign/**"
+      ],
+      "group": "trackers",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "⬜ todo"
+    },
+    {
+      "id": "kitsu-redesign",
+      "title": "Kitsu home, explore and library redesigned from the Kitsu UI reference",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "kitsu-home-extras",
+        "kitsu-media-page",
+        "kitsu-profile-plus"
+      ],
+      "owns": [
+        "lib/pages/Kitsu/kitsu_home_page.dart",
+        "lib/pages/Kitsu/kitsu_explore_page.dart",
+        "lib/pages/Kitsu/kitsu_browse_screen.dart",
+        "lib/pages/Kitsu/kitsu_user_page.dart",
+        "lib/widgets/Kitsu/kitsu_rows.dart",
+        "lib/widgets/Kitsu/kitsu_media_row.dart",
+        "lib/widgets/Kitsu/kitsu_user_list_adapter.dart",
+        "lib/services/api/Kitsu/kitsu_catalog.dart",
+        "lib/l10n/units/kitsu-redesign/**",
+        "test/units/kitsu-redesign/**",
+        "test/units/kitsu-redesign/**"
+      ],
+      "group": "trackers",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "⬜ todo"
+    },
+    {
+      "id": "anilist-list-design",
+      "title": "AniList list and list rows redesigned from the AniList UI reference",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "anilist-list-fidelity",
+        "anilist-media-page"
+      ],
+      "owns": [
+        "lib/pages/Anilist/anilist_user_page.dart",
+        "lib/widgets/Anilist/list/**",
+        "lib/widgets/Anilist/anilist_user_list_adapter.dart",
+        "lib/l10n/units/anilist-list-design/**",
+        "test/units/anilist-list-design/**",
+        "test/units/anilist-list-design/**"
       ],
       "group": "trackers",
       "dropped": null,
