@@ -9,7 +9,7 @@ sealed class SpecialQuery {
   /// - `airing`, `bypopularity`, `all`… an anime ranking;
   /// - `manga@manga`, `bypopularity@manga`… a manga ranking;
   /// - `winter@2025` a season (four-digit year);
-  /// - `suggested@anime` the user's suggestions (MAL has no manga ones).
+  /// - `suggested@anime`, `suggested@manga` the user's suggestions.
   static SpecialQuery? parse(String raw) {
     final text = raw.trim().toLowerCase();
     if (text.isEmpty) return null;
@@ -26,8 +26,7 @@ sealed class SpecialQuery {
       final year = int.tryParse(tail);
       if (year != null) return SeasonQuery(season, year);
     }
-    // MAL v2 documents only anime suggestions: `suggested@manga` is not a query.
-    if (head == 'suggested' && tail == 'anime') {
+    if (head == 'suggested' && (tail == 'anime' || tail == 'manga')) {
       return SuggestedQuery(tail);
     }
     if (tail == 'manga') {

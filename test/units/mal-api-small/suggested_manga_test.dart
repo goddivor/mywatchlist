@@ -3,9 +3,9 @@ import 'package:mywatchlist/screens/search/search_queries.dart';
 import 'package:mywatchlist/services/api/MAL/mal_api.dart';
 
 void main() {
-  test('suggested@anime parses, suggested@manga is not a special query', () {
+  test('suggested@manga still parses (empty state is served by the API layer)', () {
     expect(SpecialQuery.parse('suggested@anime'), isA<SuggestedQuery>());
-    expect(SpecialQuery.parse('suggested@manga'), isNull);
+    expect(SpecialQuery.parse('suggested@manga'), isA<SuggestedQuery>());
   });
 
   test('manga suggestions answer empty without any request', () async {
