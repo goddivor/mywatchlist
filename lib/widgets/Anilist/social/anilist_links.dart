@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:mywatchlist/constants/constants.dart' show AccountType;
 import 'package:mywatchlist/pages/Anilist/anilist_activity_page.dart';
+import 'package:mywatchlist/pages/Anilist/anilist_character_page.dart';
 import 'package:mywatchlist/pages/Anilist/anilist_review_page.dart';
+import 'package:mywatchlist/pages/Anilist/anilist_staff_page.dart';
+import 'package:mywatchlist/pages/Anilist/anilist_studio_page.dart';
 import 'package:mywatchlist/pages/Anilist/anilist_thread_page.dart';
 import 'package:mywatchlist/utils/app_routes.dart';
 import 'package:mywatchlist/utils/web_launcher.dart';
@@ -98,8 +101,8 @@ Future<void> openAnilistUser(BuildContext context, String? name) async {
 }
 
 /// What a tap on a link of AniList's HTML does: titles go through [openAnilistTitle]; users,
-/// threads, comments, activities and reviews open their screen in the app; characters, staff and studios (no in-app page
-/// yet) and every other site go through [openLink] (asks, then the in-app browser).
+/// threads, comments, activities, reviews, characters, staff and studios open their screen in
+/// the app; every other site goes through [openLink] (asks, then the in-app browser).
 Future<void> openAnilistLink(BuildContext context, String url) async {
   final link = parseAnilistLink(url);
   final absolute = url.startsWith('/') ? 'https://anilist.co$url' : url;
@@ -120,8 +123,10 @@ Future<void> openAnilistLink(BuildContext context, String url) async {
     case AnilistLinkKind.review:
       await openAnilistReview(context, link.id);
     case AnilistLinkKind.character:
+      return openAnilistCharacter(context, link.id);
     case AnilistLinkKind.staff:
+      return openAnilistStaff(context, link.id);
     case AnilistLinkKind.studio:
-      return openLink(context, absolute, confirm: false);
+      return openAnilistStudio(context, link.id);
   }
 }

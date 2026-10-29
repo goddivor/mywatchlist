@@ -1,0 +1,66 @@
+{
+  "@@locale": "en",
+  "Alp_Info": "Info",
+  "Alp_Voice_Roles": "Voice roles",
+  "Alp_Staff_Roles": "Staff roles",
+  "Alp_On_My_List": "On my list",
+  "Alp_Language": "Language",
+  "Alp_Sort_Popularity": "Popularity",
+  "Alp_Sort_Start_Date": "Start date",
+  "Alp_Sort_Score": "Score",
+  "Alp_Main_Studio_Only": "Main studio",
+  "Alp_Age": "Age",
+  "Alp_Blood_Type": "Blood type",
+  "Alp_Died": "Died",
+  "Alp_Hometown": "Hometown",
+  "Alp_Years_Active": "Years active",
+  "Alp_Occupations": "Occupations",
+  "Alp_Alt_Names": "Alternative names",
+  "Alp_Show_Spoiler_Names": "Show spoiler names",
+  "Alp_Favourites_Count": "{count} favourites",
+  "@Alp_Favourites_Count": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "Alp_Add_Favourite": "Add to favourites",
+  "Alp_Remove_Favourite": "Remove from favourites",
+  "Alp_Present": "present",
+  "Alp_Tba": "TBA",
+  "Alp_Nothing_Found": "Nothing found",
+  "Alp_Years_Range": "{from} to {to}",
+  "@Alp_Years_Range": {
+    "placeholders": {
+      "from": {
+        "type": "int"
+      },
+      "to": {
+        "type": "int"
+      }
+    }
+  },
+  "Alp_Since_Year": "Since {year}",
+  "@Alp_Since_Year": {
+    "placeholders": {
+      "year": {
+        "type": "int"
+      }
+    }
+  },
+  "Alp_Lang_French": "French",
+  "Alp_Lang_German": "German",
+  "Alp_Lang_Italian": "Italian",
+  "Alp_Lang_Spanish": "Spanish",
+  "Alp_Lang_Portuguese": "Portuguese",
+  "Alp_Lang_Hebrew": "Hebrew",
+  "Alp_Lang_Hungarian": "Hungarian",
+  "Alp_Birthday": "Birthday",
+  "Alp_Role_Main": "Main",
+  "Alp_Role_Supporting": "Supporting",
+  "Alp_Role_Background": "Background",
+  "Alp_Lang_Japanese": "Japanese",
+  "Alp_Lang_English": "English",
+  "Alp_Lang_Korean": "Korean"
+}
