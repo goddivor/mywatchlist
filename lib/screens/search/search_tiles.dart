@@ -18,6 +18,7 @@ import 'package:mywatchlist/utils/app_routes.dart';
 import 'package:mywatchlist/widgets/MAL/home/animegridcard.dart' show userCountFormat, ratingFormat;
 import 'package:mywatchlist/widgets/common/app_colors.dart';
 import 'package:mywatchlist/widgets/common/app_image.dart';
+import 'package:mywatchlist/widgets/common/dub_icon.dart';
 import 'package:mywatchlist/widgets/common/image_preview.dart';
 
 /// Opens the detail screen of an anime or manga result.
@@ -166,7 +167,17 @@ class MediaTile extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            SearchThumb(url: item.imageUrl, width: w, height: h),
+            Stack(
+              children: [
+                SearchThumb(url: item.imageUrl, width: w, height: h),
+                if (category == SearchCategory.anime && size != MediaTileSize.compact)
+                  PositionedDirectional(
+                    top: 4,
+                    end: 4,
+                    child: DubStatusBadge(animeId: item.id, radius: 5),
+                  ),
+              ],
+            ),
             const SizedBox(width: 12),
             Expanded(
               child: SizedBox(

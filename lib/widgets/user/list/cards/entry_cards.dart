@@ -101,6 +101,7 @@ class EntryListTile extends StatelessWidget {
               ],
             ),
           ),
+          EntryDubBadge(entry: entry, radius: 4),
           // The row prints the progress: only the red "+N" badge.
           EntryEpisodeBadges(entry: entry, now: now, showReleased: false),
           const SizedBox(width: 6),
@@ -132,6 +133,7 @@ class EntryListTile extends StatelessWidget {
             child: Stack(
               children: [
                 EntryCover(entry: entry, width: coverW, height: coverH, large: spacious),
+                PositionedDirectional(top: 4, end: 4, child: EntryDubBadge(entry: entry)),
                 // The row prints the progress: only the red "+N" badge.
                 PositionedDirectional(
                   bottom: 4,
@@ -307,6 +309,11 @@ class EntryGridCard extends StatelessWidget {
           top: airing != null ? 22 : 7,
           end: 3,
           child: EntryEpisodeBadges(entry: entry, now: now),
+        ),
+        PositionedDirectional(
+          top: airing != null ? 22 : 7,
+          start: 5,
+          child: EntryDubBadge(entry: entry),
         ),
         if (style.showPriority && entry.priority > 0)
           PositionedDirectional(bottom: 5, start: 5, child: PriorityPill(priority: entry.priority)),
