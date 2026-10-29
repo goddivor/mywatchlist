@@ -26,6 +26,18 @@ ListEntryStatus? listStatusOfKitsu(Object? value) => switch (value) {
       _ => null,
     };
 
+/// What the shared card model does not keep of a Kitsu library entry.
+@immutable
+class KitsuListExtras {
+  /// `ratingTwenty`, 2 to 20; null when not rated.
+  final int? twenty;
+
+  /// The user's reaction to the title, null when none.
+  final String? reaction;
+
+  const KitsuListExtras({this.twenty, this.reaction});
+}
+
 /// A page of the library plus the Kitsu library-entry id of each media on it.
 class KitsuLibraryPage {
   final ListPage page;
@@ -33,7 +45,10 @@ class KitsuLibraryPage {
   /// Library-entry id by media id.
   final Map<int, String> entryIds;
 
-  const KitsuLibraryPage(this.page, this.entryIds);
+  /// Exact rating and reaction of each entry, by media id.
+  final Map<int, KitsuListExtras> extras;
+
+  const KitsuLibraryPage(this.page, this.entryIds, [this.extras = const {}]);
 }
 
 /// The signed-in user's Kitsu library (`/library-entries`), read and written through
@@ -69,13 +84,15 @@ class KitsuLibrary {
   }
 
   /// Base parameters of a library request of [isAnime] entries.
-  Map<String, String> _params(String userId, bool isAnime, ListEntryStatus? status) {
+  Map<String, String> _params(String userId, bool isAnime, ListEntryStatus? status,
+      {bool reactions = false}) {
     final kind = isAnime ? 'anime' : 'manga';
     return {
       'filter[userId]': userId,
       'filter[kind]': kind,
       if (status != null) 'filter[status]': kitsuStatusOf(status),
-      'include': '$kind,$kind.mappings',
+      'include': '$kind,$kind.mappings${reactions ? ',mediaReaction' : ''}',
+      if (reactions) 'fields[mediaReactions]': 'reaction',
       'fields[$kind]': KitsuCatalog.fields(isAnime),
       'fields[mappings]': 'externalSite,externalId',
     };
@@ -88,11 +105,12 @@ class KitsuLibrary {
     required int offset,
     required int limit,
     String? sort,
+    bool reactions = false,
   }) async {
     final id = await userId();
     final json = await http.getJson('/library-entries',
         query: {
-          ..._params(id, isAnime, status),
+          ..._params(id, isAnime, status, reactions: reactions),
           if (sort != null) 'sort': sort,
           'page[limit]': '${limit.clamp(1, maxPage)}',
           'page[offset]': '$offset',
@@ -190,6 +208,7 @@ class KitsuLibrary {
     final relation = isAnime ? 'anime' : 'manga';
     final entries = <ListEntryView>[];
     final ids = <int, String>{};
+    final extras = <int, KitsuListExtras>{};
     for (final r in doc.data) {
       final mediaRes = doc.related(r, relation);
       if (mediaRes == null) continue;
@@ -197,8 +216,15 @@ class KitsuLibrary {
       if (media.id == 0) continue;
       entries.add(entryView(media, kitsuAttrs(r)));
       ids[media.id] = '${r['id']}';
+      final rating = kitsuAttrs(r)['ratingTwenty'];
+      final reactionRes = doc.related(r, 'mediaReaction');
+      final text = reactionRes == null ? null : kitsuAttrs(reactionRes)['reaction'];
+      extras[media.id] = KitsuListExtras(
+        twenty: rating is num && rating > 0 ? rating.toInt() : null,
+        reaction: text is String && text.trim().isNotEmpty ? text.trim() : null,
+      );
     }
-    return KitsuLibraryPage(ListPage(entries, hasMore: doc.hasNext), ids);
+    return KitsuLibraryPage(ListPage(entries, hasMore: doc.hasNext), ids, extras);
   }
 
   /// The card model of [media] with the library attributes [a] of its entry.
