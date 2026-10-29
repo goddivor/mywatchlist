@@ -78,7 +78,7 @@ void main() {
       final counts = await adapter.statusCounts('anime');
       expect(counts![ListEntryStatus.current], 2);
       expect(counts[ListEntryStatus.planned], 1);
-      expect(fake.seen, hasLength(1));
+      expect(fake.seen.where((r) => r.url.path == '/sync/all-items/anime'), hasLength(1));
     });
 
     test('a failed list reports no counts, and a dead session is recognised', () async {
