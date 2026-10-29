@@ -59,7 +59,17 @@
         "mal-polish",
         "mal-polish-2",
         "mal-friends-feed",
-        "mal-pm-composer"
+        "mal-pm-composer",
+        "tracker-contracts",
+        "tracker-routes",
+        "anilist-calendar",
+        "kitsu-calendar",
+        "simkl-search",
+        "home-layout-per-tracker",
+        "prefs-per-tracker",
+        "bookmarks-per-tracker",
+        "notifications-all-trackers",
+        "mal-pm-chat-notifications"
       ]
     },
     {
@@ -3992,6 +4002,299 @@
         "lib/l10n/units/mal-pm-composer/**",
         "test/units/mal-pm-composer/**",
         "test/units/mal-pm-composer/**"
+      ],
+      "group": "user",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "⬜ todo"
+    },
+    {
+      "id": "tracker-contracts",
+      "title": "Contracts for tracker isolation: tracker-tagged notification payloads, per-tracker preference reads, global notification gate",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P0",
+      "needs": [
+        "mal-hub-followups"
+      ],
+      "owns": [
+        "lib/services/notifications/notification_payload.dart",
+        "lib/user/preferences/tracker_scope.dart",
+        "lib/services/notifications/notification_gate.dart",
+        "test/units/tracker-contracts/**",
+        "lib/l10n/units/tracker-contracts/**",
+        "test/units/tracker-contracts/**"
+      ],
+      "group": "user",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "⬜ todo"
+    },
+    {
+      "id": "tracker-routes",
+      "title": "Routes and app bar per tracker: calendar, search, bookmarks, bell, sidebar, notification taps, startup page",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P0",
+      "needs": [
+        "tracker-contracts",
+        "mal-polish-2",
+        "anilist-calendar",
+        "kitsu-calendar",
+        "simkl-search"
+      ],
+      "owns": [
+        "lib/utils/app_routes.dart",
+        "lib/widgets/MAL/home/homeappbar.dart",
+        "lib/pages/side_bar.dart",
+        "lib/screens/home_screen.dart",
+        "lib/pages/Anilist/anilist_home_page.dart",
+        "lib/pages/Simkl/simkl_user_page.dart",
+        "lib/l10n/units/tracker-routes/**",
+        "test/units/tracker-routes/**",
+        "test/units/tracker-routes/**"
+      ],
+      "group": "user",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "⬜ todo"
+    },
+    {
+      "id": "anilist-calendar",
+      "title": "AniList calendar: the weekly airing schedule from AniList",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P0",
+      "needs": [
+        "tracker-contracts"
+      ],
+      "owns": [
+        "lib/widgets/Anilist/calendar/**",
+        "lib/services/api/Anilist/anilist_discover_service.dart",
+        "lib/l10n/units/anilist-calendar/**",
+        "test/units/anilist-calendar/**",
+        "test/units/anilist-calendar/**"
+      ],
+      "group": "user",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: sonnet"
+      ],
+      "status": "⬜ todo"
+    },
+    {
+      "id": "kitsu-calendar",
+      "title": "Kitsu calendar: upcoming episodes of the user's Kitsu library",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P0",
+      "needs": [
+        "tracker-contracts"
+      ],
+      "owns": [
+        "lib/widgets/Kitsu/calendar/**",
+        "lib/services/api/Kitsu/kitsu_library.dart",
+        "lib/l10n/units/kitsu-calendar/**",
+        "test/units/kitsu-calendar/**",
+        "test/units/kitsu-calendar/**"
+      ],
+      "group": "user",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: sonnet"
+      ],
+      "status": "⬜ todo"
+    },
+    {
+      "id": "simkl-search",
+      "title": "Simkl search screen so the search icon opens Simkl's search on Simkl",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P0",
+      "needs": [
+        "tracker-contracts"
+      ],
+      "owns": [
+        "lib/widgets/Simkl/search/**",
+        "lib/pages/Simkl/simkl_explore_page.dart",
+        "lib/l10n/units/simkl-search/**",
+        "test/units/simkl-search/**",
+        "test/units/simkl-search/**"
+      ],
+      "group": "user",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: sonnet"
+      ],
+      "status": "⬜ todo"
+    },
+    {
+      "id": "home-layout-per-tracker",
+      "title": "Home layout settings per tracker",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P0",
+      "needs": [
+        "tracker-contracts",
+        "mal-friends-feed"
+      ],
+      "owns": [
+        "lib/user/MAL/mal_home_page_preferences.dart",
+        "lib/user/MAL/mal_home_preferences_bloc.dart",
+        "lib/screens/settings/mal_home_settings.dart",
+        "lib/l10n/units/home-layout-per-tracker/**",
+        "test/units/home-layout-per-tracker/**",
+        "test/units/home-layout-per-tracker/**"
+      ],
+      "group": "user",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: sonnet"
+      ],
+      "status": "⬜ todo"
+    },
+    {
+      "id": "prefs-per-tracker",
+      "title": "Tracker settings per tracker (title language, NSFW, list, cards, detail tabs…)",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P0",
+      "needs": [
+        "tracker-contracts",
+        "home-layout-per-tracker"
+      ],
+      "owns": [
+        "lib/user/preferences/**",
+        "lib/screens/settings/user_prefs_settings.dart",
+        "lib/screens/settings/list_prefs_settings.dart",
+        "lib/screens/settings/anime_manga_settings.dart",
+        "lib/screens/settings/dub_settings.dart",
+        "lib/screens/settings/prefs/**",
+        "lib/widgets/user/list/card_layout_editor.dart",
+        "lib/screens/settings/settings_page.dart",
+        "lib/l10n/units/prefs-per-tracker/**",
+        "test/units/prefs-per-tracker/**",
+        "test/units/prefs-per-tracker/**"
+      ],
+      "group": "user",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "⬜ todo"
+    },
+    {
+      "id": "bookmarks-per-tracker",
+      "title": "Bookmarks per tracker",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P0",
+      "needs": [
+        "tracker-contracts"
+      ],
+      "owns": [
+        "lib/screens/bookmarks_screen.dart",
+        "lib/widgets/bookmarks/**",
+        "lib/cache/bookmarks.dart",
+        "lib/pages/Anilist/anilist_media_page.dart",
+        "lib/pages/Kitsu/kitsu_media_page.dart",
+        "lib/pages/Simkl/simkl_media_page.dart",
+        "lib/l10n/units/bookmarks-per-tracker/**",
+        "test/units/bookmarks-per-tracker/**",
+        "test/units/bookmarks-per-tracker/**"
+      ],
+      "group": "user",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: sonnet"
+      ],
+      "status": "⬜ todo"
+    },
+    {
+      "id": "notifications-all-trackers",
+      "title": "Notifications from every connected tracker, one group of switches per tracker",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P0",
+      "needs": [
+        "tracker-contracts",
+        "prefs-per-tracker"
+      ],
+      "owns": [
+        "lib/services/notifications/notification_service.dart",
+        "lib/services/notifications/mal_hub.dart",
+        "lib/services/notifications/anilist_*",
+        "lib/services/notifications/kitsu_*",
+        "lib/services/notifications/simkl_*",
+        "lib/main.dart",
+        "lib/screens/settings/notifications_settings.dart",
+        "lib/user/preferences/notification_preferences.dart",
+        "lib/services/api/Anilist/anilist_list_service.dart",
+        "lib/services/api/SimKl/simkl_list_service.dart",
+        "lib/l10n/units/notifications-all-trackers/**",
+        "test/units/notifications-all-trackers/**",
+        "test/units/notifications-all-trackers/**"
+      ],
+      "group": "user",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "⬜ todo"
+    },
+    {
+      "id": "mal-pm-chat-notifications",
+      "title": "MAL messages: chat-style phone notifications, fast while the app is open",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P0",
+      "needs": [
+        "tracker-contracts",
+        "mal-pm-composer"
+      ],
+      "owns": [
+        "lib/services/notifications/mal_hub_poller.dart",
+        "lib/widgets/mal_web/message_tiles.dart",
+        "lib/screens/mal_web/message_thread_screen.dart",
+        "lib/l10n/units/mal-pm-chat-notifications/**",
+        "test/units/mal-pm-chat-notifications/**",
+        "test/units/mal-pm-chat-notifications/**"
       ],
       "group": "user",
       "dropped": null,

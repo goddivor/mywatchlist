@@ -1185,6 +1185,106 @@ UI directive applies: compare DAL and MWL, keep the better, improve it.
 Deliver with the PR procedure of the brief.
 ```
 
+## tracker-contracts
+
+```text
+Unit tracker-contracts — Contracts for tracker isolation: tracker-tagged notification payloads, per-tracker preference reads, global notification gate.
+Read work/handoffs/tracker-contracts.md fully, then the DAL reference files it lists, then the MWL files you own.
+Build exactly the Goal, inside the Owns list. Heavy commands only through tools/heavy.sh; never run flutter build or touch the emulator.
+UI directive applies: compare DAL and MWL, keep the better, improve it.
+Deliver with the PR procedure of the brief.
+```
+
+## tracker-routes
+
+```text
+Unit tracker-routes — Routes and app bar per tracker: calendar, search, bookmarks, bell, sidebar, notification taps, startup page.
+Read work/handoffs/tracker-routes.md fully, then the DAL reference files it lists, then the MWL files you own.
+Build exactly the Goal, inside the Owns list. Heavy commands only through tools/heavy.sh; never run flutter build or touch the emulator.
+UI directive applies: compare DAL and MWL, keep the better, improve it.
+Deliver with the PR procedure of the brief.
+```
+
+## anilist-calendar
+
+```text
+Unit anilist-calendar — AniList calendar: the weekly airing schedule from AniList.
+Read work/handoffs/anilist-calendar.md fully, then the DAL reference files it lists, then the MWL files you own.
+Build exactly the Goal, inside the Owns list. Heavy commands only through tools/heavy.sh; never run flutter build or touch the emulator.
+UI directive applies: compare DAL and MWL, keep the better, improve it.
+Deliver with the PR procedure of the brief.
+```
+
+## kitsu-calendar
+
+```text
+Unit kitsu-calendar — Kitsu calendar: upcoming episodes of the user's Kitsu library.
+Read work/handoffs/kitsu-calendar.md fully, then the DAL reference files it lists, then the MWL files you own.
+Build exactly the Goal, inside the Owns list. Heavy commands only through tools/heavy.sh; never run flutter build or touch the emulator.
+UI directive applies: compare DAL and MWL, keep the better, improve it.
+Deliver with the PR procedure of the brief.
+```
+
+## simkl-search
+
+```text
+Unit simkl-search — Simkl search screen so the search icon opens Simkl's search on Simkl.
+Read work/handoffs/simkl-search.md fully, then the DAL reference files it lists, then the MWL files you own.
+Build exactly the Goal, inside the Owns list. Heavy commands only through tools/heavy.sh; never run flutter build or touch the emulator.
+UI directive applies: compare DAL and MWL, keep the better, improve it.
+Deliver with the PR procedure of the brief.
+```
+
+## home-layout-per-tracker
+
+```text
+Unit home-layout-per-tracker — Home layout settings per tracker.
+Read work/handoffs/home-layout-per-tracker.md fully, then the DAL reference files it lists, then the MWL files you own.
+Build exactly the Goal, inside the Owns list. Heavy commands only through tools/heavy.sh; never run flutter build or touch the emulator.
+UI directive applies: compare DAL and MWL, keep the better, improve it.
+Deliver with the PR procedure of the brief.
+```
+
+## prefs-per-tracker
+
+```text
+Unit prefs-per-tracker — Tracker settings per tracker (title language, NSFW, list, cards, detail tabs…).
+Read work/handoffs/prefs-per-tracker.md fully, then the DAL reference files it lists, then the MWL files you own.
+Build exactly the Goal, inside the Owns list. Heavy commands only through tools/heavy.sh; never run flutter build or touch the emulator.
+UI directive applies: compare DAL and MWL, keep the better, improve it.
+Deliver with the PR procedure of the brief.
+```
+
+## bookmarks-per-tracker
+
+```text
+Unit bookmarks-per-tracker — Bookmarks per tracker.
+Read work/handoffs/bookmarks-per-tracker.md fully, then the DAL reference files it lists, then the MWL files you own.
+Build exactly the Goal, inside the Owns list. Heavy commands only through tools/heavy.sh; never run flutter build or touch the emulator.
+UI directive applies: compare DAL and MWL, keep the better, improve it.
+Deliver with the PR procedure of the brief.
+```
+
+## notifications-all-trackers
+
+```text
+Unit notifications-all-trackers — Notifications from every connected tracker, one group of switches per tracker.
+Read work/handoffs/notifications-all-trackers.md fully, then the DAL reference files it lists, then the MWL files you own.
+Build exactly the Goal, inside the Owns list. Heavy commands only through tools/heavy.sh; never run flutter build or touch the emulator.
+UI directive applies: compare DAL and MWL, keep the better, improve it.
+Deliver with the PR procedure of the brief.
+```
+
+## mal-pm-chat-notifications
+
+```text
+Unit mal-pm-chat-notifications — MAL messages: chat-style phone notifications, fast while the app is open.
+Read work/handoffs/mal-pm-chat-notifications.md fully, then the DAL reference files it lists, then the MWL files you own.
+Build exactly the Goal, inside the Owns list. Heavy commands only through tools/heavy.sh; never run flutter build or touch the emulator.
+UI directive applies: compare DAL and MWL, keep the better, improve it.
+Deliver with the PR procedure of the brief.
+```
+
 ## explore-polish
 
 ```text
