@@ -184,6 +184,9 @@ void main() {
         );
 
     testWidgets('shows an app bar with a back button when pushed', (tester) async {
+      tester.view.physicalSize = const Size(1000, 2400);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
       await tester.pumpWidget(MaterialApp(
         localizationsDelegates: const [S.delegate],
         supportedLocales: S.delegate.supportedLocales,
@@ -199,11 +202,14 @@ void main() {
         ),
       ));
       await tester.tap(find.text('go'));
-      await tester.pumpAndSettle();
+      // The skeleton shimmer never settles: pump a fixed time.
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
       expect(find.byType(AppBar), findsOneWidget);
       expect(find.byType(BackButton), findsOneWidget);
       await tester.tap(find.byType(BackButton));
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
       expect(find.byType(AnilistForumPage), findsNothing);
     });
   });
