@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mywatchlist/generated/l10n.dart';
+import 'package:mywatchlist/services/api/SimKl/simkl_discover_service.dart';
 import 'package:mywatchlist/user/user_simkl_v2.dart';
 import 'package:mywatchlist/utils/app_routes.dart';
 import 'package:mywatchlist/widgets/MAL/home/homeappbar.dart';
@@ -18,7 +19,9 @@ class SimklUserPage extends StatefulWidget {
 }
 
 class _SimklUserPageState extends State<SimklUserPage> {
-  final SimklUserListAdapter _adapter = SimklUserListAdapter();
+  // Rows carry the next airing from Simkl's free calendar file (progress, next episode, countdown).
+  final SimklUserListAdapter _adapter =
+      SimklUserListAdapter(schedule: () => SimklDiscoverService.instance.calendar());
 
   /// Simkl has a single category, so the list gets no switch (`categories`) and the bar
   /// names the list instead.

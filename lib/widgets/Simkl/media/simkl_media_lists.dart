@@ -4,7 +4,6 @@ import 'package:mywatchlist/screens/MAL/detail/sections/section_states.dart';
 import 'package:mywatchlist/services/api/SimKl/simkl_detail_models.dart';
 import 'package:mywatchlist/widgets/Simkl/media/simkl_media_format.dart';
 import 'package:mywatchlist/widgets/Simkl/media/simkl_media_sections.dart';
-import 'package:mywatchlist/widgets/common/app_image.dart';
 
 /// Full-screen list of a section ("view all"): the items it already has show at once, then
 /// [load] (when given) replaces them. Loading, error with Retry and empty end states; the list
@@ -101,8 +100,10 @@ class _SimklListScreenState<T> extends State<SimklListScreen<T>> {
 class SimklEpisodeRow extends StatelessWidget {
   final SimklEpisode episode;
   final VoidCallback? onTap;
+  final bool watched;
+  final bool upcoming;
 
-  const SimklEpisodeRow({super.key, required this.episode, this.onTap});
+  const SimklEpisodeRow({super.key, required this.episode, this.onTap, this.watched = false, this.upcoming = false});
 
   @override
   Widget build(BuildContext context) {
@@ -113,7 +114,12 @@ class SimklEpisodeRow extends StatelessWidget {
         ? S.current.Smp_Episode_Number(episode.number!)
         : S.current.Smp_Specials;
     final meta = [
-      if (!episode.aired) S.current.Smp_Not_Aired else if (date != null) SimklFormat.episodeDate(date),
+      if (date != null && (upcoming || !episode.aired))
+        SimklFormat.dateClock(date)
+      else if (!episode.aired)
+        S.current.Smp_Not_Aired
+      else if (date != null)
+        SimklFormat.episodeDate(date),
       if (episode.runtime != null && episode.runtime! > 0) S.current.Smp_Minutes(episode.runtime!),
     ].join(' · ');
     return InkWell(
@@ -123,23 +129,13 @@ class SimklEpisodeRow extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            AppImage(
+            SimklEpisodeStill(
               url: episode.imageUrl,
               width: 140,
               height: 79,
-              borderRadius: BorderRadius.circular(10),
-              placeholderColor: scheme.surfaceContainerHighest,
-              errorWidget: (_) => DecoratedBox(
-                decoration: BoxDecoration(
-                  color: scheme.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: SizedBox(
-                  width: 140,
-                  height: 79,
-                  child: Icon(Icons.movie_outlined, color: scheme.onSurfaceVariant),
-                ),
-              ),
+              radius: 10,
+              watched: watched,
+              upcoming: upcoming || !episode.aired,
             ),
             const SizedBox(width: 12),
             Expanded(

@@ -5,12 +5,15 @@ import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/services/api/SimKl/simkl_discover_service.dart';
 import 'package:mywatchlist/services/api/SimKl/simkl_models.dart';
 import 'package:mywatchlist/widgets/MAL/home/homeappbar.dart';
+import 'package:mywatchlist/widgets/Simkl/calendar/simkl_calendar.dart';
 import 'package:mywatchlist/widgets/Simkl/simkl_feeds.dart';
 import 'package:mywatchlist/widgets/Simkl/simkl_media_widgets.dart';
+import 'package:mywatchlist/widgets/Simkl/simkl_states.dart';
 import 'package:mywatchlist/widgets/home/home_sections.dart';
+import 'package:mywatchlist/widgets/user/list/list_entry_view.dart';
 
 /// Explore tab for Simkl: a search bar over the Simkl anime catalogue, then one list at a time
-/// as a poster grid: trending (today, week, month) and the airing schedule from Simkl's CDN, new
+/// (a poster grid, or Simkl's calendar rows for the schedule): trending (today, week, month) and the airing schedule from Simkl's CDN, new
 /// premieres, coming soon, best anime and the genre browse from the API. Each list has its own
 /// options row (period, day, bucket, genre, sort, format). Simkl has no manga, so there is no
 /// anime / manga switch.
@@ -51,6 +54,10 @@ class _SimklExplorePageState extends State<SimklExplorePage> {
   _Load _searchState = _Load.ready;
   int _token = 0;
 
+  /// The user's list by Simkl id, for the schedule (My shows, status dots, finale badges).
+  Map<int, ListEntryView> _list = const {};
+  bool _mine = false;
+
   SimklDiscoverService get _service => widget.service ?? SimklDiscoverService.instance;
   bool get _searching => _text.isNotEmpty;
 
@@ -58,6 +65,11 @@ class _SimklExplorePageState extends State<SimklExplorePage> {
   void initState() {
     super.initState();
     _loadFeed();
+    if (simklSignedIn) {
+      simklListById().then((list) {
+        if (mounted) setState(() => _list = list);
+      });
+    }
   }
 
   @override
@@ -248,6 +260,36 @@ class _SimklExplorePageState extends State<SimklExplorePage> {
     );
   }
 
+  /// The schedule of the picked day as Simkl's calendar rows: exact time, Premiere / Finale
+  /// badges, the user's status; My shows / All anime once the list is known.
+  List<Widget> _schedule(BuildContext context, List<SimklMedia> items) {
+    final rows = [
+      for (final m in items)
+        if (!_mine || _list.containsKey(m.simklId)) SimklAiring(m, _list[m.simklId]),
+    ];
+    return [
+      if (_list.isNotEmpty)
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(15, 0, 15, 8),
+            child: SimklMineSwitch(mine: _mine, onChanged: (v) => setState(() => _mine = v)),
+          ),
+        ),
+      if (rows.isEmpty)
+        SliverToBoxAdapter(
+          child: HomeMessage(icon: Icons.event_busy_outlined, text: S.of(context).Sk_Feed_Empty),
+        )
+      else
+        SliverList.builder(
+          itemCount: rows.length,
+          itemBuilder: (context, i) => SimklAiringTile(
+            airing: rows[i],
+            onTap: () => openSimklMedia(context, rows[i].media, service: _service),
+          ),
+        ),
+    ];
+  }
+
   List<Widget> _content(BuildContext context, _Load state, List<SimklMedia> items, _Pages? pages) {
     final s = S.of(context);
     switch (state) {
@@ -277,6 +319,7 @@ class _SimklExplorePageState extends State<SimklExplorePage> {
             ),
           ];
         }
+        if (!_searching && _query.feed == SimklFeed.airing) return _schedule(context, items);
         return [
           SimklMediaGrid(items: items, onTap: (media) => openSimklMedia(context, media, service: _service)),
           if (pages != null && pages.hasMore)
@@ -366,6 +409,14 @@ class _OptionsRow extends StatelessWidget {
               _option(SimklFeedLabels.window(w), query.window == w, () => onPick(query.copyWith(window: w))),
           ],
         SimklFeed.airing => [
+            ActionChip(
+              avatar: const Icon(Icons.calendar_month_outlined, size: 18),
+              label: Text(S.current.Skr_Calendar),
+              visualDensity: VisualDensity.compact,
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(builder: (_) => const SimklCalendarPage()),
+              ),
+            ),
             for (var d = 0; d < simklScheduleDays; d++)
               _option(SimklFeedLabels.day(d), query.dayOffset == d, () => onPick(query.copyWith(dayOffset: d))),
           ],
