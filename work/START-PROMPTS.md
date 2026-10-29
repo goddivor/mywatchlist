@@ -1095,6 +1095,26 @@ UI directive applies: compare DAL and MWL, keep the better, improve it.
 Deliver with the PR procedure of the brief.
 ```
 
+## tracker-list-hooks
+
+```text
+Unit tracker-list-hooks — Shared My List: adapter hooks for status labels, score display, card badges and a rating prompt.
+Read work/handoffs/tracker-list-hooks.md fully, then the DAL reference files it lists, then the MWL files you own.
+Build exactly the Goal, inside the Owns list. Heavy commands only through tools/heavy.sh; never run flutter build or touch the emulator.
+UI directive applies: compare DAL and MWL, keep the better, improve it.
+Deliver with the PR procedure of the brief.
+```
+
+## kitsu-finish
+
+```text
+Unit kitsu-finish — Kitsu: follow, groups and library count on profiles, % on every tile, sync editor in the account's rating system.
+Read work/handoffs/kitsu-finish.md fully, then the DAL reference files it lists, then the MWL files you own.
+Build exactly the Goal, inside the Owns list. Heavy commands only through tools/heavy.sh; never run flutter build or touch the emulator.
+UI directive applies: compare DAL and MWL, keep the better, improve it.
+Deliver with the PR procedure of the brief.
+```
+
 ## explore-polish
 
 ```text

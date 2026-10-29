@@ -157,6 +157,8 @@
         "kitsu-redesign",
         "anilist-list-design",
         "simkl-data-plus",
+        "tracker-list-hooks",
+        "kitsu-finish",
         "tracker-wiring"
       ]
     },
@@ -3707,6 +3709,64 @@
         "lib/l10n/units/simkl-data-plus/**",
         "test/units/simkl-data-plus/**",
         "test/units/simkl-data-plus/**"
+      ],
+      "group": "trackers",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: sonnet"
+      ],
+      "status": "⬜ todo"
+    },
+    {
+      "id": "tracker-list-hooks",
+      "title": "Shared My List: adapter hooks for status labels, score display, card badges and a rating prompt",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "list-time-followups"
+      ],
+      "owns": [
+        "lib/widgets/user/list/**",
+        "lib/widgets/Kitsu/kitsu_user_list_adapter.dart",
+        "lib/widgets/Simkl/simkl_user_list_adapter.dart",
+        "lib/l10n/units/tracker-list-hooks/**",
+        "test/units/tracker-list-hooks/**",
+        "test/units/tracker-list-hooks/**"
+      ],
+      "group": "trackers",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: sonnet"
+      ],
+      "status": "⬜ todo"
+    },
+    {
+      "id": "kitsu-finish",
+      "title": "Kitsu: follow, groups and library count on profiles, % on every tile, sync editor in the account's rating system",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "kitsu-redesign"
+      ],
+      "owns": [
+        "lib/widgets/Kitsu/kitsu_profile_view.dart",
+        "lib/widgets/Kitsu/kitsu_media_tile.dart",
+        "lib/services/api/Kitsu/kitsu_http.dart",
+        "lib/services/api/Kitsu/kitsu_graphql.dart",
+        "lib/widgets/user/sync/tracker_entry_editor.dart",
+        "lib/l10n/units/kitsu-pages/**",
+        "test/units/kitsu-pages/**",
+        "lib/l10n/units/kitsu-finish/**",
+        "test/units/kitsu-finish/**",
+        "test/units/kitsu-finish/**"
       ],
       "group": "trackers",
       "dropped": null,

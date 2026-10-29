@@ -1090,6 +1090,20 @@ const UNITS = [
     dod: ["Tests on saved Simkl responses: CDN fields parsed, next_to_watch_info used, ids row, calendar route, check-in request (fake)."],
   },
   {
+    id: "tracker-list-hooks", title: "Shared My List: adapter hooks for status labels, score display, card badges and a rating prompt", kind: "unit", priority: "P1", group: "trackers", model: "sonnet", ui: true,
+    needs: ["list-time-followups"],
+    owns: ["lib/widgets/user/list/**", "lib/widgets/Kitsu/kitsu_user_list_adapter.dart", "lib/widgets/Simkl/simkl_user_list_adapter.dart", "lib/l10n/units/tracker-list-hooks/**", "test/units/tracker-list-hooks/**"],
+    goal: ["From kitsu-redesign (#309): the shared list (lib/widgets/user/list/**) gets adapter hooks so each tracker shows its own wording and scores: status tab labels (Kitsu 'Want to watch', 'Currently reading'…), score display (Kitsu percentage and the account's rating system, Simkl's /10), per-card badges (the user's Kitsu reaction), and a step-completion callback with a BuildContext so the Kitsu adapter can ask for a rating after the last +1. Wire the Kitsu and Simkl adapters to them. From list-time-followups (#308): the MAL adapter sets fillsEpisodeLength => true and the base default becomes false; the old time summary in list_entry_view.dart is retired in favour of listTimeSummary (and anilist_list_view uses it if it is still on the old one).", "Owner rule: each tracker is its own app (docs/tracker-ui-references.md); shared pieces stay shared but every tracker-specific behaviour is a hook on its adapter. Fakes only in tests; writes only on the viewer's tap."],
+    dod: ["Tests: each hook changes the rendered tab label / score / badge for a fake adapter; MAL time line unchanged."],
+  },
+  {
+    id: "kitsu-finish", title: "Kitsu: follow, groups and library count on profiles, % on every tile, sync editor in the account's rating system", kind: "unit", priority: "P1", group: "trackers", model: "sonnet", ui: true,
+    needs: ["kitsu-redesign"],
+    owns: ["lib/widgets/Kitsu/kitsu_profile_view.dart", "lib/widgets/Kitsu/kitsu_media_tile.dart", "lib/services/api/Kitsu/kitsu_http.dart", "lib/services/api/Kitsu/kitsu_graphql.dart", "lib/widgets/user/sync/tracker_entry_editor.dart", "lib/l10n/units/kitsu-pages/**", "test/units/kitsu-pages/**", "lib/l10n/units/kitsu-finish/**", "test/units/kitsu-finish/**"],
+    goal: ["From kitsu-redesign (#309): (1) profile follow button (KitsuHttp gains POST/DELETE for follows), groups tab and library count in kitsu_profile_view.dart, per the Kitsu 'Profile' reference; (2) KitsuMediaTile draws Kitsu's percentage, not a /10 star; (3) the sync dialog's editor (tracker_entry_editor.dart) shows and edits Kitsu ratings in the account's rating system; (4) drop the unused Kitsu_No_Mal_Match strings and update kitsu_browse_test.dart; (5) update KitsuGraphql's doc now that mutations go through execute(auth: true); (6) re-bucket the title page's rating histogram into the user's rating system if simple.", "Owner rule: each tracker is its own app (docs/tracker-ui-references.md); shared pieces stay shared but every tracker-specific behaviour is a hook on its adapter. Fakes only in tests; writes only on the viewer's tap."],
+    dod: ["Tests: follow request (fake), tile shows %, editor in Simple/Regular/Advanced, histogram buckets."],
+  },
+  {
     id: "explore-polish", title: "Explore: DailyAL images on category and genre cards, explicit genres, recommendations/stacks fallbacks, favourites badges", kind: "unit", priority: "P1", group: "discovery", model: "opus", ui: true,
     needs: ["search-sources", "explore-seasonal", "home-wiring", "profile-tabs"],
     owns: ["lib/services/api/MAL/scrapper/html_parsers.dart", "test/units/explore-crash/**", "lib/pages/MAL/mal_explore_page.dart", "lib/screens/explore/**", "assets/images/explore/**", "pubspec.yaml", "lib/cache/top_characters.dart"],
