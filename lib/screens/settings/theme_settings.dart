@@ -86,7 +86,7 @@ class _ThemeSettingsState extends State<ThemeSettings> {
                   Text(
                     S.current.Theme_Customize_Title,
                     style: theme.textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
+                      fontWeight: FontWeight.w400,
                       color: cs.onSurface,
                     ),
                   ),
@@ -99,10 +99,6 @@ class _ThemeSettingsState extends State<ThemeSettings> {
                 ),
                 const SizedBox(height: 12),
                 _ColorGrid(state: state),
-                const SizedBox(height: 10),
-                _AccentSource(state: state),
-                const SizedBox(height: 16),
-                const _Preview(),
                 const SizedBox(height: 28),
                 _SectionHeader(
                   icon: Icons.brightness_6_rounded,
@@ -162,30 +158,36 @@ class _SectionHeader extends StatelessWidget {
     final cs = theme.colorScheme;
     return Row(
       children: [
-        Icon(icon, size: 20, color: cs.primary),
-        const SizedBox(width: 8),
-        Flexible(
-          child: Text(
-            title,
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: cs.onSurface,
-            ),
+        Expanded(
+          child: Row(
+            children: [
+              Icon(icon, size: 20, color: cs.primary),
+              const SizedBox(width: 8),
+              Flexible(
+                child: Text(
+                  title,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w400,
+                    color: cs.onSurface,
+                  ),
+                ),
+              ),
+              if (tooltip != null) ...[
+                const SizedBox(width: 4),
+                Tooltip(
+                  message: tooltip,
+                  triggerMode: TooltipTriggerMode.tap,
+                  showDuration: const Duration(seconds: 4),
+                  child: Padding(
+                    padding: const EdgeInsets.all(4),
+                    child: Icon(Icons.info_outline_rounded, size: 18, color: cs.onSurfaceVariant),
+                  ),
+                ),
+              ],
+            ],
           ),
         ),
-        if (tooltip != null) ...[
-          const SizedBox(width: 4),
-          Tooltip(
-            message: tooltip,
-            triggerMode: TooltipTriggerMode.tap,
-            showDuration: const Duration(seconds: 4),
-            child: Padding(
-              padding: const EdgeInsets.all(4),
-              child: Icon(Icons.info_outline_rounded, size: 18, color: cs.onSurfaceVariant),
-            ),
-          ),
-        ],
-        if (trailing != null) ...[const Spacer(), trailing!],
+        if (trailing != null) ...[const SizedBox(width: 8), trailing!],
       ],
     );
   }
@@ -397,118 +399,6 @@ class _AddSwatch extends StatelessWidget {
   }
 }
 
-/// How the accent looks on the common components, in the current mode.
-class _Preview extends StatelessWidget {
-  const _Preview();
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final tokens = AppColors.of(context);
-    Widget status(String text, AppColorRole role) => Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-          decoration: BoxDecoration(
-            color: role.container,
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Text(
-            text,
-            style: TextStyle(color: role.onContainer, fontSize: 12, fontWeight: FontWeight.w600),
-          ),
-        );
-
-    return Card(
-      margin: EdgeInsets.zero,
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              S.current.Preview,
-              style: Theme.of(context).textTheme.labelLarge?.copyWith(color: cs.onSurfaceVariant),
-            ),
-            const SizedBox(height: 10),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              children: [
-                FilledButton(onPressed: () {}, child: Text(S.current.Theme_Preview_Button)),
-                FilledButton.tonal(onPressed: () {}, child: Text(S.current.Theme_Preview_Tonal)),
-                FilterChip(
-                  selected: true,
-                  onSelected: (_) {},
-                  label: Text(S.current.Theme_Preview_Chip),
-                ),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.star_rounded, color: tokens.score.color, size: 20),
-                    const SizedBox(width: 2),
-                    Text('8.7', style: TextStyle(color: cs.onSurface, fontWeight: FontWeight.w600)),
-                  ],
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            Wrap(
-              spacing: 6,
-              runSpacing: 6,
-              children: [
-                status(S.current.Watching, tokens.watching),
-                status(S.current.Completed, tokens.completed),
-                status(S.current.On_Hold, tokens.onHold),
-                status(S.current.Dropped, tokens.dropped),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// Where the accent comes from right now, under the swatches: the background's season, the
-/// wallpaper, or the user's own colour.
-class _AccentSource extends StatelessWidget {
-  const _AccentSource({required this.state});
-
-  final ThemeState state;
-
-  static String _seasonText(String? background) => switch (background ?? AppThemes.defaultBackground) {
-        'assets/images/spring.jpg' => S.current.Theme_Accent_Now_Spring,
-        'assets/images/summer.jpg' => S.current.Theme_Accent_Now_Summer,
-        'assets/images/fall.jpg' => S.current.Theme_Accent_Now_Fall,
-        'assets/images/winter.jpg' => S.current.Theme_Accent_Now_Winter,
-        _ => S.current.Theme_Accent_Now_Other,
-      };
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final cs = theme.colorScheme;
-    final wallpaper = state.useDynamicColor && state.dynamicColorAvailable;
-    final (IconData icon, String text) = wallpaper
-        ? (Icons.wallpaper_rounded, S.current.Theme_Accent_Now_Wallpaper)
-        : state.followSeason
-            ? (Icons.filter_vintage_rounded, _seasonText(state.backgroundImagePath))
-            : (Icons.push_pin_outlined, S.current.Theme_Accent_Now_Fixed);
-    return Row(
-      children: [
-        Icon(icon, size: 16, color: cs.primary),
-        const SizedBox(width: 6),
-        Expanded(
-          child: Text(
-            text,
-            style: theme.textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
 /// Auto, light, dark and black as a 2 × 2 grid of equal tiles, icon beside a full-size label:
 /// the former four-segment button scaled long labels such as "Sombre" down to a tiny font, and
 /// four tiles in a row would still break them on a small phone or with large system text.
@@ -596,7 +486,7 @@ class _ModeTile extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: theme.textTheme.labelLarge?.copyWith(
                         color: fg,
-                        fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                        fontWeight: selected ? FontWeight.w500 : FontWeight.w500,
                       ),
                     ),
                   ),
@@ -898,7 +788,7 @@ class _FontTile extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Text(
                 S.current.Select_Font_Family,
-                style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w400),
               ),
             ),
             const SizedBox(height: 8),
@@ -933,7 +823,7 @@ class _FontTile extends StatelessWidget {
                       AppThemes.fontDisplayNames[font] ?? font,
                       style: TextStyle(
                         fontFamily: font,
-                        fontWeight: selected ? FontWeight.bold : FontWeight.normal,
+                        fontWeight: selected ? FontWeight.w500 : FontWeight.normal,
                       ),
                     ),
                     subtitle: Text(

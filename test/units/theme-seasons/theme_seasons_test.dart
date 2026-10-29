@@ -261,7 +261,6 @@ void main() {
       tester.view.devicePixelRatio = 3; // 360 dp wide, a small phone
       addTearDown(tester.view.reset);
       final bloc = await pumpSettings(tester);
-      expect(find.text('Fond automnal\u00a0: accent marron'), findsOneWidget);
       await tester.scrollUntilVisible(find.text('Sombre'), 200,
           scrollable: find.byType(Scrollable).first);
 
