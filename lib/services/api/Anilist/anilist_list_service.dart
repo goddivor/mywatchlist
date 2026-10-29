@@ -253,6 +253,14 @@ ListEntryView anilistApplyDetail(ListEntryView view, AnilistListEntry detail) =>
       releaseEnd: view.releaseEnd,
       broadcast: view.broadcast,
       tags: view.tags,
+      episodeSeconds: view.episodeSeconds,
+      startSeason: view.startSeason,
+      startSeasonYear: view.startSeasonYear,
+      ageRating: view.ageRating,
+      source: view.source,
+      studios: view.studios,
+      authors: view.authors,
+      timesRewatched: detail.repeat,
       // Built anew rather than copied: a date or a status cleared on AniList is cleared here.
       status: anilistStatus(detail.status),
       score: (detail.scoreRaw / 10).round().clamp(0, 10),
@@ -335,6 +343,11 @@ List<AnilistRow> parseAnilistRows(List<dynamic> entries,
       releaseStart: SyncDates.fromFuzzy(mediaRaw['startDate']),
       releaseEnd: SyncDates.fromFuzzy(mediaRaw['endDate']),
       broadcast: slot,
+      // AniList's `duration` is minutes per episode: the list header's "time left".
+      episodeSeconds: isAnime ? toInt(mediaRaw['duration']) * 60 : 0,
+      startSeason: text(mediaRaw['season'])?.toLowerCase(),
+      startSeasonYear: media.seasonYear,
+      source: text(mediaRaw['source'])?.toLowerCase(),
     );
     out.add((view: anilistApplyDetail(base, detail), detail: detail));
   }
@@ -389,7 +402,7 @@ class AnilistListService {
     customLists(asArray: true) advancedScores
     startedAt { year month day }
     completedAt { year month day }
-    media { ${AnilistMedia.fields} volumes synonyms
+    media { ${AnilistMedia.fields} volumes synonyms duration season source
       startDate { year month day } endDate { year month day } }
   ''';
 

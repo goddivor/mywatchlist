@@ -508,8 +508,10 @@ class _AnilistListViewState extends State<AnilistListView> with TickerProviderSt
           // actions list Flutter adds its own ☰ next to the header's avatar.
           actions: const [SizedBox.shrink()],
           bottom: PreferredSize(
-            preferredSize: const Size.fromHeight(46 + 48),
-            child: ready ? _header(theme, sections, tabs) : const SizedBox(height: 94),
+            preferredSize: Size.fromHeight(46 + 48 + (_isAnime ? _timeLineHeight : 0)),
+            child: ready
+                ? _header(theme, sections, tabs)
+                : SizedBox(height: 94 + (_isAnime ? _timeLineHeight : 0)),
           ),
         ),
       ],
@@ -603,6 +605,16 @@ class _AnilistListViewState extends State<AnilistListView> with TickerProviderSt
           ),
         ),
         SizedBox(height: 48, child: _toolbar(theme)),
+        // AniList gives each anime's episode length: "time left" as on My List.
+        if (_isAnime)
+          SizedBox(
+            height: _timeLineHeight,
+            child: _TimeLine(
+              tabs: tabs,
+              sections: sections,
+              controllerOf: (section) => _tabFor(_category, section).controller,
+            ),
+          ),
       ],
     );
   }
@@ -677,6 +689,53 @@ class _AnilistListViewState extends State<AnilistListView> with TickerProviderSt
           ),
         ],
       ),
+    );
+  }
+}
+
+const double _timeLineHeight = 24;
+
+/// "Time left: 41 d 3 h" under the toolbar: follows the visible section and its controller.
+class _TimeLine extends StatelessWidget {
+  final TabController tabs;
+  final List<AnilistSection> sections;
+  final UserListTabController Function(AnilistSection section) controllerOf;
+
+  const _TimeLine({required this.tabs, required this.sections, required this.controllerOf});
+
+  @override
+  Widget build(BuildContext context) {
+    return ListenableBuilder(
+      listenable: tabs,
+      builder: (context, _) {
+        if (tabs.index >= sections.length) return const SizedBox.shrink();
+        final section = sections[tabs.index];
+        final c = controllerOf(section);
+        return ListenableBuilder(
+          listenable: c,
+          builder: (context, _) {
+            // Custom lists mix statuses: they count the time watched, as "All" does.
+            final summary = c.isStarted
+                ? ListTimeSummary.of(c.entries, section.listStatus, partial: c.hasMore)
+                : null;
+            if (summary == null) return const SizedBox.shrink();
+            final theme = Theme.of(context);
+            return Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: Padding(
+                padding: const EdgeInsetsDirectional.only(start: 16, end: 16),
+                child: Text(
+                  summary.label(),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.labelMedium
+                      ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                ),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 }

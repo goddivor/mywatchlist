@@ -33,6 +33,7 @@ Map<String, dynamic> _media(int id, {String type = 'ANIME', String format = 'TV'
       'episodes': 12,
       'chapters': 40,
       'volumes': 4,
+      'duration': 24,
       'genres': ['Drama'],
       'weightedScore': 80,
       'popularity': 10,
@@ -200,6 +201,9 @@ void main() {
       expect(one.repeating, isTrue);
       expect(one.score, 7);
       expect(one.priority, 2);
+      expect(one.timesRewatched, 2);
+      expect(one.episodeSeconds, 24 * 60);
+      expect(one.timeLeft, const Duration(minutes: 9 * 24));
       final d = service.detailOf('anime', 1)!;
       expect(d.status, 'REPEATING');
       expect(d.scoreRaw, 73);
