@@ -2,16 +2,23 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart' show BuildContext;
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:http/http.dart' as http;
 import 'package:mywatchlist/constants/constants.dart' show AccountType;
 import 'package:mywatchlist/generated/l10n.dart';
+import 'package:mywatchlist/main.dart' show appNavigatorKey;
+import 'package:mywatchlist/pages/Anilist/anilist_notifications_page.dart' show openAnilistNotifications;
 import 'package:mywatchlist/screens/mal_web/notifications_screen.dart' show openMalHubPayload;
 import 'package:mywatchlist/services/api/Anilist/anilist_list_service.dart';
+import 'package:mywatchlist/services/api/Anilist/anilist_notifications_service.dart';
 import 'package:mywatchlist/services/api/Kitsu/kitsu_library.dart';
 import 'package:mywatchlist/services/api/MAL/mal_api.dart';
 import 'package:mywatchlist/services/api/SimKl/simkl_list_service.dart';
 import 'package:mywatchlist/user/preferences/preferences.dart';
 import 'package:mywatchlist/user/user_manager.dart';
+import 'package:mywatchlist/widgets/Anilist/notifications/anilist_notification_tile.dart'
+    show describeAnilistNotification;
 import 'package:mywatchlist/widgets/calendar/airing_schedule.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -105,6 +112,7 @@ class NotificationService {
     this.debounce = const Duration(seconds: 2),
     this.pollMalHub = false,
     void Function(String payload)? openHubPayload,
+    void Function(String payload)? openAnilistPayload,
   })  : _backend = backend ?? PluginNotificationBackend(),
         _loadCandidates = loadCandidates ?? _loadMalCandidates,
         _loadEpisodes = loadEpisodes ?? _loadScheduleEpisodes,
@@ -114,7 +122,8 @@ class NotificationService {
         _clock = clock ?? DateTime.now,
         _trackerChanges = trackerChanges,
         _readFeedTracker = readFeedTracker ?? _userFeedTracker,
-        _openHubPayload = openHubPayload ?? openMalHubPayload;
+        _openHubPayload = openHubPayload ?? openMalHubPayload,
+        _openAnilistPayload = openAnilistPayload ?? openAnilistInboxPayload;
 
   /// The app's service; it also polls MAL's notification hub ([MalHubPoller]).
   static NotificationService instance = NotificationService(pollMalHub: true);
@@ -125,6 +134,9 @@ class NotificationService {
   /// Opens a tapped MAL hub notification (`malhub:` payloads, see [MalHubPayload]); the
   /// other payloads, private messages included, go to [onOpen].
   final void Function(String payload) _openHubPayload;
+
+  /// Opens a tapped AniList notification ([AnilistBackgroundNotifier.payload]): the inbox.
+  final void Function(String payload) _openAnilistPayload;
 
   /// Last scheduling run (shared pref, milliseconds since epoch).
   static const String lastRunKey = 'notifications_last_run_v1';
@@ -179,7 +191,7 @@ class NotificationService {
     try {
       await _backend.init(_handleTap);
       final launch = await _backend.launchPayload();
-      if (MalHubPayload.isHub(launch)) {
+      if (MalHubPayload.isHub(launch) || AnilistBackgroundNotifier.isPayload(launch)) {
         // Not a route of the home shell: opened once the navigator exists (flushPendingTap).
         _pendingTap = launch;
       } else {
@@ -204,13 +216,25 @@ class NotificationService {
   static bool _isHubOnly(String payload) =>
       MalHubPayload.isHub(payload) && MalHubPayload.messageLink(payload) == null;
 
+  /// A payload this service opens itself (MAL hub, AniList inbox), not an app route.
+  static bool _isOwn(String payload) =>
+      _isHubOnly(payload) || AnilistBackgroundNotifier.isPayload(payload);
+
+  void _openOwn(String payload) {
+    if (AnilistBackgroundNotifier.isPayload(payload)) {
+      _openAnilistPayload(payload);
+    } else {
+      _openHubPayload(payload);
+    }
+  }
+
   void _handleTap(String? payload) {
     if (payload == null || payload.isEmpty) return;
-    if (_isHubOnly(payload)) {
+    if (_isOwn(payload)) {
       if (onOpen == null) {
         _pendingTap = payload;
       } else {
-        _openHubPayload(payload);
+        _openOwn(payload);
       }
       return;
     }
@@ -228,8 +252,8 @@ class NotificationService {
     final open = onOpen;
     if (payload == null || open == null) return;
     _pendingTap = null;
-    if (_isHubOnly(payload)) {
-      _openHubPayload(payload);
+    if (_isOwn(payload)) {
+      _openOwn(payload);
       return;
     }
     open(payload);
@@ -627,4 +651,215 @@ class _SNotificationTexts implements NotificationTexts {
 
   @override
   String get testBody => S.current.Notif_Test_Body;
+}
+
+// ---------------------------------------------------------------------------------------------
+// AniList notifications in the background
+// ---------------------------------------------------------------------------------------------
+
+/// Opens the AniList inbox from a tapped system notification, once the app navigator exists
+/// (a cold start builds it a little after the tap is known). Never throws.
+Future<void> openAnilistInboxPayload(String payload) async {
+  BuildContext? context;
+  for (var i = 0; i < 34; i++) {
+    final c = appNavigatorKey.currentContext;
+    if (c != null && c.mounted) {
+      context = c;
+      break;
+    }
+    await Future<void>.delayed(const Duration(milliseconds: 300));
+  }
+  if (context == null || !context.mounted) return;
+  try {
+    await openAnilistNotifications(context);
+    unawaited(AnilistUnreadCount.instance.refresh(force: true));
+  } catch (e) {
+    debugPrint('AniList inbox: $e');
+  }
+}
+
+/// The system notification of the AniList inbox, text already translated.
+@immutable
+class AnilistSystemNotification {
+  const AnilistSystemNotification({required this.title, required this.lines, required this.payload});
+
+  final String title;
+
+  /// One sentence per new notification, newest first (at most six).
+  final List<String> lines;
+  final String payload;
+}
+
+/// The part of the notification plugin the AniList round uses (a fake in tests).
+abstract class AnilistSystemNotifier {
+  bool get isSupported;
+
+  /// The system lets the app show notifications.
+  Future<bool> allowed();
+
+  /// Shows (or replaces) the one AniList notification.
+  Future<void> show(AnilistSystemNotification notification);
+
+  /// Removes it (everything was read).
+  Future<void> cancel();
+}
+
+/// [AnilistSystemNotifier] on `flutter_local_notifications` (Android), in its own channel.
+class PluginAnilistNotifier implements AnilistSystemNotifier {
+  PluginAnilistNotifier([FlutterLocalNotificationsPlugin? plugin])
+      : _plugin = plugin ?? FlutterLocalNotificationsPlugin();
+
+  final FlutterLocalNotificationsPlugin _plugin;
+
+  static const String channelId = 'anilist_notifications';
+
+  /// Far from the airing reminders (`malId * 8 + slot`) and the MAL hub ids.
+  static const int notificationId = 0x3FFFFFE0;
+
+  @override
+  bool get isSupported => !kIsWeb && Platform.isAndroid;
+
+  AndroidFlutterLocalNotificationsPlugin? get _android =>
+      _plugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+
+  @override
+  Future<bool> allowed() async {
+    if (!isSupported) return false;
+    return await _android?.areNotificationsEnabled() ?? false;
+  }
+
+  @override
+  Future<void> show(AnilistSystemNotification n) async {
+    if (!isSupported) return;
+    final s = S.current;
+    await _plugin.show(
+      id: notificationId,
+      title: n.title,
+      body: n.lines.isEmpty ? null : n.lines.first,
+      payload: n.payload,
+      notificationDetails: NotificationDetails(
+        android: AndroidNotificationDetails(
+          channelId,
+          s.Ahx_Channel,
+          channelDescription: s.Ahx_Channel_Desc,
+          icon: PluginNotificationBackend.smallIcon,
+          category: AndroidNotificationCategory.social,
+          styleInformation: InboxStyleInformation(n.lines, contentTitle: n.title),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Future<void> cancel() async {
+    if (!isSupported) return;
+    await _plugin.cancel(id: notificationId);
+  }
+}
+
+/// "N new AniList notifications" while the app is closed (AniList G4): each background round
+/// reads the first page of the inbox (without marking it read) and, when unread
+/// notifications newer than the last round exist, shows one system notification listing
+/// them; its tap opens the inbox. Needs the master switch of the notification settings, an
+/// AniList account and its own switch ([push], on by default).
+class AnilistBackgroundNotifier {
+  AnilistBackgroundNotifier({
+    AnilistNotificationsService? service,
+    AnilistSystemNotifier? notifier,
+    NotificationPreferences Function()? readPrefs,
+    Future<SharedPreferences> Function()? storage,
+    bool Function()? signedIn,
+    DateTime Function()? clock,
+    this.firstRunWindow = const Duration(days: 3),
+  })  : _service = service,
+        _notifier = notifier ?? PluginAnilistNotifier(),
+        _readPrefs = readPrefs ?? (() => Preferences.current.notifications),
+        _storage = storage ?? SharedPreferences.getInstance,
+        _signedIn = signedIn ?? (() => UserManager.instance.isAuthenticated(AccountType.anilist)),
+        _clock = clock ?? DateTime.now;
+
+  static AnilistBackgroundNotifier instance = AnilistBackgroundNotifier();
+
+  /// Payload of the system notification (opens the AniList inbox).
+  static const String payload = 'anilist:notifications';
+
+  static bool isPayload(String? value) => value == payload;
+
+  /// Shared prefs: the switch, and the newest notification id already handled.
+  static const String pushKey = 'anilist_push_v1';
+  static const String seenKey = 'anilist_notif_seen_v1';
+
+  /// On the first round, only the unread notifications of this window are announced.
+  final Duration firstRunWindow;
+
+  final AnilistNotificationsService? _service;
+  final AnilistSystemNotifier _notifier;
+  final NotificationPreferences Function() _readPrefs;
+  final Future<SharedPreferences> Function() _storage;
+  final bool Function() _signedIn;
+  final DateTime Function() _clock;
+
+  AnilistNotificationsService get _svc => _service ?? AnilistNotificationsService.instance;
+
+  /// The settings switch.
+  final ValueNotifier<bool> push = ValueNotifier<bool>(true);
+
+  /// Whether the background job is useful for AniList now.
+  bool get wanted => _readPrefs().enabled && _signedIn() && push.value;
+
+  Future<void> loadSwitch(SharedPreferences prefs) async {
+    push.value = prefs.getBool(pushKey) ?? true;
+  }
+
+  Future<void> setPush(bool value) async {
+    push.value = value;
+    try {
+      await (await _storage()).setBool(pushKey, value);
+    } catch (_) {}
+  }
+
+  /// One round. Returns how many notifications were announced. Never throws.
+  Future<int> poll() async {
+    try {
+      if (!_notifier.isSupported || !wanted) return 0;
+      final prefs = await _storage();
+      try {
+        await prefs.reload();
+      } catch (_) {}
+      final page = await _svc.page();
+      final unread = page.items.take(page.unread).toList();
+      final newest = page.items.isEmpty ? null : page.items.map((n) => n.id).reduce((a, b) => a > b ? a : b);
+      final seen = prefs.getInt(seenKey);
+      if (newest != null && (seen == null || newest > seen)) await prefs.setInt(seenKey, newest);
+      if (page.unread == 0) {
+        await _notifier.cancel();
+        return 0;
+      }
+      final now = _clock();
+      final fresh = [
+        for (final n in unread)
+          if (seen == null
+              ? (n.createdAt == null || now.difference(n.createdAt!) <= firstRunWindow)
+              : n.id > seen)
+            n,
+      ];
+      if (fresh.isEmpty || !await _notifier.allowed()) return 0;
+      final s = S.current;
+      await _notifier.show(AnilistSystemNotification(
+        title: s.Ahx_Push_Title(page.unread),
+        lines: [
+          for (final n in unread.take(6))
+            () {
+              final d = describeAnilistNotification(n, s);
+              return [d.lead, d.text].where((t) => t.isNotEmpty).join(' ');
+            }(),
+        ],
+        payload: payload,
+      ));
+      return fresh.length;
+    } catch (e) {
+      debugPrint('AniList background notifications: $e');
+      return 0;
+    }
+  }
 }

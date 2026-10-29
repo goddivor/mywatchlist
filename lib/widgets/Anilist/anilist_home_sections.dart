@@ -4,18 +4,19 @@ import 'package:mywatchlist/pages/Anilist/anilist_forum_page.dart';
 import 'package:mywatchlist/pages/Anilist/anilist_user_page.dart';
 import 'package:mywatchlist/constants/constants.dart' show AccountType;
 import 'package:mywatchlist/services/api/Anilist/anilist_discover_service.dart';
+import 'package:mywatchlist/services/api/Anilist/anilist_feeds_service.dart';
 import 'package:mywatchlist/services/api/Anilist/anilist_list_service.dart';
 import 'package:mywatchlist/services/api/Anilist/anilist_media.dart';
 import 'package:mywatchlist/user/MAL/mal_home_page_preferences.dart';
 import 'package:mywatchlist/user/user_manager.dart';
 import 'package:mywatchlist/utils/app_routes.dart';
 import 'package:mywatchlist/widgets/Anilist/anilist_browse_screen.dart';
-import 'package:mywatchlist/widgets/Anilist/anilist_media_card.dart';
 import 'package:mywatchlist/widgets/Anilist/anilist_thread_tile.dart';
+import 'package:mywatchlist/widgets/Anilist/home/anilist_following_preview.dart';
+import 'package:mywatchlist/widgets/Anilist/home/anilist_home_cards.dart';
 import 'package:mywatchlist/widgets/MAL/home/section_header.dart';
 import 'package:mywatchlist/widgets/forum/forum_common.dart' show ForumSkeleton;
 import 'package:mywatchlist/widgets/home/home_sections.dart';
-import 'package:mywatchlist/widgets/loading/loadingcard.dart';
 import 'package:mywatchlist/widgets/user/list/list_entry_view.dart';
 
 /// The AniList query behind a home section of the shared home preferences, or null when
@@ -114,24 +115,98 @@ bool anilistShowsSection(HomeSectionPreference section) =>
     section.type == SectionType.forum ||
     anilistQueryFor(section) != null;
 
-/// One section of the AniList home: a row of covers, the user's list or the forum.
+/// What the AniList home asks in its one request: the media row of each section (by the
+/// section's place in [sections]), and whether the recommendations, the forum, the
+/// following feed and the birthdays are wanted.
+@immutable
+class AnilistHomePlan {
+  AnilistHomePlan._(this.sections, this.rows, this.rowOf, this.signedIn);
+
+  /// The sections drawn, in order.
+  final List<HomeSectionPreference> sections;
+  final List<AnilistRowRequest> rows;
+
+  /// Index in [sections] -> index in [rows] (sections without a media row are absent).
+  final Map<int, int> rowOf;
+  final bool signedIn;
+
+  /// The plan of the enabled [sections] AniList can draw. "Suggested" asks the
+  /// recommendations of the user's list when [signedIn], and trending as its fallback.
+  factory AnilistHomePlan.of(List<HomeSectionPreference> all, {required bool signedIn}) {
+    final sections = [
+      for (final s in all)
+        if (s.enabled && anilistShowsSection(s)) s,
+    ];
+    final rows = <AnilistRowRequest>[];
+    final rowOf = <int, int>{};
+    for (var i = 0; i < sections.length; i++) {
+      final query = anilistQueryFor(sections[i]);
+      if (query == null) continue;
+      rowOf[i] = rows.length;
+      rows.add(AnilistRowRequest(query, sections[i].itemCount.clamp(1, 50)));
+    }
+    return AnilistHomePlan._(sections, rows, rowOf, signedIn);
+  }
+
+  bool get recommended => signedIn && sections.any((s) => s.type == SectionType.suggested);
+  bool get forum => sections.any((s) => s.type == SectionType.forum);
+
+  /// The shortest cache time the sections ask for (2 hours by default).
+  Duration get maxAge {
+    final hours = [for (final s in sections) s.cacheDurationHours];
+    if (hours.isEmpty) return const Duration(hours: 2);
+    return Duration(hours: hours.reduce((a, b) => a < b ? a : b).clamp(1, 48));
+  }
+
+  /// Changes whenever the request would change.
+  String get key => [
+        signedIn,
+        recommended,
+        forum,
+        for (final r in rows) r.key,
+      ].join('|');
+
+  /// Loads the plan (one request; see [AnilistFeedsService.home]).
+  Future<AnilistFeed> load(AnilistFeedsService service, {bool force = false}) => service.home(
+        rows: rows,
+        recommended: recommended,
+        following: signedIn,
+        forum: forum,
+        birthdays: true,
+        maxAge: maxAge,
+        force: force,
+      );
+}
+
+/// One section of the AniList home: a row of covers, the recommendations of the user's
+/// list, the user's own list or the forum. Rows read their part of the home's single
+/// request ([feed]); the user list reads the list the List tab keeps.
 class AnilistHomeSection extends StatelessWidget {
   final HomeSectionPreference section;
+
+  /// Index of this section's media row in the home request, null for the user list and the
+  /// forum.
+  final int? row;
+  final AsyncSnapshot<AnilistFeed> feed;
   final double cardWidth;
   final double cardHeight;
   final int refresh;
+  final VoidCallback onRetry;
 
   const AnilistHomeSection({
     super.key,
     required this.section,
+    required this.feed,
+    required this.onRetry,
     required this.cardWidth,
     required this.cardHeight,
+    this.row,
     this.refresh = 0,
   });
 
   @override
   Widget build(BuildContext context) {
-    final padding = const EdgeInsets.symmetric(vertical: 10);
+    const padding = EdgeInsets.symmetric(vertical: 10);
     switch (section.type) {
       case SectionType.userList:
         return Padding(padding: padding, child: _userList(context));
@@ -144,45 +219,63 @@ class AnilistHomeSection extends StatelessWidget {
     }
   }
 
-  String get _title {
-    final custom = section.customTitle;
-    if (custom != null && custom.isNotEmpty) return custom;
-    // "Suggested for you" has no AniList meaning: the row shows what is trending.
-    if (section.type == SectionType.suggested) return S.current.Al_Sec_Trending;
+  bool get _isSuggested => section.type == SectionType.suggested;
+
+  String get _custom => section.customTitle ?? '';
+
+  String _title({required bool recommended}) {
+    if (_custom.isNotEmpty) return _custom;
+    // "Suggested for you": the recommendations of the user's list, else what is trending.
+    if (_isSuggested) {
+      return recommended ? S.current.Ahx_Sec_Recommended : S.current.Al_Sec_Trending;
+    }
     return section.getDisplayTitle();
   }
 
-  Widget _loading() => loadingCardList(
-        containerHeight: cardHeight,
-        height: cardHeight,
-        width: cardWidth,
-        itemCount: section.itemCount,
-        listPadding: const EdgeInsets.all(8),
+  Widget _loading() => anilistRowSkeleton(
+        cardWidth: cardWidth,
+        cardHeight: cardHeight,
+        count: section.itemCount.clamp(1, 8),
       );
 
+  /// The body of a part of the request: skeleton, error with Retry, or [builder].
+  Widget _part(Widget Function(AnilistFeed feed) builder) {
+    if (feed.hasError) return AnilistRowMessage(failed: true, onRetry: onRetry);
+    final data = feed.data;
+    if (data == null) return _loading();
+    return builder(data);
+  }
+
   Widget _row(BuildContext context, AnilistMediaQuery query) {
+    final alias = row == null ? null : AnilistHomeParts.row(row!);
+    final recommendations = _isSuggested
+        ? feed.data?.recommendations(AnilistHomeParts.recommended, notOnList: true)
+        : null;
+    final showRecommended = recommendations != null && recommendations.isNotEmpty;
+    final title = _title(recommended: showRecommended);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SectionHeader(
-          title: _title,
-          onTap: () => AppRoutes.push<void>(
-              context, AnilistBrowseScreen(title: _title, query: query)),
+          title: title,
+          onTap: showRecommended
+              ? null
+              : () => AppRoutes.push<void>(context, AnilistBrowseScreen(title: title, query: query)),
         ),
-        HomeAsync<List<AnilistMedia>>(
-          cacheKey: 'al:${query.key}:${section.itemCount}',
-          maxAge: Duration(hours: section.cacheDurationHours),
-          refresh: refresh,
-          load: () async => (await AnilistDiscoverService.instance
-                  .media(query, perPage: section.itemCount.clamp(1, 50)))
-              .items,
-          loading: _loading(),
-          builder: (context, items) => items.isEmpty
-              ? HomeMessage(
-                  icon: Icons.inbox_outlined, text: S.current.Hw_Empty_Items)
-              : AnilistMediaRow(
-                  items: items, cardWidth: cardWidth, cardHeight: cardHeight),
-        ),
+        _part((data) {
+          if (showRecommended) {
+            return AnilistRecommendedRow(
+              items: recommendations.take(section.itemCount).toList(),
+              cardWidth: cardWidth,
+              cardHeight: cardHeight,
+            );
+          }
+          final items = alias == null ? null : data.media(alias);
+          if (items == null || items.isEmpty) {
+            return AnilistRowMessage(failed: items == null, onRetry: onRetry);
+          }
+          return AnilistMediaCardRow(items: items, cardWidth: cardWidth, cardHeight: cardHeight);
+        }),
       ],
     );
   }
@@ -190,17 +283,15 @@ class AnilistHomeSection extends StatelessWidget {
   Widget _userList(BuildContext context) {
     final category = section.userCategory;
     final status = ListEntryStatus.fromMal(section.userStatus);
+    final title = section.getDisplayTitle();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SectionHeader(
-          title: section.getDisplayTitle(),
+          title: title,
           onTap: () => AppRoutes.push<void>(
             context,
-            Scaffold(
-              backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-              body: const AnilistUserPage(),
-            ),
+            AnilistPushedTab(title: title, child: const AnilistUserPage()),
           ),
         ),
         ListenableBuilder(
@@ -215,20 +306,14 @@ class AnilistHomeSection extends StatelessWidget {
               );
             }
             return HomeAsync<List<AnilistMedia>>(
-              cacheKey:
-                  'al:userlist:$category:${status?.name ?? 'all'}:${section.itemCount}',
+              cacheKey: 'al:userlist:$category:${status?.name ?? 'all'}:${section.itemCount}',
               maxAge: Duration(hours: section.cacheDurationHours),
               refresh: refresh,
-              load: () => recentEntries(category, status, section.itemCount,
-                  force: refresh > 0),
+              load: () => recentEntries(category, status, section.itemCount, force: refresh > 0),
               loading: _loading(),
               builder: (context, items) => items.isEmpty
-                  ? HomeMessage(
-                      icon: Icons.inbox_outlined, text: S.current.Hw_Empty_List)
-                  : AnilistMediaRow(
-                      items: items,
-                      cardWidth: cardWidth,
-                      cardHeight: cardHeight),
+                  ? HomeMessage(icon: Icons.inbox_outlined, text: S.current.Hw_Empty_List)
+                  : AnilistMediaCardRow(items: items, cardWidth: cardWidth, cardHeight: cardHeight),
             );
           },
         ),
@@ -244,8 +329,7 @@ class AnilistHomeSection extends StatelessWidget {
     final entries = [
       for (final e in all)
         if (status == null || e.status == status) e,
-    ]..sort((a, b) =>
-        (b.updatedAt ?? DateTime(0)).compareTo(a.updatedAt ?? DateTime(0)));
+    ]..sort((a, b) => (b.updatedAt ?? DateTime(0)).compareTo(a.updatedAt ?? DateTime(0)));
     return [
       for (final e in entries.take(count))
         AnilistMedia(
@@ -260,47 +344,76 @@ class AnilistHomeSection extends StatelessWidget {
   }
 
   Widget _forum(BuildContext context) {
+    final title = _custom.isNotEmpty ? _custom : S.current.Al_Forum_Title;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SectionHeader(
-          title: _forumTitle,
-          onTap: () => AppRoutes.push<void>(
-            context,
-            Scaffold(
-              backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-              body: const AnilistForumPage(),
-            ),
-          ),
+          title: title,
+          onTap: () => openAnilistForumTab(context, title),
         ),
-        HomeAsync<List<AnilistThread>>(
-          cacheKey: 'al:forum',
-          maxAge: Duration(hours: section.cacheDurationHours),
-          refresh: refresh,
-          load: () async =>
-              (await AnilistDiscoverService.instance.threads(perPage: 8)).items,
-          loading: const ForumSkeleton(count: 3),
-          builder: (context, threads) {
-            if (threads.isEmpty) {
-              return HomeMessage(
-                  icon: Icons.forum_outlined,
-                  text: S.current.Fc_Topics_Empty_Title);
+        if (feed.hasError)
+          AnilistRowMessage(failed: true, onRetry: onRetry)
+        else if (feed.data == null)
+          const ForumSkeleton(count: 3)
+        else
+          Builder(builder: (context) {
+            final threads = feed.data!.threads(AnilistHomeParts.forum);
+            if (threads == null || threads.isEmpty) {
+              return AnilistRowMessage(failed: threads == null, onRetry: onRetry);
             }
             return Column(
-              children: [
-                for (final t in threads.take(6)) AnilistThreadTile(thread: t)
-              ],
+              children: [for (final t in threads.take(6)) AnilistThreadTile(thread: t)],
             );
-          },
-        ),
+          }),
       ],
     );
   }
+}
 
-  String get _forumTitle {
-    final custom = section.customTitle;
-    return custom != null && custom.isNotEmpty
-        ? custom
-        : S.current.Al_Forum_Title;
+/// Opens the AniList forum tab ([initialTab] 0 = Forum, 1 = Activity) as a page of its own,
+/// with an app bar and a back button.
+Future<void> openAnilistForumTab(BuildContext context, String title, {int initialTab = 0}) =>
+    AppRoutes.push<void>(
+      context,
+      AnilistPushedTab(title: title, child: AnilistForumPage(initialTab: initialTab)),
+    );
+
+/// The blocks of the AniList home that are not home settings sections: what the people the
+/// user follows did (signed in), then today's birthdays. Each one hides when it has nothing.
+class AnilistHomeExtras extends StatelessWidget {
+  const AnilistHomeExtras({super.key, required this.feed, required this.signedIn});
+
+  final AsyncSnapshot<AnilistFeed> feed;
+  final bool signedIn;
+
+  @override
+  Widget build(BuildContext context) {
+    final data = feed.data;
+    if (data == null) return const SizedBox.shrink();
+    final s = S.of(context);
+    final following = signedIn ? data.activities(AnilistHomeParts.following) : null;
+    final birthdays = [
+      ...?data.people(AnilistHomeParts.birthdayCharacters, isStaff: false),
+      ...?data.people(AnilistHomeParts.birthdayStaff, isStaff: true),
+    ];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (following != null && following.isNotEmpty) ...[
+          const SizedBox(height: 10),
+          SectionHeader(
+            title: s.Ahx_Sec_Following,
+            onTap: () => openAnilistForumTab(context, s.Al_Forum_Title, initialTab: 1),
+          ),
+          AnilistFollowingPreview(items: following),
+        ],
+        if (birthdays.isNotEmpty) ...[
+          const SizedBox(height: 10),
+          SectionHeader(title: s.Ahx_Sec_Birthdays),
+          AnilistPeopleRow(items: birthdays, showKind: true),
+        ],
+      ],
+    );
   }
 }

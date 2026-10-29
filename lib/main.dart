@@ -91,7 +91,8 @@ void main() async {
   userManager = UserManager.instance;
   await userManager.initializeAllUsers();
 
-  // MAL notifications and messages while the app is closed (Android WorkManager, every 30 min).
+  // MAL notifications and messages, and AniList notifications, while the app is closed
+  // (Android WorkManager, every 30 min).
   unawaited(MalBackgroundPolling.instance.start(preferencesBloc.stream, userManager));
 
   // Initialize API clients
@@ -334,7 +335,7 @@ void restartApp(BuildContext context) {
 
 
 // ---------------------------------------------------------------------------------------------
-// MAL hub in the background
+// MAL hub and AniList notifications in the background
 // ---------------------------------------------------------------------------------------------
 
 /// Unique name and task name of the periodic WorkManager job.
@@ -349,6 +350,7 @@ const Duration malHubWorkerFrequency = Duration(minutes: 30);
 void malHubCallbackDispatcher() {
   Workmanager().executeTask((task, inputData) async {
     await runMalHubWorker();
+    await runAnilistWorker();
     // Never "retry": the next period comes in 30 minutes anyway.
     return true;
   });
@@ -378,6 +380,36 @@ Future<void> runMalHubWorker({
     await MalHubPoller.instance.poll(forceHub: true);
   } catch (e) {
     debugPrint('MAL hub worker: $e');
+  }
+}
+
+/// The AniList part of a background round (same job as the MAL hub): rebuilds the AniList
+/// session, the language and the notification plugin in the bare isolate, then lets
+/// [AnilistBackgroundNotifier] read the inbox. Skipped without an AniList account or with
+/// its switch off. Never throws.
+Future<void> runAnilistWorker({
+  Future<SharedPreferences> Function()? storage,
+  AnilistBackgroundNotifier? notifier,
+}) async {
+  try {
+    WidgetsFlutterBinding.ensureInitialized();
+    final prefs = await (storage ?? SharedPreferences.getInstance)();
+    await prefs.reload();
+    await UserManager.instance.anilist.loadFromPreferences();
+    final store = PreferencesStore(prefs);
+    final round = notifier ??
+        AnilistBackgroundNotifier(readPrefs: () => store.read().notifications, storage: storage);
+    await round.loadSwitch(prefs);
+    if (!round.wanted) return;
+    if (notifier == null) {
+      final language = LanguageBloc(prefs: prefs);
+      await language.applyCurrent();
+      await language.close();
+      await PluginNotificationBackend().init((_) {});
+    }
+    await round.poll();
+  } catch (e) {
+    debugPrint('AniList worker: $e');
   }
 }
 
@@ -421,8 +453,9 @@ class WorkmanagerMalHubScheduler implements MalHubScheduler {
 }
 
 /// Keeps the background job registered exactly while it can be useful: the notification
-/// master switch is on, a MyAnimeList account is signed in and at least one of the MAL
-/// switches (hub, friends, messages) is on.
+/// master switch is on and either a MyAnimeList account is signed in with at least one of
+/// the MAL switches (hub, friends, messages) on, or an AniList account is signed in with
+/// its switch on ([AnilistBackgroundNotifier.wanted]).
 class MalBackgroundPolling {
   MalBackgroundPolling({MalHubScheduler? scheduler, bool Function()? wanted})
       : _scheduler = scheduler ?? WorkmanagerMalHubScheduler(),
@@ -438,19 +471,20 @@ class MalBackgroundPolling {
 
   static bool _defaultWanted() {
     final poller = MalHubPoller.instance;
-    return Preferences.current.notifications.enabled &&
+    final mal = Preferences.current.notifications.enabled &&
         UserManager.instance.isAuthenticated(AccountType.myanimelist) &&
         (poller.pushHub.value || poller.pushFriends.value || MalMessagesWatcher.instance.push.value);
+    return mal || AnilistBackgroundNotifier.instance.wanted;
   }
 
   /// Registers the job at start and follows what decides it.
   Future<void> start(Stream<AppPreferences> preferences, Listenable accounts) async {
     if (!_scheduler.isSupported) return;
     try {
+      final prefs = await SharedPreferences.getInstance();
       final poller = MalHubPoller.instance;
-      if (poller is MalHubMessagesPoller) {
-        await poller.loadSwitches(await SharedPreferences.getInstance());
-      }
+      if (poller is MalHubMessagesPoller) await poller.loadSwitches(prefs);
+      await AnilistBackgroundNotifier.instance.loadSwitch(prefs);
     } catch (_) {}
     preferences.listen((_) => unawaited(sync()));
     accounts.addListener(() => unawaited(sync()));
