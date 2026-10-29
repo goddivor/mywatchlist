@@ -8,10 +8,16 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:mywatchlist/cache/cachemanager.dart';
 import 'package:mywatchlist/generated/l10n.dart';
+import 'package:mywatchlist/constants/constants.dart' show AccountType;
 import 'package:mywatchlist/main.dart' show restartApp;
 import 'package:mywatchlist/pages/settings/settings_section.dart';
 import 'package:mywatchlist/screens/settings/prefs/pref_widgets.dart';
 import 'package:mywatchlist/screens/settings/storage_settings.dart';
+import 'package:mywatchlist/services/api/MAL/mal_connect.dart' show MalSessionExpired;
+import 'package:mywatchlist/services/list_export/mal_xml.dart';
+import 'package:mywatchlist/services/list_export/mal_xml_import.dart';
+import 'package:mywatchlist/user/accounts/provider/account_manager_singleton.dart';
+import 'package:mywatchlist/user/user_mal_v2.dart';
 import 'package:mywatchlist/utils/file_service.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path_provider/path_provider.dart';
@@ -153,6 +159,175 @@ class _BackupRestoreSettingsPageState extends State<BackupRestoreSettingsPage> {
         }
       });
 
+  /// The XML tools read and write the list of the signed-in MyAnimeList account.
+  bool _requireMal() {
+    if (AccountManagerSingleton().selectedAcc == AccountType.myanimelist) return true;
+    _say(S.current.MalXml_Need_Mal);
+    return false;
+  }
+
+  Future<void> _exportXml() async {
+    if (_busy || !_requireMal()) return;
+    final isAnime = await showModalBottomSheet<bool>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+              child: Align(
+                alignment: AlignmentDirectional.centerStart,
+                child: Text(
+                  S.current.MalXml_Export_Title,
+                  style: Theme.of(sheetContext).textTheme.titleLarge,
+                ),
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.movie_outlined),
+              title: Text(S.current.MalXml_Anime),
+              onTap: () => Navigator.of(sheetContext).pop(true),
+            ),
+            ListTile(
+              leading: const Icon(Icons.menu_book_outlined),
+              title: Text(S.current.MalXml_Manga),
+              onTap: () => Navigator.of(sheetContext).pop(false),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (isAnime == null || !mounted) return;
+    await _guard(() async {
+      try {
+        final result = await MalXmlExporter(userName: () => UserMalV2.instance.username)
+            .export(isAnime: isAnime);
+        if (result.count == 0) {
+          if (mounted) _say(S.current.MalXml_Export_Empty);
+          return;
+        }
+        final dir = await getTemporaryDirectory();
+        final stamp = DateFormat('yyyy-MM-dd').format(DateTime.now());
+        final file = File('${dir.path}/${isAnime ? 'animelist' : 'mangalist'}_$stamp.xml');
+        await file.writeAsString(result.xml);
+        try {
+          await Share.shareXFiles([XFile(file.path, mimeType: 'text/xml')]);
+        } catch (e) {
+          debugPrint('MAL XML share failed: $e');
+          if (mounted) _say(S.current.MalXml_Share_Failed);
+        }
+      } on MalSessionExpired {
+        if (mounted) await _showExpired();
+      } catch (e) {
+        debugPrint('MAL XML export failed: $e');
+        if (mounted) _say(S.current.MalXml_Export_Failed);
+      }
+    });
+  }
+
+  Future<void> _importXml() async {
+    if (_busy || !_requireMal()) return;
+    MalXmlDocument? doc;
+    await _guard(() async {
+      try {
+        final result = await FilePicker.platform.pickFiles(withData: false);
+        final path = result?.files.single.path;
+        if (path == null) return;
+        final file = File(path);
+        if (await file.length() > _maxXmlBytes) {
+          if (mounted) _say(S.current.MalXml_Too_Big);
+          return;
+        }
+        final text = MalXmlReader.decodeBytes(await file.readAsBytes());
+        doc = await MalXmlReader.parseAsync(text);
+      } on FormatException {
+        if (mounted) _say(S.current.MalXml_Not_Export);
+      } catch (e) {
+        debugPrint('MAL XML read failed: $e');
+        if (mounted) _say(S.current.MalXml_Read_Failed);
+      }
+    });
+    final document = doc;
+    if (document == null || !mounted) return;
+    if (document.isEmpty) {
+      _say(S.current.MalXml_Nothing);
+      return;
+    }
+    final overwrite = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (_) => MalXmlImportSheet(document: document),
+    );
+    if (overwrite == null || !mounted) return;
+    final progress = ValueNotifier<(int, int)>((0, document.length));
+    var stop = false;
+    unawaited(showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => MalXmlProgressDialog(
+        progress: progress,
+        onStop: () => stop = true,
+      ),
+    ));
+    MalXmlImportResult? result;
+    try {
+      result = await MalXmlImporter().run(
+        document,
+        overwrite: overwrite,
+        onProgress: (done, total) => progress.value = (done, total),
+        isCancelled: () => stop,
+      );
+    } catch (e) {
+      debugPrint('MAL XML import failed: $e');
+    }
+    if (mounted) Navigator.of(context, rootNavigator: true).pop();
+    progress.dispose();
+    if (!mounted) return;
+    final outcome = result;
+    if (outcome == null) {
+      _say(S.current.MalXml_Read_Failed);
+      return;
+    }
+    if (outcome.sessionExpired) {
+      await _showExpired();
+      return;
+    }
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        icon: Icon(outcome.cancelled ? Icons.stop_circle_outlined : Icons.check_circle_outline_rounded),
+        title: Text(outcome.cancelled ? S.current.MalXml_Stopped_Title : S.current.MalXml_Done_Title),
+        content: Text(S.current.MalXml_Done_Counts(outcome.saved, outcome.skipped, outcome.failed)),
+        actions: [
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: Text(S.current.Close),
+          ),
+        ],
+      ),
+    );
+  }
+
+  static const int _maxXmlBytes = 40 * 1024 * 1024;
+
+  Future<void> _showExpired() => showDialog<void>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          icon: const Icon(Icons.lock_outline_rounded),
+          title: Text(S.current.MalXml_Expired_Title),
+          content: Text(S.current.MalXml_Expired_Body),
+          actions: [
+            FilledButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: Text(S.current.Close),
+            ),
+          ],
+        ),
+      );
+
   Future<void> _showDone(BackupRestoreResult result) async {
     final needsRestart = result.settings > 0;
     await showDialog<void>(
@@ -249,6 +424,21 @@ class _BackupRestoreSettingsPageState extends State<BackupRestoreSettingsPage> {
               title: S.current.Bkp_Restore_File,
               subtitle: S.current.Bkp_Restore_File_Desc,
               onTap: _busy ? null : _restore,
+            ),
+          ],
+        ),
+        PrefGroup(
+          title: S.current.MalXml_Section,
+          children: [
+            SettingsActionTile(
+              icon: Icons.file_upload_outlined,
+              title: S.current.MalXml_Export,
+              onTap: _busy ? null : _exportXml,
+            ),
+            SettingsActionTile(
+              icon: Icons.file_download_outlined,
+              title: S.current.MalXml_Import,
+              onTap: _busy ? null : _importXml,
             ),
           ],
         ),
@@ -401,6 +591,126 @@ class _RestoreReviewSheetState extends State<RestoreReviewSheet> {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+
+/// Review of a MAL XML file before it is written: what it holds and whether it replaces the
+/// matching entries. Pops `true` to overwrite, `false` to keep the user's entries.
+class MalXmlImportSheet extends StatefulWidget {
+  const MalXmlImportSheet({super.key, required this.document});
+
+  final MalXmlDocument document;
+
+  @override
+  State<MalXmlImportSheet> createState() => _MalXmlImportSheetState();
+}
+
+class _MalXmlImportSheetState extends State<MalXmlImportSheet> {
+  bool _overwrite = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    final doc = widget.document;
+    return SafeArea(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(S.current.MalXml_Review_Title, style: theme.textTheme.titleLarge),
+            const SizedBox(height: 4),
+            Text(
+              S.current.MalXml_Review_Counts(doc.anime.length, doc.manga.length),
+              style: theme.textTheme.bodyMedium?.copyWith(color: colors.onSurfaceVariant),
+            ),
+            if (doc.invalid > 0)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                  S.current.MalXml_Review_Invalid(doc.invalid),
+                  style: theme.textTheme.bodySmall?.copyWith(color: colors.onSurfaceVariant),
+                ),
+              ),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: SegmentedButton<bool>(
+                showSelectedIcon: false,
+                segments: [
+                  ButtonSegment(value: false, label: Text(S.current.MalXml_Mode_Keep)),
+                  ButtonSegment(value: true, label: Text(S.current.MalXml_Mode_Overwrite)),
+                ],
+                selected: {_overwrite},
+                onSelectionChanged: (v) => setState(() => _overwrite = v.first),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              _overwrite ? S.current.MalXml_Mode_Overwrite_Desc : S.current.MalXml_Mode_Keep_Desc,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: _overwrite ? colors.error : colors.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: Text(S.current.Cancel),
+                ),
+                const SizedBox(width: 8),
+                FilledButton(
+                  style: _overwrite
+                      ? FilledButton.styleFrom(
+                          backgroundColor: colors.error,
+                          foregroundColor: colors.onError,
+                        )
+                      : null,
+                  onPressed: () => Navigator.of(context).pop(_overwrite),
+                  child: Text(S.current.MalXml_Import_Action),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Progress of a running MAL XML import, with a Stop button.
+class MalXmlProgressDialog extends StatelessWidget {
+  const MalXmlProgressDialog({super.key, required this.progress, required this.onStop});
+
+  final ValueListenable<(int, int)> progress;
+  final VoidCallback onStop;
+
+  @override
+  Widget build(BuildContext context) {
+    return PopScope(
+      canPop: false,
+      child: AlertDialog(
+        title: Text(S.current.MalXml_Importing_Title),
+        content: ValueListenableBuilder<(int, int)>(
+          valueListenable: progress,
+          builder: (context, value, _) => Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              LinearProgressIndicator(value: value.$2 == 0 ? null : value.$1 / value.$2),
+              const SizedBox(height: 12),
+              Text(S.current.MalXml_Progress(value.$1, value.$2)),
+            ],
+          ),
+        ),
+        actions: [TextButton(onPressed: onStop, child: Text(S.current.MalXml_Stop))],
       ),
     );
   }
