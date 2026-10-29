@@ -1,0 +1,58 @@
+{
+  "@@locale": "fr_FR",
+  "Kc_Tab_Latest": "Récents",
+  "Kc_Tab_News": "Actualités",
+  "Kc_Tab_Groups": "Groupes",
+  "Kc_Empty": "Rien pour le moment",
+  "Kc_Error_Title": "Impossible de charger Kitsu",
+  "Kc_Retry": "Réessayer",
+  "Kc_Post_Title": "Publication",
+  "Kc_Group_Title": "Groupe",
+  "Kc_Spoiler_Hidden": "Spoiler, touchez pour afficher",
+  "Kc_Nsfw_Hidden": "Contenu sensible, touchez pour afficher",
+  "Kc_Nsfw_Badge": "Sensible",
+  "Kc_Comment_Count": "{count, plural, =0{Aucun commentaire} =1{1 commentaire} other{{count} commentaires}}",
+  "@Kc_Comment_Count": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "Kc_Like_Count": "{count, plural, =0{Aucun j’aime} =1{1 j’aime} other{{count} j’aime}}",
+  "@Kc_Like_Count": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "Kc_Member_Count": "{count, plural, =1{1 membre} other{{count} membres}}",
+  "@Kc_Member_Count": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "Kc_More_Replies": "{count, plural, =1{1 autre réponse} other{{count} autres réponses}}",
+  "@Kc_More_Replies": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "Kc_Post_Deleted": "Cette publication n’est plus disponible",
+  "Kc_Group_Search": "Rechercher un groupe",
+  "Kc_Group_Posts_Empty": "Aucune publication dans ce groupe pour le moment",
+  "Kc_Discussion_Empty": "Personne n’a encore publié à propos de ce titre",
+  "Kc_On_Title": "sur {title}",
+  "@Kc_On_Title": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  }
+}
