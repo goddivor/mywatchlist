@@ -4,7 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/pages/Kitsu/kitsu_browse_screen.dart';
-import 'package:mywatchlist/pages/Kitsu/kitsu_media_page.dart';
+import 'package:mywatchlist/pages/Kitsu/kitsu_media_page.dart' as title_page;
 import 'package:mywatchlist/services/api/Kitsu/kitsu_graphql.dart';
 import 'package:mywatchlist/services/api/Kitsu/kitsu_media_detail.dart';
 import 'package:mywatchlist/services/api/Kitsu/kitsu_catalog.dart';
@@ -61,7 +61,7 @@ void main() {
     await tester.tap(find.text('Dungeon Meshi'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
-    expect(find.byType(KitsuMediaPage), findsOneWidget);
+    expect(find.byType(title_page.KitsuMediaPage), findsOneWidget);
     expect(find.text(S.current.Kitsu_No_Mal_Match), findsNothing);
   });
 
