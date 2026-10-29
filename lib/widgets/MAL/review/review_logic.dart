@@ -5,10 +5,11 @@ import 'package:mywatchlist/services/api/Jikan/jikan_anime_review.dart';
 import 'package:mywatchlist/widgets/common/share_builder.dart';
 
 /// Order of the review list.
-enum ReviewSort { newest, oldest, highest, lowest }
+enum ReviewSort { helpful, newest, oldest, highest, lowest }
 
 extension ReviewSortLabel on ReviewSort {
   String get label => switch (this) {
+        ReviewSort.helpful => S.current.Helpful,
         ReviewSort.newest => S.current.Social_Reviews_Sort_Newest,
         ReviewSort.oldest => S.current.Social_Reviews_Sort_Oldest,
         ReviewSort.highest => S.current.Social_Reviews_Sort_Highest,
@@ -16,7 +17,7 @@ extension ReviewSortLabel on ReviewSort {
       };
 
   IconData get icon => switch (this) {
-        ReviewSort.newest || ReviewSort.highest => Icons.arrow_downward,
+        ReviewSort.helpful || ReviewSort.newest || ReviewSort.highest => Icons.arrow_downward,
         ReviewSort.oldest || ReviewSort.lowest => Icons.arrow_upward,
       };
 }
@@ -59,6 +60,14 @@ List<AnimeReview> filterReviews(
     return true;
   }).toList();
   switch (sort) {
+    case ReviewSort.helpful:
+      // Most reacted first; equal counts keep the API order.
+      final indexed = [for (var i = 0; i < result.length; i++) (i, result[i])];
+      indexed.sort((a, b) {
+        final byReactions = (b.$2.reactions?.overall ?? 0).compareTo(a.$2.reactions?.overall ?? 0);
+        return byReactions != 0 ? byReactions : a.$1.compareTo(b.$1);
+      });
+      result = [for (final entry in indexed) entry.$2];
     case ReviewSort.newest:
       break;
     case ReviewSort.oldest:

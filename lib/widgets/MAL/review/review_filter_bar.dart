@@ -10,7 +10,7 @@ class ReviewFilters {
   final int? score;
   final Set<String> tags;
 
-  const ReviewFilters({this.sort = ReviewSort.newest, this.score, this.tags = const {}});
+  const ReviewFilters({this.sort = ReviewSort.helpful, this.score, this.tags = const {}});
 
   bool get narrowed => score != null || tags.isNotEmpty;
 
