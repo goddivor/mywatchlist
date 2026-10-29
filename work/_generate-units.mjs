@@ -1104,6 +1104,13 @@ const UNITS = [
     dod: ["Tests: follow request (fake), tile shows %, editor in Simple/Regular/Advanced, histogram buckets."],
   },
   {
+    id: "anilist-polish", title: "AniList polish: standalone forum page, in-app activities, account title language, settings toggles, image placeholder", kind: "unit", priority: "P2", group: "trackers", model: "sonnet", ui: true,
+    needs: ["anilist-media-page", "anilist-profile-plus", "anilist-home-extras"],
+    owns: ["lib/pages/Anilist/anilist_forum_page.dart", "lib/widgets/Anilist/social/anilist_activity_tile.dart", "lib/services/api/Anilist/anilist_list_service.dart", "lib/widgets/Anilist/settings/notification_types_sheet.dart", "lib/widgets/common/app_image.dart", "lib/l10n/units/anilist-polish/**", "test/units/anilist-polish/**"],
+    goal: ["Leftovers routed by the orchestrator (2026-10-29): (1) AnilistForumPage gets a standalone mode with a back button (used by a title's forum in the title page Social tab, and by the home 'view all' instead of the covering app bar); (2) anilist_activity_tile.dart:137 opens some activities on anilist.co: open them in the app (openAnilistActivity); (3) AnilistListService builds titles from the account's title language (AnilistSettingsService), not the app preference; (4) notification_types_sheet.dart:43: two quick toggles drop the second save; (5) app_image.dart: the default placeholder sizes itself from the width when the height is unbounded (the trap behind the thread crash), with a test.", "Owner rule: each tracker is its own app (docs/tracker-ui-references.md). Fakes only in tests."],
+    dod: ["Tests per item."],
+  },
+  {
     id: "explore-polish", title: "Explore: DailyAL images on category and genre cards, explicit genres, recommendations/stacks fallbacks, favourites badges", kind: "unit", priority: "P1", group: "discovery", model: "opus", ui: true,
     needs: ["search-sources", "explore-seasonal", "home-wiring", "profile-tabs"],
     owns: ["lib/services/api/MAL/scrapper/html_parsers.dart", "test/units/explore-crash/**", "lib/pages/MAL/mal_explore_page.dart", "lib/screens/explore/**", "assets/images/explore/**", "pubspec.yaml", "lib/cache/top_characters.dart"],

@@ -159,6 +159,7 @@
         "simkl-data-plus",
         "tracker-list-hooks",
         "kitsu-finish",
+        "anilist-polish",
         "tracker-wiring"
       ]
     },
@@ -3781,6 +3782,37 @@
         "model: sonnet"
       ],
       "status": "✅ done"
+    },
+    {
+      "id": "anilist-polish",
+      "title": "AniList polish: standalone forum page, in-app activities, account title language, settings toggles, image placeholder",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P2",
+      "needs": [
+        "anilist-media-page",
+        "anilist-profile-plus",
+        "anilist-home-extras"
+      ],
+      "owns": [
+        "lib/pages/Anilist/anilist_forum_page.dart",
+        "lib/widgets/Anilist/social/anilist_activity_tile.dart",
+        "lib/services/api/Anilist/anilist_list_service.dart",
+        "lib/widgets/Anilist/settings/notification_types_sheet.dart",
+        "lib/widgets/common/app_image.dart",
+        "lib/l10n/units/anilist-polish/**",
+        "test/units/anilist-polish/**",
+        "test/units/anilist-polish/**"
+      ],
+      "group": "trackers",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: sonnet"
+      ],
+      "status": "⬜ todo"
     },
     {
       "id": "explore-polish",
