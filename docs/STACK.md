@@ -40,7 +40,7 @@ Never state a version from memory: read it here or in `pubspec.yaml` / `pubspec.
 | add_2_calendar | ^3.0.1 |
 | open_filex | ^5.0.0 (adds READ_MEDIA_* to the merged manifest: strip before any Play Store release) |
 | flutter_displaymode | ^0.7.0 |
-| workmanager | ^0.9.2 (periodic WorkManager job for the MAL hub while the app is closed; Android only, its manifest adds the WorkManager services and foreground-service permissions) |
+| workmanager | ^0.9.2 (periodic WorkManager job for the MAL hub while the app is closed; Android only; with `workmanager_platform_interface` pinned to 0.9.3 because workmanager_apple 0.9.4 does not compile against 0.9.4 and Flutter 3.35 cannot take apple >=0.9.5) |
 | graphview | ^1.5.1 |
 | fl_chart | ^1.3.0 |
 | build_runner (dev) | ^2.15.1 |

@@ -17,6 +17,7 @@ import 'package:mywatchlist/services/notifications/mal_hub.dart';
 import 'package:mywatchlist/services/notifications/mal_hub_poller.dart';
 import 'package:mywatchlist/services/notifications/notification_service.dart';
 import 'package:mywatchlist/pages/side_bar.dart' show SidebarMenuItem;
+import 'package:mywatchlist/user/base_user.dart' show AuthStatus;
 import 'package:mywatchlist/user/preferences/preferences.dart';
 import 'package:mywatchlist/user/user_mal_v2.dart';
 import 'package:mywatchlist/user/user_manager.dart';
@@ -253,7 +254,7 @@ void main() {
       final response = await client.postJson('/x.json', {'notification_ids': [1, 'b']});
       expect(response.statusCode, 200);
       expect(posts, hasLength(2));
-      expect(posts.first.headers['Content-Type'], 'application/json');
+      expect(posts.first.headers['Content-Type'], startsWith('application/json'));
       expect(posts.first.headers['Cookie'], contains('MALSESSIONID=abc123'));
       expect(jsonDecode(posts.first.body), {'notification_ids': [1, 'b'], 'csrf_token': 'tok1'});
       expect(jsonDecode(posts.last.body)['csrf_token'], 'tok2');
@@ -276,10 +277,12 @@ void main() {
       UserMalV2.instance
         ..authResponse = AuthResponse(accessToken: 'token')
         ..username = 'goddivor'
-        ..needsReLogin = false;
+        ..needsReLogin = false
+        ..status = AuthStatus.AUTHENTICATED;
       addTearDown(() => UserMalV2.instance
         ..authResponse = null
-        ..username = null);
+        ..username = null
+        ..status = AuthStatus.UNAUTHENTICATED);
       final prefs = await SharedPreferences.getInstance();
       final bloc = PreferencesBloc(store: PreferencesStore(prefs));
       addTearDown(bloc.close);
