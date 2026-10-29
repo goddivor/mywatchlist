@@ -376,7 +376,7 @@ class AnilistHomeSection extends StatelessWidget {
 Future<void> openAnilistForumTab(BuildContext context, String title, {int initialTab = 0}) =>
     AppRoutes.push<void>(
       context,
-      AnilistPushedTab(title: title, child: AnilistForumPage(initialTab: initialTab)),
+      AnilistForumPage(initialTab: initialTab, standalone: true),
     );
 
 /// The blocks of the AniList home that are not home settings sections: what the people the
