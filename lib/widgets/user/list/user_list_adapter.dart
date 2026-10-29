@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:mywatchlist/constants/constants.dart' show AccountType;
 import 'package:mywatchlist/widgets/common/list_sort_filter.dart';
+import 'package:mywatchlist/widgets/user/list/list_entry_look.dart';
 import 'package:mywatchlist/widgets/user/list/list_entry_view.dart';
+
+export 'package:mywatchlist/widgets/user/list/list_entry_look.dart';
 
 /// One page of a user list.
 class ListPage {
@@ -38,7 +41,11 @@ class ListEditRemoved extends ListEditResult {
 ///
 /// `MalUserListAdapter` is the MyAnimeList one; the AniList, Kitsu and Simkl
 /// user list units implement the same class and reuse `UserListView`.
-abstract class UserListAdapter {
+///
+/// Each tracker is its own app: its wording and scores are hooks of [ListEntryLook]
+/// (status labels, user and community scores, card badges), and [afterStep] lets it follow a
+/// quick +1 with its own prompt.
+abstract class UserListAdapter extends ListEntryLook {
   const UserListAdapter();
 
   AccountType get tracker;
@@ -79,9 +86,8 @@ abstract class UserListAdapter {
   /// Whether this tracker's entries carry the episode length
   /// ([ListEntryView.episodeSeconds]), so the anime list shows its "time left / watched" line.
   ///
-  /// Each adapter declares its own value. Until the MyAnimeList adapter overrides it, the
-  /// default keeps the line MyAnimeList already had; other adapters opt in.
-  bool get fillsEpisodeLength => tracker == AccountType.myanimelist;
+  /// Off by default: an adapter whose entries carry the length opts in.
+  bool get fillsEpisodeLength => false;
 
   /// Whether the quick +1 / -1 buttons can change [entry].
   bool canStep(ListEntryView entry) => false;
@@ -90,6 +96,16 @@ abstract class UserListAdapter {
   /// Reaching the total completes it, as the edit sheet does.
   Future<ListEntryView> step(ListEntryView entry, int delta) =>
       throw UnsupportedError('step');
+
+  /// Called once a quick +1 / -1 saved [saved] (it was [before]), with the list's [context],
+  /// so the tracker can follow up on the viewer's tap (Kitsu asks for a rating after the last
+  /// episode). Returns the entry after any further write, null when nothing changed.
+  Future<ListEntryView?> afterStep(
+    BuildContext context,
+    ListEntryView saved, {
+    required ListEntryView before,
+  }) async =>
+      null;
 
   /// True when [error] means the session is dead (show "sign in again").
   bool isSessionExpired(Object error) => false;

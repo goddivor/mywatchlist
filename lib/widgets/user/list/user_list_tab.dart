@@ -87,9 +87,13 @@ class _UserListTabState extends State<UserListTab> with AutomaticKeepAliveClient
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    return ListenableBuilder(
-      listenable: widget.controller,
-      builder: (context, _) => _body(context),
+    // The cards below word and draw their entries as this tracker does.
+    return ListEntryLookScope(
+      look: widget.adapter,
+      child: ListenableBuilder(
+        listenable: widget.controller,
+        builder: (context, _) => _body(context),
+      ),
     );
   }
 

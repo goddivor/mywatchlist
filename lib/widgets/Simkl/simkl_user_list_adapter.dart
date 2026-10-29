@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/constants/constants.dart' show AccountType;
 import 'package:mywatchlist/services/api/SimKl/simkl_client.dart';
 import 'package:mywatchlist/services/api/SimKl/simkl_list_service.dart';
 import 'package:mywatchlist/services/api/SimKl/simkl_models.dart';
 import 'package:mywatchlist/user/user_simkl_v2.dart';
 import 'package:mywatchlist/utils/app_routes.dart';
+import 'package:mywatchlist/widgets/Simkl/media/simkl_media_format.dart';
 import 'package:mywatchlist/widgets/Simkl/simkl_edit_sheet.dart';
 import 'package:mywatchlist/widgets/Simkl/simkl_media_widgets.dart' show openSimklTitle;
 import 'package:mywatchlist/widgets/common/list_sort_filter.dart';
@@ -130,6 +132,20 @@ class SimklUserListAdapter extends UserListAdapter {
   @override
   Future<ListEditResult> edit(BuildContext context, ListEntryView entry) =>
       showSimklEditSheet(context, entry, service: _service);
+
+  /// Simkl rates out of 10 everywhere: "8/10" for the user, "8.2/10" for the community.
+  @override
+  ListScoreText? userScore(ListEntryView entry) => entry.score > 0
+      ? ListScoreText(S.current.Tlh_Score_Of_Ten('${entry.score}'),
+          spoken: S.current.UserList_My_Score_Value(entry.score))
+      : null;
+
+  @override
+  ListScoreText? meanScore(ListEntryView entry) {
+    final mean = entry.meanScore;
+    if (mean == null || mean <= 0) return null;
+    return ListScoreText(S.current.Tlh_Score_Of_Ten(SimklFormat.score(mean)));
+  }
 
   @override
   bool canStep(ListEntryView entry) => entry.status != null;

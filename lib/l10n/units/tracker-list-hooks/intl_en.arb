@@ -1,0 +1,27 @@
+{
+  "@@locale": "en",
+  "Tlh_Score_Of_Ten": "{score}/10",
+  "@Tlh_Score_Of_Ten": {
+    "placeholders": {
+      "score": {
+        "type": "String"
+      }
+    }
+  },
+  "Tlh_Your_Reaction": "Your reaction: {reaction}",
+  "@Tlh_Your_Reaction": {
+    "placeholders": {
+      "reaction": {
+        "type": "String"
+      }
+    }
+  },
+  "Tlh_Community_Approval": "Community approval: {percent}",
+  "@Tlh_Community_Approval": {
+    "placeholders": {
+      "percent": {
+        "type": "String"
+      }
+    }
+  }
+}

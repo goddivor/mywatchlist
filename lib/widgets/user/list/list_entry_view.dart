@@ -326,6 +326,17 @@ class ListEntryView {
     };
   }
 
+  /// True for an entry on the "to watch" side whose episode total is still unknown (an airing
+  /// show with `num_episodes` = 0): its time left cannot be counted, so a time line that leaves
+  /// it out is only a lower bound.
+  bool get hasUnknownTimeLeft =>
+      isAnime &&
+      episodeSeconds > 0 &&
+      total <= 0 &&
+      (status == ListEntryStatus.current ||
+          status == ListEntryStatus.onHold ||
+          status == ListEntryStatus.planned);
+
   /// Time already watched: [progress] episodes at the average length, or null when unknown.
   Duration? get timeWatched {
     if (!isAnime || episodeSeconds <= 0 || status == null) return null;
@@ -424,6 +435,10 @@ class ListTimeSummary {
   /// Time of [entries] of the tab [status]: the time left for the tabs of titles still to
   /// watch (watching, on hold, plan to watch), the time watched for the others and for "All".
   /// Null for manga, or when no entry has a known length.
+  ///
+  /// Superseded by `listTimeSummary` (rewatches counted in the time watched), which My List
+  /// uses; kept, rewatches not counted, for the AniList list view and its tests until they
+  /// move to `listTimeSummary`.
   static ListTimeSummary? of(
     Iterable<ListEntryView> entries,
     ListEntryStatus? status, {
@@ -437,12 +452,14 @@ class ListTimeSummary {
       _ => ListTimeKind.watched,
     };
     var seconds = 0;
+    var unknown = false;
     for (final e in entries) {
       final d = kind == ListTimeKind.left ? e.timeLeft : e.timeWatched;
       if (d != null) seconds += d.inSeconds;
+      if (kind == ListTimeKind.left && e.hasUnknownTimeLeft) unknown = true;
     }
     if (seconds <= 0) return null;
-    return ListTimeSummary(kind, Duration(seconds: seconds), partial: partial);
+    return ListTimeSummary(kind, Duration(seconds: seconds), partial: partial || unknown);
   }
 
   /// The translated line ("Time left: 41 d 3 h").

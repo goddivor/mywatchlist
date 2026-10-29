@@ -1,14 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
 import 'package:mywatchlist/constants/constants.dart' show AccountType;
 import 'package:mywatchlist/services/api/Kitsu/kitsu_graphql.dart' show KitsuMediaKind;
 import 'package:mywatchlist/services/api/Kitsu/kitsu_http.dart';
+import 'package:mywatchlist/generated/l10n.dart';
+import 'package:mywatchlist/services/api/Kitsu/kitsu_catalog.dart' show KitsuRatingSystem;
 import 'package:mywatchlist/services/api/Kitsu/kitsu_library.dart';
+import 'package:mywatchlist/services/api/Kitsu/kitsu_media.dart' show KitsuDocument, kitsuAttrs;
 import 'package:mywatchlist/user/preferences/preferences.dart';
 import 'package:mywatchlist/user/user_kitsu_v2.dart';
 import 'package:mywatchlist/utils/app_routes.dart';
 import 'package:mywatchlist/widgets/Kitsu/kitsu_open.dart';
 import 'package:mywatchlist/widgets/Kitsu/media/kitsu_entry_sheet.dart';
+import 'package:mywatchlist/widgets/Kitsu/media/kitsu_library_box.dart' show kitsuWriteFailed;
 import 'package:mywatchlist/widgets/Kitsu/media/kitsu_my_library.dart';
+import 'package:mywatchlist/widgets/Kitsu/media/kitsu_rating.dart';
+import 'package:mywatchlist/widgets/Kitsu/profile/kitsu_profile_rows.dart' show kitsuStatusLabel;
 import 'package:mywatchlist/widgets/common/list_sort_filter.dart';
 import 'package:mywatchlist/widgets/user/edit/edit_rules.dart';
 import 'package:mywatchlist/widgets/user/edit/list_entry.dart';
@@ -30,15 +38,33 @@ class KitsuUserListAdapter extends UserListAdapter {
     DateTime Function()? clock,
     Future<SyncEntry?> Function(BuildContext context, ListEntryView entry, SyncEntry initial)?
         editor,
+    KitsuRatingSystem Function()? ratingSystem,
+    Future<int?> Function(BuildContext context, ListEntryView entry)? askRating,
   })  : _library = library ?? KitsuLibrary.instance,
         _owner = owner ?? (() => UserKitsuV2.instance.username),
         _clock = clock ?? DateTime.now,
-        _editor = editor ?? _openEditor;
+        _editor = editor ?? _openEditor,
+        _ratingSystem = ratingSystem ?? (() => KitsuRating.current),
+        _askRating = askRating ?? _showRatingSheet;
 
   final KitsuLibrary _library;
   final String? Function() _owner;
   final DateTime Function() _clock;
   final Future<SyncEntry?> Function(BuildContext, ListEntryView, SyncEntry) _editor;
+  final KitsuRatingSystem Function() _ratingSystem;
+  final Future<int?> Function(BuildContext, ListEntryView) _askRating;
+
+  /// Kitsu's own rating (`ratingTwenty`, 2 to 20) and reaction of each loaded entry
+  /// (`anime:12`), read from the same library request as the page: the shared card model keeps
+  /// the rating on 0-10 only.
+  final Map<String, KitsuListExtras> _extras = {};
+
+  /// The library, reading pages through [KitsuExtrasHttp] so their answer also carries each
+  /// entry's reaction and exact rating. Writes and counts go through the injected one.
+  late final KitsuLibrary _reader = KitsuLibrary(
+    http: KitsuExtrasHttp(() => _library.http, _remember),
+    owner: _owner,
+  );
 
   /// Library-entry id of each loaded media (`anime:12`), filled by [fetch].
   final Map<String, String> _entryIds = {};
@@ -73,7 +99,7 @@ class KitsuUserListAdapter extends UserListAdapter {
     required int limit,
     String? apiSort,
   }) async {
-    final result = await _library.page(
+    final result = await _reader.page(
       isAnime: category == 'anime',
       status: status,
       offset: offset,
@@ -162,10 +188,17 @@ class KitsuUserListAdapter extends UserListAdapter {
     if (saved.isRemoved) {
       // Deleted from Kitsu: its library-entry id is gone with it.
       _entryIds.remove('${entry.category}:${entry.id}');
+      _extras.remove('${entry.category}:${entry.id}');
       return const ListEditRemoved();
     }
     final id = saved.entryId;
-    if (id != null) _entryIds['${entry.category}:${entry.id}'] = id;
+    final key = '${entry.category}:${entry.id}';
+    if (id != null) _entryIds[key] = id;
+    final score = saved.score;
+    _extras[key] = KitsuListExtras(
+      twenty: score == null || score <= 0 ? null : (score * 2).round(),
+      reaction: _extras[key]?.reaction,
+    );
     return ListEditUpdated(applySync(entry, saved, _clock()));
   }
 
@@ -218,6 +251,91 @@ class KitsuUserListAdapter extends UserListAdapter {
       listFinishDate: saved.finishDate,
     );
   }
+
+  void _remember(Map<String, KitsuListExtras> found) => _extras.addAll(found);
+
+  /// The extras of [entry], its 0-10 score doubled when the page did not carry them.
+  KitsuListExtras _extrasOf(ListEntryView entry) =>
+      _extras['${entry.category}:${entry.id}'] ??
+      KitsuListExtras(twenty: entry.score > 0 ? entry.score * 2 : null);
+
+  /// The exact rating of [entry] as the list last saw it (`ratingTwenty`), null when unrated.
+  @visibleForTesting
+  int? ratingTwentyOf(ListEntryView entry) => _extrasOf(entry).twenty;
+
+  /// Kitsu's words: "Currently watching", "Want to watch"…
+  @override
+  String statusLabel(ListEntryStatus status, {required bool isAnime}) =>
+      kitsuStatusLabel(status, isAnime: isAnime);
+
+  /// The user's rating in the account's system: a face and its word (Simple), stars out of 5
+  /// (Regular) or points out of 10 (Advanced).
+  @override
+  ListScoreText? userScore(ListEntryView entry) {
+    final twenty = _extrasOf(entry).twenty;
+    if (twenty == null || twenty <= 0) return null;
+    final system = _ratingSystem();
+    return ListScoreText(
+      KitsuRating.text(twenty, system),
+      icon: switch (system) {
+        KitsuRatingSystem.simple => KitsuRating.simpleIcon(KitsuRating.simpleIndex(twenty)),
+        KitsuRatingSystem.regular => Icons.star_rounded,
+        KitsuRatingSystem.advanced => null,
+      },
+      spoken: KitsuRating.spoken(twenty, system),
+    );
+  }
+
+  /// The community score as Kitsu writes it: a percentage ("88%"), no star.
+  @override
+  ListScoreText? meanScore(ListEntryView entry) {
+    final mean = entry.meanScore;
+    if (mean == null || mean <= 0) return null;
+    final percent = NumberFormat.percentPattern(Intl.getCurrentLocale()).format(mean / 10);
+    return ListScoreText(percent,
+        icon: Icons.favorite_rounded, spoken: S.current.Tlh_Community_Approval(percent));
+  }
+
+  /// The user's reaction to the title (Kitsu's 140-character review).
+  @override
+  List<ListCardBadge> cardBadges(ListEntryView entry) {
+    final reaction = _extras['${entry.category}:${entry.id}']?.reaction;
+    if (reaction == null) return const [];
+    return [
+      ListCardBadge(
+        icon: Icons.chat_bubble_rounded,
+        label: reaction,
+        detail: S.current.Tlh_Your_Reaction(reaction),
+      ),
+    ];
+  }
+
+  /// After the +1 that completes an unrated title, asks for the rating in the account's system,
+  /// as Kitsu does, and writes it only when the viewer picks one.
+  @override
+  Future<ListEntryView?> afterStep(BuildContext context, ListEntryView saved,
+      {required ListEntryView before}) async {
+    final completed =
+        saved.status == ListEntryStatus.completed && before.status != ListEntryStatus.completed;
+    if (!completed || (_extrasOf(saved).twenty ?? 0) > 0) return null;
+    final picked = await _askRating(context, saved);
+    if (picked == null || picked <= 0) return null;
+    try {
+      final id = await _entryIdOf(saved);
+      if (id == null) throw const KitsuHttpError(404);
+      await _library.update(id, {'ratingTwenty': picked});
+    } catch (e) {
+      debugPrint('KitsuUserListAdapter.afterStep failed (${e.runtimeType})');
+      if (context.mounted) kitsuWriteFailed(context);
+      return null;
+    }
+    final key = '${saved.category}:${saved.id}';
+    _extras[key] = KitsuListExtras(twenty: picked, reaction: _extras[key]?.reaction);
+    return saved.copyWith(score: KitsuLibrary.scoreOfTwenty(picked), updatedAt: _clock());
+  }
+
+  static Future<int?> _showRatingSheet(BuildContext context, ListEntryView entry) =>
+      showKitsuRatingSheet(context, title: S.current.Kr_Completed_Rate);
 
   @override
   bool canStep(ListEntryView entry) => entry.status != null;
@@ -273,4 +391,79 @@ class KitsuUserListAdapter extends UserListAdapter {
   @override
   Future<void> signInAgain(BuildContext context) =>
       AppRoutes.signInAgain(context, AccountType.kitsu);
+}
+
+/// What the shared card model does not keep of a Kitsu library entry.
+@immutable
+class KitsuListExtras {
+  /// `ratingTwenty`, 2 to 20; null when not rated.
+  final int? twenty;
+
+  /// The user's reaction to the title, null when none.
+  final String? reaction;
+
+  const KitsuListExtras({this.twenty, this.reaction});
+}
+
+/// A [KitsuHttp] that asks the library pages (`/library-entries` including the media) for the
+/// entries' reactions too, and hands each page's ratings and reactions to [onPage]. Every other
+/// request goes to [inner] unchanged.
+@visibleForTesting
+class KitsuExtrasHttp extends KitsuHttp {
+  KitsuExtrasHttp(this.inner, this.onPage) : super(auth: _unused);
+
+  final KitsuHttp Function() inner;
+  final void Function(Map<String, KitsuListExtras> found) onPage;
+
+  static Future<http.Response?> _unused(
+    Future<http.Response> Function(http.Client client, String token) send, {
+    bool? idempotent,
+  }) async =>
+      null;
+
+  @override
+  Future<Map<String, dynamic>> getJson(
+    String path, {
+    Map<String, String>? query,
+    bool auth = false,
+  }) async {
+    final include = query?['include'];
+    final kind = include?.split(',').first;
+    final isPage = path == '/library-entries' && (kind == 'anime' || kind == 'manga');
+    if (!isPage) return inner().getJson(path, query: query, auth: auth);
+    final json = await inner().getJson(
+      path,
+      query: {
+        ...query!,
+        'include': '$include,mediaReaction',
+        'fields[mediaReactions]': 'reaction',
+      },
+      auth: auth,
+    );
+    onPage(parse(json, kind!));
+    return json;
+  }
+
+  @override
+  Future<Map<String, dynamic>> patchJson(String path, Map<String, dynamic> body) =>
+      inner().patchJson(path, body);
+
+  /// Rating and reaction of each entry of a library answer, by `kind:mediaId`.
+  static Map<String, KitsuListExtras> parse(Map<String, dynamic> json, String kind) {
+    final doc = KitsuDocument.from(json);
+    final out = <String, KitsuListExtras>{};
+    for (final r in doc.data) {
+      final ref = ((r['relationships'] as Map?)?[kind] as Map?)?['data'];
+      final mediaId = ref is Map ? ref['id'] : null;
+      if (mediaId == null) continue;
+      final rating = kitsuAttrs(r)['ratingTwenty'];
+      final reactionRes = doc.related(r, 'mediaReaction');
+      final text = reactionRes == null ? null : kitsuAttrs(reactionRes)['reaction'];
+      out['$kind:$mediaId'] = KitsuListExtras(
+        twenty: rating is num && rating > 0 ? rating.toInt() : null,
+        reaction: text is String && text.trim().isNotEmpty ? text.trim() : null,
+      );
+    }
+    return out;
+  }
 }

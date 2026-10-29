@@ -422,8 +422,11 @@ Duration? timeWatchedWithRewatches(ListEntryView e) {
   return base + Duration(seconds: runs * e.total * e.episodeSeconds);
 }
 
-/// The time line of a list tab ([ListTimeSummary.of]), with rewatches counted in the time
-/// watched ([timeWatchedWithRewatches]); the time left is unchanged.
+/// The time line of a list tab ("Time left: 41 d 3 h"), with rewatches counted in the time
+/// watched ([timeWatchedWithRewatches]); the time left is unchanged. The tabs of titles still
+/// to watch (watching, on hold, plan to watch) show the time left, the others and "All" the
+/// time watched. Null for manga, or when no entry has a known length. The total is partial
+/// ("+") while more entries are to load or when a title to watch has no known episode total.
 ListTimeSummary? listTimeSummary(
   Iterable<ListEntryView> entries,
   ListEntryStatus? status, {
@@ -435,10 +438,13 @@ ListTimeSummary? listTimeSummary(
     _ => ListTimeKind.watched,
   };
   var seconds = 0;
+  var unknown = false;
   for (final e in entries) {
     final d = kind == ListTimeKind.left ? e.timeLeft : timeWatchedWithRewatches(e);
     if (d != null) seconds += d.inSeconds;
+    // An airing show without an episode total: what is known is counted, the total gets "+".
+    if (kind == ListTimeKind.left && e.hasUnknownTimeLeft) unknown = true;
   }
   if (seconds <= 0) return null;
-  return ListTimeSummary(kind, Duration(seconds: seconds), partial: partial);
+  return ListTimeSummary(kind, Duration(seconds: seconds), partial: partial || unknown);
 }

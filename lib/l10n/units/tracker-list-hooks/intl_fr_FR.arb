@@ -1,0 +1,6 @@
+{
+  "@@locale": "fr_FR",
+  "Tlh_Score_Of_Ten": "{score}/10",
+  "Tlh_Your_Reaction": "Votre réaction : {reaction}",
+  "Tlh_Community_Approval": "Approbation de la communauté : {percent}"
+}

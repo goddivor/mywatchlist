@@ -96,6 +96,10 @@ class MalUserListAdapter extends UserListAdapter {
   @override
   AccountType get tracker => AccountType.myanimelist;
 
+  /// The list node asks `average_episode_duration`, so the anime list shows its time line.
+  @override
+  bool get fillsEpisodeLength => true;
+
   @override
   String? get owner => _owner();
 
