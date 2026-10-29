@@ -1,42 +1,19 @@
-import 'dart:convert';
-
 import 'package:flutter/foundation.dart';
-import 'package:http/http.dart' as http;
-import 'package:mywatchlist/constants/constants.dart';
+import 'package:mywatchlist/services/api/Anilist/anilist_graphql.dart';
+import 'package:mywatchlist/services/api/Anilist/anilist_media.dart';
 
+/// Legacy static AniList reads (public data, no session). Every call goes through
+/// [AnilistGraphql] so it takes a token of the shared rate limiter and maps errors to
+/// [AnilistError]. Scores are asked as `weightedScore` (0-100; `averageScore` is deprecated):
+/// read them with [AnilistMedia.scoreOf].
 class AnilistApi {
-  static const String _baseUrl = Constants.anilistApiUrl;
-
-  /// Helper method for GraphQL POST requests (no auth needed for public queries).
+  /// Runs the public [query] and answers `{'data': …}` (the shape the callers read).
   static Future<Map<String, dynamic>> _graphqlQuery(
     String query, {
     Map<String, dynamic>? variables,
-    String? accessToken,
   }) async {
-    final headers = {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
-    };
-    if (accessToken != null) {
-      headers['Authorization'] = 'Bearer $accessToken';
-    }
-
-    final response = await http.post(
-      Uri.parse(_baseUrl),
-      headers: headers,
-      body: jsonEncode({
-        'query': query,
-        if (variables != null) 'variables': variables,
-      }),
-    );
-
-    if (response.statusCode == 200) {
-      return json.decode(response.body) as Map<String, dynamic>;
-    } else {
-      debugPrint('AniList GraphQL query failed: ${response.statusCode}');
-      debugPrint('Response body: ${response.body}');
-      throw Exception('AniList GraphQL query failed: ${response.statusCode}');
-    }
+    final data = await AnilistGraphql.instance.query(query, variables: variables ?? const {});
+    return {'data': data};
   }
 
   /// Search for media (anime/manga) with various filters.
@@ -93,7 +70,7 @@ class AnilistApi {
           episodes
           chapters
           volumes
-          averageScore
+          weightedScore
           popularity
           description
           startDate {
@@ -159,7 +136,7 @@ class AnilistApi {
         duration
         chapters
         volumes
-        averageScore
+        weightedScore
         meanScore
         popularity
         favourites
@@ -280,7 +257,7 @@ class AnilistApi {
           coverImage {
             large
           }
-          averageScore
+          weightedScore
           popularity
         }
       }
@@ -343,7 +320,7 @@ class AnilistApi {
             }
             format
             episodes
-            averageScore
+            weightedScore
           }
         }
       }
@@ -490,7 +467,7 @@ class AnilistApi {
               large
             }
             type
-            averageScore
+            weightedScore
           }
         }
       }
@@ -532,7 +509,7 @@ class AnilistApi {
             }
             type
             format
-            averageScore
+            weightedScore
           }
           mediaRecommendation {
             id
@@ -545,7 +522,7 @@ class AnilistApi {
             }
             type
             format
-            averageScore
+            weightedScore
           }
         }
       }
