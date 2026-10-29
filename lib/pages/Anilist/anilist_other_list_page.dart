@@ -217,7 +217,7 @@ class _AnilistOtherListPageState extends State<AnilistOtherListPage> {
       body: ListenableBuilder(
         listenable: controller,
         builder: (context, _) => ListEntryLookScope(
-          look: _compare ? AnilistCompareLook(_mine) : _adapter,
+          look: _compare ? AnilistCompareLook(_mine, base: _adapter) : _adapter,
           child: CustomScrollView(
             key: PageStorageKey<String>('al_other_${widget.username}_$_category'),
             slivers: [

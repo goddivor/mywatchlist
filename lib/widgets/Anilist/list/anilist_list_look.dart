@@ -117,10 +117,16 @@ List<ListCardBadge> anilistBadgesOf(AnilistListEntry? detail) {
 typedef AnilistRailLabel = ({String text, AppColorRole? role});
 
 /// The next episode of an airing anime row: its number when known and when it airs (UTC).
-/// The number is the first episode not released yet (calendar, then the weekly estimate),
-/// the moment AniList's weekly slot (built from `nextAiringEpisode.airingAt`).
+/// AniList's own `nextAiringEpisode` (episode and exact moment, carried by the row) wins while
+/// it is still ahead, so a broadcast break shows the real date. Else the number is the first
+/// episode not released yet (calendar, then the weekly estimate) at AniList's weekly slot.
 ({int? episode, DateTime at})? anilistNextAiring(ListEntryView e, DateTime now) {
   if (!e.isAnime || e.releaseState != ReleaseState.releasing) return null;
+  final exact = e.nextAiringAt;
+  if (exact != null && exact.isAfter(now)) {
+    final n = e.nextEpisode;
+    return (episode: n != null && n > 0 && (e.total <= 0 || n <= e.total) ? n : null, at: exact);
+  }
   final slot = e.broadcast;
   if (slot == null) return null;
   final released = e.releasedCount(now);
