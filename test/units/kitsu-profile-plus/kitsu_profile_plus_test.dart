@@ -280,7 +280,8 @@ void main() {
         [for (var i = 1; i <= 9; i++) MapEntry('c$i', i)], 6, 'Other');
     expect(parts.length, 7);
     expect(parts.first.key, 'c9');
-    expect(parts.last, const MapEntry('Other', 6));
+    expect(parts.last.key, 'Other');
+    expect(parts.last.value, 6);
   });
 
   test('the time percentile is read from the stats', () {
