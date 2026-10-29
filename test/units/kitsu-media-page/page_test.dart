@@ -104,10 +104,10 @@ void main() {
     await pump(tester, anime(fake));
 
     expect(find.text('Sousou no Frieren'), findsWidgets);
-    expect(find.text('#2'), findsOneWidget);
-    expect(find.text('8.89'), findsOneWidget);
+    expect(find.text('#2 Highest rated'), findsOneWidget);
+    expect(find.text('89%'), findsOneWidget);
+    expect(find.text('#788 Most popular'), findsOneWidget);
     expect(find.text('21,409 users'), findsOneWidget);
-    expect(find.text('731 favorites'), findsOneWidget);
     expect(find.text('TV (28 eps)'), findsOneWidget);
     expect(find.text('Finished'), findsWidgets);
     expect(find.text('Synopsis'), findsOneWidget);
@@ -121,7 +121,7 @@ void main() {
     expect(find.text('Episodes'), findsWidgets);
     expect(find.text('Episode 1'), findsOneWidget);
     expect(find.text("The Journey's End"), findsOneWidget);
-    expect(find.text('Related'), findsOneWidget);
+    expect(find.text('Franchise'), findsOneWidget);
     expect(find.text('Sequel'), findsOneWidget);
     expect(find.text('Reactions'), findsOneWidget);
     expect(find.text('Tamaya'), findsOneWidget);
@@ -229,7 +229,7 @@ void main() {
     expect(find.text('Où regarder'), findsOneWidget);
     expect(find.text('Épisode 1'), findsOneWidget);
     expect(find.text('Suite'), findsOneWidget);
-    expect(find.text('Titres liés'), findsOneWidget);
+    expect(find.text('Franchise'), findsOneWidget);
     expect(find.text('Réactions'), findsOneWidget);
     expect(find.text('Personnages'), findsOneWidget);
     expect(find.text('Informations'), findsOneWidget);

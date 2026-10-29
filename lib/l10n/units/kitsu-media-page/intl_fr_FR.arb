@@ -8,8 +8,16 @@
   "Kmp_List_Load_Error": "Impossible de charger cette liste",
   "Kmp_Title_Copied": "Titre copié",
   "Kmp_Id_Copied": "Identifiant copié",
-  "Kmp_Rank": "n° {rank}",
-  "@Kmp_Rank": {
+  "Kmp_Rank_Rated": "n° {rank} le mieux noté",
+  "@Kmp_Rank_Rated": {
+    "placeholders": {
+      "rank": {
+        "type": "String"
+      }
+    }
+  },
+  "Kmp_Rank_Popular": "n° {rank} le plus populaire",
+  "@Kmp_Rank_Popular": {
     "placeholders": {
       "rank": {
         "type": "String"
@@ -139,7 +147,7 @@
   },
   "Kmp_View_All": "Tout voir",
   "Kmp_Trailer": "Bande-annonce",
-  "Kmp_Related": "Titres liés",
+  "Kmp_Franchise": "Franchise",
   "Kmp_Rel_Sequel": "Suite",
   "Kmp_Rel_Prequel": "Préquelle",
   "Kmp_Rel_Alt_Setting": "Univers alternatif",

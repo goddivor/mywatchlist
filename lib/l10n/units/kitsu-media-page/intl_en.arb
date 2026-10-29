@@ -8,8 +8,16 @@
   "Kmp_List_Load_Error": "Couldn’t load this list",
   "Kmp_Title_Copied": "Title copied",
   "Kmp_Id_Copied": "ID copied",
-  "Kmp_Rank": "#{rank}",
-  "@Kmp_Rank": {
+  "Kmp_Rank_Rated": "#{rank} Highest rated",
+  "@Kmp_Rank_Rated": {
+    "placeholders": {
+      "rank": {
+        "type": "String"
+      }
+    }
+  },
+  "Kmp_Rank_Popular": "#{rank} Most popular",
+  "@Kmp_Rank_Popular": {
     "placeholders": {
       "rank": {
         "type": "String"
@@ -139,7 +147,7 @@
   },
   "Kmp_View_All": "View all",
   "Kmp_Trailer": "Trailer",
-  "Kmp_Related": "Related",
+  "Kmp_Franchise": "Franchise",
   "Kmp_Rel_Sequel": "Sequel",
   "Kmp_Rel_Prequel": "Prequel",
   "Kmp_Rel_Alt_Setting": "Alternative setting",

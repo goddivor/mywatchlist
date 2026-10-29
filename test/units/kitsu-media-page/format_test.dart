@@ -11,9 +11,9 @@ void main() {
 
   setUpAll(() => LanguageBloc.apply('en'));
 
-  test('Kitsu percentages show as a score out of 10', () {
-    expect(KitsuMediaFormat.score(88.85), '8.89');
-    expect(KitsuMediaFormat.score(90), '9.00');
+  test('Kitsu percentages show as a percentage, as Kitsu shows it', () {
+    expect(KitsuMediaFormat.score(88.85), '89%');
+    expect(KitsuMediaFormat.score(90), '90%');
   });
 
   test('histogram: the 19 steps fold into 10 whole points and no vote is lost', () {

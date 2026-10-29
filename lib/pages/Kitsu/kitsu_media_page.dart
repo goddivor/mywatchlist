@@ -250,13 +250,6 @@ class _KitsuMediaPageState extends State<KitsuMediaPage> {
       ));
     }
 
-    final ratings = _ratings;
-    if (ratings != null && ratings.total > 0) {
-      out.add(KitsuSection(title: S.current.Kmp_Ratings, child: KitsuRatingHistogram(ratings)));
-    } else if (_ratingsLoading) {
-      out.add(const KitsuBlockSkeleton(height: 150));
-    }
-
     if (d.streamingLinks.isNotEmpty) {
       out.add(KitsuSection(
         title: S.current.Kmp_Where_To_Watch,
@@ -305,22 +298,11 @@ class _KitsuMediaPageState extends State<KitsuMediaPage> {
       ));
     }
 
-    if (d.relations.isNotEmpty) {
-      out.add(KitsuSection(
-        title: S.current.Kmp_Related,
-        child: KitsuStrip(
-          height: KitsuPosterCard.heightFor(context, 116),
-          itemCount: d.relations.length,
-          itemBuilder: (context, i) {
-            final r = d.relations[i];
-            return KitsuPosterCard(
-              media: r.media,
-              caption: KitsuMediaFormat.relation(r.kind),
-              onTap: () => _openTitle(r.media),
-            );
-          },
-        ),
-      ));
+    final ratings = _ratings;
+    if (ratings != null && ratings.total > 0) {
+      out.add(KitsuSection(title: S.current.Kmp_Ratings, child: KitsuRatingHistogram(ratings)));
+    } else if (_ratingsLoading) {
+      out.add(const KitsuBlockSkeleton(height: 150));
     }
 
     if (d.reactions.nodes.isNotEmpty) {
@@ -346,16 +328,25 @@ class _KitsuMediaPageState extends State<KitsuMediaPage> {
       ));
     }
 
-    if (d.posts.nodes.isNotEmpty) {
+    if (d.relations.isNotEmpty) {
       out.add(KitsuSection(
-        title: S.current.Kmp_Posts,
-        onViewAll: () => _openDiscussion(d),
-        child: Column(children: [
-          for (final p in d.posts.nodes.take(3)) KitsuPostTile(post: p, onTap: () => _openDiscussion(d)),
-        ]),
+        title: S.current.Kmp_Franchise,
+        child: KitsuStrip(
+          height: KitsuPosterCard.heightFor(context, 116),
+          itemCount: d.relations.length,
+          itemBuilder: (context, i) {
+            final r = d.relations[i];
+            return KitsuPosterCard(
+              media: r.media,
+              caption: KitsuMediaFormat.relation(r.kind),
+              onTap: () => _openTitle(r.media),
+            );
+          },
+        ),
       ));
     }
 
+    out.add(_info(context, d));
     if (d.characters.nodes.isNotEmpty) {
       out.add(KitsuSection(
         title: S.current.Kmp_Characters,
@@ -405,7 +396,16 @@ class _KitsuMediaPageState extends State<KitsuMediaPage> {
       ));
     }
 
-    out.add(_info(context, d));
+    if (d.posts.nodes.isNotEmpty) {
+      out.add(KitsuSection(
+        title: S.current.Kmp_Posts,
+        onViewAll: () => _openDiscussion(d),
+        child: Column(children: [
+          for (final p in d.posts.nodes.take(3)) KitsuPostTile(post: p, onTap: () => _openDiscussion(d)),
+        ]),
+      ));
+    }
+
     return out;
   }
 

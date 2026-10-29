@@ -130,7 +130,6 @@ class _Meta extends StatelessWidget {
     final rating = d.averageRating;
     final counts = [
       if (d.userCount != null && d.userCount! > 0) KitsuMediaFormat.users(d.userCount!),
-      if (d.favoritesCount != null && d.favoritesCount! > 0) KitsuMediaFormat.favorites(d.favoritesCount!),
     ];
     final label = theme.textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant);
     final status = KitsuMediaFormat.status(d.status, d.kind);
@@ -141,12 +140,6 @@ class _Meta extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
-            d.averageRatingRank == null ? '# ?' : S.current.Kmp_Rank(KitsuMediaFormat.count(d.averageRatingRank!)),
-            maxLines: 1,
-            style: const TextStyle(fontSize: 20),
-          ),
-          const SizedBox(height: 6),
           Row(
             children: [
               Icon(Icons.star_rounded, size: 26, color: colors.score.color),
@@ -154,6 +147,12 @@ class _Meta extends StatelessWidget {
               Text(rating == null ? '?' : KitsuMediaFormat.score(rating), style: const TextStyle(fontSize: 26)),
             ],
           ),
+          if (d.averageRatingRank != null)
+            Text(S.current.Kmp_Rank_Rated(KitsuMediaFormat.count(d.averageRatingRank!)),
+                maxLines: 1, overflow: TextOverflow.ellipsis, style: theme.textTheme.labelMedium),
+          if (d.userCountRank != null)
+            Text(S.current.Kmp_Rank_Popular(KitsuMediaFormat.count(d.userCountRank!)),
+                maxLines: 1, overflow: TextOverflow.ellipsis, style: theme.textTheme.labelMedium),
           for (final line in counts) Text(line, maxLines: 1, overflow: TextOverflow.ellipsis, style: theme.textTheme.labelSmall),
           if (format.isNotEmpty) ...[
             const SizedBox(height: 8),

@@ -5,8 +5,8 @@ import 'package:mywatchlist/services/api/Kitsu/kitsu_graphql.dart';
 /// Words and numbers of the Kitsu title page. Kitsu's enums (`FINISHED`, `SIDE_STORY`, `MOVIE`)
 /// become translated labels; a value the app does not know is shown as Kitsu wrote it.
 abstract final class KitsuMediaFormat {
-  /// Kitsu's average rating is a percentage; the app shows it out of 10 (`8.89`).
-  static String score(double averageRating) => ((averageRating * 10).round() / 100).toStringAsFixed(2);
+  /// Kitsu's average rating is a percentage ("Community Approval"), shown as Kitsu does (`89%`).
+  static String score(double averageRating) => '${averageRating.round()}%';
 
   static String count(int value) => NumberFormat.decimalPattern().format(value);
 
