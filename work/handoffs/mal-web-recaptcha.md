@@ -3,7 +3,7 @@
 **Kind** unit · **Priority** P0 · **Group** user · **Model** opus
 
 ## Needs done first
-- `mal-hub-followups` (MAL hub follow-ups: in-app thread on message tap, JSON posts through postJson, message poller next to the hub poller)
+- `mal-messages` (MAL private messages: inbox, sent, thread, compose and reply)
 
 ## Owns (may create or edit ONLY these)
 - `lib/services/api/MAL/web/mal_web_form_submitter.dart`

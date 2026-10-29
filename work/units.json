@@ -3657,7 +3657,7 @@
       "artifact": "",
       "priority": "P0",
       "needs": [
-        "mal-hub-followups"
+        "mal-messages"
       ],
       "owns": [
         "lib/services/api/MAL/web/mal_web_form_submitter.dart",
