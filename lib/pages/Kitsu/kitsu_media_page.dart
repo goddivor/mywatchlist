@@ -10,6 +10,7 @@ import 'package:mywatchlist/services/api/Kitsu/kitsu_graphql.dart';
 import 'package:mywatchlist/services/api/Kitsu/kitsu_media_detail.dart';
 import 'package:mywatchlist/utils/app_routes.dart';
 import 'package:mywatchlist/utils/web_launcher.dart' show launchWebView;
+import 'package:mywatchlist/widgets/Kitsu/feed/kitsu_media_discussion_page.dart';
 import 'package:mywatchlist/widgets/Kitsu/media/kitsu_media_cards.dart';
 import 'package:mywatchlist/widgets/Kitsu/media/kitsu_media_format.dart';
 import 'package:mywatchlist/widgets/Kitsu/media/kitsu_media_header.dart';
@@ -348,8 +349,9 @@ class _KitsuMediaPageState extends State<KitsuMediaPage> {
     if (d.posts.nodes.isNotEmpty) {
       out.add(KitsuSection(
         title: S.current.Kmp_Posts,
+        onViewAll: () => _openDiscussion(d),
         child: Column(children: [
-          for (final p in d.posts.nodes.take(3)) KitsuPostTile(post: p),
+          for (final p in d.posts.nodes.take(3)) KitsuPostTile(post: p, onTap: () => _openDiscussion(d)),
         ]),
       ));
     }
@@ -406,6 +408,9 @@ class _KitsuMediaPageState extends State<KitsuMediaPage> {
     out.add(_info(context, d));
     return out;
   }
+
+  void _openDiscussion(KitsuMediaDetail d) =>
+      _push(KitsuMediaDiscussionPage(kind: d.kind, mediaId: d.id, title: d.titles.display));
 
   void _openCategory(KitsuMediaDetail d, KitsuCategory c) => _push(KitsuBrowseScreen(
         title: c.title,
