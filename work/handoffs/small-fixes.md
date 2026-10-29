@@ -11,6 +11,7 @@
 
 ## Owns (may create or edit ONLY these)
 - `lib/screens/user_profile/sections/friends_section.dart`
+- `test/units/home-wiring/home_preferences_test.dart`
 - `test/units/profile-tabs/profile_tabs_test.dart`
 - `lib/user/requests/requests_bloc.dart`
 - `lib/widgets/MAL/home/news_widget.dart`
