@@ -629,7 +629,13 @@ class HtmlParsers {
   // Parse anime/manga details page
   static AnimeDetailHtml parseAnimeDetailedHtml(Document document,
       {ContentType type = ContentType.anime}) {
+    final sidebar = parseDetailSidebar(document);
     return AnimeDetailHtml(
+      favorites: sidebar.favorites,
+      producers: type == ContentType.anime ? sidebar.producers : null,
+      licensors: type == ContentType.anime ? sidebar.licensors : null,
+      themes: sidebar.themes,
+      demographics: sidebar.demographics,
       title: _getTitle(document, type),
       mainPicture: _getMainPicture(document),
       trailer: type == ContentType.anime ? _getTrailer(document) : null,
@@ -649,6 +655,68 @@ class HtmlParsers {
       interestStacks: _getInterestStacks(document),
       additionalTitles: _getAdditionalTitles(document),
     );
+  }
+
+  /// Facts of the page's left column (`span.dark_text` labels) that API v2
+  /// lacks: favourites count, producers, licensors, themes, demographics.
+  /// Never throws: an unknown layout gives an empty result.
+  static DetailSidebar parseDetailSidebar(Document document) {
+    try {
+      final rows = <String, Element>{};
+      final root = document.querySelector('.leftside') ?? document.body;
+      for (final row in root?.querySelectorAll('.spaceit_pad') ?? <Element>[]) {
+        final label = row.querySelector('span.dark_text')?.text.trim() ?? '';
+        if (label.isEmpty) continue;
+        rows.putIfAbsent(label.replaceAll(':', '').trim().toLowerCase(), () => row);
+      }
+      Element? row(List<String> labels) {
+        for (final label in labels) {
+          if (rows[label] case final found?) return found;
+        }
+        return null;
+      }
+
+      int? favorites;
+      final favoritesRow = row(const ['favorites']);
+      if (favoritesRow != null) {
+        final digits = favoritesRow.nodes
+            .where((n) => n.nodeType == Node.TEXT_NODE)
+            .map((n) => n.text ?? '')
+            .join()
+            .replaceAll(RegExp(r'[^0-9]'), '');
+        favorites = int.tryParse(digits);
+      }
+      return DetailSidebar(
+        favorites: favorites,
+        producers: _sidebarLinks(row(const ['producers', 'producer']), 'producer'),
+        licensors: _sidebarLinks(row(const ['licensors', 'licensor']), 'producer'),
+        themes: _sidebarLinks(row(const ['themes', 'theme']), 'genre'),
+        demographics:
+            _sidebarLinks(row(const ['demographics', 'demographic']), 'genre'),
+      );
+    } catch (_) {
+      return const DetailSidebar();
+    }
+  }
+
+  /// Links of one sidebar row whose path has `/<kind>/<id>/` ("None found,
+  /// add some" links to the edit form and is skipped), with absolute URLs.
+  static List<Link> _sidebarLinks(Element? row, String kind) {
+    if (row == null) return const [];
+    final pattern = RegExp('/$kind/(\\d+)');
+    final links = <Link>[];
+    for (final a in row.querySelectorAll('a')) {
+      final href = a.attributes['href']?.trim() ?? '';
+      if (!pattern.hasMatch(href)) continue;
+      final name = _escape(a.attributes['title'] ?? a.text);
+      final text = name.isEmpty ? _escape(a.text) : name;
+      if (text.isEmpty) continue;
+      final url = href.startsWith('http')
+          ? href
+          : 'https://myanimelist.net${href.startsWith('/') ? '' : '/'}$href';
+      links.add(Link(name: text, url: url));
+    }
+    return links;
   }
 
   // Parse user history page
