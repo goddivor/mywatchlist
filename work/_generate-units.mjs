@@ -1132,6 +1132,13 @@ const UNITS = [
     dod: ["Tests per item; the cancelled re-login test fails on the old code."],
   },
   {
+    id: "anilist-polish-2", title: "AniList polish 2: other users' lists in their score format, exact next airing in list rows, drop ListTimeSummary.of", kind: "unit", priority: "P2", group: "trackers", model: "sonnet", ui: true,
+    needs: ["anilist-list-design", "anilist-polish"],
+    owns: ["lib/widgets/Anilist/profile/other_list_adapter.dart", "lib/pages/Anilist/anilist_other_list_page.dart", "lib/services/api/Anilist/anilist_list_service.dart", "lib/widgets/user/list/list_entry_view.dart", "test/units/tracker-list-hooks/list_hooks_test.dart", "lib/widgets/Anilist/list/**", "lib/l10n/units/anilist-polish-2/**", "test/units/anilist-polish-2/**"],
+    goal: ["Findings from anilist-list-design (#331): (1) other users' AniList lists (lib/widgets/Anilist/profile/other_list_adapter.dart, lib/pages/Anilist/anilist_other_list_page.dart) still show 0-10: fetch that user's score format (mediaListOptions.scoreFormat) and use anilistUserScoreText and anilistPercentText; (2) the AniList list service (parseAnilistRows in anilist_list_service.dart) carries the next episode and its exact airing time (nextAiringEpisode { episode airingAt }) into the rows, so 'Ep N in Xd' is exact during broadcast breaks; (3) delete ListTimeSummary.of and its last caller in test/units/tracker-list-hooks/list_hooks_test.dart:247.", "Owner rule: each tracker is its own app. Fakes only in tests."],
+    dod: ["Tests per item."],
+  },
+  {
     id: "explore-polish", title: "Explore: DailyAL images on category and genre cards, explicit genres, recommendations/stacks fallbacks, favourites badges", kind: "unit", priority: "P1", group: "discovery", model: "opus", ui: true,
     needs: ["search-sources", "explore-seasonal", "home-wiring", "profile-tabs"],
     owns: ["lib/services/api/MAL/scrapper/html_parsers.dart", "test/units/explore-crash/**", "lib/pages/MAL/mal_explore_page.dart", "lib/screens/explore/**", "assets/images/explore/**", "pubspec.yaml", "lib/cache/top_characters.dart"],

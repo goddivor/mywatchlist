@@ -163,6 +163,7 @@
         "tracker-list-hooks",
         "kitsu-finish",
         "anilist-polish",
+        "anilist-polish-2",
         "tracker-wiring"
       ]
     },
@@ -3903,6 +3904,37 @@
         "test/units/mal-polish-2/**"
       ],
       "group": "user",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: sonnet"
+      ],
+      "status": "⬜ todo"
+    },
+    {
+      "id": "anilist-polish-2",
+      "title": "AniList polish 2: other users' lists in their score format, exact next airing in list rows, drop ListTimeSummary.of",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P2",
+      "needs": [
+        "anilist-list-design",
+        "anilist-polish"
+      ],
+      "owns": [
+        "lib/widgets/Anilist/profile/other_list_adapter.dart",
+        "lib/pages/Anilist/anilist_other_list_page.dart",
+        "lib/services/api/Anilist/anilist_list_service.dart",
+        "lib/widgets/user/list/list_entry_view.dart",
+        "test/units/tracker-list-hooks/list_hooks_test.dart",
+        "lib/widgets/Anilist/list/**",
+        "lib/l10n/units/anilist-polish-2/**",
+        "test/units/anilist-polish-2/**",
+        "test/units/anilist-polish-2/**"
+      ],
+      "group": "trackers",
       "dropped": null,
       "skills": [],
       "states": [],
