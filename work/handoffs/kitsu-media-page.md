@@ -19,6 +19,7 @@
 Plus `PROJECT-STATE.md` (rewrite in place, within its cap) and `docs/DECISIONS.md` (append one line per decision). Anything else you need is a FINDING to report, never an edit.
 
 ## Goal
+- (kitsu-community #275) link the title page to KitsuMediaDiscussionPage(kind:, mediaId:, title:) for the title's discussions.
 - Kitsu/Simkl audit docs/kitsu-simkl-report-2026-10-28.md, unit `kitsu-media-page`: Native Kitsu title page: header (cover, banner, rating, rank, users, favourites), rating histogram (A1), where to watch (A3), episodes (A4) or chapters (A5), related (A6), top reactions (A7), latest posts preview (A8), characters/staff/studios when present (A9), trailer (A10), category chips (A11), external ids; titles without MAL mapping become openable Read the matching report items (endpoints, sample responses, selectors, risks) and implement them.
 - Owner decision: a Kitsu/Simkl account shows only its own tracker's data (never MAL news/forum); scraping the tracker's own site for extra data is welcome. Replicate DailyAL/MALClient UI conventions where MWL would be weaker; no explanatory captions; theme tokens; English + French. Never write to the owner's tracker accounts in tests (fakes/fixtures only).
 
