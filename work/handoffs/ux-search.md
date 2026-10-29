@@ -7,6 +7,7 @@
 - `ux-explore` (Explore like DailyAL: tonal buttons, arrow headers, no extra search, no captions)
 
 ## Owns (may create or edit ONLY these)
+- `test/units/shared-kit/select_test.dart`
 - `lib/screens/search/search_home_view.dart`
 - `lib/screens/search/search_tiles.dart`
 - `lib/screens/search/search_filter_panel.dart`

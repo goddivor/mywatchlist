@@ -7,6 +7,7 @@
 - `ux-theme` (Theme settings without captions or preview card)
 
 ## Owns (may create or edit ONLY these)
+- `lib/screens/search/search_results_part.dart`
 - `lib/user/theme/app_themes.dart`
 - `lib/pages/MAL/mal_explore_page.dart`
 - `lib/screens/explore/**`
@@ -18,6 +19,7 @@
 Plus `PROJECT-STATE.md` (rewrite in place, within its cap) and `docs/DECISIONS.md` (append one line per decision). Anything else you need is a FINDING to report, never an edit.
 
 ## Goal
+- From ux-search PR #276: search_results_part.dart passes the list position (index) to MediaTile so result rows show #1, #2… like DailyAL, and the all-tab result rows use the same MediaTile row.
 - From ux-explore PR #235: `filledButtonTheme` in lib/user/theme/app_themes.dart forces the accent colour on every FilledButton, including FilledButton.tonal — tonal buttons must keep their tonal (secondaryContainer) colours everywhere; check other screens using tonal buttons.
 - Owner rules (replicate DailyAL, no explanatory captions): with NSFW off, hide the Explicit genres card entirely like DailyAL instead of showing 'Hidden (NSFW off)' (Exp_Nsfw_Hidden); update the explore-polish tests that pin the caption. Theme tokens; English + French.
 

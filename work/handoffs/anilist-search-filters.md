@@ -20,6 +20,7 @@
 Plus `PROJECT-STATE.md` (rewrite in place, within its cap) and `docs/DECISIONS.md` (append one line per decision). Anything else you need is a FINDING to report, never an edit.
 
 ## Goal
+- From ux-search PR #276: AniList search result rows match the DailyAL row of MediaTile (#rank, star score with members, type and length, regular-weight title, edit pencil).
 - Audit docs/anilist-report-2026-10-28.md, unit `anilist-search-filters`: C1-C9: `AnilistMediaQuery` gains every filter, filter sheet, 36 sorts, tabs for characters / staff / studios / users, genres and tags from the API (cached a day), tag explorer, account adult option Read the matching report items (queries/endpoints, samples, file:line) and implement them.
 - Owner rules: every tracker gets everything its API allows (never capped at MAL); replicate DailyAL's UI conventions where MWL would be weaker; no explanatory captions; theme tokens; English + French. Never write to the owner's accounts in tests (fakes).
 

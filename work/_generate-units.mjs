@@ -805,7 +805,7 @@ const UNITS = [
   {
     id: "ux-search", title: "Search home and results like DailyAL; one season picker", kind: "unit", priority: "P1", group: "settings", model: "opus", ui: true,
     needs: ["small-fixes", "ux-explore"],
-    owns: ["lib/screens/search/search_home_view.dart", "lib/screens/search/search_tiles.dart", "lib/screens/search/search_filter_panel.dart", "lib/widgets/common/select/searchable_select.dart", "lib/l10n/units/ux-search/**", "test/units/ux-search/**"],
+    owns: ["test/units/shared-kit/select_test.dart", "lib/screens/search/search_home_view.dart", "lib/screens/search/search_tiles.dart", "lib/screens/search/search_filter_panel.dart", "lib/widgets/common/select/searchable_select.dart", "lib/l10n/units/ux-search/**", "test/units/ux-search/**"],
     goal: ["UI comparison report docs/ui-check-report-2026-10-28.md: group C items 5-8. Read those items and the matching screen sections (screenshots under the checker scratchpad shots/).", "Owner rules: replicate DailyAL's UI (dailyal-108 file:line given in the report) where MWL is weaker; remove explanatory captions/helper texts DailyAL lacks; regular-weight titles and tonal controls like DailyAL; theme tokens; English + French."],
     dod: ["Checker: side by side with DailyAL on the same theme."],
   },
@@ -882,8 +882,8 @@ const UNITS = [
   {
     id: "ux-polish-2", title: "Tonal buttons stay tonal; explicit card hidden with NSFW off like DailyAL", kind: "unit", priority: "P1", group: "settings", model: "sonnet", ui: true,
     needs: ["ux-explore", "ux-theme"],
-    owns: ["lib/user/theme/app_themes.dart", "lib/pages/MAL/mal_explore_page.dart", "lib/screens/explore/**", "test/units/explore-polish/**", "test/units/ux-polish-2/**", "lib/l10n/units/explore-polish/**"],
-    goal: ["From ux-explore PR #235: `filledButtonTheme` in lib/user/theme/app_themes.dart forces the accent colour on every FilledButton, including FilledButton.tonal — tonal buttons must keep their tonal (secondaryContainer) colours everywhere; check other screens using tonal buttons.", "Owner rules (replicate DailyAL, no explanatory captions): with NSFW off, hide the Explicit genres card entirely like DailyAL instead of showing 'Hidden (NSFW off)' (Exp_Nsfw_Hidden); update the explore-polish tests that pin the caption. Theme tokens; English + French."],
+    owns: ["lib/screens/search/search_results_part.dart", "lib/user/theme/app_themes.dart", "lib/pages/MAL/mal_explore_page.dart", "lib/screens/explore/**", "test/units/explore-polish/**", "test/units/ux-polish-2/**", "lib/l10n/units/explore-polish/**"],
+    goal: ["From ux-search PR #276: search_results_part.dart passes the list position (index) to MediaTile so result rows show #1, #2… like DailyAL, and the all-tab result rows use the same MediaTile row.", "From ux-explore PR #235: `filledButtonTheme` in lib/user/theme/app_themes.dart forces the accent colour on every FilledButton, including FilledButton.tonal — tonal buttons must keep their tonal (secondaryContainer) colours everywhere; check other screens using tonal buttons.", "Owner rules (replicate DailyAL, no explanatory captions): with NSFW off, hide the Explicit genres card entirely like DailyAL instead of showing 'Hidden (NSFW off)' (Exp_Nsfw_Hidden); update the explore-polish tests that pin the caption. Theme tokens; English + French."],
     dod: ["Tests: a FilledButton.tonal renders with the tonal container colour; no explicit card when NSFW is off."],
   },
   {
@@ -925,7 +925,7 @@ const UNITS = [
     id: "anilist-search-filters", title: "anilist-search-filters", kind: "unit", priority: "P1", group: "trackers", model: "opus", ui: true,
     needs: ["anilist-client-limits"],
     owns: ["lib/services/api/Anilist/anilist_discover_service.dart", "lib/services/api/Anilist/anilist_catalog.dart", "lib/widgets/Anilist/anilist_browse_screen.dart", "lib/widgets/Anilist/anilist_chips.dart", "lib/widgets/Anilist/search/**", "lib/l10n/units/anilist-search-filters/**", "test/units/anilist-search-filters/**", "lib/l10n/units/anilist-search-filters/**", "test/units/anilist-search-filters/**"],
-    goal: ["Audit docs/anilist-report-2026-10-28.md, unit `anilist-search-filters`: C1-C9: `AnilistMediaQuery` gains every filter, filter sheet, 36 sorts, tabs for characters / staff / studios / users, genres and tags from the API (cached a day), tag explorer, account adult option Read the matching report items (queries/endpoints, samples, file:line) and implement them.", "Owner rules: every tracker gets everything its API allows (never capped at MAL); replicate DailyAL's UI conventions where MWL would be weaker; no explanatory captions; theme tokens; English + French. Never write to the owner's accounts in tests (fakes)."],
+    goal: ["From ux-search PR #276: AniList search result rows match the DailyAL row of MediaTile (#rank, star score with members, type and length, regular-weight title, edit pencil).", "Audit docs/anilist-report-2026-10-28.md, unit `anilist-search-filters`: C1-C9: `AnilistMediaQuery` gains every filter, filter sheet, 36 sorts, tabs for characters / staff / studios / users, genres and tags from the API (cached a day), tag explorer, account adult option Read the matching report items (queries/endpoints, samples, file:line) and implement them.", "Owner rules: every tracker gets everything its API allows (never capped at MAL); replicate DailyAL's UI conventions where MWL would be weaker; no explanatory captions; theme tokens; English + French. Never write to the owner's accounts in tests (fakes)."],
     dod: ["Offline tests on saved responses; checker on the owner's account (read-only)."],
   },
   {

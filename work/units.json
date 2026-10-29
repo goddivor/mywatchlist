@@ -2492,6 +2492,7 @@
         "ux-explore"
       ],
       "owns": [
+        "test/units/shared-kit/select_test.dart",
         "lib/screens/search/search_home_view.dart",
         "lib/screens/search/search_tiles.dart",
         "lib/screens/search/search_filter_panel.dart",
@@ -2786,6 +2787,7 @@
         "ux-theme"
       ],
       "owns": [
+        "lib/screens/search/search_results_part.dart",
         "lib/user/theme/app_themes.dart",
         "lib/pages/MAL/mal_explore_page.dart",
         "lib/screens/explore/**",
