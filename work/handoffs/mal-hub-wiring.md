@@ -12,6 +12,7 @@
 - `lib/widgets/MAL/home/homeappbar.dart`
 - `lib/pages/side_bar.dart`
 - `pubspec.yaml`
+- `pubspec.lock`
 - `lib/main.dart`
 - `docs/STACK.md`
 - `lib/screens/settings/notifications_settings.dart`

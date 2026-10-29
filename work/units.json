@@ -51,7 +51,8 @@
         "profile-lists",
         "mal-notifications",
         "mal-messages",
-        "mal-hub-wiring"
+        "mal-hub-wiring",
+        "mal-hub-followups"
       ]
     },
     {
@@ -3429,6 +3430,7 @@
         "lib/widgets/MAL/home/homeappbar.dart",
         "lib/pages/side_bar.dart",
         "pubspec.yaml",
+        "pubspec.lock",
         "lib/main.dart",
         "docs/STACK.md",
         "lib/screens/settings/notifications_settings.dart",
@@ -3437,6 +3439,35 @@
         "lib/l10n/units/mal-hub-wiring/**",
         "test/units/mal-hub-wiring/**",
         "test/units/mal-hub-wiring/**"
+      ],
+      "group": "user",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "⬜ todo"
+    },
+    {
+      "id": "mal-hub-followups",
+      "title": "MAL hub follow-ups: in-app thread on message tap, JSON posts through postJson, message poller next to the hub poller",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "mal-hub-wiring"
+      ],
+      "owns": [
+        "lib/utils/app_routes.dart",
+        "lib/services/notifications/notification_service.dart",
+        "lib/services/notifications/mal_hub_poller.dart",
+        "lib/services/api/MAL/web/mal_notifications_api.dart",
+        "lib/main.dart",
+        "lib/l10n/units/mal-hub-followups/**",
+        "test/units/mal-hub-followups/**",
+        "test/units/mal-hub-followups/**"
       ],
       "group": "user",
       "dropped": null,
