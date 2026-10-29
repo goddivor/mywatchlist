@@ -66,11 +66,14 @@ class _FakeApi extends MalNotificationsApi {
   final List<List<String>> markedRead = [];
   final List<String> answered = [];
 
+  /// When set, each fetch answers what it returns (MAL serving the next unread page).
+  MalNotificationFeed Function()? onFetch;
+
   @override
   Future<MalNotificationFeed> fetch() async {
     final e = error;
     if (e != null) throw e;
-    return feed;
+    return onFetch?.call() ?? feed;
   }
 
   @override
@@ -353,6 +356,24 @@ void main() {
       expect(read, ['1']);
       expect(await hub.markAllRead(), isTrue);
       expect(api.markedRead.last, ['2']);
+      expect(hub.unread.value, 0);
+    });
+
+    test('mark all goes on while MAL lists more unread (it shows 25 at a time)', () async {
+      await hub.refresh();
+      // Each fetch after a batch lists the next unread ones, then none.
+      final pages = [
+        MalNotificationFeed(items: [_item('4'), _item('5')]),
+        MalNotificationFeed(items: [_item('4', read: true), _item('5', read: true)]),
+      ];
+      final real = api.feed;
+      var fetches = 0;
+      api.onFetch = () => fetches < pages.length ? pages[fetches++] : real;
+      expect(await hub.markAllRead(), isTrue);
+      expect(api.markedRead, [
+        ['1', '2'],
+        ['4', '5'],
+      ]);
       expect(hub.unread.value, 0);
     });
 
