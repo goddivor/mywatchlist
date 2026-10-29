@@ -468,22 +468,23 @@ class _MalWebFormHostState extends State<MalWebFormHost> {
   @override
   Widget build(BuildContext context) {
     return Stack(
+      fit: StackFit.passthrough,
       children: [
-        Positioned.fill(child: widget.child),
+        widget.child,
         ValueListenableBuilder<MalWebPage?>(
           valueListenable: MalWebFormHost._page,
           builder: (context, page, _) {
             // Only the most recent host shows the page (a WebView has one parent).
             final view = page?.view;
-            if (view == null || MalWebFormHost._hosts.isEmpty || MalWebFormHost._hosts.last != this) {
-              return const SizedBox.shrink();
-            }
+            final shown = view != null && MalWebFormHost._hosts.isNotEmpty && MalWebFormHost._hosts.last == this;
             return Positioned(
               left: 0,
               top: 0,
               width: 1,
               height: 1,
-              child: IgnorePointer(child: ExcludeSemantics(child: Opacity(opacity: 0, child: view))),
+              child: shown
+                  ? IgnorePointer(child: ExcludeSemantics(child: Opacity(opacity: 0, child: view)))
+                  : const SizedBox.shrink(),
             );
           },
         ),
