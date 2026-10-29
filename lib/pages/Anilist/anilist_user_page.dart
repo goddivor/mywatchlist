@@ -13,8 +13,9 @@ import 'package:mywatchlist/utils/app_routes.dart';
 import 'package:mywatchlist/widgets/MAL/home/homeappbar.dart';
 
 /// "My list" tab for AniList: the signed-in user's anime and manga lists in the account's own
-/// sections (Rewatching, custom lists, completed split by format), drawn with the shared list
-/// cards (sort and filter, list / grid, quick +1), edited with the AniList editor.
+/// sections (Rewatching, custom lists, completed split by format), drawn with AniList's own
+/// rows (score in the account's format, label rail, community %), edited with the AniList
+/// editor.
 class AnilistUserPage extends StatefulWidget {
   const AnilistUserPage({super.key});
 

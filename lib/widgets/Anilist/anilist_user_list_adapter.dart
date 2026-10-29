@@ -7,6 +7,8 @@ import 'package:mywatchlist/services/api/Anilist/anilist_list_write.dart';
 import 'package:mywatchlist/services/tracker_sync_service.dart';
 import 'package:mywatchlist/utils/app_routes.dart';
 import 'package:mywatchlist/widgets/Anilist/list/anilist_entry_editor.dart';
+import 'package:mywatchlist/widgets/Anilist/list/anilist_list_look.dart';
+import 'package:mywatchlist/widgets/Anilist/search/anilist_labels.dart';
 import 'package:mywatchlist/widgets/Anilist/social/anilist_links.dart' show openAnilistTitle;
 import 'package:mywatchlist/widgets/common/list_sort_filter.dart';
 import 'package:mywatchlist/widgets/user/list/list_entry_view.dart';
@@ -107,6 +109,36 @@ class AnilistUserListAdapter extends UserListAdapter {
 
   @override
   String? apiSort(String category, String sortKey, SortDirection direction) => null;
+
+  /// AniList gives each anime's episode length (`duration`): the list shows its time line.
+  @override
+  bool get fillsEpisodeLength => true;
+
+  /// The account's score format of [category] (AniList's default, POINT_10, until loaded).
+  AnilistScoreFormat scoreFormatOf(String category) =>
+      lists.optionsOf(category)?.scoreFormat ?? AnilistScoreFormat.point10;
+
+  /// AniList's words: "Planning", "Paused".
+  @override
+  String statusLabel(ListEntryStatus status, {required bool isAnime}) =>
+      AnilistLabels.listStatus(anilistStatusValueOfShared(status), anime: isAnime);
+
+  /// The user's score in the account's format (`85`, `8.5`, `8`, stars, a face), from the
+  /// exact 0-100 value AniList keeps, never the rounded 0-10 of the shared row.
+  @override
+  ListScoreText? userScore(ListEntryView entry) {
+    final raw = lists.detailOf(entry.category, entry.id)?.scoreRaw ?? entry.score * 10;
+    return anilistUserScoreText(raw, scoreFormatOf(entry.category));
+  }
+
+  /// AniList's community score as a percentage (`82%`).
+  @override
+  ListScoreText? meanScore(ListEntryView entry) => anilistPercentText(entry);
+
+  /// Notes, private, priority.
+  @override
+  List<ListCardBadge> cardBadges(ListEntryView entry) =>
+      anilistBadgesOf(lists.detailOf(entry.category, entry.id));
 
   /// [entries] sorted by an [AnilistSortKeys] key from their AniList fields; other keys are
   /// left to the shared sort. Entries without a value go last whatever the direction.
@@ -290,8 +322,19 @@ class AnilistUserListAdapter extends UserListAdapter {
   @override
   bool canStep(ListEntryView entry) => entry.status != null;
 
+  /// Whether a +1 of [entry] reaches its last episode (chapter) and would complete it: the
+  /// list asks first, as AniList's own apps do.
+  bool completesOnStep(ListEntryView entry, int delta) =>
+      delta > 0 &&
+      entry.total > 0 &&
+      entry.progress + delta >= entry.total &&
+      entry.status != ListEntryStatus.completed;
+
+  /// Adds [delta] episodes. Reaching the total completes the entry (with today's finish date)
+  /// unless [complete] is false, then only the progress moves; the first episode of a Planning
+  /// entry makes it Watching (Reading) and fills an empty start date.
   @override
-  Future<ListEntryView> step(ListEntryView entry, int delta) async {
+  Future<ListEntryView> step(ListEntryView entry, int delta, {bool complete = true}) async {
     final detail = lists.detailOf(entry.category, entry.id);
     final repeating = entry.repeating || (detail?.isRepeating ?? false);
     var progress = entry.progress + delta;
@@ -302,7 +345,8 @@ class AnilistUserListAdapter extends UserListAdapter {
     int? repeat;
     var finish = entry.listFinishDate;
     final today = _today();
-    final completes = entry.total > 0 && progress >= entry.total && delta > 0;
+    final completes = complete && entry.total > 0 && progress >= entry.total && delta > 0;
+    var start = entry.listStartDate;
     if (completes) {
       // The last episode completes the entry, as the edit sheet does; a rewatch counts.
       status = ListEntryStatus.completed.malValue(isAnime: entry.isAnime);
@@ -310,13 +354,20 @@ class AnilistUserListAdapter extends UserListAdapter {
       if (finish == null || finish.isEmpty) finish = today;
     } else if (entry.status == ListEntryStatus.planned && progress > 0) {
       status = ListEntryStatus.current.malValue(isAnime: entry.isAnime);
+      if (start == null || start.isEmpty) start = today;
     }
     // No score: the shared row holds a rounded one, sending it would destroy 7.5 or 73.
     final saved = await _tracker.saveTracker(
       AccountType.anilist,
       entry.id.toString(),
       entry.category,
-      SyncEntry(status: status, progress: progress, finishDate: finish, repeat: repeat),
+      SyncEntry(
+        status: status,
+        progress: progress,
+        startDate: start == entry.listStartDate ? null : start,
+        finishDate: finish,
+        repeat: repeat,
+      ),
       malId: entry.malId,
     );
     final newStatus = ListEntryStatus.fromMal(saved.status) ??
@@ -326,6 +377,7 @@ class AnilistUserListAdapter extends UserListAdapter {
       status: newStatus,
       progress: saved.progress ?? progress,
       repeating: stillRepeating,
+      listStartDate: saved.startDate ?? start,
       listFinishDate: saved.finishDate ?? finish,
       updatedAt: _clock(),
     );
@@ -348,7 +400,7 @@ class AnilistUserListAdapter extends UserListAdapter {
               notes: detail.notes,
               customLists: detail.customLists,
               advancedScores: detail.advancedScores,
-              startedAt: detail.startedAt,
+              startedAt: updated.listStartDate,
               completedAt: updated.listFinishDate,
               createdAt: detail.createdAt,
               format: detail.format,

@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/widgets/user/edit/list_entry.dart';
 import 'package:mywatchlist/widgets/user/list/list_entry_view.dart';
+import 'package:mywatchlist/widgets/user/list/list_query.dart' show listTimeSummary;
 import 'package:mywatchlist/widgets/user/list/mal_user_list_adapter.dart';
 
 Map<String, dynamic> _anime(int id, String status, int watched,
@@ -90,24 +91,25 @@ void main() {
 
   test('a tab sums its entries: left for to-watch tabs, watched for the others', () {
     final entries = [_view('watching', 2), _view('plan_to_watch', 0)];
-    final left = ListTimeSummary.of(entries, ListEntryStatus.planned)!;
+    final left = listTimeSummary(entries, ListEntryStatus.planned)!;
     expect(left.kind, ListTimeKind.left);
     expect(left.total, const Duration(minutes: 24 * 22));
     expect(left.label(), 'Time left: 8 h 48 min');
 
-    final done = ListTimeSummary.of([_view('completed', 12)], ListEntryStatus.completed)!;
+    final done = listTimeSummary([_view('completed', 12)], ListEntryStatus.completed)!;
     expect(done.kind, ListTimeKind.watched);
-    expect(done.label(), 'Time watched: 4 h 48 min');
+    // 12 episodes, then the 2 rewatches of the fixture: three full runs.
+    expect(done.label(), 'Time watched: 14 h 24 min');
 
-    expect(ListTimeSummary.of([_view('watching', 2, seconds: 0)], ListEntryStatus.current), isNull);
+    expect(listTimeSummary([_view('watching', 2, seconds: 0)], ListEntryStatus.current), isNull);
   });
 
   test('durations show their two largest units; a partial total ends with +', () {
     expect(formatListDuration(const Duration(days: 41, hours: 3, minutes: 9)), '41 d 3 h');
     expect(formatListDuration(const Duration(hours: 5, minutes: 20)), '5 h 20 min');
     expect(formatListDuration(const Duration(seconds: 10)), '1 min');
-    final partial = ListTimeSummary.of([_view('planned'.replaceAll('planned', 'plan_to_watch'), 0)],
-        ListEntryStatus.planned, partial: true)!;
+    final partial = listTimeSummary([_view('plan_to_watch', 0)], ListEntryStatus.planned,
+        partial: true)!;
     expect(partial.label(), 'Time left: 4 h 48 min+');
   });
 
