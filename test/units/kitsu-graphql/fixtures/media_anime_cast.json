@@ -1,0 +1,1409 @@
+{
+ "data": {
+  "findAnimeById": {
+   "__typename": "Anime",
+   "id": "1",
+   "slug": "cowboy-bebop",
+   "titles": {
+    "canonical": "Cowboy Bebop",
+    "romanized": "Cowboy Bebop",
+    "translated": "Cowboy Bebop",
+    "original": "カウボーイビバップ"
+   },
+   "description": {
+    "en": "In the year 2071, humanity has colonized several of the planets and moons of the solar system leaving the now uninhabitable surface of planet Earth behind. The Inter Solar System Police attempts to keep peace in the galaxy, aided in part by outlaw bounty hunters, referred to as \"Cowboys\". The ragtag team aboard the spaceship Bebop are two such individuals.\nMellow and carefree Spike Spiegel is balanced by his boisterous, pragmatic partner Jet Black as the pair makes a living chasing bounties and collecting rewards. Thrown off course by the addition of new members that they meet in their travels—Ein, a genetically engineered, highly intelligent Welsh Corgi; femme fatale Faye Valentine, an enigmatic trickster with memory loss; and the strange computer whiz kid Edward Wong—the crew embarks on thrilling adventures that unravel each member's dark and mysterious past little by little. \nWell-balanced with high density action and light-hearted comedy, Cowboy Bebop is a space Western classic and an homage to the smooth and improvised music it is named after.\n\n(Source: MAL Rewrite)"
+   },
+   "posterImage": {
+    "original": {
+     "url": "https://media.kitsu.app/anime/poster_images/1/original.jpg",
+     "width": 484,
+     "height": 706
+    }
+   },
+   "bannerImage": {
+    "original": {
+     "url": "https://media.kitsu.app/anime/1/cover_image/fb57e5f25616633a41f0f5f1ded938ee.jpeg",
+     "width": 1400,
+     "height": 875
+    }
+   },
+   "status": "FINISHED",
+   "startDate": "1998-04-03",
+   "endDate": "1999-04-24",
+   "ageRating": "R",
+   "ageRatingGuide": "17+ (violence & profanity)",
+   "sfw": true,
+   "averageRating": 82.28,
+   "averageRatingRank": 202,
+   "userCount": 162522,
+   "userCountRank": 44,
+   "favoritesCount": 5169,
+   "nextRelease": null,
+   "originCountries": [
+    "JP"
+   ],
+   "originLanguages": [
+    "ja"
+   ],
+   "categories": {
+    "nodes": [
+     {
+      "id": "155",
+      "slug": "science-fiction",
+      "title": {
+       "en": "Science Fiction"
+      }
+     },
+     {
+      "id": "51",
+      "slug": "space",
+      "title": {
+       "en": "Space"
+      }
+     },
+     {
+      "id": "184",
+      "slug": "drama",
+      "title": {
+       "en": "Drama"
+      }
+     },
+     {
+      "id": "150",
+      "slug": "action",
+      "title": {
+       "en": "Action"
+      }
+     },
+     {
+      "id": "60",
+      "slug": "space-travel",
+      "title": {
+       "en": "Space Travel"
+      }
+     },
+     {
+      "id": "197",
+      "slug": "post-apocalypse",
+      "title": {
+       "en": "Post Apocalypse"
+      }
+     },
+     {
+      "id": "77",
+      "slug": "other-planet",
+      "title": {
+       "en": "Other Planet"
+      }
+     },
+     {
+      "id": "50",
+      "slug": "future",
+      "title": {
+       "en": "Future"
+      }
+     },
+     {
+      "id": "78",
+      "slug": "shipboard",
+      "title": {
+       "en": "Shipboard"
+      }
+     },
+     {
+      "id": "201",
+      "slug": "detective",
+      "title": {
+       "en": "Detective"
+      }
+     },
+     {
+      "id": "21",
+      "slug": "bounty-hunter",
+      "title": {
+       "en": "Bounty Hunter"
+      }
+     },
+     {
+      "id": "44",
+      "slug": "gunfights",
+      "title": {
+       "en": "Gunfights"
+      }
+     },
+     {
+      "id": "157",
+      "slug": "adventure",
+      "title": {
+       "en": "Adventure"
+      }
+     },
+     {
+      "id": "160",
+      "slug": "comedy",
+      "title": {
+       "en": "Comedy"
+      }
+     }
+    ]
+   },
+   "mappings": {
+    "nodes": [
+     {
+      "externalSite": "MYANIMELIST_ANIME",
+      "externalId": "1"
+     },
+     {
+      "externalSite": "HULU",
+      "externalId": "50019061"
+     },
+     {
+      "externalSite": "AOZORA",
+      "externalId": "t9UTv55e2Q"
+     },
+     {
+      "externalSite": "TRAKT",
+      "externalId": "30857"
+     },
+     {
+      "externalSite": "THETVDB",
+      "externalId": "76885"
+     },
+     {
+      "externalSite": "ANILIST_ANIME",
+      "externalId": "1"
+     },
+     {
+      "externalSite": "ANIDB",
+      "externalId": "23"
+     }
+    ]
+   },
+   "relationships": {
+    "nodes": [
+     {
+      "kind": "SIDE_STORY",
+      "destination": {
+       "__typename": "Anime",
+       "id": "2",
+       "slug": "cowboy-bebop-tengoku-no-tobira",
+       "titles": {
+        "canonical": "Cowboy Bebop: Knockin' on Heaven's Door"
+       },
+       "posterImage": {
+        "original": {
+         "url": "https://media.kitsu.app/anime/poster_images/2/original.jpg",
+         "width": 1000,
+         "height": 1426
+        }
+       }
+      }
+     },
+     {
+      "kind": "SIDE_STORY",
+      "destination": {
+       "__typename": "Anime",
+       "id": "7604",
+       "slug": "cowboy-bebop-ein-no-natsuyasumi",
+       "titles": {
+        "canonical": "Cowboy Bebop: Ein no Natsuyasumi"
+       },
+       "posterImage": {
+        "original": {
+         "url": "https://media.kitsu.app/anime/poster_images/7604/original.jpg",
+         "width": 490,
+         "height": 710
+        }
+       }
+      }
+     },
+     {
+      "kind": "SUMMARY",
+      "destination": {
+       "__typename": "Anime",
+       "id": "3424",
+       "slug": "cowboy-bebop-session-xx-mish-mash-blues",
+       "titles": {
+        "canonical": "Cowboy Bebop: Yose Atsume Blues"
+       },
+       "posterImage": {
+        "original": {
+         "url": "https://media.kitsu.app/anime/poster_images/3424/original.jpg",
+         "width": 225,
+         "height": 275
+        }
+       }
+      }
+     },
+     {
+      "kind": "ADAPTATION",
+      "destination": {
+       "__typename": "Manga",
+       "id": "414",
+       "slug": "cowboy-bebop",
+       "titles": {
+        "canonical": "Cowboy Bebop"
+       },
+       "posterImage": {
+        "original": {
+         "url": "https://media.kitsu.app/manga/poster_images/414/original.jpg",
+         "width": 225,
+         "height": 335
+        }
+       }
+      }
+     },
+     {
+      "kind": "ADAPTATION",
+      "destination": {
+       "__typename": "Manga",
+       "id": "416",
+       "slug": "cowboy-bebop-shooting-star",
+       "titles": {
+        "canonical": "Cowboy Bebop Shooting Star"
+       },
+       "posterImage": {
+        "original": {
+         "url": "https://media.kitsu.app/manga/poster_images/416/original.jpg",
+         "width": 225,
+         "height": 335
+        }
+       }
+      }
+     }
+    ]
+   },
+   "reactions": {
+    "totalCount": 520,
+    "nodes": [
+     {
+      "id": "569",
+      "reaction": "An unmistakable masterpiece. Blending many styles and genres while staying true to its own rich story and characters.",
+      "progress": 26,
+      "createdAt": "2017-07-25T14:21:38Z",
+      "author": {
+       "id": "59163",
+       "name": "dulleh",
+       "slug": "dulleh",
+       "avatarImage": {
+        "original": {
+         "url": "https://media.kitsu.app/users/avatars/59163/original.png",
+         "width": 460,
+         "height": 460
+        }
+       }
+      },
+      "likes": {
+       "totalCount": 102
+      }
+     },
+     {
+      "id": "2007",
+      "reaction": "A space western filled with jazz, action, and the cutest corgi this side of Jupiter. All I got to say to that is....Let's Jam! ",
+      "progress": 26,
+      "createdAt": "2017-07-26T02:13:23Z",
+      "author": {
+       "id": "34680",
+       "name": "Doaks",
+       "slug": "Doaks",
+       "avatarImage": {
+        "original": {
+         "url": "https://media.kitsu.app/user/34680/avatar/9603fba2aae70f7beb972c848298e5fd.png",
+         "width": 1920,
+         "height": 1080
+        }
+       }
+      },
+      "likes": {
+       "totalCount": 61
+      }
+     },
+     {
+      "id": "1860",
+      "reaction": "Bebop is a show I will never tire of. The episodic nature gives us the chance to see the cast in various situations and works in its favor.",
+      "progress": 26,
+      "createdAt": "2017-07-26T00:25:52Z",
+      "author": {
+       "id": "2431",
+       "name": "jojovonjo (Parody)",
+       "slug": "jojovonjo",
+       "avatarImage": {
+        "original": {
+         "url": "https://media.kitsu.app/user/2431/avatar/725ebba26e449966ab27bfa194033570.gif",
+         "width": 200,
+         "height": 142
+        }
+       }
+      },
+      "likes": {
+       "totalCount": 42
+      }
+     },
+     {
+      "id": "11727",
+      "reaction": "Cowboy Bebop is one of the most beloved and culturally diverse anime of all time. And I highly encourage you to see it...in English",
+      "progress": 26,
+      "createdAt": "2017-08-18T22:17:41Z",
+      "author": {
+       "id": "22685",
+       "name": "SilvaDour",
+       "slug": "SilvaDour",
+       "avatarImage": {
+        "original": {
+         "url": "https://media.kitsu.app/user/22685/avatar/69780016d92530d658ec9d6803405a44.jpeg",
+         "width": 3840,
+         "height": 2160
+        }
+       }
+      },
+      "likes": {
+       "totalCount": 41
+      }
+     },
+     {
+      "id": "2104",
+      "reaction": "An undeniable stone cold classic thanks to its memorable vignettes, existentialist themes, rule of cool, and Yoko Kanno's iconic soundtrack ",
+      "progress": 26,
+      "createdAt": "2017-07-26T02:41:28Z",
+      "author": {
+       "id": "140367",
+       "name": "Himynameischair",
+       "slug": "Himynameischair",
+       "avatarImage": {
+        "original": {
+         "url": "https://media.kitsu.app/users/avatars/140367/original.png",
+         "width": null,
+         "height": null
+        }
+       }
+      },
+      "likes": {
+       "totalCount": 30
+      }
+     },
+     {
+      "id": "82847",
+      "reaction": "Adult orphans banding together to bicker like siblings, never get the bounty, reference movies and music, and survive gunfights/fistfights. ",
+      "progress": 26,
+      "createdAt": "2018-08-06T14:41:20Z",
+      "author": {
+       "id": "165921",
+       "name": "JoAnneTheRed",
+       "slug": "JoAnneTheRed",
+       "avatarImage": {
+        "original": {
+         "url": "https://media.kitsu.app/user/165921/avatar/cf45cae851dbbfc8dab6ddb8b041fe71.jpeg",
+         "width": 1260,
+         "height": 708
+        }
+       }
+      },
+      "likes": {
+       "totalCount": 21
+      }
+     }
+    ]
+   },
+   "posts": {
+    "totalCount": 865,
+    "nodes": [
+     {
+      "id": "9916042",
+      "content": "I felt sad when annie and shin died\nThe ending didnt affect me but the final scene did:\n“You’re gonna carry that weight”\n\nOver all i dont like it tho i love character driven plots\nIgnoring the animation and soundtracks, I  know people love it because of the nostalgia, the dub, its aesthetic, and characters but none affected me even tho i love the action genre and scifi theme",
+      "contentFormatted": "<p>I felt sad when annie and shin died<br>\nThe ending didnt affect me but the final scene did:<br>\n“You’re gonna carry that weight”</p>\n\n<p>Over all i dont like it tho i love character driven plots<br>\nIgnoring the animation and soundtracks, I  know people love it because of the nostalgia, the dub, its aesthetic, and characters but none affected me even tho i love the action genre and scifi theme</p>\n",
+      "isSpoiler": true,
+      "isNsfw": false,
+      "createdAt": "2026-09-08T20:48:21Z",
+      "author": {
+       "id": "83099",
+       "name": "Fellow_Friend",
+       "slug": "Fellow_Friend",
+       "avatarImage": {
+        "original": {
+         "url": "https://media.kitsu.app/users/avatars/83099/original.png",
+         "width": null,
+         "height": null
+        }
+       }
+      },
+      "media": {
+       "__typename": "Anime",
+       "id": "1",
+       "slug": "cowboy-bebop",
+       "titles": {
+        "canonical": "Cowboy Bebop"
+       },
+       "posterImage": {
+        "original": {
+         "url": "https://media.kitsu.app/anime/poster_images/1/original.jpg",
+         "width": 484,
+         "height": 706
+        }
+       }
+      },
+      "likes": {
+       "totalCount": 2
+      },
+      "comments": {
+       "totalCount": 0
+      }
+     },
+     {
+      "id": "9916035",
+      "content": "This episode made me sad because ed left and ein followed her\nBefore starting the anime i didnt like anyone except jet, now its ed\nThe fact that faye left hurt too not because i like the team, but I just remembered my own friend group, they dont know but sometimes i think of leaving",
+      "contentFormatted": "<p>This episode made me sad because ed left and ein followed her<br>\nBefore starting the anime i didnt like anyone except jet, now its ed<br>\nThe fact that faye left hurt too not because i like the team, but I just remembered my own friend group, they dont know but sometimes i think of leaving</p>\n",
+      "isSpoiler": true,
+      "isNsfw": false,
+      "createdAt": "2026-09-08T18:14:21Z",
+      "author": {
+       "id": "83099",
+       "name": "Fellow_Friend",
+       "slug": "Fellow_Friend",
+       "avatarImage": {
+        "original": {
+         "url": "https://media.kitsu.app/users/avatars/83099/original.png",
+         "width": null,
+         "height": null
+        }
+       }
+      },
+      "media": {
+       "__typename": "Anime",
+       "id": "1",
+       "slug": "cowboy-bebop",
+       "titles": {
+        "canonical": "Cowboy Bebop"
+       },
+       "posterImage": {
+        "original": {
+         "url": "https://media.kitsu.app/anime/poster_images/1/original.jpg",
+         "width": 484,
+         "height": 706
+        }
+       }
+      },
+      "likes": {
+       "totalCount": 3
+      },
+      "comments": {
+       "totalCount": 1
+      }
+     },
+     {
+      "id": "9915952",
+      "content": "This episode was funny, andy turning out to be a spoiled rich brat a narcissist and a menace just like the criminal he chases",
+      "contentFormatted": "<p>This episode was funny, andy turning out to be a spoiled rich brat a narcissist and a menace just like the criminal he chases</p>\n",
+      "isSpoiler": true,
+      "isNsfw": false,
+      "createdAt": "2026-09-07T22:32:34Z",
+      "author": {
+       "id": "83099",
+       "name": "Fellow_Friend",
+       "slug": "Fellow_Friend",
+       "avatarImage": {
+        "original": {
+         "url": "https://media.kitsu.app/users/avatars/83099/original.png",
+         "width": null,
+         "height": null
+        }
+       }
+      },
+      "media": {
+       "__typename": "Anime",
+       "id": "1",
+       "slug": "cowboy-bebop",
+       "titles": {
+        "canonical": "Cowboy Bebop"
+       },
+       "posterImage": {
+        "original": {
+         "url": "https://media.kitsu.app/anime/poster_images/1/original.jpg",
+         "width": 484,
+         "height": 706
+        }
+       }
+      },
+      "likes": {
+       "totalCount": 0
+      },
+      "comments": {
+       "totalCount": 0
+      }
+     },
+     {
+      "id": "9915879",
+      "content": "I like the action genre the scifi theme the fact that its character driven but im not loving the show for some reason",
+      "contentFormatted": "<p>I like the action genre the scifi theme the fact that its character driven but im not loving the show for some reason</p>\n",
+      "isSpoiler": false,
+      "isNsfw": false,
+      "createdAt": "2026-09-06T21:58:16Z",
+      "author": {
+       "id": "83099",
+       "name": "Fellow_Friend",
+       "slug": "Fellow_Friend",
+       "avatarImage": {
+        "original": {
+         "url": "https://media.kitsu.app/users/avatars/83099/original.png",
+         "width": null,
+         "height": null
+        }
+       }
+      },
+      "media": {
+       "__typename": "Anime",
+       "id": "1",
+       "slug": "cowboy-bebop",
+       "titles": {
+        "canonical": "Cowboy Bebop"
+       },
+       "posterImage": {
+        "original": {
+         "url": "https://media.kitsu.app/anime/poster_images/1/original.jpg",
+         "width": 484,
+         "height": 706
+        }
+       }
+      },
+      "likes": {
+       "totalCount": 4
+      },
+      "comments": {
+       "totalCount": 3
+      }
+     },
+     {
+      "id": "9913957",
+      "content": "Amazing dialogue https://youtu.be/Bfbbfo6I0Jg?si=-lF3jDU3j-qIJx0c",
+      "contentFormatted": "<p>Amazing dialogue <a href=\"https://youtu.be/Bfbbfo6I0Jg?si=-lF3jDU3j-qIJx0c\" target=\"_blank\" rel=\"nofollow\" class=\"autolink\">https://youtu.be/Bfbbfo6I0Jg?si=-lF3jDU3j-qIJx0c</a></p>\n",
+      "isSpoiler": false,
+      "isNsfw": false,
+      "createdAt": "2026-08-14T18:59:05Z",
+      "author": {
+       "id": "66861",
+       "name": "Supesharisuto",
+       "slug": "Supesharisuto",
+       "avatarImage": {
+        "original": {
+         "url": "https://media.kitsu.app/user/66861/avatar/72c1958ed0827d889f248dcd163ce849.jpeg",
+         "width": 447,
+         "height": 447
+        }
+       }
+      },
+      "media": {
+       "__typename": "Anime",
+       "id": "1",
+       "slug": "cowboy-bebop",
+       "titles": {
+        "canonical": "Cowboy Bebop"
+       },
+       "posterImage": {
+        "original": {
+         "url": "https://media.kitsu.app/anime/poster_images/1/original.jpg",
+         "width": 484,
+         "height": 706
+        }
+       }
+      },
+      "likes": {
+       "totalCount": 0
+      },
+      "comments": {
+       "totalCount": 0
+      }
+     }
+    ]
+   },
+   "characters": {
+    "totalCount": 125,
+    "nodes": [
+     {
+      "role": "BACKGROUND",
+      "character": {
+       "id": "79392",
+       "slug": "sally-yung",
+       "names": {
+        "canonical": "Sally  Yung"
+       },
+       "image": {
+        "original": {
+         "url": "https://media.kitsu.app/characters/images/79392/original.jpg",
+         "width": 225,
+         "height": 329
+        }
+       }
+      },
+      "voices": {
+       "nodes": [
+        {
+         "person": {
+          "id": "3890",
+          "name": "Ikuko Tani",
+          "image": {
+           "original": {
+            "url": "https://media.kitsu.app/people/images/3890/original.jpg",
+            "width": 225,
+            "height": 345
+           }
+          }
+         }
+        }
+       ]
+      }
+     },
+     {
+      "role": "BACKGROUND",
+      "character": {
+       "id": "75197",
+       "slug": "white-tiger-representative",
+       "names": {
+        "canonical": "White Tiger Representative"
+       },
+       "image": {
+        "original": {
+         "url": "https://media.kitsu.app/characters/images/75197/original.jpg",
+         "width": 225,
+         "height": 294
+        }
+       }
+      },
+      "voices": {
+       "nodes": []
+      }
+     },
+     {
+      "role": "BACKGROUND",
+      "character": {
+       "id": "73258",
+       "slug": "tom-wiles",
+       "names": {
+        "canonical": "Tom Wiles"
+       },
+       "image": {
+        "original": {
+         "url": "https://media.kitsu.app/characters/images/73258/original.jpg",
+         "width": 225,
+         "height": 291
+        }
+       }
+      },
+      "voices": {
+       "nodes": [
+        {
+         "person": {
+          "id": "1138",
+          "name": "Hirohiko Kakegawa",
+          "image": {
+           "original": {
+            "url": "https://media.kitsu.app/people/images/1138/original.jpg",
+            "width": 225,
+            "height": 350
+           }
+          }
+         }
+        }
+       ]
+      }
+     },
+     {
+      "role": "BACKGROUND",
+      "character": {
+       "id": "72610",
+       "slug": "mao-yenrai",
+       "names": {
+        "canonical": "Mao  Yenrai"
+       },
+       "image": {
+        "original": {
+         "url": "https://media.kitsu.app/characters/images/72610/original.jpg",
+         "width": 225,
+         "height": 315
+        }
+       }
+      },
+      "voices": {
+       "nodes": [
+        {
+         "person": {
+          "id": "813",
+          "name": "Kazuaki Itou",
+          "image": {
+           "original": {
+            "url": "https://media.kitsu.app/people/images/813/original.jpg",
+            "width": 200,
+            "height": 200
+           }
+          }
+         }
+        }
+       ]
+      }
+     },
+     {
+      "role": "BACKGROUND",
+      "character": {
+       "id": "5",
+       "slug": "ein-654ddb2c-eb4e-43b8-b7da-21b2b9ae8f68",
+       "names": {
+        "canonical": "Ein"
+       },
+       "image": {
+        "original": {
+         "url": "https://media.kitsu.app/characters/images/5/original.jpg",
+         "width": 225,
+         "height": 350
+        }
+       }
+      },
+      "voices": {
+       "nodes": [
+        {
+         "person": {
+          "id": "47",
+          "name": "Kouichi Yamadera",
+          "image": {
+           "original": {
+            "url": "https://media.kitsu.app/people/images/47/original.jpg",
+            "width": 225,
+            "height": 350
+           }
+          }
+         }
+        }
+       ]
+      }
+     },
+     {
+      "role": "BACKGROUND",
+      "character": {
+       "id": "61577",
+       "slug": "amjad",
+       "names": {
+        "canonical": "Amjad"
+       },
+       "image": {
+        "original": {
+         "url": "https://media.kitsu.app/characters/images/61577/original.jpg",
+         "width": 225,
+         "height": 173
+        }
+       }
+      },
+      "voices": {
+       "nodes": [
+        {
+         "person": {
+          "id": "643",
+          "name": "Shinpachi Tsuji",
+          "image": {
+           "original": {
+            "url": "https://media.kitsu.app/people/images/643/original.jpg",
+            "width": 225,
+            "height": 315
+           }
+          }
+         }
+        }
+       ]
+      }
+     },
+     {
+      "role": "BACKGROUND",
+      "character": {
+       "id": "61576",
+       "slug": "actress",
+       "names": {
+        "canonical": "Actress"
+       },
+       "image": {
+        "original": {
+         "url": "https://media.kitsu.app/characters/images/61576/original.jpg",
+         "width": 225,
+         "height": 304
+        }
+       }
+      },
+      "voices": {
+       "nodes": [
+        {
+         "person": {
+          "id": "1395",
+          "name": "Yui Horie",
+          "image": {
+           "original": {
+            "url": "https://media.kitsu.app/people/images/1395/original.jpg",
+            "width": 225,
+            "height": 350
+           }
+          }
+         }
+        }
+       ]
+      }
+     },
+     {
+      "role": "BACKGROUND",
+      "character": {
+       "id": "69934",
+       "slug": "alisa-f71f28b4-0599-4ecf-bbfc-8b2228889b84",
+       "names": {
+        "canonical": "Alisa"
+       },
+       "image": {
+        "original": {
+         "url": "https://media.kitsu.app/characters/images/69934/original.jpg",
+         "width": 225,
+         "height": 326
+        }
+       }
+      },
+      "voices": {
+       "nodes": [
+        {
+         "person": {
+          "id": "1125",
+          "name": "Mika Doi",
+          "image": {
+           "original": {
+            "url": "https://media.kitsu.app/people/images/1125/original.jpg",
+            "width": 225,
+            "height": 350
+           }
+          }
+         }
+        }
+       ]
+      }
+     },
+     {
+      "role": "BACKGROUND",
+      "character": {
+       "id": "90619",
+       "slug": "angel-7807e820-8606-4f48-8dd3-135018935025",
+       "names": {
+        "canonical": "Angel"
+       },
+       "image": {
+        "original": {
+         "url": "https://media.kitsu.app/characters/images/90619/original.jpg",
+         "width": 225,
+         "height": 229
+        }
+       }
+      },
+      "voices": {
+       "nodes": [
+        {
+         "person": {
+          "id": "637",
+          "name": "Sachiko Kojima",
+          "image": {
+           "original": {
+            "url": "https://media.kitsu.app/people/images/637/original.jpg",
+            "width": 225,
+            "height": 336
+           }
+          }
+         }
+        }
+       ]
+      }
+     },
+     {
+      "role": "BACKGROUND",
+      "character": {
+       "id": "67441",
+       "slug": "annie-99673995-5fd5-483b-8b70-4ee13ecd9ecf",
+       "names": {
+        "canonical": "Annie"
+       },
+       "image": {
+        "original": {
+         "url": "https://media.kitsu.app/characters/images/67441/original.jpg",
+         "width": 225,
+         "height": 293
+        }
+       }
+      },
+      "voices": {
+       "nodes": [
+        {
+         "person": {
+          "id": "3563",
+          "name": "Miyuki Ichijou",
+          "image": {
+           "original": {
+            "url": "https://media.kitsu.app/people/images/3563/original.jpg",
+            "width": 225,
+            "height": 350
+           }
+          }
+         }
+        }
+       ]
+      }
+     },
+     {
+      "role": "BACKGROUND",
+      "character": {
+       "id": "77389",
+       "slug": "antonio-70210165-fadc-4f97-9526-18055d01c24d",
+       "names": {
+        "canonical": "Antonio"
+       },
+       "image": {
+        "original": {
+         "url": "https://media.kitsu.app/characters/images/77389/original.jpg",
+         "width": 225,
+         "height": 293
+        }
+       }
+      },
+      "voices": {
+       "nodes": [
+        {
+         "person": {
+          "id": "5257",
+          "name": "Jin Hirao",
+          "image": {
+           "original": {
+            "url": "https://media.kitsu.app/people/images/5257/original.jpg",
+            "width": 120,
+            "height": 170
+           }
+          }
+         }
+        }
+       ]
+      }
+     },
+     {
+      "role": "BACKGROUND",
+      "character": {
+       "id": "61578",
+       "slug": "bartender-a",
+       "names": {
+        "canonical": "Bartender A"
+       },
+       "image": {
+        "original": {
+         "url": "https://media.kitsu.app/characters/images/61578/original.jpg",
+         "width": 225,
+         "height": 248
+        }
+       }
+      },
+      "voices": {
+       "nodes": [
+        {
+         "person": {
+          "id": "4630",
+          "name": "Katsumi Chou",
+          "image": {
+           "original": {
+            "url": "https://media.kitsu.app/people/images/4630/original.jpg",
+            "width": 204,
+            "height": 204
+           }
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "staff": {
+    "totalCount": 62,
+    "nodes": [
+     {
+      "role": "Producer",
+      "person": {
+       "id": "22442",
+       "slug": "yutaka-maseba",
+       "name": "Yutaka Maseba",
+       "image": {
+        "original": {
+         "url": "https://media.kitsu.app/people/images/22442/original.jpg",
+         "width": 292,
+         "height": 450
+        }
+       }
+      }
+     },
+     {
+      "role": "Producer",
+      "person": {
+       "id": "1",
+       "slug": "masahiko-minami",
+       "name": "Masahiko Minami",
+       "image": {
+        "original": {
+         "url": "https://media.kitsu.app/people/images/1/original.jpg",
+         "width": null,
+         "height": null
+        }
+       }
+      }
+     },
+     {
+      "role": "Director, Script, Storyboard",
+      "person": {
+       "id": "2",
+       "slug": "shinichiro-watanabe",
+       "name": "Shinichiro Watanabe",
+       "image": {
+        "original": {
+         "url": "https://media.kitsu.app/people/images/2/original.jpg",
+         "width": 225,
+         "height": 350
+        }
+       }
+      }
+     },
+     {
+      "role": "Sound Director",
+      "person": {
+       "id": "3",
+       "slug": "katsuyoshi-kobayashi",
+       "name": "Katsuyoshi Kobayashi",
+       "image": null
+      }
+     },
+     {
+      "role": "Episode Director, Storyboard",
+      "person": {
+       "id": "22443",
+       "slug": "mori-kunihiro",
+       "name": "Mori Kunihiro",
+       "image": {
+        "original": {
+         "url": "https://media.kitsu.app/people/images/22443/original.jpg",
+         "width": 400,
+         "height": 400
+        }
+       }
+      }
+     },
+     {
+      "role": "Script",
+      "person": {
+       "id": "1710",
+       "slug": "shoji-kawamori",
+       "name": "Shoji Kawamori",
+       "image": {
+        "original": {
+         "url": "https://media.kitsu.app/people/images/1710/original.jpg",
+         "width": 225,
+         "height": 350
+        }
+       }
+      }
+     },
+     {
+      "role": "Script",
+      "person": {
+       "id": "5",
+       "slug": "sadayuki-murai",
+       "name": "Sadayuki Murai",
+       "image": {
+        "original": {
+         "url": "https://media.kitsu.app/people/images/5/original.jpg",
+         "width": 165,
+         "height": 147
+        }
+       }
+      }
+     },
+     {
+      "role": "Script, Series Composition",
+      "person": {
+       "id": "7",
+       "slug": "keiko-nobumoto",
+       "name": "Keiko Nobumoto",
+       "image": {
+        "original": {
+         "url": "https://media.kitsu.app/people/images/7/original.jpg",
+         "width": 225,
+         "height": 141
+        }
+       }
+      }
+     },
+     {
+      "role": "Script",
+      "person": {
+       "id": "4",
+       "slug": "yamaguchi-ryota",
+       "name": "Yamaguchi Ryota",
+       "image": null
+      }
+     },
+     {
+      "role": "Script",
+      "person": {
+       "id": "6",
+       "slug": "dai-sato",
+       "name": "Dai Sato",
+       "image": {
+        "original": {
+         "url": "https://media.kitsu.app/people/images/6/original.jpg",
+         "width": 100,
+         "height": 100
+        }
+       }
+      }
+     },
+     {
+      "role": "Script",
+      "person": {
+       "id": "8",
+       "slug": "michiko-yokote",
+       "name": "Michiko Yokote",
+       "image": {
+        "original": {
+         "url": "https://media.kitsu.app/people/images/8/original.jpg",
+         "width": 210,
+         "height": 300
+        }
+       }
+      }
+     },
+     {
+      "role": "Storyboard",
+      "person": {
+       "id": "10",
+       "slug": "umanosuke-iida",
+       "name": "Umanosuke Iida",
+       "image": {
+        "original": {
+         "url": "https://media.kitsu.app/people/images/10/original.jpg",
+         "width": 225,
+         "height": 169
+        }
+       }
+      }
+     }
+    ]
+   },
+   "productions": {
+    "nodes": []
+   },
+   "quotes": {
+    "nodes": [
+     {
+      "id": "557",
+      "lines": {
+       "nodes": [
+        {
+         "content": "Lesson! Lesson! If you see a stranger, follow him.",
+         "character": {
+          "names": {
+           "canonical": "Edward Wong Hau Pepelu Tivrusky IV"
+          }
+         }
+        }
+       ]
+      }
+     },
+     {
+      "id": "231",
+      "lines": {
+       "nodes": [
+        {
+         "content": "The past is the past and the future is the future. A man is a man and a woman is a woman. The present is the present. I am who I am and you are who you are. That's all there is to it. Does it really matter? Or do we just think it does?",
+         "character": {
+          "names": {
+           "canonical": "Faye Valentine"
+          }
+         }
+        }
+       ]
+      }
+     },
+     {
+      "id": "230",
+      "lines": {
+       "nodes": [
+        {
+         "content": "Bang.",
+         "character": {
+          "names": {
+           "canonical": "Spike Spiegel"
+          }
+         }
+        }
+       ]
+      }
+     },
+     {
+      "id": "361",
+      "lines": {
+       "nodes": [
+        {
+         "content": "Don't you wanna hang out and waste your life with us?",
+         "character": {
+          "names": {
+           "canonical": "Spike Spiegel"
+          }
+         }
+        }
+       ]
+      }
+     },
+     {
+      "id": "370",
+      "lines": {
+       "nodes": [
+        {
+         "content": "Do not fear Death. Death is always at our side. When we show fear, it jumps at us faster than light. But, if we do not show fear, it casts its eye upon us gently and then guides us into infinity.",
+         "character": {
+          "names": {
+           "canonical": "Laughing Bull"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "subtype": "TV",
+   "season": "SPRING",
+   "episodeCount": 26,
+   "episodeLength": 1500,
+   "totalLength": 37560,
+   "youtubeTrailerVideoId": "qig4KOK2R2g",
+   "streamingLinks": {
+    "nodes": [
+     {
+      "url": "https://www.amazon.com/gp/video/detail/B06VW8K7ZJ/",
+      "subs": [
+       "en"
+      ],
+      "dubs": [
+       "ja"
+      ],
+      "regions": [
+       "US"
+      ],
+      "streamer": {
+       "siteName": "Amazon"
+      }
+     },
+     {
+      "url": "http://www.crunchyroll.com/cowboy-bebop",
+      "subs": [
+       "en"
+      ],
+      "dubs": [
+       "ja"
+      ],
+      "regions": [
+       "US"
+      ],
+      "streamer": {
+       "siteName": "Crunchyroll"
+      }
+     },
+     {
+      "url": "https://www.hulu.com/cowboy-bebop",
+      "subs": [
+       "en"
+      ],
+      "dubs": [
+       "ja"
+      ],
+      "regions": [
+       "US"
+      ],
+      "streamer": {
+       "siteName": "Hulu"
+      }
+     },
+     {
+      "url": "http://tubitv.com/series/2052/cowboy_bebop",
+      "subs": [
+       "en"
+      ],
+      "dubs": [
+       "ja"
+      ],
+      "regions": [
+       "US"
+      ],
+      "streamer": {
+       "siteName": "TubiTV"
+      }
+     }
+    ]
+   },
+   "episodes": {
+    "totalCount": 26,
+    "pageInfo": {
+     "hasNextPage": true,
+     "endCursor": "Mw"
+    },
+    "nodes": [
+     {
+      "id": "229115",
+      "number": 1,
+      "titles": {
+       "canonical": "Asteroid Blues"
+      },
+      "description": {
+       "en": "Spike and Jet head to Tijuana to track down an outlaw smuggling a dangerous drug known as blood-eye.  Jet wants the bounty, but Spike has eyes for a far prettier prize."
+      },
+      "releasedAt": "1998-10-23T00:00:00+00:00",
+      "length": 1500,
+      "thumbnail": {
+       "original": {
+        "url": "https://media.kitsu.app/episodes/thumbnails/229115/original.jpeg",
+        "width": 600,
+        "height": 400
+       }
+      }
+     },
+     {
+      "id": "229114",
+      "number": 2,
+      "titles": {
+       "canonical": "Stray Dog Strut"
+      },
+      "description": {
+       "en": "Spike and Jet's next case takes them to Mars, where they'll to try apprehend a professional pet thief and a priceless data dog."
+      },
+      "releasedAt": "1998-10-30T00:00:00+00:00",
+      "length": 1320,
+      "thumbnail": {
+       "original": {
+        "url": "https://media.kitsu.app/episodes/thumbnails/229114/original.jpeg",
+        "width": 600,
+        "height": 400
+       }
+      }
+     },
+     {
+      "id": "229113",
+      "number": 3,
+      "titles": {
+       "canonical": "Honky Tonk Women"
+      },
+      "description": {
+       "en": "A night at the casino lands Spike and Jet in hot water when they cross paths with Faye Valentine, a stunning con artist wanted by the law - and the bad guys."
+      },
+      "releasedAt": "1998-11-06T00:00:00+00:00",
+      "length": 1440,
+      "thumbnail": {
+       "original": {
+        "url": "https://media.kitsu.app/episodes/thumbnails/229113/original.jpeg",
+        "width": 600,
+        "height": 400
+       }
+      }
+     }
+    ]
+   }
+  }
+ }
+}

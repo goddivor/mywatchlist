@@ -1,0 +1,19 @@
+{
+ "data": {
+  "lookupMapping": {
+   "__typename": "Anime",
+   "id": "46474",
+   "slug": "sousou-no-frieren",
+   "titles": {
+    "canonical": "Sousou no Frieren"
+   },
+   "posterImage": {
+    "original": {
+     "url": "https://media.kitsu.app/anime/46474/poster_image/99d7df09d8cb9360b1e02825372ce612.jpg",
+     "width": 460,
+     "height": 649
+    }
+   }
+  }
+ }
+}

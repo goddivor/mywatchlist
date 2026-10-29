@@ -1,0 +1,36 @@
+{
+ "data": {
+  "searchProfileByUsername": {
+   "pageInfo": {
+    "hasNextPage": true,
+    "endCursor": "Mw"
+   },
+   "nodes": [
+    {
+     "id": "286143",
+     "name": "Tamaya",
+     "slug": "Tamaya",
+     "avatarImage": {
+      "original": {
+       "url": "https://media.kitsu.app/user/286143/avatar/37ab3ead95d0102f45b2f3409d1f14de.png",
+       "width": 2160,
+       "height": 3840
+      }
+     }
+    },
+    {
+     "id": "761465",
+     "name": "jlloyd_tamayao",
+     "slug": null,
+     "avatarImage": null
+    },
+    {
+     "id": "1118655",
+     "name": "raiden_aries_tamayao",
+     "slug": null,
+     "avatarImage": null
+    }
+   ]
+  }
+ }
+}

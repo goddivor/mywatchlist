@@ -1,0 +1,51 @@
+{
+ "data": {
+  "findProfileBySlug": {
+   "followers": {
+    "totalCount": 94,
+    "pageInfo": {
+     "hasNextPage": true,
+     "endCursor": "Mw"
+    },
+    "nodes": [
+     {
+      "id": "1558699",
+      "name": "Parrot_Eats_Potato ",
+      "slug": null,
+      "avatarImage": {
+       "original": {
+        "url": "https://media.kitsu.app/user/1558699/avatar/5959e2130fb90c295c4770fdf0a3c810.jpeg",
+        "width": 2000,
+        "height": 1000
+       }
+      }
+     },
+     {
+      "id": "1402687",
+      "name": "dsachnet :3",
+      "slug": "dsachnet",
+      "avatarImage": {
+       "original": {
+        "url": "https://media.kitsu.app/user/1402687/avatar/43c3534d0bcf18b5bed7fb2de9bddd40.jpeg",
+        "width": 736,
+        "height": 736
+       }
+      }
+     },
+     {
+      "id": "591442",
+      "name": "Obama",
+      "slug": null,
+      "avatarImage": {
+       "original": {
+        "url": "https://media.kitsu.app/user/591442/avatar/9c0f92f62980dd71a3024f26973359f7.jpeg",
+        "width": 640,
+        "height": 488
+       }
+      }
+     }
+    ]
+   }
+  }
+ }
+}

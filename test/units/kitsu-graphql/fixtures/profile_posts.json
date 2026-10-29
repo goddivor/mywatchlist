@@ -1,0 +1,124 @@
+{
+ "data": {
+  "findProfileBySlug": {
+   "posts": {
+    "totalCount": 147,
+    "pageInfo": {
+     "hasNextPage": true,
+     "endCursor": "Mw"
+    },
+    "nodes": [
+     {
+      "id": "9814168",
+      "content": "OMG IS THIS YOU OMG THIS IS SOMETIMES ME BUT NOT ALWAYS I MEAN YEAH THATS WHAT SOMETIMES MEANS YEAH WHEN I SIT NEXT TO MY CRUSH WHICH IS TOTALLY NOT YOU OR JUSTLUKE HEHE *BLUSHES AND FARTS QUIETLY* OMGGG DONT TELL ANYBODYYY OKAYYY I MEAN IT ISNT TRUEEE TEEHEE~ BUT DONT YOU THINK VIOLET EVERGARDEN FROM THE SHOW VIOLET EVERGARDEN FARTS???? LIKE SHE IS A GIRL (WOMAN) SO SHE WOULDNT FART RIGHT ATLEAST THATS WHAT REDDIT TOLD ME MAYBE IF I ASK NICELY SHE COULD FART ON MY FA",
+      "contentFormatted": "<p>OMG IS THIS YOU OMG THIS IS SOMETIMES ME BUT NOT ALWAYS I MEAN YEAH THATS WHAT SOMETIMES MEANS YEAH WHEN I SIT NEXT TO MY CRUSH WHICH IS TOTALLY NOT YOU OR JUSTLUKE HEHE <em>BLUSHES AND FARTS QUIETLY</em> OMGGG DONT TELL ANYBODYYY OKAYYY I MEAN IT ISNT TRUEEE TEEHEE~ BUT DONT YOU THINK VIOLET EVERGARDEN FROM THE SHOW VIOLET EVERGARDEN FARTS???? LIKE SHE IS A GIRL (WOMAN) SO SHE WOULDNT FART RIGHT ATLEAST THATS WHAT REDDIT TOLD ME MAYBE IF I ASK NICELY SHE COULD FART ON MY FA</p>\n",
+      "isSpoiler": true,
+      "isNsfw": false,
+      "createdAt": "2024-02-28T00:07:17Z",
+      "author": {
+       "id": "286143",
+       "name": "Tamaya",
+       "slug": "Tamaya",
+       "avatarImage": {
+        "original": {
+         "url": "https://media.kitsu.app/user/286143/avatar/37ab3ead95d0102f45b2f3409d1f14de.png",
+         "width": 2160,
+         "height": 3840
+        }
+       }
+      },
+      "media": {
+       "__typename": "Anime",
+       "id": "41450",
+       "slug": "violet-evergarden-movie",
+       "titles": {
+        "canonical": "Violet Evergarden the Movie"
+       },
+       "posterImage": {
+        "original": {
+         "url": "https://media.kitsu.app/anime/poster_images/41450/original.jpg",
+         "width": 2150,
+         "height": 3000
+        }
+       }
+      },
+      "likes": {
+       "totalCount": 0
+      },
+      "comments": {
+       "totalCount": 1
+      }
+     },
+     {
+      "id": "9814167",
+      "content": "https://youtu.be/HEXWRTEbj1I?si=h3qc8wuT7fm5ojof",
+      "contentFormatted": "<p><a href=\"https://youtu.be/HEXWRTEbj1I?si=h3qc8wuT7fm5ojof\" target=\"_blank\" rel=\"nofollow\" class=\"autolink\">https://youtu.be/HEXWRTEbj1I?si=h3qc8wuT7fm5ojof</a></p>\n",
+      "isSpoiler": false,
+      "isNsfw": false,
+      "createdAt": "2024-02-28T00:04:28Z",
+      "author": {
+       "id": "286143",
+       "name": "Tamaya",
+       "slug": "Tamaya",
+       "avatarImage": {
+        "original": {
+         "url": "https://media.kitsu.app/user/286143/avatar/37ab3ead95d0102f45b2f3409d1f14de.png",
+         "width": 2160,
+         "height": 3840
+        }
+       }
+      },
+      "media": null,
+      "likes": {
+       "totalCount": 0
+      },
+      "comments": {
+       "totalCount": 0
+      }
+     },
+     {
+      "id": "9814163",
+      "content": "BROO THIS YOUR FAVOURITE ANIME RIGHT. Brooo remember in sora no otshimono aka heavens lost property for the less smart ones teehee~ where the guy in like episode 2 tries to fuck a fish yeahh weird anime why did you ever recommend it to me bleh… you should watch a good show like Inukai-sans dog!!! TRUEEEE BESTIEE! Yeah thats what im saying anyway Ecchi or Imouto which better hmmm🤨🤨🤨",
+      "contentFormatted": "<p>BROO THIS YOUR FAVOURITE ANIME RIGHT. Brooo remember in sora no otshimono aka heavens lost property for the less smart ones teehee~ where the guy in like episode 2 tries to fuck a fish yeahh weird anime why did you ever recommend it to me bleh… you should watch a good show like Inukai-sans dog!!! TRUEEEE BESTIEE! Yeah thats what im saying anyway Ecchi or Imouto which better hmmm🤨🤨🤨</p>\n",
+      "isSpoiler": true,
+      "isNsfw": false,
+      "createdAt": "2024-02-27T23:42:18Z",
+      "author": {
+       "id": "286143",
+       "name": "Tamaya",
+       "slug": "Tamaya",
+       "avatarImage": {
+        "original": {
+         "url": "https://media.kitsu.app/user/286143/avatar/37ab3ead95d0102f45b2f3409d1f14de.png",
+         "width": 2160,
+         "height": 3840
+        }
+       }
+      },
+      "media": {
+       "__typename": "Anime",
+       "id": "4363",
+       "slug": "heaven-s-lost-property",
+       "titles": {
+        "canonical": "Heaven's Lost Property"
+       },
+       "posterImage": {
+        "original": {
+         "url": "https://media.kitsu.app/anime/poster_images/4363/original.jpg",
+         "width": 894,
+         "height": 1280
+        }
+       }
+      },
+      "likes": {
+       "totalCount": 0
+      },
+      "comments": {
+       "totalCount": 1
+      }
+     }
+    ]
+   }
+  }
+ }
+}
