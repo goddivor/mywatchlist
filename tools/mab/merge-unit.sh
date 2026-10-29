@@ -57,6 +57,8 @@ if [ ! -d "$WT" ]; then
 fi
 cd "$WT" || exit 1
 [ "$(git rev-parse --abbrev-ref HEAD)" = "$BR" ] || die "$WT is on $(git rev-parse --abbrev-ref HEAD), expected $BR"
+# `flutter pub get` regenerates this tracked file in every worktree: put it back before judging.
+git checkout -- macos/Flutter/GeneratedPluginRegistrant.swift 2>/dev/null || true
 if [ -n "$(git status --porcelain)" ]; then
   say "DIRTY worktree — the builder may still be working. Not touching it."; git status --short | head -20; exit 8
 fi
