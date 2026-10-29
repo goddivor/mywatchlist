@@ -141,7 +141,14 @@ class RetryPolicy {
       } finally {
         client.close();
       }
-      if (attempt < maxAttempts) await sleep(delayAfter(attempt));
+      if (attempt == maxAttempts) break;
+      var wait = delayAfter(attempt);
+      if (deadline != null) {
+        final left = deadline.difference(DateTime.now());
+        // The next attempt would start at or after the deadline.
+        if (left <= wait) break;
+      }
+      await sleep(wait);
     }
     Error.throwWithStackTrace(
       lastError ?? StateError('Failed after $maxAttempts attempts'),
