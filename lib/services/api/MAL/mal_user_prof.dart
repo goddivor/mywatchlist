@@ -8,7 +8,12 @@ class MalUserProf {
   final String location;
   final String? gender;
   final DateTime? birthday;
+  /// The account's time zone (`time_zone`, an IANA name such as `Africa/Lome`); own profile
+  /// only, empty when MAL gives none.
   final String timezone;
+
+  /// Whether the account is a MyAnimeList Supporter (`is_supporter`); own profile only.
+  final bool isSupporter;
   final String joinedAt;
   final String picture;
   final UserAnimeStatistics animeStatistics;
@@ -17,6 +22,7 @@ class MalUserProf {
     required this.gender,
     required this.birthday,
     required this.timezone,
+    this.isSupporter = false,
     required this.picture,
     required this.id,
     required this.name,
@@ -31,7 +37,9 @@ class MalUserProf {
       gender: json['gender'] as String?,
       // A missing or blank birthday is normal (users may hide it).
       birthday: birthday is String ? DateTime.tryParse(birthday) : null,
-      timezone: json['timezone'] as String? ?? '',
+      // The API key is `time_zone`; `timezone` is what older cached profiles stored.
+      timezone: (json['time_zone'] ?? json['timezone']) as String? ?? '',
+      isSupporter: json['is_supporter'] == true,
       picture: json['picture'] as String? ?? '',
       id: (json['id'] as num?)?.toInt() ?? 0,
       name: json['name'] as String? ?? '',
@@ -48,7 +56,8 @@ class MalUserProf {
         'location': location,
         'gender': gender,
         'birthday': birthday?.toIso8601String(),
-        'timezone': timezone,
+        'time_zone': timezone,
+        'is_supporter': isSupporter,
         'joined_at': joinedAt,
         'picture': picture,
         'anime_statistics': animeStatistics.toJson(),

@@ -48,7 +48,7 @@ class MalUser {
         'location': data['location'] ?? '',
         'gender': data['gender'],
         'birthday': data['birthday'],
-        'timezone': '',
+        'time_zone': '',
         'joined_at': data['joined'] ?? '',
         'picture': data['images']?['jpg']?['image_url'] ?? '',
         'anime_statistics': data['statistics']?['anime'] ?? {},

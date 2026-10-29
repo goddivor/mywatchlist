@@ -1,0 +1,11 @@
+{
+  "@@locale": "en",
+  "Mpe_Tab_Blog": "Blog",
+  "Mpe_Reviews_Empty": "No reviews written yet.",
+  "Mpe_Recs_Empty": "No recommendations made yet.",
+  "Mpe_Stacks_Empty": "No interest stacks yet.",
+  "Mpe_Blog_Empty": "No blog entries yet.",
+  "Mpe_Comments_Count": "{count, plural, =0{No comments} =1{1 comment} other{{count} comments}}",
+  "@Mpe_Comments_Count": { "placeholders": { "count": { "type": "int" } } },
+  "Mpe_Supporter": "Supporter"
+}
