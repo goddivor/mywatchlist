@@ -56,7 +56,8 @@
         "list-time-followups",
         "mal-web-recaptcha",
         "kitsu-polish",
-        "mal-polish"
+        "mal-polish",
+        "mal-polish-2"
       ]
     },
     {
@@ -3868,6 +3869,38 @@
         "lib/l10n/units/mal-polish/**",
         "test/units/mal-polish/**",
         "test/units/mal-polish/**"
+      ],
+      "group": "user",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: sonnet"
+      ],
+      "status": "⬜ todo"
+    },
+    {
+      "id": "mal-polish-2",
+      "title": "MAL polish 2: Settings > Accounts uses the new page, Supporter badge for others, time zone in About, dead TrackerTile, cancelled MAL re-login keeps the session",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "mal-polish"
+      ],
+      "owns": [
+        "lib/screens/settings/accounts_settings.dart",
+        "lib/utils/app_routes.dart",
+        "lib/screens/user_profile/user_profile_data.dart",
+        "lib/screens/user_profile/user_profile_view.dart",
+        "lib/user/trackers/widgets/tracker_tile.dart",
+        "test/units/accounts-ux/tracker_tile_test.dart",
+        "lib/services/auth/mal_auth_v2.dart",
+        "lib/screens/manage_accounts_page.dart",
+        "lib/l10n/units/mal-polish-2/**",
+        "test/units/mal-polish-2/**",
+        "test/units/mal-polish-2/**"
       ],
       "group": "user",
       "dropped": null,
