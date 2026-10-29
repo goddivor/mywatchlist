@@ -239,7 +239,7 @@ void main() {
       final session = await _connected();
       final a = api(session, (r) async {
         if (r.method == 'GET') return http.Response("<meta name='csrf_token' content='tok1'>", 200);
-        return http.Response('true', 200);
+        return http.Response('{"success":true}', 200);
       });
       final feed = parseNotificationPage(_fixture('notification_page_reconstructed.html'))!;
       expect(await a.markRead(feed.items.take(3)), isTrue);
@@ -260,7 +260,7 @@ void main() {
       final a = api(session, (r) async {
         if (r.method == 'GET') return http.Response("<meta name='csrf_token' content='tok${++tokens}'>", 200);
         final body = jsonDecode(r.body) as Map;
-        return body['csrf_token'] == 'tok2' ? http.Response('{}', 200) : http.Response('', 403);
+        return body['csrf_token'] == 'tok2' ? http.Response('{"success":true}', 200) : http.Response('', 403);
       });
       final request = parseNotificationPage(_fixture('notification_page_reconstructed.html'))!.items.first;
       expect(await a.acceptFriendRequests([request]), isTrue);

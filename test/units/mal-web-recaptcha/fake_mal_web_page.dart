@@ -15,7 +15,22 @@ class FakeMalWebPage implements MalWebPage {
     this.neverAnswers = false,
     this.loginOnLoad = false,
     this.formPage = '<html><body><form class="recaptcha-form"></form></body></html>',
+    this.ajaxReply = const MalWebAjaxAnswer(status: 200, body: '{"success":true}'),
+    this.ajaxNotReadyPolls = 0,
+    this.ajaxPendingPolls = 0,
   });
+
+  /// What MAL answers to an AJAX call sent from the page; null = it never answers.
+  final MalWebAjaxAnswer? ajaxReply;
+
+  /// How many times the page's jQuery is not there yet before [sendAjax] starts the call.
+  int ajaxNotReadyPolls;
+
+  /// How many times [ajaxAnswer] is still running before [ajaxReply] comes.
+  int ajaxPendingPolls;
+
+  /// The AJAX calls the page sent.
+  final List<MalWebAjax> ajaxSent = [];
 
   /// The page MAL answers with after the click.
   final String answer;
@@ -105,6 +120,26 @@ class FakeMalWebPage implements MalWebPage {
 
   @override
   Future<String> html() async => _html;
+
+  @override
+  Future<bool> sendAjax(MalWebAjax call) async {
+    if (ajaxNotReadyPolls > 0) {
+      ajaxNotReadyPolls--;
+      return false;
+    }
+    ajaxSent.add(call);
+    return true;
+  }
+
+  @override
+  Future<MalWebAjaxAnswer?> ajaxAnswer() async {
+    if (ajaxSent.isEmpty) return null;
+    if (ajaxPendingPolls > 0) {
+      ajaxPendingPolls--;
+      return null;
+    }
+    return ajaxReply;
+  }
 
   @override
   Widget? get view => null;

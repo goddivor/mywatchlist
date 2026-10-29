@@ -57,6 +57,33 @@ class MalWebFormResult {
   const MalWebFormResult({required this.url, required this.html});
 }
 
+/// A JSON POST that MAL's own page sends with its own jQuery: `$.ajax` with
+/// `contentType: "application/json"`, as MAL's scripts do (`NotificationContainerMixin`).
+/// MAL's `ajaxPrefilter` adds the page's `csrf_token` to the JSON body, the WebView adds the
+/// session cookies, so the request is exactly the site's.
+@immutable
+class MalWebAjax {
+  /// The MAL page the request is sent from (`/notification`).
+  final Uri page;
+
+  /// The endpoint, relative to myanimelist.net (`/notification/api/check-items-as-read.json`).
+  final String path;
+
+  /// The JSON body, before MAL's prefilter adds the token.
+  final Map<String, Object?> body;
+
+  const MalWebAjax({required this.page, required this.path, required this.body});
+}
+
+/// What MAL answered to a [MalWebAjax]: the HTTP status (0 when the request never got an
+/// answer) and the raw body.
+@immutable
+class MalWebAjaxAnswer {
+  final int status;
+  final String body;
+  const MalWebAjaxAnswer({required this.status, required this.body});
+}
+
 /// What the page reports about the form before it is sent.
 enum MalWebFormState {
   /// No such form on the page.
@@ -101,6 +128,13 @@ abstract class MalWebPage {
   /// The whole document of the page now shown.
   Future<String> html();
 
+  /// Starts [call] with the page's own jQuery. False when the page's jQuery (and MAL's
+  /// token) is not there yet: nothing was sent, ask again later.
+  Future<bool> sendAjax(MalWebAjax call);
+
+  /// The answer of the request started by [sendAjax], or null while it runs.
+  Future<MalWebAjaxAnswer?> ajaxAnswer();
+
   /// The widget that shows the page, when it needs to be in the widget tree (null: none).
   Widget? get view;
 
@@ -136,22 +170,58 @@ class MalWebFormSubmitter {
 
   Future<void> _queue = Future.value();
 
-  /// Sends [form] and returns MAL's answer page. One form at a time.
+  /// Sends [form] and returns MAL's answer page. One page at a time (forms and AJAX calls).
   ///
   /// Throws [MalWebNoSession] without a session, [MalWebSessionExpired] when MAL sends the
   /// page to its login, [MalWebFormMissing] when the page has no such form,
   /// [MalWebActionFailed] when MAL's page alerts (reCAPTCHA blocked), [MalWebFormTimeout]
   /// after [timeout].
-  Future<MalWebFormResult> submit(MalWebForm form) {
-    final done = Completer<MalWebFormResult>();
+  Future<MalWebFormResult> submit(MalWebForm form) => _enqueue(() => _submit(form));
+
+  /// Sends [call] from MAL's own page [MalWebAjax.page] with the page's jQuery (MAL's
+  /// prefilter adds the token, the WebView the session cookies) and returns MAL's answer,
+  /// whatever its status: the caller judges it. One page at a time.
+  ///
+  /// Throws [MalWebNoSession] without a session, [MalWebSessionExpired] when MAL sends the
+  /// page to its login, [MalWebFormTimeout] when the page's jQuery never comes or MAL never
+  /// answers within [timeout].
+  Future<MalWebAjaxAnswer> postFromPage(MalWebAjax call) => _enqueue(() => _postFromPage(call));
+
+  Future<T> _enqueue<T>(Future<T> Function() task) {
+    final done = Completer<T>();
     _queue = _queue.then((_) async {
       try {
-        done.complete(await _submit(form));
+        done.complete(await task());
       } catch (e, st) {
         done.completeError(e, st);
       }
     });
     return done.future;
+  }
+
+  Future<MalWebAjaxAnswer> _postFromPage(MalWebAjax call) async {
+    await session.ensureLoaded();
+    final cookies = parseCookieHeader(session.cookieHeader);
+    if (!session.isConnected || cookies.isEmpty) throw const MalWebNoSession();
+    final deadline = DateTime.now().add(timeout);
+    final page = _pageFactory();
+    MalWebFormHost._show(page);
+    try {
+      await _within(deadline, page.setCookies(cookies));
+      await _within(deadline, page.load(call.page));
+      await _checkLogin(page, deadline);
+      while (!await _within(deadline, page.sendAjax(call))) {
+        await _pause(deadline);
+      }
+      while (true) {
+        final answer = await _within(deadline, page.ajaxAnswer());
+        if (answer != null) return answer;
+        await _pause(deadline);
+      }
+    } finally {
+      MalWebFormHost._hide(page);
+      unawaited(page.dispose().catchError((Object _) {}));
+    }
   }
 
   Future<MalWebFormResult> _submit(MalWebForm form) async {
@@ -296,6 +366,28 @@ String submitScript(MalWebForm form) => '(function(){${_findFormJs(form)}'
     'window.$submittedMarker=true;'
     'setTimeout(function(){if(b){b.click();}else if(f.requestSubmit){f.requestSubmit();}else{f.submit();}},0);'
     'return JSON.stringify({clicked:true});})()';
+
+/// Global the AJAX answer is kept in until [ajaxAnswerScript] reads it.
+const String ajaxAnswerMarker = '__mwlAjax';
+
+/// Starts [call] with MAL's jQuery (`window.$`, which carries MAL's csrf prefilter), the
+/// same options as MAL's own calls; `dataType: "text"` keeps the raw body for the app to
+/// judge. `{"started":false}` while jQuery or the page token is missing.
+@visibleForTesting
+String sendAjaxScript(MalWebAjax call) => '(function(){var j=window.\$||window.jQuery;'
+    'if(!j||!j.ajax||!document.querySelector(\'meta[name="csrf_token"]\'))return JSON.stringify({started:false});'
+    'window.$ajaxAnswerMarker=null;'
+    'function keep(x){window.$ajaxAnswerMarker={status:(x&&x.status)||0,'
+    'body:(x&&x.responseText!=null)?String(x.responseText):""};}'
+    'j.ajax({url:${jsonEncode(call.path)},data:JSON.stringify(${jsonEncode(call.body)}),'
+    'contentType:"application/json",type:"POST",dataType:"text"})'
+    '.done(function(d,s,x){keep(x);}).fail(function(x){keep(x);});'
+    'return JSON.stringify({started:true});})()';
+
+/// The answer kept by [sendAjaxScript] as JSON, or `""` while the request runs.
+@visibleForTesting
+const String ajaxAnswerScript =
+    'window.$ajaxAnswerMarker==null?"":JSON.stringify(window.$ajaxAnswerMarker)';
 
 /// `runJavaScriptReturningResult` gives a string back JSON-quoted on some platforms.
 @visibleForTesting
@@ -445,6 +537,24 @@ class WebViewMalWebPage implements MalWebPage {
   Future<String> html() async {
     final result = await _run('document.documentElement.outerHTML');
     return result is String ? result : '$result';
+  }
+
+  @override
+  Future<bool> sendAjax(MalWebAjax call) async {
+    final result = await _run(sendAjaxScript(call));
+    return result is Map && result['started'] == true;
+  }
+
+  @override
+  Future<MalWebAjaxAnswer?> ajaxAnswer() async {
+    final result = await _run(ajaxAnswerScript);
+    if (result is! Map) return null;
+    final status = result['status'];
+    final body = result['body'];
+    return MalWebAjaxAnswer(
+      status: status is num ? status.toInt() : 0,
+      body: body is String ? body : '${body ?? ''}',
+    );
   }
 
   @override
