@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:mywatchlist/constants/constants.dart' show AccountType, showToast;
 import 'package:mywatchlist/generated/l10n.dart';
+import 'package:mywatchlist/screens/mal_web/messages_screen.dart' show openComposeMalMessage;
 import 'package:mywatchlist/screens/user_profile/user_profile_data.dart';
 import 'package:mywatchlist/screens/user_profile/user_profile_view.dart' show UserProfileTab;
 import 'package:mywatchlist/utils/app_routes.dart';
@@ -124,6 +125,19 @@ class _UserPopSheetState extends State<UserPopSheet> {
     );
   }
 
+  /// Writing to a MAL user needs another user than the signed-in one.
+  bool _canMessage(UserProfileData data) =>
+      !_isSelf &&
+      data.username.isNotEmpty &&
+      data.username.toLowerCase() != UserProfileRepository.ownUsername?.toLowerCase();
+
+  void _message(UserProfileData data) {
+    final navigator = Navigator.of(context);
+    final host = navigator.context;
+    navigator.pop();
+    openComposeMalMessage(host, to: data.username);
+  }
+
   @override
   Widget build(BuildContext context) {
     final data = _data;
@@ -217,6 +231,14 @@ class _UserPopSheetState extends State<UserPopSheet> {
                   icon: Icon(_isSelf ? Icons.person_outline : Icons.view_list_rounded),
                   label: Text(s.Prof_Open_Full),
                 ),
+                if (_canMessage(data)) ...[
+                  const SizedBox(height: 8),
+                  OutlinedButton.icon(
+                    onPressed: () => _message(data),
+                    icon: const Icon(Icons.mail_outline),
+                    label: Text(s.Pm_Message),
+                  ),
+                ],
                 const SizedBox(height: 8),
                 OutlinedButton.icon(
                   onPressed: () => openLink(context, data.profileUrl),
