@@ -163,7 +163,7 @@ class _AnilistSpoilerState extends State<AnilistSpoiler> {
                 Icon(Icons.visibility_off_outlined, size: 14, color: scheme.onErrorContainer),
                 const SizedBox(width: 4),
                 Text(
-                  S.of(context).Als_Spoiler,
+                  S.current.Als_Spoiler,
                   style: Theme.of(context)
                       .textTheme
                       .labelMedium
@@ -219,7 +219,7 @@ class _VideoTile extends StatelessWidget {
                         child: Icon(
                           Icons.play_arrow_rounded,
                           size: 36,
-                          semanticLabel: S.of(context).Als_Play_Video,
+                          semanticLabel: S.current.Als_Play_Video,
                           color: tokens.onImageScrim,
                         ),
                       ),
