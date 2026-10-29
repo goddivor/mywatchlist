@@ -1,17 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:mywatchlist/generated/l10n.dart';
+import 'package:mywatchlist/services/api/Kitsu/kitsu_catalog.dart' show KitsuRatingSystem;
 import 'package:mywatchlist/services/api/Kitsu/kitsu_graphql.dart';
 import 'package:mywatchlist/widgets/Kitsu/media/kitsu_media_format.dart';
 import 'package:mywatchlist/widgets/Kitsu/media/kitsu_media_parts.dart';
+import 'package:mywatchlist/widgets/Kitsu/media/kitsu_rating.dart';
 import 'package:mywatchlist/widgets/common/app_colors.dart';
 import 'package:mywatchlist/widgets/common/app_image.dart';
 
-/// The rating histogram: one bar per whole point (1 to 10), each the sum of the two Kitsu steps
-/// (out of 20) that make it, the tallest bar full height.
+/// The rating histogram in the rating system of the account: 4 bars (Simple faces), 10 (Regular
+/// half stars) or 19 (Advanced steps), the tallest bar full height.
 class KitsuRatingHistogram extends StatelessWidget {
   final KitsuRatingFrequencies ratings;
 
-  const KitsuRatingHistogram(this.ratings, {super.key});
+  /// The account's system, [KitsuRating.current] when null.
+  final KitsuRatingSystem? system;
+
+  const KitsuRatingHistogram(this.ratings, {super.key, this.system});
 
   static const double _barArea = 110;
 
@@ -20,11 +25,26 @@ class KitsuRatingHistogram extends StatelessWidget {
         for (var point = 1; point <= 10; point++) r[point * 2 - 1] + r[point * 2],
       ];
 
+  /// Votes per bar of [system], worst first.
+  static List<int> bars(KitsuRatingFrequencies r, KitsuRatingSystem system) => r.rebucket(switch (system) {
+        KitsuRatingSystem.simple => 4,
+        KitsuRatingSystem.regular => 10,
+        KitsuRatingSystem.advanced => 19,
+      });
+
+  /// The `ratingTwenty` bar [i] stands for in [system].
+  static int twentyOf(int i, KitsuRatingSystem system) => switch (system) {
+        KitsuRatingSystem.simple => KitsuRating.simpleSteps[i],
+        KitsuRatingSystem.regular => (i + 1) * 2,
+        KitsuRatingSystem.advanced => i + 2,
+      };
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-    final values = buckets(ratings);
+    final sys = system ?? KitsuRating.current;
+    final values = bars(ratings, sys);
     final peak = values.fold(0, (a, b) => a > b ? a : b);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: kitsuPagePadding + 10),
@@ -41,10 +61,11 @@ class KitsuRatingHistogram extends StatelessWidget {
                 for (var i = 0; i < values.length; i++)
                   Expanded(
                     child: Semantics(
-                      label: S.current.Kmp_Rating_Bar(KitsuMediaFormat.count(values[i]), i + 1),
+                      label: S.current.Kpl_Rating_Bar(
+                          KitsuMediaFormat.count(values[i]), KitsuRating.spoken(twentyOf(i, sys), sys)),
                       excludeSemantics: true,
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 2),
+                        padding: EdgeInsets.symmetric(horizontal: values.length > 10 ? 1 : 2),
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.end,
                           children: [
@@ -56,7 +77,7 @@ class KitsuRatingHistogram extends StatelessWidget {
                               ),
                             ),
                             const SizedBox(height: 4),
-                            Text('${i + 1}', style: theme.textTheme.labelSmall?.copyWith(color: scheme.onSurfaceVariant)),
+                            _label(theme, scheme, i, sys),
                           ],
                         ),
                       ),
@@ -68,6 +89,19 @@ class KitsuRatingHistogram extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  /// Under a bar: the face (Simple), the stars (Regular) or the whole points (Advanced).
+  Widget _label(ThemeData theme, ColorScheme scheme, int i, KitsuRatingSystem sys) {
+    final style = theme.textTheme.labelSmall?.copyWith(color: scheme.onSurfaceVariant);
+    final twenty = twentyOf(i, sys);
+    return switch (sys) {
+      KitsuRatingSystem.simple =>
+        Icon(KitsuRating.simpleIcon(KitsuRating.simpleIndex(twenty)), size: 18, color: scheme.onSurfaceVariant),
+      KitsuRatingSystem.regular => Text(KitsuRating.text(twenty, sys), style: style, maxLines: 1),
+      KitsuRatingSystem.advanced =>
+        Text(twenty.isEven ? '${twenty ~/ 2}' : '', style: style, maxLines: 1),
+    };
   }
 }
 

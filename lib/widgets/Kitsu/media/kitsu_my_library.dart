@@ -168,9 +168,11 @@ class KitsuMyLibrary {
 
   static const String _image = 'original { url width height }';
 
+  /// No `reaction` here: the schema lists `LibraryEntry.reaction` but Kitsu has no resolver for
+  /// it, so asking for it fails the whole query ("Failed to implement LibraryEntry.reaction")
+  /// and the Quick update came back empty. The reaction comes from the JSON:API library pages.
   static const String entryFields = '''
 id status progress rating reconsumeCount reconsuming private notes startedAt finishedAt
-reaction { reaction }
 nextUnit { id number titles { canonical } thumbnail { $_image } }''';
 
   static const String _quickMedia = '''

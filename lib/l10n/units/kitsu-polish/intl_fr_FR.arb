@@ -1,0 +1,10 @@
+{
+  "@@locale": "fr_FR",
+  "Kpl_Short_Watching": "En cours",
+  "Kpl_Short_Reading": "En cours",
+  "Kpl_Short_Planned": "Prévu",
+  "Kpl_Short_Completed": "Terminé",
+  "Kpl_Short_On_Hold": "En pause",
+  "Kpl_Short_Dropped": "Abandonné",
+  "Kpl_Rating_Bar": "{count} notes : {rating}"
+}

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:mywatchlist/constants/constants.dart' show AccountType;
 import 'package:mywatchlist/services/api/Kitsu/kitsu_graphql.dart' show KitsuMediaKind;
@@ -7,7 +6,6 @@ import 'package:mywatchlist/services/api/Kitsu/kitsu_http.dart';
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/services/api/Kitsu/kitsu_catalog.dart' show KitsuRatingSystem;
 import 'package:mywatchlist/services/api/Kitsu/kitsu_library.dart';
-import 'package:mywatchlist/services/api/Kitsu/kitsu_media.dart' show KitsuDocument, kitsuAttrs;
 import 'package:mywatchlist/user/preferences/preferences.dart';
 import 'package:mywatchlist/user/user_kitsu_v2.dart';
 import 'package:mywatchlist/utils/app_routes.dart';
@@ -59,13 +57,6 @@ class KitsuUserListAdapter extends UserListAdapter {
   /// the rating on 0-10 only.
   final Map<String, KitsuListExtras> _extras = {};
 
-  /// The library, reading pages through [KitsuExtrasHttp] so their answer also carries each
-  /// entry's reaction and exact rating. Writes and counts go through the injected one.
-  late final KitsuLibrary _reader = KitsuLibrary(
-    http: KitsuExtrasHttp(() => _library.http, _remember),
-    owner: _owner,
-  );
-
   /// Library-entry id of each loaded media (`anime:12`), filled by [fetch].
   final Map<String, String> _entryIds = {};
 
@@ -99,7 +90,7 @@ class KitsuUserListAdapter extends UserListAdapter {
     required int limit,
     String? apiSort,
   }) async {
-    final result = await _reader.page(
+    final result = await _library.page(
       isAnime: category == 'anime',
       status: status,
       offset: offset,
@@ -108,6 +99,9 @@ class KitsuUserListAdapter extends UserListAdapter {
     );
     for (final e in result.entryIds.entries) {
       _entryIds['$category:${e.key}'] = e.value;
+    }
+    for (final e in result.extras.entries) {
+      _extras['$category:${e.key}'] = e.value;
     }
     return result.page;
   }
@@ -252,8 +246,6 @@ class KitsuUserListAdapter extends UserListAdapter {
     );
   }
 
-  void _remember(Map<String, KitsuListExtras> found) => _extras.addAll(found);
-
   /// The extras of [entry], its 0-10 score doubled when the page did not carry them.
   KitsuListExtras _extrasOf(ListEntryView entry) =>
       _extras['${entry.category}:${entry.id}'] ??
@@ -262,6 +254,11 @@ class KitsuUserListAdapter extends UserListAdapter {
   /// The exact rating of [entry] as the list last saw it (`ratingTwenty`), null when unrated.
   @visibleForTesting
   int? ratingTwentyOf(ListEntryView entry) => _extrasOf(entry).twenty;
+
+  /// Kitsu's short words for the grid chip ("Watching", "Want to read"…), not MyAnimeList's codes.
+  @override
+  String statusShortLabel(ListEntryStatus status, {required bool isAnime}) =>
+      kitsuStatusShortLabel(status, isAnime: isAnime);
 
   /// Kitsu's words: "Currently watching", "Want to watch"…
   @override
@@ -393,77 +390,14 @@ class KitsuUserListAdapter extends UserListAdapter {
       AppRoutes.signInAgain(context, AccountType.kitsu);
 }
 
-/// What the shared card model does not keep of a Kitsu library entry.
-@immutable
-class KitsuListExtras {
-  /// `ratingTwenty`, 2 to 20; null when not rated.
-  final int? twenty;
-
-  /// The user's reaction to the title, null when none.
-  final String? reaction;
-
-  const KitsuListExtras({this.twenty, this.reaction});
-}
-
-/// A [KitsuHttp] that asks the library pages (`/library-entries` including the media) for the
-/// entries' reactions too, and hands each page's ratings and reactions to [onPage]. Every other
-/// request goes to [inner] unchanged.
-@visibleForTesting
-class KitsuExtrasHttp extends KitsuHttp {
-  KitsuExtrasHttp(this.inner, this.onPage) : super(auth: _unused);
-
-  final KitsuHttp Function() inner;
-  final void Function(Map<String, KitsuListExtras> found) onPage;
-
-  static Future<http.Response?> _unused(
-    Future<http.Response> Function(http.Client client, String token) send, {
-    bool? idempotent,
-  }) async =>
-      null;
-
-  @override
-  Future<Map<String, dynamic>> getJson(
-    String path, {
-    Map<String, String>? query,
-    bool auth = false,
-  }) async {
-    final include = query?['include'];
-    final kind = include?.split(',').first;
-    final isPage = path == '/library-entries' && (kind == 'anime' || kind == 'manga');
-    if (!isPage) return inner().getJson(path, query: query, auth: auth);
-    final json = await inner().getJson(
-      path,
-      query: {
-        ...query!,
-        'include': '$include,mediaReaction',
-        'fields[mediaReactions]': 'reaction',
-      },
-      auth: auth,
-    );
-    onPage(parse(json, kind!));
-    return json;
-  }
-
-  @override
-  Future<Map<String, dynamic>> patchJson(String path, Map<String, dynamic> body) =>
-      inner().patchJson(path, body);
-
-  /// Rating and reaction of each entry of a library answer, by `kind:mediaId`.
-  static Map<String, KitsuListExtras> parse(Map<String, dynamic> json, String kind) {
-    final doc = KitsuDocument.from(json);
-    final out = <String, KitsuListExtras>{};
-    for (final r in doc.data) {
-      final ref = ((r['relationships'] as Map?)?[kind] as Map?)?['data'];
-      final mediaId = ref is Map ? ref['id'] : null;
-      if (mediaId == null) continue;
-      final rating = kitsuAttrs(r)['ratingTwenty'];
-      final reactionRes = doc.related(r, 'mediaReaction');
-      final text = reactionRes == null ? null : kitsuAttrs(reactionRes)['reaction'];
-      out['$kind:$mediaId'] = KitsuListExtras(
-        twenty: rating is num && rating > 0 ? rating.toInt() : null,
-        reaction: text is String && text.trim().isNotEmpty ? text.trim() : null,
-      );
-    }
-    return out;
-  }
+/// A list status in the few letters of the grid card's chip, in Kitsu's own words.
+String kitsuStatusShortLabel(ListEntryStatus status, {required bool isAnime}) {
+  final s = S.current;
+  return switch (status) {
+    ListEntryStatus.current => isAnime ? s.Kpl_Short_Watching : s.Kpl_Short_Reading,
+    ListEntryStatus.planned => s.Kpl_Short_Planned,
+    ListEntryStatus.completed => s.Kpl_Short_Completed,
+    ListEntryStatus.onHold => s.Kpl_Short_On_Hold,
+    ListEntryStatus.dropped => s.Kpl_Short_Dropped,
+  };
 }
