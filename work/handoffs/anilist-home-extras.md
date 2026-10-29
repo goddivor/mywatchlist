@@ -9,6 +9,9 @@
 - `anilist-notifications` (anilist-notifications)
 
 ## Owns (may create or edit ONLY these)
+- `lib/services/notifications/notification_service.dart`
+- `lib/main.dart`
+- `lib/screens/settings/notifications_settings.dart`
 - `lib/pages/Anilist/anilist_home_page.dart`
 - `lib/pages/Anilist/anilist_explore_page.dart`
 - `lib/widgets/Anilist/anilist_home_sections.dart`
@@ -23,6 +26,7 @@
 Plus `PROJECT-STATE.md` (rewrite in place, within its cap) and `docs/DECISIONS.md` (append one line per decision). Anything else you need is a FINDING to report, never an edit.
 
 ## Goal
+- From anilist-notifications (#248): put AnilistNotificationBell (lib/widgets/Anilist/notifications/anilist_notification_bell.dart) in the AniList home app bar; background AniList notifications (G4) through notification_service.dart and the existing worker, behind a settings switch.
 - From anilist-search-filters (#297): anilist_explore_page.dart uses the live AniList genre list (AnilistCatalog) and gets a Tags entry (openAnilistTag).
 - From anilist-social (#291): the forum row's 'view all' in anilist_home_sections.dart opens the forum in a bare screen with no back button: give it an app bar.
 - Audit docs/anilist-report-2026-10-28.md, unit `anilist-home-extras`: D1-D6, D8, D10: home rows batched in one request, recommendations from my list, following activity row, daily trends with episode, birthdays, latest reviews / recommendations, top characters, full season view on Explore; bell with unread badge in the AniList home app bar Read the matching report items (queries/endpoints, samples, file:line) and implement them.

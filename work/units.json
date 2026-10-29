@@ -3175,6 +3175,9 @@
         "anilist-notifications"
       ],
       "owns": [
+        "lib/services/notifications/notification_service.dart",
+        "lib/main.dart",
+        "lib/screens/settings/notifications_settings.dart",
         "lib/pages/Anilist/anilist_home_page.dart",
         "lib/pages/Anilist/anilist_explore_page.dart",
         "lib/widgets/Anilist/anilist_home_sections.dart",
