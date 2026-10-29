@@ -3757,6 +3757,9 @@
         "kitsu-redesign"
       ],
       "owns": [
+        "lib/services/api/Kitsu/kitsu_profile.dart",
+        "lib/widgets/Kitsu/feed/**",
+        "lib/widgets/Kitsu/profile/**",
         "lib/widgets/Kitsu/kitsu_profile_view.dart",
         "lib/widgets/Kitsu/kitsu_media_tile.dart",
         "lib/services/api/Kitsu/kitsu_http.dart",

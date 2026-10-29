@@ -6,6 +6,9 @@
 - `kitsu-redesign` (Kitsu home, explore and library redesigned from the Kitsu UI reference)
 
 ## Owns (may create or edit ONLY these)
+- `lib/services/api/Kitsu/kitsu_profile.dart`
+- `lib/widgets/Kitsu/feed/**`
+- `lib/widgets/Kitsu/profile/**`
 - `lib/widgets/Kitsu/kitsu_profile_view.dart`
 - `lib/widgets/Kitsu/kitsu_media_tile.dart`
 - `lib/services/api/Kitsu/kitsu_http.dart`
@@ -20,6 +23,7 @@
 Plus `PROJECT-STATE.md` (rewrite in place, within its cap) and `docs/DECISIONS.md` (append one line per decision). Anything else you need is a FINDING to report, never an edit.
 
 ## Goal
+- Checker batch 4, issue goddivor/mywatchlist#314 (put 'Closes #314' in the PR; reproductions in docs/checks/check-batch4-2026-10-29.md): Kitsu JSON:API text is decoded as Latin-1 (kitsu_http.dart reads response.body; decode UTF-8 from bodyBytes); the time percentile 0.99 shows 'More than 1%' (kitsu_profile.dart:240, fraction read as 0-100); profile Activity titles must open the native page (check after kitsu-redesign #309); double space in feed relative times; empty band under the Groups search field.
 - From kitsu-redesign (#309): (1) profile follow button (KitsuHttp gains POST/DELETE for follows), groups tab and library count in kitsu_profile_view.dart, per the Kitsu 'Profile' reference; (2) KitsuMediaTile draws Kitsu's percentage, not a /10 star; (3) the sync dialog's editor (tracker_entry_editor.dart) shows and edits Kitsu ratings in the account's rating system; (4) drop the unused Kitsu_No_Mal_Match strings and update kitsu_browse_test.dart; (5) update KitsuGraphql's doc now that mutations go through execute(auth: true); (6) re-bucket the title page's rating histogram into the user's rating system if simple.
 - Owner rule: each tracker is its own app (docs/tracker-ui-references.md); shared pieces stay shared but every tracker-specific behaviour is a hook on its adapter. Fakes only in tests; writes only on the viewer's tap.
 
