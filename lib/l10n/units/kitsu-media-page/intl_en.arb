@@ -1,0 +1,248 @@
+{
+  "@@locale": "en",
+  "Kmp_Open_On_Kitsu": "Open on Kitsu",
+  "Kmp_Open_On_Mal": "Open on MyAnimeList",
+  "Kmp_Share": "Share",
+  "Kmp_Load_Error": "Couldn’t load this title from Kitsu",
+  "Kmp_Not_Found": "Kitsu doesn’t know this title",
+  "Kmp_List_Load_Error": "Couldn’t load this list",
+  "Kmp_Title_Copied": "Title copied",
+  "Kmp_Id_Copied": "ID copied",
+  "Kmp_Rank": "#{rank}",
+  "@Kmp_Rank": {
+    "placeholders": {
+      "rank": {
+        "type": "String"
+      }
+    }
+  },
+  "Kmp_Users": "{count, plural, =1{1 user} other{{formatted} users}}",
+  "@Kmp_Users": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "formatted": {
+        "type": "String"
+      }
+    }
+  },
+  "Kmp_Favorites": "{count, plural, =1{1 favorite} other{{formatted} favorites}}",
+  "@Kmp_Favorites": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "formatted": {
+        "type": "String"
+      }
+    }
+  },
+  "Kmp_Episodes_Short": "{count, plural, =1{1 ep} other{{count} eps}}",
+  "@Kmp_Episodes_Short": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "Kmp_Chapters_Short": "{count, plural, =1{1 ch.} other{{count} ch.}}",
+  "@Kmp_Chapters_Short": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "Kmp_Volumes_Short": "{count, plural, =1{1 vol.} other{{count} vols.}}",
+  "@Kmp_Volumes_Short": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "Kmp_Synopsis": "Synopsis",
+  "Kmp_Show_More": "Show more",
+  "Kmp_Show_Less": "Show less",
+  "Kmp_Ratings": "Ratings",
+  "Kmp_Ratings_Total": "{count, plural, =1{1 rating} other{{formatted} ratings}}",
+  "@Kmp_Ratings_Total": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "formatted": {
+        "type": "String"
+      }
+    }
+  },
+  "Kmp_Rating_Bar": "{count} ratings of {score} out of 10",
+  "@Kmp_Rating_Bar": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      },
+      "score": {
+        "type": "int"
+      }
+    }
+  },
+  "Kmp_Where_To_Watch": "Where to watch",
+  "Kmp_Subs": "Subs",
+  "Kmp_Dubs": "Dubs",
+  "Kmp_Episodes": "Episodes",
+  "Kmp_Chapters": "Chapters",
+  "Kmp_Volumes": "Volumes",
+  "Kmp_Episode_N": "Episode {number}",
+  "@Kmp_Episode_N": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "Kmp_Chapter_N": "Chapter {number}",
+  "@Kmp_Chapter_N": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "Kmp_Volume_N": "Volume {number}",
+  "@Kmp_Volume_N": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "Kmp_Minutes": "{count} min",
+  "@Kmp_Minutes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "Kmp_Duration_Hm": "{hours} h {minutes} min",
+  "@Kmp_Duration_Hm": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "Kmp_View_All": "View all",
+  "Kmp_Trailer": "Trailer",
+  "Kmp_Related": "Related",
+  "Kmp_Rel_Sequel": "Sequel",
+  "Kmp_Rel_Prequel": "Prequel",
+  "Kmp_Rel_Alt_Setting": "Alternative setting",
+  "Kmp_Rel_Alt_Version": "Alternative version",
+  "Kmp_Rel_Side_Story": "Side story",
+  "Kmp_Rel_Parent_Story": "Parent story",
+  "Kmp_Rel_Summary": "Summary",
+  "Kmp_Rel_Full_Story": "Full story",
+  "Kmp_Rel_Spin_Off": "Spin-off",
+  "Kmp_Rel_Adaptation": "Adaptation",
+  "Kmp_Rel_Character": "Character",
+  "Kmp_Rel_Other": "Other",
+  "Kmp_Reactions": "Reactions",
+  "Kmp_Reaction_Episode": "At episode {number}",
+  "@Kmp_Reaction_Episode": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "Kmp_Reaction_Chapter": "At chapter {number}",
+  "@Kmp_Reaction_Chapter": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "Kmp_Likes": "{count, plural, =1{1 like} other{{formatted} likes}}",
+  "@Kmp_Likes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "formatted": {
+        "type": "String"
+      }
+    }
+  },
+  "Kmp_Comments": "{count, plural, =1{1 comment} other{{formatted} comments}}",
+  "@Kmp_Comments": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "formatted": {
+        "type": "String"
+      }
+    }
+  },
+  "Kmp_Posts": "Posts",
+  "Kmp_Spoiler": "Spoiler",
+  "Kmp_Nsfw": "NSFW",
+  "Kmp_Characters": "Characters",
+  "Kmp_Staff": "Staff",
+  "Kmp_Voiced_By": "Voiced by {name}",
+  "@Kmp_Voiced_By": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "Kmp_Role_Main": "Main",
+  "Kmp_Role_Recurring": "Recurring",
+  "Kmp_Role_Background": "Background",
+  "Kmp_Role_Cameo": "Cameo",
+  "Kmp_Quotes": "Quotes",
+  "Kmp_Categories": "Categories",
+  "Kmp_Info": "Information",
+  "Kmp_Type": "Type",
+  "Kmp_Status": "Status",
+  "Kmp_Aired": "Aired",
+  "Kmp_Published": "Published",
+  "Kmp_Season": "Season",
+  "Kmp_Age_Rating": "Age rating",
+  "Kmp_Origin": "Origin",
+  "Kmp_Next_Release": "Next release",
+  "Kmp_Total_Length": "Total length",
+  "Kmp_Episode_Length": "Episode length",
+  "Kmp_Studios": "Studios",
+  "Kmp_Producers": "Producers",
+  "Kmp_Licensors": "Licensors",
+  "Kmp_Serialization": "Serialization",
+  "Kmp_Alt_Titles": "Other titles",
+  "Kmp_External_Ids": "Also on",
+  "Kmp_Status_Airing": "Airing",
+  "Kmp_Status_Publishing": "Publishing",
+  "Kmp_Status_Finished": "Finished",
+  "Kmp_Status_Upcoming": "Upcoming",
+  "Kmp_Status_Tba": "To be announced",
+  "Kmp_Season_Winter": "Winter",
+  "Kmp_Season_Spring": "Spring",
+  "Kmp_Season_Summer": "Summer",
+  "Kmp_Season_Fall": "Fall",
+  "Kmp_Type_Movie": "Movie",
+  "Kmp_Type_Special": "Special",
+  "Kmp_Type_Music": "Music",
+  "Kmp_Type_Manga": "Manga",
+  "Kmp_Type_Novel": "Novel",
+  "Kmp_Type_Oneshot": "One-shot",
+  "Kmp_Type_Doujin": "Doujinshi",
+  "Kmp_Type_Manhwa": "Manhwa",
+  "Kmp_Type_Manhua": "Manhua"
+}

@@ -6,7 +6,7 @@ import 'package:mywatchlist/widgets/common/app_colors.dart';
 import 'package:mywatchlist/widgets/common/app_image.dart';
 
 /// A poster tile of the Kitsu catalogue (browse grid, favorites): cover, mean score badge, the
-/// title on two lines and the type with the year. A tap opens the MyAnimeList detail screen.
+/// title on two lines and the type with the year. A tap opens the title's Kitsu page.
 class KitsuMediaTile extends StatelessWidget {
   final KitsuMedia media;
 
