@@ -1,0 +1,79 @@
+{
+ "data": {
+  "findPostById": {
+   "id": "9917665",
+   "content": "we chillin'",
+   "contentFormatted": "<p>we chillin’</p>\n",
+   "isSpoiler": false,
+   "isNsfw": false,
+   "createdAt": "2026-09-25T21:44:25Z",
+   "author": {
+    "id": "66861",
+    "name": "Supesharisuto",
+    "slug": "Supesharisuto",
+    "avatarImage": {
+     "original": {
+      "url": "https://media.kitsu.app/user/66861/avatar/72c1958ed0827d889f248dcd163ce849.jpeg",
+      "width": 447,
+      "height": 447
+     }
+    }
+   },
+   "media": {
+    "__typename": "Anime",
+    "id": "46474",
+    "slug": "sousou-no-frieren",
+    "titles": {
+     "canonical": "Sousou no Frieren"
+    },
+    "posterImage": {
+     "original": {
+      "url": "https://media.kitsu.app/anime/46474/poster_image/99d7df09d8cb9360b1e02825372ce612.jpg",
+      "width": 460,
+      "height": 649
+     }
+    }
+   },
+   "likes": {
+    "totalCount": 5
+   },
+   "comments": {
+    "totalCount": 1
+   },
+   "thread": {
+    "totalCount": 1,
+    "pageInfo": {
+     "hasNextPage": false,
+     "endCursor": "MQ"
+    },
+    "nodes": [
+     {
+      "id": "32226924",
+      "content": "literally, it seems",
+      "contentFormatted": "<p>literally, it seems</p>\n",
+      "createdAt": "2026-09-26T15:17:26Z",
+      "author": {
+       "id": "325731",
+       "name": "shazbotian",
+       "slug": "shazbotian",
+       "avatarImage": {
+        "original": {
+         "url": "https://media.kitsu.app/users/avatars/325731/original.jpeg",
+         "width": 1378,
+         "height": 1439
+        }
+       }
+      },
+      "likes": {
+       "totalCount": 1
+      },
+      "replies": {
+       "totalCount": 0,
+       "nodes": []
+      }
+     }
+    ]
+   }
+  }
+ }
+}

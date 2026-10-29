@@ -1,0 +1,58 @@
+{
+  "@@locale": "en",
+  "Kc_Tab_Latest": "Latest",
+  "Kc_Tab_News": "News",
+  "Kc_Tab_Groups": "Groups",
+  "Kc_Empty": "Nothing here yet",
+  "Kc_Error_Title": "Could not load Kitsu",
+  "Kc_Retry": "Retry",
+  "Kc_Post_Title": "Post",
+  "Kc_Group_Title": "Group",
+  "Kc_Spoiler_Hidden": "Spoiler, tap to show",
+  "Kc_Nsfw_Hidden": "NSFW, tap to show",
+  "Kc_Nsfw_Badge": "NSFW",
+  "Kc_Comment_Count": "{count, plural, =0{No comments} =1{1 comment} other{{count} comments}}",
+  "@Kc_Comment_Count": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "Kc_Like_Count": "{count, plural, =1{1 like} other{{count} likes}}",
+  "@Kc_Like_Count": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "Kc_Member_Count": "{count, plural, =1{1 member} other{{count} members}}",
+  "@Kc_Member_Count": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "Kc_More_Replies": "{count, plural, =1{1 more reply} other{{count} more replies}}",
+  "@Kc_More_Replies": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "Kc_Post_Deleted": "This post is no longer available",
+  "Kc_Group_Search": "Search groups",
+  "Kc_Group_Posts_Empty": "No posts in this group yet",
+  "Kc_Discussion_Empty": "No one has posted about this title yet",
+  "Kc_On_Title": "on {title}",
+  "@Kc_On_Title": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  }
+}

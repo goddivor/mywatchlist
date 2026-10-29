@@ -1,0 +1,758 @@
+{
+ "data": [
+  {
+   "id": "f9b6816e-d2fc-11f1-8080-80003d913a76",
+   "type": "activityGroups",
+   "attributes": {
+    "createdAt": "2026-10-28T18:25:38.827505",
+    "updatedAt": "2026-10-28T18:25:38.827505",
+    "group": "MediaReaction:365465",
+    "isSeen": null,
+    "isRead": null
+   },
+   "relationships": {
+    "activities": {
+     "data": [
+      {
+       "type": "activities",
+       "id": "f9383d00-d2fc-11f1-8080-80003d913a76"
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "74aaa41e-d2fa-11f1-8080-800142c503f8",
+   "type": "activityGroups",
+   "attributes": {
+    "createdAt": "2026-10-28T18:07:36.619318",
+    "updatedAt": "2026-10-28T18:07:36.619318",
+    "group": "9920750",
+    "isSeen": null,
+    "isRead": null
+   },
+   "relationships": {
+    "activities": {
+     "data": [
+      {
+       "type": "activities",
+       "id": "744c2400-d2fa-11f1-8080-800143c07315"
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "36bc8f5c-d2fa-11f1-8080-8000663abade",
+   "type": "activityGroups",
+   "attributes": {
+    "createdAt": "2026-10-28T18:05:52.718012",
+    "updatedAt": "2026-10-28T18:05:52.718012",
+    "group": "MediaReaction:365464",
+    "isSeen": null,
+    "isRead": null
+   },
+   "relationships": {
+    "activities": {
+     "data": [
+      {
+       "type": "activities",
+       "id": "364f0000-d2fa-11f1-8080-8000663abade"
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "e2ffb293-d2f9-11f1-8080-800041953f8d",
+   "type": "activityGroups",
+   "attributes": {
+    "createdAt": "2026-10-28T18:03:32.229390",
+    "updatedAt": "2026-10-28T18:03:32.229390",
+    "group": "9920749",
+    "isSeen": null,
+    "isRead": null
+   },
+   "relationships": {
+    "activities": {
+     "data": [
+      {
+       "type": "activities",
+       "id": "e2441b80-d2f9-11f1-8080-80012ddff2eb"
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "79550890-d2f9-11f1-8080-800027748ec1",
+   "type": "activityGroups",
+   "attributes": {
+    "createdAt": "2026-10-28T18:00:34.950158",
+    "updatedAt": "2026-10-28T18:00:34.950158",
+    "group": "9920748",
+    "isSeen": null,
+    "isRead": null
+   },
+   "relationships": {
+    "activities": {
+     "data": [
+      {
+       "type": "activities",
+       "id": "78c40d00-d2f9-11f1-8080-80006bb607c6"
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "158f3845-d2f9-11f1-8080-80011d9d2e95",
+   "type": "activityGroups",
+   "attributes": {
+    "createdAt": "2026-10-27T19:22:33.072087",
+    "updatedAt": "2026-10-28T17:57:47.559328",
+    "group": "9920685",
+    "isSeen": null,
+    "isRead": null
+   },
+   "relationships": {
+    "activities": {
+     "data": [
+      {
+       "type": "activities",
+       "id": "1539df80-d2f9-11f1-8080-80012e5adf31"
+      }
+     ]
+    }
+   }
+  }
+ ],
+ "included": [
+  {
+   "id": "f9383d00-d2fc-11f1-8080-80003d913a76",
+   "type": "activities",
+   "attributes": {
+    "createdAt": null,
+    "updatedAt": "2026-10-28T18:25:38.529Z",
+    "status": null,
+    "verb": "media_reaction",
+    "time": "2026-10-28T18:25:38.000+00:00",
+    "streamId": null,
+    "foreignId": "MediaReaction:365465",
+    "rating": null,
+    "progress": 9,
+    "replyToType": null,
+    "replyToUser": null,
+    "nineteenScale": null,
+    "mentionedUsers": null,
+    "reason": null
+   },
+   "relationships": {
+    "subject": {
+     "data": {
+      "type": "mediaReactions",
+      "id": "365465"
+     }
+    }
+   }
+  },
+  {
+   "id": "744c2400-d2fa-11f1-8080-800143c07315",
+   "type": "activities",
+   "attributes": {
+    "createdAt": null,
+    "updatedAt": "2026-10-28T18:09:28.124Z",
+    "status": null,
+    "verb": "post",
+    "time": "2026-10-28T18:07:36.000+00:00",
+    "streamId": null,
+    "foreignId": "Post:9920750",
+    "rating": null,
+    "progress": null,
+    "replyToType": null,
+    "replyToUser": null,
+    "nineteenScale": null,
+    "mentionedUsers": [],
+    "reason": null
+   },
+   "relationships": {
+    "subject": {
+     "data": {
+      "type": "posts",
+      "id": "9920750"
+     }
+    }
+   }
+  },
+  {
+   "id": "364f0000-d2fa-11f1-8080-8000663abade",
+   "type": "activities",
+   "attributes": {
+    "createdAt": null,
+    "updatedAt": "2026-10-28T18:05:52.414Z",
+    "status": null,
+    "verb": "media_reaction",
+    "time": "2026-10-28T18:05:52.000+00:00",
+    "streamId": null,
+    "foreignId": "MediaReaction:365464",
+    "rating": null,
+    "progress": 0,
+    "replyToType": null,
+    "replyToUser": null,
+    "nineteenScale": null,
+    "mentionedUsers": null,
+    "reason": null
+   },
+   "relationships": {
+    "subject": {
+     "data": {
+      "type": "mediaReactions",
+      "id": "365464"
+     }
+    }
+   }
+  },
+  {
+   "id": "e2441b80-d2f9-11f1-8080-80012ddff2eb",
+   "type": "activities",
+   "attributes": {
+    "createdAt": null,
+    "updatedAt": "2026-10-28T18:03:52.351Z",
+    "status": null,
+    "verb": "post",
+    "time": "2026-10-28T18:03:31.000+00:00",
+    "streamId": null,
+    "foreignId": "Post:9920749",
+    "rating": null,
+    "progress": null,
+    "replyToType": null,
+    "replyToUser": null,
+    "nineteenScale": null,
+    "mentionedUsers": [],
+    "reason": null
+   },
+   "relationships": {
+    "subject": {
+     "data": {
+      "type": "posts",
+      "id": "9920749"
+     }
+    }
+   }
+  },
+  {
+   "id": "78c40d00-d2f9-11f1-8080-80006bb607c6",
+   "type": "activities",
+   "attributes": {
+    "createdAt": null,
+    "updatedAt": "2026-10-28T18:00:34.489Z",
+    "status": null,
+    "verb": "post",
+    "time": "2026-10-28T18:00:34.000+00:00",
+    "streamId": null,
+    "foreignId": "Post:9920748",
+    "rating": null,
+    "progress": null,
+    "replyToType": null,
+    "replyToUser": null,
+    "nineteenScale": null,
+    "mentionedUsers": [],
+    "reason": null
+   },
+   "relationships": {
+    "subject": {
+     "data": {
+      "type": "posts",
+      "id": "9920748"
+     }
+    }
+   }
+  },
+  {
+   "id": "1539df80-d2f9-11f1-8080-80012e5adf31",
+   "type": "activities",
+   "attributes": {
+    "createdAt": null,
+    "updatedAt": null,
+    "status": null,
+    "verb": "comment",
+    "time": "2026-10-28T17:57:47.000+00:00",
+    "streamId": null,
+    "foreignId": "Comment:32229833",
+    "rating": null,
+    "progress": null,
+    "replyToType": "post",
+    "replyToUser": "User:15820",
+    "nineteenScale": null,
+    "mentionedUsers": [],
+    "reason": null
+   },
+   "relationships": {
+    "subject": {
+     "data": {
+      "type": "comments",
+      "id": "32229833"
+     }
+    }
+   }
+  },
+  {
+   "id": "365465",
+   "type": "mediaReactions",
+   "links": {
+    "self": "/media-reactions/365465"
+   },
+   "attributes": {
+    "createdAt": "2026-10-28T18:25:38.529Z",
+    "updatedAt": "2026-10-28T18:26:03.212Z",
+    "reaction": "Slice of Life, some aura farming, bear outfit attracts all the kids -_-. Not a fan of the EN dub voice.",
+    "upVotesCount": 0,
+    "heldReason": null
+   },
+   "relationships": {
+    "user": {
+     "data": {
+      "type": "users",
+      "id": "1691013"
+     }
+    }
+   }
+  },
+  {
+   "id": "365464",
+   "type": "mediaReactions",
+   "links": {
+    "self": "/media-reactions/365464"
+   },
+   "attributes": {
+    "createdAt": "2026-10-28T18:05:52.414Z",
+    "updatedAt": "2026-10-28T18:05:57.696Z",
+    "reaction": "A fitting finale to a masterpiece",
+    "upVotesCount": 0,
+    "heldReason": null
+   },
+   "relationships": {
+    "user": {
+     "data": {
+      "type": "users",
+      "id": "797347"
+     }
+    }
+   }
+  },
+  {
+   "id": "1691013",
+   "type": "users",
+   "links": {
+    "self": "/users/1691013"
+   },
+   "attributes": {
+    "createdAt": "2026-03-13T15:07:01.924Z",
+    "updatedAt": "2026-10-22T01:39:27.793Z",
+    "name": "L3monDr0p",
+    "pastNames": [],
+    "slug": null,
+    "about": "Just a girl who watches anime.",
+    "location": "United States of America",
+    "waifuOrHusbando": null,
+    "followersCount": 2,
+    "followingCount": 1,
+    "lifeSpentOnAnime": 0,
+    "birthday": "1990-03-11",
+    "gender": "female",
+    "commentsCount": 3,
+    "favoritesCount": 1,
+    "likesGivenCount": 2,
+    "reviewsCount": 0,
+    "likesReceivedCount": 18,
+    "postsCount": 20,
+    "ratingsCount": 65,
+    "mediaReactionsCount": 44,
+    "proExpiresAt": null,
+    "title": null,
+    "profileCompleted": true,
+    "feedCompleted": false,
+    "website": null,
+    "proTier": null,
+    "avatar": {
+     "tiny": "https://media.kitsu.app/user/1691013/avatar/tiny-4c4a3d578558bce6d229b1ec6e1b0e42.jpeg",
+     "large": "https://media.kitsu.app/user/1691013/avatar/large-5d3ac58bb35ff13a9f3b61b71f8bbe70.jpeg",
+     "small": "https://media.kitsu.app/user/1691013/avatar/small-99d5a92c1cfe80b7faecfede3d3831da.jpeg",
+     "medium": "https://media.kitsu.app/user/1691013/avatar/medium-9826ca6c0e86c836e4907d14e2e0b7b4.jpeg",
+     "original": "https://media.kitsu.app/user/1691013/avatar/a0838900d4a5dbdedc95454ed09e36b3.png",
+     "meta": {
+      "dimensions": {
+       "tiny": {
+        "width": 40,
+        "height": 40
+       },
+       "large": {
+        "width": 200,
+        "height": 200
+       },
+       "small": {
+        "width": 64,
+        "height": 64
+       },
+       "medium": {
+        "width": 100,
+        "height": 100
+       }
+      }
+     }
+    },
+    "coverImage": {
+     "tiny": "https://media.kitsu.app/user/1691013/cover_image/tiny-3901d881c1445cc820a94a616cde7c88.jpeg",
+     "large": "https://media.kitsu.app/user/1691013/cover_image/large-359640ab96095a7741daaa428a207195.jpeg",
+     "small": "https://media.kitsu.app/user/1691013/cover_image/small-d31607d1443d6518246f1c9bfb516b7d.jpeg",
+     "original": "https://media.kitsu.app/user/1691013/cover_image/3b5a59a0295d9cb5b144cbae660f6d00.png",
+     "meta": {
+      "dimensions": {
+       "tiny": {
+        "width": 840,
+        "height": 200
+       },
+       "large": {
+        "width": 3360,
+        "height": 800
+       },
+       "small": {
+        "width": 1680,
+        "height": 400
+       }
+      }
+     }
+    },
+    "status": "registered",
+    "subscribedToNewsletter": true,
+    "permissions": [],
+    "sfwFilterPreference": "nsfw_everywhere"
+   }
+  },
+  {
+   "id": "91131",
+   "type": "users",
+   "links": {
+    "self": "/users/91131"
+   },
+   "attributes": {
+    "createdAt": "2015-05-24T01:32:25.622Z",
+    "updatedAt": "2026-10-28T18:55:29.043Z",
+    "name": "Marx",
+    "pastNames": [
+     "Mari Marx",
+     "Marx"
+    ],
+    "slug": "Marx",
+    "about": "Anime fan for over 21 years. 🎌\n\nYuri, mystery, and supernatural stories are among my absolute favorites. I love intriguing plots, and stories that keep me guessing. I also have a soft spot for CGDCT.\n\nBeyond anime, I'm into horror series, gaming and Japanese idols. \n\nNever too old to find another anime worth falling in love with. \n",
+    "location": "Brazil",
+    "waifuOrHusbando": "Waifu",
+    "followersCount": 405,
+    "followingCount": 138,
+    "lifeSpentOnAnime": 243377,
+    "birthday": "1995-02-07",
+    "gender": "female",
+    "commentsCount": 118,
+    "favoritesCount": 61,
+    "likesGivenCount": 1174,
+    "reviewsCount": 13,
+    "likesReceivedCount": 645,
+    "postsCount": 1142,
+    "ratingsCount": 1631,
+    "mediaReactionsCount": 50,
+    "proExpiresAt": null,
+    "title": null,
+    "profileCompleted": true,
+    "feedCompleted": true,
+    "website": null,
+    "proTier": null,
+    "avatar": {
+     "tiny": "https://media.kitsu.app/user/91131/avatar/tiny-74348504e44493cc0ba5208820818d26.jpeg",
+     "large": "https://media.kitsu.app/user/91131/avatar/large-0a08048401a1052306aa19dbcb65c768.jpeg",
+     "small": "https://media.kitsu.app/user/91131/avatar/small-3e01568671c1be2a39950ab01cc057f8.jpeg",
+     "medium": "https://media.kitsu.app/user/91131/avatar/medium-cfff93a94c3ef9dfb8765240b50ff770.jpeg",
+     "original": "https://media.kitsu.app/user/91131/avatar/4269cdb8dc5ae0694a72b47f0d1b2b0b.jpeg",
+     "meta": {
+      "dimensions": {
+       "tiny": {
+        "width": 40,
+        "height": 40
+       },
+       "large": {
+        "width": 200,
+        "height": 200
+       },
+       "small": {
+        "width": 64,
+        "height": 64
+       },
+       "medium": {
+        "width": 100,
+        "height": 100
+       }
+      }
+     }
+    },
+    "coverImage": {
+     "tiny": "https://media.kitsu.app/user/91131/cover_image/tiny-a773b6244ee29ed44acf5544fc98442c.jpeg",
+     "large": "https://media.kitsu.app/user/91131/cover_image/large-65d774a01618f7cff65a9c8b0e63558d.jpeg",
+     "small": "https://media.kitsu.app/user/91131/cover_image/small-4f16c158eaa929bca5144a3254739ccf.jpeg",
+     "original": "https://media.kitsu.app/user/91131/cover_image/d0cc9839797bd0dda33ae3670326d91e.png",
+     "meta": {
+      "dimensions": {
+       "tiny": {
+        "width": 840,
+        "height": 200
+       },
+       "large": {
+        "width": 3360,
+        "height": 800
+       },
+       "small": {
+        "width": 1680,
+        "height": 400
+       }
+      }
+     }
+    },
+    "status": "registered",
+    "subscribedToNewsletter": true,
+    "permissions": [],
+    "sfwFilterPreference": "nsfw_sometimes"
+   }
+  },
+  {
+   "id": "797347",
+   "type": "users",
+   "links": {
+    "self": "/users/797347"
+   },
+   "attributes": {
+    "createdAt": "2020-07-23T11:07:29.892Z",
+    "updatedAt": "2024-08-23T15:12:27.481Z",
+    "name": "gang01",
+    "pastNames": [],
+    "slug": "gang01",
+    "about": "I'm just an artist, who draws and is inspired by everything, but especially japan forms of entertainment ",
+    "location": "Romania",
+    "waifuOrHusbando": "Waifu",
+    "followersCount": 6,
+    "followingCount": 13,
+    "lifeSpentOnAnime": 0,
+    "birthday": "2001-03-28",
+    "gender": "male",
+    "commentsCount": 1,
+    "favoritesCount": 33,
+    "likesGivenCount": 15,
+    "reviewsCount": 0,
+    "likesReceivedCount": 12,
+    "postsCount": 2,
+    "ratingsCount": 307,
+    "mediaReactionsCount": 305,
+    "proExpiresAt": null,
+    "title": null,
+    "profileCompleted": true,
+    "feedCompleted": true,
+    "website": null,
+    "proTier": null,
+    "avatar": {
+     "tiny": "https://media.kitsu.app/users/avatars/797347/tiny.png",
+     "large": "https://media.kitsu.app/users/avatars/797347/large.png",
+     "small": "https://media.kitsu.app/users/avatars/797347/small.png",
+     "medium": "https://media.kitsu.app/users/avatars/797347/medium.png",
+     "original": "https://media.kitsu.app/users/avatars/797347/original.png",
+     "meta": {
+      "dimensions": {
+       "tiny": {
+        "width": 40,
+        "height": 40
+       },
+       "large": {
+        "width": 200,
+        "height": 200
+       },
+       "small": {
+        "width": 64,
+        "height": 64
+       },
+       "medium": {
+        "width": 100,
+        "height": 100
+       }
+      }
+     }
+    },
+    "coverImage": {
+     "tiny": "https://media.kitsu.app/users/cover_images/797347/tiny.jpg",
+     "large": "https://media.kitsu.app/users/cover_images/797347/large.jpg",
+     "small": "https://media.kitsu.app/users/cover_images/797347/small.jpg",
+     "original": "https://media.kitsu.app/users/cover_images/797347/original.png",
+     "meta": {
+      "dimensions": {
+       "tiny": {
+        "width": 840,
+        "height": 200
+       },
+       "large": {
+        "width": 3360,
+        "height": 800
+       },
+       "small": {
+        "width": 1680,
+        "height": 400
+       }
+      }
+     }
+    },
+    "status": "registered",
+    "subscribedToNewsletter": true,
+    "permissions": [],
+    "sfwFilterPreference": "nsfw_sometimes"
+   }
+  },
+  {
+   "id": "9920750",
+   "type": "posts",
+   "links": {
+    "self": "/posts/9920750"
+   },
+   "attributes": {
+    "createdAt": "2026-10-28T18:07:36.089Z",
+    "updatedAt": "2026-10-28T18:35:40.929Z",
+    "content": "show her!!",
+    "contentFormatted": "<p>show her!!</p>\n",
+    "commentsCount": 0,
+    "postLikesCount": 1,
+    "spoiler": false,
+    "nsfw": false,
+    "blocked": false,
+    "deletedAt": null,
+    "topLevelCommentsCount": 0,
+    "editedAt": "2026-10-28T18:07:56.206Z",
+    "targetInterest": null,
+    "embed": null,
+    "embedUrl": null,
+    "heldReason": null,
+    "lockedAt": null,
+    "lockedReason": null
+   },
+   "relationships": {
+    "user": {
+     "data": {
+      "type": "users",
+      "id": "91131"
+     }
+    }
+   }
+  },
+  {
+   "id": "9920749",
+   "type": "posts",
+   "links": {
+    "self": "/posts/9920749"
+   },
+   "attributes": {
+    "createdAt": "2026-10-28T18:03:31.854Z",
+    "updatedAt": "2026-10-28T18:35:51.118Z",
+    "content": "Lynokis is one of the best characters of this anime so far 👏\n\nI wish I had her self-esteem to never give up 😅",
+    "contentFormatted": "<p>Lynokis is one of the best characters of this anime so far 👏</p>\n\n<p>I wish I had her self-esteem to never give up 😅</p>\n",
+    "commentsCount": 0,
+    "postLikesCount": 1,
+    "spoiler": false,
+    "nsfw": false,
+    "blocked": false,
+    "deletedAt": null,
+    "topLevelCommentsCount": 0,
+    "editedAt": null,
+    "targetInterest": null,
+    "embed": null,
+    "embedUrl": null,
+    "heldReason": null,
+    "lockedAt": null,
+    "lockedReason": null
+   },
+   "relationships": {
+    "user": {
+     "data": {
+      "type": "users",
+      "id": "91131"
+     }
+    }
+   }
+  },
+  {
+   "id": "9920748",
+   "type": "posts",
+   "links": {
+    "self": "/posts/9920748"
+   },
+   "attributes": {
+    "createdAt": "2026-10-28T18:00:34.489Z",
+    "updatedAt": "2026-10-28T18:35:54.655Z",
+    "content": "plotting",
+    "contentFormatted": "<p>plotting</p>\n",
+    "commentsCount": 0,
+    "postLikesCount": 1,
+    "spoiler": false,
+    "nsfw": false,
+    "blocked": false,
+    "deletedAt": null,
+    "topLevelCommentsCount": 0,
+    "editedAt": null,
+    "targetInterest": null,
+    "embed": null,
+    "embedUrl": null,
+    "heldReason": null,
+    "lockedAt": null,
+    "lockedReason": null
+   },
+   "relationships": {
+    "user": {
+     "data": {
+      "type": "users",
+      "id": "91131"
+     }
+    }
+   }
+  },
+  {
+   "id": "32229833",
+   "type": "comments",
+   "links": {
+    "self": "/comments/32229833"
+   },
+   "attributes": {
+    "createdAt": "2026-10-28T17:57:47.249Z",
+    "updatedAt": "2026-10-28T18:36:19.519Z",
+    "content": "reminds me of Tanya Degurechaff ",
+    "contentFormatted": "<p>reminds me of Tanya Degurechaff</p>\n",
+    "blocked": false,
+    "deletedAt": null,
+    "likesCount": 1,
+    "repliesCount": 0,
+    "editedAt": null,
+    "embed": null,
+    "embedUrl": null,
+    "heldReason": null
+   },
+   "relationships": {
+    "user": {
+     "data": {
+      "type": "users",
+      "id": "91131"
+     }
+    }
+   }
+  }
+ ],
+ "meta": {
+  "feed": {
+   "group": "global",
+   "id": "future"
+  },
+  "readonlyToken": "eyJhbGciOiJIUzI1NiJ9.eyJyZXNvdXJjZSI6IioiLCJhY3Rpb24iOiJyZWFkIiwiZmVlZF9pZCI6Imdsb2JhbGZ1dHVyZSJ9.j2N8x4MNIRVD_7hDpmlTSVE4PGANEoOzobIASuovVTU"
+ },
+ "links": {
+  "next": "https://kitsu.io/api/edge/feeds/global/global?include=subject%2Csubject.user&page%5Blimit%5D=6&page%5Bcursor%5D=158f3845-d2f9-11f1-8080-80011d9d2e95"
+ }
+}
