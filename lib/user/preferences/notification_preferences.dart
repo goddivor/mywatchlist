@@ -6,7 +6,8 @@ class NotificationPreferences extends Equatable {
   /// When the user turned airing notifications on; null = off.
   final DateTime? subscribedAt;
 
-  /// Notify the episodes airing today (DAL `onDailyAnimeReleases`).
+  /// Notify the episodes airing today (DAL `onDailyAnimeReleases`). Stored for parity but
+  /// read by nothing and without a settings tile, as in DailyAL.
   final bool dailyReleases;
 
   /// Notify new episodes of the anime in the watching list (DAL `onWatchingListUpdated`).

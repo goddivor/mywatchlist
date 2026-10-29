@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mywatchlist/constants/constants.dart';
 import 'package:mywatchlist/services/api/MAL/models/forum/forum_models.dart';
 import 'package:mywatchlist/generated/l10n.dart';
+import 'package:mywatchlist/user/preferences/preferences.dart';
 import 'package:mywatchlist/utils/web_launcher.dart';
 import 'package:mywatchlist/widgets/forum/bbcode_widget.dart';
 import 'package:mywatchlist/widgets/forum/forum_common.dart';
@@ -447,6 +448,9 @@ class _PostWidgetState extends State<PostWidget>
 
   Widget _buildQuoteWidgets() {
     if (quoteBodyList.isEmpty) return const SizedBox.shrink();
+    if (Preferences.general.showOnlyLastQuote) {
+      return _quoteWidget(quoteBodyList.last.trim(), quotedPostList.last);
+    }
     return Column(
       children: [
         for (var i = 0; i < quotedPostList.length; i++)

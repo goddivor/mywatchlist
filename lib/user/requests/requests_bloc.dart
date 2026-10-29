@@ -170,7 +170,7 @@ class RequestsBloc extends Bloc<RequestsEvent, RequestsState> {
     if (type == SectionType.seasonNow) {
       return MalApi.getAnimeSeasonal(
           MalApi.getSeasonType(), MalApi.getCurrentSeasonYear(),
-          sortType: SortType.AnimeScore, limit: limit);
+          sortType: SortType.AnimeNumListUsers, limit: limit);
     }
     if (type == SectionType.suggested) {
       return MalApi.getContentSuggestions(limit: limit);

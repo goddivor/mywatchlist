@@ -31,7 +31,7 @@
   "Hw_Empty_Features": "No features available",
   "Hw_Empty_List": "Nothing in this list yet",
   "Hw_Sign_In_List": "Sign in to MyAnimeList to see your list here",
-  "Hw_Sec_News": "Anime News",
+  "Hw_Sec_News": "News",
   "Hw_Sec_Season": "{season} {year} Anime",
   "@Hw_Sec_Season": {
     "placeholders": {

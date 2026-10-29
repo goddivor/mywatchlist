@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:mywatchlist/constants/constants.dart' show AccountType;
 import 'package:mywatchlist/generated/l10n.dart';
+import 'package:mywatchlist/screens/mal_web/compose_message_screen.dart';
 import 'package:mywatchlist/screens/user_profile/sections/profile_tab.dart';
 import 'package:mywatchlist/screens/user_profile/sections/profile_tabs_source.dart';
 import 'package:mywatchlist/services/api/MAL/scrapper/user_friends.dart';
@@ -131,16 +131,6 @@ class _FriendTile extends StatelessWidget {
     final s = S.of(context);
     final theme = Theme.of(context);
     final lastSeen = friend.lastSeenAt != null ? _ago(s, friend.lastSeenAt!) : friend.lastOnline;
-    // Two-line row like DailyAL's (name, then one meta line): the friendship date is a
-    // date only and shares the last-seen line instead of adding a third one.
-    final since = friend.friendsSinceAt != null
-        ? DateFormat.yMMMd(Localizations.localeOf(context).toString())
-            .format(friend.friendsSinceAt!)
-        : friend.friendsSince;
-    final lines = [
-      if (lastSeen != null) s.Prof_Last_Seen(lastSeen),
-      if (since != null) s.Prof_Friends_Since(since),
-    ];
     return ListTile(
       leading: ClipOval(
         child: AppImage(
@@ -158,9 +148,14 @@ class _FriendTile extends StatelessWidget {
         ),
       ),
       title: Text(friend.username, maxLines: 1, overflow: TextOverflow.ellipsis),
-      subtitle: lines.isEmpty
+      subtitle: lastSeen == null
           ? null
-          : Text(lines.join(' · '), maxLines: 1, overflow: TextOverflow.ellipsis),
+          : Text(s.Prof_Last_Seen(lastSeen), maxLines: 1, overflow: TextOverflow.ellipsis),
+      trailing: IconButton(
+        icon: const Icon(Icons.mail_outline),
+        tooltip: s.Pm_Message,
+        onPressed: () => openComposeMalMessage(context, to: friend.username),
+      ),
       onTap: () => AppRoutes.openUserProfile(
         context,
         tracker: AccountType.myanimelist,

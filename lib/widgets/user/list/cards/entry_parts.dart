@@ -6,6 +6,7 @@ import 'package:mywatchlist/user/preferences/preferences.dart';
 import 'package:mywatchlist/widgets/calendar/airing_schedule.dart';
 import 'package:mywatchlist/widgets/common/app_colors.dart';
 import 'package:mywatchlist/widgets/common/app_image.dart';
+import 'package:mywatchlist/widgets/common/dub_icon.dart';
 import 'package:mywatchlist/widgets/common/score_reveal.dart';
 import 'package:mywatchlist/widgets/user/list/list_entry_view.dart';
 import 'package:mywatchlist/widgets/user/list/list_query.dart';
@@ -86,6 +87,20 @@ class EntryCover extends StatelessWidget {
       placeholderColor: Theme.of(context).colorScheme.surfaceContainerHighest,
       semanticLabel: entry.title,
     );
+  }
+}
+
+/// The dub pill over an anime cover (the "Show dub icon" setting and MyDubList decide, in
+/// [DubStatusBadge]). Nothing for manga or an entry without a MyAnimeList id.
+class EntryDubBadge extends StatelessWidget {
+  final ListEntryView entry;
+  final double radius;
+  const EntryDubBadge({super.key, required this.entry, this.radius = 6});
+
+  @override
+  Widget build(BuildContext context) {
+    if (entry.category != 'anime' || entry.malId == null) return const SizedBox.shrink();
+    return DubStatusBadge(animeId: entry.malId, radius: radius);
   }
 }
 
