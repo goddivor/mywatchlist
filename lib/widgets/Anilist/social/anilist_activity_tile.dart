@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/pages/Anilist/anilist_activity_page.dart';
 import 'package:mywatchlist/services/api/Anilist/anilist_social_service.dart';
@@ -126,6 +127,12 @@ class AnilistActivityTile extends StatelessWidget {
           service: _service,
         );
         if (done == true) onDeleted?.call();
+      case _ActivityAction.copyLink:
+        await Clipboard.setData(ClipboardData(text: activity.url));
+        if (context.mounted) {
+          ScaffoldMessenger.maybeOf(context)
+              ?.showSnackBar(SnackBar(content: Text(s.Als_Link_Copied)));
+        }
       case _ActivityAction.browser:
         await openLink(context, activity.url, confirm: false);
     }
@@ -155,6 +162,7 @@ class AnilistActivityTile extends StatelessWidget {
         if (_mine && a.kind == AnilistActivityKind.text)
           PopupMenuItem(value: _ActivityAction.edit, child: Text(s.Edit)),
         if (_mine) PopupMenuItem(value: _ActivityAction.delete, child: Text(s.Delete)),
+        PopupMenuItem(value: _ActivityAction.copyLink, child: Text(s.Als_Copy_Link)),
         PopupMenuItem(value: _ActivityAction.browser, child: Text(s.Open_In_Browser)),
       ],
     );
@@ -235,7 +243,7 @@ class AnilistActivityTile extends StatelessWidget {
   }
 }
 
-enum _ActivityAction { subscribe, pin, edit, delete, browser }
+enum _ActivityAction { subscribe, pin, edit, delete, copyLink, browser }
 
 class _ListUpdate extends StatelessWidget {
   const _ListUpdate({required this.activity});

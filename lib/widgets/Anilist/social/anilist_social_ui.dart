@@ -159,7 +159,8 @@ class AnilistAuthorLine extends StatelessWidget {
   }
 }
 
-/// A heart with the like count: the heart likes or unlikes, the count opens who liked it.
+/// A heart with the like count: the heart likes or unlikes; the count, or a long press on
+/// the heart, opens who liked it.
 class AnilistLikeButton extends StatelessWidget {
   const AnilistLikeButton({
     super.key,
@@ -184,13 +185,16 @@ class AnilistLikeButton extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        IconButton(
+        GestureDetector(
+          onLongPress: count > 0 ? () => showAnilistLikes(context, type: type, id: id) : null,
+          child: IconButton(
           visualDensity: VisualDensity.compact,
           tooltip: isLiked ? s.Als_Unlike : s.Als_Like,
           isSelected: isLiked,
           onPressed: onToggle,
           icon: Icon(Icons.favorite_border, size: 20, color: color),
           selectedIcon: Icon(Icons.favorite, size: 20, color: color),
+          ),
         ),
         if (count > 0)
           InkWell(
@@ -337,7 +341,8 @@ class AnilistReplyBar extends StatelessWidget {
   }
 }
 
-/// A review score the AniList way: "77/100" on the score token's tonal pill.
+/// A review score the AniList way (anilist.co, AniHyou): "77%" on a tonal pill coloured by
+/// anilist.co's scale (under 50 red, 50-74 amber, 75 and up green).
 class AnilistScorePill extends StatelessWidget {
   const AnilistScorePill({super.key, required this.score, this.large = false});
 
@@ -347,20 +352,21 @@ class AnilistScorePill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final role = AppColors.of(context).score;
-    final style = (large
-            ? Theme.of(context).textTheme.titleMedium
-            : Theme.of(context).textTheme.labelMedium)
+    final tokens = AppColors.of(context);
+    final role = score >= 75
+        ? tokens.success
+        : score >= 50
+            ? tokens.warning
+            : tokens.danger;
+    final theme = Theme.of(context).textTheme;
+    final style = (large ? theme.titleMedium : theme.labelMedium)
         ?.copyWith(color: role.onContainer, fontWeight: FontWeight.w700);
     return DecoratedBox(
       decoration: BoxDecoration(color: role.container, borderRadius: BorderRadius.circular(8)),
       child: Padding(
         padding: EdgeInsets.symmetric(horizontal: large ? 10 : 6, vertical: large ? 4 : 2),
-        child: Text.rich(
-          TextSpan(children: [
-            TextSpan(text: '$score'),
-            TextSpan(text: '/100', style: style?.copyWith(fontWeight: FontWeight.w400, fontSize: (style.fontSize ?? 12) * 0.75)),
-          ]),
+        child: Text(
+          NumberFormat.percentPattern(Intl.getCurrentLocale()).format(score / 100),
           style: style,
         ),
       ),

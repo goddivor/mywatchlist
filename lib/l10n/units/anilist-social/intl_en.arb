@@ -211,5 +211,7 @@
   "Als_Vote_Down": "No",
   "Als_Write": "Write",
   "Als_Write_Reply": "Write a reply…",
-  "Als_Write_Review": "Write a review"
+  "Als_Write_Review": "Write a review",
+  "Als_Copy_Link": "Copy link",
+  "Als_Link_Copied": "Link copied"
 }
