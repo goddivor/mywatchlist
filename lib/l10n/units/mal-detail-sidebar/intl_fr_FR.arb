@@ -1,0 +1,14 @@
+{
+  "@@locale": "fr_FR",
+  "Dsb_Adult": "18+",
+  "Dsb_Adult_Semantics": "Titre pour adultes",
+  "Dsb_Next_Episode": "Prochain épisode",
+  "Dsb_Next_Episode_Number": "Ép. {number}",
+  "Dsb_Next_Episode_Title": "Ép. {number} · {title}",
+  "Dsb_Favorites_Semantics": "{count} favoris",
+  "Dsb_Added_To_Mal": "Ajouté sur MAL",
+  "Dsb_Last_Updated": "Dernière modification : {date}",
+  "Dsb_Producers": "Producteurs",
+  "Dsb_Licensors": "Distributeurs",
+  "Dsb_Demographic": "Public cible"
+}

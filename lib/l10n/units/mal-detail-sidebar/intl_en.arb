@@ -1,0 +1,45 @@
+{
+  "@@locale": "en",
+  "Dsb_Adult": "18+",
+  "Dsb_Adult_Semantics": "Adult title",
+  "Dsb_Next_Episode": "Next episode",
+  "Dsb_Next_Episode_Number": "Ep {number}",
+  "@Dsb_Next_Episode_Number": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "Dsb_Next_Episode_Title": "Ep {number} · {title}",
+  "@Dsb_Next_Episode_Title": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      },
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "Dsb_Favorites_Semantics": "{count} favorites",
+  "@Dsb_Favorites_Semantics": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "Dsb_Added_To_Mal": "Added to MAL",
+  "Dsb_Last_Updated": "Last updated: {date}",
+  "@Dsb_Last_Updated": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "Dsb_Producers": "Producers",
+  "Dsb_Licensors": "Licensors",
+  "Dsb_Demographic": "Demographic"
+}

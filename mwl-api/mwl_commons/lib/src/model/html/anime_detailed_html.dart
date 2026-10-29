@@ -19,6 +19,18 @@ class AnimeDetailHtml {
   final List<InterestStack>? interestStacks;
   final List<AdditionalTitle>? additionalTitles;
 
+  /// "Favorites" count of the page's Statistics block; null when absent.
+  final int? favorites;
+
+  /// Producers and licensors (anime only), linked to `/anime/producer/<id>`.
+  final List<Link>? producers;
+  final List<Link>? licensors;
+
+  /// Themes and demographics, which API v2 merges into `genres`
+  /// (`/anime|manga/genre/<id>`).
+  final List<Link>? themes;
+  final List<Link>? demographics;
+
   AnimeDetailHtml({
     this.title,
     this.mainPicture,
@@ -32,7 +44,17 @@ class AnimeDetailHtml {
     this.staff,
     this.interestStacks,
     this.additionalTitles,
+    this.favorites,
+    this.producers,
+    this.licensors,
+    this.themes,
+    this.demographics,
   });
+
+  static List<Link>? _links(dynamic json) => (json as List?)
+      ?.whereType<Map>()
+      .map((item) => Link.fromJson(Map<String, dynamic>.from(item)))
+      .toList();
 
   factory AnimeDetailHtml.fromJson(Map<String, dynamic> json) {
     return AnimeDetailHtml(
@@ -66,6 +88,11 @@ class AnimeDetailHtml {
       additionalTitles: (json['additionalTitles'] as List?)
           ?.map((item) => AdditionalTitle.fromJson(item))
           .toList(),
+      favorites: (json['favorites'] as num?)?.toInt(),
+      producers: _links(json['producers']),
+      licensors: _links(json['licensors']),
+      themes: _links(json['themes']),
+      demographics: _links(json['demographics']),
     );
   }
 
@@ -85,8 +112,30 @@ class AnimeDetailHtml {
       'staff': staff?.map((item) => item.toJson()).toList(),
       'interestStacks': interestStacks?.map((item) => item.toJson()).toList(),
       'additionalTitles': additionalTitles?.map((item) => item.toJson()).toList(),
+      'favorites': favorites,
+      'producers': producers?.map((item) => item.toJson()).toList(),
+      'licensors': licensors?.map((item) => item.toJson()).toList(),
+      'themes': themes?.map((item) => item.toJson()).toList(),
+      'demographics': demographics?.map((item) => item.toJson()).toList(),
     };
   }
+}
+
+/// Left-column facts of an anime/manga page (`HtmlParsers.parseDetailSidebar`).
+class DetailSidebar {
+  final int? favorites;
+  final List<Link> producers;
+  final List<Link> licensors;
+  final List<Link> themes;
+  final List<Link> demographics;
+
+  const DetailSidebar({
+    this.favorites,
+    this.producers = const [],
+    this.licensors = const [],
+    this.themes = const [],
+    this.demographics = const [],
+  });
 }
 
 class AdaptNode {
