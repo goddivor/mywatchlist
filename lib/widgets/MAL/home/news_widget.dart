@@ -120,7 +120,7 @@ class _NewsTile extends StatelessWidget {
               children: [
                 Text(
                   node['title'] ?? '',
-                  style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                  style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w400),
                   overflow: TextOverflow.ellipsis,
                   maxLines: 5,
                 ),
