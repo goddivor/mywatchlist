@@ -70,6 +70,8 @@ class _SeasonalScreenState extends State<SeasonalScreen> with SingleTickerProvid
     vsync: this,
   );
   ListViewSettings _settings = SeasonalData.defaults();
+  SeasonGroup _group = SeasonGroup.all;
+  Set<int> _continuing = const {};
   List<ListEntryView>? _entries;
   List<ListEntryView> _visible = const [];
   bool _failed = false;
@@ -134,10 +136,13 @@ class _SeasonalScreenState extends State<SeasonalScreen> with SingleTickerProvid
     }
     try {
       final load = widget.loader ?? SeasonalData.load;
+      final group = await SeasonalData.readGroup();
       final entries = await load(season, force: force);
       if (!mounted || generation != _generation) return;
       setState(() {
         _settings = saved;
+        _group = group;
+        _continuing = SeasonalData.continuingIds(season);
         _entries = entries;
         _recompute();
       });
@@ -153,7 +158,12 @@ class _SeasonalScreenState extends State<SeasonalScreen> with SingleTickerProvid
 
   void _recompute() {
     final entries = _entries ?? const [];
-    final filtered = filterEntries(entries, _settings.filter);
+    final grouped = switch (_group) {
+      SeasonGroup.all => entries,
+      SeasonGroup.fresh => [for (final e in entries) if (!_continuing.contains(e.id)) e],
+      SeasonGroup.continuing => [for (final e in entries) if (_continuing.contains(e.id)) e],
+    };
+    final filtered = filterEntries(grouped, _settings.filter);
     _visible = sortEntries(filtered, _settings.sortKey, _settings.direction);
   }
 
@@ -173,6 +183,44 @@ class _SeasonalScreenState extends State<SeasonalScreen> with SingleTickerProvid
     );
     if (result == null || !mounted || result == _settings) return;
     _applySettings(result);
+  }
+
+  void _setGroup(SeasonGroup value) {
+    if (value == _group) return;
+    setState(() {
+      _group = value;
+      _recompute();
+    });
+    SeasonalData.writeGroup(value);
+  }
+
+  Widget _groupChips() {
+    final total = _entries?.length ?? 0;
+    final extra = _continuing.length;
+    String label(SeasonGroup g) => switch (g) {
+          SeasonGroup.all => S.current.Seasonal_Group_All(total),
+          SeasonGroup.fresh => S.current.Seasonal_Group_New(total - extra),
+          SeasonGroup.continuing => S.current.Seasonal_Group_Continuing(extra),
+        };
+    return SliverToBoxAdapter(
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        child: Row(
+          children: [
+            for (final g in SeasonGroup.values)
+              Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: ChoiceChip(
+                  label: Text(label(g)),
+                  selected: _group == g,
+                  onSelected: (_) => _setGroup(g),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
   }
 
   void _applySettings(ListViewSettings value) {
@@ -346,7 +394,7 @@ class _SeasonalScreenState extends State<SeasonalScreen> with SingleTickerProvid
     final locale = Localizations.localeOf(context).toString();
     final visible = _visible;
     return [
-      const SliverToBoxAdapter(child: SizedBox(height: 4)),
+      if (_continuing.isNotEmpty) _groupChips() else const SliverToBoxAdapter(child: SizedBox(height: 4)),
       if (visible.isEmpty)
         SliverToBoxAdapter(
           child: Column(
