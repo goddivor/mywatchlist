@@ -1139,6 +1139,13 @@ const UNITS = [
     dod: ["Tests per item."],
   },
   {
+    id: "mal-friends-feed", title: "MAL home: a Friends activity section (friends' latest list updates)", kind: "unit", priority: "P1", group: "user", model: "sonnet", ui: true,
+    needs: ["mal-polish-2"],
+    owns: ["lib/user/MAL/mal_home_page_preferences.dart", "lib/screens/settings/mal_home_settings.dart", "lib/pages/MAL/mal_home_page.dart", "lib/widgets/MAL/home/friends_activity_row.dart", "lib/l10n/units/mal-friends-feed/**", "test/units/mal-friends-feed/**"],
+    goal: ["Owner request 2026-10-29: a 'Friends activity' section on the MAL home, like a friend feed: the latest list updates of the user's MAL friends (watching / completed / dropped…, episode, time), read from FriendsActivityApi (MAL RSS rss.php?type=rw/rm, already used by the notifications screen's Friends activity tab). A horizontal row of compact cards (friend avatar + title cover + status chip + 'Ep N' + relative time), tap opens the title, long press or the avatar opens the friend's profile; 'View all' opens the Friends activity tab of the notifications screen. Add it as a new home section kind SectionType.friendsActivity (append to the enum: it is the storage order), selectable and reorderable in the MAL home settings, on by default after the news row for signed-in MAL users with friends, hidden when empty or without a MAL session. Respect the existing 3 h friends refresh interval (cache) so the home does not hammer MAL.", "Check DailyAL (/home/thinkpad/.cache/mwl-mab/dailyal-108) for any friends-updates UI to follow; otherwise follow the existing MAL home row style. Never send anything to MAL; fakes only in tests."],
+    dod: ["Tests: the row shows friends' updates from a saved RSS answer, hides when empty or signed out, respects the cache interval, and the section can be added/moved in the home settings."],
+  },
+  {
     id: "explore-polish", title: "Explore: DailyAL images on category and genre cards, explicit genres, recommendations/stacks fallbacks, favourites badges", kind: "unit", priority: "P1", group: "discovery", model: "opus", ui: true,
     needs: ["search-sources", "explore-seasonal", "home-wiring", "profile-tabs"],
     owns: ["lib/services/api/MAL/scrapper/html_parsers.dart", "test/units/explore-crash/**", "lib/pages/MAL/mal_explore_page.dart", "lib/screens/explore/**", "assets/images/explore/**", "pubspec.yaml", "lib/cache/top_characters.dart"],

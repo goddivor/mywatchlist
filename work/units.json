@@ -57,7 +57,8 @@
         "mal-web-recaptcha",
         "kitsu-polish",
         "mal-polish",
-        "mal-polish-2"
+        "mal-polish-2",
+        "mal-friends-feed"
       ]
     },
     {
@@ -3942,6 +3943,34 @@
         "model: sonnet"
       ],
       "status": "✅ done"
+    },
+    {
+      "id": "mal-friends-feed",
+      "title": "MAL home: a Friends activity section (friends' latest list updates)",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "mal-polish-2"
+      ],
+      "owns": [
+        "lib/user/MAL/mal_home_page_preferences.dart",
+        "lib/screens/settings/mal_home_settings.dart",
+        "lib/pages/MAL/mal_home_page.dart",
+        "lib/widgets/MAL/home/friends_activity_row.dart",
+        "lib/l10n/units/mal-friends-feed/**",
+        "test/units/mal-friends-feed/**",
+        "test/units/mal-friends-feed/**"
+      ],
+      "group": "user",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: sonnet"
+      ],
+      "status": "⬜ todo"
     },
     {
       "id": "explore-polish",
