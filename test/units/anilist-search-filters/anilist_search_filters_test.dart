@@ -496,7 +496,7 @@ void main() {
       expect(search.variables['genre_in'], ['Drama']);
 
       // Removing the genre chip searches again without it.
-      await tester.tap(find.descendant(of: find.byType(InputChip), matching: find.byIcon(Icons.cancel)));
+      await tester.tap(find.descendant(of: find.widgetWithText(InputChip, 'Drama'), matching: find.byType(Icon)));
       await tester.pumpAndSettle();
       expect(log.lastWhere((s) => s.query.contains('media(')).variables.containsKey('genre_in'), isFalse);
 
