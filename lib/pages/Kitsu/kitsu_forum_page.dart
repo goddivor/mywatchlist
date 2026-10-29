@@ -67,7 +67,7 @@ class _KitsuForumPageState extends State<KitsuForumPage> with SingleTickerProvid
                 KitsuGroupsList(
                   feed: _feed,
                   onOpenGroup: (g) => gotoPage(
-                      context: context, newPage: KitsuGroupPage(group: g, feed: widget.feed)),
+                      context: context, newPage: KitsuGroupScreen(group: g, feed: widget.feed)),
                 ),
               ],
             ),

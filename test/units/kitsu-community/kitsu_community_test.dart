@@ -154,6 +154,7 @@ void main() {
       await tester.tap(find.text('Groups'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 500));
+      await tester.pump(const Duration(milliseconds: 50));
       expect(find.byType(ListTile), findsWidgets);
       expect(fake.requests.any((r) => r.url.path.endsWith('/groups')), isTrue);
     });
@@ -198,7 +199,7 @@ void main() {
       final fake = _Fake(_routes);
       final groups = await fake.feed.groups();
       final group = groups.groups.first;
-      await _pump(tester, KitsuGroupPage(group: group, feed: fake.feed));
+      await _pump(tester, KitsuGroupScreen(group: group, feed: fake.feed));
       await tester.pump(const Duration(milliseconds: 500));
       expect(find.text(group.name), findsOneWidget);
       expect(find.byType(Card), findsWidgets);

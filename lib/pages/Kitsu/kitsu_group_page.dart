@@ -8,16 +8,16 @@ import 'package:mywatchlist/widgets/Kitsu/feed/kitsu_feed_list.dart';
 import 'package:mywatchlist/widgets/common/app_image.dart';
 
 /// One Kitsu group: its header and the feed of its posts.
-class KitsuGroupPage extends StatefulWidget {
+class KitsuGroupScreen extends StatefulWidget {
   final KitsuGroup group;
   final KitsuFeed? feed;
-  const KitsuGroupPage({super.key, required this.group, this.feed});
+  const KitsuGroupScreen({super.key, required this.group, this.feed});
 
   @override
-  State<KitsuGroupPage> createState() => _KitsuGroupPageState();
+  State<KitsuGroupScreen> createState() => _KitsuGroupScreenState();
 }
 
-class _KitsuGroupPageState extends State<KitsuGroupPage> {
+class _KitsuGroupScreenState extends State<KitsuGroupScreen> {
   late final KitsuFeed _feed = widget.feed ?? KitsuFeed();
   late final KitsuFeedController _controller = _feed.group(widget.group.id);
 

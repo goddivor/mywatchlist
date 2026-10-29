@@ -127,7 +127,7 @@ class _KitsuPostPageState extends State<KitsuPostPage> {
                 },
               );
             }
-            return _CommentTile(comment: _comments[i - 1]);
+            return _CommentTile(comment: _comments[i - 1], postId: widget.postId);
           },
         ),
       );
@@ -184,7 +184,8 @@ class _PostHeader extends StatelessWidget {
 class _CommentTile extends StatelessWidget {
   final KitsuComment comment;
   final bool reply;
-  const _CommentTile({required this.comment, this.reply = false});
+  final String postId;
+  const _CommentTile({required this.comment, required this.postId, this.reply = false});
 
   @override
   Widget build(BuildContext context) {
@@ -217,12 +218,12 @@ class _CommentTile extends StatelessWidget {
               ],
             ),
           ),
-          for (final r in comment.replies) _CommentTile(comment: r, reply: true),
+          for (final r in comment.replies) _CommentTile(comment: r, postId: postId, reply: true),
           if (!reply && hidden > 0)
             Padding(
               padding: const EdgeInsets.only(left: 36),
               child: TextButton(
-                onPressed: () => launchWebView(KitsuFeed.siteUrl, context: context),
+                onPressed: () => launchWebView(KitsuFeed.postUrl(postId), context: context),
                 child: Text(s.Kc_More_Replies(hidden)),
               ),
             ),
