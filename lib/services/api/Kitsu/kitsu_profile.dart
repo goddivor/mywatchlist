@@ -16,6 +16,9 @@ class KitsuMediaStats {
   /// Time spent watching (anime) or reading (manga).
   final Duration time;
 
+  /// Share of Kitsu users this one is ahead of (0-100) on time spent, `null` when Kitsu gave none.
+  final double? timePercentile;
+
   /// Titles per category, most frequent first.
   final List<MapEntry<String, int>> categories;
 
@@ -27,6 +30,7 @@ class KitsuMediaStats {
     this.units = 0,
     this.completed = 0,
     this.time = Duration.zero,
+    this.timePercentile,
     this.categories = const [],
     this.statusCounts = const {},
   });
@@ -38,6 +42,7 @@ class KitsuMediaStats {
         units: units,
         completed: completed,
         time: time,
+        timePercentile: timePercentile,
         categories: categories,
         statusCounts: counts,
       );
@@ -61,6 +66,10 @@ class KitsuProfile {
   final int ratingsCount;
   final int reviewsCount;
   final int favoritesCount;
+  final int commentsCount;
+  final int postsCount;
+  final int reactionsCount;
+  final int likesReceivedCount;
   final String? waifuName;
   final String? waifuLabel;
   final KitsuMediaStats anime;
@@ -82,11 +91,18 @@ class KitsuProfile {
     this.ratingsCount = 0,
     this.reviewsCount = 0,
     this.favoritesCount = 0,
+    this.commentsCount = 0,
+    this.postsCount = 0,
+    this.reactionsCount = 0,
+    this.likesReceivedCount = 0,
     this.waifuName,
     this.waifuLabel,
     this.anime = const KitsuMediaStats(),
     this.manga = const KitsuMediaStats(),
   });
+
+  /// What GraphQL looks a profile up by: the slug, else the numeric id (a user may have no slug).
+  String get handle => slug ?? id;
 
   String get webUrl => 'https://kitsu.app/users/${slug ?? id}';
 
@@ -106,6 +122,10 @@ class KitsuProfile {
         ratingsCount: ratingsCount,
         reviewsCount: reviewsCount,
         favoritesCount: favoritesCount,
+        commentsCount: commentsCount,
+        postsCount: postsCount,
+        reactionsCount: reactionsCount,
+        likesReceivedCount: likesReceivedCount,
         waifuName: waifuName,
         waifuLabel: waifuLabel,
         anime: anime,
@@ -131,7 +151,8 @@ class KitsuProfiles {
 
   static const String _userFields =
       'name,slug,about,location,gender,birthday,createdAt,avatar,coverImage,followersCount,'
-      'followingCount,ratingsCount,reviewsCount,favoritesCount,waifuOrHusbando,stats,waifu';
+      'followingCount,ratingsCount,reviewsCount,favoritesCount,commentsCount,postsCount,'
+      'mediaReactionsCount,likesReceivedCount,waifuOrHusbando,stats,waifu';
 
   /// The profile of Kitsu user [userId], or of the signed-in user when null. The first answer is
   /// the profile with its Kitsu statistics; [loadCounts] adds the list counts per status of the
@@ -203,6 +224,7 @@ class KitsuProfiles {
     KitsuMediaStats stats(String prefix) {
       var media = 0, units = 0, completed = 0;
       var time = Duration.zero;
+      double? percentile;
       var categories = <MapEntry<String, int>>[];
       for (final s in doc.relatedAll(user, 'stats')) {
         final sa = kitsuAttrs(s);
@@ -214,6 +236,8 @@ class KitsuProfiles {
           units = (data['units'] as num?)?.toInt() ?? 0;
           completed = (data['completed'] as num?)?.toInt() ?? 0;
           time = Duration(seconds: (data['time'] as num?)?.toInt() ?? 0);
+          final p = data['percentiles'];
+          percentile = p is Map && p['time'] is num ? (p['time'] as num).toDouble() : null;
         } else if (kind.endsWith('category-breakdown')) {
           final cats = data['categories'];
           if (cats is Map) {
@@ -225,7 +249,12 @@ class KitsuProfiles {
         }
       }
       return KitsuMediaStats(
-          media: media, units: units, completed: completed, time: time, categories: categories);
+          media: media,
+          units: units,
+          completed: completed,
+          time: time,
+          timePercentile: percentile,
+          categories: categories);
     }
 
     final waifu = doc.related(user, 'waifu');
@@ -245,6 +274,10 @@ class KitsuProfiles {
       ratingsCount: count('ratingsCount'),
       reviewsCount: count('reviewsCount'),
       favoritesCount: count('favoritesCount'),
+      commentsCount: count('commentsCount'),
+      postsCount: count('postsCount'),
+      reactionsCount: count('mediaReactionsCount'),
+      likesReceivedCount: count('likesReceivedCount'),
       waifuName: waifu == null ? null : text(kitsuAttrs(waifu)['canonicalName']),
       waifuLabel: text(a['waifuOrHusbando']),
       anime: stats('anime'),
