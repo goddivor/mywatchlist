@@ -168,7 +168,12 @@ if ! pushout=$(git push -q --force-with-lease origin "HEAD:$BR" 2>&1); then
   say "PUSH FAILED (someone pushed to $BR since the fetch?): $pushout"; exit 4
 fi
 sleep 3
-TITLE=$("$GH" api "repos/$REPO/pulls/$PR" --jq .title)
+TITLE=""
+for i in 1 2 3 4 5; do
+  TITLE=$("$GH" api "repos/$REPO/pulls/$PR" --jq .title 2>/dev/null) || TITLE=""
+  case "$TITLE" in ""|"{"*) TITLE=""; sleep 5;; *) break;; esac
+done
+[ -n "$TITLE" ] || { say "could not read the PR title; not merging"; exit 5; }
 merged=false
 for i in $(seq 1 "$MERGE_RETRIES"); do
   "$GH" api -X PUT "repos/$REPO/pulls/$PR/merge" -f merge_method=squash -f sha="$SHA" -f commit_title="$TITLE (#$PR)" --jq .message 2>&1 | tail -1 | sed 's/^/  github: /'
