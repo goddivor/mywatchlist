@@ -1,0 +1,15 @@
+{
+  "@@locale": "fr_FR",
+  "Ltf_Field_Time_Left": "Temps restant",
+  "Ltf_Field_Time_Left_Desc": "Temps qu’il reste à regarder, à la durée moyenne d’un épisode",
+  "Ltf_Time_Left_Value": "Il reste {time}",
+  "@Ltf_Time_Left_Value": { "placeholders": { "time": { "type": "String" } } },
+  "Ltf_Rewatched": "Revu ×{count}",
+  "@Ltf_Rewatched": { "placeholders": { "count": { "type": "int" } } },
+  "Ltf_Reread": "Relu ×{count}",
+  "@Ltf_Reread": { "placeholders": { "count": { "type": "int" } } },
+  "Ltf_Facet_Season": "Saison",
+  "Ltf_Facet_Studio": "Studio",
+  "Ltf_Facet_Author": "Auteur",
+  "Ltf_Facet_Rating": "Classification"
+}

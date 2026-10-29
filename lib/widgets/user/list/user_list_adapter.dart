@@ -76,6 +76,13 @@ abstract class UserListAdapter {
   /// Opens the edit sheet of [entry] and reports what was saved.
   Future<ListEditResult> edit(BuildContext context, ListEntryView entry);
 
+  /// Whether this tracker's entries carry the episode length
+  /// ([ListEntryView.episodeSeconds]), so the anime list shows its "time left / watched" line.
+  ///
+  /// Each adapter declares its own value. Until the MyAnimeList adapter overrides it, the
+  /// default keeps the line MyAnimeList already had; other adapters opt in.
+  bool get fillsEpisodeLength => tracker == AccountType.myanimelist;
+
   /// Whether the quick +1 / -1 buttons can change [entry].
   bool canStep(ListEntryView entry) => false;
 

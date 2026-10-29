@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:mywatchlist/constants/constants.dart' show AccountType, DisplaySubType;
+import 'package:mywatchlist/constants/constants.dart' show DisplaySubType;
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/user/list_cache/list_status_cache.dart';
 import 'package:mywatchlist/user/preferences/preferences.dart';
@@ -81,8 +81,8 @@ class _UserListViewState extends State<UserListView> with SingleTickerProviderSt
   bool get _isAnime => _category == 'anime';
 
   /// Whether the header carries the "time left" line: anime lists of a tracker whose adapter
-  /// fills `ListEntryView.episodeSeconds` (MyAnimeList's `average_episode_duration`).
-  bool get _showsTime => _isAnime && _adapter.tracker == AccountType.myanimelist;
+  /// fills `ListEntryView.episodeSeconds` ([UserListAdapter.fillsEpisodeLength]).
+  bool get _showsTime => _isAnime && _adapter.fillsEpisodeLength;
   ListViewSettings get _current => _settings[_category] ?? ListViewStore.defaults(_category);
 
   @override
@@ -608,7 +608,7 @@ class _TimeLine extends StatelessWidget {
           builder: (context, _) {
             final c = controllerOf(status);
             final summary = c.isStarted
-                ? ListTimeSummary.of(c.entries, status, partial: c.hasMore)
+                ? listTimeSummary(c.entries, status, partial: c.hasMore)
                 : null;
             if (summary == null) return const SizedBox.shrink();
             final theme = Theme.of(context);

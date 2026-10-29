@@ -31,6 +31,10 @@ abstract final class ListFacetKeys {
   static const score = 'score';
   static const repeating = 'repeating';
   static const unseen = 'unseen';
+  static const season = 'season';
+  static const studio = 'studio';
+  static const author = 'author';
+  static const rating = 'rating';
 }
 
 /// The sort options every tracker can offer (computed on the device), for
@@ -100,6 +104,55 @@ String priorityLabel(int priority) => switch (priority) {
       _ => S.current.UserList_Priority_Low,
     };
 
+/// Seasons in calendar order (MAL `start_season.season`, AniList `season` lowercased).
+const List<String> _seasonOrder = ['winter', 'spring', 'summer', 'fall'];
+
+/// Facet value of the first season of [e] (`2024:spring`), or null when unknown.
+String? _seasonKey(ListEntryView e) {
+  final season = e.startSeason?.toLowerCase();
+  final year = e.startSeasonYear;
+  if (season == null || year == null || !_seasonOrder.contains(season)) return null;
+  return '$year:$season';
+}
+
+String _seasonLabel(String key) {
+  final parts = key.split(':');
+  final name = switch (parts.last) {
+    'winter' => S.current.Explore_Season_Winter,
+    'spring' => S.current.Explore_Season_Spring,
+    'summer' => S.current.Explore_Season_Summer,
+    _ => S.current.Explore_Season_Fall,
+  };
+  return S.current.Mi_Season_Year(name, parts.first);
+}
+
+/// Newest season first.
+int _compareSeasons(String a, String b) {
+  final pa = a.split(':');
+  final pb = b.split(':');
+  final year = int.parse(pb.first).compareTo(int.parse(pa.first));
+  if (year != 0) return year;
+  return _seasonOrder.indexOf(pb.last).compareTo(_seasonOrder.indexOf(pa.last));
+}
+
+/// MAL age ratings, mildest first.
+const List<String> _ratingOrder = ['g', 'pg', 'pg_13', 'r', 'r+', 'rx'];
+
+String _ratingLabel(String rating) => switch (rating) {
+      'g' => S.current.Mi_Rating_G,
+      'pg' => S.current.Mi_Rating_Pg,
+      'pg_13' => S.current.Mi_Rating_Pg_13,
+      'r' => S.current.Mi_Rating_R,
+      'r+' => S.current.Mi_Rating_R_Plus,
+      'rx' => S.current.Mi_Rating_Rx,
+      _ => rating.replaceAll('_', '-').toUpperCase(),
+    };
+
+String? _ratingOf(ListEntryView e) {
+  final r = e.ageRating?.trim().toLowerCase();
+  return r == null || r.isEmpty ? null : r;
+}
+
 /// Score buckets of the "My score" facet.
 const List<String> _scoreBuckets = ['9', '7', '5', '1', '0'];
 
@@ -127,13 +180,32 @@ List<ListFilterFacet> facetsFor(Iterable<ListEntryView> entries,
   final media = <String>{};
   final release = <ReleaseState>{};
   final genres = <String>{};
+  final seasons = <String>{};
+  final studios = <String>{};
+  final authors = <String>{};
+  final ratings = <String>{};
   for (final e in entries) {
     media.add(e.mediaType ?? 'unknown');
     release.add(e.releaseState);
     genres.addAll(e.genres);
+    final season = _seasonKey(e);
+    if (season != null) seasons.add(season);
+    studios.addAll(e.studios.where((s) => s.isNotEmpty));
+    authors.addAll(e.authors.where((a) => a.isNotEmpty));
+    final rating = _ratingOf(e);
+    if (rating != null) ratings.add(rating);
   }
   final sortedMedia = media.toList()..sort((a, b) => mediaTypeLabel(a).compareTo(mediaTypeLabel(b)));
   final sortedGenres = genres.toList()..sort();
+  final sortedSeasons = seasons.toList()..sort(_compareSeasons);
+  int byName(String a, String b) => a.toLowerCase().compareTo(b.toLowerCase());
+  final sortedStudios = studios.toList()..sort(byName);
+  final sortedAuthors = authors.toList()..sort(byName);
+  int rank(String r) {
+    final i = _ratingOrder.indexOf(r);
+    return i < 0 ? _ratingOrder.length : i;
+  }
+  final sortedRatings = ratings.toList()..sort((a, b) => rank(a).compareTo(rank(b)));
   return [
     if (sortedMedia.length > 1)
       ListFilterFacet(
@@ -159,6 +231,34 @@ List<ListFilterFacet> facetsFor(Iterable<ListEntryView> entries,
         options: [for (final g in sortedGenres) SelectOption(g, g)],
         allowExclude: true,
         matchAll: true,
+      ),
+    if (sortedSeasons.isNotEmpty)
+      ListFilterFacet(
+        key: ListFacetKeys.season,
+        label: S.current.Ltf_Facet_Season,
+        options: [for (final k in sortedSeasons) SelectOption(k, _seasonLabel(k))],
+        allowExclude: true,
+      ),
+    if (sortedStudios.isNotEmpty)
+      ListFilterFacet(
+        key: ListFacetKeys.studio,
+        label: S.current.Ltf_Facet_Studio,
+        options: [for (final s in sortedStudios) SelectOption(s, s)],
+        allowExclude: true,
+      ),
+    if (sortedAuthors.isNotEmpty)
+      ListFilterFacet(
+        key: ListFacetKeys.author,
+        label: S.current.Ltf_Facet_Author,
+        options: [for (final a in sortedAuthors) SelectOption(a, a)],
+        allowExclude: true,
+      ),
+    if (sortedRatings.isNotEmpty)
+      ListFilterFacet(
+        key: ListFacetKeys.rating,
+        label: S.current.Ltf_Facet_Rating,
+        options: [for (final r in sortedRatings) SelectOption(r, _ratingLabel(r))],
+        allowExclude: true,
       ),
     ListFilterFacet(
       key: ListFacetKeys.score,
@@ -195,6 +295,10 @@ Set<String> _valuesOf(ListEntryView e, String facet, DateTime now) => switch (fa
       ListFacetKeys.score => {_scoreBucketOf(e.score)},
       ListFacetKeys.repeating => e.repeating ? const {'yes'} : const {},
       ListFacetKeys.unseen => e.unseenCount(now) > 0 ? const {'yes'} : const {},
+      ListFacetKeys.season => _seasonKey(e) == null ? const {} : {_seasonKey(e)!},
+      ListFacetKeys.studio => e.studios.toSet(),
+      ListFacetKeys.author => e.authors.toSet(),
+      ListFacetKeys.rating => _ratingOf(e) == null ? const {} : {_ratingOf(e)!},
       _ => const {},
     };
 
@@ -304,4 +408,37 @@ List<ListEntryView> sortEntries(
     return a.$3.compareTo(b.$3);
   });
   return [for (final k in keyed) k.$1];
+}
+
+/// Time already watched of [e], rewatches included: the current [ListEntryView.progress], plus
+/// one full run per completed rewatch ([ListEntryView.timesRewatched]) and, while a rewatch is
+/// in progress ([ListEntryView.repeating]), the first full run its progress restarted from.
+/// The extra runs need a known episode total. Null when the length is unknown.
+Duration? timeWatchedWithRewatches(ListEntryView e) {
+  final base = e.timeWatched;
+  if (base == null) return null;
+  if (e.total <= 0) return base;
+  final runs = (e.timesRewatched > 0 ? e.timesRewatched : 0) + (e.repeating ? 1 : 0);
+  return base + Duration(seconds: runs * e.total * e.episodeSeconds);
+}
+
+/// The time line of a list tab ([ListTimeSummary.of]), with rewatches counted in the time
+/// watched ([timeWatchedWithRewatches]); the time left is unchanged.
+ListTimeSummary? listTimeSummary(
+  Iterable<ListEntryView> entries,
+  ListEntryStatus? status, {
+  bool partial = false,
+}) {
+  final kind = switch (status) {
+    ListEntryStatus.current || ListEntryStatus.onHold || ListEntryStatus.planned =>
+      ListTimeKind.left,
+    _ => ListTimeKind.watched,
+  };
+  var seconds = 0;
+  for (final e in entries) {
+    final d = kind == ListTimeKind.left ? e.timeLeft : timeWatchedWithRewatches(e);
+    if (d != null) seconds += d.inSeconds;
+  }
+  if (seconds <= 0) return null;
+  return ListTimeSummary(kind, Duration(seconds: seconds), partial: partial);
 }

@@ -188,6 +188,30 @@ class PriorityPill extends StatelessWidget {
   }
 }
 
+/// "Rewatched ×2" / "Reread ×2" when the user went through the title again
+/// ([ListEntryView.timesRewatched] > 0). [short] draws only the replay icon and
+/// "×2" (grid covers), with the full text for screen readers.
+class RewatchPill extends StatelessWidget {
+  final ListEntryView entry;
+  final bool short;
+  const RewatchPill({super.key, required this.entry, this.short = false});
+
+  @override
+  Widget build(BuildContext context) {
+    final count = entry.timesRewatched;
+    if (count <= 0) return const SizedBox.shrink();
+    final text = entry.isAnime ? S.current.Ltf_Rewatched(count) : S.current.Ltf_Reread(count);
+    final role = AppColors.of(context).completed;
+    final pill = EntryPill(
+      label: short ? '×$count' : text,
+      icon: Icons.replay_rounded,
+      background: role.container,
+      foreground: role.onContainer,
+    );
+    return short ? Semantics(label: text, excludeSemantics: true, child: pill) : pill;
+  }
+}
+
 /// The episode badges of a cover, DailyAL's rule: a red "+N" badge for the
 /// released episodes (chapters) the user has not watched yet and, when
 /// [showReleased] is set, a blue badge with the number released so far

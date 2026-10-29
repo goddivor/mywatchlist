@@ -96,6 +96,10 @@ class EntryListTile extends StatelessWidget {
                     ),
                     const SizedBox(width: 8),
                     MyScore(entry: entry, fontSize: 11),
+                    if (entry.timesRewatched > 0) ...[
+                      const SizedBox(width: 6),
+                      RewatchPill(entry: entry, short: true),
+                    ],
                   ],
                 ),
               ],
@@ -120,6 +124,7 @@ class EntryListTile extends StatelessWidget {
     final badges = <Widget>[
       if (style.showStatus) StatusPill(entry: entry),
       if (style.showPriority && entry.priority > 0) PriorityPill(priority: entry.priority),
+      if (entry.timesRewatched > 0) RewatchPill(entry: entry),
       MeanScore(entry: entry, showMembers: spacious),
     ];
     return Padding(
@@ -315,8 +320,21 @@ class EntryGridCard extends StatelessWidget {
           start: 5,
           child: EntryDubBadge(entry: entry),
         ),
-        if (style.showPriority && entry.priority > 0)
-          PositionedDirectional(bottom: 5, start: 5, child: PriorityPill(priority: entry.priority)),
+        if ((style.showPriority && entry.priority > 0) || entry.timesRewatched > 0)
+          PositionedDirectional(
+            bottom: 5,
+            start: 5,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (style.showPriority && entry.priority > 0) ...[
+                  PriorityPill(priority: entry.priority),
+                  const SizedBox(width: 4),
+                ],
+                RewatchPill(entry: entry, short: true),
+              ],
+            ),
+          ),
       ],
     );
   }
