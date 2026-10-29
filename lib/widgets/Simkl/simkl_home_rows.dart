@@ -47,10 +47,9 @@ class SimklRowHeader extends StatelessWidget {
   }
 }
 
-/// Simkl's trending chart as wide fanart cards: picture, rank, title, Simkl score and the number
-/// of watchers. The fanart comes from the title's record (`/anime/{id}`, cached by Simkl's CDN
-/// and not counted), asked only for the cards actually built; until it answers (or without one)
-/// the poster fills the card.
+/// Simkl's trending chart as wide cards: picture, rank, title, Simkl score and the number of
+/// watchers. The picture is the title's fanart when its record is already kept (opened before),
+/// else its poster.
 class SimklTrendingCarousel extends StatelessWidget {
   final List<SimklMedia> items;
   final void Function(SimklMedia media) onTap;
@@ -115,15 +114,9 @@ class _TrendingCardState extends State<_TrendingCard> {
   @override
   void initState() {
     super.initState();
-    final id = widget.media.simklId;
-    final kept = _service.peek<SimklTitle>(SimklDetailService.titleKey(id));
-    if (kept != null) {
-      _fanart = kept.fanartUrl;
-    } else {
-      _service.title(id).then((t) {
-        if (mounted && t.fanartUrl != null) setState(() => _fanart = t.fanartUrl);
-      }, onError: (_) {});
-    }
+    // Only a record already kept (a title opened before): the trending files carry no fanart
+    // for this app's parser, and one record call per card is not worth it on every home open.
+    _fanart = _service.peek<SimklTitle>(SimklDetailService.titleKey(widget.media.simklId))?.fanartUrl;
   }
 
   @override

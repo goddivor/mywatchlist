@@ -226,15 +226,9 @@ class SimklRatingStrip extends StatelessWidget {
         _PlainChip(label: S.current.Smp_Drop_Rate, value: SimklFormat.percent(t.dropRate!), icon: Icons.trending_down_rounded),
     ];
     if (chips.isEmpty) return const SizedBox.shrink();
-    return SizedBox(
-      height: 58,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.fromLTRB(simklPagePadding, 0, simklPagePadding, 0),
-        itemCount: chips.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 8),
-        itemBuilder: (_, i) => chips[i],
-      ),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(simklPagePadding, 4, simklPagePadding, 0),
+      child: Wrap(spacing: 8, runSpacing: 8, children: chips),
     );
   }
 }
@@ -250,7 +244,7 @@ class _ChipShell extends StatelessWidget {
           color: Theme.of(context).colorScheme.surfaceContainerHigh,
           borderRadius: BorderRadius.circular(14),
         ),
-        child: Padding(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6), child: Center(child: child)),
+        child: Padding(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6), child: child),
       );
 }
 

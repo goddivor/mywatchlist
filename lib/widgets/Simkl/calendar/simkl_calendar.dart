@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:mywatchlist/generated/l10n.dart';
-import 'package:mywatchlist/services/api/SimKl/simkl_discover_service.dart';
+import 'package:mywatchlist/services/api/SimKl/simkl_discover_service.dart' hide SimklFormat;
 import 'package:mywatchlist/services/api/SimKl/simkl_list_service.dart';
 import 'package:mywatchlist/services/api/SimKl/simkl_models.dart';
 import 'package:mywatchlist/user/preferences/preferences.dart';
 import 'package:mywatchlist/widgets/Simkl/media/simkl_media_format.dart';
 import 'package:mywatchlist/widgets/Simkl/simkl_media_widgets.dart' show openSimklMedia;
 import 'package:mywatchlist/widgets/Simkl/simkl_states.dart';
-import 'package:mywatchlist/widgets/common/app_colors.dart';
 import 'package:mywatchlist/widgets/common/app_image.dart';
 import 'package:mywatchlist/widgets/home/home_sections.dart';
 import 'package:mywatchlist/widgets/user/list/list_entry_view.dart';

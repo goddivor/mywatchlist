@@ -3,7 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mywatchlist/constants/constants.dart' show getTileSizeValues;
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/services/api/SimKl/simkl_client.dart' show SimklSessionExpired;
-import 'package:mywatchlist/services/api/SimKl/simkl_discover_service.dart';
+import 'package:mywatchlist/services/api/SimKl/simkl_discover_service.dart' hide SimklFormat;
 import 'package:mywatchlist/services/api/SimKl/simkl_list_service.dart';
 import 'package:mywatchlist/services/api/SimKl/simkl_models.dart';
 import 'package:mywatchlist/user/MAL/mal_home_preferences_bloc.dart';

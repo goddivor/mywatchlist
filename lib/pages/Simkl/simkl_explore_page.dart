@@ -409,8 +409,6 @@ class _OptionsRow extends StatelessWidget {
               _option(SimklFeedLabels.window(w), query.window == w, () => onPick(query.copyWith(window: w))),
           ],
         SimklFeed.airing => [
-            for (var d = 0; d < simklScheduleDays; d++)
-              _option(SimklFeedLabels.day(d), query.dayOffset == d, () => onPick(query.copyWith(dayOffset: d))),
             ActionChip(
               avatar: const Icon(Icons.calendar_month_outlined, size: 18),
               label: Text(S.current.Skr_Calendar),
@@ -419,6 +417,8 @@ class _OptionsRow extends StatelessWidget {
                 MaterialPageRoute<void>(builder: (_) => const SimklCalendarPage()),
               ),
             ),
+            for (var d = 0; d < simklScheduleDays; d++)
+              _option(SimklFeedLabels.day(d), query.dayOffset == d, () => onPick(query.copyWith(dayOffset: d))),
           ],
         SimklFeed.best => [
             for (final b in SimklBest.values)

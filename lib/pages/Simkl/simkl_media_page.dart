@@ -27,8 +27,9 @@ import 'package:share_plus/share_plus.dart';
 /// reviews, comments, memos, tags and links are read from simkl.com (anonymous, desktop
 /// markup, parsed off the UI isolate). A section whose source failed or whose markup is no
 /// longer recognised is not shown. "Open on MyAnimeList" stays in the menu when the title has
-/// a MyAnimeList id. Nothing is ever written to Simkl except through the list button, on the
-/// user's own action.
+/// a MyAnimeList id. Nothing is ever written to Simkl except on the user's own action (the status
+/// bar's list editor, "Mark Ep. N watched"). Block order: Simkl part of
+/// `docs/tracker-ui-references.md` (§ 2.3).
 class SimklMediaPage extends StatefulWidget {
   final int simklId;
   final String? slug;
