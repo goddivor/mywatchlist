@@ -32,7 +32,8 @@ class DetailTabPreference extends Equatable {
   List<Object?> get props => [tabType, visible];
 }
 
-/// Default section order of the anime detail page (DAL order, plus MWL's Staff section).
+/// Default section order of the anime detail page (DAL order, plus MWL's Staff and
+/// Episodes sections).
 final List<TabType> defaultAnimeTabOrder = List.unmodifiable(
     ContentPreferences.defaultAnimeTabs.map((tab) => tab.tabType));
 
@@ -83,6 +84,7 @@ class ContentPreferences extends Equatable {
     DetailTabPreference(TabType.Synopsis),
     DetailTabPreference(TabType.Media),
     DetailTabPreference(TabType.Related),
+    DetailTabPreference(TabType.Episodes),
     DetailTabPreference(TabType.Adaptations),
     DetailTabPreference(TabType.Reviews),
     DetailTabPreference(TabType.Recommendations),
@@ -193,7 +195,13 @@ class ContentPreferences extends Equatable {
 
   /// Keeps the saved order, drops duplicates and appends every default section the saved
   /// list does not know yet (a section added by a later version shows up, visible). A new
-  /// `ScoreStats` section goes right after `Stats`, as in DailyAL.
+  /// `ScoreStats` section goes right after `Stats`, as in DailyAL, and a new `Episodes`
+  /// section right after `Related`.
+  static const Map<TabType, TabType> _insertAfter = {
+    TabType.ScoreStats: TabType.Stats,
+    TabType.Episodes: TabType.Related,
+  };
+
   static List<DetailTabPreference> completeTabs(
       List<DetailTabPreference> saved, List<TabType> defaults) {
     final result = <DetailTabPreference>[];
@@ -204,9 +212,11 @@ class ContentPreferences extends Equatable {
     for (final type in defaults) {
       if (seen.contains(type)) continue;
       seen.add(type);
-      final statsIndex = result.indexWhere((t) => t.tabType == TabType.Stats);
-      if (type == TabType.ScoreStats && statsIndex != -1) {
-        result.insert(statsIndex + 1, DetailTabPreference(type));
+      final anchor = _insertAfter[type];
+      final anchorIndex =
+          anchor == null ? -1 : result.indexWhere((t) => t.tabType == anchor);
+      if (anchorIndex != -1) {
+        result.insert(anchorIndex + 1, DetailTabPreference(type));
       } else {
         result.add(DetailTabPreference(type));
       }

@@ -55,6 +55,7 @@ void main() {
       final sections = DetailSections.build(_data(content: _content()));
       expect(_types(sections), [
         TabType.Synopsis,
+        TabType.Episodes,
         TabType.Reviews,
         TabType.Forums,
         TabType.Pictures,
@@ -87,6 +88,7 @@ void main() {
       expect(types.first, TabType.Synopsis);
       expect(types, isNot(contains(TabType.Staff)));
       expect(types, isNot(contains(TabType.Media)));
+      expect(types, isNot(contains(TabType.Episodes)));
       expect(types.indexOf(TabType.Pictures),
           lessThan(types.indexOf(TabType.Forums)));
     });
