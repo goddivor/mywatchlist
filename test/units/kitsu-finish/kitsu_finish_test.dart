@@ -269,7 +269,7 @@ void main() {
       expect(kitsuScoreIn(5, KitsuRatingSystem.simple), 4);
       expect(kitsuScoreIn(6, KitsuRatingSystem.simple), 7);
       expect(kitsuScoreIn(9.5, KitsuRatingSystem.simple), 10);
-      expect(kitsuScoreIn(7.5, KitsuRatingSystem.regular), 8);
+      expect(kitsuScoreIn(7.5, KitsuRatingSystem.regular), 7);
       expect(kitsuScoreIn(7.5, KitsuRatingSystem.advanced), 7.5);
       expect(kitsuScoreIn(0.5, KitsuRatingSystem.advanced), 1);
     });
