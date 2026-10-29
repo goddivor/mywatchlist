@@ -348,18 +348,21 @@ class AnilistNotificationsService {
     AnilistNotificationGroup group = AnilistNotificationGroup.all,
     int page = 1,
   }) async {
+    // AniList answers 500 when `type_in` is given as null: "All" leaves the filter out.
+    final types = group.kinds?.map((k) => k.wire).toList();
+    final filtered = types != null;
     final data = await _gql.query(
       '''
-query (\$page: Int, \$types: [NotificationType]) {
+query (\$page: Int${filtered ? r', $types: [NotificationType]' : ''}) {
   Viewer { unreadNotificationCount }
   Page(page: \$page, perPage: $perPage) {
     pageInfo { hasNextPage }
-    notifications(type_in: \$types, resetNotificationCount: false) { ${AnilistNotification.fields} }
+    notifications(${filtered ? r'type_in: $types, ' : ''}resetNotificationCount: false) { ${AnilistNotification.fields} }
   }
 }''',
       variables: {
         'page': page,
-        'types': group.kinds?.map((k) => k.wire).toList(),
+        if (filtered) 'types': types,
       },
       auth: true,
     );

@@ -81,6 +81,9 @@ void main() {
       // Reading never marks the inbox read.
       expect(log.single['query'], contains('resetNotificationCount: false'));
       expect(log.single['variables']['types'], isNull);
+      // AniList answers 500 to `type_in: null`: "All" sends no filter at all.
+      expect(log.single['query'], isNot(contains('type_in')));
+      expect((log.single['variables'] as Map).containsKey('types'), isFalse);
     });
 
     test('group filters send their types; unreadSince is the oldest unread', () async {
@@ -88,6 +91,7 @@ void main() {
       final service = AnilistNotificationsService(client: _fake(log), signedIn: true);
       final page = await service.page(group: AnilistNotificationGroup.follows);
       expect(log.single['variables']['types'], ['FOLLOWING']);
+      expect(log.single['query'], contains(r'type_in: $types'));
       expect(page.unread, 2);
       expect(page.unreadSince, page.items[1].createdAt);
       expect(AnilistNotificationGroup.values.length, 6);
