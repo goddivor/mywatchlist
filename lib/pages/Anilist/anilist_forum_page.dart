@@ -1,40 +1,180 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:mywatchlist/generated/l10n.dart';
-import 'package:mywatchlist/services/api/Anilist/anilist_discover_service.dart';
+import 'package:mywatchlist/services/api/Anilist/anilist_social_service.dart';
 import 'package:mywatchlist/widgets/Anilist/anilist_thread_tile.dart';
+import 'package:mywatchlist/widgets/Anilist/social/anilist_activity_feed.dart';
+import 'package:mywatchlist/widgets/Anilist/social/anilist_reviews_feed.dart';
+import 'package:mywatchlist/widgets/Anilist/social/anilist_social_ui.dart';
+import 'package:mywatchlist/widgets/Anilist/social/anilist_thread_composer.dart';
 import 'package:mywatchlist/widgets/MAL/home/homeappbar.dart';
-import 'package:mywatchlist/widgets/forum/forum_common.dart' show ForumSkeleton;
-import 'package:mywatchlist/widgets/home/home_sections.dart' show HomeMessage;
+import 'package:mywatchlist/widgets/forum/forum_common.dart' show ForumMessage, ForumSkeleton;
 
-/// The AniList forum tab: the threads, sorted by recent activity, newest, most viewed or most
-/// replied, loaded page by page. A thread opens on anilist.co.
+/// The AniList "Forum" tab: Forum (threads by sort, category, subscribed, search; a thread
+/// opens in the app) and Activity (the Following / Global feed, post a status). The app bar
+/// menu also opens the latest reviews and the new thread editor.
+///
+/// With [mediaId] it is the forum of one title (no Activity tab).
 class AnilistForumPage extends StatefulWidget {
-  final AnilistDiscoverService? service;
+  const AnilistForumPage({super.key, this.service, this.initialTab = 0, this.mediaId});
 
-  const AnilistForumPage({super.key, this.service});
+  final AnilistSocialService? service;
+
+  /// 0 = Forum, 1 = Activity.
+  final int initialTab;
+  final int? mediaId;
 
   @override
   State<AnilistForumPage> createState() => _AnilistForumPageState();
 }
 
-class _AnilistForumPageState extends State<AnilistForumPage> {
+class _AnilistForumPageState extends State<AnilistForumPage> with SingleTickerProviderStateMixin {
+  late final TabController _tabs = TabController(
+    length: widget.mediaId == null ? 2 : 1,
+    vsync: this,
+    initialIndex: widget.mediaId == null ? widget.initialTab.clamp(0, 1) : 0,
+  );
+
+  AnilistSocialService get _service => widget.service ?? AnilistSocialService.instance;
+
+  @override
+  void dispose() {
+    _tabs.dispose();
+    super.dispose();
+  }
+
+  void _menu(_ForumAction action) {
+    switch (action) {
+      case _ForumAction.reviews:
+        openAnilistReviews(context);
+      case _ForumAction.newThread:
+        openAnilistThreadComposer(
+          context,
+          mediaIds: [if (widget.mediaId != null) widget.mediaId!],
+          service: _service,
+        );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final s = S.of(context);
+    final scheme = Theme.of(context).colorScheme;
+    final single = widget.mediaId != null;
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      body: Column(
+        children: [
+          AppBarHome(
+            title: s.Al_Forum_Title,
+            showSearch: false,
+            showBookmarks: false,
+            showCalendar: false,
+          ),
+          Row(
+            children: [
+              Expanded(
+                child: single
+                    ? const SizedBox(height: 8)
+                    : TabBar(
+                        controller: _tabs,
+                        tabs: [Tab(text: s.Als_Tab_Forum), Tab(text: s.Als_Activity)],
+                      ),
+              ),
+              PopupMenuButton<_ForumAction>(
+                icon: Icon(Icons.more_vert, color: scheme.onSurfaceVariant),
+                onSelected: _menu,
+                itemBuilder: (_) => [
+                  if (!single)
+                    PopupMenuItem(value: _ForumAction.reviews, child: Text(s.Als_Latest_Reviews)),
+                  if (_service.signedIn)
+                    PopupMenuItem(value: _ForumAction.newThread, child: Text(s.Als_New_Thread)),
+                ],
+              ),
+            ],
+          ),
+          Expanded(
+            child: TabBarView(
+              controller: _tabs,
+              children: [
+                AnilistThreadList(service: widget.service, mediaId: widget.mediaId),
+                if (!single) _KeepAlive(child: AnilistActivityFeed(service: widget.service)),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+enum _ForumAction { reviews, newThread }
+
+class _KeepAlive extends StatefulWidget {
+  const _KeepAlive({required this.child});
+
+  final Widget child;
+
+  @override
+  State<_KeepAlive> createState() => _KeepAliveState();
+}
+
+class _KeepAliveState extends State<_KeepAlive> with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    return widget.child;
+  }
+}
+
+/// Forum threads with their filters: sort chips, category, "Subscribed" (signed in) and a
+/// search field; page by page with pull to refresh.
+class AnilistThreadList extends StatefulWidget {
+  const AnilistThreadList({super.key, this.service, this.mediaId});
+
+  final AnilistSocialService? service;
+  final int? mediaId;
+
+  @override
+  State<AnilistThreadList> createState() => _AnilistThreadListState();
+}
+
+class _AnilistThreadListState extends State<AnilistThreadList>
+    with AutomaticKeepAliveClientMixin {
   /// AniList `ThreadSort` values, in chip order.
   static const _sorts = ['REPLIED_AT_DESC', 'ID_DESC', 'VIEW_COUNT_DESC', 'REPLY_COUNT_DESC'];
 
   final List<AnilistThread> _threads = [];
-  String _sort = _sorts.first;
+  final _search = TextEditingController();
+  Timer? _debounce;
+  late AnilistThreadFilter _filter = AnilistThreadFilter(mediaId: widget.mediaId);
+  bool _searching = false;
   int _page = 0;
   int _generation = 0;
   bool _loading = false;
   bool _hasNext = true;
   Object? _error;
 
-  AnilistDiscoverService get _service => widget.service ?? AnilistDiscoverService.instance;
+  AnilistSocialService get _service => widget.service ?? AnilistSocialService.instance;
+
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
     super.initState();
-    _load(initial: true);
+    _load();
+  }
+
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    _search.dispose();
+    super.dispose();
   }
 
   String _label(String sort, S s) => switch (sort) {
@@ -44,43 +184,54 @@ class _AnilistForumPageState extends State<AnilistForumPage> {
         _ => s.Al_Forum_Recent,
       };
 
-  void _setSort(String sort) {
-    if (sort == _sort) return;
-    setState(() {
-      _sort = sort;
-      _generation++;
-      _threads.clear();
-      _page = 0;
-      _hasNext = true;
-      _loading = false;
-      _error = null;
-    });
-    _load();
-  }
-
-  Future<void> _refresh() async {
+  void _reset() {
     _generation++;
     _threads.clear();
     _page = 0;
     _hasNext = true;
     _loading = false;
     _error = null;
+  }
+
+  void _setFilter(AnilistThreadFilter filter) {
+    if (filter == _filter) return;
+    setState(() {
+      _filter = filter;
+      _reset();
+    });
+    _load();
+  }
+
+  void _onSearch(String text) {
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 450), () {
+      final query = text.trim();
+      _setFilter(_filter.copyWith(search: () => query.isEmpty ? null : query));
+    });
+  }
+
+  void _toggleSearch() {
+    setState(() => _searching = !_searching);
+    if (!_searching && _search.text.isNotEmpty) {
+      _search.clear();
+      _setFilter(_filter.copyWith(search: () => null));
+    }
+  }
+
+  Future<void> _refresh() async {
+    setState(_reset);
     await _load();
   }
 
-  Future<void> _load({bool initial = false}) async {
+  Future<void> _load() async {
     if (_loading || !_hasNext) return;
     final generation = _generation;
-    if (initial) {
+    setState(() {
       _loading = true;
-    } else if (mounted) {
-      setState(() {
-        _loading = true;
-        _error = null;
-      });
-    }
+      _error = null;
+    });
     try {
-      final page = await _service.threads(sort: _sort, page: _page + 1);
+      final page = await _service.threads(_filter, page: _page + 1);
       if (!mounted || generation != _generation) return;
       final known = {for (final t in _threads) t.id};
       setState(() {
@@ -98,82 +249,145 @@ class _AnilistForumPageState extends State<AnilistForumPage> {
     }
   }
 
-  bool _onScroll(ScrollNotification n) {
-    if (n.metrics.extentAfter < 500) _load();
-    return false;
+  Future<void> _pickCategory() async {
+    final s = S.of(context);
+    final picked = await showModalBottomSheet<int>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (context) => DraggableScrollableSheet(
+        expand: false,
+        initialChildSize: 0.6,
+        maxChildSize: 0.9,
+        builder: (context, controller) => ListView(
+          controller: controller,
+          children: [
+            ListTile(
+              title: Text(s.Als_All_Categories),
+              selected: _filter.categoryId == null,
+              onTap: () => Navigator.of(context).pop(0),
+            ),
+            for (final c in AnilistForumCategory.all)
+              ListTile(
+                title: Text(anilistCategoryName(c)),
+                selected: _filter.categoryId == c.id,
+                onTap: () => Navigator.of(context).pop(c.id),
+              ),
+          ],
+        ),
+      ),
+    );
+    if (picked == null) return;
+    _setFilter(_filter.copyWith(categoryId: () => picked == 0 ? null : picked));
   }
 
   @override
   Widget build(BuildContext context) {
-    Localizations.localeOf(context);
+    super.build(context);
     final s = S.of(context);
-    return Scaffold(
-      backgroundColor: Colors.transparent,
-      body: Column(
+    final category = _filter.categoryId == null
+        ? null
+        : AnilistForumCategory.all.where((c) => c.id == _filter.categoryId).firstOrNull;
+    final filters = SizedBox(
+      height: 48,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         children: [
-          AppBarHome(
-            title: s.Al_Forum_Title,
-            showSearch: false,
-            showBookmarks: false,
-            showCalendar: false,
+          IconButton.filledTonal(
+            visualDensity: VisualDensity.compact,
+            tooltip: s.Search,
+            isSelected: _searching,
+            onPressed: _toggleSearch,
+            icon: const Icon(Icons.search, size: 20),
+            selectedIcon: const Icon(Icons.close, size: 20),
           ),
-          SizedBox(
-            height: 44,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              itemCount: _sorts.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 8),
-              itemBuilder: (context, i) => ChoiceChip(
-                label: Text(_label(_sorts[i], s)),
-                selected: _sort == _sorts[i],
-                onSelected: (_) => _setSort(_sorts[i]),
+          const SizedBox(width: 8),
+          if (widget.mediaId == null) ...[
+            FilterChip(
+              label: Text(category == null ? s.Als_Categories : anilistCategoryName(category)),
+              selected: category != null,
+              avatar: const Icon(Icons.category_outlined, size: 18),
+              onSelected: (_) => _pickCategory(),
+            ),
+            const SizedBox(width: 8),
+          ],
+          if (_service.signedIn) ...[
+            FilterChip(
+              label: Text(s.Als_Subscribed),
+              selected: _filter.subscribed,
+              onSelected: (on) => _setFilter(_filter.copyWith(subscribed: on)),
+            ),
+            const SizedBox(width: 8),
+          ],
+          for (final sort in _sorts)
+            Padding(
+              padding: const EdgeInsetsDirectional.only(end: 8),
+              child: ChoiceChip(
+                label: Text(_label(sort, s)),
+                selected: _filter.sort == sort,
+                onSelected: (_) => _setFilter(_filter.copyWith(sort: sort)),
+              ),
+            ),
+        ],
+      ),
+    );
+
+    return Column(
+      children: [
+        filters,
+        if (_searching)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+            child: TextField(
+              controller: _search,
+              autofocus: true,
+              textInputAction: TextInputAction.search,
+              onChanged: _onSearch,
+              onSubmitted: _onSearch,
+              decoration: InputDecoration(
+                isDense: true,
+                prefixIcon: const Icon(Icons.search),
+                hintText: s.Als_Search_Threads,
+                border: const OutlineInputBorder(),
               ),
             ),
           ),
-          Expanded(child: _body(s)),
-        ],
-      ),
+        Expanded(child: _body(s)),
+      ],
     );
   }
 
   Widget _body(S s) {
     if (_threads.isEmpty) {
-      if (_loading) return const ForumSkeleton(count: 8);
+      if (_loading) return const ForumSkeleton(count: 8, round: true);
       if (_error != null) {
-        return Center(
-          child: HomeMessage(
-            icon: Icons.cloud_off_outlined,
-            text: s.Al_Load_Failed,
-            actionLabel: s.Al_Retry,
-            onAction: _load,
-          ),
+        return ForumMessage(
+          icon: Icons.cloud_off_outlined,
+          title: anilistErrorText(_error!),
+          onRetry: _load,
         );
       }
-      return Center(child: HomeMessage(icon: Icons.forum_outlined, text: s.Fc_Topics_Empty_Title));
+      return RefreshIndicator(
+        onRefresh: _refresh,
+        child: ForumMessage(icon: Icons.forum_outlined, title: s.Fc_Topics_Empty_Title),
+      );
     }
     return NotificationListener<ScrollNotification>(
-      onNotification: _onScroll,
+      onNotification: (n) {
+        if (n.metrics.extentAfter < 500) _load();
+        return false;
+      },
       child: RefreshIndicator(
         onRefresh: _refresh,
         child: ListView.builder(
           itemCount: _threads.length + 1,
           itemBuilder: (context, i) {
-            if (i < _threads.length) return AnilistThreadTile(thread: _threads[i]);
-            return Padding(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              child: Center(
-                child: _loading
-                    ? const SizedBox(
-                        width: 24,
-                        height: 24,
-                        child: CircularProgressIndicator(strokeWidth: 3),
-                      )
-                    : _error != null
-                        ? TextButton(onPressed: _load, child: Text(s.Al_Retry))
-                        : const SizedBox.shrink(),
-              ),
-            );
+            if (i < _threads.length) {
+              return AnilistThreadTile(key: ValueKey(_threads[i].id), thread: _threads[i]);
+            }
+            return AnilistPageFooter(loading: _loading, failed: _error != null, onRetry: _load);
           },
         ),
       ),
