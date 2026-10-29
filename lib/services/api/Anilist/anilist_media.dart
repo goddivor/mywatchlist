@@ -79,14 +79,26 @@ class AnilistMedia {
   /// Page of the title on anilist.co.
   String get url => 'https://anilist.co/$category/$id';
 
-  /// GraphQL selection every discovery query uses.
+  /// GraphQL selection every discovery query uses. The score is `weightedScore` (0-100):
+  /// `averageScore` is deprecated in AniList's schema (same values today) and is not asked,
+  /// so this selection keeps working once it is removed; [fromJson] still reads it.
   static const String fields = '''
-    id idMal type format status episodes chapters genres seasonYear popularity averageScore isAdult
+    id idMal type format status episodes chapters genres seasonYear popularity weightedScore isAdult
     title { romaji english native }
     coverImage { large extraLarge }
     bannerImage
     nextAiringEpisode { episode airingAt }
   ''';
+
+  /// AniList's score of [json] on 0-10: `weightedScore`, else the deprecated `averageScore`
+  /// (older selections, saved answers); null when AniList has no score yet (0 or absent).
+  static double? scoreOf(Map<String, dynamic> json) {
+    for (final key in const ['weightedScore', 'averageScore']) {
+      final v = json[key];
+      if (v is num && v > 0) return v / 10;
+    }
+    return null;
+  }
 
   /// [titleLang] is a `TitleLang` name (`en`, `ja`, `ro`).
   factory AnilistMedia.fromJson(Map<String, dynamic> json, {String titleLang = 'ro'}) {
@@ -106,7 +118,7 @@ class AnilistMedia {
         '';
     final cover = json['coverImage'];
     final next = json['nextAiringEpisode'];
-    final average = json['averageScore'];
+    final average = scoreOf(json);
     final airingAt = next is Map && next['airingAt'] is num
         ? DateTime.fromMillisecondsSinceEpoch((next['airingAt'] as num).toInt() * 1000,
             isUtc: true)
@@ -119,7 +131,7 @@ class AnilistMedia {
       altTitle: [english, romaji, native].firstWhere((t) => t != null && t != title, orElse: () => null),
       coverUrl: cover is Map ? text(cover['large']) ?? text(cover['extraLarge']) : null,
       bannerUrl: text(json['bannerImage']),
-      score: average is num && average > 0 ? average / 10 : null,
+      score: average,
       format: text(json['format']),
       status: text(json['status']),
       episodes: (json['episodes'] as num?)?.toInt(),
