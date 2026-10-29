@@ -3602,6 +3602,7 @@
         "kitsu-profile-plus"
       ],
       "owns": [
+        "lib/widgets/Kitsu/profile/kitsu_profile_rows.dart",
         "lib/pages/Kitsu/kitsu_media_page.dart",
         "lib/widgets/Kitsu/media/**",
         "lib/widgets/Kitsu/kitsu_open.dart",
