@@ -1,0 +1,21 @@
+{
+  "@@locale": "en",
+  "Ald_Score_Stars": "{count} out of 5 stars",
+  "@Ald_Score_Stars": { "placeholders": { "count": { "type": "int" } } },
+  "Ald_Score_Face_Sad": "My score: did not like it",
+  "Ald_Score_Face_Neutral": "My score: it was okay",
+  "Ald_Score_Face_Happy": "My score: liked it",
+  "Ald_My_Score": "My score: {score}",
+  "@Ald_My_Score": { "placeholders": { "score": { "type": "String" } } },
+  "Ald_Average_Score": "Average score {percent}",
+  "@Ald_Average_Score": { "placeholders": { "percent": { "type": "String" } } },
+  "Ald_Notes": "Notes",
+  "Ald_Private": "Private",
+  "Ald_Priority": "Priority {value}",
+  "@Ald_Priority": { "placeholders": { "value": { "type": "int" } } },
+  "Ald_Airs_In": "Airs in {time}",
+  "@Ald_Airs_In": { "placeholders": { "time": { "type": "String" } } },
+  "Ald_Complete_Title": "Mark as completed?",
+  "Ald_Complete_Yes": "Completed",
+  "Ald_Complete_Only_Progress": "Only +1"
+}

@@ -1,0 +1,108 @@
+{
+  "data": {
+    "MediaListCollection": {
+      "hasNextChunk": false,
+      "user": {
+        "mediaListOptions": {
+          "scoreFormat": "POINT_100",
+          "rowOrder": "score",
+          "animeList": {
+            "sectionOrder": ["Watching", "Completed", "Paused", "Dropped", "Planning", "Favourites"],
+            "splitCompletedSectionByFormat": false,
+            "customLists": ["Favourites"],
+            "advancedScoring": [],
+            "advancedScoringEnabled": false
+          },
+          "mangaList": {"sectionOrder": []}
+        }
+      },
+      "lists": [
+        {
+          "name": "Watching",
+          "isCustomList": false,
+          "status": "CURRENT",
+          "entries": [
+            {
+              "id": 9001, "status": "CURRENT", "scoreRaw": 73, "score": 7.3, "progress": 10,
+              "progressVolumes": 0, "repeat": 0, "priority": 2, "private": true,
+              "hiddenFromStatusLists": false, "notes": "Watch with subs",
+              "customLists": [{"name": "Favourites", "enabled": true}], "advancedScores": {},
+              "updatedAt": 1761700000, "createdAt": 1761000000,
+              "startedAt": {"year": 2026, "month": 10, "day": 1},
+              "completedAt": {"year": null, "month": null, "day": null},
+              "media": {
+                "id": 1, "idMal": 101, "type": "ANIME", "format": "TV", "status": "FINISHED",
+                "episodes": 12, "duration": 24, "genres": ["Drama"], "weightedScore": 80,
+                "popularity": 1000, "title": {"romaji": "Frieren", "userPreferred": "Frieren"},
+                "startDate": {"year": 2026, "month": 7, "day": 1},
+                "endDate": {"year": 2026, "month": 9, "day": 23}
+              }
+            },
+            {
+              "id": 9002, "status": "CURRENT", "scoreRaw": 0, "score": 0, "progress": 11,
+              "progressVolumes": 0, "repeat": 0, "priority": 0, "private": false,
+              "hiddenFromStatusLists": false, "notes": "",
+              "customLists": [{"name": "Favourites", "enabled": false}], "advancedScores": {},
+              "updatedAt": 1761600000, "createdAt": 1761000001,
+              "startedAt": {"year": 2026, "month": 9, "day": 1},
+              "completedAt": {"year": null, "month": null, "day": null},
+              "media": {
+                "id": 2, "idMal": 102, "type": "ANIME", "format": "MOVIE", "status": "FINISHED",
+                "episodes": 12, "duration": 24, "genres": ["Action"], "weightedScore": 45,
+                "popularity": 500, "title": {"romaji": "Dandadan", "userPreferred": "Dandadan"},
+                "startDate": {"year": 2025, "month": 1, "day": 1},
+                "endDate": {"year": 2025, "month": 3, "day": 1}
+              }
+            }
+          ]
+        },
+        {
+          "name": "Paused",
+          "isCustomList": false,
+          "status": "PAUSED",
+          "entries": [
+            {
+              "id": 9003, "status": "PAUSED", "scoreRaw": 85, "score": 8.5, "progress": 3,
+              "progressVolumes": 0, "repeat": 2, "priority": 0, "private": false,
+              "hiddenFromStatusLists": false, "notes": "",
+              "customLists": [], "advancedScores": {},
+              "updatedAt": 1761500000, "createdAt": 1761000002,
+              "startedAt": {"year": 2026, "month": 1, "day": 1},
+              "completedAt": {"year": null, "month": null, "day": null},
+              "media": {
+                "id": 3, "idMal": 103, "type": "ANIME", "format": "OVA", "status": "FINISHED",
+                "episodes": 6, "duration": 30, "genres": ["Comedy"], "weightedScore": 66,
+                "popularity": 300, "title": {"romaji": "Mushishi", "userPreferred": "Mushishi"},
+                "startDate": {"year": 2014, "month": 4, "day": 1},
+                "endDate": {"year": 2014, "month": 6, "day": 1}
+              }
+            }
+          ]
+        },
+        {
+          "name": "Planning",
+          "isCustomList": false,
+          "status": "PLANNING",
+          "entries": [
+            {
+              "id": 9004, "status": "PLANNING", "scoreRaw": 0, "score": 0, "progress": 0,
+              "progressVolumes": 0, "repeat": 0, "priority": 0, "private": false,
+              "hiddenFromStatusLists": false, "notes": "",
+              "customLists": [], "advancedScores": {},
+              "updatedAt": 1761400000, "createdAt": 1761000003,
+              "startedAt": {"year": null, "month": null, "day": null},
+              "completedAt": {"year": null, "month": null, "day": null},
+              "media": {
+                "id": 4, "idMal": 104, "type": "ANIME", "format": "TV", "status": "FINISHED",
+                "episodes": 24, "duration": 24, "genres": ["Drama"], "weightedScore": 90,
+                "popularity": 9000, "title": {"romaji": "Monster", "userPreferred": "Monster"},
+                "startDate": {"year": 2004, "month": 4, "day": 7},
+                "endDate": {"year": 2005, "month": 9, "day": 27}
+              }
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

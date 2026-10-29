@@ -9,6 +9,7 @@ import 'package:mywatchlist/user/list_cache/list_status_cache.dart';
 import 'package:mywatchlist/user/preferences/preferences.dart';
 import 'package:mywatchlist/widgets/Anilist/anilist_user_list_adapter.dart';
 import 'package:mywatchlist/widgets/Anilist/list/anilist_bulk_edit.dart';
+import 'package:mywatchlist/widgets/Anilist/list/anilist_list_tab.dart';
 import 'package:mywatchlist/widgets/Anilist/list/anilist_sections.dart';
 import 'package:mywatchlist/widgets/common/list_sort_filter.dart';
 import 'package:mywatchlist/widgets/common/select/select_option.dart';
@@ -19,17 +20,16 @@ import 'package:mywatchlist/widgets/user/list/list_query.dart';
 import 'package:mywatchlist/widgets/user/list/list_view_store.dart';
 import 'package:mywatchlist/widgets/user/list/user_list_adapter.dart';
 import 'package:mywatchlist/widgets/user/list/user_list_controller.dart';
-import 'package:mywatchlist/widgets/user/list/user_list_tab.dart';
 
 /// The signed-in user's AniList list as anilist.co draws it: All, then the account's
 /// sections in its own order (Watching, Rewatching, Completed or Completed split by format,
-/// Paused, Dropped, Planning, custom lists), with the shared list cards, sort / filter /
-/// display sheet, search, pull to refresh, quick +1 and the AniList editor; a select action
-/// edits several entries at once.
+/// Paused, Dropped, Planning, custom lists), AniList's own rows ([AnilistEntryRow]: score in
+/// the account's format, label rail, community %), sort / filter / display sheet, search, pull
+/// to refresh, quick +1 (asking before the last episode completes the entry) and the AniList
+/// editor; a select action edits several entries at once.
 ///
-/// Built from the shared list pieces (`UserListTab`, `UserListTabController`, the sort sheet,
-/// `ListViewStore`); the sections come from the list itself, so the tabs appear once it is
-/// loaded.
+/// Built on the shared list state (`UserListTabController`, the sort sheet, `ListViewStore`);
+/// the sections come from the list itself, so the tabs appear once it is loaded.
 class AnilistListView extends StatefulWidget {
   final AnilistUserListAdapter adapter;
   final Widget Function(BuildContext context, Widget categorySwitch) titleBuilder;
@@ -70,6 +70,7 @@ class _AnilistListViewState extends State<AnilistListView> with TickerProviderSt
   AnilistUserListAdapter get _adapter => widget.adapter;
   AnilistListService get _lists => _adapter.lists;
   bool get _isAnime => _category == 'anime';
+  bool get _showsTime => _isAnime && _adapter.fillsEpisodeLength;
   ListViewSettings get _current => _settings[_category] ?? ListViewStore.defaults(_category);
   List<AnilistSection> get _currentSections => _sections[_category] ?? const [];
   AnilistSection? get _visibleSection {
@@ -373,9 +374,16 @@ class _AnilistListViewState extends State<AnilistListView> with TickerProviderSt
 
   Future<void> _step(ListEntryView entry, int delta) async {
     if (_busy.value.contains(entry.id)) return;
+    var complete = true;
+    if (_adapter.completesOnStep(entry, delta)) {
+      final answer = await _askComplete(entry);
+      if (answer == null || !mounted) return;
+      complete = answer;
+    }
+    if (_busy.value.contains(entry.id)) return;
     _busy.value = {..._busy.value, entry.id};
     try {
-      final saved = await _adapter.step(entry, delta);
+      final saved = await _adapter.step(entry, delta, complete: complete);
       if (mounted) _applyChange(saved);
     } catch (e) {
       if (!mounted) return;
@@ -393,6 +401,26 @@ class _AnilistListViewState extends State<AnilistListView> with TickerProviderSt
       _busy.value = {..._busy.value}..remove(entry.id);
     }
   }
+
+  /// The +1 reaches the last episode: completed (true), only the progress (false), or
+  /// nothing (null, dismissed).
+  Future<bool?> _askComplete(ListEntryView entry) => showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text(S.current.Ald_Complete_Title),
+          content: Text(entry.title, maxLines: 3, overflow: TextOverflow.ellipsis),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: Text(S.current.Ald_Complete_Only_Progress),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: Text(S.current.Ald_Complete_Yes),
+            ),
+          ],
+        ),
+      );
 
   /// [entry] was saved: it moves in or out of each section by its AniList fields.
   void _applyChange(ListEntryView entry) {
@@ -508,10 +536,10 @@ class _AnilistListViewState extends State<AnilistListView> with TickerProviderSt
           // actions list Flutter adds its own ☰ next to the header's avatar.
           actions: const [SizedBox.shrink()],
           bottom: PreferredSize(
-            preferredSize: Size.fromHeight(46 + 48 + (_isAnime ? _timeLineHeight : 0)),
+            preferredSize: Size.fromHeight(46 + 48 + (_showsTime ? _timeLineHeight : 0)),
             child: ready
                 ? _header(theme, sections, tabs)
-                : SizedBox(height: 94 + (_isAnime ? _timeLineHeight : 0)),
+                : SizedBox(height: 94 + (_showsTime ? _timeLineHeight : 0)),
           ),
         ),
       ],
@@ -562,7 +590,7 @@ class _AnilistListViewState extends State<AnilistListView> with TickerProviderSt
       controller: tabs,
       children: [
         for (final section in sections)
-          UserListTab(
+          AnilistListTab(
             key: PageStorageKey('al-tab-$_category-${section.key}'),
             controller: _tabFor(_category, section).controller,
             adapter: _tabFor(_category, section).adapter,
@@ -570,11 +598,15 @@ class _AnilistListViewState extends State<AnilistListView> with TickerProviderSt
             cardProfile: profile,
             actions: _actions,
             style: _style(context, showStatus: !section.isStatus),
+            dataOf: _rowData,
             onClearFilters: _clearFilters,
           ),
       ],
     );
   }
+
+  AnilistRowData _rowData(ListEntryView e) =>
+      (detail: _lists.detailOf(e.category, e.id), format: _adapter.scoreFormatOf(e.category));
 
   Widget _header(ThemeData theme, List<AnilistSection> sections, TabController tabs) {
     final counts = _counts[_category] ?? const {};
@@ -606,7 +638,7 @@ class _AnilistListViewState extends State<AnilistListView> with TickerProviderSt
         ),
         SizedBox(height: 48, child: _toolbar(theme)),
         // AniList gives each anime's episode length: "time left" as on My List.
-        if (_isAnime)
+        if (_showsTime)
           SizedBox(
             height: _timeLineHeight,
             child: _TimeLine(
@@ -716,7 +748,7 @@ class _TimeLine extends StatelessWidget {
           builder: (context, _) {
             // Custom lists mix statuses: they count the time watched, as "All" does.
             final summary = c.isStarted
-                ? ListTimeSummary.of(c.entries, section.listStatus, partial: c.hasMore)
+                ? listTimeSummary(c.entries, section.listStatus, partial: c.hasMore)
                 : null;
             if (summary == null) return const SizedBox.shrink();
             final theme = Theme.of(context);
@@ -776,6 +808,22 @@ class _SectionAdapter extends UserListAdapter {
   @override
   String? apiSort(String category, String sortKey, SortDirection direction) => null;
 
+  // AniList's look: the cards of a section word and score their rows as the base adapter does.
+  @override
+  bool get fillsEpisodeLength => base.fillsEpisodeLength;
+  @override
+  String statusLabel(ListEntryStatus status, {required bool isAnime}) =>
+      base.statusLabel(status, isAnime: isAnime);
+  @override
+  String statusShortLabel(ListEntryStatus status, {required bool isAnime}) =>
+      base.statusShortLabel(status, isAnime: isAnime);
+  @override
+  ListScoreText? userScore(ListEntryView entry) => base.userScore(entry);
+  @override
+  ListScoreText? meanScore(ListEntryView entry) => base.meanScore(entry);
+  @override
+  List<ListCardBadge> cardBadges(ListEntryView entry) => base.cardBadges(entry);
+
   @override
   Future<ListPage> fetch({
     required String category,
@@ -819,7 +867,8 @@ class _SectionAdapter extends UserListAdapter {
   @override
   bool canStep(ListEntryView entry) => base.canStep(entry);
   @override
-  Future<ListEntryView> step(ListEntryView entry, int delta) => base.step(entry, delta);
+  Future<ListEntryView> step(ListEntryView entry, int delta, {bool complete = true}) =>
+      base.step(entry, delta, complete: complete);
   @override
   bool isSessionExpired(Object error) => base.isSessionExpired(error);
   @override

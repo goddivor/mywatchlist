@@ -436,9 +436,9 @@ class ListTimeSummary {
   /// watch (watching, on hold, plan to watch), the time watched for the others and for "All".
   /// Null for manga, or when no entry has a known length.
   ///
-  /// Superseded by `listTimeSummary` (rewatches counted in the time watched), which My List
-  /// uses; kept, rewatches not counted, for the AniList list view and its tests until they
-  /// move to `listTimeSummary`.
+  /// Superseded by `listTimeSummary` (rewatches counted in the time watched), which every
+  /// list uses. Rewatches not counted. Only `test/units/tracker-list-hooks/list_hooks_test.dart`
+  /// still calls it (to check both agree without rewatches); delete it with that line.
   static ListTimeSummary? of(
     Iterable<ListEntryView> entries,
     ListEntryStatus? status, {
