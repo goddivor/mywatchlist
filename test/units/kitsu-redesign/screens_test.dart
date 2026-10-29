@@ -28,12 +28,12 @@ void main() {
     await initializeDateFormatting();
   });
 
-  Future<void> pump(WidgetTester tester, Widget page, {String locale = 'en', bool settle = true}) async {
+  Future<void> pump(WidgetTester tester, Widget page, {String locale = 'en', bool settle = true, double width = 900}) async {
     SharedPreferences.setMockInitialValues({});
     await LanguageBloc.apply(locale);
     final prefs = PreferencesBloc(store: PreferencesStore(await SharedPreferences.getInstance()));
     addTearDown(prefs.close);
-    tester.view.physicalSize = const Size(900, 6000);
+    tester.view.physicalSize = Size(width, 6000);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
     final parts = locale.split('_');
@@ -119,7 +119,8 @@ void main() {
 
     testWidgets('+1 writes the next episode and moves the ticks', (tester) async {
       final fake = site(entry: entryJson());
-      await pump(tester, page(fake));
+      // Wide enough for the whole episode strip to be built.
+      await pump(tester, page(fake), width: 2800);
       await tester.tap(find.text('+1'));
       await tester.pumpAndSettle();
       expect(fake.inputs('mutation Update').single, {'id': '900', 'progress': 6});
