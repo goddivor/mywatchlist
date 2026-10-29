@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_widget_from_html_core/flutter_widget_from_html_core.dart';
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/screens/user_profile/sections/profile_tab.dart';
 import 'package:mywatchlist/screens/user_profile/sections/stats_section.dart'
@@ -11,8 +10,10 @@ import 'package:mywatchlist/services/api/Anilist/anilist_list_service.dart'
 import 'package:mywatchlist/services/api/Anilist/anilist_profile_service.dart';
 import 'package:mywatchlist/user/preferences/preferences.dart';
 import 'package:mywatchlist/utils/web_launcher.dart';
-import 'package:mywatchlist/widgets/Anilist/anilist_media_card.dart';
-import 'package:mywatchlist/services/api/Anilist/anilist_media.dart';
+import 'package:mywatchlist/pages/Anilist/anilist_settings_page.dart';
+import 'package:mywatchlist/widgets/Anilist/social/anilist_html.dart';
+import 'package:mywatchlist/widgets/Anilist/social/anilist_links.dart'
+    show openAnilistLink, openAnilistTitle;
 import 'package:mywatchlist/widgets/charts/chart_card.dart';
 import 'package:mywatchlist/widgets/charts/chart_palette.dart';
 import 'package:mywatchlist/widgets/charts/ranked_bar_list.dart';
@@ -21,7 +22,6 @@ import 'package:mywatchlist/widgets/charts/status_bar_chart.dart';
 import 'package:mywatchlist/widgets/common/app_bar_menu.dart';
 import 'package:mywatchlist/widgets/common/app_colors.dart';
 import 'package:mywatchlist/widgets/common/app_image.dart';
-import 'package:mywatchlist/widgets/common/image_preview.dart';
 import 'package:mywatchlist/widgets/common/share_builder.dart';
 import 'package:mywatchlist/widgets/user/profile/profile_format.dart';
 import 'package:mywatchlist/widgets/user/profile/profile_header.dart';
@@ -201,12 +201,18 @@ class _BodyState extends State<_Body> with SingleTickerProviderStateMixin {
                 onShare: _share,
                 onOpenInBrowser: () => openLink(context, profile.url),
                 items: [
-                  if (widget.isSelf)
+                  if (widget.isSelf) ...[
                     AppBarMenuItem(
                       label: s.Prof_Edit_Profile,
                       icon: Icons.edit_outlined,
                       onTap: () => openLink(context, 'https://anilist.co/settings/profile'),
                     ),
+                    AppBarMenuItem(
+                      label: s.Als_Title,
+                      icon: Icons.settings_outlined,
+                      onTap: () => AppRoutes.push<void>(context, const AnilistSettingsPage()),
+                    ),
+                  ],
                 ],
               ),
             ],
@@ -523,32 +529,7 @@ class _AboutTabState extends State<_AboutTab> with AutomaticKeepAliveClientMixin
         SliverToBoxAdapter(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-            child: HtmlWidget(
-              about,
-              textStyle: Theme.of(context).textTheme.bodyMedium,
-              onTapUrl: (url) {
-                openLink(context, url);
-                return true;
-              },
-              customWidgetBuilder: (element) {
-                if (element.localName != 'img') return null;
-                final src = element.attributes['src'];
-                if (src == null || src.isEmpty) return const SizedBox.shrink();
-                final width = MediaQuery.sizeOf(context).width - 32;
-                return GestureDetector(
-                  onTap: () => zoomInImage(context, src),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 4),
-                    child: AppImage(
-                      url: src,
-                      width: width,
-                      fit: BoxFit.contain,
-                      errorWidget: (_) => const SizedBox.shrink(),
-                    ),
-                  ),
-                );
-              },
-            ),
+            child: AnilistHtml(about),
           ),
         ),
         if (widget.isSelf)
@@ -583,14 +564,13 @@ class _FavoritesTabState extends State<_FavoritesTab> with AutomaticKeepAliveCli
   @override
   bool get wantKeepAlive => true;
 
+  /// A favourite title opens the AniList title, never the MyAnimeList page (owner rule);
+  /// characters, staff and studios open their AniList screen in the app.
   void _open(AnilistFavorite f, String? category) {
-    if (category != null && f.malId != null) {
-      openAnilistMedia(
-        context,
-        AnilistMedia(id: f.id, malId: f.malId, category: category, title: f.title),
-      );
+    if (category != null) {
+      openAnilistTitle(context, category: category, id: f.id);
     } else {
-      openLink(context, f.url);
+      openAnilistLink(context, f.url);
     }
   }
 

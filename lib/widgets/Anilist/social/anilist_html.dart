@@ -98,6 +98,9 @@ class AnilistHtml extends StatelessWidget {
       width: width,
       fit: BoxFit.contain,
       alignment: AlignmentDirectional.centerStart,
+      // The text gives no height (the picture's own ratio decides once it is decoded), so the
+      // placeholder needs one: the default fills its slot, which is infinite here.
+      placeholder: (context) => anilistImagePlaceholder(context, width),
       errorWidget: (_) => const SizedBox.shrink(),
     );
     return InlineCustomWidget(
@@ -113,6 +116,14 @@ class AnilistHtml extends StatelessWidget {
     );
   }
 }
+
+/// What an AniList picture shows while it loads: a flat box [width] wide at a 16:9 ratio
+/// (at most 240 tall), since the HTML gives no height and the slot has none either.
+Widget anilistImagePlaceholder(BuildContext context, double width) => SizedBox(
+      width: width,
+      height: (width * 9 / 16).clamp(16.0, 240.0),
+      child: ColoredBox(color: Theme.of(context).colorScheme.surfaceContainerHighest),
+    );
 
 /// Hidden content: a "Spoiler" pill until tapped, then the content (tap again hides it).
 class AnilistSpoiler extends StatefulWidget {
