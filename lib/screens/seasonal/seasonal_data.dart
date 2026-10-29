@@ -46,6 +46,10 @@ ListEntryView entryFromAnime(Anime a) {
   );
 }
 
+/// Which part of a season the screen shows: everything, the shows that start in it, or the
+/// leftovers of earlier seasons that still air (MAL's "TV (New)" and "TV (Continuing)").
+enum SeasonGroup { all, fresh, continuing }
+
 /// Downloads whole seasons and keeps the sort / filter / display of the seasonal screen.
 class SeasonalData {
   SeasonalData._();
@@ -59,12 +63,33 @@ class SeasonalData {
   /// MAL serves at most 500 anime per seasonal request.
   static const int pageSize = 500;
 
+  static final Map<String, Set<int>> _continuing = {};
+
+  /// Ids of the anime of [season] that started in an earlier season and still air (MAL's
+  /// "Continuing"). Empty until [load] has read the season, and when MAL sent no `start_season`.
+  static Set<int> continuingIds(SeasonKey season) => _continuing[season.storageKey] ?? const {};
+
+  /// True when an anime that began on [startDate] (`2026-07-05`, `2026-07` or `2026`) began before
+  /// [season]. `Anime` does not carry MAL's `start_season`, so the season is read from the date
+  /// (winter 1-3, spring 4-6, summer 7-9, fall 10-12); an unknown or partial date counts as new.
+  static bool isContinuing(String? startDate, SeasonKey season) {
+    if (startDate == null) return false;
+    final parts = startDate.split('-');
+    final year = int.tryParse(parts.first);
+    if (year == null) return false;
+    if (year != season.year) return year < season.year;
+    final month = parts.length > 1 ? int.tryParse(parts[1]) : null;
+    if (month == null) return false;
+    return (month - 1) ~/ 3 < season.season.index;
+  }
+
   /// Every anime of [season], all pages, cached for ten minutes.
   static Future<List<ListEntryView>> load(SeasonKey season, {bool force = false}) {
     final key = 'season:${season.storageKey}';
     if (force) ExploreCache.instance.forget(key);
     return ExploreCache.instance.load(key, () async {
       final all = <ListEntryView>[];
+      final continuing = <int>{};
       var offset = 0;
       while (true) {
         final page = await MalApi.getAnimeSeasonalResult(
@@ -76,9 +101,13 @@ class SeasonalData {
           fields: const [fields],
         );
         all.addAll(page.data.map(entryFromAnime));
+        for (final a in page.data) {
+          if (isContinuing(a.startDate, season)) continuing.add(a.id);
+        }
         if (!page.hasNextPage || page.data.isEmpty) break;
         offset += pageSize;
       }
+      _continuing[season.storageKey] = continuing;
       return all;
     });
   }
@@ -132,6 +161,28 @@ class SeasonalData {
     } catch (e) {
       debugPrint('SeasonalData.readSettings: $e');
       return fallback;
+    }
+  }
+
+  static const String _groupKey = 'seasonal_group_v1';
+
+  static Future<SeasonGroup> readGroup() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final name = prefs.getString(_groupKey);
+      return SeasonGroup.values.firstWhere((g) => g.name == name, orElse: () => SeasonGroup.all);
+    } catch (e) {
+      debugPrint('SeasonalData.readGroup: $e');
+      return SeasonGroup.all;
+    }
+  }
+
+  static Future<void> writeGroup(SeasonGroup value) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_groupKey, value.name);
+    } catch (e) {
+      debugPrint('SeasonalData.writeGroup: $e');
     }
   }
 
