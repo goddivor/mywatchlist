@@ -1,0 +1,12 @@
+{
+  "@@locale": "en",
+  "Sdp_Check_In": "Watching now",
+  "Sdp_Check_In_Done": "Ep. {number} is now on your Simkl dashboard",
+  "@Sdp_Check_In_Done": { "placeholders": { "number": { "type": "int" } } },
+  "Sdp_Check_In_Wait": "Wait {seconds} seconds before checking in again",
+  "@Sdp_Check_In_Wait": { "placeholders": { "seconds": { "type": "int" } } },
+  "Sdp_Check_In_Failed": "Could not check in",
+  "Sdp_Marked_Watched": "Ep. {number} marked watched",
+  "@Sdp_Marked_Watched": { "placeholders": { "number": { "type": "int" } } },
+  "Sdp_Other_Sites": "Other sites"
+}

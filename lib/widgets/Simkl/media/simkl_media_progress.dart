@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/services/api/SimKl/simkl_detail_models.dart';
+import 'package:mywatchlist/services/api/SimKl/simkl_list_service.dart' show SimklNextToWatch;
 import 'package:mywatchlist/widgets/Simkl/media/simkl_media_format.dart';
 import 'package:mywatchlist/widgets/Simkl/media/simkl_media_sections.dart' show simklPagePadding;
 import 'package:mywatchlist/widgets/common/app_colors.dart';
@@ -41,6 +42,7 @@ SimklNextUp? simklNextUp({
   required List<SimklEpisode>? episodes,
   required ListEntryView? entry,
   required DateTime now,
+  SimklNextToWatch? info,
 }) {
   final regular = [
     for (final e in episodes ?? const <SimklEpisode>[])
@@ -54,6 +56,17 @@ SimklNextUp? simklNextUp({
   final total = entry != null && entry.total > 0 ? entry.total : (title.totalEpisodes ?? 0);
 
   final status = entry?.status;
+  // Simkl's own answer (`next_to_watch_info`) wins over the computation below while it is about
+  // the episode right after the user's progress.
+  if (info != null && entry != null && status == ListEntryStatus.current && info.episode == entry.progress + 1) {
+    final date = info.date;
+    return SimklNextUp(
+      date == null || !date.isAfter(now) ? SimklNextKind.watchNext : SimklNextKind.upcoming,
+      episode: info.episode,
+      episodeTitle: info.title,
+      date: date,
+    );
+  }
   if (entry != null && status != null && status != ListEntryStatus.dropped) {
     final next = entry.progress + 1;
     final done = status == ListEntryStatus.completed || (total > 0 && next > total);
@@ -88,6 +101,10 @@ class SimklNextEpisodeCard extends StatelessWidget {
   final DateTime now;
   final VoidCallback? onMark;
   final bool marking;
+
+  /// "Watching now" (Simkl check-in) of the episode; null hides the button.
+  final VoidCallback? onCheckIn;
+  final bool checkingIn;
   final VoidCallback? onOpenSequel;
 
   const SimklNextEpisodeCard({
@@ -96,6 +113,8 @@ class SimklNextEpisodeCard extends StatelessWidget {
     required this.now,
     this.onMark,
     this.marking = false,
+    this.onCheckIn,
+    this.checkingIn = false,
     this.onOpenSequel,
   });
 
@@ -138,6 +157,7 @@ class SimklNextEpisodeCard extends StatelessWidget {
       SimklNextKind.sequel => Icons.skip_next_rounded,
     };
     final mark = next.kind == SimklNextKind.watchNext && next.episode != null ? onMark : null;
+    final checkIn = next.kind == SimklNextKind.watchNext && next.episode != null ? onCheckIn : null;
     return Padding(
       padding: const EdgeInsets.fromLTRB(simklPagePadding, 12, simklPagePadding, 0),
       child: Material(
@@ -183,6 +203,17 @@ class SimklNextEpisodeCard extends StatelessWidget {
                     ],
                   ),
                 ),
+                if (checkIn != null && !marking)
+                  checkingIn
+                      ? const Padding(
+                          padding: EdgeInsets.all(12),
+                          child: SizedBox.square(dimension: 22, child: CircularProgressIndicator(strokeWidth: 2.5)),
+                        )
+                      : IconButton(
+                          tooltip: s.Sdp_Check_In,
+                          onPressed: checkIn,
+                          icon: Icon(Icons.live_tv_outlined, color: scheme.onSecondaryContainer),
+                        ),
                 if (mark != null)
                   marking
                       ? const Padding(

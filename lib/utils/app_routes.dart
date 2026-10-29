@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mywatchlist/constants/constants.dart' show AccountType;
 import 'package:mywatchlist/pages/Anilist/anilist_user_profile_page.dart';
 import 'package:mywatchlist/pages/Kitsu/kitsu_user_profile_page.dart';
@@ -40,6 +41,8 @@ import 'package:mywatchlist/user/user_kitsu_v2.dart';
 import 'package:mywatchlist/user/user_simkl_v2.dart';
 import 'package:mywatchlist/widgets/Anilist/anilist_profile_view.dart';
 import 'package:mywatchlist/widgets/Kitsu/kitsu_profile_view.dart';
+import 'package:mywatchlist/user/accounts/account_bloc.dart';
+import 'package:mywatchlist/widgets/Simkl/calendar/simkl_calendar.dart';
 import 'package:mywatchlist/widgets/Simkl/simkl_profile_view.dart';
 import 'package:mywatchlist/widgets/Simkl/simkl_states.dart' show simklSignedIn;
 import 'package:mywatchlist/widgets/user/profile/user_pop_sheet.dart';
@@ -106,9 +109,20 @@ abstract final class AppRoutes {
   static Future<void> openBookmarks(BuildContext context) =>
       push<void>(context, const BookmarksScreen());
 
-  /// Opens the weekly airing calendar (`lib/screens/calendar/calendar_screen.dart`).
+  /// Opens the weekly airing calendar (`lib/screens/calendar/calendar_screen.dart`); a Simkl
+  /// account gets Simkl's own calendar (`SimklCalendarPage`).
   static Future<void> openCalendar(BuildContext context) =>
-      push<void>(context, const CalendarScreen());
+      push<void>(context, _isSimklActive(context) ? const SimklCalendarPage() : const CalendarScreen());
+
+  /// True when the selected account is Simkl; false without an account bloc above [context].
+  static bool _isSimklActive(BuildContext context) {
+    try {
+      final state = context.read<AccountBloc>().state;
+      return state is AccountLoaded && state.selectedAccountType == AccountType.simkl;
+    } catch (_) {
+      return false;
+    }
+  }
 
   /// Opens the global search screen, optionally prefilled with [query], on [category]
   /// (`all`, `anime`, `manga`, `character`, `person`, `user`, `forum`, `featured`, `news`,
