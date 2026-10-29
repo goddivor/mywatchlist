@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/widgets/user/list/list_entry_view.dart';

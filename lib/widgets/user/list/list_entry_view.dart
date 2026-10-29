@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/widgets/calendar/airing_schedule.dart';
 import 'package:mywatchlist/widgets/common/app_colors.dart';
-import 'package:mywatchlist/widgets/user/list/list_query.dart' show listTimeSummary;
 
 /// Status of an entry in a user list, the same for every tracker.
 ///
@@ -433,15 +432,35 @@ class ListTimeSummary {
 
   const ListTimeSummary(this.kind, this.total, {this.partial = false});
 
-  /// The time line of [entries] in the tab [status]: an alias of [listTimeSummary] (rewatches
-  /// counted in the time watched), kept for the AniList list view until it calls
-  /// [listTimeSummary] itself. One rule for every tracker.
+  /// Time of [entries] of the tab [status]: the time left for the tabs of titles still to
+  /// watch (watching, on hold, plan to watch), the time watched for the others and for "All".
+  /// Null for manga, or when no entry has a known length.
+  ///
+  /// Superseded by `listTimeSummary` (rewatches counted in the time watched), which My List
+  /// uses; kept, rewatches not counted, for the AniList list view and its tests until they
+  /// move to `listTimeSummary`.
   static ListTimeSummary? of(
     Iterable<ListEntryView> entries,
     ListEntryStatus? status, {
     bool partial = false,
-  }) =>
-      listTimeSummary(entries, status, partial: partial);
+  }) {
+    final kind = switch (status) {
+      ListEntryStatus.current ||
+      ListEntryStatus.onHold ||
+      ListEntryStatus.planned =>
+        ListTimeKind.left,
+      _ => ListTimeKind.watched,
+    };
+    var seconds = 0;
+    var unknown = false;
+    for (final e in entries) {
+      final d = kind == ListTimeKind.left ? e.timeLeft : e.timeWatched;
+      if (d != null) seconds += d.inSeconds;
+      if (kind == ListTimeKind.left && e.hasUnknownTimeLeft) unknown = true;
+    }
+    if (seconds <= 0) return null;
+    return ListTimeSummary(kind, Duration(seconds: seconds), partial: partial || unknown);
+  }
 
   /// The translated line ("Time left: 41 d 3 h").
   String label() {

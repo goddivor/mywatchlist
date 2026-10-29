@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
+import 'package:intl/intl.dart' hide TextDirection;
 import 'package:mywatchlist/constants/constants.dart' show DisplaySubType;
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/widgets/common/app_colors.dart';
@@ -217,11 +217,11 @@ class _RowInfo extends StatelessWidget {
     required this.airing,
   });
 
-  static double _lineHeight(TextStyle? style, TextScaler scaler) {
+  static double _lineHeight(TextStyle? style, TextScaler scaler, TextDirection direction) {
     final painter = TextPainter(
       text: TextSpan(text: 'Ag', style: style),
       textScaler: scaler,
-      textDirection: TextDirection.ltr,
+      textDirection: direction,
       maxLines: 1,
     )..layout();
     final h = painter.height;
@@ -233,20 +233,21 @@ class _RowInfo extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scaler = MediaQuery.textScalerOf(context);
+    final dir = Directionality.of(context);
     final muted = theme.colorScheme.onSurfaceVariant;
     final titleStyle = theme.textTheme.titleSmall?.copyWith(height: 1.2);
     final mediaStyle = theme.textTheme.bodySmall?.copyWith(color: muted);
     final airingStyle = theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.primary);
     final pillStyle = const TextStyle(fontSize: 10.5, height: 1.2);
     final badgeHeight = [
-      _lineHeight(pillStyle, scaler) + 4,
-      _lineHeight(theme.textTheme.labelMedium, scaler),
+      _lineHeight(pillStyle, scaler, dir) + 4,
+      _lineHeight(theme.textTheme.labelMedium, scaler, dir),
       15.0,
     ].reduce((a, b) => a > b ? a : b);
     return LayoutBuilder(builder: (context, box) {
-      final titleLine = _lineHeight(titleStyle, scaler);
-      final mediaLine = _lineHeight(mediaStyle, scaler);
-      final airingLine = _lineHeight(airingStyle, scaler) + 2;
+      final titleLine = _lineHeight(titleStyle, scaler, dir);
+      final mediaLine = _lineHeight(mediaStyle, scaler, dir);
+      final airingLine = _lineHeight(airingStyle, scaler, dir) + 2;
       var room = box.maxHeight - 2 - badgeHeight - 4 - 2;
       var showAiring = airing != null;
       var lines = mediaLines;
