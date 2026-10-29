@@ -3,7 +3,6 @@ import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/pages/Anilist/anilist_review_page.dart';
 import 'package:mywatchlist/services/api/Anilist/anilist_social_service.dart';
 import 'package:mywatchlist/widgets/Anilist/social/anilist_social_ui.dart';
-import 'package:mywatchlist/widgets/MAL/review/review_item.dart' show ReviewScoreBadge;
 import 'package:mywatchlist/widgets/common/app_image.dart';
 
 /// "73 %" of the voters found it helpful; empty without votes.
@@ -97,7 +96,7 @@ class AnilistReviewTile extends StatelessWidget {
                           child: Icon(Icons.lock_outline,
                               size: 14, semanticLabel: s.Als_Private, color: scheme.onSurfaceVariant),
                         ),
-                      ReviewScoreBadge(score: review.score, size: 16),
+                      AnilistScorePill(score: review.score),
                     ],
                   ),
                 ],

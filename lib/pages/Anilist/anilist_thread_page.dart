@@ -285,8 +285,8 @@ class _AnilistThreadPageState extends State<AnilistThreadPage> {
                                 size: 12,
                                 color: theme.colorScheme.onSecondaryContainer,
                               ),
-                              onTap: () => openAnilistLink(
-                                  context, 'https://anilist.co/${m.category}/${m.id}'),
+                              onTap: () =>
+                                  openAnilistTitle(context, category: m.category, id: m.id),
                             ),
                         ],
                       ),

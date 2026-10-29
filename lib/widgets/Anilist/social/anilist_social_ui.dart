@@ -7,6 +7,7 @@ import 'package:mywatchlist/services/api/Anilist/anilist_social_service.dart';
 import 'package:mywatchlist/utils/app_routes.dart';
 import 'package:mywatchlist/widgets/Anilist/social/anilist_likes_sheet.dart';
 import 'package:mywatchlist/widgets/Anilist/social/anilist_links.dart';
+import 'package:mywatchlist/widgets/common/app_colors.dart';
 import 'package:mywatchlist/widgets/forum/forum_common.dart' show ForumAvatar;
 
 /// "now", "5 min", "3 h", "2 d", then the date in the app locale.
@@ -330,6 +331,37 @@ class AnilistReplyBar extends StatelessWidget {
               ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// A review score the AniList way: "77/100" on the score token's tonal pill.
+class AnilistScorePill extends StatelessWidget {
+  const AnilistScorePill({super.key, required this.score, this.large = false});
+
+  /// 0-100.
+  final int score;
+  final bool large;
+
+  @override
+  Widget build(BuildContext context) {
+    final role = AppColors.of(context).score;
+    final style = (large
+            ? Theme.of(context).textTheme.titleMedium
+            : Theme.of(context).textTheme.labelMedium)
+        ?.copyWith(color: role.onContainer, fontWeight: FontWeight.w700);
+    return DecoratedBox(
+      decoration: BoxDecoration(color: role.container, borderRadius: BorderRadius.circular(8)),
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: large ? 10 : 6, vertical: large ? 4 : 2),
+        child: Text.rich(
+          TextSpan(children: [
+            TextSpan(text: '$score'),
+            TextSpan(text: '/100', style: style?.copyWith(fontWeight: FontWeight.w400, fontSize: (style.fontSize ?? 12) * 0.75)),
+          ]),
+          style: style,
         ),
       ),
     );

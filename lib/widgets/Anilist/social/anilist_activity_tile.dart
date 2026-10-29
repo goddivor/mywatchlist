@@ -249,7 +249,7 @@ class _ListUpdate extends StatelessWidget {
     final media = activity.media;
     final sentence = anilistListStatusText(activity.status, activity.progress);
     void open() {
-      if (media != null) openAnilistLink(context, 'https://anilist.co/${media.category}/${media.id}');
+      if (media != null) openAnilistTitle(context, category: media.category, id: media.id);
     }
 
     return InkWell(

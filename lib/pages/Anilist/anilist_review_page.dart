@@ -7,7 +7,6 @@ import 'package:mywatchlist/widgets/Anilist/social/anilist_html.dart';
 import 'package:mywatchlist/widgets/Anilist/social/anilist_links.dart';
 import 'package:mywatchlist/widgets/Anilist/social/anilist_review_composer.dart';
 import 'package:mywatchlist/widgets/Anilist/social/anilist_social_ui.dart';
-import 'package:mywatchlist/widgets/MAL/review/review_item.dart' show ReviewScoreBadge;
 import 'package:mywatchlist/widgets/common/app_colors.dart';
 import 'package:mywatchlist/widgets/common/app_image.dart';
 import 'package:mywatchlist/widgets/forum/forum_common.dart' show ForumMessage, ForumSkeleton;
@@ -17,8 +16,8 @@ import 'package:mywatchlist/widgets/forum/forum_common.dart' show ForumMessage, 
 Future<AnilistReview?> openAnilistReview(BuildContext context, int id, {AnilistReview? initial}) =>
     AppRoutes.push<AnilistReview>(context, AnilistReviewPage(reviewId: id, initial: initial));
 
-/// A whole AniList review, laid out like the MAL review page: the title (banner, cover; a
-/// tap opens it), reviewer and date, score, summary, the text, then "Was this review
+/// A whole AniList review, laid out like anilist.co's review page: the title (banner, cover;
+/// a tap opens it), reviewer and date, score, summary, the text, then "Was this review
 /// helpful?" with up and down votes. The reviewer edits or deletes it from the app bar.
 class AnilistReviewPage extends StatefulWidget {
   const AnilistReviewPage({super.key, required this.reviewId, this.initial, this.service});
@@ -165,10 +164,7 @@ class _AnilistReviewPageState extends State<AnilistReviewPage> {
                           child: Icon(Icons.lock_outline,
                               size: 18, semanticLabel: s.Als_Private, color: scheme.onSurfaceVariant),
                         ),
-                      ReviewScoreBadge(score: review.score, size: 24),
-                      Text('/100',
-                          style: theme.textTheme.bodySmall
-                              ?.copyWith(color: scheme.onSurfaceVariant)),
+                      AnilistScorePill(score: review.score, large: true),
                     ],
                   ),
                 ),
@@ -222,7 +218,7 @@ class _MediaHeader extends StatelessWidget {
     final tokens = AppColors.of(context);
     final width = MediaQuery.sizeOf(context).width;
     final banner = media.bannerUrl;
-    void open() => openAnilistLink(context, 'https://anilist.co/${media.category}/${media.id}');
+    void open() => openAnilistTitle(context, category: media.category, id: media.id);
     return InkWell(
       onTap: open,
       child: SizedBox(

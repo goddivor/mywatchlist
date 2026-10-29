@@ -1,13 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:mywatchlist/constants/constants.dart' show AccountType, showToast;
-import 'package:mywatchlist/generated/l10n.dart';
+import 'package:mywatchlist/constants/constants.dart' show AccountType;
 import 'package:mywatchlist/pages/Anilist/anilist_activity_page.dart';
 import 'package:mywatchlist/pages/Anilist/anilist_review_page.dart';
 import 'package:mywatchlist/pages/Anilist/anilist_thread_page.dart';
-import 'package:mywatchlist/services/api/Anilist/anilist_social_service.dart';
 import 'package:mywatchlist/utils/app_routes.dart';
 import 'package:mywatchlist/utils/web_launcher.dart';
-import 'package:mywatchlist/widgets/Anilist/anilist_media_card.dart' show openAnilistMedia;
 
 /// What an `anilist.co` link points to.
 enum AnilistLinkKind { anime, manga, character, staff, studio, user, thread, comment, activity, review }
@@ -86,32 +83,32 @@ AnilistLink? parseAnilistLink(String url) {
   return null;
 }
 
+/// The one place every social screen opens an AniList title ([category] `anime` | `manga`,
+/// AniList [id]). Owner rule (2026-10-29): an AniList title never opens the MAL page. Until
+/// `anilist-media-page` ships the native title page (`openAnilistTitle`), it opens the title
+/// on anilist.co; switch this body to that page then, nothing else changes.
+Future<void> openAnilistTitle(BuildContext context, {required String category, required int id}) =>
+    openLink(context, 'https://anilist.co/${category == 'manga' ? 'manga' : 'anime'}/$id',
+        confirm: false);
+
 /// Opens an AniList profile inside the app.
 Future<void> openAnilistUser(BuildContext context, String? name) async {
   if (name == null || name.isEmpty) return;
   await AppRoutes.openUserProfile(context, tracker: AccountType.anilist, username: name);
 }
 
-/// What a tap on a link of AniList's HTML does: titles, users, threads, comments, activities
-/// and reviews open their screen in the app; characters, staff and studios (no in-app page
+/// What a tap on a link of AniList's HTML does: titles go through [openAnilistTitle]; users,
+/// threads, comments, activities and reviews open their screen in the app; characters, staff and studios (no in-app page
 /// yet) and every other site go through [openLink] (asks, then the in-app browser).
-Future<void> openAnilistLink(BuildContext context, String url, {AnilistSocialService? service}) async {
+Future<void> openAnilistLink(BuildContext context, String url) async {
   final link = parseAnilistLink(url);
   final absolute = url.startsWith('/') ? 'https://anilist.co$url' : url;
   if (link == null) return openLink(context, absolute);
   switch (link.kind) {
     case AnilistLinkKind.anime:
     case AnilistLinkKind.manga:
-      try {
-        final media = await (service ?? AnilistSocialService.instance).media(link.id);
-        if (!context.mounted) return;
-        if (media != null) return openAnilistMedia(context, media);
-      } catch (_) {
-        showToast(S.current.Al_Load_Failed);
-        return;
-      }
-      if (!context.mounted) return;
-      return openLink(context, absolute, confirm: false);
+      return openAnilistTitle(context,
+          category: link.kind == AnilistLinkKind.manga ? 'manga' : 'anime', id: link.id);
     case AnilistLinkKind.user:
       return openAnilistUser(context, link.name);
     case AnilistLinkKind.thread:

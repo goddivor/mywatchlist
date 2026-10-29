@@ -3,7 +3,6 @@ import 'package:mywatchlist/services/api/Anilist/anilist_actions.dart';
 import 'package:mywatchlist/services/api/Anilist/anilist_discover_service.dart'
     show AnilistThread, AnilistThreadPage;
 import 'package:mywatchlist/services/api/Anilist/anilist_graphql.dart';
-import 'package:mywatchlist/services/api/Anilist/anilist_media.dart';
 import 'package:mywatchlist/user/base_user.dart';
 import 'package:mywatchlist/user/user_anilist_v2.dart';
 
@@ -1194,16 +1193,6 @@ class AnilistSocialService {
     );
     final md = data['Markdown'];
     return md is Map ? _str(md['html']) : '';
-  }
-
-  /// A title for an in-app link (`anilist.co/anime/<id>`), null when AniList has none.
-  Future<AnilistMedia?> media(int id) async {
-    final data = await _gql.query(
-      'query (\$id: Int) { Media(id: \$id) { ${AnilistMedia.fields} } }',
-      variables: {'id': id},
-    );
-    final m = data['Media'];
-    return m is Map<String, dynamic> ? AnilistMedia.fromJson(m) : null;
   }
 
   /// Votes on recommending [recommendationId] to fans of [mediaId] (also creates the
