@@ -241,6 +241,10 @@ class AnimeGridCard extends StatelessWidget {
 
   bool get _adult => isNsfw || node.isAdult;
 
+  /// "18+" only while adult titles are shown (otherwise the cover is hidden).
+  bool _adultShown(BuildContext context) =>
+      (_adult || node.isNsfwRated) && _CardImage._adultAllowed(context);
+
   @override
   Widget build(BuildContext context) {
     final title = _title;
@@ -410,11 +414,23 @@ class AnimeGridCard extends StatelessWidget {
               : _compactLayer(context, title, null, null),
         if (time != null) _timeCard(context, time),
         if (!_coverOnly) _badges(context, topInset, compact),
-        if (category == 'anime' && onClose == null)
+        if (!_coverOnly && _adultShown(context) || category == 'anime' && onClose == null)
           PositionedDirectional(
             top: topInset,
             end: 5,
-            child: DubStatusBadge(animeId: node.id, radius: borderRadius),
+            // "18+" sits top-end, on the line of the score badge, next to the dub badge.
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (!_coverOnly && _adultShown(context))
+                  Padding(
+                    padding: EdgeInsetsDirectional.only(end: category == 'anime' ? 3 : 0),
+                    child: _AdultBadge(radius: borderRadius),
+                  ),
+                if (category == 'anime' && onClose == null)
+                  DubStatusBadge(animeId: node.id, radius: borderRadius),
+              ],
+            ),
           ),
         if (additionalWidget != null && !_coverOnly) additionalWidget!,
         if (onClose != null)
@@ -556,10 +572,7 @@ class AnimeGridCard extends StatelessWidget {
     final score = node.score;
     final hasScore = score > 0;
     final hasMembers = members > 0;
-    // "18+" only while adult titles are shown (otherwise the cover is hidden).
-    final rated = (_adult || node.isNsfwRated) && _CardImage._adultAllowed(context);
     final children = <Widget>[
-      if (rated) _AdultBadge(radius: borderRadius),
       if (compact && showMemberCount && (hasScore || hasMembers))
         ScoreMembersBadge(
           score: hasScore ? score : null,
