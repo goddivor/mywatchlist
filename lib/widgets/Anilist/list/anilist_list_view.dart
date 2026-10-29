@@ -131,10 +131,12 @@ class _AnilistListViewState extends State<AnilistListView> with TickerProviderSt
     }
   }
 
-  /// Rebuilds the tabs of [category] from the kept list (after a load, an edit, a +1).
-  Future<void> _rebuildSections(String category) async {
-    _keptRows[category] = await _lists.all(category);
-    if (!mounted) return;
+  /// Rebuilds the tabs of [category] from the kept list (after a load, an edit, a +1); never
+  /// asks AniList.
+  void _rebuildSections(String category) {
+    final kept = _lists.keptEntries(category);
+    if (kept == null || !mounted) return;
+    _keptRows[category] = kept;
     final options = _lists.optionsOf(category) ?? const AnilistListOptions();
     final details = _details(category).toList();
     final sections = anilistSections(options, details, isAnime: category == 'anime');
@@ -143,10 +145,12 @@ class _AnilistListViewState extends State<AnilistListView> with TickerProviderSt
     final changed = old == null ||
         old.length != sections.length ||
         [for (var i = 0; i < old.length; i++) old[i] != sections[i]].any((x) => x);
+    // The tab on screen, read before the sections change under its index.
+    final keep = category == _category ? _visibleSection : null;
     setState(() {
       _sections[category] = sections;
       _counts[category] = counts;
-      if (changed && category == _category) _resetTabs(keep: _visibleSection);
+      if (changed && category == _category) _resetTabs(keep: keep);
     });
   }
 
@@ -215,7 +219,8 @@ class _AnilistListViewState extends State<AnilistListView> with TickerProviderSt
   void _onSectionLoaded(String category, AnilistSection section) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      _rebuildSections(category).then((_) => _restoreCache(category));
+      _rebuildSections(category);
+      _restoreCache(category);
     });
   }
 

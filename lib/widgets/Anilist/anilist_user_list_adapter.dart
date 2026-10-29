@@ -215,9 +215,10 @@ class AnilistUserListAdapter extends UserListAdapter {
 
   /// [view] after AniList saved [detail]: the row and the kept list follow it.
   ListEntryView applyDetail(ListEntryView view, AnilistListEntry detail) {
-    final updated = anilistApplyDetail(
-        view, detail.updatedAt == null ? _stamped(detail) : detail);
-    lists.put(updated, detail: detail.updatedAt == null ? _stamped(detail) : detail);
+    // AniList answers `updatedAt`; a test fake may not: the row still sorts as just edited.
+    final d = detail.updatedAt == null ? _stamped(detail) : detail;
+    final updated = anilistApplyDetail(view, d);
+    lists.put(updated, detail: d);
     return updated;
   }
 
@@ -274,8 +275,8 @@ class AnilistUserListAdapter extends UserListAdapter {
         // Deleted from AniList: forget the row in the kept list, drop it from the screen.
         lists.put(entry, removed: true);
         return const ListEditRemoved();
-      case AnilistEditSaved(:final detail):
-        return ListEditUpdated(applyDetail(entry, detail));
+      case AnilistEditSaved(detail: final saved):
+        return ListEditUpdated(applyDetail(entry, saved));
     }
   }
 

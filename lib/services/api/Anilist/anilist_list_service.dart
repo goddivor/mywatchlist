@@ -409,6 +409,9 @@ class AnilistListService {
     });
   }
 
+  /// The rows of [category] as last loaded, without asking AniList; null before a load.
+  List<ListEntryView>? keptEntries(String category) => _kept[category]?.entries;
+
   /// AniList's own fields of the row [mediaId] of [category], once the list is loaded.
   AnilistListEntry? detailOf(String category, int mediaId) =>
       _kept[category]?.details[mediaId];
