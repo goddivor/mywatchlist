@@ -4,8 +4,11 @@ import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:mywatchlist/constants/constants.dart' show AccountType;
 import 'package:mywatchlist/generated/l10n.dart';
+import 'package:mywatchlist/services/api/MAL/web/mal_messages_api.dart';
 import 'package:mywatchlist/user/preferences/preferences.dart';
+import 'package:mywatchlist/user/user_manager.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'mal_hub.dart';
@@ -21,7 +24,15 @@ abstract final class MalHubPayload {
   static String friend(FriendActivity a) => '$prefix|${a.link}';
   static const String screen = prefix;
 
+  /// A private message: no hub item, the message's page on MAL (with its thread when known).
+  static String message(MalMessage m) =>
+      '$prefix|${m.url}${m.threadId != null ? '&threadid=${m.threadId}' : ''}';
+
   static bool isHub(String? payload) => payload != null && payload.startsWith(prefix);
+
+  /// The MAL messages page a hub payload points to (a thread, the inbox or the sent box);
+  /// null for any other payload. These open in the app, not in the browser.
+  static MalMessageLink? messageLink(String? payload) => MalMessageLink.parse(parse(payload)?.url);
 
   /// The item id and the url of a hub payload (both may be null); null when not one.
   static ({String? id, String? url})? parse(String? payload) {
@@ -32,6 +43,52 @@ abstract final class MalHubPayload {
     final url = bar < 0 ? '' : rest.substring(bar + 1);
     return (id: id.isEmpty ? null : id, url: url.isEmpty ? null : url);
   }
+}
+
+/// A `mymessages.php` link of MAL: `go=read&id=<id>[&f=1][&threadid=<t>]` is a thread
+/// ([id] set, [sent] with `f=1`), no `go` is the inbox, `go=sent` the sent box. Compose
+/// (`go=send`) and other pages are not one.
+@immutable
+class MalMessageLink {
+  const MalMessageLink({this.id, this.sent = false, this.threadId});
+
+  /// The message; null for a box.
+  final int? id;
+  final bool sent;
+  final int? threadId;
+
+  bool get isThread => id != null;
+
+  static MalMessageLink? parse(String? url) {
+    final uri = url == null ? null : Uri.tryParse(url.trim());
+    if (uri == null) return null;
+    final host = uri.host.toLowerCase();
+    if (host.isNotEmpty && host != 'myanimelist.net' && host != 'www.myanimelist.net') return null;
+    if (uri.path != '/mymessages.php') return null;
+    final q = uri.queryParameters;
+    final go = q['go'] ?? '';
+    switch (go) {
+      case '':
+        return const MalMessageLink();
+      case 'sent':
+        return const MalMessageLink(sent: true);
+      case 'read':
+        final id = int.tryParse(q['id'] ?? '');
+        if (id == null || id <= 0) return null;
+        return MalMessageLink(id: id, sent: q['f'] == '1', threadId: int.tryParse(q['threadid'] ?? ''));
+    }
+    return null;
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      other is MalMessageLink && other.id == id && other.sent == sent && other.threadId == threadId;
+
+  @override
+  int get hashCode => Object.hash(id, sent, threadId);
+
+  @override
+  String toString() => 'MalMessageLink(id: $id, sent: $sent, threadId: $threadId)';
 }
 
 /// Which Android channel a system notification goes to.
@@ -433,5 +490,145 @@ class MalHubPoller with WidgetsBindingObserver {
     _timer = null;
     if (_started) WidgetsBinding.instance.removeObserver(this);
     _started = false;
+  }
+}
+
+// ---------------------------------------------------------------------------------------------
+// MAL private messages in the poller
+// ---------------------------------------------------------------------------------------------
+
+/// Looks at the first page of the MAL inbox, refreshes the unread count of the badges and
+/// raises a phone notification for each unread message not seen before.
+class MalMessagesWatcher {
+  MalMessagesWatcher({
+    MalMessagesApi? api,
+    MalHubNotifier? notifier,
+    bool Function()? mayNotify,
+    bool Function()? canRead,
+    Future<SharedPreferences> Function()? storage,
+    this.maxPerRun = 5,
+  })  : _api = api,
+        _notifier = notifier,
+        _mayNotify = mayNotify ?? (() => Preferences.current.notifications.enabled),
+        _canRead = canRead ?? (() => UserManager.instance.isAuthenticated(AccountType.myanimelist)),
+        _storage = storage ?? SharedPreferences.getInstance;
+
+  static MalMessagesWatcher instance = MalMessagesWatcher();
+
+  static const String seenKey = 'mal_pm_seen_v1';
+  static const String pushKey = 'mal_pm_push_v1';
+
+  final MalMessagesApi? _api;
+  final MalHubNotifier? _notifier;
+  final bool Function() _mayNotify;
+  final bool Function() _canRead;
+  final Future<SharedPreferences> Function() _storage;
+  final int maxPerRun;
+
+  /// The settings switch (on by default).
+  final ValueNotifier<bool> push = ValueNotifier<bool>(true);
+
+  Future<int>? _checking;
+
+  MalMessagesApi get api => _api ?? MalMessagesApi.instance;
+  MalHubNotifier get notifier => _notifier ?? MalHubPoller.instance.notifier;
+
+  Future<void> load() async {
+    try {
+      push.value = (await _storage()).getBool(pushKey) ?? true;
+    } catch (_) {}
+  }
+
+  Future<void> setPush(bool value) async {
+    push.value = value;
+    try {
+      await (await _storage()).setBool(pushKey, value);
+    } catch (_) {}
+  }
+
+  /// One look at the inbox; calls made during a look share it. Returns how many messages
+  /// were notified. Never throws.
+  Future<int> check() => _checking ??= _check().whenComplete(() => _checking = null);
+
+  Future<int> _check() async {
+    try {
+      if (!_canRead()) return 0;
+      final page = await api.inbox(); // also refreshes MalMessagesApi.unread
+      final prefs = await _storage();
+      final stored = prefs.getStringList(seenKey);
+      final seen = {...?stored};
+      final ids = [for (final m in page.messages) '${m.id}'];
+      await prefs.setStringList(seenKey, {...ids, ...seen}.take(200).toList());
+      // The first look only remembers what is there.
+      if (stored == null) return 0;
+      final fresh = [
+        for (final m in page.messages)
+          if (!m.isRead && !seen.contains('${m.id}')) m,
+      ];
+      if (fresh.isEmpty || !push.value || !_mayNotify() || !await notifier.allowed()) return 0;
+      final s = S.current;
+      final notifications = [
+        for (final m in fresh.take(maxPerRun))
+          HubSystemNotification(
+            id: 0x60000000 | (m.id & 0x0FFFFFFF),
+            title: s.Mhw_Message_From(m.counterpart),
+            body: m.subject,
+            payload: MalHubPayload.message(m),
+          ),
+      ];
+      await notifier.show(MalHubChannel.hub, notifications);
+      return notifications.length;
+    } catch (e) {
+      debugPrint('MAL messages check: $e');
+      return 0;
+    }
+  }
+}
+
+/// [MalHubPoller] that also looks at the private messages each time it polls (every 30
+/// minutes in the app, and in the background job).
+class MalHubMessagesPoller extends MalHubPoller {
+  MalHubMessagesPoller({
+    super.hub,
+    super.notifier,
+    NotificationPreferences Function()? readPrefs,
+    Future<SharedPreferences> Function()? storage,
+    super.clock,
+    MalMessagesWatcher? watcher,
+  })  : _watcher = watcher,
+        _readPrefsForWatcher = readPrefs ?? (() => Preferences.current.notifications),
+        _store = storage ?? SharedPreferences.getInstance,
+        super(readPrefs: readPrefs ?? (() => Preferences.current.notifications), storage: storage);
+
+  final MalMessagesWatcher? _watcher;
+  final NotificationPreferences Function() _readPrefsForWatcher;
+  final Future<SharedPreferences> Function() _store;
+
+  late final MalMessagesWatcher watcher = _watcher ??
+      (identical(MalHubPoller.instance, this)
+          ? MalMessagesWatcher.instance
+          : MalMessagesWatcher(
+              notifier: notifier,
+              mayNotify: () => _readPrefsForWatcher().enabled,
+              storage: _store,
+            ));
+
+  /// Reads the three switches from [prefs] (the background isolate does not run [start]).
+  Future<void> loadSwitches(SharedPreferences prefs) async {
+    pushHub.value = prefs.getBool(MalHubPoller.pushHubKey) ?? true;
+    pushFriends.value = prefs.getBool(MalHubPoller.pushFriendsKey) ?? true;
+    watcher.push.value = prefs.getBool(MalMessagesWatcher.pushKey) ?? true;
+  }
+
+  @override
+  Future<void> start() async {
+    await watcher.load();
+    return super.start();
+  }
+
+  @override
+  Future<void> poll({bool force = false}) async {
+    await super.poll(force: force);
+    await watcher.check();
   }
 }
