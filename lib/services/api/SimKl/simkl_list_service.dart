@@ -63,6 +63,50 @@ class SimklPlayback {
   static int? _int(Object? v) => v is num ? v.toInt() : int.tryParse('$v');
 }
 
+/// What Simkl says the viewer should watch next (`next_to_watch_info` of a `watching` item,
+/// asked with `next_watch_info=yes`): the episode, its title and when it aired or airs.
+class SimklNextToWatch {
+  final int episode;
+  final String? title;
+  final DateTime? date;
+
+  const SimklNextToWatch({required this.episode, this.title, this.date});
+
+  /// Simkl id to next episode, for the items of a list answer that carry the field.
+  static Map<int, SimklNextToWatch> parseAll(Object? data) {
+    final list = data is Map ? data['anime'] : null;
+    if (list is! List) return const {};
+    final out = <int, SimklNextToWatch>{};
+    for (final raw in list) {
+      if (raw is! Map) continue;
+      final show = raw['show'];
+      final ids = show is Map && show['ids'] is Map ? show['ids'] as Map : const {};
+      final id = SimklPlayback._int(ids['simkl'] ?? ids['simkl_id']);
+      final info = raw['next_to_watch_info'];
+      if (id == null || info is! Map) continue;
+      final episode = SimklPlayback._int(info['episode']);
+      if (episode == null) continue;
+      final title = info['title'];
+      out[id] = SimklNextToWatch(
+        episode: episode,
+        title: title is String && title.trim().isNotEmpty ? title.trim() : null,
+        date: DateTime.tryParse(info['date'] is String ? info['date'] as String : '')?.toUtc(),
+      );
+    }
+    return out;
+  }
+}
+
+/// A second check-in came before Simkl's 20 second per-user lock expired (Simkl answers that
+/// with a 400 `RATE_LIMIT`); nothing was sent.
+class SimklCheckInTooSoon implements Exception {
+  final Duration wait;
+  const SimklCheckInTooSoon(this.wait);
+
+  @override
+  String toString() => 'SimklCheckInTooSoon(${wait.inSeconds}s)';
+}
+
 /// The community score of a title (`GET /ratings/anime`).
 class SimklCommunityRating {
   final double rating;
@@ -129,6 +173,9 @@ class SimklListService {
 
   Map<int, SimklCommunityRating> _ratings = const {};
 
+  /// `next_to_watch_info` of the kept list by Simkl id (only `watching` items have one).
+  Map<int, SimklNextToWatch> _next = const {};
+
   /// Titles the last ratings call was made for (a title nobody rated is not asked again).
   Set<int> _ratingAsked = const {};
   DateTime? _ratingsAt;
@@ -162,6 +209,7 @@ class SimklListService {
     _removedStamp = null;
     _dirty = false;
     _ratings = const {};
+    _next = const {};
     _ratingAsked = const {};
     _ratingsAt = null;
     _ratingsTried = null;
@@ -190,11 +238,20 @@ class SimklListService {
       list = kept; // nothing changed
     } else if (kept != null && _stamp != null && stamp != null && removed == _removedStamp) {
       deltaPulls++;
-      final data = await _client.getAuth('/sync/all-items/anime', query: {'date_from': _stamp!});
-      list = _merge(kept, parseSimklAnimeList(data));
+      final data = await _client.getAuth('/sync/all-items/anime', query: {'date_from': _stamp!, ..._nextQuery});
+      final changed = parseSimklAnimeList(data);
+      // A changed item is read again: the one it had no longer holds.
+      _next = {
+        for (final e in _next.entries)
+          if (!changed.any((c) => c.id == e.key)) e.key: e.value,
+        ...SimklNextToWatch.parseAll(data),
+      };
+      list = _merge(kept, changed);
     } else {
       fullPulls++;
-      list = parseSimklAnimeList(await _client.getAuth('/sync/all-items/anime'));
+      final data = await _client.getAuth('/sync/all-items/anime', query: _nextQuery);
+      _next = SimklNextToWatch.parseAll(data);
+      list = parseSimklAnimeList(data);
     }
     _stamp = stamp;
     _removedStamp = removed;
@@ -220,6 +277,12 @@ class SimklListService {
       return null;
     }
   }
+
+  static const Map<String, String> _nextQuery = {'next_watch_info': 'yes'};
+
+  /// Simkl's own "next to watch" of [simklId] from the last list pull; null when it has none (not
+  /// watching, or nothing aired left to watch).
+  SimklNextToWatch? nextToWatch(int simklId) => _next[simklId];
 
   static String? _animeStamp(Map<String, dynamic>? activities, String key) {
     final anime = activities?['anime'];
@@ -348,6 +411,50 @@ class SimklListService {
       ],
     });
     _wrote(removal: true);
+  }
+
+  static const Duration checkInLock = Duration(seconds: 20);
+  DateTime? _checkedInAt;
+
+  /// "Watching now" (`POST /scrobble/checkin`): Simkl shows the episode on the viewer's dashboard
+  /// and marks it watched itself when its runtime has elapsed (no pause or stop call follows).
+  /// The list is read again afterwards through the activities check, not by this call.
+  ///
+  /// [ids] are the external ids of the title (`SimklTitle.externalIds`), sent next to the Simkl
+  /// id because Simkl resolves the first one it knows. Throws [SimklCheckInTooSoon] inside the
+  /// 20 second lock.
+  Future<void> checkIn({
+    required int simklId,
+    required String title,
+    required int episode,
+    int? year,
+    int? malId,
+    Map<String, String> ids = const {},
+  }) async {
+    final at = _checkedInAt;
+    final now = _clock();
+    if (at != null && now.difference(at) < checkInLock) {
+      throw SimklCheckInTooSoon(checkInLock - now.difference(at));
+    }
+    _checkedInAt = now;
+    try {
+      await _client.postAuth('/scrobble/checkin', {
+        'anime': {
+          'title': title,
+          if (year != null) 'year': year,
+          'ids': {
+            ...ids,
+            'simkl': simklId,
+            if (malId != null) 'mal': malId,
+          },
+        },
+        // AniDB numbering is single-season: season 1 and the absolute episode number.
+        'episode': {'season': 1, 'number': episode},
+      });
+    } catch (_) {
+      _checkedInAt = null; // nothing was recorded: the viewer may try again
+      rethrow;
+    }
   }
 
   /// Marks one more (or one fewer) episode watched; see [setProgress].

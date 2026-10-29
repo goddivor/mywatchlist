@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:mywatchlist/services/api/SimKl/simkl_title_language.dart';
 import 'package:mywatchlist/widgets/user/list/list_entry_view.dart';
 
 /// Simkl's list status words and their tracker-neutral [ListEntryStatus].
@@ -36,6 +37,14 @@ abstract final class SimklImages {
     return 'https://simkl.in/posters/${p}_$size.jpg';
   }
 
+  /// Background picture (`fanart`, `_mobile` size, 16:9).
+  static String? fanart(Object? path) {
+    final p = path is String ? path.trim() : '';
+    if (p.isEmpty) return null;
+    if (p.startsWith('http')) return p;
+    return 'https://simkl.in/fanart/${p}_mobile.jpg';
+  }
+
   /// The public page of a title, for the rare ones without a MyAnimeList id.
   static String page(int simklId, [String? slug]) =>
       'https://simkl.com/anime/$simklId${slug == null || slug.isEmpty ? '' : '/$slug'}';
@@ -46,6 +55,18 @@ double? _double(Object? v) => v is num ? v.toDouble() : (v is String ? double.tr
 double? _percent(Object? v) =>
     v is num ? v.toDouble() : (v is String ? double.tryParse(v.replaceAll('%', '').replaceAll(',', '.').trim()) : null);
 String? _text(Object? v) => v is String && v.trim().isNotEmpty ? v.trim() : null;
+
+/// The first official alternative title (Simkl lists the original-language one first).
+String? _firstOfficial(Object? alt) {
+  if (alt is! List) return null;
+  for (final a in alt) {
+    if (a is Map && (a['type'] == null || a['type'] == 'official')) {
+      final name = _text(a['name']);
+      if (name != null) return name;
+    }
+  }
+  return null;
+}
 
 /// One title of a Simkl discover or search answer (trending, premieres, airing, search).
 @immutable
@@ -69,6 +90,21 @@ class SimklMedia {
   final double? dropRate;
   final int? rank;
 
+  /// Background picture of the CDN feeds (`fanart`), null when Simkl has none.
+  final String? fanartUrl;
+
+  /// The streamer or channel (`network`) and the number of episodes of the whole title.
+  final String? network;
+  final int? totalEpisodes;
+
+  /// The romanised and the original-script titles when the answer carries them; [title] is
+  /// Simkl's default. See [retitled].
+  final String? titleRomaji;
+  final String? titleNative;
+
+  /// Calendar answers: this episode ends the title (`finale_type` of the calendar file).
+  final bool finale;
+
   /// Airing answers: the episode number and its air time.
   final int? episode;
   final DateTime? airDate;
@@ -87,9 +123,44 @@ class SimklMedia {
     this.watchers,
     this.dropRate,
     this.rank,
+    this.fanartUrl,
+    this.network,
+    this.totalEpisodes,
+    this.titleRomaji,
+    this.titleNative,
+    this.finale = false,
     this.episode,
     this.airDate,
   });
+
+  /// The same item titled for [lang] (the Simkl profile's title language).
+  SimklMedia retitled(SimklTitleLanguage lang) {
+    final next = SimklTitlePreference.pick(lang, title, romaji: titleRomaji, original: titleNative);
+    if (next == title) return this;
+    return SimklMedia(
+      simklId: simklId,
+      malId: malId,
+      slug: slug,
+      title: next,
+      posterUrl: posterUrl,
+      year: year,
+      rating: rating,
+      overview: overview,
+      animeType: animeType,
+      genres: genres,
+      watchers: watchers,
+      dropRate: dropRate,
+      rank: rank,
+      fanartUrl: fanartUrl,
+      network: network,
+      totalEpisodes: totalEpisodes,
+      titleRomaji: titleRomaji,
+      titleNative: titleNative,
+      finale: finale,
+      episode: episode,
+      airDate: airDate,
+    );
+  }
 
   /// Null when the item has no Simkl id or no title.
   static SimklMedia? fromJson(Object? raw) {
@@ -129,6 +200,12 @@ class SimklMedia {
       watchers: _int(m['watched']) ?? _int(m['watchers']),
       dropRate: _percent(m['drop_rate'] ?? m['droprate']),
       rank: _int(m['rank']),
+      fanartUrl: SimklImages.fanart(m['fanart']),
+      network: _text(m['network']),
+      totalEpisodes: _int(m['total_episodes']),
+      titleRomaji: _text(m['title_romaji']),
+      titleNative: _firstOfficial(m['alt_titles']),
+      finale: _text(m['finale_type']) != null,
       episode: episode is Map ? _int(episode['episode']) : _int(episode),
       airDate: DateTime.tryParse(_text(m['date']) ?? '')?.toUtc(),
     );

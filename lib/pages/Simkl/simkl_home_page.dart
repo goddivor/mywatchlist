@@ -6,6 +6,7 @@ import 'package:mywatchlist/services/api/SimKl/simkl_client.dart' show SimklSess
 import 'package:mywatchlist/services/api/SimKl/simkl_discover_service.dart' hide SimklFormat;
 import 'package:mywatchlist/services/api/SimKl/simkl_list_service.dart';
 import 'package:mywatchlist/services/api/SimKl/simkl_models.dart';
+import 'package:mywatchlist/services/api/SimKl/simkl_title_language.dart';
 import 'package:mywatchlist/user/MAL/mal_home_preferences_bloc.dart';
 import 'package:mywatchlist/user/user_simkl_v2.dart';
 import 'package:mywatchlist/widgets/MAL/home/homeappbar.dart';
@@ -36,6 +37,19 @@ class SimklHomePage extends StatefulWidget {
 class _SimklHomePageState extends State<SimklHomePage> {
   /// Bumped by a pull to refresh: every section reloads when it changes.
   int _refresh = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    // The profile's title language (once per run); the rows reload when it is not the default.
+    if (simklSignedIn) {
+      SimklTitlePreference.ensureLoaded().then((_) {
+        if (mounted && SimklTitlePreference.language != SimklTitleLanguage.english) {
+          setState(() => _refresh++);
+        }
+      });
+    }
+  }
 
   Future<void> _onRefresh() async {
     HomeSectionCache.clear();

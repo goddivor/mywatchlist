@@ -1,0 +1,12 @@
+{
+  "@@locale": "fr_FR",
+  "Sdp_Check_In": "Je regarde maintenant",
+  "Sdp_Check_In_Done": "L’épisode {number} apparaît sur votre tableau de bord Simkl",
+  "@Sdp_Check_In_Done": { "placeholders": { "number": { "type": "int" } } },
+  "Sdp_Check_In_Wait": "Patientez {seconds} secondes avant un nouveau signalement",
+  "@Sdp_Check_In_Wait": { "placeholders": { "seconds": { "type": "int" } } },
+  "Sdp_Check_In_Failed": "Impossible de signaler le visionnage",
+  "Sdp_Marked_Watched": "Épisode {number} marqué comme vu",
+  "@Sdp_Marked_Watched": { "placeholders": { "number": { "type": "int" } } },
+  "Sdp_Other_Sites": "Autres sites"
+}

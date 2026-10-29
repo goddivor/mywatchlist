@@ -6,6 +6,7 @@ import 'package:mywatchlist/screens/MAL/detail/sections/section_states.dart';
 import 'package:mywatchlist/services/api/SimKl/simkl_detail_models.dart';
 import 'package:mywatchlist/services/api/SimKl/simkl_detail_service.dart';
 import 'package:mywatchlist/services/api/SimKl/simkl_list_service.dart';
+import 'package:mywatchlist/services/api/SimKl/simkl_title_language.dart';
 import 'package:mywatchlist/user/base_user.dart' show AuthStatus;
 import 'package:mywatchlist/user/user_simkl_v2.dart';
 import 'package:mywatchlist/utils/app_routes.dart';
@@ -73,6 +74,7 @@ class _SimklMediaPageState extends State<SimklMediaPage> {
   ListEntryView? _entry;
   bool _listKnown = false;
   bool _marking = false;
+  bool _checkingIn = false;
 
   /// The user's list by Simkl id (progress badges on related titles).
   Map<int, ListEntryView> _byId = const {};
@@ -92,6 +94,8 @@ class _SimklMediaPageState extends State<SimklMediaPage> {
 
   Future<void> _load({bool force = false}) async {
     if (force) _service.invalidate(widget.simklId);
+    // The profile's title language, read once per run (tests inject a service and skip it).
+    if (_signedIn && widget.service == null) await SimklTitlePreference.ensureLoaded();
     final id = widget.simklId;
     final record = _service.title(id, force: force);
     unawaited(_service.episodes(id, force: force).then((v) {
@@ -278,6 +282,33 @@ class _SimklMediaPageState extends State<SimklMediaPage> {
     );
   }
 
+  /// "Watching now": Simkl shows the episode on the dashboard and marks it watched when its
+  /// runtime has elapsed. Only on the viewer's tap.
+  Future<void> _checkIn(int number) async {
+    final t = _title;
+    if (t == null || _checkingIn) return;
+    setState(() => _checkingIn = true);
+    final messenger = ScaffoldMessenger.maybeOf(context);
+    String message;
+    try {
+      await (widget.listService ?? SimklListService.instance).checkIn(
+        simklId: t.simklId,
+        title: t.enTitle ?? t.title,
+        episode: number,
+        year: t.year,
+        malId: t.malId,
+        ids: t.externalIds,
+      );
+      message = S.current.Sdp_Check_In_Done(number);
+    } on SimklCheckInTooSoon catch (e) {
+      message = S.current.Sdp_Check_In_Wait(e.wait.inSeconds + 1);
+    } catch (_) {
+      message = S.current.Sdp_Check_In_Failed;
+    }
+    messenger?.showSnackBar(SnackBar(content: Text(message)));
+    if (mounted) setState(() => _checkingIn = false);
+  }
+
   Future<void> _markWatched(int number) async {
     final entry = _entry;
     if (entry == null || _marking) return;
@@ -351,12 +382,20 @@ class _SimklMediaPageState extends State<SimklMediaPage> {
     if (_signedIn && _listKnown) {
       out.add(SimklMyStatusBar(entry: entry, total: t.totalEpisodes ?? 0, onEdit: _editList));
     }
-    final next = simklNextUp(title: t, episodes: episodes, entry: entry, now: now);
+    final next = simklNextUp(
+      title: t,
+      episodes: episodes,
+      entry: entry,
+      now: now,
+      info: (widget.listService ?? SimklListService.instance).nextToWatch(widget.simklId),
+    );
     if (next != null) {
       out.add(SimklNextEpisodeCard(
         next: next,
         now: now,
         marking: _marking,
+        checkingIn: _checkingIn,
+        onCheckIn: _signedIn && _listKnown && next.episode != null ? () => _checkIn(next.episode!) : null,
         onMark: next.episode == null ? null : () => _markWatched(next.episode!),
         onOpenSequel: next.sequel == null ? null : () => _openTitle(next.sequel!),
       ));
@@ -518,6 +557,7 @@ class _SimklMediaPageState extends State<SimklMediaPage> {
       (S.current.Smp_Certification, t.certification),
       (S.current.Smp_Alt_Titles, t.altTitles.isEmpty ? null : t.altTitles.join('\n')),
     ];
+    final ids = simklExternalLinks(t.externalIds, animeType: t.animeType);
     final tags = page?.tags ?? const <String>[];
     final links = page?.links ?? const <SimklLink>[];
     return SimklSection(
@@ -527,6 +567,14 @@ class _SimklMediaPageState extends State<SimklMediaPage> {
         children: [
           for (final (label, value) in rows)
             if (value != null && value.isNotEmpty) SimklInfoRow(label, value),
+          if (ids.isNotEmpty)
+            _Labelled(
+              S.current.Sdp_Other_Sites,
+              SimklChips(
+                [for (final l in ids) l.name],
+                onTap: (i) => launchWebView(ids[i].url, context: context),
+              ),
+            ),
           if (tags.isNotEmpty) _TagsBlock(tags),
           if (links.isNotEmpty)
             _Labelled(

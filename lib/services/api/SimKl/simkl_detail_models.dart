@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:mywatchlist/services/api/SimKl/simkl_models.dart' show SimklImages;
+import 'package:mywatchlist/services/api/SimKl/simkl_title_language.dart';
 
 // Plain immutable data: everything here crosses isolates (parsed by `Isolate.run`).
 
@@ -168,6 +169,11 @@ class SimklTitle {
   final String? seasonNameYear;
   final List<String> studios;
   final List<String> altTitles;
+
+  /// Every external id the record carries (`anilist`, `kitsu`, `imdb`, `tmdb`, `tvdb`, `anidb`,
+  /// `mal`...), by key, as text; Simkl's own ids (`simkl`, `simkl_id`, `slug`) are left out.
+  final Map<String, String> externalIds;
+  final String? titleRomaji;
   final SimklRating? simklRating;
   final SimklRating? malRating;
   final SimklRating? imdbRating;
@@ -203,6 +209,8 @@ class SimklTitle {
     this.seasonNameYear,
     this.studios = const [],
     this.altTitles = const [],
+    this.externalIds = const {},
+    this.titleRomaji,
     this.simklRating,
     this.malRating,
     this.imdbRating,
@@ -213,7 +221,7 @@ class SimklTitle {
   });
 
   /// Null for Simkl's `[]` (unknown id) or a record without id and title.
-  static SimklTitle? fromJson(Object? raw, {int? fallbackId}) {
+  static SimklTitle? fromJson(Object? raw, {int? fallbackId, SimklTitleLanguage? language}) {
     if (raw is! Map) return null;
     final m = raw.cast<String, Object?>();
     final ids = _map(m['ids']);
@@ -221,11 +229,24 @@ class SimklTitle {
     final title = _text(m['title']);
     if (id == null || title == null) return null;
     final ratings = _map(m['ratings']);
+    final altNames = _list(m['alt_titles']).map((a) => a is Map ? _text(a['name']) : null).whereType<String>().toList();
+    final romaji = _text(m['title_romaji']);
     return SimklTitle(
       simklId: id,
       slug: _text(ids['slug']),
       malId: _int(ids['mal']),
-      title: title,
+      title: SimklTitlePreference.pick(
+        language ?? SimklTitlePreference.language,
+        title,
+        romaji: romaji,
+        original: altNames.isEmpty ? null : altNames.first,
+      ),
+      titleRomaji: romaji,
+      externalIds: {
+        for (final e in ids.entries)
+          if (!const {'simkl', 'simkl_id', 'slug'}.contains(e.key))
+            if (_text(e.value is num ? '${e.value}' : e.value) case final v?) e.key: v,
+      },
       enTitle: _text(m['en_title']),
       year: _int(m['year']),
       animeType: _text(m['anime_type']),
@@ -247,7 +268,7 @@ class SimklTitle {
       totalEpisodes: _int(m['total_episodes']),
       seasonNameYear: _text(m['season_name_year']),
       studios: _list(m['studios']).map((s) => s is Map ? _text(s['name']) : _text(s)).whereType<String>().toList(),
-      altTitles: _list(m['alt_titles']).map((a) => a is Map ? _text(a['name']) : null).whereType<String>().toList(),
+      altTitles: altNames,
       simklRating: SimklRating.fromJson(ratings['simkl']),
       malRating: SimklRating.fromJson(ratings['mal']),
       imdbRating: SimklRating.fromJson(ratings['imdb']),
@@ -499,4 +520,20 @@ class SimklTitlePage {
   });
 
   static const empty = SimklTitlePage();
+}
+
+/// The pages of a title on other sites, from its external ids: AniList, Kitsu, MyAnimeList,
+/// IMDb, TMDB, TVDB, AniDB, in that order; an id Simkl gives without a known page is left out.
+List<({String name, String url})> simklExternalLinks(Map<String, String> ids, {String? animeType}) {
+  final movie = animeType?.toLowerCase() == 'movie';
+  String? id(String key) => ids[key];
+  return [
+    if (id('anilist') case final v?) (name: 'AniList', url: 'https://anilist.co/anime/$v'),
+    if (id('kitsu') case final v?) (name: 'Kitsu', url: 'https://kitsu.app/anime/$v'),
+    if (id('mal') case final v?) (name: 'MyAnimeList', url: 'https://myanimelist.net/anime/$v'),
+    if (id('imdb') case final v?) (name: 'IMDb', url: 'https://www.imdb.com/title/$v/'),
+    if (id('tmdb') case final v?) (name: 'TMDB', url: 'https://www.themoviedb.org/${movie ? 'movie' : 'tv'}/$v'),
+    if (id('tvdb') case final v?) (name: 'TVDB', url: 'https://thetvdb.com/?tab=series&id=$v'),
+    if (id('anidb') case final v?) (name: 'AniDB', url: 'https://anidb.net/anime/$v'),
+  ];
 }
