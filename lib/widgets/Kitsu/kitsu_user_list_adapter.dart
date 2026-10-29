@@ -96,6 +96,7 @@ class KitsuUserListAdapter extends UserListAdapter {
       offset: offset,
       limit: limit,
       sort: apiSort,
+      reactions: true,
     );
     for (final e in result.entryIds.entries) {
       _entryIds['$category:${e.key}'] = e.value;

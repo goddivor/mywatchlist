@@ -84,14 +84,15 @@ class KitsuLibrary {
   }
 
   /// Base parameters of a library request of [isAnime] entries.
-  Map<String, String> _params(String userId, bool isAnime, ListEntryStatus? status) {
+  Map<String, String> _params(String userId, bool isAnime, ListEntryStatus? status,
+      {bool reactions = false}) {
     final kind = isAnime ? 'anime' : 'manga';
     return {
       'filter[userId]': userId,
       'filter[kind]': kind,
       if (status != null) 'filter[status]': kitsuStatusOf(status),
-      'include': '$kind,$kind.mappings,mediaReaction',
-      'fields[mediaReactions]': 'reaction',
+      'include': '$kind,$kind.mappings${reactions ? ',mediaReaction' : ''}',
+      if (reactions) 'fields[mediaReactions]': 'reaction',
       'fields[$kind]': KitsuCatalog.fields(isAnime),
       'fields[mappings]': 'externalSite,externalId',
     };
@@ -104,11 +105,12 @@ class KitsuLibrary {
     required int offset,
     required int limit,
     String? sort,
+    bool reactions = false,
   }) async {
     final id = await userId();
     final json = await http.getJson('/library-entries',
         query: {
-          ..._params(id, isAnime, status),
+          ..._params(id, isAnime, status, reactions: reactions),
           if (sort != null) 'sort': sort,
           'page[limit]': '${limit.clamp(1, maxPage)}',
           'page[offset]': '$offset',
