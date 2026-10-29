@@ -907,6 +907,7 @@ enum TabType {
   Stats,
   ScoreStats,
   More_Info,
+  Episodes,
 }
 
 Widget loadingGraph(BuildContext context) {

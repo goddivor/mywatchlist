@@ -18,6 +18,7 @@ import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/screens/MAL/detail/detail_data.dart';
 import 'package:mywatchlist/screens/MAL/detail/sections/adaptations_section.dart';
 import 'package:mywatchlist/screens/MAL/detail/sections/characters_section.dart';
+import 'package:mywatchlist/screens/MAL/detail/sections/episodes_section.dart';
 import 'package:mywatchlist/screens/MAL/detail/sections/featured_section.dart';
 import 'package:mywatchlist/screens/MAL/detail/sections/forums_section.dart';
 import 'package:mywatchlist/screens/MAL/detail/sections/interest_stacks_section.dart';
@@ -97,6 +98,7 @@ String detailTabLabel(TabType type) {
     TabType.Stats => s.Dh_Tab_Stats,
     TabType.ScoreStats => s.Dh_Tab_Score_Stats,
     TabType.More_Info => s.Dh_Tab_More_Info,
+    TabType.Episodes => s.Ep_Tab_Episodes,
   };
 }
 
@@ -121,6 +123,7 @@ abstract final class DetailSections {
     TabType.Stats: statsSection,
     TabType.ScoreStats: scoreStatsSection,
     TabType.More_Info: moreInfoSection,
+    TabType.Episodes: episodesSection,
   };
 
   /// The user's visible section order for this category (contract pref).

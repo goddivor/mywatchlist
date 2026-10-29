@@ -1,0 +1,16 @@
+{
+  "@@locale": "fr_FR",
+  "Ep_Tab_Episodes": "Épisodes",
+  "Ep_Empty": "Aucun épisode listé pour le moment",
+  "Ep_Failed": "Impossible de charger les épisodes",
+  "Ep_Number": "Épisode {number}",
+  "@Ep_Number": { "placeholders": { "number": { "type": "int" } } },
+  "Ep_Filler": "Remplissage",
+  "Ep_Recap": "Récapitulatif",
+  "Ep_Discussion": "Discussion",
+  "Ep_Open_Mal": "Ouvrir sur MyAnimeList",
+  "Ep_Synopsis": "Synopsis",
+  "Ep_No_Synopsis": "Pas encore de synopsis",
+  "Ep_Range": "{start} - {end}",
+  "@Ep_Range": { "placeholders": { "start": { "type": "int" }, "end": { "type": "int" } } }
+}
