@@ -8,6 +8,10 @@
 - `kitsu-profile-plus` (kitsu-profile-plus)
 
 ## Owns (may create or edit ONLY these)
+- `lib/pages/Kitsu/kitsu_media_page.dart`
+- `lib/widgets/Kitsu/media/**`
+- `lib/widgets/Kitsu/kitsu_open.dart`
+- `lib/l10n/units/kitsu-pages/**`
 - `lib/pages/Kitsu/kitsu_home_page.dart`
 - `lib/pages/Kitsu/kitsu_explore_page.dart`
 - `lib/pages/Kitsu/kitsu_browse_screen.dart`
@@ -23,6 +27,7 @@
 Plus `PROJECT-STATE.md` (rewrite in place, within its cap) and `docs/DECISIONS.md` (append one line per decision). Anything else you need is a FINDING to report, never an edit.
 
 ## Goal
+- From kitsu-media-page (#290): the signed-in parts of the Kitsu title page: library box (status, progress, +1, edit), the user's rating system, watched ticks on episodes, per-episode discussion, favourite heart, next episode line; drop the unused Kitsu_No_Mal_Match strings; rename one of the two KitsuMediaPage classes (kitsu_catalog.dart vs the page).
 - Redesign the Kitsu home, explore/search and library from the Kitsu part of docs/tracker-ui-references.md. Home starts with the Quick Update carousel (next-episode thumbnail, '✓ Episode N' button, link to the episode discussion). Library: the five status counts from meta.statusCounts in one call, Kitsu wording ('Want to watch'), the user's rating system (Simple / Regular / Advanced) in every rating display, the user's own reaction on cards. Scores as percentages, never /10. Also from kitsu-home-extras: apply the account rating system to score display; the 'pick from my plan to watch' variant of Surprise me; keep one KitsuCategory type (kitsu_catalog.dart vs kitsu_graphql.dart).
 - Owner rule 2026-10-29: each tracker is its own app; DailyAL's UI is the reference for MAL only. Follow the matching section of docs/tracker-ui-references.md (recommended block order and the data field behind each block); own files and own layout; every item opens this tracker's native page. No explanatory captions; theme tokens; English + French; fakes only in tests.
 

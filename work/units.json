@@ -2159,6 +2159,7 @@
         "tracker-followups"
       ],
       "owns": [
+        "test/units/kitsu-pages/kitsu_browse_test.dart",
         "lib/widgets/Kitsu/kitsu_user_list_adapter.dart",
         "lib/pages/Kitsu/kitsu_media_page.dart",
         "lib/services/api/Kitsu/kitsu_media_detail.dart",
@@ -3592,6 +3593,10 @@
         "kitsu-profile-plus"
       ],
       "owns": [
+        "lib/pages/Kitsu/kitsu_media_page.dart",
+        "lib/widgets/Kitsu/media/**",
+        "lib/widgets/Kitsu/kitsu_open.dart",
+        "lib/l10n/units/kitsu-pages/**",
         "lib/pages/Kitsu/kitsu_home_page.dart",
         "lib/pages/Kitsu/kitsu_explore_page.dart",
         "lib/pages/Kitsu/kitsu_browse_screen.dart",

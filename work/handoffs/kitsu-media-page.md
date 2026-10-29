@@ -7,6 +7,7 @@
 - `tracker-followups` (Tracker follow-ups: removed rows disappear, Simkl list categories, notifications for every tracker)
 
 ## Owns (may create or edit ONLY these)
+- `test/units/kitsu-pages/kitsu_browse_test.dart`
 - `lib/widgets/Kitsu/kitsu_user_list_adapter.dart`
 - `lib/pages/Kitsu/kitsu_media_page.dart`
 - `lib/services/api/Kitsu/kitsu_media_detail.dart`
