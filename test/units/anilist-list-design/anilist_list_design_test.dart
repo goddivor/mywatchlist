@@ -98,6 +98,12 @@ final _noActions = EntryActions(
   busy: ValueNotifier(const <int>{}),
 );
 
+/// Lets the status cache's delayed save run before the test ends.
+Future<void> _settle(WidgetTester tester) async {
+  await tester.pumpWidget(const SizedBox());
+  await tester.pump(const Duration(seconds: 1));
+}
+
 void main() {
   setUpAll(() async {
     forbidNetwork();
@@ -214,7 +220,7 @@ void main() {
         Center(
           child: SizedBox(
             width: 360,
-            height: anilistRowExtent(compact: compact),
+            height: anilistRowExtent(compact: compact, scaler: TextScaler.linear(textScale)),
             child: AnilistEntryRow(
               entry: e,
               detail: d,
@@ -302,6 +308,7 @@ void main() {
       expect(find.text('7'), findsNothing);
       expect(find.text('80%'), findsOneWidget);
       expect(tester.takeException(), isNull);
+      await _settle(tester);
     });
 
     testWidgets('the +1 to the last episode asks first; "Only +1" does not complete',
@@ -322,6 +329,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 50));
       expect(sync.writes.single.status, 'watching');
       expect(sync.writes.single.progress, 12);
+      await _settle(tester);
     });
   });
 }

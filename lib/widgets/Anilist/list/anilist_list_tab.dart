@@ -20,8 +20,10 @@ import 'package:mywatchlist/widgets/user/list/user_list_tab.dart' show listGridD
 /// the account's score format.
 typedef AnilistRowData = ({AnilistListEntry? detail, AnilistScoreFormat format});
 
-/// Height of an AniList list row ([compact] = one-line rows).
-double anilistRowExtent({required bool compact}) => compact ? 88 : 124;
+/// Height of an AniList list row ([compact] = one-line rows), grown with the text size: the
+/// three text lines of a row take more room under a larger [scaler].
+double anilistRowExtent({required bool compact, TextScaler scaler = TextScaler.noScaling}) =>
+    (compact ? 96 : 124) + (scaler.scale(14) - 14).clamp(0, 40) * 3;
 
 /// The body of one AniList list section: AniList's own rows (cover, title and score in the
 /// account's format, label rail, progress bar with +1), the shared grid and custom cards, pull
@@ -133,8 +135,11 @@ class _AnilistListTabState extends State<AnilistListTab> with AutomaticKeepAlive
     } else {
       final profile = display.subType == DisplaySubType.custom ? widget.cardProfile : null;
       final compact = display.subType == DisplaySubType.compact;
+      final scaler = MediaQuery.textScalerOf(context);
       list = SliverFixedExtentList.builder(
-        itemExtent: profile != null ? profile.height + 8 : anilistRowExtent(compact: compact),
+        itemExtent: profile != null
+            ? profile.height + 8
+            : anilistRowExtent(compact: compact, scaler: scaler),
         itemCount: entries.length,
         itemBuilder: (context, i) {
           final e = entries[i];
