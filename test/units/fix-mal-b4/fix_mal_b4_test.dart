@@ -17,7 +17,6 @@ import 'package:mywatchlist/services/api/Jikan/jikan_anime_episode.dart';
 import 'package:mywatchlist/services/api/Jikan/jikan_api.dart';
 import 'package:mywatchlist/services/api/MAL/scrapper/episodes_page.dart';
 import 'package:mywatchlist/services/api/MAL/web/mal_messages_api.dart';
-import 'package:mywatchlist/services/api/MAL/web/mal_notifications_api.dart';
 import 'package:mywatchlist/services/api/MAL/web/mal_web_client.dart';
 import 'package:mywatchlist/services/api/MAL/web/mal_web_form_submitter.dart';
 import 'package:mywatchlist/services/auth/mal_web_session.dart';
