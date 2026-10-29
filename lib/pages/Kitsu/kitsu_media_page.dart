@@ -5,7 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/pages/Kitsu/kitsu_browse_screen.dart';
 import 'package:mywatchlist/screens/MAL/detail/sections/section_states.dart';
-import 'package:mywatchlist/services/api/Kitsu/kitsu_catalog.dart';
+import 'package:mywatchlist/services/api/Kitsu/kitsu_catalog.dart' show KitsuMediaQuery;
 import 'package:mywatchlist/services/api/Kitsu/kitsu_graphql.dart';
 import 'package:mywatchlist/services/api/Kitsu/kitsu_media_detail.dart';
 import 'package:mywatchlist/utils/app_routes.dart';

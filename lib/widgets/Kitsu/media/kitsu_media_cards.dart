@@ -455,7 +455,7 @@ class KitsuCharacterCard extends StatelessWidget {
   static const double width = 100;
 
   static double heightFor(BuildContext context) =>
-      width * 1.4 + 10 + MediaQuery.textScalerOf(context).scale(62);
+      width * 1.4 + 10 + MediaQuery.textScalerOf(context).scale(74);
 
   @override
   Widget build(BuildContext context) {
@@ -498,7 +498,7 @@ class KitsuStaffCard extends StatelessWidget {
   static const double width = 100;
 
   static double heightFor(BuildContext context) =>
-      width * 1.4 + 10 + MediaQuery.textScalerOf(context).scale(48);
+      width * 1.4 + 10 + MediaQuery.textScalerOf(context).scale(60);
 
   @override
   Widget build(BuildContext context) {

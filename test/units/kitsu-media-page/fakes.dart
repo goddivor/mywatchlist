@@ -17,9 +17,9 @@ const _pictureKeys = {'posterImage', 'bannerImage', 'avatarImage', 'thumbnail', 
 /// Drops every picture so a widget test never asks the network for one.
 Object? withoutPictures(Object? json) {
   if (json is Map) {
-    return {
+    return <String, dynamic>{
       for (final e in json.entries)
-        if (!_pictureKeys.contains(e.key)) e.key: withoutPictures(e.value),
+        if (!_pictureKeys.contains(e.key)) '${e.key}': withoutPictures(e.value),
     };
   }
   if (json is List) return [for (final e in json) withoutPictures(e)];

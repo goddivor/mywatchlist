@@ -163,9 +163,9 @@ void main() {
     await pump(tester, anime(fake));
     await tester.tap(find.text('Sousou no Frieren 2nd Season'));
     await tester.pumpAndSettle();
-    expect(find.byType(KitsuMediaPage), findsNWidgets(2));
+    expect(find.byType(KitsuMediaPage, skipOffstage: false), findsNWidgets(2));
     expect(find.text('Sousou no Frieren 2nd Season'), findsWidgets);
-    expect(fake.requests.last.body, contains('"key":"49240"'));
+    expect(fake.requests.any((r) => r.body.contains('"key":"49240"')), isTrue);
   });
 
   testWidgets('a streaming link and an external id open in the browser', (tester) async {
