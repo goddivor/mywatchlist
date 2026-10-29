@@ -151,9 +151,8 @@ bool _watchNsfw(BuildContext context) => context.select<PreferencesBloc?, bool>(
 /// card opens the genres of its group. The groups come from the app's MAL tables, so the row
 /// never waits for the network.
 ///
-/// Explicit genres follow the NSFW preference: with it off, the card shows no picture (a flat
-/// 18+ block) and asks before turning the preference on, since MyAnimeList hides those titles
-/// from every browse and search while it is off.
+/// Explicit genres follow the NSFW preference like DailyAL: with it off the card is not listed
+/// at all (no caption, no placeholder), since MyAnimeList hides those titles while it is off.
 class GenresRow extends StatelessWidget {
   final String category;
 
@@ -162,7 +161,10 @@ class GenresRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final nsfw = _watchNsfw(context);
-    final groups = ExploreData.genreGroups(category);
+    final groups = [
+      for (final g in ExploreData.genreGroups(category))
+        if (nsfw || !g.isExplicit) g,
+    ];
     return SizedBox(
       height: kExploreCardHeight,
       child: ListView.separated(
@@ -172,52 +174,19 @@ class GenresRow extends StatelessWidget {
         separatorBuilder: (_, __) => const SizedBox(width: 10),
         itemBuilder: (context, i) {
           final group = groups[i];
-          final hidden = group.isExplicit && !nsfw;
           return ExplorePictureCard(
             asset: ExploreImages.genreGroup(group.type, category),
             icon: _genreGroupIcon(group.type),
             label: _genreGroupLabel(group.type),
             // DailyAL shows the group name only (no genre count).
-            caption: hidden ? S.current.Exp_Nsfw_Hidden : null,
             hue: 200.0 + i * 55,
-            hidden: hidden,
             width: kExploreCardWidth,
             height: kExploreCardHeight,
-            onTap: () async {
-              if (hidden && !await _askNsfw(context)) return;
-              if (context.mounted) _showGenres(context, group, category);
-            },
+            onTap: () => _showGenres(context, group, category),
           );
         },
       ),
     );
-  }
-
-  /// Asks to turn the NSFW preference on; true when it is on afterwards.
-  static Future<bool> _askNsfw(BuildContext context) async {
-    final yes = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        icon: const Icon(Icons.eighteen_up_rating_rounded),
-        title: Text(S.current.Exp_Nsfw_Title),
-        content: Text(S.current.Exp_Nsfw_Body),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: Text(S.current.Cancel),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: Text(S.current.Exp_Nsfw_Enable),
-          ),
-        ],
-      ),
-    );
-    if (yes != true) return false;
-    final bloc = Preferences.bloc;
-    if (bloc == null) return false;
-    bloc.add(GeneralPreferencesChanged((p) => p.copyWith(nsfw: true)));
-    return true;
   }
 
   void _showGenres(BuildContext context, GenreGroup group, String category) {

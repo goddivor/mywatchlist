@@ -210,10 +210,10 @@ class AppThemes {
           ),
         ),
       ),
+      // Only the shape is themed: colours come from the scheme, so FilledButton keeps the
+      // accent (primary) and FilledButton.tonal keeps secondaryContainer.
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          backgroundColor: cs.primary,
-          foregroundColor: cs.onPrimary,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),

@@ -11,7 +11,8 @@ const double kExplorePadding = 16;
 
 /// Compact count ("12K") in the app language.
 String compactCount(BuildContext context, num value) =>
-    NumberFormat.compact(locale: Localizations.localeOf(context).toString()).format(value);
+    NumberFormat.compact(locale: Localizations.localeOf(context).toString())
+        .format(value);
 
 /// Title row of a section (DailyAL's `_titleWidget`): a regular-weight title and, when the
 /// section has a full list, an arrow button that opens it.
@@ -26,7 +27,8 @@ class ExploreSectionHeader extends StatelessWidget {
     final theme = Theme.of(context);
     return Padding(
       // The arrow keeps the row as tall as DailyAL's; a header without it gets the same height.
-      padding: const EdgeInsetsDirectional.fromSTEB(kExplorePadding, 20, kExplorePadding - 8, 6),
+      padding: const EdgeInsetsDirectional.fromSTEB(
+          kExplorePadding, 20, kExplorePadding - 8, 6),
       child: ConstrainedBox(
         constraints: const BoxConstraints(minHeight: kMinInteractiveDimension),
         child: Row(
@@ -109,7 +111,9 @@ class _AsyncSectionState<T> extends State<AsyncSection<T>> {
         if (!snapshot.hasData) return widget.skeleton;
         final data = snapshot.data as T;
         if (widget.isEmpty(data)) {
-          return SectionMessage(icon: Icons.inbox_outlined, text: S.current.Explore_Section_Empty);
+          return SectionMessage(
+              icon: Icons.inbox_outlined,
+              text: S.current.Explore_Section_Empty);
         }
         return widget.builder(context, data);
       },
@@ -123,13 +127,15 @@ class SectionMessage extends StatelessWidget {
   final String text;
   final VoidCallback? onRetry;
 
-  const SectionMessage({super.key, required this.icon, required this.text, this.onRetry});
+  const SectionMessage(
+      {super.key, required this.icon, required this.text, this.onRetry});
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: kExplorePadding, vertical: 12),
+      padding:
+          const EdgeInsets.symmetric(horizontal: kExplorePadding, vertical: 12),
       child: Row(
         children: [
           Icon(icon, color: scheme.onSurfaceVariant),
@@ -138,7 +144,8 @@ class SectionMessage extends StatelessWidget {
             child: Text(text, style: TextStyle(color: scheme.onSurfaceVariant)),
           ),
           if (onRetry != null)
-            TextButton(onPressed: onRetry, child: Text(S.current.Explore_Try_Again)),
+            TextButton(
+                onPressed: onRetry, child: Text(S.current.Explore_Try_Again)),
         ],
       ),
     );
@@ -146,7 +153,8 @@ class SectionMessage extends StatelessWidget {
 }
 
 /// Placeholder row of a horizontal section.
-Widget horizontalSkeleton({double height = 200, double width = 130}) => loadingCardList(
+Widget horizontalSkeleton({double height = 200, double width = 130}) =>
+    loadingCardList(
       containerHeight: height + 10,
       height: height,
       width: width,
@@ -201,7 +209,8 @@ class ExploreTile extends StatelessWidget {
                   label,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(color: textColor, fontSize: 14, height: 1.15),
+                  style:
+                      TextStyle(color: textColor, fontSize: 14, height: 1.15),
                 ),
                 if (caption != null)
                   Text(caption!,
@@ -264,9 +273,11 @@ class PosterTile extends StatelessWidget {
                   height: imageHeight,
                   borderRadius: radius,
                 ),
-                if (badge != null) PositionedDirectional(top: 6, start: 6, child: badge!),
+                if (badge != null)
+                  PositionedDirectional(top: 6, start: 6, child: badge!),
                 if (bottomBadge != null)
-                  PositionedDirectional(bottom: 6, start: 6, child: bottomBadge!),
+                  PositionedDirectional(
+                      bottom: 6, start: 6, child: bottomBadge!),
               ],
             ),
             const SizedBox(height: 6),
@@ -278,8 +289,8 @@ class PosterTile extends StatelessWidget {
               Text(subtitle!,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.bodySmall
-                      ?.copyWith(color: theme.colorScheme.onSurfaceVariant, fontSize: 11)),
+                  style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant, fontSize: 11)),
           ],
         ),
       ),
@@ -298,7 +309,8 @@ class CornerBadge extends StatelessWidget {
   /// Read by screen readers instead of [text] (e.g. "12,345 favourites" for "12K").
   final String? semanticLabel;
 
-  const CornerBadge(this.text, {super.key, this.icon, this.iconColor, this.semanticLabel});
+  const CornerBadge(this.text,
+      {super.key, this.icon, this.iconColor, this.semanticLabel});
 
   @override
   Widget build(BuildContext context) {
@@ -319,13 +331,16 @@ class CornerBadge extends StatelessWidget {
             ],
             Text(text,
                 style: TextStyle(
-                    color: tokens.onImageScrim, fontSize: 11, fontWeight: FontWeight.w600)),
+                    color: tokens.onImageScrim,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600)),
           ],
         ),
       ),
     );
     if (semanticLabel == null) return badge;
-    return Semantics(label: semanticLabel, excludeSemantics: true, child: badge);
+    return Semantics(
+        label: semanticLabel, excludeSemantics: true, child: badge);
   }
 }
 
@@ -335,7 +350,7 @@ class CornerBadge extends StatelessWidget {
 ///
 /// The picture is decoded at the card's size (never above the 225 px source), so a row of
 /// cards scrolls without decoding full pictures. Without a picture the card is an
-/// [ExploreTile]; [hidden] replaces the picture by a flat block (adult content with NSFW off).
+/// [ExploreTile].
 class ExplorePictureCard extends StatelessWidget {
   final String? asset;
   final String label;
@@ -345,7 +360,6 @@ class ExplorePictureCard extends StatelessWidget {
   final VoidCallback onTap;
   final double width;
   final double height;
-  final bool hidden;
 
   const ExplorePictureCard({
     super.key,
@@ -357,13 +371,12 @@ class ExplorePictureCard extends StatelessWidget {
     this.caption,
     this.width = 148,
     this.height = 100,
-    this.hidden = false,
   });
 
   @override
   Widget build(BuildContext context) {
     final asset = this.asset;
-    if (asset == null && !hidden) {
+    if (asset == null) {
       return ExploreTile(
         icon: icon,
         label: label,
@@ -376,24 +389,19 @@ class ExplorePictureCard extends StatelessWidget {
     }
     final scheme = Theme.of(context).colorScheme;
     final tokens = AppColors.of(context);
-    final foreground = hidden ? scheme.onSurfaceVariant : tokens.onImageScrim;
+    final foreground = tokens.onImageScrim;
     final text = Padding(
       padding: const EdgeInsets.all(10),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          if (hidden) ...[
-            Icon(Icons.eighteen_up_rating_rounded, color: foreground, size: 22),
-            const SizedBox(height: 4),
-          ],
           Text(
             label,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
             textAlign: TextAlign.center,
             // DailyAL's card title: regular weight, 15.
-            style: TextStyle(
-                color: hidden ? scheme.onSurface : foreground, fontSize: 15, height: 1.15),
+            style: TextStyle(color: foreground, fontSize: 15, height: 1.15),
           ),
           if (caption != null) ...[
             const SizedBox(height: 2),
@@ -410,28 +418,28 @@ class ExplorePictureCard extends StatelessWidget {
       width: width,
       height: height,
       child: Material(
-        color: hidden ? scheme.surfaceContainerHighest : scheme.surfaceContainer,
+        color: scheme.surfaceContainer,
         borderRadius: BorderRadius.circular(12),
         clipBehavior: Clip.antiAlias,
         child: Stack(
           fit: StackFit.expand,
           children: [
-            if (!hidden && asset != null) ...[
-              LayoutBuilder(builder: (context, constraints) {
-                final ratio = MediaQuery.devicePixelRatioOf(context);
-                final w = constraints.maxWidth.isFinite ? constraints.maxWidth : width;
-                final decode = (w * ratio).round().clamp(32, ExploreImages.sourceWidth);
-                return Image.asset(
-                  asset,
-                  fit: BoxFit.cover,
-                  cacheWidth: decode,
-                  excludeFromSemantics: true,
-                  gaplessPlayback: true,
-                  errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-                );
-              }),
-              ColoredBox(color: tokens.imageScrim),
-            ],
+            LayoutBuilder(builder: (context, constraints) {
+              final ratio = MediaQuery.devicePixelRatioOf(context);
+              final w =
+                  constraints.maxWidth.isFinite ? constraints.maxWidth : width;
+              final decode =
+                  (w * ratio).round().clamp(32, ExploreImages.sourceWidth);
+              return Image.asset(
+                asset,
+                fit: BoxFit.cover,
+                cacheWidth: decode,
+                excludeFromSemantics: true,
+                gaplessPlayback: true,
+                errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+              );
+            }),
+            ColoredBox(color: tokens.imageScrim),
             Center(child: text),
             Material(
               type: MaterialType.transparency,
