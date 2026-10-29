@@ -41,6 +41,7 @@ this brief, then your unit's start prompt and handoff. Follow all three strictly
 ## Machine load (owner's rule — strict)
 - You WRITE CODE. You never run `flutter build`, `flutter run`, `adb` or the emulator: the checker does that, alone on the machine.
 - Every heavy command (`flutter analyze`, `flutter test`, `dart analyze`, `flutter pub get`, `tools/verify.sh`, `tools/l10n/build.sh`) goes through the machine-wide lock: `tools/heavy.sh <command>`. If another agent holds it, you wait — that is expected.
+- Wait for a heavy command with the Bash tool's `run_in_background: true` (you are notified when it exits, however long the lock queue is), never with a Monitor or a timed watcher: those expire after 30 minutes and leave you idle while the command is still queued.
 - While iterating, analyze only your own files (`tools/heavy.sh dart analyze lib/<your paths>`), at most once per significant step. The full gate `tools/heavy.sh tools/verify.sh` once, at the end, before pushing.
 - Never `pkill -f`, never kill a process you did not start. No server, no port is needed for this project.
 - Fresh worktree: `assets/.env` is copied for you (never commit it); run `tools/heavy.sh flutter pub get` once.
