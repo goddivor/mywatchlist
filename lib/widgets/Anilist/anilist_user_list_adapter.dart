@@ -4,11 +4,10 @@ import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/services/api/Anilist/anilist_graphql.dart';
 import 'package:mywatchlist/services/api/Anilist/anilist_list_service.dart';
 import 'package:mywatchlist/services/api/Anilist/anilist_list_write.dart';
-import 'package:mywatchlist/services/api/Anilist/anilist_media.dart';
 import 'package:mywatchlist/services/tracker_sync_service.dart';
 import 'package:mywatchlist/utils/app_routes.dart';
-import 'package:mywatchlist/widgets/Anilist/anilist_media_card.dart';
 import 'package:mywatchlist/widgets/Anilist/list/anilist_entry_editor.dart';
+import 'package:mywatchlist/widgets/Anilist/social/anilist_links.dart' show openAnilistTitle;
 import 'package:mywatchlist/widgets/common/list_sort_filter.dart';
 import 'package:mywatchlist/widgets/user/list/list_entry_view.dart';
 import 'package:mywatchlist/widgets/user/list/list_query.dart';
@@ -44,12 +43,20 @@ class AnilistUserListAdapter extends UserListAdapter {
     Future<AnilistEditResult?> Function(
             BuildContext context, ListEntryView entry, AnilistListEntry? detail)?
         anilistEditor,
+    Future<void> Function(BuildContext context, {required String category, required int id})?
+        opener,
   })  : _service = service,
         _sync = sync,
         _write = write,
         _clock = clock ?? DateTime.now,
         _editor = editor,
-        _anilistEditor = anilistEditor;
+        _anilistEditor = anilistEditor,
+        _opener = opener ?? openAnilistTitle;
+
+  /// Opens a row's title (tests replace it). Owner rule: an AniList row opens the AniList
+  /// title ([openAnilistTitle]), never the MyAnimeList page, even when AniList knows its MAL id.
+  final Future<void> Function(BuildContext context, {required String category, required int id})
+      _opener;
 
   /// Test hook in the shared editor's terms (status, score, progress, dates).
   final Future<SyncEntry?> Function(BuildContext, ListEntryView, SyncEntry)? _editor;
@@ -172,16 +179,8 @@ class AnilistUserListAdapter extends UserListAdapter {
   }
 
   @override
-  void open(BuildContext context, ListEntryView entry) => openAnilistMedia(
-        context,
-        AnilistMedia(
-          id: entry.id,
-          malId: entry.malId,
-          category: entry.category,
-          title: entry.title,
-          coverUrl: entry.imageUrl,
-        ),
-      );
+  void open(BuildContext context, ListEntryView entry) =>
+      _opener(context, category: entry.category, id: entry.id);
 
   static SyncEntry _syncEntryOf(ListEntryView e, AnilistListEntry? d) => SyncEntry(
         status: e.status?.malValue(isAnime: e.isAnime),
