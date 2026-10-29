@@ -289,7 +289,8 @@ class AnilistMediaQuery {
   List<String> get allGenres => {if (genre != null) genre!, ...genres}.toList();
   List<String> get allTags => {if (tag != null) tag!, ...tags}.toList();
 
-  /// How many filters are set (the badge of the filter button): sort, text and type excluded.
+  /// How many filters are set (the badge of the filter button): sort, text and type excluded,
+  /// and the length ranges of the other type (not sent).
   int get filterCount => [
         season != null || seasonYear != null,
         allStatuses.isNotEmpty,
@@ -305,10 +306,10 @@ class AnilistMediaQuery {
         isLicensed != null,
         licensedByIds.isNotEmpty,
         !years.isOpen,
-        !episodes.isOpen,
-        !duration.isOpen,
-        !chapters.isOpen,
-        !volumes.isOpen,
+        category != 'manga' && !episodes.isOpen,
+        category != 'manga' && !duration.isOpen,
+        category == 'manga' && !chapters.isOpen,
+        category == 'manga' && !volumes.isOpen,
         !score.isOpen,
         popularityMin != null,
         onList != null,

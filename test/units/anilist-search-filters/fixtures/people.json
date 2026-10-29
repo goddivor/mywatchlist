@@ -1,0 +1,87 @@
+{
+ "data": {
+  "c": {
+   "pageInfo": {
+    "hasNextPage": false
+   },
+   "characters": [
+    {
+     "id": 176754,
+     "name": {
+      "userPreferred": "Frieren",
+      "native": "フリーレン"
+     },
+     "image": {
+      "large": "https://s4.anilist.co/file/anilistcdn/character/large/b176754-PCnpqIOkjhFk.png"
+     },
+     "favourites": 22574
+    }
+   ]
+  },
+  "s": {
+   "pageInfo": {
+    "hasNextPage": false
+   },
+   "staff": [
+    {
+     "id": 112215,
+     "name": {
+      "userPreferred": "Atsumi Tanezaki",
+      "native": "種﨑敦美"
+     },
+     "image": {
+      "large": "https://s4.anilist.co/file/anilistcdn/staff/large/n112215-kfABGD8W2YSJ.jpg"
+     },
+     "favourites": 3920,
+     "primaryOccupations": [
+      "Voice Actor",
+      "Vocalist"
+     ]
+    }
+   ]
+  },
+  "st": {
+   "pageInfo": {
+    "hasNextPage": false
+   },
+   "studios": [
+    {
+     "id": 11,
+     "name": "MADHOUSE",
+     "isAnimationStudio": true,
+     "favourites": 20002,
+     "media": {
+      "nodes": [
+       {
+        "title": {
+         "userPreferred": "DEATH NOTE"
+        }
+       }
+      ]
+     }
+    }
+   ]
+  },
+  "u": {
+   "pageInfo": {
+    "hasNextPage": true
+   },
+   "users": [
+    {
+     "id": 7785480,
+     "name": "joshjoshjoshjosh",
+     "avatar": {
+      "large": "https://s4.anilist.co/file/anilistcdn/user/avatar/large/default.png"
+     }
+    },
+    {
+     "id": 6820382,
+     "name": "joshjoshjosh",
+     "avatar": {
+      "large": "https://s4.anilist.co/file/anilistcdn/user/avatar/large/default.png"
+     }
+    }
+   ]
+  }
+ }
+}

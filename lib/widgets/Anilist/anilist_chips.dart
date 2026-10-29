@@ -1,22 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:mywatchlist/generated/l10n.dart';
+import 'package:mywatchlist/services/api/Anilist/anilist_catalog.dart';
 import 'package:mywatchlist/services/api/Anilist/anilist_discover_service.dart';
 import 'package:mywatchlist/utils/app_routes.dart';
 import 'package:mywatchlist/widgets/Anilist/anilist_browse_screen.dart';
+import 'package:mywatchlist/widgets/Anilist/search/anilist_tag_explorer.dart';
 import 'package:mywatchlist/widgets/home/home_chips.dart' show kHomeChipsHeight;
 
 /// Opens the grid of the titles AniList returns for [query] under [title].
 void openAnilistBrowse(BuildContext context, String title, AnilistMediaQuery query) =>
     AppRoutes.push<void>(context, AnilistBrowseScreen(title: title, query: query));
 
-/// Opens AniList's search.
-void openAnilistSearch(BuildContext context, {String category = 'anime'}) =>
+/// Opens AniList's search ([kind]: titles of [category] by default, or characters, staff,
+/// studios, users).
+void openAnilistSearch(BuildContext context,
+        {String category = 'anime', String? text, AnilistSearchKind? kind}) =>
     AppRoutes.push<void>(
       context,
       AnilistBrowseScreen(
         title: '',
-        query: AnilistMediaQuery(category: category, sort: 'SEARCH_MATCH'),
+        query: AnilistMediaQuery(category: category, sort: 'SEARCH_MATCH', search: text),
         searchable: true,
+        kind: kind,
       ),
     );
 
@@ -30,6 +35,7 @@ class AnilistChipsBar extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     final chips = <(String, void Function(BuildContext))>[
       (s.Hw_Chip_Genres, showAnilistGenres),
+      (s.Als_Chip_Tags, (c) => openAnilistTagExplorer(c)),
       (
         s.Hw_Chip_Top_Anime,
         (c) => openAnilistBrowse(
@@ -95,7 +101,9 @@ class AnilistChipsBar extends StatelessWidget {
 }
 
 /// The genres of AniList in a bottom sheet (anime or manga); a genre opens its titles by
-/// popularity. AniList's genre names are its own keys, shown as AniList writes them.
+/// popularity. AniList's genre names are its own keys, shown as AniList writes them. The list
+/// is AniList's own (`GenreCollection`, kept a day by [AnilistCatalog]); `Hentai` only when
+/// adult titles are allowed.
 Future<void> showAnilistGenres(BuildContext context, {String category = 'anime'}) {
   return showModalBottomSheet<void>(
     context: context,
@@ -128,6 +136,19 @@ class _GenresSheet extends StatefulWidget {
 
 class _GenresSheetState extends State<_GenresSheet> {
   late String _category = widget.category;
+  List<String> _genres = AnilistCatalog.instance.cached?.genresFor(adult: false) ?? AnilistDiscoverService.genres;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadGenres();
+  }
+
+  Future<void> _loadGenres() async {
+    final catalog = await AnilistCatalog.instance.load();
+    final adult = await AnilistDiscoverService.instance.adultAllowed();
+    if (mounted) setState(() => _genres = catalog.genresFor(adult: adult));
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -157,7 +178,7 @@ class _GenresSheetState extends State<_GenresSheet> {
             spacing: 8,
             runSpacing: 8,
             children: [
-              for (final genre in AnilistDiscoverService.genres)
+              for (final genre in _genres)
                 ActionChip(
                   label: Text(genre),
                   onPressed: () => widget.onPick(genre, _category),

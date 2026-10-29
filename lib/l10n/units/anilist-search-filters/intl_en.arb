@@ -1,0 +1,165 @@
+{
+  "@@locale": "en",
+  "Als_Kind_Anime": "Anime",
+  "Als_Kind_Manga": "Manga",
+  "Als_Kind_Characters": "Characters",
+  "Als_Kind_Staff": "Staff",
+  "Als_Kind_Studios": "Studios",
+  "Als_Kind_Users": "Users",
+  "Als_Search_Hint": "Search AniList",
+  "Als_Filters": "Filters",
+  "Als_Sort": "Sort",
+  "Als_Reset": "Reset",
+  "Als_Apply": "Show results",
+  "Als_Any": "Any",
+  "Als_Sec_Format": "Format",
+  "Als_Sec_Status": "Status",
+  "Als_Sec_Season": "Season",
+  "Als_Sec_Year": "Year",
+  "Als_Sec_Genres": "Genres",
+  "Als_Sec_Tags": "Tags",
+  "Als_Sec_Tag_Rank": "Minimum tag rank",
+  "Als_Sec_Tag_Categories": "Tag categories",
+  "Als_Sec_Streaming": "Streaming on",
+  "Als_Sec_Reading": "Readable on",
+  "Als_Sec_Country": "Country",
+  "Als_Sec_Source": "Source",
+  "Als_Sec_Episodes": "Episodes",
+  "Als_Sec_Duration": "Episode length (minutes)",
+  "Als_Sec_Chapters": "Chapters",
+  "Als_Sec_Volumes": "Volumes",
+  "Als_Sec_Score": "Score",
+  "Als_Sec_Popularity": "Popularity",
+  "Als_Sec_My_List": "My list",
+  "Als_Sec_Licensing": "Licensing",
+  "Als_Sec_Adult": "Adult content",
+  "Als_On_List": "On my list",
+  "Als_Off_List": "Not on my list",
+  "Als_Licensed": "Licensed",
+  "Als_Doujin": "Doujin",
+  "Als_Adult_Only": "Adult only",
+  "Als_Adult_Hide": "Hide adult",
+  "Als_Adult_Chip": "Adult",
+  "Als_Not": "Not {name}",
+  "@Als_Not": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "Als_Range": "{label} {range}",
+  "@Als_Range": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      },
+      "range": {
+        "type": "String"
+      }
+    }
+  },
+  "Als_Popularity_Min": "{count}+ users",
+  "@Als_Popularity_Min": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "Als_Tag_Count": "{count, plural, =0{Choose tags} =1{1 tag} other{{count} tags}}",
+  "@Als_Tag_Count": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "Als_Chapters_Short": "{count} ch",
+  "@Als_Chapters_Short": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "Als_Minutes_Short": "{count} min",
+  "@Als_Minutes_Short": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "Als_Format_TV": "TV",
+  "Als_Format_TV_SHORT": "TV short",
+  "Als_Format_MOVIE": "Movie",
+  "Als_Format_SPECIAL": "Special",
+  "Als_Format_OVA": "OVA",
+  "Als_Format_ONA": "ONA",
+  "Als_Format_MUSIC": "Music",
+  "Als_Format_MANGA": "Manga",
+  "Als_Format_NOVEL": "Light novel",
+  "Als_Format_ONE_SHOT": "One shot",
+  "Als_Status_RELEASING": "Releasing",
+  "Als_Status_FINISHED": "Finished",
+  "Als_Status_NOT_YET_RELEASED": "Not yet released",
+  "Als_Status_HIATUS": "Hiatus",
+  "Als_Status_CANCELLED": "Cancelled",
+  "Als_Source_ORIGINAL": "Original",
+  "Als_Source_MANGA": "Manga",
+  "Als_Source_LIGHT_NOVEL": "Light novel",
+  "Als_Source_WEB_NOVEL": "Web novel",
+  "Als_Source_NOVEL": "Novel",
+  "Als_Source_VISUAL_NOVEL": "Visual novel",
+  "Als_Source_VIDEO_GAME": "Video game",
+  "Als_Source_GAME": "Game",
+  "Als_Source_COMIC": "Comic",
+  "Als_Source_DOUJINSHI": "Doujinshi",
+  "Als_Source_ANIME": "Anime",
+  "Als_Source_LIVE_ACTION": "Live action",
+  "Als_Source_MULTIMEDIA_PROJECT": "Multimedia project",
+  "Als_Source_PICTURE_BOOK": "Picture book",
+  "Als_Source_OTHER": "Other",
+  "Als_Country_JP": "Japan",
+  "Als_Country_KR": "South Korea",
+  "Als_Country_CN": "China",
+  "Als_Country_TW": "Taiwan",
+  "Als_Sort_POPULARITY": "Popularity",
+  "Als_Sort_SCORE": "Score",
+  "Als_Sort_TRENDING": "Trending",
+  "Als_Sort_FAVOURITES": "Favourites",
+  "Als_Sort_START_DATE": "Start date",
+  "Als_Sort_END_DATE": "End date",
+  "Als_Sort_TITLE_ROMAJI": "Title (romaji)",
+  "Als_Sort_TITLE_ENGLISH": "Title (English)",
+  "Als_Sort_TITLE_NATIVE": "Title (native)",
+  "Als_Sort_EPISODES": "Episodes",
+  "Als_Sort_DURATION": "Episode length",
+  "Als_Sort_CHAPTERS": "Chapters",
+  "Als_Sort_VOLUMES": "Volumes",
+  "Als_Sort_FORMAT": "Format",
+  "Als_Sort_STATUS": "Status",
+  "Als_Sort_TYPE": "Type",
+  "Als_Sort_UPDATED_AT": "Last updated",
+  "Als_Sort_ID": "Date added",
+  "Als_Sort_SEARCH_MATCH": "Best match",
+  "Als_Sort_Ascending": "Ascending",
+  "Als_Sort_Descending": "Descending",
+  "Als_List_Watching": "Watching",
+  "Als_List_Reading": "Reading",
+  "Als_List_Planning": "Planning",
+  "Als_List_Completed": "Completed",
+  "Als_List_Paused": "Paused",
+  "Als_List_Dropped": "Dropped",
+  "Als_List_Rewatching": "Rewatching",
+  "Als_List_Rereading": "Rereading",
+  "Als_Layout_Grid": "Grid",
+  "Als_Layout_List": "List",
+  "Als_Tags_Title": "Tags",
+  "Als_Tag_Search_Hint": "Search tags",
+  "Als_Tag_Browse": "Browse titles",
+  "Als_Spoiler": "Spoiler",
+  "Als_Chip_Tags": "Tags",
+  "Als_Choose": "Choose"
+}
