@@ -408,11 +408,11 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      expect(find.textContaining('before'), findsOneWidget);
-      expect(find.textContaining('the secret'), findsNothing);
+      expect(find.textContaining('before', findRichText: true), findsOneWidget);
+      expect(find.textContaining('the secret', findRichText: true), findsNothing);
       await tester.tap(find.text('Spoiler'));
       await tester.pumpAndSettle();
-      expect(find.textContaining('the secret'), findsOneWidget);
+      expect(find.textContaining('the secret', findRichText: true), findsOneWidget);
     });
 
     test('embeds are recognised', () {

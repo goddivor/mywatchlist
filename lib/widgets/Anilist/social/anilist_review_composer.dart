@@ -79,7 +79,7 @@ class _AnilistReviewComposerPageState extends State<AnilistReviewComposerPage> {
           _existingId = mine.review.id;
           _summary.text = mine.review.summary;
           _body.text = mine.markdown;
-          _score = mine.review.score.toDouble().clamp(0, 100);
+          _score = mine.review.score.clamp(0, 100).toDouble();
           _private = mine.review.isPrivate;
         }
         _loading = false;
