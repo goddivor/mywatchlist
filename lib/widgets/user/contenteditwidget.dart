@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:intl/intl.dart';
 import 'package:mywatchlist/constants/constants.dart'
     show AccountType, showToast;
 import 'package:mywatchlist/generated/l10n.dart';
@@ -92,6 +93,10 @@ class _ContentEditWidgetState extends State<ContentEditWidget> {
   final TextEditingController _progressController = TextEditingController();
   final TextEditingController _volumesController = TextEditingController();
 
+  /// Last change of the MyAnimeList entry (`my_list_status.updated_at`, then
+  /// the time of this sheet's last write); null when unknown.
+  DateTime? _updatedAt;
+
   bool _advanced = false;
   bool _repeatOpen = false;
   bool _datesOpen = true;
@@ -158,7 +163,13 @@ class _ContentEditWidgetState extends State<ContentEditWidget> {
   // Data
   // ---------------------------------------------------------------------------
 
+  /// The detail page's MAL entry only describes the MAL list.
+  bool get _readsMal => widget.service == null || widget.service is MalListEntryService;
+
   Future<void> _load() async {
+    _updatedAt = _readsMal
+        ? DateTime.tryParse(widget.contentDetailed?.myListStatus?.updatedAt ?? '')
+        : null;
     if (!_service.canEdit) {
       setState(() => _phase = _Phase.notEditable);
       return;
@@ -214,6 +225,7 @@ class _ContentEditWidgetState extends State<ContentEditWidget> {
       if (mounted) {
         setState(() {
           _entry = result.entry;
+          _updatedAt = _readsMal ? _now : null;
           _syncControllers();
         });
       }
@@ -362,6 +374,7 @@ class _ContentEditWidgetState extends State<ContentEditWidget> {
       if (mounted) {
         setState(() {
           _entry = null;
+          _updatedAt = null;
           _advanced = false;
           _syncControllers();
         });
@@ -540,14 +553,6 @@ class _ContentEditWidgetState extends State<ContentEditWidget> {
     );
   }
 
-  String? _progressHint(EditableContent content) {
-    final total = content.progressTotal;
-    if (total > 0) return S.current.Edit_Of_Total(total);
-    final aired = estimateAiredEpisodes(content, _now);
-    if (aired != null) return S.current.Edit_Aired_Estimate(aired);
-    return null;
-  }
-
   Widget _statusButton(ListEntry entry) => StatusButton(
         status: entry.status,
         isAnime: _isAnime,
@@ -570,8 +575,7 @@ class _ContentEditWidgetState extends State<ContentEditWidget> {
                 size: 20),
           )
         : null;
-    final caption = FieldCaption(S.current.Edit_Episodes_Seen,
-        hint: _progressHint(content), action: toggle);
+    final caption = FieldCaption(S.current.Edit_Episodes_Seen, action: toggle);
     if (useBar) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -633,8 +637,7 @@ class _ContentEditWidgetState extends State<ContentEditWidget> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  FieldCaption(S.current.Edit_Chapters_Read,
-                      hint: _progressHint(content)),
+                  FieldCaption(S.current.Edit_Chapters_Read),
                   ProgressStepper(
                     key: const ValueKey('edit-progress'),
                     controller: _progressController,
@@ -650,10 +653,7 @@ class _ContentEditWidgetState extends State<ContentEditWidget> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  FieldCaption(S.current.Edit_Volumes_Read,
-                      hint: content.numVolumes > 0
-                          ? S.current.Edit_Of_Total(content.numVolumes)
-                          : null),
+                  FieldCaption(S.current.Edit_Volumes_Read),
                   ProgressStepper(
                     key: const ValueKey('edit-volumes'),
                     controller: _volumesController,
@@ -677,10 +677,7 @@ class _ContentEditWidgetState extends State<ContentEditWidget> {
       children: [
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12),
-          child: FieldCaption(
-            S.current.Score,
-            hint: score > 0 ? '$score · ${scoreLabel(score)}' : scoreLabel(0),
-          ),
+          child: FieldCaption(S.current.Score),
         ),
         NumberBar(
           key: const ValueKey('edit-score-bar'),
@@ -880,8 +877,24 @@ class _ContentEditWidgetState extends State<ContentEditWidget> {
           busy: _busy.contains(EditField.tags),
           onTap: _editTags,
         ),
+        if (_updatedAt case final updated?)
+          Padding(
+            padding: const EdgeInsetsDirectional.only(start: 4, top: 10),
+            child: Text(
+              S.current.Dsb_Last_Updated(_updatedFormat(updated)),
+              key: const ValueKey('edit-updated-at'),
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant),
+            ),
+          ),
       ],
     );
+  }
+
+  String _updatedFormat(DateTime value) {
+    final locale = Localizations.localeOf(context).toString();
+    final local = value.toLocal();
+    return '${DateFormat.yMMMd(locale).format(local)} ${DateFormat.Hm(locale).format(local)}';
   }
 
   Widget _bottomBar() {
