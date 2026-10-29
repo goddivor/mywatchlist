@@ -2,7 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:mywatchlist/generated/l10n.dart';
-import 'package:mywatchlist/pages/Anilist/anilist_forum_page.dart' show AnilistThreadList;
+import 'package:mywatchlist/pages/Anilist/anilist_forum_page.dart' show AnilistForumPage;
 import 'package:mywatchlist/services/api/Anilist/anilist_media_detail.dart';
 import 'package:mywatchlist/services/api/Anilist/anilist_social_service.dart' show AnilistRecommendationVote;
 import 'package:mywatchlist/utils/app_routes.dart';
@@ -517,10 +517,7 @@ class AnilistSocialTab extends StatelessWidget {
           trailing: TextButton(
             onPressed: () => AppRoutes.push<void>(
               context,
-              Scaffold(
-                appBar: AppBar(title: Text(d.title)),
-                body: AnilistThreadList(mediaId: d.id),
-              ),
+              AnilistForumPage(mediaId: d.id, standalone: true),
             ),
             child: Text(s.Amp_All_Threads),
           ),
