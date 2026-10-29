@@ -1,12 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:mywatchlist/generated/l10n.dart';
-import 'package:mywatchlist/services/api/Anilist/anilist_discover_service.dart';
-import 'package:mywatchlist/utils/web_launcher.dart';
+import 'package:mywatchlist/pages/Anilist/anilist_thread_page.dart';
+import 'package:mywatchlist/services/api/Anilist/anilist_social_service.dart';
+import 'package:mywatchlist/widgets/Anilist/social/anilist_thread_composer.dart'
+    show anilistCategoryName;
 import 'package:mywatchlist/widgets/common/app_image.dart';
 
+/// A category name of a thread row in the app language.
+String _categoryLabel(String name) {
+  for (final c in AnilistForumCategory.all) {
+    if (c.name == name) return anilistCategoryName(c);
+  }
+  return name;
+}
+
 /// One AniList forum thread: title, author, counts and the last reply date. A tap opens the
-/// thread on anilist.co (the app has no thread reader for AniList).
+/// thread page.
 class AnilistThreadTile extends StatelessWidget {
   final AnilistThread thread;
 
@@ -22,10 +32,10 @@ class AnilistThreadTile extends StatelessWidget {
       if (thread.author != null) thread.author!,
       s.Al_Replies(thread.replyCount),
       s.Al_Views(thread.viewCount),
-      if (replied != null) DateFormat.MMMd().format(replied),
+      if (replied != null) DateFormat.MMMd(Intl.getCurrentLocale()).format(replied),
     ].join(' · ');
     return InkWell(
-      onTap: () => openLink(context, thread.url),
+      onTap: () => openAnilistThread(context, thread.id),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         child: Row(
@@ -92,7 +102,7 @@ class AnilistThreadTile extends StatelessWidget {
                             child: Padding(
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                               child: Text(
-                                c,
+                                _categoryLabel(c),
                                 style: theme.textTheme.labelSmall
                                     ?.copyWith(color: cs.onSecondaryContainer),
                               ),

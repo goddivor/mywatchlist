@@ -1,0 +1,215 @@
+{
+  "@@locale": "en",
+  "Als_Action_Failed": "That didn't work. Try again.",
+  "Als_Activity": "Activity",
+  "Als_Activity_Empty": "No activity yet",
+  "Als_All_Categories": "All categories",
+  "Als_Categories": "Categories",
+  "Als_Cat_Anime": "Anime",
+  "Als_Cat_Manga": "Manga",
+  "Als_Cat_Light_Novels": "Light Novels",
+  "Als_Cat_Visual_Novels": "Visual Novels",
+  "Als_Cat_Release_Discussion": "Release Discussion",
+  "Als_Cat_General": "General",
+  "Als_Cat_News": "News",
+  "Als_Cat_Music": "Music",
+  "Als_Cat_Gaming": "Gaming",
+  "Als_Cat_Site_Feedback": "Site Feedback",
+  "Als_Cat_Bug_Reports": "Bug Reports",
+  "Als_Cat_Site_Announcements": "Site Announcements",
+  "Als_Cat_List_Customisation": "List Customisation",
+  "Als_Cat_Recommendations": "Recommendations",
+  "Als_Cat_Forum_Games": "Forum Games",
+  "Als_Cat_Anilist_Apps": "AniList Apps",
+  "Als_Cat_Events": "Events",
+  "Als_Characters_Count": "{count} / {min} characters",
+  "@Als_Characters_Count": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "min": {
+        "type": "int"
+      }
+    }
+  },
+  "Als_Composer_Hint": "Write something…",
+  "Als_Delete_Activity": "Delete this activity?",
+  "Als_Delete_Comment": "Delete this comment?",
+  "Als_Delete_Reply": "Delete this reply?",
+  "Als_Delete_Review": "Delete this review?",
+  "Als_Edit_Review": "Edit your review",
+  "Als_Edit_Status": "Edit status",
+  "Als_Following": "Following",
+  "Als_Global": "Global",
+  "Als_Hide_Replies": "Hide replies",
+  "Als_Kind_List": "List updates",
+  "Als_Kind_Messages": "Messages",
+  "Als_Kind_Status": "Statuses",
+  "Als_Latest_Reviews": "Latest reviews",
+  "Als_Like": "Like",
+  "Als_Unlike": "Unlike",
+  "Als_Liked_By": "Liked by",
+  "Als_Likes_Count": "{count, plural, =1{1 like} other{{count} likes}}",
+  "@Als_Likes_Count": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "Als_Locked": "Locked",
+  "Als_Message_To": "to {name}",
+  "@Als_Message_To": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "Als_Min_Characters": "At least {min} characters",
+  "@Als_Min_Characters": {
+    "placeholders": {
+      "min": {
+        "type": "int"
+      }
+    }
+  },
+  "Als_New_Status": "New status",
+  "Als_New_Thread": "New thread",
+  "Als_No_Comments": "No comments yet",
+  "Als_No_Likes": "No likes yet",
+  "Als_No_Replies": "No replies yet",
+  "Als_Nothing_To_Preview": "Nothing to preview",
+  "Als_Pin": "Pin to profile",
+  "Als_Unpin": "Unpin",
+  "Als_Pinned": "Pinned",
+  "Als_Play_Video": "Play the video",
+  "Als_Post": "Post",
+  "Als_Private": "Private",
+  "Als_Reply": "Reply",
+  "Als_Reply_To": "Reply to {name}",
+  "@Als_Reply_To": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "Als_Review_Helpful": "Helpful: {rating} of {total}",
+  "@Als_Review_Helpful": {
+    "placeholders": {
+      "rating": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "Als_Review_Helpful_Short": "{percent}% helpful",
+  "@Als_Review_Helpful_Short": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "Als_Reviews_Empty": "No reviews yet",
+  "Als_Review_Was_Helpful": "Was this review helpful?",
+  "Als_Search_Threads": "Search threads",
+  "Als_Sign_In_To_Act": "Sign in to AniList to like, reply or post",
+  "Als_Sort_Newest": "Newest",
+  "Als_Sort_Helpful": "Most helpful",
+  "Als_Sort_Highest": "Highest score",
+  "Als_Sort_Lowest": "Lowest score",
+  "Als_Sort_Updated": "Recently updated",
+  "Als_Spoiler": "Spoiler",
+  "Als_Status_Watched": "{count, plural, =1{Watched episode {progress} of} other{Watched episodes {progress} of}}",
+  "@Als_Status_Watched": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "progress": {
+        "type": "String"
+      }
+    }
+  },
+  "Als_Status_Rewatched_Episode": "{count, plural, =1{Rewatched episode {progress} of} other{Rewatched episodes {progress} of}}",
+  "@Als_Status_Rewatched_Episode": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "progress": {
+        "type": "String"
+      }
+    }
+  },
+  "Als_Status_Read": "{count, plural, =1{Read chapter {progress} of} other{Read chapters {progress} of}}",
+  "@Als_Status_Read": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "progress": {
+        "type": "String"
+      }
+    }
+  },
+  "Als_Status_Reread_Chapter": "{count, plural, =1{Reread chapter {progress} of} other{Reread chapters {progress} of}}",
+  "@Als_Status_Reread_Chapter": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "progress": {
+        "type": "String"
+      }
+    }
+  },
+  "Als_Status_Completed": "Completed",
+  "Als_Status_Dropped": "Dropped",
+  "Als_Status_Paused": "Paused",
+  "Als_Status_Plans_Watch": "Plans to watch",
+  "Als_Status_Plans_Read": "Plans to read",
+  "Als_Status_Rewatched": "Rewatched",
+  "Als_Status_Reread": "Reread",
+  "Als_Subscribe": "Subscribe",
+  "Als_Unsubscribe": "Unsubscribe",
+  "Als_Subscribed": "Subscribed",
+  "Als_Tab_Forum": "Forum",
+  "Als_Thread": "Thread",
+  "Als_Thread_Title": "Title",
+  "Als_Time_Now": "now",
+  "Als_Time_Minutes": "{n}m",
+  "@Als_Time_Minutes": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "Als_Time_Hours": "{n}h",
+  "@Als_Time_Hours": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "Als_Time_Days": "{n}d",
+  "@Als_Time_Days": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "Als_Vote_Up": "Yes",
+  "Als_Vote_Down": "No",
+  "Als_Write": "Write",
+  "Als_Write_Reply": "Write a reply…",
+  "Als_Write_Review": "Write a review"
+}
