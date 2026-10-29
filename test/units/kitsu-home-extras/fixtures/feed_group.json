@@ -1,0 +1,552 @@
+{
+ "data": [
+  {
+   "id": "75fba3ff-d229-11f1-8080-800102246423",
+   "type": "activityGroups",
+   "attributes": {
+    "createdAt": "2026-10-27T17:06:44.004741",
+    "updatedAt": "2026-10-27T17:11:34.011391",
+    "group": "9920677",
+    "isSeen": null,
+    "isRead": null
+   },
+   "relationships": {
+    "activities": {
+     "data": [
+      {
+       "type": "activities",
+       "id": "75615080-d229-11f1-8080-8000310cfa55"
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "203a21fe-d1b6-11f1-8080-800142f157d4",
+   "type": "activityGroups",
+   "attributes": {
+    "createdAt": "2026-10-27T03:25:58.012979",
+    "updatedAt": "2026-10-27T03:25:58.012979",
+    "group": "9920640",
+    "isSeen": null,
+    "isRead": null
+   },
+   "relationships": {
+    "activities": {
+     "data": [
+      {
+       "type": "activities",
+       "id": "1f9f9080-d1b6-11f1-8080-80002f3152e5"
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "35333973-d0dd-11f1-8080-80015d251500",
+   "type": "activityGroups",
+   "attributes": {
+    "createdAt": "2026-10-24T14:35:07.766898",
+    "updatedAt": "2026-10-26T01:33:12.409534",
+    "group": "9920416",
+    "isSeen": null,
+    "isRead": null
+   },
+   "relationships": {
+    "activities": {
+     "data": [
+      {
+       "type": "activities",
+       "id": "34f4bc00-d0dd-11f1-8080-8000339d601c"
+      }
+     ]
+    }
+   }
+  }
+ ],
+ "included": [
+  {
+   "id": "75615080-d229-11f1-8080-8000310cfa55",
+   "type": "activities",
+   "attributes": {
+    "createdAt": null,
+    "updatedAt": null,
+    "status": null,
+    "verb": "comment",
+    "time": "2026-10-27T17:11:33.000+00:00",
+    "streamId": null,
+    "foreignId": "Comment:32229746",
+    "rating": null,
+    "progress": null,
+    "replyToType": "post",
+    "replyToUser": "User:283847",
+    "nineteenScale": null,
+    "mentionedUsers": [],
+    "reason": null
+   },
+   "relationships": {
+    "subject": {
+     "data": {
+      "type": "comments",
+      "id": "32229746"
+     }
+    }
+   }
+  },
+  {
+   "id": "1f9f9080-d1b6-11f1-8080-80002f3152e5",
+   "type": "activities",
+   "attributes": {
+    "createdAt": null,
+    "updatedAt": "2026-10-27T03:25:57.678Z",
+    "status": null,
+    "verb": "post",
+    "time": "2026-10-27T03:25:57.000+00:00",
+    "streamId": null,
+    "foreignId": "Post:9920640",
+    "rating": null,
+    "progress": null,
+    "replyToType": null,
+    "replyToUser": null,
+    "nineteenScale": null,
+    "mentionedUsers": [],
+    "reason": null
+   },
+   "relationships": {
+    "subject": {
+     "data": {
+      "type": "posts",
+      "id": "9920640"
+     }
+    }
+   }
+  },
+  {
+   "id": "34f4bc00-d0dd-11f1-8080-8000339d601c",
+   "type": "activities",
+   "attributes": {
+    "createdAt": null,
+    "updatedAt": null,
+    "status": null,
+    "verb": "comment",
+    "time": "2026-10-26T01:33:12.000+00:00",
+    "streamId": null,
+    "foreignId": "Comment:32229549",
+    "rating": null,
+    "progress": null,
+    "replyToType": "post",
+    "replyToUser": "User:165921",
+    "nineteenScale": null,
+    "mentionedUsers": [],
+    "reason": null
+   },
+   "relationships": {
+    "subject": {
+     "data": {
+      "type": "comments",
+      "id": "32229549"
+     }
+    }
+   }
+  },
+  {
+   "id": "32229746",
+   "type": "comments",
+   "links": {
+    "self": "/comments/32229746"
+   },
+   "attributes": {
+    "createdAt": "2026-10-27T17:11:33.662Z",
+    "updatedAt": "2026-10-28T08:43:11.229Z",
+    "content": "Damn, feels extra heavy when even the BLEACH anime finale had a boxing coach that looks like an homage to Danpei",
+    "contentFormatted": "<p>Damn, feels extra heavy when even the BLEACH anime finale had a boxing coach that looks like an homage to Danpei</p>\n",
+    "blocked": false,
+    "deletedAt": null,
+    "likesCount": 2,
+    "repliesCount": 1,
+    "editedAt": "2026-10-27T17:11:47.444Z",
+    "embed": null,
+    "embedUrl": null,
+    "heldReason": null
+   },
+   "relationships": {
+    "user": {
+     "data": {
+      "type": "users",
+      "id": "22685"
+     }
+    }
+   }
+  },
+  {
+   "id": "32229549",
+   "type": "comments",
+   "links": {
+    "self": "/comments/32229549"
+   },
+   "attributes": {
+    "createdAt": "2026-10-26T01:33:12.115Z",
+    "updatedAt": "2026-10-26T01:47:26.803Z",
+    "content": "They are letting me dream",
+    "contentFormatted": "<p>They are letting me dream</p>\n",
+    "blocked": false,
+    "deletedAt": null,
+    "likesCount": 1,
+    "repliesCount": 1,
+    "editedAt": "2026-10-26T01:34:06.263Z",
+    "embed": null,
+    "embedUrl": null,
+    "heldReason": null
+   },
+   "relationships": {
+    "user": {
+     "data": {
+      "type": "users",
+      "id": "278432"
+     }
+    }
+   }
+  },
+  {
+   "id": "22685",
+   "type": "users",
+   "links": {
+    "self": "/users/22685"
+   },
+   "attributes": {
+    "createdAt": "2013-09-14T15:26:22.219Z",
+    "updatedAt": "2026-10-26T15:04:56.066Z",
+    "name": "SilvaDour",
+    "pastNames": [
+     "❄️YuleDour🌲",
+     "SilvaDour",
+     " 💀SpookyDour🎃",
+     "SilvaDour",
+     "❄️Frosty SilvaDour❄️",
+     "Frosty SilvaDour",
+     "SilvaDour",
+     "🎃SpookyDour🎃",
+     "SilvaDour",
+     "GrincHaDour"
+    ],
+    "slug": "SilvaDour",
+    "about": "The name's Marlon (I usually go by Silva on this site), I'm a 29-year old nomad, weirdo devil extraordinaire.\nI am also a Tsundere masochist...oh and I write reviews as a hobby (Well...I used to, new teaching job kind threw things out of wack)",
+    "location": "Coimbra, Portugal",
+    "waifuOrHusbando": "Waifu",
+    "followersCount": 2364,
+    "followingCount": 1057,
+    "lifeSpentOnAnime": 155961,
+    "birthday": "1996-11-16",
+    "gender": "male",
+    "commentsCount": 38796,
+    "favoritesCount": 118,
+    "likesGivenCount": 30397,
+    "reviewsCount": 9,
+    "likesReceivedCount": 38960,
+    "postsCount": 19916,
+    "ratingsCount": 1649,
+    "mediaReactionsCount": 1324,
+    "proExpiresAt": null,
+    "title": "Mod",
+    "profileCompleted": true,
+    "feedCompleted": true,
+    "website": null,
+    "proTier": null,
+    "avatar": {
+     "tiny": "https://media.kitsu.app/user/22685/avatar/tiny-662d7818e58b6df6bdc7041e65798d45.jpeg",
+     "large": "https://media.kitsu.app/user/22685/avatar/large-1ef376edbe325a1e7f5ee43efff186d6.jpeg",
+     "small": "https://media.kitsu.app/user/22685/avatar/small-51553817c0cded428cd7af22bde75c74.jpeg",
+     "medium": "https://media.kitsu.app/user/22685/avatar/medium-9c040e43af2e0cb684c649d3dbb9e232.jpeg",
+     "original": "https://media.kitsu.app/user/22685/avatar/69780016d92530d658ec9d6803405a44.jpeg",
+     "meta": {
+      "dimensions": {
+       "tiny": {
+        "width": 40,
+        "height": 40
+       },
+       "large": {
+        "width": 200,
+        "height": 200
+       },
+       "small": {
+        "width": 64,
+        "height": 64
+       },
+       "medium": {
+        "width": 100,
+        "height": 100
+       }
+      }
+     }
+    },
+    "coverImage": {
+     "tiny": "https://media.kitsu.app/users/cover_images/22685/tiny.jpg",
+     "large": "https://media.kitsu.app/users/cover_images/22685/large.jpg",
+     "small": "https://media.kitsu.app/users/cover_images/22685/small.jpg",
+     "original": "https://media.kitsu.app/users/cover_images/22685/original.jpeg",
+     "meta": {
+      "dimensions": {
+       "tiny": {
+        "width": 840,
+        "height": 200
+       },
+       "large": {
+        "width": 3360,
+        "height": 800
+       },
+       "small": {
+        "width": 1680,
+        "height": 400
+       }
+      }
+     }
+    },
+    "status": "registered",
+    "subscribedToNewsletter": false,
+    "permissions": [
+     "community_mod",
+     "database_mod"
+    ],
+    "sfwFilterPreference": "nsfw_sometimes"
+   }
+  },
+  {
+   "id": "310343",
+   "type": "users",
+   "links": {
+    "self": "/users/310343"
+   },
+   "attributes": {
+    "createdAt": "2018-06-26T20:32:26.531Z",
+    "updatedAt": "2026-05-11T18:27:39.962Z",
+    "name": "Arashiiiii",
+    "pastNames": [
+     "Arashi",
+     "Arashisenpai"
+    ],
+    "slug": "Arashiiiii",
+    "about": "Started watching anime/reading manga in 2013.\nAnimeplanet: Arashiiiii\nAniList: Arashiiiii\nMAL: Arashiiiii",
+    "location": "USA",
+    "waifuOrHusbando": "Husbando",
+    "followersCount": 250,
+    "followingCount": 242,
+    "lifeSpentOnAnime": 0,
+    "birthday": "1999-01-12",
+    "gender": "Slime",
+    "commentsCount": 126,
+    "favoritesCount": 44,
+    "likesGivenCount": 20,
+    "reviewsCount": 0,
+    "likesReceivedCount": 20,
+    "postsCount": 20,
+    "ratingsCount": 8666,
+    "mediaReactionsCount": 0,
+    "proExpiresAt": null,
+    "title": null,
+    "profileCompleted": true,
+    "feedCompleted": true,
+    "website": "https://myanimelist.net/profile/Arashiiiii",
+    "proTier": null,
+    "avatar": {
+     "tiny": "https://media.kitsu.app/user/310343/avatar/tiny-6608dc5743fb019af3b30a624de23d44.jpeg",
+     "large": "https://media.kitsu.app/user/310343/avatar/large-84991888aeff02f74b90ecbf8049031d.jpeg",
+     "small": "https://media.kitsu.app/user/310343/avatar/small-29b6dbe8528f077969ff227611b32d83.jpeg",
+     "medium": "https://media.kitsu.app/user/310343/avatar/medium-624c540949a22ce85d3b24ee7dfe259c.jpeg",
+     "original": "https://media.kitsu.app/user/310343/avatar/f26c6696ab880e53656c888c9e2ffe03.jpeg",
+     "meta": {
+      "dimensions": {
+       "tiny": {
+        "width": 40,
+        "height": 40
+       },
+       "large": {
+        "width": 200,
+        "height": 200
+       },
+       "small": {
+        "width": 64,
+        "height": 64
+       },
+       "medium": {
+        "width": 100,
+        "height": 100
+       }
+      }
+     }
+    },
+    "coverImage": {
+     "tiny": "https://media.kitsu.app/user/310343/cover_image/tiny-7f79f729125d084f257f0d67815e807b.jpeg",
+     "large": "https://media.kitsu.app/user/310343/cover_image/large-24157184dddff75677b1712e646dfbfd.jpeg",
+     "small": "https://media.kitsu.app/user/310343/cover_image/small-588b10a48c4d4fd8367b8a553588bd7f.jpeg",
+     "original": "https://media.kitsu.app/user/310343/cover_image/6659fd2253d0dd00247641b90a758ce0.jpeg",
+     "meta": {
+      "dimensions": {
+       "tiny": {
+        "width": 840,
+        "height": 200
+       },
+       "large": {
+        "width": 3360,
+        "height": 800
+       },
+       "small": {
+        "width": 1680,
+        "height": 400
+       }
+      }
+     }
+    },
+    "status": "registered",
+    "subscribedToNewsletter": true,
+    "permissions": [],
+    "sfwFilterPreference": "nsfw_sometimes"
+   }
+  },
+  {
+   "id": "278432",
+   "type": "users",
+   "links": {
+    "self": "/users/278432"
+   },
+   "attributes": {
+    "createdAt": "2018-05-29T13:51:04.081Z",
+    "updatedAt": "2026-10-28T18:32:46.732Z",
+    "name": "Melchess",
+    "pastNames": [],
+    "slug": "Melchess",
+    "about": "I'm just a simple weeb with a simple dream of see how many animes i can until my death.",
+    "location": "Brazil",
+    "waifuOrHusbando": "Waifu",
+    "followersCount": 212,
+    "followingCount": 147,
+    "lifeSpentOnAnime": 0,
+    "birthday": "2001-11-10",
+    "gender": "male",
+    "commentsCount": 107,
+    "favoritesCount": 31,
+    "likesGivenCount": 20,
+    "reviewsCount": 0,
+    "likesReceivedCount": 20,
+    "postsCount": 20,
+    "ratingsCount": 1219,
+    "mediaReactionsCount": 176,
+    "proExpiresAt": null,
+    "title": null,
+    "profileCompleted": true,
+    "feedCompleted": true,
+    "website": null,
+    "proTier": null,
+    "avatar": {
+     "tiny": "https://media.kitsu.app/user/278432/avatar/tiny-a2edaf2dc178b301092766d799357089.jpeg",
+     "large": "https://media.kitsu.app/user/278432/avatar/large-03915433fda80139c4a0f78fb27c2b42.jpeg",
+     "small": "https://media.kitsu.app/user/278432/avatar/small-212fbd388fd29287041b737be9211941.jpeg",
+     "medium": "https://media.kitsu.app/user/278432/avatar/medium-4fa7a6653633b3578d6458fe9c06b8d4.jpeg",
+     "original": "https://media.kitsu.app/user/278432/avatar/cc72399b77a5cca9b1c2118aaba90241.jpeg",
+     "meta": {
+      "dimensions": {
+       "tiny": {
+        "width": 40,
+        "height": 40
+       },
+       "large": {
+        "width": 200,
+        "height": 200
+       },
+       "small": {
+        "width": 64,
+        "height": 64
+       },
+       "medium": {
+        "width": 100,
+        "height": 100
+       }
+      }
+     }
+    },
+    "coverImage": {
+     "tiny": "https://media.kitsu.app/users/cover_images/278432/tiny.jpg",
+     "large": "https://media.kitsu.app/users/cover_images/278432/large.jpg",
+     "small": "https://media.kitsu.app/users/cover_images/278432/small.jpg",
+     "original": "https://media.kitsu.app/users/cover_images/278432/original.jpeg",
+     "meta": {
+      "dimensions": {
+       "tiny": {
+        "width": 840,
+        "height": 200
+       },
+       "large": {
+        "width": 3360,
+        "height": 800
+       },
+       "small": {
+        "width": 1680,
+        "height": 400
+       }
+      }
+     }
+    },
+    "status": "registered",
+    "subscribedToNewsletter": true,
+    "permissions": [],
+    "sfwFilterPreference": "sfw"
+   }
+  },
+  {
+   "id": "9920640",
+   "type": "posts",
+   "links": {
+    "self": "/posts/9920640"
+   },
+   "attributes": {
+    "createdAt": "2026-10-27T03:25:57.678Z",
+    "updatedAt": "2026-10-27T03:26:22.739Z",
+    "content": "https://www.animenewsnetwork.com/news/2026-10-26/precure-franchise-gets-spinoff-tv-anime-dual-shadow-~precure-villain-heroines~/.243229",
+    "contentFormatted": "<p><a href=\"https://www.animenewsnetwork.com/news/2026-10-26/precure-franchise-gets-spinoff-tv-anime-dual-shadow-~precure-villain-heroines~/.243229\" target=\"_blank\" rel=\"nofollow\" class=\"autolink\">https://www.animenewsnetwork.com/news/2026-10-26/precure-franchise-gets-spinoff-tv-anime-dual-shadow-~precure-villain-heroines~/.243229</a></p>\n",
+    "commentsCount": 0,
+    "postLikesCount": 0,
+    "spoiler": false,
+    "nsfw": false,
+    "blocked": false,
+    "deletedAt": null,
+    "topLevelCommentsCount": 0,
+    "editedAt": null,
+    "targetInterest": null,
+    "embed": {
+     "url": "https://www.animenewsnetwork.com/news/2026-10-26/precure-franchise-gets-spinoff-tv-anime-dual-shadow-~precure-villain-heroines~/.243229",
+     "kind": "article",
+     "site": {
+      "name": "Anime News Network"
+     },
+     "image": {
+      "url": "https://www.animenewsnetwork.com/thumbnails/crop600x315gGI/youtube/4H3qrB9yaJA.jpg",
+      "width": "600",
+      "height": "315"
+     },
+     "title": "Precure Franchise Gets Spinoff TV Anime Dual Shadow ~Precure Villain Heroines~"
+    },
+    "embedUrl": null,
+    "heldReason": null,
+    "lockedAt": null,
+    "lockedReason": null
+   },
+   "relationships": {
+    "user": {
+     "data": {
+      "type": "users",
+      "id": "310343"
+     }
+    }
+   }
+  }
+ ],
+ "meta": {
+  "feed": {
+   "group": "group_aggr",
+   "id": "596"
+  },
+  "readonlyToken": "eyJhbGciOiJIUzI1NiJ9.eyJyZXNvdXJjZSI6IioiLCJhY3Rpb24iOiJyZWFkIiwiZmVlZF9pZCI6Imdyb3VwX2FnZ3I1OTYifQ.7UsDQkgI4unEdqUBCE0fIdLRxclmRlrdQubqdn87nd8"
+ },
+ "links": {
+  "next": "https://kitsu.io/api/edge/feeds/group/596?include=subject%2Csubject.user&page%5Blimit%5D=3&page%5Bcursor%5D=35333973-d0dd-11f1-8080-80015d251500"
+ }
+}

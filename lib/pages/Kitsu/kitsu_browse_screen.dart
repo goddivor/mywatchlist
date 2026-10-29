@@ -1,9 +1,11 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:mywatchlist/constants/constants.dart' show HomePageTileSize, getTileSizeValues;
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/services/api/Kitsu/kitsu_catalog.dart';
 import 'package:mywatchlist/services/api/Kitsu/kitsu_media.dart';
+import 'package:mywatchlist/widgets/Kitsu/kitsu_media_row.dart';
 import 'package:mywatchlist/widgets/Kitsu/kitsu_media_tile.dart';
 import 'package:mywatchlist/widgets/home/home_sections.dart' show HomeMessage;
 
@@ -14,11 +16,15 @@ class KitsuBrowseScreen extends StatefulWidget {
   final KitsuMediaQuery query;
   final bool searchable;
 
+  /// Kitsu category id: a "Trending in <title>" row tops the grid.
+  final String? trendingCategoryId;
+
   const KitsuBrowseScreen({
     super.key,
     required this.title,
     required this.query,
     this.searchable = false,
+    this.trendingCategoryId,
   });
 
   /// The search screen of the Kitsu catalogue.
@@ -167,6 +173,24 @@ class _KitsuBrowseScreenState extends State<KitsuBrowseScreen> {
     );
   }
 
+  Widget _trendingRow() {
+    final id = widget.trendingCategoryId!;
+    final isAnime = widget.query.isAnime;
+    final tile = getTileSizeValues(HomePageTileSize.m);
+    return SliverToBoxAdapter(
+      child: KitsuMediaRow(
+        key: ValueKey('trending-category:$id:$isAnime'),
+        cacheKey: 'kitsu:trending:category:$id:${isAnime ? 'anime' : 'manga'}',
+        title: S.current.Kitsu_Trending_In(widget.title),
+        isAnime: isAnime,
+        load: () => KitsuCatalog.instance.trendingInCategory(id, isAnime: isAnime),
+        cardWidth: tile.containerHeight * (2 / 3),
+        cardHeight: tile.containerHeight,
+        hideWhenEmpty: true,
+      ),
+    );
+  }
+
   Widget _body(S s) {
     if (_waitingForText) {
       return HomeMessage(icon: Icons.search_rounded, text: s.Kitsu_Search_Prompt);
@@ -192,6 +216,7 @@ class _KitsuBrowseScreenState extends State<KitsuBrowseScreen> {
     return CustomScrollView(
       controller: _scroll,
       slivers: [
+        if (widget.trendingCategoryId != null && !widget.searchable) _trendingRow(),
         SliverPadding(
           padding: const EdgeInsets.all(12),
           sliver: SliverGrid.builder(

@@ -3,7 +3,9 @@ import 'package:mywatchlist/constants/constants.dart' show HomePageTileSize, get
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/pages/Kitsu/kitsu_browse_screen.dart';
 import 'package:mywatchlist/services/api/Kitsu/kitsu_catalog.dart';
+import 'package:mywatchlist/services/api/Kitsu/kitsu_media.dart' show KitsuMedia;
 import 'package:mywatchlist/utils/app_routes.dart';
+import 'package:mywatchlist/widgets/Kitsu/kitsu_open.dart';
 import 'package:mywatchlist/widgets/Kitsu/kitsu_media_row.dart';
 import 'package:mywatchlist/widgets/MAL/home/homeappbar.dart';
 import 'package:mywatchlist/widgets/MAL/home/section_header.dart';
@@ -22,6 +24,28 @@ class KitsuExplorePage extends StatefulWidget {
 class _KitsuExplorePageState extends State<KitsuExplorePage> {
   bool _isAnime = true;
   int _refresh = 0;
+  bool _picking = false;
+
+  /// Opens a random title of the current kind (the "Surprise me" button).
+  Future<void> _surprise() async {
+    if (_picking) return;
+    setState(() => _picking = true);
+    KitsuMedia? pick;
+    try {
+      pick = await KitsuCatalog.instance.randomMedia(isAnime: _isAnime);
+    } catch (_) {
+      pick = null;
+    }
+    if (!mounted) return;
+    setState(() => _picking = false);
+    if (pick != null) {
+      openKitsuMedia(context, pick);
+    } else {
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text(S.current.Kitsu_Surprise_Failed)));
+    }
+  }
 
   Future<void> _onRefresh() async {
     HomeSectionCache.clear();
@@ -93,6 +117,24 @@ class _KitsuExplorePageState extends State<KitsuExplorePage> {
               ),
             ),
             SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
+                child: Align(
+                  alignment: AlignmentDirectional.centerStart,
+                  child: FilledButton.tonalIcon(
+                    onPressed: _picking ? null : _surprise,
+                    icon: _picking
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2))
+                        : const Icon(Icons.casino_outlined, size: 18),
+                    label: Text(s.Kitsu_Surprise_Me),
+                  ),
+                ),
+              ),
+            ),
+            SliverToBoxAdapter(
               child: KitsuMediaRow(
                 key: ValueKey('trending:$isAnime'),
                 cacheKey: 'kitsu:trending:${isAnime ? 'anime' : 'manga'}',
@@ -149,6 +191,7 @@ class _KitsuExplorePageState extends State<KitsuExplorePage> {
                             context,
                             KitsuBrowseScreen(
                               title: c.title,
+                              trendingCategoryId: c.id,
                               query: KitsuMediaQuery(
                                 isAnime: isAnime,
                                 filters: {'categories': c.slug},

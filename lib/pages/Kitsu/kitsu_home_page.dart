@@ -3,14 +3,18 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mywatchlist/constants/constants.dart' show AccountType, getTileSizeValues;
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/pages/Kitsu/kitsu_browse_screen.dart';
+import 'package:mywatchlist/pages/Kitsu/kitsu_post_page.dart';
 import 'package:mywatchlist/pages/Kitsu/kitsu_user_page.dart';
 import 'package:mywatchlist/services/api/Kitsu/kitsu_catalog.dart';
+import 'package:mywatchlist/services/api/Kitsu/kitsu_feed.dart';
+import 'package:mywatchlist/services/api/Kitsu/kitsu_graphql.dart' show KitsuFeedPost;
 import 'package:mywatchlist/services/api/Kitsu/kitsu_library.dart';
 import 'package:mywatchlist/services/api/MAL/mal_anime.dart' show Anime;
 import 'package:mywatchlist/user/MAL/mal_home_page_preferences.dart';
 import 'package:mywatchlist/user/MAL/mal_home_preferences_bloc.dart';
 import 'package:mywatchlist/user/user_manager.dart';
 import 'package:mywatchlist/utils/app_routes.dart';
+import 'package:mywatchlist/widgets/Kitsu/feed/kitsu_feed_list.dart';
 import 'package:mywatchlist/widgets/Kitsu/kitsu_media_row.dart';
 import 'package:mywatchlist/widgets/Kitsu/kitsu_rows.dart';
 import 'package:mywatchlist/widgets/MAL/home/contentlistwidget.dart';
@@ -20,9 +24,11 @@ import 'package:mywatchlist/widgets/home/home_sections.dart';
 import 'package:mywatchlist/widgets/loading/loadingcard.dart';
 import 'package:mywatchlist/widgets/user/list/list_entry_view.dart';
 
-/// The Kitsu home tab: trending anime, then the sections of the user's home layout that Kitsu can
-/// fill (seasonal, upcoming, top rated, favorites, popular, airing, formats, manga and the user's
-/// own list). News, suggestions, features and the forum have no Kitsu source and are skipped.
+/// The Kitsu home tab: trending anime, what the people the user follows are watching (signed in
+/// only, hidden when empty), then the sections of the user's home layout that Kitsu can fill
+/// (news from the Kitsu News Network group, seasonal, upcoming, top rated, favorites, popular,
+/// airing, formats, manga and the user's own list). Suggestions, features and the forum have no
+/// Kitsu source and are skipped.
 ///
 /// Every title opens the MyAnimeList detail screen of its MyAnimeList id (Kitsu mappings).
 class KitsuHomePage extends StatefulWidget {
@@ -42,6 +48,34 @@ class _KitsuHomePageState extends State<KitsuHomePage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) context.read<HomePreferencesBloc>().add(LoadHomePreferencesEvent());
     });
+    UserManager.instance.addListener(_syncAccount);
+    _syncAccount();
+  }
+
+  @override
+  void dispose() {
+    UserManager.instance.removeListener(_syncAccount);
+    super.dispose();
+  }
+
+  bool? _wasSignedIn;
+
+  /// Follows the Kitsu session: the account's title language applies to the rows once read, and
+  /// the rows reload when it changes what they show.
+  Future<void> _syncAccount() async {
+    final signedIn = UserManager.instance.isAuthenticated(AccountType.kitsu);
+    if (signedIn == _wasSignedIn) return;
+    _wasSignedIn = signedIn;
+    final catalog = KitsuCatalog.instance;
+    final before = catalog.account?.titleLang;
+    if (!signedIn) {
+      catalog.clearAccountPrefs();
+    } else {
+      await catalog.loadAccountPrefs();
+    }
+    if (!mounted || catalog.account?.titleLang == before) return;
+    HomeSectionCache.clear();
+    setState(() => _refresh++);
   }
 
   Future<void> _onRefresh() async {
@@ -65,8 +99,7 @@ class _KitsuHomePageState extends State<KitsuHomePage> {
             final cardWidth = cardHeight * (2 / 3);
             final sections = [
               for (final s in state.preferences.sections)
-                if (s.enabled && (kitsuQueryForSection(s) != null || s.type == SectionType.userList))
-                  s,
+                if (s.enabled && kitsuSectionSupported(s)) s,
             ];
             return CustomScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
@@ -93,6 +126,25 @@ class _KitsuHomePageState extends State<KitsuHomePage> {
                     refresh: _refresh,
                   ),
                 ),
+                SliverToBoxAdapter(
+                  child: ListenableBuilder(
+                    listenable: UserManager.instance,
+                    builder: (context, _) => !UserManager.instance.isAuthenticated(AccountType.kitsu)
+                        ? const SizedBox.shrink()
+                        : KitsuMediaRow(
+                            cacheKey: 'kitsu:local-trending:anime',
+                            title: S.current.Kitsu_Following_Trending,
+                            isAnime: true,
+                            load: () =>
+                                KitsuCatalog.instance.trendingAmongFollowing(isAnime: true),
+                            cardWidth: cardWidth,
+                            cardHeight: cardHeight,
+                            maxAge: const Duration(minutes: 10),
+                            refresh: _refresh,
+                            hideWhenEmpty: true,
+                          ),
+                  ),
+                ),
                 SliverList.builder(
                   itemCount: sections.length,
                   itemBuilder: (context, i) => RepaintBoundary(
@@ -110,6 +162,16 @@ class _KitsuHomePageState extends State<KitsuHomePage> {
 
   Widget _section(BuildContext context, HomeSectionPreference s, double w, double h) {
     final title = s.getDisplayTitle();
+    if (s.type == SectionType.news) {
+      return KitsuNewsRow(
+        title: title,
+        limit: s.itemCount,
+        maxAge: Duration(hours: s.cacheDurationHours),
+        refresh: _refresh,
+        onOpenPost: (post) => AppRoutes.push<void>(context, KitsuPostPage(postId: post.id)),
+        onViewAll: () => AppRoutes.push<void>(context, _KitsuNewsScreen(title: title)),
+      );
+    }
     if (s.type == SectionType.userList) {
       return _UserListRow(section: s, cardWidth: w, cardHeight: h, refresh: _refresh);
     }
@@ -219,6 +281,37 @@ class _UserListRow extends StatelessWidget {
           tileHeight: cardHeight,
         );
       },
+    );
+  }
+}
+
+/// The whole Kitsu news feed (group 596) behind the home row's "View all".
+class _KitsuNewsScreen extends StatefulWidget {
+  final String title;
+  const _KitsuNewsScreen({required this.title});
+
+  @override
+  State<_KitsuNewsScreen> createState() => _KitsuNewsScreenState();
+}
+
+class _KitsuNewsScreenState extends State<_KitsuNewsScreen> {
+  late final KitsuFeedController _news = KitsuFeed().news();
+
+  @override
+  void dispose() {
+    _news.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text(widget.title)),
+      body: KitsuFeedList(
+        controller: _news,
+        onOpenPost: (KitsuFeedPost post) =>
+            AppRoutes.push<void>(context, KitsuPostPage(postId: post.id)),
+      ),
     );
   }
 }
