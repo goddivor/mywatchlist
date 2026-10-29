@@ -2,12 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mywatchlist/constants/constants.dart';
-import 'package:mywatchlist/enums.dart';
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/screens/search/general_search_screen.dart';
 import 'package:mywatchlist/screens/search/search_filters.dart' show SearchCategory;
 import 'package:mywatchlist/services/api/MAL/mal_anime.dart';
-import 'package:mywatchlist/services/api/MAL/mal_api.dart';
 import 'package:mywatchlist/user/MAL/mal_home_page_preferences.dart';
 import 'package:mywatchlist/user/MAL/mal_home_preferences_bloc.dart';
 import 'package:mywatchlist/user/requests/requests_bloc.dart';
@@ -79,8 +77,9 @@ class _MalHomePageState extends State<MalHomePage> {
         case SectionType.forum:
           // Loaded by their own widgets (lib/widgets/home/home_sections.dart).
           break;
-        case SectionType.seasonNow when section.season != null || section.year != null:
-          // A fixed season is loaded by its own section, not by the shared current-season request.
+        case SectionType.seasonNow:
+          // Every season row (current or fixed) loads through its own section, sorted by members
+          // like DailyAL (lib/widgets/home/home_sections.dart, loadHomeSeasonRow).
           break;
         default:
           if (!type.isContentRow) break;
@@ -231,8 +230,8 @@ class _MalHomePageState extends State<MalHomePage> {
         );
       case SectionType.forum:
         return HomeForumSection(section: section, refresh: _refresh);
-      case SectionType.seasonNow when section.season != null || section.year != null:
-        return _buildFixedSeasonSection(theme, section, title, tileSize);
+      case SectionType.seasonNow:
+        return _buildSeasonSection(theme, section, title, tileSize);
       default:
         return _buildAnimeSection(theme, section, title, tileSize);
     }
@@ -254,7 +253,7 @@ class _MalHomePageState extends State<MalHomePage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SectionHeader(
-            title: section.getDisplayTitle(),
+            title: _articlesTitle(section, isNews),
             onTap: () => AppRoutes.openSearch(
               context,
               category: isNews ? SearchCategory.news : SearchCategory.featured,
@@ -294,6 +293,13 @@ class _MalHomePageState extends State<MalHomePage> {
         ],
       ),
     );
+  }
+
+  /// DailyAL's "News" for the news row unless the user renamed it.
+  String _articlesTitle(HomeSectionPreference section, bool isNews) {
+    final custom = section.customTitle;
+    if (isNews && (custom == null || custom.isEmpty)) return S.current.News;
+    return section.getDisplayTitle();
   }
 
   Widget _buildAnimeSection(
@@ -350,9 +356,9 @@ class _MalHomePageState extends State<MalHomePage> {
         onAction: onRetry,
       );
 
-  /// A seasonal row for a season picked in the home settings (the shared request only knows the
-  /// current season).
-  Widget _buildFixedSeasonSection(
+  /// A seasonal row (the current season or the one picked in the home settings), most members
+  /// first like DailyAL.
+  Widget _buildSeasonSection(
     ThemeData theme,
     HomeSectionPreference section,
     String title,
@@ -372,11 +378,13 @@ class _MalHomePageState extends State<MalHomePage> {
             cacheKey: 'season:${season.name}:$year:${section.itemCount}',
             maxAge: Duration(hours: section.cacheDurationHours),
             refresh: _refresh,
-            load: () => MalApi.getAnimeSeasonal(
-              season,
-              year,
-              sortType: SortType.AnimeNumListUsers,
+            load: () => loadHomeSeasonRow(
+              season: season,
+              year: year,
               limit: section.itemCount,
+              maxAge: Duration(hours: section.cacheDurationHours),
+              // After a pull to refresh, ask MAL again (the disk copy is only the fallback).
+              preferCache: _refresh == 0,
             ),
             loading: _loadingRow(section, cardWidth, cardHeight),
             builder: (context, items) => _animeRow(
@@ -426,7 +434,6 @@ class _MalHomePageState extends State<MalHomePage> {
       category: isManga ? "manga" : "anime",
       items: limited,
       height: cardHeight,
-      showTime: section.type == SectionType.seasonNow || section.type == SectionType.upcoming,
       padding: const EdgeInsets.all(8.0),
       tileWidth: cardWidth,
       tileHeight: cardHeight,

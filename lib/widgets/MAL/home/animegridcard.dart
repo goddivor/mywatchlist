@@ -491,8 +491,8 @@ class AnimeGridCard extends StatelessWidget {
                       textAlign: TextAlign.start,
                       style: TextStyle(
                         color: AppColors.of(context).onImageScrim,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w400,
                         height: 1.2,
                       ),
                     ),

@@ -2,11 +2,14 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mywatchlist/cache/cachemanager.dart';
 import 'package:mywatchlist/constants/constants.dart';
+import 'package:mywatchlist/enums.dart';
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/pages/MAL/mal_user_page.dart';
 import 'package:mywatchlist/screens/forum/forum_topics_screen.dart';
 import 'package:mywatchlist/services/api/MAL/mal_anime.dart';
+import 'package:mywatchlist/services/api/MAL/mal_api.dart';
 import 'package:mywatchlist/services/api/MAL/mal_forum_api.dart';
 import 'package:mywatchlist/services/api/MAL/mal_user.dart';
 import 'package:mywatchlist/services/api/MAL/models/forum/forum_topics_data.dart';
@@ -44,6 +47,44 @@ class HomeSectionCache {
   static void clearPrefix(String prefix) =>
       _entries.removeWhere((key, _) => key.startsWith(prefix));
 }
+
+/// The anime of one season for a home row, most members first like DailyAL (MAL's
+/// `anime_score` sort of the seasonal endpoint is not a score order: it put Black Clover and
+/// Doraemon (2005) ahead of One Piece, Detective Conan and Steel Ball Run). Kept on disk: with
+/// [preferCache] a copy younger than [maxAge] is served without a request, and when the request
+/// fails a copy of the last 7 days is shown before giving up.
+Future<List<Anime>> loadHomeSeasonRow({
+  required SeasonType season,
+  required int year,
+  required int limit,
+  required Duration maxAge,
+  bool preferCache = true,
+  Future<List<Anime>> Function()? fetch,
+  CacheManager? cache,
+}) async {
+  final store = cache ?? CacheManager.instance;
+  final key = homeSeasonCacheKey(season, year, limit);
+  if (preferCache) {
+    final cached = await store.getCachedAnimeList(key, maxAge.inSeconds);
+    if (cached != null && cached.isNotEmpty) return cached;
+  }
+  try {
+    final items = await (fetch ??
+        () => MalApi.getAnimeSeasonal(season, year,
+            sortType: SortType.AnimeNumListUsers, limit: limit))();
+    await store.cacheAnimeList(key, items);
+    return items;
+  } catch (_) {
+    final fallback = await store.getCachedAnimeList(key, const Duration(days: 7).inSeconds);
+    if (fallback != null && fallback.isNotEmpty) return fallback;
+    rethrow;
+  }
+}
+
+/// Disk cache key of a home season row ("members" marks the sort, so the rows cached with the
+/// old score sort are never read back).
+String homeSeasonCacheKey(SeasonType season, int year, int limit) =>
+    'homeSeason-members:${season.name}:$year@$limit';
 
 /// Loads [load] once (or reads the in-memory answer), shows [loading] meanwhile, an error state
 /// with a "Try again" button when it fails and [builder] with the data otherwise. A new
