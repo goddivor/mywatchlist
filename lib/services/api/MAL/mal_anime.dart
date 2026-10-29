@@ -750,6 +750,16 @@ class Anime {
   final Broadcast? broadcast;
   final List<String>? genres;
 
+  /// MAL's entry rating: `white` (safe), `gray` (may not be safe) or `black`
+  /// (adult); null when the source did not say.
+  final String? nsfw;
+
+  /// Adult title (`black`).
+  bool get isAdult => nsfw == 'black';
+
+  /// Title shown with an "18+" mark (`black` or `gray`).
+  bool get isNsfwRated => nsfw == 'black' || nsfw == 'gray';
+
   Anime({
     required this.id,
     required this.title,
@@ -768,6 +778,7 @@ class Anime {
     this.myListStatus,
     this.broadcast,
     this.genres,
+    this.nsfw,
   });
 
   // Factory from Jikan API response
@@ -798,7 +809,18 @@ class Anime {
         ...(json['themes'] as List<dynamic>? ?? [])
             .map((g) => g['name'] as String),
       ],
+      nsfw: nsfwFromJikanRating(json['rating'] as String?),
     );
+  }
+
+  /// MAL's `nsfw` value for a Jikan `rating` ("Rx - Hentai" is adult,
+  /// "R+ - Mild Nudity" may not be safe); null when Jikan gives none.
+  static String? nsfwFromJikanRating(String? rating) {
+    if (rating == null || rating.isEmpty) return null;
+    final code = rating.split(' ').first.toLowerCase();
+    if (code == 'rx') return 'black';
+    if (code == 'r+') return 'gray';
+    return 'white';
   }
 
   // Factory from MAL API response
@@ -830,6 +852,7 @@ class Anime {
       genres: (json['genres'] as List<dynamic>?)
           ?.map((g) => g['name'] as String)
           .toList(),
+      nsfw: json['nsfw'] as String?,
     );
   }
 
@@ -852,6 +875,7 @@ class Anime {
       'my_list_status': myListStatus?.toJson(),
       if (broadcast != null) 'broadcast': broadcast!.toJson(),
       if (genres != null) 'genres': genres!.map((g) => {'name': g}).toList(),
+      if (nsfw != null) 'nsfw': nsfw,
     };
   }
 }

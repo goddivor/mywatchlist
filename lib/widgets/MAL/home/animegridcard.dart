@@ -193,7 +193,8 @@ class AnimeGridCard extends StatelessWidget {
   /// Favourites count badge; null hides it.
   final int? favorites;
 
-  /// Adult title: the cover is blurred while the NSFW preference is off.
+  /// Adult title: the cover is hidden while the NSFW preference is off. A
+  /// MAL `black` node (`Anime.isAdult`) counts as adult too.
   final bool isNsfw;
 
   const AnimeGridCard({
@@ -237,6 +238,8 @@ class AnimeGridCard extends StatelessWidget {
       showCardBar && (category == 'anime' || category == 'manga');
 
   String get _title => displayTitle ?? node.title;
+
+  bool get _adult => isNsfw || node.isAdult;
 
   @override
   Widget build(BuildContext context) {
@@ -375,7 +378,7 @@ class AnimeGridCard extends StatelessWidget {
         _CardImage(
           url: url,
           radius: radius,
-          blurred: isNsfw,
+          blurred: _adult,
           fixedSize: aspectRatio == null && gridHeight == null && !_coverOnly
               ? Size(width, height)
               : null,
@@ -553,7 +556,10 @@ class AnimeGridCard extends StatelessWidget {
     final score = node.score;
     final hasScore = score > 0;
     final hasMembers = members > 0;
+    // "18+" only while adult titles are shown (otherwise the cover is hidden).
+    final rated = (_adult || node.isNsfwRated) && _CardImage._adultAllowed(context);
     final children = <Widget>[
+      if (rated) _AdultBadge(radius: borderRadius),
       if (compact && showMemberCount && (hasScore || hasMembers))
         ScoreMembersBadge(
           score: hasScore ? score : null,
@@ -829,6 +835,39 @@ class _Pill extends StatelessWidget {
                 const SizedBox(width: 3),
                 Text(text, style: _badgeText(tokens)),
               ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// "18+" mark of an adult or "may not be safe" title (MAL `black` / `gray`).
+class _AdultBadge extends StatelessWidget {
+  final double radius;
+  const _AdultBadge({required this.radius});
+
+  @override
+  Widget build(BuildContext context) {
+    final role = AppColors.of(context).danger;
+    return IgnorePointer(
+      child: Semantics(
+        label: S.current.Dsb_Adult_Semantics,
+        excludeSemantics: true,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: role.container,
+            borderRadius: BorderRadius.circular(radius),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+            child: Text(
+              S.current.Dsb_Adult,
+              style: TextStyle(
+                  color: role.onContainer,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700),
             ),
           ),
         ),

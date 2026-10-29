@@ -15,11 +15,17 @@ import 'package:mywatchlist/services/api/MAL/mal_api.dart';
 /// search, authors open their person page, the season opens the season's anime and the media
 /// type opens its ranking. Values without a destination are plain text.
 ///
+/// [html] is the scraped MAL page (`DetailData.html`): it adds the producers, licensors, themes
+/// and demographic that API v2 lacks (v2 merges themes and demographics into the genres).
+///
 /// With [isModal] the widget owns its scroll view (DailyAL `isModal`), so a dialog can host it
 /// without wrapping it in a second one; otherwise it is a plain column for a parent scroll view.
 class MoreInfoWidget extends StatelessWidget {
   final MalAnime? anime;
   final dynamic additionalTitles; // Use dynamic to allow for various types
+
+  /// Scraped MAL page; null while it loads or when it failed.
+  final Map<String, dynamic>? html;
   final double horizPadding;
   final String category;
   final bool isModal;
@@ -28,6 +34,7 @@ class MoreInfoWidget extends StatelessWidget {
     Key? key,
     this.anime,
     this.additionalTitles,
+    this.html,
     required this.horizPadding,
     this.category = "anime",
     this.isModal = false,
@@ -88,6 +95,7 @@ class MoreInfoWidget extends StatelessWidget {
       if (_duration(a.averageEpisodeDuration) case final duration?)
         _InfoRow(S.current.Duration, _text(duration)),
       if (a.rating != null) _InfoRow(S.current.Rating, _text(_rating(a.rating!))),
+      ..._producerRows(context),
       if (studios.isNotEmpty)
         _InfoRow(
           S.current.Studios,
@@ -101,8 +109,58 @@ class MoreInfoWidget extends StatelessWidget {
               ),
           ]),
         ),
+      ..._themeRows(context),
+      ..._addedRow(context, a),
     ];
   }
+
+  /// Producers and licensors of the MAL page, each opening the studio pager.
+  List<Widget> _producerRows(BuildContext context) => [
+        for (final (label, key) in [
+          (S.current.Dsb_Producers, 'producers'),
+          (S.current.Dsb_Licensors, 'licensors'),
+        ])
+          if (_pageLinks(key) case final links when links.isNotEmpty)
+            _InfoRow(
+              label,
+              _LinkWrap([
+                for (final link in links)
+                  _Link(
+                    link.name,
+                    link.id > 0
+                        ? () => _open(context, GeneralSearchScreen.byStudio(id: link.id, name: link.name))
+                        : null,
+                  ),
+              ]),
+            ),
+      ];
+
+  /// When the entry was added to MyAnimeList (API v2 `created_at`).
+  List<Widget> _addedRow(BuildContext context, MalAnime a) {
+    final created = DateTime.tryParse(a.createdAt ?? '');
+    if (created == null) return const [];
+    final locale = Localizations.localeOf(context).toString();
+    return [
+      _InfoRow(S.current.Dsb_Added_To_Mal, _text(DateFormat.yMMMd(locale).format(created.toLocal()))),
+    ];
+  }
+
+  /// Links of the scraped page under [key] (`producers`, `themes`…) with the MAL id of their URL.
+  List<({String name, int id})> _pageLinks(String key) {
+    final raw = html?[key];
+    if (raw is! List) return const [];
+    final result = <({String name, int id})>[];
+    for (final item in raw) {
+      if (item is! Map) continue;
+      final name = item['name']?.toString().trim() ?? '';
+      if (name.isEmpty) continue;
+      final match = _idInUrl.firstMatch(item['url']?.toString() ?? '');
+      result.add((name: name, id: match == null ? 0 : int.parse(match.group(1)!)));
+    }
+    return result;
+  }
+
+  static final RegExp _idInUrl = RegExp(r'/(?:producer|genre)/(\d+)');
 
   List<Widget> _mangaRows(BuildContext context, MalAnime a) {
     final magazines = a.serialization ?? const <MalSerialization>[];
@@ -140,6 +198,8 @@ class MoreInfoWidget extends StatelessWidget {
               ),
           ]),
         ),
+      ..._themeRows(context),
+      ..._addedRow(context, a),
     ];
   }
 
@@ -203,34 +263,54 @@ class MoreInfoWidget extends StatelessWidget {
     ];
   }
 
+  /// Genres of API v2 without the themes and demographics the MAL page lists apart (those get
+  /// their own rows in the information card, as on the website).
   List<Widget> _genresCard(BuildContext context, MalAnime a) {
-    final genres = a.genres ?? const <Genre>[];
+    final apart = [..._pageLinks('themes'), ..._pageLinks('demographics')];
+    final apartIds = {for (final link in apart) if (link.id > 0) link.id};
+    final apartNames = {for (final link in apart) link.name.toLowerCase()};
+    final genres = [
+      for (final genre in a.genres ?? const <Genre>[])
+        if (!apartIds.contains(genre.id) &&
+            !apartNames.contains(genre.name.replaceAll('_', ' ').toLowerCase()))
+          (name: genre.name.replaceAll('_', ' '), id: genre.id),
+    ];
     if (genres.isEmpty) return const [];
-    final searchCategory = _isManga ? SearchCategory.manga : SearchCategory.anime;
     return [
       const SizedBox(height: 16),
-      _InfoCard(
-        title: S.current.Genres,
-        children: [
-          _LinkWrap([
-            for (final genre in genres)
-              _Link(
-                genre.name.replaceAll('_', ' '),
-                genre.name.isEmpty
-                    ? null
-                    : () => _open(
-                          context,
-                          GeneralSearchScreen.byGenre(
-                            ids: genre.id > 0 ? [genre.id] : const [],
-                            names: [genre.name],
-                            category: searchCategory,
-                          ),
-                        ),
-              ),
-          ]),
-        ],
-      ),
+      _InfoCard(title: S.current.Genres, children: [_genreWrap(context, genres)]),
     ];
+  }
+
+  /// Themes and demographic rows of the information card (scraped page only).
+  List<Widget> _themeRows(BuildContext context) => [
+        for (final (label, key) in [
+          (S.current.Themes, 'themes'),
+          (S.current.Dsb_Demographic, 'demographics'),
+        ])
+          if (_pageLinks(key) case final links when links.isNotEmpty)
+            _InfoRow(label, _genreWrap(context, links)),
+      ];
+
+  /// Genre chips, each opening the genre search of this category.
+  Widget _genreWrap(BuildContext context, List<({String name, int id})> links) {
+    final searchCategory = _isManga ? SearchCategory.manga : SearchCategory.anime;
+    return _LinkWrap([
+      for (final link in links)
+        _Link(
+          link.name,
+          link.name.isEmpty
+              ? null
+              : () => _open(
+                    context,
+                    GeneralSearchScreen.byGenre(
+                      ids: link.id > 0 ? [link.id] : const [],
+                      names: [link.name],
+                      category: searchCategory,
+                    ),
+                  ),
+        ),
+    ]);
   }
 
   List<(String, String)> _additionalTitles() {
