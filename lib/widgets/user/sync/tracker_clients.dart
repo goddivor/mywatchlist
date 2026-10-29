@@ -2,9 +2,9 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 import 'package:mywatchlist/constants/constants.dart';
+import 'package:mywatchlist/services/api/Anilist/anilist_graphql.dart';
 import 'package:mywatchlist/services/api/SimKl/simkl_api.dart';
 import 'package:mywatchlist/services/api/SimKl/simkl_client.dart';
-import 'package:mywatchlist/user/user_anilist_v2.dart';
 import 'package:mywatchlist/user/user_kitsu_v2.dart';
 import 'package:mywatchlist/user/user_simkl_v2.dart';
 import 'package:mywatchlist/widgets/user/sync/sync_entry.dart';
@@ -61,11 +61,36 @@ abstract class _BaseClient implements TrackerEntryClient {
 // AniList
 // ---------------------------------------------------------------------------
 
-class AnilistEntryClient extends _BaseClient {
-  AnilistEntryClient({AuthSender? auth})
-      : super(auth ?? _defaultAuth(UserAnilistV2.instance.sendAuthenticated));
+class AnilistEntryClient implements TrackerEntryClient {
+  /// Every call goes through [AnilistGraphql] (shared rate limiter, error mapping): reads with
+  /// `query`, writes with `mutate` (sent once, never replayed after a network failure).
+  /// [graphql] defaults to [AnilistGraphql.instance]; [auth] (tests, older callers) builds a
+  /// client over that sender instead, without a limiter.
+  AnilistEntryClient({AuthSender? auth, AnilistGraphql? graphql})
+      : _graphql = graphql ?? (auth == null ? null : _overSender(auth));
 
-  static const endpoint = 'https://graphql.anilist.co';
+  final AnilistGraphql? _graphql;
+
+  AnilistGraphql get _client => _graphql ?? AnilistGraphql.instance;
+
+  static const endpoint = AnilistGraphql.endpoint;
+
+  static AnilistGraphql _overSender(AuthSender send) {
+    GraphqlSender over({required bool idempotent}) => (body, {required bool auth}) => send(
+          (client, token) => client.post(
+            Uri.parse(endpoint),
+            headers: {
+              'Authorization': 'Bearer $token',
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+            },
+            body: body,
+          ),
+          idempotent: idempotent,
+        );
+    return AnilistGraphql(
+        sender: over(idempotent: true), mutationSender: over(idempotent: false));
+  }
 
   @override
   AccountType get tracker => AccountType.anilist;
@@ -82,25 +107,19 @@ class AnilistEntryClient extends _BaseClient {
     completedAt { year month day }
   ''';
 
-  Future<Map<String, dynamic>> _gql(String query, Map<String, dynamic> vars,
-      {bool? idempotent}) async {
-    final response = await send(
-      (client, token) => client.post(
-        Uri.parse(endpoint),
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        body: jsonEncode({'query': query, 'variables': vars}),
-      ),
-      idempotent: idempotent,
-    );
-    if (response.statusCode != 200) fail(response);
-    final body = json.decode(response.body);
-    if (body is! Map<String, dynamic>) fail(response);
-    if (body['errors'] != null && body['data'] == null) fail(response);
-    return body;
+  /// Runs [operation] and maps AniList's errors to the sync's.
+  Future<Map<String, dynamic>> _gql(String operation, Map<String, dynamic> vars,
+      {bool write = false}) async {
+    try {
+      final data = write
+          ? await _client.mutate(operation, variables: vars)
+          : await _client.query(operation, variables: vars, auth: true);
+      return {'data': data};
+    } on AnilistSessionExpired {
+      throw SyncAuthRequired(tracker);
+    } on AnilistError catch (e) {
+      throw SyncRequestFailed(tracker, e.statusCode, e.message ?? '');
+    }
   }
 
   @override
@@ -146,7 +165,7 @@ class AnilistEntryClient extends _BaseClient {
           completedAt: \$completedAt
         ) { $_entryFields }
       }
-    ''', vars, idempotent: true);
+    ''', vars, write: true);
     final saved = body['data']?['SaveMediaListEntry'];
     if (saved is! Map<String, dynamic>) {
       throw SyncRequestFailed(tracker, 200, 'no entry in the answer');
@@ -162,7 +181,7 @@ class AnilistEntryClient extends _BaseClient {
     if (id == null) return;
     await _gql('''
       mutation (\$id: Int) { DeleteMediaListEntry(id: \$id) { deleted } }
-    ''', {'id': id}, idempotent: true);
+    ''', {'id': id}, write: true);
   }
 
   @override

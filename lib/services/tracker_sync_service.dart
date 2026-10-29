@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:mywatchlist/constants/constants.dart';
 import 'package:mywatchlist/services/api/Anilist/anilist_api.dart';
+import 'package:mywatchlist/services/api/Anilist/anilist_media.dart';
 import 'package:mywatchlist/services/api/Kitsu/kitsu_api.dart';
 import 'package:mywatchlist/services/api/SimKl/simkl_api.dart';
 import 'package:mywatchlist/widgets/user/sync/mal_side.dart';
@@ -237,7 +238,11 @@ class TrackerSyncService {
           title: titleMap?['romaji'] ?? titleMap?['english'] ?? '',
           imageUrl: coverMap?['large'] ?? coverMap?['medium'],
           status: m['status'] as String?,
-          score: m['averageScore'] as int?,
+          // 0-100 like Kitsu's average: weightedScore, else the deprecated averageScore.
+          score: switch (AnilistMedia.scoreOf(m)) {
+            final double v => (v * 10).round(),
+            null => null,
+          },
           mediaType: m['format'] as String?,
         );
       }).toList();

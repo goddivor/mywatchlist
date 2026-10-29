@@ -16,6 +16,17 @@ class AnilistUser {
     return {'data': data};
   }
 
+  /// Authenticated GraphQL write through [AnilistGraphql.mutate]: sent once (no replay after a
+  /// network failure), behind the shared rate limiter; answers `{'data': …}`.
+  Future<Map<String, dynamic>> _authenticatedGraphqlMutation(
+    String mutation, {
+    Map<String, dynamic>? variables,
+  }) async {
+    final data =
+        await AnilistGraphql.instance.mutate(mutation, variables: variables ?? const {});
+    return {'data': data};
+  }
+
   /// Get the authenticated user's profile information.
   Future<AnilistUserProf> getUserInfo() async {
     const query = '''
@@ -124,7 +135,7 @@ class AnilistUser {
       if (progress != null) 'progress': progress,
     };
 
-    final response = await _authenticatedGraphqlQuery(
+    final response = await _authenticatedGraphqlMutation(
       query,
       variables: variables,
     );
@@ -142,7 +153,7 @@ class AnilistUser {
     }
     ''';
 
-    final response = await _authenticatedGraphqlQuery(
+    final response = await _authenticatedGraphqlMutation(
       query,
       variables: {'id': id},
     );
