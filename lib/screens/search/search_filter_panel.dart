@@ -412,19 +412,17 @@ class _FiltersTab extends StatelessWidget {
     final manga = category == SearchCategory.manga;
     final f = filters;
 
-    _RowBuilder chips<T>(String title, String key, List<SelectOption<T>> options, {String? disabled}) {
+    _RowBuilder chips<T>(String title, String key, List<SelectOption<T>> options) {
       return (context) => _FilterSection(
             title: title,
             active: f.has(key),
             onClear: () => onChanged(f.remove(key)),
-            child: disabled != null
-                ? _Hint(disabled)
-                : ThreeStateSelectBar<T>(
-                    padding: EdgeInsets.zero,
-                    options: options,
-                    selected: f.has(key) ? (key == FilterKey.score || key == FilterKey.gender ? f.integer(key) : f.text(key)) as T? : null,
-                    onChanged: (value) => onChanged(f.set(key, value)),
-                  ),
+            child: ThreeStateSelectBar<T>(
+              padding: EdgeInsets.zero,
+              options: options,
+              selected: f.has(key) ? (key == FilterKey.score || key == FilterKey.gender ? f.integer(key) : f.text(key)) as T? : null,
+              onChanged: (value) => onChanged(f.set(key, value)),
+            ),
           );
     }
 
@@ -436,7 +434,8 @@ class _FiltersTab extends StatelessWidget {
         return _FilterSection(
           title: title,
           active: f.has(key),
-          onClear: () => onChanged(f.remove(key)),
+          // The direction is hidden without an order, so it must not stay set behind it.
+          onClear: () => onChanged(key == FilterKey.orderBy ? f.remove(key).remove(FilterKey.sort) : f.remove(key)),
           child: _PickerPill(
             label: label,
             onTap: () async {
@@ -487,7 +486,7 @@ class _FiltersTab extends StatelessWidget {
 
     _RowBuilder genres() => (context) => _GenresFilter(manga: manga, filters: f, onChanged: onChanged);
 
-    final needsOrder = f.has(FilterKey.orderBy) ? null : S.current.Srch_Needs_Order;
+    final hasOrder = f.has(FilterKey.orderBy);
 
     switch (category) {
       case SearchCategory.anime:
@@ -497,7 +496,8 @@ class _FiltersTab extends StatelessWidget {
           chips(S.current.Srch_F_Rated, FilterKey.rating, SearchOptions.ratings()),
           genres(),
           picker(S.current.Srch_F_OrderBy, FilterKey.orderBy, SearchOptions.animeOrders()),
-          chips(S.current.Srch_F_Sort, FilterKey.sort, SearchOptions.sorts(), disabled: needsOrder),
+          // Direction means nothing before an order is picked: it appears with it.
+          if (hasOrder) chips(S.current.Srch_F_Sort, FilterKey.sort, SearchOptions.sorts()),
           chips(S.current.Srch_F_MinScore, FilterKey.score, SearchOptions.scores()),
           date(S.current.Srch_F_Start, FilterKey.startDate),
           date(S.current.Srch_F_End, FilterKey.endDate),
@@ -511,7 +511,8 @@ class _FiltersTab extends StatelessWidget {
           chips(S.current.Srch_F_Status, FilterKey.status, SearchOptions.mangaStatuses()),
           genres(),
           picker(S.current.Srch_F_OrderBy, FilterKey.orderBy, SearchOptions.mangaOrders()),
-          chips(S.current.Srch_F_Sort, FilterKey.sort, SearchOptions.sorts(), disabled: needsOrder),
+          // Direction means nothing before an order is picked: it appears with it.
+          if (hasOrder) chips(S.current.Srch_F_Sort, FilterKey.sort, SearchOptions.sorts()),
           chips(S.current.Srch_F_MinScore, FilterKey.score, SearchOptions.scores()),
           date(S.current.Srch_F_Start, FilterKey.startDate),
           date(S.current.Srch_F_End, FilterKey.endDate),
@@ -844,16 +845,6 @@ class _GenrePickerState extends State<GenrePicker> {
               prefixIcon: const Icon(Icons.search),
               filled: true,
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(28), borderSide: BorderSide.none),
-            ),
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(24, 8, 24, 4),
-          child: Align(
-            alignment: AlignmentDirectional.centerStart,
-            child: Text(
-              S.current.Srch_Genres_Hint,
-              style: theme.textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
             ),
           ),
         ),

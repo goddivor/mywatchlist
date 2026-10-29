@@ -2,16 +2,14 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mywatchlist/constants/constants.dart' show DisplaySubType, HomePageTileSize, getTileSizeValues;
-import 'package:mywatchlist/enums.dart';
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/screens/search/search_history.dart';
-import 'package:mywatchlist/screens/search/search_queries.dart';
+import 'package:mywatchlist/pages/MAL/mal_explore_page.dart' show ExploreStorage;
+import 'package:mywatchlist/screens/explore/explore_sections.dart' show RankingsRow, SeasonalPicker;
 import 'package:mywatchlist/screens/search/search_tiles.dart';
 import 'package:mywatchlist/services/api/MAL/mal_anime.dart';
-import 'package:mywatchlist/services/api/MAL/mal_api.dart';
 import 'package:mywatchlist/user/MAL/mal_home_preferences_bloc.dart';
 import 'package:mywatchlist/widgets/MAL/home/animegridcard.dart';
-import 'package:mywatchlist/widgets/common/select/select.dart';
 
 /// What the autocomplete knows right now.
 @immutable
@@ -34,7 +32,7 @@ class SuggestionState {
 }
 
 /// The screen shown before a search: autocomplete while typing, then the recent searches, the
-/// recently opened titles, the season picker and the ranking shortcuts.
+/// recently opened titles, Explore's season picker and the ranking picture rows.
 class SearchHomeView extends StatelessWidget {
   final SearchHistory history;
   final ValueListenable<SuggestionState> suggestions;
@@ -76,54 +74,14 @@ class SearchHomeView extends StatelessWidget {
           onRemove: history.removeRecentManga,
         ),
         _SectionHeader(S.current.Srch_By_Season),
-        SliverToBoxAdapter(child: SeasonPicker(onQuery: onQuery)),
+        // One season picker for the whole app: Explore's (DailyAL's SeasonalWidget).
+        SliverToBoxAdapter(child: ExploreStorage.isolated(const SeasonalPicker())),
         _SectionHeader(S.current.Srch_Anime_Categories),
-        SliverToBoxAdapter(
-          child: _ChipWrap(
-            labels: desiredTopAnimeOrderSS(S.current),
-            queryOf: SpecialQuery.animeRanking,
-            onQuery: onQuery,
-          ),
-        ),
+        const SliverToBoxAdapter(child: RankingsRow(isAnime: true)),
         _SectionHeader(S.current.Srch_Manga_Categories),
-        SliverToBoxAdapter(
-          child: _ChipWrap(
-            labels: desiredMangaRankingMapSS(S.current),
-            queryOf: SpecialQuery.mangaRanking,
-            onQuery: onQuery,
-          ),
-        ),
-        const SliverToBoxAdapter(child: SizedBox(height: 24)),
-        SliverToBoxAdapter(child: _Tip()),
+        const SliverToBoxAdapter(child: RankingsRow(isAnime: false)),
         const SliverToBoxAdapter(child: SizedBox(height: 80)),
       ],
-    );
-  }
-}
-
-class _Tip extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      child: Column(
-        children: [
-          Icon(Icons.search_rounded, size: 40, color: theme.colorScheme.onSurface.withValues(alpha: 0.25)),
-          const SizedBox(height: 8),
-          Text(
-            S.current.Srch_Start_Title,
-            textAlign: TextAlign.center,
-            style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurface.withValues(alpha: 0.5)),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            S.current.Srch_Special_Tip,
-            textAlign: TextAlign.center,
-            style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurface.withValues(alpha: 0.4)),
-          ),
-        ],
-      ),
     );
   }
 }
@@ -139,11 +97,11 @@ class _SectionHeader extends StatelessWidget {
     final theme = Theme.of(context);
     return SliverToBoxAdapter(
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 20, 16, 4),
+        padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
         child: Row(
           children: [
             Expanded(
-              child: Text(title, style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
+              child: Text(title, style: theme.textTheme.titleLarge),
             ),
             if (onClear != null)
               TextButton(
@@ -331,92 +289,6 @@ class _RecentList extends StatelessWidget {
             ),
           );
         },
-      ),
-    );
-  }
-}
-
-class _ChipWrap<K> extends StatelessWidget {
-  final Map<K, String> labels;
-  final String Function(K key) queryOf;
-  final ValueChanged<String> onQuery;
-
-  const _ChipWrap({required this.labels, required this.queryOf, required this.onQuery});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 4, 12, 0),
-      child: Wrap(
-        spacing: 6,
-        runSpacing: 0,
-        children: [
-          for (final entry in labels.entries)
-            ActionChip(
-              label: Text(entry.value, style: const TextStyle(fontSize: 12)),
-              visualDensity: VisualDensity.compact,
-              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              onPressed: () => onQuery(queryOf(entry.key)),
-            ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Pick a season and a year, then search them. The newest year offered is next year (announced
-/// seasons are listed), not a number written in the code.
-class SeasonPicker extends StatefulWidget {
-  final ValueChanged<String> onQuery;
-
-  const SeasonPicker({super.key, required this.onQuery});
-
-  @override
-  State<SeasonPicker> createState() => _SeasonPickerState();
-}
-
-class _SeasonPickerState extends State<SeasonPicker> {
-  late SeasonType _season = MalApi.getSeasonType();
-  late int _year = DateTime.now().year;
-
-  static String seasonLabel(SeasonType season) => switch (season) {
-        SeasonType.WINTER => S.current.Srch_Season_Winter,
-        SeasonType.SPRING => S.current.Srch_Season_Spring,
-        SeasonType.SUMMER => S.current.Srch_Season_Summer,
-        SeasonType.FALL => S.current.Srch_Season_Fall,
-      };
-
-  @override
-  Widget build(BuildContext context) {
-    final last = lastSeasonYear();
-    final years = [
-      for (var y = last; y >= firstSeasonYear; y--) SelectOption(y, '$y'),
-    ];
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      child: Wrap(
-        spacing: 8,
-        runSpacing: 4,
-        crossAxisAlignment: WrapCrossAlignment.center,
-        children: [
-          for (final season in SeasonType.values)
-            ChoiceChip(
-              label: Text(seasonLabel(season)),
-              selected: season == _season,
-              onSelected: (_) => setState(() => _season = season),
-            ),
-          SelectButton<int>(
-            title: S.current.Srch_Year,
-            options: years,
-            selected: _year,
-            onChanged: (year) => setState(() => _year = year),
-          ),
-          FilledButton.icon(
-            onPressed: () => widget.onQuery(SpecialQuery.season(_season, _year)),
-            icon: const Icon(Icons.search_rounded, size: 18),
-            label: Text(S.current.Srch_Go),
-          ),
-        ],
       ),
     );
   }
