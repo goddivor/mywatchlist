@@ -6,8 +6,10 @@ import 'package:mywatchlist/screens/mal_web/mal_web_form_errors.dart';
 import 'package:mywatchlist/services/api/MAL/web/mal_messages_api.dart';
 import 'package:mywatchlist/services/api/MAL/web/mal_web_form_submitter.dart';
 import 'package:mywatchlist/services/auth/mal_web_session.dart';
+import 'package:mywatchlist/services/upload/image_upload.dart';
 import 'package:mywatchlist/utils/app_routes.dart';
 import 'package:mywatchlist/widgets/forum/forum_common.dart';
+import 'package:mywatchlist/widgets/mal_web/message_composer/composer_controls.dart';
 import 'package:mywatchlist/widgets/mal_web/message_tiles.dart';
 
 /// Opens the compose screen, the recipient filled with [to] when given. Completes with true
@@ -18,12 +20,19 @@ Future<bool> openComposeMalMessage(BuildContext context, {String? to}) async {
 }
 
 /// A new private message: recipient (friends first, then MAL's user search), subject, body.
+/// The body is formatted like a chat app (selection toolbar and a formatting row write MAL
+/// BBCode), takes photos (uploaded to catbox.moe, inserted as `[img]`) and is previewed as it
+/// will look once it holds markup.
 class ComposeMalMessageScreen extends StatefulWidget {
-  const ComposeMalMessageScreen({super.key, this.to, this.api, this.session});
+  const ComposeMalMessageScreen({super.key, this.to, this.api, this.session, this.uploader, this.pickImage});
 
   final String? to;
   final MalMessagesApi? api;
   final MalWebSession? session;
+
+  /// Photo upload and picker (tests give fakes).
+  final ImageUploader? uploader;
+  final MalImagePick? pickImage;
 
   @override
   State<ComposeMalMessageScreen> createState() => _ComposeMalMessageScreenState();
@@ -35,6 +44,8 @@ class _ComposeMalMessageScreenState extends State<ComposeMalMessageScreen> {
   final TextEditingController _body = TextEditingController();
   final FocusNode _toFocus = FocusNode();
   final FocusNode _subjectFocus = FocusNode();
+  final FocusNode _bodyFocus = FocusNode();
+  late final MalImageAttacher _attacher = MalImageAttacher(uploader: widget.uploader, pick: widget.pickImage);
   final GlobalKey<FormState> _form = GlobalKey<FormState>();
   bool _sending = false;
   bool _sent = false;
@@ -77,6 +88,8 @@ class _ComposeMalMessageScreenState extends State<ComposeMalMessageScreen> {
     _body.dispose();
     _toFocus.dispose();
     _subjectFocus.dispose();
+    _bodyFocus.dispose();
+    _attacher.dispose();
     super.dispose();
   }
 
@@ -99,7 +112,7 @@ class _ComposeMalMessageScreenState extends State<ComposeMalMessageScreen> {
   }
 
   Future<void> _send() async {
-    if (_sending || !(_form.currentState?.validate() ?? false)) return;
+    if (_sending || _attacher.busy || !(_form.currentState?.validate() ?? false)) return;
     setState(() => _sending = true);
     try {
       await _api.send(to: _to.text, subject: _subject.text, body: _body.text);
@@ -158,11 +171,11 @@ class _ComposeMalMessageScreenState extends State<ComposeMalMessageScreen> {
                   // Its own listener: the Scaffold is the cached child of the builder above,
                   // so the button follows the session when the gate connects it.
                   : ListenableBuilder(
-                      listenable: _session,
+                      listenable: Listenable.merge([_session, _attacher]),
                       builder: (context, _) => IconButton(
                         tooltip: s.Pm_Send,
                         icon: const Icon(Icons.send_rounded),
-                        onPressed: _session.isConnected ? _send : null,
+                        onPressed: _session.isConnected && !_attacher.busy ? _send : null,
                       ),
                     ),
             ),
@@ -171,7 +184,30 @@ class _ComposeMalMessageScreenState extends State<ComposeMalMessageScreen> {
         body: MalWebFormHost(
           child: MalSessionGate(
             session: _session,
-            connected: (context) => _fields(context),
+            connected: (context) => Column(
+              children: [
+                Expanded(child: _fields(context)),
+                Material(
+                  color: Theme.of(context).colorScheme.surfaceContainer,
+                  child: SafeArea(
+                    top: false,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        MalUploadProgress(attacher: _attacher),
+                        MalFormattingBar(
+                          controller: _body,
+                          attacher: _attacher,
+                          focus: _bodyFocus,
+                          enabled: !_sending,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -229,7 +265,10 @@ class _ComposeMalMessageScreenState extends State<ComposeMalMessageScreen> {
           const SizedBox(height: 8),
           TextFormField(
             controller: _body,
+            focusNode: _bodyFocus,
             enabled: !_sending,
+            contextMenuBuilder: (context, state) =>
+                malFormattingContextMenu(context, state, _body, focus: _bodyFocus),
             minLines: 8,
             maxLines: null,
             keyboardType: TextInputType.multiline,
@@ -242,6 +281,7 @@ class _ComposeMalMessageScreenState extends State<ComposeMalMessageScreen> {
             style: theme.textTheme.bodyLarge?.copyWith(color: scheme.onSurface),
             validator: (v) => (v ?? '').trim().isEmpty ? s.Pm_Body_Required : null,
           ),
+          MalComposerPreview(controller: _body, margin: const EdgeInsets.only(top: 8)),
         ],
       ),
     );
