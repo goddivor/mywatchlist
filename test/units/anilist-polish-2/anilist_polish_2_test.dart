@@ -5,7 +5,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/services/api/Anilist/anilist_graphql.dart';
-import 'package:mywatchlist/services/api/Anilist/anilist_list_service.dart';
 import 'package:mywatchlist/services/api/Anilist/anilist_list_write.dart';
 import 'package:mywatchlist/services/api/Anilist/anilist_profile_service.dart';
 import 'package:mywatchlist/widgets/Anilist/list/anilist_list_look.dart';
