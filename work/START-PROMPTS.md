@@ -1295,6 +1295,16 @@ UI directive applies: compare DAL and MWL, keep the better, improve it.
 Deliver with the PR procedure of the brief.
 ```
 
+## mal-detail-friends
+
+```text
+Unit mal-detail-friends — MAL detail page: friends' scores and statuses (Friends / Top friends / Everyone).
+Read work/handoffs/mal-detail-friends.md fully, then the DAL reference files it lists, then the MWL files you own.
+Build exactly the Goal, inside the Owns list. Heavy commands only through tools/heavy.sh; never run flutter build or touch the emulator.
+UI directive applies: compare DAL and MWL, keep the better, improve it.
+Deliver with the PR procedure of the brief.
+```
+
 ## explore-polish
 
 ```text

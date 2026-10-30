@@ -69,7 +69,8 @@
         "prefs-per-tracker",
         "bookmarks-per-tracker",
         "notifications-all-trackers",
-        "mal-pm-chat-notifications"
+        "mal-pm-chat-notifications",
+        "mal-detail-friends"
       ]
     },
     {
@@ -4329,6 +4330,32 @@
       "states": [],
       "notes": [
         "model: opus"
+      ],
+      "status": "⬜ todo"
+    },
+    {
+      "id": "mal-detail-friends",
+      "title": "MAL detail page: friends' scores and statuses (Friends / Top friends / Everyone)",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "mal-polish-2"
+      ],
+      "owns": [
+        "lib/screens/MAL/detail/sections/user_updates_section.dart",
+        "lib/services/api/MAL/web/friends_updates_api.dart",
+        "lib/l10n/units/mal-detail-friends/**",
+        "test/units/mal-detail-friends/**",
+        "test/units/mal-detail-friends/**"
+      ],
+      "group": "user",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: sonnet"
       ],
       "status": "⬜ todo"
     },
