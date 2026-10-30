@@ -1,26 +1,72 @@
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
 import 'package:mywatchlist/services/api/Tenrai/tenrai_api.dart';
 import 'package:mywatchlist/services/api/Tenrai/tenrai_client.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-/// Which server answers the app's Jikan v4 requests.
+/// The server answering the app's Jikan v4 requests.
+enum DataSource {
+  jikan,
+  tenrai;
+
+  /// Brand name of the server (never translated).
+  String get label => switch (this) {
+        DataSource.jikan => 'Jikan',
+        DataSource.tenrai => 'Tenrai',
+      };
+}
+
+/// How long Jikan stays muted after it did not answer (settings choices).
+enum JikanMuteDuration {
+  oneWeek(Duration(days: 7)),
+  twoWeeks(Duration(days: 14)),
+  oneMonth(Duration(days: 30)),
+  threeMonths(Duration(days: 90));
+
+  const JikanMuteDuration(this.duration);
+
+  final Duration duration;
+
+  static const JikanMuteDuration fallback = JikanMuteDuration.oneMonth;
+
+  static JikanMuteDuration byName(String? name) =>
+      values.where((d) => d.name == name).firstOrNull ?? fallback;
+}
+
+/// Which server answers the app's Jikan v4 requests: ONE at a time, never both.
 ///
-/// Jikan (`api.jikan.moe/v4`) is asked first. When it times out, fails at the
-/// network level (DNS, refused connection) or answers 5xx, it is marked down
-/// for [reprobeAfter] (circuit breaker) and the same request goes to Tenrai
-/// (`api.tenrai.org/v1`, the same schema) when Tenrai has that endpoint
-/// ([tenraiServes]). Endpoints Tenrai lacks (`/users`, `/clubs`, `/watch`,
+/// Jikan (`api.jikan.moe/v4`) and Tenrai (`api.tenrai.org/v1`) serve the same
+/// data with the same schema. [start] (called once from `main`, not awaited)
+/// picks the source of the session: while Jikan is muted (date saved in the
+/// preferences) it is Tenrai without asking Jikan; otherwise one light Jikan
+/// request ([probe], [probeTimeout]) decides: an answer keeps Jikan, a
+/// timeout, a network error or a 5xx selects Tenrai and mutes Jikan for
+/// [muteDuration] (1 month by default, changed in Settings > Data sources).
+/// Requests wait for that choice through [ready] (at most [readyTimeout]).
+///
+/// During the session [JikanClient] (lib/services/api/Jikan/jikan_client.dart)
+/// sends every Jikan URL to [active] only. When Jikan fails at the network
+/// level ([jikanFailed]) Tenrai takes over and Jikan is muted; when Tenrai
+/// fails ([tenraiFailed]) Jikan takes over only if it is not muted. Endpoints
+/// Tenrai lacks ([tenraiServes] false: `/users`, `/clubs`, `/watch`,
 /// `/userupdates`, `/random/users`, forum topics other than episode threads)
-/// stay on Jikan and their callers keep their MyAnimeList-page fallbacks.
+/// fail at once while Tenrai is active, so their callers go straight to their
+/// MyAnimeList-page / mwl-api fallbacks.
 ///
-/// [JikanClient] (lib/services/api/Jikan/jikan_client.dart) applies this to
-/// every Jikan URL of the app, so callers keep building `api.jikan.moe` URLs.
-class JikanSource {
+/// A [JikanSource] that was never [start]ed uses Jikan and does not wait.
+class JikanSource extends ChangeNotifier {
   JikanSource({
     TenraiClient? tenrai,
-    this.reprobeAfter = const Duration(minutes: 5),
-    this.hedgeAfter = const Duration(milliseconds: 2500),
     this.probeTimeout = const Duration(seconds: 4),
+    this.readyTimeout = const Duration(seconds: 5),
+    Future<bool> Function()? probe,
+    http.Client? probeClient,
     DateTime Function()? now,
   })  : _tenrai = tenrai,
+        _probe = probe,
+        _probeClient = probeClient,
         _now = now ?? DateTime.now;
 
   /// The selector used by the app's [JikanClient.instance].
@@ -33,48 +79,185 @@ class JikanSource {
   /// Tenrai's base URL (no trailing slash).
   static const String tenraiBase = TenraiClient.baseUrl;
 
+  /// The light request of the launch probe (a small, cached Jikan answer).
+  static final Uri probeUrl = Uri.parse('$jikanBase/genres/anime?filter=demographics');
+
+  /// Preference keys (device settings, not tracker-scoped).
+  static const String mutedUntilKey = 'data_source_jikan_muted_until_v1';
+  static const String mutedSinceKey = 'data_source_jikan_muted_since_v1';
+  static const String muteDurationKey = 'data_source_jikan_mute_duration_v1';
+
   final TenraiClient? _tenrai;
-
-  /// How long Jikan stays marked down before a request tries it again.
-  final Duration reprobeAfter;
-
-  /// A Tenrai-served request also goes to Tenrai when Jikan has not answered
-  /// by then (at once while Jikan is being re-probed).
-  final Duration hedgeAfter;
-
-  /// Longest wait for Jikan while it is being re-probed after a failure.
-  final Duration probeTimeout;
-
+  final Future<bool> Function()? _probe;
+  final http.Client? _probeClient;
   final DateTime Function() _now;
 
-  DateTime? _downUntil;
+  /// Longest wait for the probe's answer.
+  final Duration probeTimeout;
+
+  /// Longest wait of a request for the launch choice.
+  final Duration readyTimeout;
+
+  SharedPreferences? _prefs;
+  Completer<void>? _ready;
+  DataSource _active = DataSource.jikan;
+  DateTime? _mutedUntil;
+  DateTime? _mutedSince;
+  JikanMuteDuration _muteDuration = JikanMuteDuration.fallback;
+  bool _probing = false;
 
   TenraiClient get tenrai => _tenrai ?? TenraiClient.instance;
 
-  /// True while Jikan is marked down: Tenrai-served requests skip it.
-  bool get jikanDown {
-    final until = _downUntil;
+  /// The server every Jikan-shaped request goes to.
+  DataSource get active => _active;
+
+  /// True while a probe (launch or [testAgain]) is running.
+  bool get probing => _probing;
+
+  /// How long Jikan stays muted after a failure.
+  JikanMuteDuration get muteDuration => _muteDuration;
+
+  /// The date until which Jikan is not asked (null when it is not muted).
+  DateTime? get jikanMutedUntil => jikanMuted ? _mutedUntil : null;
+
+  bool get jikanMuted {
+    final until = _mutedUntil;
     return until != null && _now().isBefore(until);
   }
 
-  /// True after a Jikan failure until Jikan answers again (also during a
-  /// re-probe, once [jikanDown] is over).
-  bool get jikanSuspect => _downUntil != null;
-
-  void markJikanDown() => _downUntil = _now().add(reprobeAfter);
-
-  void markJikanUp() => _downUntil = null;
-
-  /// Let the next request try Jikan again (a Retry button).
-  void allowProbe() {
-    if (_downUntil != null) _downUntil = _now();
+  /// Completes once the launch choice is made (at once when [start] was never
+  /// called), never after [readyTimeout]; never throws.
+  Future<void> get ready {
+    final ready = _ready;
+    if (ready == null || ready.isCompleted) return Future<void>.value();
+    return ready.future.timeout(readyTimeout, onTimeout: () {});
   }
 
+  /// Reads the saved mute, then chooses the source of the session (see the
+  /// class comment). Requests started meanwhile wait through [ready].
+  Future<void> start(SharedPreferences prefs) async {
+    _prefs = prefs;
+    final ready = _ready = Completer<void>();
+    try {
+      _muteDuration = JikanMuteDuration.byName(prefs.getString(muteDurationKey));
+      _mutedUntil = _readDate(prefs, mutedUntilKey);
+      _mutedSince = _readDate(prefs, mutedSinceKey);
+      if (jikanMuted) {
+        _active = DataSource.tenrai;
+      } else {
+        await _runProbe();
+      }
+    } finally {
+      if (!ready.isCompleted) ready.complete();
+      notifyListeners();
+    }
+  }
+
+  /// Asks Jikan again now (Settings > Data sources): an answer ends the mute
+  /// and makes Jikan the source, a failure mutes it again from now.
+  Future<DataSource> testAgain() async {
+    if (_probing) return _active;
+    await _runProbe();
+    notifyListeners();
+    return _active;
+  }
+
+  /// Changes and saves the mute duration; a running mute is recomputed from
+  /// its start. The source of the session does not change.
+  Future<void> setMuteDuration(JikanMuteDuration duration) async {
+    _muteDuration = duration;
+    final since = _mutedSince;
+    if (since != null && _mutedUntil != null) _mutedUntil = since.add(duration.duration);
+    notifyListeners();
+    final prefs = _prefs;
+    if (prefs == null) return;
+    await prefs.setString(muteDurationKey, duration.name);
+    await _saveMute();
+  }
+
+  /// Jikan failed at the network level: Tenrai becomes the source and Jikan
+  /// is muted (once, however many requests fail together).
+  void jikanFailed() {
+    if (_active == DataSource.tenrai) return;
+    _active = DataSource.tenrai;
+    _mute();
+    notifyListeners();
+  }
+
+  /// Tenrai failed at the network level: Jikan becomes the source unless it is
+  /// muted. Returns true when the source changed.
+  bool tenraiFailed() {
+    if (_active == DataSource.jikan || jikanMuted) return false;
+    _active = DataSource.jikan;
+    notifyListeners();
+    return true;
+  }
+
+  Future<void> _runProbe() async {
+    _probing = true;
+    notifyListeners();
+    bool up;
+    try {
+      up = await (_probe ?? _defaultProbe)().timeout(probeTimeout, onTimeout: () => false);
+    } catch (e) {
+      up = false;
+    }
+    _probing = false;
+    if (up) {
+      _active = DataSource.jikan;
+      _mutedUntil = null;
+      _mutedSince = null;
+      unawaited(_saveMute());
+    } else {
+      _active = DataSource.tenrai;
+      _mute();
+    }
+  }
+
+  /// One light Jikan request: any answer below 500 (a 429 too) means Jikan
+  /// is up.
+  Future<bool> _defaultProbe() async {
+    final client = _probeClient;
+    final response = await (client != null ? client.get(probeUrl) : http.get(probeUrl))
+        .timeout(probeTimeout);
+    return response.statusCode < 500;
+  }
+
+  void _mute() {
+    final now = _now();
+    _mutedSince = now;
+    _mutedUntil = now.add(_muteDuration.duration);
+    unawaited(_saveMute());
+  }
+
+  Future<void> _saveMute() async {
+    final prefs = _prefs;
+    if (prefs == null) return;
+    try {
+      final until = _mutedUntil;
+      final since = _mutedSince;
+      if (until == null || since == null) {
+        await prefs.remove(mutedUntilKey);
+        await prefs.remove(mutedSinceKey);
+      } else {
+        await prefs.setString(mutedUntilKey, until.toIso8601String());
+        await prefs.setString(mutedSinceKey, since.toIso8601String());
+      }
+    } catch (e) {
+      debugPrint('JikanSource: mute not saved: $e');
+    }
+  }
+
+  static DateTime? _readDate(SharedPreferences prefs, String key) =>
+      DateTime.tryParse(prefs.getString(key) ?? '');
+
   /// The server a caller building its own URL should use for [path]
-  /// (`/anime/1/full`): Tenrai while Jikan is down and Tenrai has the path,
-  /// else Jikan.
+  /// (`/anime/1/full`): Tenrai while it is the source and has the path, else
+  /// Jikan.
   String baseFor(String path) =>
-      jikanDown && tenraiServes(Uri.parse('$jikanBase$path')) ? tenraiBase : jikanBase;
+      _active == DataSource.tenrai && tenraiServes(Uri.parse('$jikanBase$path'))
+          ? tenraiBase
+          : jikanBase;
 
   bool isJikan(Uri url) => url.host == jikanHost && url.path.startsWith('/v4');
 

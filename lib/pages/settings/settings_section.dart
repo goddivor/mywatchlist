@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:mywatchlist/generated/l10n.dart';
+import 'package:mywatchlist/services/api/jikan_source.dart';
 
 /// One page of the settings hub. `AppRoutes.openSettingsPage` opens any of them, so a
 /// feature unit can link to a settings page without importing it.
@@ -16,6 +18,7 @@ enum SettingsSection {
   downloads,
   backup,
   storage,
+  dataSources,
   about,
 }
 
@@ -48,6 +51,8 @@ extension SettingsSectionInfo on SettingsSection {
         return S.current.Backup_And_Restore;
       case SettingsSection.storage:
         return S.current.Settings_Storage;
+      case SettingsSection.dataSources:
+        return S.current.Dss_Title;
       case SettingsSection.about:
         return S.current.About;
     }
@@ -79,6 +84,8 @@ extension SettingsSectionInfo on SettingsSection {
         return S.current.Backup_And_Restore_desc;
       case SettingsSection.storage:
         return S.current.Settings_Storage_Desc;
+      case SettingsSection.dataSources:
+        return dataSourceStatus(JikanSource.instance);
       case SettingsSection.about:
         return S.current.About_desc;
     }
@@ -110,8 +117,25 @@ extension SettingsSectionInfo on SettingsSection {
         return Icons.settings_backup_restore;
       case SettingsSection.storage:
         return Icons.storage_outlined;
+      case SettingsSection.dataSources:
+        return Icons.dns_outlined;
       case SettingsSection.about:
         return Icons.info_outline;
     }
   }
+}
+
+/// "Jikan muted until 30 Nov 2026" for [source] (date in the app language), null when Jikan
+/// is not muted.
+String? jikanMutedText(JikanSource source) {
+  final until = source.jikanMutedUntil;
+  if (until == null) return null;
+  return S.current.Dss_Muted_Until(DateFormat.yMMMd(Intl.getCurrentLocale()).format(until));
+}
+
+/// The data source line of the hub: "Tenrai · Jikan muted until 30 Nov 2026", or the active
+/// source alone.
+String dataSourceStatus(JikanSource source) {
+  final muted = jikanMutedText(source);
+  return muted == null ? source.active.label : '${source.active.label} · $muted';
 }

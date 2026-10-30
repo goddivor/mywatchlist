@@ -901,6 +901,22 @@ class MwlApi {
     return _listOf(result?['data'], ReviewHtml.fromJson);
   }
 
+  /// [getReviewList] for a race: throws [MwlApiNoAnswer] when the backend gave
+  /// no answer (unreachable, error status) instead of an empty list, so an
+  /// empty page always means "no reviews" (#361).
+  Future<List<ReviewHtml>> requireReviewList({
+    int? id,
+    String category = 'anime',
+    int page = 1,
+    bool fromCache = true,
+  }) async {
+    final result = await getReviews(
+        id: id, category: category, page: page, fromCache: fromCache);
+    final data = result?['data'];
+    if (data is! List) throw MwlApiNoAnswer('reviews', result == null ? 'no answer' : 'no data');
+    return _listOf(data, ReviewHtml.fromJson);
+  }
+
   /// "About me" of a MAL profile. Null when the page failed.
   Future<UserAboutHtml?> getUserAboutHtml(
     String username, {
@@ -1017,4 +1033,15 @@ class MwlApi {
         .map((e) => '${e.key}=${Uri.encodeComponent(e.value.toString())}');
     return entries.join('&');
   }
+}
+
+/// The mwl-api backend gave no usable answer to [route] (unreachable, error
+/// status, or no `data`).
+class MwlApiNoAnswer implements Exception {
+  final String route;
+  final String reason;
+  const MwlApiNoAnswer(this.route, this.reason);
+
+  @override
+  String toString() => 'MwlApiNoAnswer($route): $reason';
 }

@@ -9,7 +9,9 @@ import 'package:mywatchlist/widgets/MAL/review/review_logic.dart';
 ///
 /// The first page races Jikan `reviews` against the mwl-api `reviews` route
 /// (MAL review pages parsed by the backend), see [JikanFallbacks.race], so it
-/// ends within about 12 s; the next pages come from the source that answered
+/// ends within about 12 s. The Jikan leg goes to the active data source (Jikan
+/// or Tenrai); an unreachable backend fails its leg and an empty backend page
+/// never beats a Jikan leg still loading; the next pages come from the source that answered
 /// first (the two number their pages differently and are never mixed). A
 /// failed next page keeps what is loaded and stops asking.
 class ReviewsFeed extends ChangeNotifier {
@@ -88,6 +90,8 @@ class ReviewsFeed extends ChangeNotifier {
       final result = await JikanFallbacks.race<(List<AnimeReview>, bool)>(
         jikan: _jikanPage,
         fallback: _mwlPage,
+        // An empty fallback page waits for the Jikan leg (#361).
+        isEmpty: (page) => page.$1.isEmpty,
       );
       _fromMwl = !result.fromJikan;
       return result.value;

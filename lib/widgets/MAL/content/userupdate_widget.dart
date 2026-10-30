@@ -15,10 +15,11 @@ import 'package:mywatchlist/widgets/loading/shimmercolor.dart';
 /// (avatar, name, progress ring, score, age, status). A tap on a card opens the quick user
 /// sheet of that user.
 ///
-/// Sources ([JikanFallbacks.race]): Jikan `userupdates`, against the "Recently Updated By"
-/// table of MAL's stats page (mwl-api `content/updates`), which answers while Jikan is down
-/// (Tenrai has no `userupdates`). The skeleton always ends in cards, an empty state or an
-/// error with Retry within about 12 s.
+/// Sources ([JikanFallbacks.race]): Jikan `userupdates` while Jikan is the data source,
+/// against the "Recently Updated By" table of MAL's stats page (`?m=all`, all members) read
+/// on the phone without a session. Tenrai has no `userupdates`: while Jikan is muted the
+/// Jikan leg fails at once and MAL's page is the only source. The skeleton always ends in
+/// cards, an empty state or an error with Retry within about 12 s.
 class UserUpdatesPage extends StatefulWidget {
   final int id;
   final VoidCallback? onPageChange;
