@@ -1,0 +1,8 @@
+{
+  "@@locale": "fr_FR",
+  "Mdf_Tab_Friends": "Amis",
+  "Mdf_Tab_Top_Friends": "Meilleurs amis",
+  "Mdf_Tab_Everyone": "Tout le monde",
+  "Mdf_Friends_Empty": "Aucun de vos amis n'a encore ajouté ce titre à sa liste",
+  "Mdf_Friends_Failed": "Impossible de charger les mises à jour de vos amis"
+}
