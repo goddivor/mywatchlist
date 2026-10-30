@@ -6,6 +6,7 @@
 - `mal-polish` (MAL polish: Accounts caption, MAL session from its tile, active account after the website login, bell label, Clubs row, Supporter badge for others, time zone in About)
 
 ## Owns (may create or edit ONLY these)
+- `test/units/accounts-ux/account_tile_test.dart`
 - `lib/screens/settings/accounts_settings.dart`
 - `lib/utils/app_routes.dart`
 - `lib/screens/user_profile/user_profile_data.dart`
