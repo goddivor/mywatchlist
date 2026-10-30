@@ -6,6 +6,7 @@
 - `tracker-contracts` (Contracts for tracker isolation: tracker-tagged notification payloads, per-tracker preference reads, global notification gate)
 
 ## Owns (may create or edit ONLY these)
+- `lib/utils/app_routes.dart`
 - `lib/pages/settings/settings_section.dart`
 - `lib/widgets/MAL/content/userupdate_widget.dart`
 - `lib/services/api/MAL/web/friends_updates_api.dart`

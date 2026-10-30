@@ -4372,6 +4372,7 @@
         "tracker-contracts"
       ],
       "owns": [
+        "lib/utils/app_routes.dart",
         "lib/pages/settings/settings_section.dart",
         "lib/widgets/MAL/content/userupdate_widget.dart",
         "lib/services/api/MAL/web/friends_updates_api.dart",
