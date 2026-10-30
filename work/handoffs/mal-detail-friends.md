@@ -3,7 +3,7 @@
 **Kind** unit · **Priority** P1 · **Group** user · **Model** sonnet
 
 ## Needs done first
-- `mal-polish-2` (MAL polish 2: Settings > Accounts uses the new page, Supporter badge for others, time zone in About, dead TrackerTile, cancelled MAL re-login keeps the session)
+- `mal-hub-followups` (MAL hub follow-ups: in-app thread on message tap, JSON posts through postJson, message poller next to the hub poller)
 
 ## Owns (may create or edit ONLY these)
 - `lib/screens/MAL/detail/sections/user_updates_section.dart`

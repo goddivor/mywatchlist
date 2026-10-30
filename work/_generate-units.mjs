@@ -1231,7 +1231,7 @@ const UNITS = [
   },
   {
     id: "mal-detail-friends", title: "MAL detail page: friends' scores and statuses (Friends / Top friends / Everyone)", kind: "unit", priority: "P1", group: "user", model: "sonnet", ui: true,
-    needs: ["mal-polish-2"],
+    needs: ["mal-hub-followups"],
     owns: ["lib/screens/MAL/detail/sections/user_updates_section.dart", "lib/services/api/MAL/web/friends_updates_api.dart", "lib/l10n/units/mal-detail-friends/**", "test/units/mal-detail-friends/**"],
     goal: ["Owner request 2026-10-30 (like the official MAL app's friend feed on a title page): on the MAL detail page, the 'Recently Updated By' section (user_updates_section.dart) gets tabs Friends / Top friends / Everyone. Friends and Top friends come from MAL's own stats page with the website session (MalWebClient GET /{anime|manga}/{id}/_/stats, default = My Friends, ?m=top = My Top Friends; table 'Recently Updated By': member + avatar, score, status, eps seen (or chapters for manga), activity date), checked live by the orchestrator on the owner's account (One Piece: Ma1cus 10 On-Hold 1156 / ?, …). Everyone keeps the current source. Default tab: Friends when the MAL session is active and the friends table is not empty, else Everyone; without a session the tabs are hidden. Rows open the friend's profile; status uses the status colour tokens; DailyAL-style rows (check DailyAL for the members table look).", "Fakes only in tests (a saved stats page with the friends table, trimmed from the live page). Never write to MAL."],
     dod: ["Tests: friends rows parsed from a saved page (anime and manga), tabs and default, hidden without a session, row opens the profile."],

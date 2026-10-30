@@ -4341,7 +4341,7 @@
       "artifact": "",
       "priority": "P1",
       "needs": [
-        "mal-polish-2"
+        "mal-hub-followups"
       ],
       "owns": [
         "lib/screens/MAL/detail/sections/user_updates_section.dart",
