@@ -1,16 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:mwl_commons/mwl_commons.dart' show ContentUpdateHtml;
-import 'package:mywatchlist/constants/constants.dart' show TabType, displayTimeAgo;
+import 'package:mywatchlist/constants/constants.dart' show TabType;
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/screens/MAL/detail/detail_data.dart';
 import 'package:mywatchlist/screens/MAL/detail/detail_sections.dart';
 import 'package:mywatchlist/screens/MAL/detail/sections/section_states.dart';
+import 'package:mywatchlist/services/api/Jikan/jikan_fallbacks.dart' show userUpdateFromHtml;
 import 'package:mywatchlist/services/api/MAL/web/friends_updates_api.dart';
 import 'package:mywatchlist/widgets/MAL/content/userupdate_widget.dart';
-import 'package:mywatchlist/widgets/MAL/home/animecardbar.dart' show StatusBadge;
-import 'package:mywatchlist/widgets/MAL/home/animegridcard.dart' show NodeStatusValue;
-import 'package:mywatchlist/widgets/MAL/review/review_item.dart' show ReviewScoreBadge;
-import 'package:mywatchlist/widgets/MAL/review/user_link.dart';
 
 /// Recent list updates of other users, with Friends / Top friends tabs when a MAL website
 /// session is connected.
@@ -172,81 +168,13 @@ class _FriendsUpdatesSectionState extends State<FriendsUpdatesSection> with Auto
         if (data.updates.isEmpty) {
           return SectionMessage(height: 200, icon: Icons.people_outline, message: S.current.Mdf_Friends_Empty);
         }
-        return Padding(
-          padding: EdgeInsets.symmetric(horizontal: widget.horizPadding + 10),
-          child: Column(
-            children: [
-              for (final update in data.updates.take(20))
-                FriendUpdateRow(update: update, isManga: widget.category == 'manga'),
-            ],
-          ),
+        // The same cards as Everyone.
+        return UserUpdatesGrid(
+          updates: data.updates.map(userUpdateFromHtml).toList(),
+          category: widget.category,
+          horizPadding: widget.horizPadding,
         );
       },
-    );
-  }
-}
-
-/// One member of the "Recently Updated By" table: avatar, name and activity, progress,
-/// score and status. A tap opens the member's profile.
-class FriendUpdateRow extends StatelessWidget {
-  final ContentUpdateHtml update;
-  final bool isManga;
-
-  const FriendUpdateRow({super.key, required this.update, required this.isManga});
-
-  String _progress() {
-    String part(int? n) => n?.toString() ?? '?';
-    if (isManga) {
-      return '${S.current.Social_Updates_Chapters_Short} ${part(update.chaptersRead)} / ${part(update.chaptersTotal)}';
-    }
-    return '${part(update.episodesSeen)} / ${part(update.episodesTotal)}';
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final status = update.status;
-    final nsv = status == null ? null : NodeStatusValue.fromString(status.trim().toLowerCase().replaceAll(RegExp(r'[\s-]+'), '_'));
-    final date = DateTime.tryParse(update.date ?? '');
-    final linkable = isLinkableUser(update.username);
-    return Semantics(
-      button: linkable,
-      label: linkable ? S.current.Social_Open_Profile(update.username) : null,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(8),
-        onTap: linkable ? () => openMalUser(context, update.username) : null,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 6),
-          child: Row(
-            children: [
-              RoundAvatar(size: 40, url: update.imageUrl),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(update.username, maxLines: 1, overflow: TextOverflow.ellipsis, style: theme.textTheme.bodyMedium),
-                    Text(
-                      [
-                        _progress(),
-                        if (date != null) displayTimeAgo(date) else if (update.activity != null) update.activity!,
-                      ].join('  ·  '),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-                    ),
-                  ],
-                ),
-              ),
-              ReviewScoreBadge(score: update.score, size: 14),
-              if (nsv?.status != null) ...[
-                const SizedBox(width: 10),
-                StatusBadge(nsv!, height: 25),
-              ],
-            ],
-          ),
-        ),
-      ),
     );
   }
 }

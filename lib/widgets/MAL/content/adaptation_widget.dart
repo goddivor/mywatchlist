@@ -7,96 +7,112 @@ import 'package:mywatchlist/services/api/MAL/scrapper/anime_detailed_html.dart';
 import 'package:mywatchlist/widgets/common/app_image.dart';
 import 'package:mywatchlist/widgets/user/list/list_query.dart' show mediaTypeLabel;
 
-/// Adaptations of a title, laid out like DailyAL's tiles: a small card with
-/// the picture faded behind a centred title and the media type under it.
-/// No relation chip: the section title already says "Adaptations".
+/// Adaptations of a title: a horizontal row of cards with the cover on the left, a relation
+/// badge, the title and the media type, and a chevron (MWL's own look, the owner's choice over
+/// DailyAL's faded tiles).
 class AdaptationsWidget extends StatelessWidget {
   final List<AdaptNode> nodes;
   const AdaptationsWidget({super.key, required this.nodes});
 
-  static const double tileWidth = 160;
-  static const double tileHeight = 105;
+  static const double tileWidth = 280;
+  static const double tileHeight = 130;
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
       height: tileHeight,
-      child: ListView.builder(
+      child: ListView.separated(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 17.0),
         itemCount: nodes.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 10),
         itemBuilder: (context, index) => AdaptationTile(node: nodes[index]),
       ),
     );
   }
 }
 
-/// One adaptation: DailyAL's card (160 x 105, 12 dp corners).
+/// One adaptation: cover, relation badge, title, media type and a chevron.
 class AdaptationTile extends StatelessWidget {
   final AdaptNode node;
   const AdaptationTile({super.key, required this.node});
 
-  static final BorderRadius _radius = BorderRadius.circular(12);
+  static final BorderRadius _radius = BorderRadius.circular(14);
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final background = scheme.surfaceContainerLow;
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
     final kind = adaptationKindLabel(node);
-    return Padding(
-      padding: const EdgeInsets.all(4),
+    final relation = adaptationRelationLabel(node);
+    return SizedBox(
+      width: AdaptationsWidget.tileWidth,
       child: Material(
-        color: background,
+        color: scheme.surfaceContainerLow,
         borderRadius: _radius,
         clipBehavior: Clip.antiAlias,
-        child: SizedBox(
-          width: AdaptationsWidget.tileWidth,
-          child: Stack(
-            fit: StackFit.expand,
+        child: InkWell(
+          onTap: () => _open(context),
+          child: Row(
             children: [
-              // DailyAL fades the picture to 10 %; an alpha veil does the
-              // same without a saveLayer per tile.
-              if (node.image.isNotEmpty)
-                AppImage(
-                  url: node.image,
-                  width: AdaptationsWidget.tileWidth,
-                  height: AdaptationsWidget.tileHeight,
-                  placeholderColor: background,
-                  errorWidget: (_) => const SizedBox.shrink(),
-                ),
-              ColoredBox(color: background.withValues(alpha: 0.9)),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(8, 18, 8, 18),
-                child: Column(
-                  children: [
-                    Expanded(
-                      child: Center(
+              AppImage(
+                url: node.image,
+                width: 90,
+                height: AdaptationsWidget.tileHeight,
+                placeholderColor: scheme.surfaceContainerHighest,
+              ),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (relation.isNotEmpty) ...[
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: scheme.primaryContainer,
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            relation,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              color: scheme.onPrimaryContainer,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 11,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                      ],
+                      Expanded(
                         child: Text(
                           node.animeTitle.name,
-                          textAlign: TextAlign.center,
                           maxLines: 3,
                           overflow: TextOverflow.ellipsis,
-                          style: TextStyle(fontSize: 13, color: scheme.onSurface),
+                          style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600, height: 1.3),
                         ),
                       ),
-                    ),
-                    if (kind.isNotEmpty) ...[
-                      const SizedBox(height: 5),
-                      Text(
-                        kind,
-                        textAlign: TextAlign.center,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(fontSize: 13, color: scheme.onSurfaceVariant),
-                      ),
+                      if (kind.isNotEmpty)
+                        Text(
+                          kind,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant, fontSize: 12),
+                        ),
                     ],
-                  ],
+                  ),
                 ),
               ),
-              // On top, so the ripple shows over the veil.
-              Material(
-                type: MaterialType.transparency,
-                child: InkWell(onTap: () => _open(context)),
+              Padding(
+                padding: const EdgeInsets.only(right: 10),
+                child: Icon(
+                  Icons.chevron_right_rounded,
+                  size: 20,
+                  color: scheme.onSurfaceVariant.withValues(alpha: 0.4),
+                ),
               ),
             ],
           ),
@@ -147,3 +163,7 @@ String adaptationKindLabel(AdaptNode node) {
       ? S.current.UserList_Media_Manga
       : S.current.Anime_Caps;
 }
+
+/// The relation MAL writes before the parentheses ("Adaptation (Manga)" gives "Adaptation").
+String adaptationRelationLabel(AdaptNode node) =>
+    node.relation.replaceAll(RegExp(r'\([^()]*\)\s*$'), '').trim();

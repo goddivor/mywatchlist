@@ -78,7 +78,23 @@ class _UserUpdatesPageState extends State<UserUpdatesPage> with AutomaticKeepAli
     );
   }
 
-  Widget _grid(List<AnimeUserUpdate?> users) {
+  Widget _grid(List<AnimeUserUpdate?> users) =>
+      UserUpdatesGrid(updates: users, category: widget.category, horizPadding: widget.horizPadding);
+}
+
+/// The two-row horizontal grid of update cards; `null` entries show a skeleton card.
+/// Also used by the Friends tabs of the title page.
+class UserUpdatesGrid extends StatelessWidget {
+  final List<AnimeUserUpdate?> updates;
+  final String category;
+  final double horizPadding;
+
+  const UserUpdatesGrid({super.key, required this.updates, required this.category, required this.horizPadding});
+
+  @override
+  Widget build(BuildContext context) {
+    final users = updates;
+
     return SizedBox(
       height: 280,
       child: GridView.builder(
@@ -87,7 +103,7 @@ class _UserUpdatesPageState extends State<UserUpdatesPage> with AutomaticKeepAli
           childAspectRatio: .5,
         ),
         scrollDirection: Axis.horizontal,
-        padding: EdgeInsets.symmetric(horizontal: widget.horizPadding + 10, vertical: 7),
+        padding: EdgeInsets.symmetric(horizontal: horizPadding + 10, vertical: 7),
         itemCount: users.length,
         itemBuilder: (context, index) {
           final update = users[index];
@@ -96,7 +112,7 @@ class _UserUpdatesPageState extends State<UserUpdatesPage> with AutomaticKeepAli
             child: SizedBox(
               width: 120,
               child: Card(
-                child: update == null ? const SizedBox() : _UpdateCard(update: update, category: widget.category),
+                child: update == null ? const SizedBox() : _UpdateCard(update: update, category: category),
               ),
             ),
           );
