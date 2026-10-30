@@ -6,6 +6,7 @@ import 'package:mywatchlist/services/api/MAL/web/mal_web_client.dart';
 import 'package:mywatchlist/services/auth/mal_auth_v2.dart';
 import 'package:mywatchlist/services/auth/mal_web_session.dart';
 import 'package:mywatchlist/utils/sidebar_extension.dart';
+import 'package:mywatchlist/widgets/mal_web/message_composer/message_markup_view.dart';
 import 'package:mywatchlist/widgets/forum/forum_common.dart';
 import 'package:mywatchlist/widgets/user/profile/profile_comments.dart' show formatCommentDate;
 
@@ -109,10 +110,8 @@ class MalMessageTile extends StatelessWidget {
                     Row(
                       children: [
                         Expanded(
-                          child: Text(
+                          child: MalMessagePreview(
                             subject,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
                             style: theme.textTheme.bodyMedium?.copyWith(
                               fontWeight: unread ? FontWeight.w600 : null,
                               color: scheme.onSurface,
@@ -133,10 +132,8 @@ class MalMessageTile extends StatelessWidget {
                     ),
                   ],
                   if (hasSubject && message.preview.isNotEmpty)
-                    Text(
+                    MalMessagePreview(
                       message.preview,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
                       style: theme.textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
                     ),
                 ],
@@ -165,10 +162,13 @@ class MalMessageBubble extends StatelessWidget {
     final foreground = mine ? scheme.onPrimaryContainer : scheme.onSurface;
     final date = message.date;
     final name = mine ? S.of(context).Pm_You : message.sender;
+    final maxWidth = MediaQuery.sizeOf(context).width * 0.82;
+    // Margin 24 + padding 28: what is left inside the bubble for a picture.
+    final imageWidth = (maxWidth - 52).clamp(120.0, 260.0);
     return Align(
       alignment: mine ? AlignmentDirectional.centerEnd : AlignmentDirectional.centerStart,
       child: ConstrainedBox(
-        constraints: BoxConstraints(maxWidth: MediaQuery.sizeOf(context).width * 0.82),
+        constraints: BoxConstraints(maxWidth: maxWidth),
         child: Container(
           margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
           padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
@@ -189,7 +189,11 @@ class MalMessageBubble extends StatelessWidget {
                 style: theme.textTheme.labelSmall?.copyWith(color: foreground.withValues(alpha: 0.75)),
               ),
               const SizedBox(height: 4),
-              MalHtmlBody(message.html, style: theme.textTheme.bodyMedium?.copyWith(color: foreground)),
+              MalMessageMarkup(
+                message.html,
+                style: theme.textTheme.bodyMedium?.copyWith(color: foreground),
+                imageWidth: imageWidth,
+              ),
             ],
           ),
         ),

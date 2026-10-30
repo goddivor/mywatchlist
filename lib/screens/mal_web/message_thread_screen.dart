@@ -1,6 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/services/api/MAL/web/mal_messages_api.dart';
@@ -8,8 +6,12 @@ import 'package:mywatchlist/screens/mal_web/mal_web_form_errors.dart';
 import 'package:mywatchlist/services/api/MAL/web/mal_web_client.dart';
 import 'package:mywatchlist/services/api/MAL/web/mal_web_form_submitter.dart';
 import 'package:mywatchlist/services/auth/mal_web_session.dart';
+import 'package:mywatchlist/services/upload/image_upload.dart';
 import 'package:mywatchlist/utils/web_launcher.dart';
 import 'package:mywatchlist/widgets/forum/forum_common.dart';
+import 'package:mywatchlist/widgets/mal_web/message_composer/composer_controls.dart';
+import 'package:mywatchlist/widgets/mal_web/message_composer/message_markup.dart';
+import 'package:mywatchlist/widgets/mal_web/message_composer/reply_composer.dart';
 import 'package:mywatchlist/widgets/mal_web/message_tiles.dart';
 
 /// What the thread screen did, for the list that opened it.
@@ -18,11 +20,22 @@ enum MessageThreadResult { deleted }
 /// A message and its thread as chat bubbles (oldest at the top), with a reply box at the
 /// bottom when MAL offers a reply.
 class MalMessageThreadScreen extends StatefulWidget {
-  const MalMessageThreadScreen({super.key, required this.message, this.api, this.session});
+  const MalMessageThreadScreen({
+    super.key,
+    required this.message,
+    this.api,
+    this.session,
+    this.uploader,
+    this.pickImage,
+  });
 
   final MalMessage message;
   final MalMessagesApi? api;
   final MalWebSession? session;
+
+  /// Photo upload and picker of the reply bar (tests give fakes).
+  final ImageUploader? uploader;
+  final MalImagePick? pickImage;
 
   @override
   State<MalMessageThreadScreen> createState() => _MalMessageThreadScreenState();
@@ -86,7 +99,7 @@ class _MalMessageThreadScreenState extends State<MalMessageThreadScreen> {
         _sending = false;
         _thread = thread.withMessage(MalThreadMessage(
           sender: _api.me ?? '',
-          html: const HtmlEscape().convert(messageBody(text)).replaceAll('\n', '<br>'),
+          html: bbcodeToHtml(messageBody(text)),
           isMine: true,
         ));
       });
@@ -199,71 +212,16 @@ class _MalMessageThreadScreenState extends State<MalMessageThreadScreen> {
             ),
           ),
         ),
-        if (thread.canReply) _ReplyBar(controller: _reply, sending: _sending, name: thread.counterpart, onSend: _send),
-      ],
-    );
-  }
-}
-
-class _ReplyBar extends StatelessWidget {
-  const _ReplyBar({required this.controller, required this.sending, required this.name, required this.onSend});
-
-  final TextEditingController controller;
-  final bool sending;
-  final String name;
-  final VoidCallback onSend;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
-    final s = S.of(context);
-    return Material(
-      color: scheme.surfaceContainer,
-      child: SafeArea(
-        top: false,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(12, 8, 8, 8),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: controller,
-                  enabled: !sending,
-                  minLines: 1,
-                  maxLines: 6,
-                  keyboardType: TextInputType.multiline,
-                  textCapitalization: TextCapitalization.sentences,
-                  style: theme.textTheme.bodyMedium?.copyWith(color: scheme.onSurface),
-                  decoration: InputDecoration(
-                    hintText: s.Pm_Reply_Hint(name),
-                    filled: true,
-                    fillColor: scheme.surfaceContainerHighest,
-                    isDense: true,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(20), borderSide: BorderSide.none),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 4),
-              ListenableBuilder(
-                listenable: controller,
-                builder: (context, _) => sending
-                    ? const Padding(
-                        padding: EdgeInsets.all(12),
-                        child: SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2)),
-                      )
-                    : IconButton.filled(
-                        tooltip: s.Pm_Send,
-                        onPressed: controller.text.trim().isEmpty ? null : onSend,
-                        icon: const Icon(Icons.send_rounded),
-                      ),
-              ),
-            ],
+        if (thread.canReply)
+          MalReplyComposer(
+            controller: _reply,
+            sending: _sending,
+            hint: s.Pm_Reply_Hint(thread.counterpart),
+            onSend: _send,
+            uploader: widget.uploader,
+            pickImage: widget.pickImage,
           ),
-        ),
-      ),
+      ],
     );
   }
 }
