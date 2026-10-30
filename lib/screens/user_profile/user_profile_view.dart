@@ -234,6 +234,7 @@ class _ProfileBodyState extends State<_ProfileBody> with SingleTickerProviderSta
       UserProfileTab.about => AboutSection(
           username: data.username,
           isSelf: widget.isSelf,
+          timezone: data.timezone,
           fromPage: data.about == null
               ? null
               : UserAboutHtml(about: data.about, modern: data.aboutModern),

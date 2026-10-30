@@ -24,6 +24,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// "Open in browser" in that page, and a missing context, fall back to Custom Tabs (tokens
 /// only). Desktop uses flutter_web_auth_2.
 class MalAuthV2 {
+  /// [httpClient] replaces the network for the token exchange (tests only).
+  MalAuthV2({http.Client? httpClient}) : _http = httpClient;
+
+  final http.Client? _http;
+
   final String clientId = Constants.malclientId;
   final String clientSecret = Constants.malClientSecret;
   final String redirectUri = Constants.malredirectUri;
@@ -47,7 +52,6 @@ class MalAuthV2 {
       return false;
     }
 
-    _hadTokens = UserMalV2.instance.accessToken != null;
     UserMalV2.instance.setStatus(AuthStatus.INPROGRESS);
     UserMalV2.instance.notifyAccountChange();
 
@@ -61,17 +65,16 @@ class MalAuthV2 {
     }
   }
 
-  /// Whether tokens existed when this sign in started (a reconnect from a signed-in app).
-  bool _hadTokens = false;
-
-  /// A sign in that did not finish leaves a signed-in account signed in.
+  /// A sign in that was cancelled or failed leaves the account as it was. A dead session
+  /// has no tokens ([BaseUser.markNeedsReLogin] drops them), so tokens mean the account is
+  /// still signed in and must not look disconnected; without tokens it is signed out.
+  /// Works for the deep link too, which can come back through another [MalAuthV2].
   void _endWithoutSignIn() {
-    UserMalV2.instance.setStatus(
-      _hadTokens && UserMalV2.instance.accessToken != null
-          ? AuthStatus.AUTHENTICATED
-          : AuthStatus.UNAUTHENTICATED,
+    final user = UserMalV2.instance;
+    user.setStatus(
+      user.accessToken != null ? AuthStatus.AUTHENTICATED : AuthStatus.UNAUTHENTICATED,
     );
-    UserMalV2.instance.notifyAccountChange();
+    user.notifyAccountChange();
   }
 
   /// Main OAuth sign-in flow
@@ -125,14 +128,12 @@ class MalAuthV2 {
         return await _exchangeCodeForToken(code, codeChallenge);
       } else {
         print('No code received from OAuth callback');
-        UserMalV2.instance.setStatus(AuthStatus.UNAUTHENTICATED);
-        UserMalV2.instance.notifyAccountChange();
+        _endWithoutSignIn();
         return false;
       }
     } catch (e) {
       print('OAuth error on desktop: $e');
-      UserMalV2.instance.setStatus(AuthStatus.UNAUTHENTICATED);
-      UserMalV2.instance.notifyAccountChange();
+      _endWithoutSignIn();
       return false;
     }
   }
@@ -211,8 +212,7 @@ class MalAuthV2 {
       return true;
     } catch (e) {
       print('Custom Tabs error: $e');
-      UserMalV2.instance.setStatus(AuthStatus.UNAUTHENTICATED);
-      UserMalV2.instance.notifyAccountChange();
+      _endWithoutSignIn();
       return false;
     }
   }
@@ -234,8 +234,7 @@ class MalAuthV2 {
       return false;
     } catch (e) {
       print('Fallback auth error: $e');
-      UserMalV2.instance.setStatus(AuthStatus.UNAUTHENTICATED);
-      UserMalV2.instance.notifyAccountChange();
+      _endWithoutSignIn();
       return false;
     }
   }
@@ -247,7 +246,7 @@ class MalAuthV2 {
     Map<String, String>? webSessionJar,
   }) async {
     try {
-      final response = await http.post(
+      final response = await (_http?.post ?? http.post)(
         Uri.parse(tokenEndPoint),
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
@@ -292,14 +291,12 @@ class MalAuthV2 {
         return true;
       } else {
         debugPrint('MAL token exchange failed: ${response.statusCode}');
-        UserMalV2.instance.setStatus(AuthStatus.UNAUTHENTICATED);
-        UserMalV2.instance.notifyAccountChange();
+        _endWithoutSignIn();
         return false;
       }
     } catch (e) {
       debugPrint('MAL token exchange error: ${e.runtimeType}');
-      UserMalV2.instance.setStatus(AuthStatus.UNAUTHENTICATED);
-      UserMalV2.instance.notifyAccountChange();
+      _endWithoutSignIn();
       return false;
     }
   }

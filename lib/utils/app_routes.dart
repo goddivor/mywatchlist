@@ -16,7 +16,6 @@ import 'package:mywatchlist/screens/manage_accounts_page.dart';
 import 'package:mywatchlist/screens/search/general_search_screen.dart';
 import 'package:mywatchlist/screens/search/search_filters.dart';
 import 'package:mywatchlist/screens/settings/about_settings.dart';
-import 'package:mywatchlist/screens/settings/accounts_settings.dart';
 import 'package:mywatchlist/screens/settings/anime_manga_settings.dart';
 import 'package:mywatchlist/screens/settings/backup_settings.dart';
 import 'package:mywatchlist/screens/settings/download_settings.dart';
@@ -73,7 +72,7 @@ abstract final class AppRoutes {
   static Widget settingsPageFor(SettingsSection section) {
     switch (section) {
       case SettingsSection.accounts:
-        return const AccountsSettingsPage();
+        return const ManageAccountsPage();
       case SettingsSection.theme:
         return const ThemeSettings();
       case SettingsSection.language:
