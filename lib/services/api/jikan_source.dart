@@ -198,7 +198,7 @@ class JikanSource extends ChangeNotifier {
     notifyListeners();
     bool up;
     try {
-      up = await (_probe ?? _defaultProbe)().timeout(probeTimeout, onTimeout: () => false);
+      up = await _askProbe().timeout(probeTimeout, onTimeout: () => false);
     } catch (e) {
       up = false;
     }
@@ -213,6 +213,10 @@ class JikanSource extends ChangeNotifier {
       _mute();
     }
   }
+
+  /// The probe's answer as a real `Future<bool>` (a probe typed `Future<Never>`, one that
+  /// always throws, would reject the `bool` timeout value).
+  Future<bool> _askProbe() async => await (_probe ?? _defaultProbe)();
 
   /// One light Jikan request: any answer below 500 (a 429 too) means Jikan
   /// is up.
