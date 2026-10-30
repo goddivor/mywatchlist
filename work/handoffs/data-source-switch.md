@@ -6,6 +6,10 @@
 - `tracker-contracts` (Contracts for tracker isolation: tracker-tagged notification payloads, per-tracker preference reads, global notification gate)
 
 ## Owns (may create or edit ONLY these)
+- `lib/pages/settings/settings_section.dart`
+- `lib/widgets/MAL/content/userupdate_widget.dart`
+- `lib/services/api/MAL/web/friends_updates_api.dart`
+- `lib/widgets/user/list/mal_user_list_adapter.dart`
 - `lib/services/api/jikan_source.dart`
 - `lib/services/api/Jikan/jikan_client.dart`
 - `lib/services/api/Jikan/jikan_fallbacks.dart`
@@ -28,6 +32,7 @@ Plus `PROJECT-STATE.md` (rewrite in place, within its cap) and `docs/DECISIONS.m
 - During the session, every Jikan-shaped request goes only to the active source (JikanClient keeps rewriting api.jikan.moe URLs). If the active source fails at the network level during the session, switch the active source to the other one sequentially (never both in flight for the same request), and if Jikan was the one failing, mute it. Endpoints Tenrai lacks (/users, /clubs, /watch, /userupdates, /random/users, forum topics) never call Jikan while it is muted: their callers go straight to their existing MyAnimeList-page / mwl-api fallbacks.
 - Settings (in the settings hub, an existing page that fits such as user prefs or a small 'Data sources' page reached from it): Jikan mute duration (1 week / 2 weeks / 1 month (default) / 3 months), the current source with the date until which Jikan is muted, and a 'Test again now' action that re-probes and updates. No explanatory captions (owner rule).
 - Also fix #361 in the same layer: a fallback that has no answer (mwl-api unreachable → null) must fail instead of returning an empty list, so JikanFallbacks.race never lets an empty fallback win (reviews, user updates, characters and the other JikanFallbacks routes). Reference #361 in the PR (Closes #361).
+- Gap the owner approved: with Jikan muted, data Tenrai lacks must still load from MAL pages read on the phone. The 'Everyone' tab of Recently Updated By reads MAL's stats page ?m=all (same parser as FriendsUpdatesApi, works without a session too) instead of Jikan userupdates / mwl-api; a member's list statistics (mal_user_list_adapter.dart, Jikan users/{name}/statistics) get a MAL-page fallback (profile page statistics block). Check every other Jikan-only caller (grep api.jikan.moe and JikanApi users/clubs/watch/userupdates) and list in the PR which ones have a MAL-page path and which do not.
 - Fakes only in tests (fake clients for Jikan/Tenrai, fake clock).
 
 ## Known bugs to fix in scope

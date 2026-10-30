@@ -4372,6 +4372,10 @@
         "tracker-contracts"
       ],
       "owns": [
+        "lib/pages/settings/settings_section.dart",
+        "lib/widgets/MAL/content/userupdate_widget.dart",
+        "lib/services/api/MAL/web/friends_updates_api.dart",
+        "lib/widgets/user/list/mal_user_list_adapter.dart",
         "lib/services/api/jikan_source.dart",
         "lib/services/api/Jikan/jikan_client.dart",
         "lib/services/api/Jikan/jikan_fallbacks.dart",
