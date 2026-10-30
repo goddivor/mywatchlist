@@ -1223,6 +1223,13 @@ const UNITS = [
     dod: ["Tests: a new message raises one notification in the mal_messages channel with the sender; reading the thread cancels it; foreground poll interval; works with the airing switch off."],
   },
   {
+    id: "mal-graph-local", title: "MAL relation graph built in the app (no backend needed)", kind: "unit", priority: "P0", group: "trackers", model: "opus", ui: true,
+    needs: ["mal-hub-followups"],
+    owns: ["lib/widgets/graph/**", "lib/services/api/MAL/anime_graph_builder.dart", "lib/l10n/units/mal-graph-local/**", "test/units/mal-graph-local/**"],
+    goal: ["Owner report 2026-10-30: the MAL anime relation graph never works. Cause (checked by the orchestrator): AnimeGraphScreen loads it from the self-hosted mwl-rust-api (GET {API_URL}/anime/{id}/related with API_SECRET) and API_URL is empty in assets/.env, so the request is never sent and the screen fails. Build the graph inside the app instead, with the same algorithm as mwl-rust-api/src/anime_service.rs (get_related_anime_with_graph): start from the title, MAL API v2 /anime/{id}?fields=related_anime,... (MalApi, the app's client id / user token), follow valid relation types (the root also includes 'other' relations, the others do not, as valid_relation does), BFS with 5 requests at a time, skip visited nodes, produce the same nodes/edges JSON shape AnimeGraphData.fromJson reads. Bound it (e.g. 120 nodes, stop politely on 429 with what is loaded), cache per title (session + disk, a few days), show progress while it grows. Keep the Rust API as an optional first source when API_URL is set and answers; otherwise the local builder.", "Fakes only in tests (saved MAL related_anime answers)."],
+    dod: ["Tests on saved MAL answers: graph nodes/edges match the Rust algorithm (root other relations, no others after), bounds and 429 stop, cache; the screen loads without API_URL."],
+  },
+  {
     id: "explore-polish", title: "Explore: DailyAL images on category and genre cards, explicit genres, recommendations/stacks fallbacks, favourites badges", kind: "unit", priority: "P1", group: "discovery", model: "opus", ui: true,
     needs: ["search-sources", "explore-seasonal", "home-wiring", "profile-tabs"],
     owns: ["lib/services/api/MAL/scrapper/html_parsers.dart", "test/units/explore-crash/**", "lib/pages/MAL/mal_explore_page.dart", "lib/screens/explore/**", "assets/images/explore/**", "pubspec.yaml", "lib/cache/top_characters.dart"],

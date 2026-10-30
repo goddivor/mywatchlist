@@ -176,6 +176,7 @@
         "kitsu-finish",
         "anilist-polish",
         "anilist-polish-2",
+        "mal-graph-local",
         "tracker-wiring"
       ]
     },
@@ -4297,6 +4298,32 @@
         "test/units/mal-pm-chat-notifications/**"
       ],
       "group": "user",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "⬜ todo"
+    },
+    {
+      "id": "mal-graph-local",
+      "title": "MAL relation graph built in the app (no backend needed)",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P0",
+      "needs": [
+        "mal-hub-followups"
+      ],
+      "owns": [
+        "lib/widgets/graph/**",
+        "lib/services/api/MAL/anime_graph_builder.dart",
+        "lib/l10n/units/mal-graph-local/**",
+        "test/units/mal-graph-local/**",
+        "test/units/mal-graph-local/**"
+      ],
+      "group": "trackers",
       "dropped": null,
       "skills": [],
       "states": [],
