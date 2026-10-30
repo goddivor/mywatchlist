@@ -1,0 +1,83 @@
+{
+  "@@locale": "fr_FR",
+  "Tc_Channel_Watching": "{tracker} · Nouveaux épisodes (« En cours »)",
+  "@Tc_Channel_Watching": {
+    "placeholders": {
+      "tracker": {
+        "type": "String"
+      }
+    }
+  },
+  "Tc_Channel_Watching_Desc": "Nouveaux épisodes des animes que vous regardez sur {tracker}",
+  "@Tc_Channel_Watching_Desc": {
+    "placeholders": {
+      "tracker": {
+        "type": "String"
+      }
+    }
+  },
+  "Tc_Channel_Plan": "{tracker} · Début de diffusion (« À regarder »)",
+  "@Tc_Channel_Plan": {
+    "placeholders": {
+      "tracker": {
+        "type": "String"
+      }
+    }
+  },
+  "Tc_Channel_Plan_Desc": "Animes de votre liste « À regarder » sur {tracker} dont la diffusion commence",
+  "@Tc_Channel_Plan_Desc": {
+    "placeholders": {
+      "tracker": {
+        "type": "String"
+      }
+    }
+  },
+  "Tc_Channel_Inbox": "{tracker} · Notifications",
+  "@Tc_Channel_Inbox": {
+    "placeholders": {
+      "tracker": {
+        "type": "String"
+      }
+    }
+  },
+  "Tc_Channel_Inbox_Desc": "Vos notifications {tracker}",
+  "@Tc_Channel_Inbox_Desc": {
+    "placeholders": {
+      "tracker": {
+        "type": "String"
+      }
+    }
+  },
+  "Tc_Channel_Friends": "{tracker} · Activité des amis",
+  "@Tc_Channel_Friends": {
+    "placeholders": {
+      "tracker": {
+        "type": "String"
+      }
+    }
+  },
+  "Tc_Channel_Friends_Desc": "Ce que vos amis {tracker} ajoutent et mettent à jour",
+  "@Tc_Channel_Friends_Desc": {
+    "placeholders": {
+      "tracker": {
+        "type": "String"
+      }
+    }
+  },
+  "Tc_Channel_Messages": "{tracker} · Messages",
+  "@Tc_Channel_Messages": {
+    "placeholders": {
+      "tracker": {
+        "type": "String"
+      }
+    }
+  },
+  "Tc_Channel_Messages_Desc": "Nouveaux messages privés sur {tracker}",
+  "@Tc_Channel_Messages_Desc": {
+    "placeholders": {
+      "tracker": {
+        "type": "String"
+      }
+    }
+  }
+}
