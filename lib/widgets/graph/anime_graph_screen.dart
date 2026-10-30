@@ -3,23 +3,31 @@ import 'package:flutter/rendering.dart';
 import 'package:graphview/GraphView.dart';
 import 'package:mywatchlist/constants/constants.dart' show showToast;
 import 'package:mywatchlist/generated/l10n.dart';
-import 'package:mywatchlist/services/api/mwl_api.dart';
+import 'package:mywatchlist/services/api/MAL/anime_graph_builder.dart';
 import 'package:mywatchlist/utils/app_routes.dart';
 import 'package:mywatchlist/widgets/MAL/home/animegridcard.dart'
     show NodeStatusValue;
 import 'package:mywatchlist/user/list_cache/list_status_cache.dart';
+import 'package:mywatchlist/widgets/common/app_colors.dart';
 import 'package:mywatchlist/widgets/common/app_image.dart';
 import 'package:mywatchlist/widgets/common/select/select.dart';
 import 'package:mywatchlist/widgets/graph/anime_graph_data.dart';
 import 'package:mywatchlist/widgets/graph/anime_graph_node.dart';
 import 'package:mywatchlist/widgets/graph/graph_share.dart';
 
-/// Loads the relation graph of an anime. Replaced in tests.
+/// Loads the relation graph of an anime: cached copy, mwl-rust-api when `API_URL` is set and
+/// answers, else built in the app from the MAL API ([AnimeGraphRepository]). Replaced in tests.
 @visibleForTesting
 Future<AnimeGraphData> Function(int id) animeGraphLoader = (id) async {
-  final json = await MwlApi.i.getAnimeGraph(id);
-  return AnimeGraphData.fromJson(json);
+  final result = await AnimeGraphRepository.instance.load(id);
+  return AnimeGraphData.fromJson(result.json).withCompleteness(
+      complete: result.complete, rateLimited: result.rateLimited);
 };
+
+/// Titles found so far while the graph of an anime is built. Replaced in tests.
+@visibleForTesting
+ValueListenable<int> Function(int id) animeGraphProgress =
+    (id) => AnimeGraphRepository.instance.progressOf(id);
 
 /// Graphs fetched during this session, so reopening one is instant.
 final Map<int, AnimeGraphData> _sessionCache = {};
@@ -28,7 +36,7 @@ final Map<int, AnimeGraphData> _sessionCache = {};
 @visibleForTesting
 void clearAnimeGraphCache() => _sessionCache.clear();
 
-enum _LoadState { loading, ready, empty, failed }
+enum _LoadState { loading, ready, empty, failed, rateLimited }
 
 /// The relation graph of an anime: every title of its franchise as a node, relations as arrows.
 ///
@@ -58,7 +66,9 @@ class _AnimeGraphScreenState extends State<AnimeGraphScreen>
     with SingleTickerProviderStateMixin {
   static const double _focusScale = 0.8;
   static const double _pad = 40;
+  /// The share strip stays dark in every theme: the logo asset is drawn on black.
   static const Color _footerColor = Color(0xFF151515);
+  static const Color _footerTextColor = Color(0xFFFFFFFF);
 
   final TransformationController _transform = TransformationController();
   final GlobalKey _captureKey = GlobalKey();
@@ -73,7 +83,7 @@ class _AnimeGraphScreenState extends State<AnimeGraphScreen>
 
   SugiyamaAlgorithm? _algorithm;
   Widget? _graphView;
-  Color? _builtForColor;
+  ColorScheme? _builtForScheme;
   Size _viewport = Size.zero;
   bool _sharing = false;
 
@@ -102,8 +112,12 @@ class _AnimeGraphScreenState extends State<AnimeGraphScreen>
     try {
       final data = await animeGraphLoader(widget.id);
       if (!mounted) return;
-      if (!data.isEmpty) _sessionCache[widget.id] = data;
+      if (!data.isEmpty && data.complete) _sessionCache[widget.id] = data;
       _show(data);
+    } on AnimeGraphUnavailable catch (e) {
+      if (!mounted) return;
+      setState(() =>
+          _state = e.rateLimited ? _LoadState.rateLimited : _LoadState.failed);
     } catch (e) {
       if (!mounted) return;
       setState(() => _state = _LoadState.failed);
@@ -121,16 +135,17 @@ class _AnimeGraphScreenState extends State<AnimeGraphScreen>
 
   // ---------------------------------------------------------------- graph
 
-  Color _edgeColor(GraphRelation relation, ColorScheme scheme) =>
+  static Color _edgeColor(
+          GraphRelation relation, ColorScheme scheme, AppColors colors) =>
       switch (relation) {
-        GraphRelation.sequel => Colors.green,
-        GraphRelation.prequel => Colors.red,
+        GraphRelation.sequel => colors.success.color,
+        GraphRelation.prequel => colors.danger.color,
         _ => scheme.primary,
       };
 
   /// Builds the graph and its view once; later frames reuse the same widget instance, so a
   /// selection or a status change never re-runs the layout.
-  Widget _buildGraphView(ColorScheme scheme) {
+  Widget _buildGraphView(ColorScheme scheme, AppColors colors) {
     final graph = Graph()..isTree = false;
     for (final edge in _data.orderedEdges(_order)) {
       final long = edge.relation == GraphRelation.sequel ||
@@ -139,7 +154,7 @@ class _AnimeGraphScreenState extends State<AnimeGraphScreen>
         Node.Id(edge.source),
         Node.Id(edge.target),
         paint: Paint()
-          ..color = _edgeColor(edge.relation, scheme)
+          ..color = _edgeColor(edge.relation, scheme, colors)
           ..strokeWidth = long ? 3 : 2
           ..style = PaintingStyle.stroke,
       );
@@ -149,7 +164,7 @@ class _AnimeGraphScreenState extends State<AnimeGraphScreen>
       ..nodeSeparation = 40
       ..levelSeparation = 90);
     _algorithm = algorithm;
-    _builtForColor = scheme.primary;
+    _builtForScheme = scheme;
     return GraphView(
       graph: graph,
       algorithm: algorithm,
@@ -260,6 +275,7 @@ class _AnimeGraphScreenState extends State<AnimeGraphScreen>
 
   void _showLegend() {
     final scheme = Theme.of(context).colorScheme;
+    final colors = AppColors.of(context);
     showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
@@ -273,8 +289,12 @@ class _AnimeGraphScreenState extends State<AnimeGraphScreen>
             Text(S.current.Rg_Legend,
                 style: Theme.of(sheetContext).textTheme.titleLarge),
             const SizedBox(height: 16),
-            _LegendRow(color: Colors.green, label: S.current.Rg_Legend_Sequel),
-            _LegendRow(color: Colors.red, label: S.current.Rg_Legend_Prequel),
+            _LegendRow(
+                color: colors.success.color,
+                label: S.current.Rg_Legend_Sequel),
+            _LegendRow(
+                color: colors.danger.color,
+                label: S.current.Rg_Legend_Prequel),
             _LegendRow(color: scheme.primary, label: S.current.Rg_Legend_Other),
             const SizedBox(height: 12),
             Text(
@@ -303,7 +323,7 @@ class _AnimeGraphScreenState extends State<AnimeGraphScreen>
       fileStem: stem,
       background: background,
       footerColor: _footerColor,
-      footerTextColor: Colors.white,
+      footerTextColor: _footerTextColor,
       brand: brand,
       logoAsset: 'assets/images/mwl-black-bg.png',
     );
@@ -365,13 +385,21 @@ class _AnimeGraphScreenState extends State<AnimeGraphScreen>
         ],
       ),
       body: switch (_state) {
-        _LoadState.loading =>
-          _Message(loading: true, text: S.current.Rg_Loading),
+        _LoadState.loading => _Message(
+            loading: true,
+            text: S.current.Rg_Loading,
+            progress: animeGraphProgress(widget.id),
+          ),
         _LoadState.empty =>
           _Message(icon: Icons.hub_outlined, text: S.current.Rg_Unavailable),
         _LoadState.failed => _Message(
             icon: Icons.cloud_off_outlined,
             text: S.current.Rg_Unavailable_Offline,
+            onRetry: _load,
+          ),
+        _LoadState.rateLimited => _Message(
+            icon: Icons.hourglass_empty,
+            text: S.current.Mgl_Rate_Limited_Root,
             onRetry: _load,
           ),
         _LoadState.ready => _graphBody(context),
@@ -391,11 +419,11 @@ class _AnimeGraphScreenState extends State<AnimeGraphScreen>
 
   Widget _graphBody(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    if (_graphView == null || _builtForColor != scheme.primary) {
-      _graphView = _buildGraphView(scheme);
+    if (_graphView == null || _builtForScheme != scheme) {
+      _graphView = _buildGraphView(scheme, AppColors.of(context));
       _focusAfterLayout(animate: false);
     }
-    return LayoutBuilder(
+    final graph = LayoutBuilder(
       builder: (context, constraints) {
         _viewport = constraints.biggest;
         return InteractiveViewer(
@@ -412,6 +440,60 @@ class _AnimeGraphScreenState extends State<AnimeGraphScreen>
         );
       },
     );
+    if (_data.complete) return graph;
+    return Column(
+      children: [
+        _PartialNotice(
+          text: _data.rateLimited
+              ? S.current.Mgl_Rate_Limited
+              : S.current.Mgl_Bounded(_data.nodes.length),
+          onRetry: _data.rateLimited ? _load : null,
+        ),
+        Expanded(child: graph),
+      ],
+    );
+  }
+}
+
+/// A strip above a graph that was cut short, with Retry when waiting may help.
+class _PartialNotice extends StatelessWidget {
+  final String text;
+  final VoidCallback? onRetry;
+
+  const _PartialNotice({required this.text, this.onRetry});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final warning = AppColors.of(context).warning;
+    return Material(
+      color: warning.container,
+      child: SafeArea(
+        top: false,
+        bottom: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
+          child: Row(
+            children: [
+              Icon(Icons.info_outline, size: 20, color: warning.onContainer),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(text,
+                    style: theme.textTheme.bodyMedium
+                        ?.copyWith(color: warning.onContainer)),
+              ),
+              if (onRetry != null)
+                TextButton(
+                  onPressed: onRetry,
+                  style: TextButton.styleFrom(
+                      foregroundColor: warning.onContainer),
+                  child: Text(S.current.Rg_Retry),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
 
@@ -421,8 +503,15 @@ class _Message extends StatelessWidget {
   final String text;
   final VoidCallback? onRetry;
 
+  /// Titles found so far, shown under the spinner while the graph grows.
+  final ValueListenable<int>? progress;
+
   const _Message(
-      {this.icon, this.loading = false, required this.text, this.onRetry});
+      {this.icon,
+      this.loading = false,
+      required this.text,
+      this.onRetry,
+      this.progress});
 
   @override
   Widget build(BuildContext context) {
@@ -443,6 +532,20 @@ class _Message extends StatelessWidget {
             const SizedBox(height: 16),
             Text(text,
                 textAlign: TextAlign.center, style: theme.textTheme.bodyLarge),
+            if (progress != null)
+              ValueListenableBuilder<int>(
+                valueListenable: progress!,
+                builder: (context, count, _) => count == 0
+                    ? const SizedBox(height: 24)
+                    : Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: Text(
+                          S.current.Rg_Titles(count),
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant),
+                        ),
+                      ),
+              ),
             if (onRetry != null) ...[
               const SizedBox(height: 16),
               FilledButton.tonal(
@@ -542,7 +645,7 @@ class _NodeSheet extends StatelessWidget {
                           _Pill(
                               icon: Icons.star_rounded,
                               label: node.mean!.toStringAsFixed(2),
-                              color: Colors.amber),
+                              color: AppColors.of(context).score.color),
                         _Pill(
                           icon: status == null
                               ? Icons.add_circle_outline
