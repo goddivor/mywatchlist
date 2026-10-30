@@ -1,0 +1,6 @@
+{
+  "@@locale": "fr_FR",
+  "Mgl_Rate_Limited": "MyAnimeList limite les requêtes : le graphe montre ce qui a déjà été chargé.",
+  "Mgl_Rate_Limited_Root": "MyAnimeList limite les requêtes. Patientez une minute, puis réessayez.",
+  "Mgl_Bounded": "Grande franchise : le graphe montre ses {count} premiers titres."
+}

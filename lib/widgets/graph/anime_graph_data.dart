@@ -137,7 +137,20 @@ class AnimeGraphData {
   final Map<int, GraphNodeData> nodes;
   final List<GraphEdgeData> edges;
 
-  const AnimeGraphData(this.nodes, this.edges);
+  /// False when the graph was cut short (node bound or MAL rate limit): shown, never cached.
+  final bool complete;
+
+  /// The graph was cut short because MyAnimeList answered 429.
+  final bool rateLimited;
+
+  const AnimeGraphData(this.nodes, this.edges,
+      {this.complete = true, this.rateLimited = false});
+
+  /// The same graph marked as cut short or not.
+  AnimeGraphData withCompleteness(
+          {required bool complete, bool rateLimited = false}) =>
+      AnimeGraphData(nodes, edges,
+          complete: complete, rateLimited: rateLimited);
 
   static const AnimeGraphData empty = AnimeGraphData({}, []);
 
