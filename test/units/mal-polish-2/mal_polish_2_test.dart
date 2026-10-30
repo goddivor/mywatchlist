@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -35,6 +36,7 @@ void main() {
     final user = UserMalV2.instance;
 
     setUp(() {
+      dotenv.testLoad(fileInput: 'MAL_CLIENT_ID=cid\nMAL_CLIENT_SECRET=sec');
       SharedPreferences.setMockInitialValues({'mal_code_challenge': 'verifier'});
       user.authResponse = AuthResponse(accessToken: 'old', refreshToken: 'r');
       user.status = AuthStatus.AUTHENTICATED;
