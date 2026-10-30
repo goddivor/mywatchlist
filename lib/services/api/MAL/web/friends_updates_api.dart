@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:html/parser.dart' as html;
-import 'package:mwl_commons/mwl_commons.dart' show ContentUpdateHtml, PageParsers;
+import 'package:mwl_commons/mwl_commons.dart' show ContentUpdateHtml, ContentUpdatesHtml, PageParsers;
 import 'package:mywatchlist/services/api/MAL/web/mal_web_client.dart';
 
 /// Which members of the stats page's "Recently Updated By" table are listed.
@@ -42,6 +42,19 @@ FriendsUpdates parseFriendsUpdates(String raw, {DateTime? now}) {
   return FriendsUpdates(updates: page.updates, signedIn: signedIn);
 }
 
+/// Every member's rows of a stats page (`?m=all`), the header row skipped as in
+/// [parseFriendsUpdates]; [ContentUpdatesHtml.hasNextPage] follows MAL's "Next Page" link.
+/// Never throws.
+ContentUpdatesHtml parseAllUpdates(String raw, {DateTime? now}) {
+  final doc = html.parse(raw);
+  for (final row in doc.querySelectorAll('table.table-recently-updated tr')) {
+    if (row.querySelector('td.fw-b') != null) row.remove();
+  }
+  return PageParsers.parseRecentUpdates(doc, now: now);
+}
+
+ContentUpdatesHtml _parseAllUpdates((String, DateTime?) input) => parseAllUpdates(input.$1, now: input.$2);
+
 /// Friends' list updates of a title (anime or manga), `GET /{category}/{id}/_/stats` with
 /// the website session. Read only: nothing is written to MAL.
 class FriendsUpdatesApi {
@@ -67,5 +80,22 @@ class FriendsUpdatesApi {
       throw MalWebActionFailed(statusCode: response.statusCode);
     }
     return parseFriendsUpdates(response.body, now: now);
+  }
+
+  /// Rows per page of MAL's "Recently Updated By" table.
+  static const int allPageSize = 75;
+
+  /// Every member's latest updates of a title, page [page] (1 based, [allPageSize] rows):
+  /// `GET /{category}/{id}/_/stats?m=all[&show=N]`. Works without a session (its cookies
+  /// are sent when there is one); the page is parsed off the UI isolate. Throws
+  /// [MalWebActionFailed] when MAL answers another status than 200.
+  Future<ContentUpdatesHtml> fetchAll(String category, int id, {int page = 1, DateTime? now}) async {
+    final kind = category == 'manga' ? 'manga' : 'anime';
+    final show = page > 1 ? '&show=${(page - 1) * allPageSize}' : '';
+    final response = await _web.get('/$kind/$id/_/stats?m=all$show');
+    if (response.statusCode != 200) {
+      throw MalWebActionFailed(statusCode: response.statusCode);
+    }
+    return compute(_parseAllUpdates, (response.body, now));
   }
 }

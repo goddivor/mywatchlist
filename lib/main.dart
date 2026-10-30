@@ -14,6 +14,7 @@ import 'package:mywatchlist/screens/open_screen.dart';
 import 'package:flutter_phoenix/flutter_phoenix.dart';
 import 'package:mywatchlist/services/api/Jikan/jikan_api.dart';
 import 'package:mywatchlist/services/api/MAL/mal_api.dart';
+import 'package:mywatchlist/services/api/jikan_source.dart';
 import 'package:mywatchlist/services/api/MAL/scrapper/mal_scrapper.dart';
 import 'package:mywatchlist/services/auth/mal_auth_v2.dart';
 import 'package:mywatchlist/services/auth/anilist_auth_v2.dart';
@@ -70,6 +71,10 @@ void main() async {
 
   // Load shared preferences
   final sharedPreferences = await SharedPreferences.getInstance();
+
+  // One data source for Jikan-shaped requests (Jikan or Tenrai, never both): the saved mute
+  // or a light Jikan probe decides, without blocking the launch; requests wait for it (5 s max).
+  unawaited(JikanSource.instance.start(sharedPreferences));
 
   // DailyAL preferences (the contract read by every feature): legacy keys moved first, then
   // the bloc starts from the saved values so the first frame already uses them.

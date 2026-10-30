@@ -15,6 +15,7 @@ import 'package:mywatchlist/screens/mal_web/messages_screen.dart';
 import 'package:mywatchlist/screens/manage_accounts_page.dart';
 import 'package:mywatchlist/screens/search/general_search_screen.dart';
 import 'package:mywatchlist/screens/search/search_filters.dart';
+import 'package:mywatchlist/screens/settings/data_source_settings.dart';
 import 'package:mywatchlist/screens/settings/about_settings.dart';
 import 'package:mywatchlist/screens/settings/anime_manga_settings.dart';
 import 'package:mywatchlist/screens/settings/backup_settings.dart';
@@ -95,6 +96,8 @@ abstract final class AppRoutes {
         return const BackupRestoreSettingsPage();
       case SettingsSection.storage:
         return const StorageSettingsPage();
+      case SettingsSection.dataSources:
+        return const DataSourceSettingsPage();
       case SettingsSection.about:
         return const AboutSettingsPage();
     }

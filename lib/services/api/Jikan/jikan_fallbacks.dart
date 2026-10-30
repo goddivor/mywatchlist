@@ -19,6 +19,7 @@ import 'package:mywatchlist/services/api/Jikan/jikan_anime_news.dart' show Anime
 import 'package:mywatchlist/services/api/Jikan/jikan_client.dart';
 import 'package:mywatchlist/services/api/Jikan/mal_news_page.dart';
 import 'package:mywatchlist/services/api/MAL/mal_forum_api.dart';
+import 'package:mywatchlist/services/api/MAL/web/friends_updates_api.dart';
 import 'package:mywatchlist/services/api/MAL/models/forum/forum_models.dart' show ForumTopicsData;
 import 'package:mywatchlist/services/api/jikan_source.dart' show JikanSource;
 import 'package:mywatchlist/services/api/mwl_api.dart';
@@ -70,24 +71,30 @@ class JikanFallbacks {
   static Duration budget = const Duration(seconds: 12);
 
   /// Jikan against a fallback source. The [jikan] leg goes through
-  /// [JikanClient], which hands the request to Tenrai (same schema) when Jikan
-  /// is down or slower than [JikanSource.hedgeAfter] (2.5 s, before the 3 s
-  /// [headStart]), so Tenrai is the fast second source and the fallback
-  /// (usually a MyAnimeList page) the third. Jikan runs first; the fallback starts
-  /// after [headStart], or at once when Jikan fails or while the Jikan client
-  /// skips requests after a timeout ([JikanClient.isUnreachable], then Jikan
-  /// is not asked at all; with failover that means Tenrai failed too). The first answer wins; when both fail, or nothing
-  /// answered within [budget], it throws [NoSourceAnswered].
+  /// [JikanClient], which sends it to the one active data source (Jikan or
+  /// Tenrai, see [JikanSource]); the fallback is usually a MyAnimeList page.
+  /// The fallback starts after [headStart], or at once when the Jikan leg
+  /// fails (an endpoint Tenrai lacks fails at once while Jikan is muted) or
+  /// while the client skips requests ([JikanClient.isUnreachable], then the
+  /// Jikan leg is not asked at all). The first answer wins, except that an
+  /// EMPTY fallback answer ([isEmpty]; by default null, an empty list or map)
+  /// is held while the Jikan leg is still running: it is returned only when
+  /// that leg fails or the [budget] ends, so a fallback with nothing to say
+  /// never hides Jikan's data (#361). When both fail, or nothing answered
+  /// within [budget], it throws [NoSourceAnswered].
   static Future<RaceResult<T>> race<T>({
     required Future<T> Function() jikan,
     required Future<T> Function() fallback,
+    bool Function(T value)? isEmpty,
   }) {
     final completer = Completer<RaceResult<T>>();
+    final empty = isEmpty ?? _looksEmpty;
     Object? jikanError;
     Object? fallbackError;
     var jikanDone = false;
     var fallbackStarted = false;
     var fallbackDone = false;
+    RaceResult<T>? heldEmpty;
     Timer? headTimer;
     Timer? budgetTimer;
 
@@ -103,7 +110,11 @@ class JikanFallbacks {
     }
 
     void failIfBothDone() {
-      if (jikanDone && fallbackDone) {
+      if (!jikanDone || !fallbackDone) return;
+      final held = heldEmpty;
+      if (held != null) {
+        finish(held);
+      } else {
         finish(null, NoSourceAnswered(jikanError: jikanError, fallbackError: fallbackError));
       }
     }
@@ -113,7 +124,15 @@ class JikanFallbacks {
       fallbackStarted = true;
       headTimer?.cancel();
       Future<T>.sync(fallback).then(
-        (value) => finish(RaceResult(value, RaceWinner.fallback)),
+        (value) {
+          final result = RaceResult(value, RaceWinner.fallback);
+          if (jikanDone || !empty(value)) {
+            finish(result);
+            return;
+          }
+          heldEmpty = result;
+          fallbackDone = true;
+        },
         onError: (Object e) {
           fallbackDone = true;
           fallbackError = e;
@@ -122,7 +141,10 @@ class JikanFallbacks {
       );
     }
 
-    budgetTimer = Timer(budget, () => finish(null, const NoSourceAnswered(timedOut: true)));
+    budgetTimer = Timer(budget, () {
+      final held = heldEmpty;
+      finish(held, held == null ? const NoSourceAnswered(timedOut: true) : null);
+    });
     if (JikanClient.instance.isUnreachable) {
       jikanDone = true;
       jikanError = 'Jikan skipped (unreachable)';
@@ -145,6 +167,11 @@ class JikanFallbacks {
     return completer.future;
   }
 
+  static bool _looksEmpty(Object? value) =>
+      value == null ||
+      (value is Iterable && value.isEmpty) ||
+      (value is Map && value.isEmpty);
+
   /// Reviews of one title from the mwl-api `reviews` route (MAL review
   /// pages parsed by the backend), most voted first.
   static Future<List<AnimeReview>> Function(int id, String category, int page)
@@ -166,17 +193,17 @@ class JikanFallbacks {
       MalNewsPage.fetch;
 
   /// Members' latest list updates of one title from the "Recently Updated
-  /// By" table of MAL's stats page (mwl-api `content/updates`, parsed off the
-  /// UI isolate). Tenrai has no `userupdates`, so this is the only source
-  /// while Jikan is down.
+  /// By" table of MAL's stats page (`?m=all`), read and parsed on the phone
+  /// (off the UI isolate). Tenrai has no `userupdates`, so this is the only
+  /// source while Jikan is muted.
   static Future<updates.AnimeUserUpdatesResponse> Function(
-      int id, String category, int page) userUpdates = _mwlUserUpdates;
+      int id, String category, int page) userUpdates = _malUserUpdates;
 
   /// Restores the real sources and timings (tests).
   @visibleForTesting
   static void reset() {
     news = MalNewsPage.fetch;
-    userUpdates = _mwlUserUpdates;
+    userUpdates = _malUserUpdates;
     reviews = _mwlReviews;
     forum = _malForum;
     characters = _mwlCharacters;
@@ -192,16 +219,20 @@ class JikanFallbacks {
 
   static Future<List<AnimeReview>> _mwlReviews(
       int id, String category, int page) async {
+    // No answer from the backend fails (#361): an empty list would win the race.
     final list = await MwlApi.i
-        .getReviewList(id: id, category: category, page: page)
+        .requireReviewList(id: id, category: category, page: page)
         .timeout(timeout);
     return list.map(reviewFromHtml).toList();
   }
 
-  static Future<updates.AnimeUserUpdatesResponse> _mwlUserUpdates(
+  /// Page [page] of MAL's "Recently Updated By" table (all members), read on
+  /// the phone (`?m=all`, no session needed).
+  static Future<updates.AnimeUserUpdatesResponse> _malUserUpdates(
       int id, String category, int page) async {
-    final html = await MwlApi.i
-        .getContentUpdates(id, category, page: page, timeout: timeout);
+    final html = await FriendsUpdatesApi()
+        .fetchAll(category, id, page: page)
+        .timeout(timeout);
     return userUpdatesFromHtml(html);
   }
 
@@ -233,8 +264,13 @@ class JikanFallbacks {
   }
 
   static Future<ContentCharactersHtml?> _mwlCharacters(
-          int id, String category) =>
-      MwlApi.i.getContentCharacters(id, category: category).timeout(timeout);
+      int id, String category) async {
+    final page =
+        await MwlApi.i.getContentCharacters(id, category: category).timeout(timeout);
+    // No answer from the backend fails (#361) instead of answering "nothing".
+    if (page == null) throw StateError('mwl-api characters page unavailable');
+    return page;
+  }
 }
 
 class _Memo<T> {

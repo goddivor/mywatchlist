@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mywatchlist/generated/l10n.dart';
+import 'package:mywatchlist/services/api/jikan_source.dart';
 import 'package:mywatchlist/user/user_preference.dart';
 import 'package:mywatchlist/utils/app_routes.dart';
 
@@ -33,7 +34,12 @@ const List<(String Function(), List<SettingsSection>)> _groups = [
   ),
   (
     _dataTitle,
-    [SettingsSection.downloads, SettingsSection.backup, SettingsSection.storage],
+    [
+      SettingsSection.downloads,
+      SettingsSection.backup,
+      SettingsSection.storage,
+      SettingsSection.dataSources,
+    ],
   ),
   (_infoTitle, [SettingsSection.about]),
 ];
@@ -87,13 +93,14 @@ class _SettingsPageState extends State<SettingsPage> {
                       ),
                     ),
                   for (final section in sections)
-                    _SettingsTile(
-                      icon: section.icon,
-                      title: section.title,
-                      subtitle: section.description,
-                      onTap: () =>
-                          AppRoutes.openSettingsPage(context, section),
-                    ),
+                    if (section == SettingsSection.dataSources)
+                      // The line shows the live source and the mute date.
+                      ListenableBuilder(
+                        listenable: JikanSource.instance,
+                        builder: (context, _) => _sectionTile(context, section),
+                      )
+                    else
+                      _sectionTile(context, section),
                 ],
               ),
             ),
@@ -102,7 +109,7 @@ class _SettingsPageState extends State<SettingsPage> {
             child: Padding(
               padding: const EdgeInsets.fromLTRB(16, 24, 16, 40),
               child: Text(
-                '${S.current.Made_With_Flutter} Flutter',
+                S.current.Dss_Made_With_Flutter,
                 textAlign: TextAlign.center,
                 style: theme.textTheme.bodySmall
                     ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
@@ -114,6 +121,13 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 }
+
+Widget _sectionTile(BuildContext context, SettingsSection section) => _SettingsTile(
+      icon: section.icon,
+      title: section.title,
+      subtitle: section.description,
+      onTap: () => AppRoutes.openSettingsPage(context, section),
+    );
 
 class _SectionHeader extends StatelessWidget {
   final String title;

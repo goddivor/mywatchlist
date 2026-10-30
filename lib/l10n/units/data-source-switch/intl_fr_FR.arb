@@ -1,0 +1,16 @@
+{
+  "@@locale": "fr_FR",
+  "Dss_Title": "Sources de données",
+  "Dss_Group": "Données anime et manga",
+  "Dss_Current": "Source utilisée",
+  "Dss_Muted_Until": "Jikan en pause jusqu’au {date}",
+  "Dss_Mute_Duration": "Mettre Jikan en pause pendant",
+  "Dss_One_Week": "1 semaine",
+  "Dss_Two_Weeks": "2 semaines",
+  "Dss_One_Month": "1 mois",
+  "Dss_Three_Months": "3 mois",
+  "Dss_Test_Again": "Tester Jikan à nouveau",
+  "Dss_Jikan_Up": "Jikan répond : il redevient la source utilisée",
+  "Dss_Jikan_Down": "Jikan ne répond pas : Tenrai est utilisé",
+  "Dss_Made_With_Flutter": "Fabriqué avec Flutter"
+}
