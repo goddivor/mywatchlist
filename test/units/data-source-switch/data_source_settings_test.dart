@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mywatchlist/generated/l10n.dart';
-import 'package:mywatchlist/pages/settings/settings_section.dart';
 import 'package:mywatchlist/screens/settings/data_source_settings.dart';
 import 'package:mywatchlist/services/api/jikan_source.dart';
 import 'package:mywatchlist/utils/app_routes.dart';

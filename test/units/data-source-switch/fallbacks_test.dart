@@ -134,7 +134,7 @@ void main() {
       expect(page.hasNextPage, isTrue);
       final jikanShape = userUpdatesFromHtml(page);
       expect(jikanShape.data.first.user?.username, 'GBlaken');
-      expect(jikanShape.pagination?.hasNextPage, isTrue);
+      expect(jikanShape.pagination.hasNextPage, isTrue);
     });
 
     test('fetchAll reads ?m=all without a session; page 2 uses show=75', () async {
