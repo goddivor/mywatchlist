@@ -69,7 +69,7 @@ enum PayloadKind {
 /// * `calendar` / `bookmarks` → MAL [PayloadKind.calendar] / [PayloadKind.bookmarks].
 /// * `malhub:` → MAL [PayloadKind.notifications] (the hub screen).
 /// * `malhub:<itemId>|<url>` → MAL [PayloadKind.hub] (item id, url; private message links
-///   included, read with `MalMessageLink.parse(extra)`).
+///   included, read with `MalMessageLink.parse(extra)`); an item id holding `:` is dropped).
 /// * `anilist:notifications` is already in the new format (AniList inbox).
 ///
 /// [parse] never throws: an empty, unknown or malformed payload is null (the tap does nothing).
@@ -188,7 +188,9 @@ class NotificationPayload {
         return const NotificationPayload._(mal, PayloadKind.notifications, isLegacy: true);
       }
       final bar = rest.indexOf('|');
-      final id = _blankToNull(bar < 0 ? rest : rest.substring(0, bar));
+      // An item id with `:` cannot be re-encoded; the url still opens the item.
+      final rawId = _blankToNull(bar < 0 ? rest : rest.substring(0, bar));
+      final id = rawId != null && rawId.contains(':') ? null : rawId;
       final url = bar < 0 ? null : _blankToNull(rest.substring(bar + 1));
       if (id == null && url == null) {
         return const NotificationPayload._(mal, PayloadKind.notifications, isLegacy: true);
