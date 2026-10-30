@@ -348,7 +348,10 @@ class AnimeGraphRepository {
 
   /// The graph of [id]; a second call while a walk runs joins it.
   Future<AnimeGraphResult> load(int id) =>
-      _running[id] ??= _load(id).whenComplete(() => _running.remove(id));
+      _running[id] ??= _load(id).whenComplete(() {
+        // A block body: returning the removed future would make it wait on itself.
+        _running.remove(id);
+      });
 
   Future<AnimeGraphResult> _load(int id) async {
     final session = _session[id];
