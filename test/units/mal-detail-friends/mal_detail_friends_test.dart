@@ -8,6 +8,7 @@ import 'package:http/testing.dart';
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/screens/MAL/detail/sections/user_updates_section.dart';
 import 'package:mywatchlist/services/api/MAL/web/friends_updates_api.dart';
+import 'package:mywatchlist/widgets/MAL/content/userupdate_widget.dart';
 import 'package:mywatchlist/services/api/MAL/web/mal_web_client.dart';
 import 'package:mywatchlist/services/auth/mal_web_session.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -149,7 +150,7 @@ void main() {
       expect(find.byKey(const ValueKey('friends-tab-everyone')), findsOneWidget);
       expect(find.text('Ma1cus'), findsOneWidget);
       expect(find.text('EVERYONE VIEW'), findsNothing);
-      expect(find.byType(FriendUpdateRow), findsNWidgets(18));
+      expect(find.byType(UserUpdatesGrid), findsOneWidget);
     });
 
     testWidgets('Top friends tab loads ?m=top', (tester) async {
@@ -161,7 +162,7 @@ void main() {
       await tester.pump();
       await tester.pump();
       expect(sent.last.query, 'm=top');
-      expect(find.byType(FriendUpdateRow), findsNWidgets(3));
+      expect(find.text('KitoKunX'), findsOneWidget);
       expect(find.text('Grest'), findsOneWidget);
     });
 
@@ -198,7 +199,7 @@ void main() {
 
     testWidgets('a row opens the friend profile (tappable with a name)', (tester) async {
       await pump(tester, section(_api(await _connected(), [])));
-      final inkwell = tester.widget<InkWell>(find.descendant(of: find.byType(FriendUpdateRow).first, matching: find.byType(InkWell)));
+      final inkwell = tester.widget<InkWell>(find.descendant(of: find.byType(UserUpdatesGrid), matching: find.byType(InkWell)).first);
       expect(inkwell.onTap, isNotNull);
     });
   });

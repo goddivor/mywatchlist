@@ -70,7 +70,7 @@ void main() {
       expect(adaptationCategory('https://myanimelist.net/manga/123/Name'), 'manga');
     });
 
-    testWidgets('160 x 105 tiles with title and media type, no relation chip', (tester) async {
+    testWidgets('280 x 130 cards: cover, relation badge, title, media type and chevron', (tester) async {
       await pumpInApp(
         tester,
         SizedBox(
@@ -84,11 +84,9 @@ void main() {
       await tester.pump();
       expect(find.text('Sousou no Frieren'), findsOneWidget);
       expect(find.text(S.current.UserList_Media_Manga), findsOneWidget);
-      expect(find.text('Adaptation'), findsNothing);
-      expect(find.byIcon(Icons.chevron_right_rounded), findsNothing);
-      final size = tester.getSize(find.byType(AdaptationTile));
-      // 4 dp of margin on each side, like DailyAL's Card.
-      expect(size, const Size(168, 105));
+      expect(find.text('Adaptation'), findsOneWidget);
+      expect(find.byIcon(Icons.chevron_right_rounded), findsOneWidget);
+      expect(tester.getSize(find.byType(AdaptationTile)), const Size(280, 130));
     });
   });
 

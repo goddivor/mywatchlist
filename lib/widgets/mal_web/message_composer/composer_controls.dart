@@ -130,7 +130,7 @@ class MalImageAttacher extends ChangeNotifier {
   bool _busy = false;
   bool _disposed = false;
 
-  ImageUploader get uploader => _uploader ?? CatboxUploader.instance;
+  ImageUploader get uploader => _uploader ?? FreeimageUploader.instance;
 
   bool get busy => _busy;
 

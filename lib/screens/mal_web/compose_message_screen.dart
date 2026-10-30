@@ -21,7 +21,7 @@ Future<bool> openComposeMalMessage(BuildContext context, {String? to}) async {
 
 /// A new private message: recipient (friends first, then MAL's user search), subject, body.
 /// The body is formatted like a chat app (selection toolbar and a formatting row write MAL
-/// BBCode), takes photos (uploaded to catbox.moe, inserted as `[img]`) and is previewed as it
+/// BBCode), takes photos (uploaded to freeimage.host, inserted as `[img]`) and is previewed as it
 /// will look once it holds markup.
 class ComposeMalMessageScreen extends StatefulWidget {
   const ComposeMalMessageScreen({super.key, this.to, this.api, this.session, this.uploader, this.pickImage});

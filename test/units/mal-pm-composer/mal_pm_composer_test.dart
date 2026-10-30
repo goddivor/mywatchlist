@@ -152,6 +152,36 @@ void main() {
     });
   });
 
+  group('freeimage.host upload (default)', () {
+    test('posts key, action, format and source, answers image.url', () async {
+      final adapter = _FakeAdapter('{"status_code":200,"image":{"url":"https://iili.io/abc123.jpg"}}');
+      final progress = <double>[];
+      final url = await FreeimageUploader(dio: _dio(adapter)).upload(_image(), onProgress: progress.add);
+      expect(url.toString(), 'https://iili.io/abc123.jpg');
+      final options = adapter.last!;
+      expect(options.uri.toString(), 'https://freeimage.host/api/1/upload');
+      final form = options.data as FormData;
+      expect(Map.fromEntries(form.fields),
+          {'key': FreeimageUploader.publicKey, 'action': 'upload', 'format': 'json'});
+      expect(form.files.single.key, 'source');
+      expect(form.files.single.value.filename, 'my_photo.jpg');
+      expect(progress.last, 1.0);
+    });
+
+    test('an answer without an https image URL is a refusal', () async {
+      for (final body in ['{"status_code":400,"error":{"message":"bad"}}', 'oops', '{"image":{"url":"http://x/y.jpg"}}']) {
+        await expectLater(
+          FreeimageUploader(dio: _dio(_FakeAdapter(body))).upload(_image()),
+          throwsA(isA<ImageUploadFailed>().having((e) => e.reason, 'reason', ImageUploadError.refused)),
+        );
+      }
+    });
+
+    test('the composer uploads to freeimage.host by default', () {
+      expect(FreeimageUploader.instance, isA<FreeimageUploader>());
+    });
+  });
+
   group('catbox upload', () {
     test('posts reqtype=fileupload + fileToUpload and answers the URL', () async {
       final adapter = _FakeAdapter('https://files.catbox.moe/abc123.jpg\n');
