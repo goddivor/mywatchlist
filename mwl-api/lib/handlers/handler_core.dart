@@ -617,6 +617,7 @@ class HandlerCore {
     final result = await HttpConnect.htmlPage(
       'https://www.livechart.me/$season-$year/${type ?? 'all'}',
       PageParsers.parseLiveChartSchedule,
+      headers: const {'user-agent': 'me.livechart.android/6.4.8'},
     );
     return {'url': uri.path, 'data': result, 'fromCache': false};
   }

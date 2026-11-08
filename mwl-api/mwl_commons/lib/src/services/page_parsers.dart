@@ -751,18 +751,28 @@ class PageParsers {
   /// or without any related link are skipped, as in DailyAL.
   static List<LiveChartEpisode> parseLiveChartSchedule(Document doc) {
     final result = <LiveChartEpisode>[];
-    for (final card in doc.querySelectorAll('.anime-card')) {
-      final time = card.querySelector('.episode-countdown time');
+    for (final card in doc.querySelectorAll(
+        '.anime-card, .lc-anime-details-card')) {
+      final scheduleLink = card.querySelector('a[href*="/schedules/"]');
+      final time = card.querySelector('.episode-countdown time') ??
+          scheduleLink?.querySelector('time[data-timestamp]');
       final timestamp = int.tryParse(time?.attributes['data-timestamp'] ?? '');
-      final info = _clean(card.querySelector('.release-schedule-info')?.text);
+      final info = _clean(
+          card.querySelector('.release-schedule-info')?.text ??
+              scheduleLink?.text);
       final episode = int.tryParse(
           RegExp(r'EP\s*(\d+)').firstMatch(info)?.group(1) ?? '');
       if (timestamp == null || episode == null) continue;
 
       final links = <String, String>{};
-      for (final a in card.querySelectorAll('.related-links a')) {
+      for (final a in card.querySelectorAll(
+          '.related-links a, .lc-anime-details-card__footer a')) {
         final href = a.attributes['href'];
-        final kind = a.className.replaceAll('-icon', '').trim();
+        final classes = a.className.split(RegExp(r'\s+'));
+        final kind = href?.contains('myanimelist.net/anime/') == true
+            ? 'mal'
+            : classes.firstWhere((c) => c.isNotEmpty, orElse: () => '')
+                .replaceAll('-icon', '');
         if (href != null && kind.isNotEmpty) links[kind] = href;
       }
       if (links.isEmpty) continue;
@@ -770,7 +780,9 @@ class PageParsers {
       result.add(LiveChartEpisode(
         timestamp: timestamp,
         episode: episode,
-        title: _cleanOrNull(card.querySelector('.main-title')?.text),
+        title: _cleanOrNull(card.querySelector('.main-title')?.text ??
+            card.querySelector('.lc-anime-details-card__title')?.text ??
+            card.attributes['data-anime-item-romanized-native-title']),
         malId: MalPath.idFromUrl(links['mal']),
         relatedLinks: links,
       ));
