@@ -1,0 +1,11 @@
+{
+  "@@locale": "en",
+  "Kpl_Short_Watching": "Watching",
+  "Kpl_Short_Reading": "Reading",
+  "Kpl_Short_Planned": "Planned",
+  "Kpl_Short_Completed": "Done",
+  "Kpl_Short_On_Hold": "On hold",
+  "Kpl_Short_Dropped": "Dropped",
+  "Kpl_Rating_Bar": "{count} ratings: {rating}",
+  "@Kpl_Rating_Bar": { "placeholders": { "count": { "type": "String" }, "rating": { "type": "String" } } }
+}

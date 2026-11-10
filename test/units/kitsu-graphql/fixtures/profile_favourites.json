@@ -1,0 +1,69 @@
+{
+ "data": {
+  "findProfileBySlug": {
+   "favorites": {
+    "totalCount": 19,
+    "pageInfo": {
+     "hasNextPage": true,
+     "endCursor": "Mw"
+    },
+    "nodes": [
+     {
+      "id": "1707145",
+      "item": {
+       "__typename": "Character",
+       "id": "39486",
+       "slug": "haruno-yukinoshita",
+       "names": {
+        "canonical": "Haruno Yukinoshita"
+       },
+       "image": {
+        "original": {
+         "url": "https://media.kitsu.app/characters/images/39486/original.jpg",
+         "width": 225,
+         "height": 350
+        }
+       }
+      }
+     },
+     {
+      "id": "1707146",
+      "item": {
+       "__typename": "Character",
+       "id": "37856",
+       "slug": "yukino-yukinoshita",
+       "names": {
+        "canonical": "Yukino Yukinoshita"
+       },
+       "image": {
+        "original": {
+         "url": "https://media.kitsu.app/characters/images/37856/original.jpg",
+         "width": 225,
+         "height": 350
+        }
+       }
+      }
+     },
+     {
+      "id": "1688457",
+      "item": {
+       "__typename": "Character",
+       "id": "36444",
+       "slug": "mikoto-urabe",
+       "names": {
+        "canonical": "Mikoto Urabe"
+       },
+       "image": {
+        "original": {
+         "url": "https://media.kitsu.app/characters/images/36444/original.jpg",
+         "width": 225,
+         "height": 350
+        }
+       }
+      }
+     }
+    ]
+   }
+  }
+ }
+}

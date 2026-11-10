@@ -1,55 +1,59 @@
-class UserHistoryList {
-  final List<UserHistory> histories;
-
-  UserHistoryList({required this.histories});
-
-  // Méthode pour convertir un JSON en UserHistoryList
-  factory UserHistoryList.fromJson(List<dynamic> json) {
-    var histories = json.map((item) => UserHistory.fromJson(item as Map<String, dynamic>)).toList();
-    return UserHistoryList(histories: histories);
-  }
-
- // Méthode pour convertir UserHistoryList en JSON
-  Map<String, dynamic> toJson() {
-    return {
-      'histories': histories.map((history) => history.toJson()).toList(),
-    };
-  }
-}
-
-
-class UserHistory {
+/// One line of a user's MyAnimeList history ("Watched ep. 5 of ...").
+class ProfileHistoryEntry {
   final int id;
   final String title;
-  final String history;
-  final String? category;
+
+  /// Progress text, e.g. "Ep. 5".
+  final String progress;
+
+  /// `anime` or `manga`.
+  final String category;
+
+  /// MAL's own wording: "Today, 9:12 AM", "Yesterday, 11:03 PM" or "Oct 5, 2:03 AM".
   final String time;
 
-  UserHistory({
+  const ProfileHistoryEntry({
     required this.id,
     required this.title,
-    required this.history,
+    required this.progress,
     required this.category,
     required this.time,
   });
 
-  factory UserHistory.fromJson(Map<String, dynamic> json) {
-    return UserHistory(
-      id: json['id'] as int,
-      title: json['title'] as String,
-      history: json['history'] as String,
-      category: json['category'] as String?,
-      time: json['time'] as String,
-    );
+  /// The day part of [time] ("Today", "Yesterday", "Oct 5"), used to group entries.
+  String get dayLabel {
+    final comma = time.indexOf(',');
+    return (comma > 0 ? time.substring(0, comma) : time).trim();
   }
 
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'title': title,
-      'history': history,
-      'category': category,
-      'time': time,
-    };
+  /// The clock part of [time], empty when MAL gave none.
+  String get clock {
+    final comma = time.lastIndexOf(',');
+    return comma > 0 ? time.substring(comma + 1).trim() : '';
   }
+}
+
+/// Reads the `data` of a `users/history` envelope (`{histories: [...]}` or a bare list).
+List<ProfileHistoryEntry> parseHistoryEnvelope(
+  Map<String, dynamic>? envelope, {
+  required String category,
+}) {
+  final payload = envelope?['data'];
+  final rows = payload is Map ? payload['histories'] : payload;
+  if (rows is! List) return const [];
+  final out = <ProfileHistoryEntry>[];
+  for (final row in rows) {
+    if (row is! Map) continue;
+    final id = (row['id'] as num?)?.toInt() ?? 0;
+    final title = (row['title'] as String?)?.trim() ?? '';
+    if (id == 0 || title.isEmpty) continue;
+    out.add(ProfileHistoryEntry(
+      id: id,
+      title: title,
+      progress: (row['history'] as String?)?.trim() ?? '',
+      category: (row['category'] as String?) ?? category,
+      time: (row['time'] as String?)?.trim() ?? '',
+    ));
+  }
+  return out;
 }

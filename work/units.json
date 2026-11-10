@@ -1,0 +1,4667 @@
+{
+  "groups": [
+    {
+      "id": "foundation",
+      "title": "Foundation and shared shapes",
+      "priority": "P0",
+      "units": [
+        "gate-fix",
+        "auth-refresh",
+        "backend-parsers",
+        "mal-auth-calls",
+        "l10n-pipeline",
+        "deps-prefs-contract",
+        "app-shell",
+        "shared-kit",
+        "perf-foundation",
+        "tenrai-client",
+        "mal-session",
+        "data-source-switch"
+      ]
+    },
+    {
+      "id": "detail",
+      "title": "Anime/manga detail screen",
+      "priority": "P1",
+      "units": [
+        "detail-split",
+        "detail-header",
+        "detail-related-graph",
+        "detail-synopsis-media",
+        "detail-social",
+        "detail-resilience",
+        "detail-more-info",
+        "stack-polish",
+        "jikan-leftovers",
+        "detail-polish"
+      ]
+    },
+    {
+      "id": "user",
+      "title": "User list, profile and edit",
+      "priority": "P0",
+      "units": [
+        "accounts-ux",
+        "edit-sheet",
+        "user-list-mal",
+        "list-cards-dal",
+        "user-profile-mal",
+        "profile-polish",
+        "profile-tabs",
+        "sync-dialog",
+        "profile-lists",
+        "mal-notifications",
+        "mal-messages",
+        "mal-hub-wiring",
+        "mal-hub-followups",
+        "list-time-followups",
+        "mal-web-recaptcha",
+        "kitsu-polish",
+        "mal-polish",
+        "mal-polish-2",
+        "mal-friends-feed",
+        "mal-pm-composer",
+        "tracker-contracts",
+        "tracker-routes",
+        "anilist-calendar",
+        "kitsu-calendar",
+        "simkl-search",
+        "home-layout-per-tracker",
+        "prefs-per-tracker",
+        "bookmarks-per-tracker",
+        "notifications-all-trackers",
+        "mal-pm-chat-notifications",
+        "mal-detail-friends"
+      ]
+    },
+    {
+      "id": "discovery",
+      "title": "Home, explore, search, calendar",
+      "priority": "P1",
+      "units": [
+        "bookmarks",
+        "calendar",
+        "explore-seasonal",
+        "search-upgrade",
+        "home-wiring",
+        "cards-upgrade",
+        "search-sources",
+        "explore-weekly",
+        "bookmarks-everywhere",
+        "home-rows",
+        "home-rows-kinds",
+        "explore-polish",
+        "home-fixes"
+      ]
+    },
+    {
+      "id": "settings",
+      "title": "Settings, notifications, prefs",
+      "priority": "P1",
+      "units": [
+        "settings-prefs-pages",
+        "theme-colors",
+        "settings-theme-about-backup",
+        "notifications",
+        "dub-info",
+        "api-prefs",
+        "small-fixes",
+        "ux-explore",
+        "ux-search",
+        "ux-reviews",
+        "ux-detail-content",
+        "ux-edit-sheet",
+        "ux-calendar",
+        "ux-seasonal",
+        "ux-theme",
+        "ux-home",
+        "ux-stack",
+        "ux-forum",
+        "ux-polish-2",
+        "theme-seasons",
+        "backup-fixes"
+      ]
+    },
+    {
+      "id": "community",
+      "title": "Forum, clubs, featured, characters",
+      "priority": "P2",
+      "units": [
+        "forum-clubs",
+        "featured-characters"
+      ]
+    },
+    {
+      "id": "trackers",
+      "title": "Other trackers (AniList, Kitsu, Simkl)",
+      "priority": "P2",
+      "units": [
+        "anilist-pages",
+        "kitsu-pages",
+        "simkl-pages",
+        "tracker-followups",
+        "kitsu-graphql",
+        "kitsu-media-page",
+        "kitsu-community",
+        "kitsu-profile-plus",
+        "kitsu-home-extras",
+        "simkl-api-compliance",
+        "simkl-auth-v2",
+        "simkl-cdn-feeds",
+        "simkl-media-page",
+        "simkl-profile-plus",
+        "simkl-list-sync",
+        "anilist-client-limits",
+        "anilist-list-fidelity",
+        "anilist-people-pages",
+        "anilist-search-filters",
+        "anilist-social",
+        "anilist-notifications",
+        "anilist-settings",
+        "anilist-media-page",
+        "anilist-profile-plus",
+        "anilist-home-extras",
+        "mal-episodes",
+        "mal-detail-sidebar",
+        "mal-seasonal-groups",
+        "mal-list-time",
+        "mal-profile-extras",
+        "mal-list-xml",
+        "mal-web-writes-2",
+        "mal-api-small",
+        "mal-ona-ranking",
+        "simkl-redesign",
+        "kitsu-redesign",
+        "anilist-list-design",
+        "simkl-data-plus",
+        "tracker-list-hooks",
+        "kitsu-finish",
+        "anilist-polish",
+        "anilist-polish-2",
+        "mal-graph-local",
+        "tracker-wiring"
+      ]
+    },
+    {
+      "id": "release",
+      "title": "Versioning, CI, update, platform",
+      "priority": "P2",
+      "units": [
+        "versioning-ci",
+        "l10n-quality",
+        "color-sweep",
+        "app-icon",
+        "splash-screen",
+        "launch-update-check",
+        "release-fixes",
+        "in-app-update",
+        "deep-links"
+      ]
+    }
+  ],
+  "units": [
+    {
+      "id": "gate-fix",
+      "title": "Make the merge gate meaningful",
+      "kind": "foundation",
+      "entry": "",
+      "artifact": "",
+      "priority": "P0",
+      "needs": [],
+      "owns": [
+        "test/widget_test.dart",
+        "test/flutter_test_config.dart",
+        "test/smoke/**",
+        "test/helpers/**",
+        "android/app/src/main/AndroidManifest.xml",
+        "lib/l10n/units/gate-fix/**"
+      ],
+      "group": "foundation",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "auth-refresh",
+      "title": "Token refresh and retry for all trackers",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P0",
+      "needs": [
+        "gate-fix"
+      ],
+      "owns": [
+        "lib/user/base_user.dart",
+        "lib/user/user_manager.dart",
+        "lib/user/user_mal_v2.dart",
+        "lib/user/user_anilist_v2.dart",
+        "lib/user/user_kitsu_v2.dart",
+        "lib/user/user_simkl_v2.dart",
+        "lib/services/auth/**",
+        "lib/services/api/MAL/mal_connect.dart",
+        "lib/l10n/units/auth-refresh/**",
+        "test/units/auth-refresh/**"
+      ],
+      "group": "foundation",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: sonnet"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "backend-parsers",
+      "title": "mwl-api: port DAL's missing routes and HTML parsers",
+      "kind": "shared",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "gate-fix"
+      ],
+      "owns": [
+        "mwl-api/**",
+        "mwl-rust-api/**",
+        "lib/services/api/mwl_api.dart",
+        "lib/l10n/units/backend-parsers/**",
+        "test/units/backend-parsers/**"
+      ],
+      "group": "foundation",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "mal-auth-calls",
+      "title": "Route every MAL request through the token-refresh path",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P0",
+      "needs": [
+        "auth-refresh"
+      ],
+      "owns": [
+        "lib/services/api/MAL/mal_api.dart",
+        "lib/services/api/MAL/mal_user.dart",
+        "lib/services/api/MAL/mal_user_prof.dart",
+        "lib/services/api/MAL/mal_forum_api.dart",
+        "lib/services/api/MAL/mal_clubs_api.dart",
+        "lib/services/api/MAL/user_anime_statistics.dart",
+        "lib/l10n/units/mal-auth-calls/**",
+        "test/units/mal-auth-calls/**"
+      ],
+      "group": "foundation",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: sonnet"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "l10n-pipeline",
+      "title": "Restore the localization pipeline (ARB sources, per-unit fragments, working language picker)",
+      "kind": "contract",
+      "entry": "",
+      "artifact": "",
+      "priority": "P0",
+      "needs": [
+        "gate-fix"
+      ],
+      "owns": [
+        "lib/l10n/**",
+        "l10n.yaml",
+        "lib/generated/**",
+        "lib/user/language/**",
+        "lib/screens/settings/language_settings.dart",
+        "lib/main.dart",
+        "pubspec.yaml",
+        "pubspec.lock",
+        "tools/l10n/**",
+        "tools/verify.sh",
+        ".gitignore",
+        "CLAUDE.md",
+        "test/units/l10n-pipeline/**"
+      ],
+      "group": "foundation",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "deps-prefs-contract",
+      "title": "Dependencies, Android permissions and the preferences contract",
+      "kind": "contract",
+      "entry": "",
+      "artifact": "",
+      "priority": "P0",
+      "needs": [
+        "l10n-pipeline"
+      ],
+      "owns": [
+        "lib/utils/deep_links.dart",
+        "test/units/deep-links/**",
+        "android/build.gradle",
+        "android/build.gradle.kts",
+        "docs/PERFORMANCE.md",
+        "pubspec.yaml",
+        "pubspec.lock",
+        "android/app/src/main/AndroidManifest.xml",
+        "android/app/build.gradle",
+        "android/app/build.gradle.kts",
+        "linux/flutter/generated_plugin_registrant.cc",
+        "linux/flutter/generated_plugins.cmake",
+        "macos/Flutter/GeneratedPluginRegistrant.swift",
+        "windows/flutter/generated_plugin_registrant.cc",
+        "windows/flutter/generated_plugins.cmake",
+        "lib/main.dart",
+        "lib/user/preferences/**",
+        "lib/user/userpref.dart",
+        "lib/user/user_preference.dart",
+        "lib/user/anime_manga_pref.dart",
+        "lib/user/anime_manga_pref.g.dart",
+        "lib/user/anime_manga_tab_pref.dart",
+        "lib/user/anime_manga_tab_pref.g.dart",
+        "lib/user/list_pref.dart",
+        "lib/user/user.dart",
+        "lib/services/notifications/notification_service.dart",
+        "lib/l10n/units/deps-prefs-contract/**",
+        "test/units/deps-prefs-contract/**"
+      ],
+      "group": "foundation",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "app-shell",
+      "title": "App shell seams: settings hub, sidebar, home shell, startup",
+      "kind": "foundation",
+      "entry": "",
+      "artifact": "",
+      "priority": "P0",
+      "needs": [
+        "deps-prefs-contract"
+      ],
+      "owns": [
+        "lib/screens/settings/settings_page.dart",
+        "lib/screens/settings/accounts_settings.dart",
+        "lib/screens/settings/about_settings.dart",
+        "lib/screens/settings/notifications_settings.dart",
+        "lib/screens/settings/user_prefs_settings.dart",
+        "lib/screens/settings/anime_manga_settings.dart",
+        "lib/screens/settings/list_prefs_settings.dart",
+        "lib/screens/settings/backup_settings.dart",
+        "lib/screens/settings/storage_settings.dart",
+        "lib/screens/settings/dub_settings.dart",
+        "lib/pages/settings/**",
+        "lib/pages/side_bar.dart",
+        "lib/utils/sidebar_extension.dart",
+        "lib/screens/home_screen.dart",
+        "lib/screens/open_screen.dart",
+        "lib/screens/bookmarks_screen.dart",
+        "lib/screens/calendar/calendar_screen.dart",
+        "lib/utils/app_routes.dart",
+        "lib/l10n/units/app-shell/**",
+        "test/units/app-shell/**"
+      ],
+      "group": "foundation",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "detail-split",
+      "title": "Split the 1852-line detail screen into sections with seams",
+      "kind": "foundation",
+      "entry": "",
+      "artifact": "",
+      "priority": "P0",
+      "needs": [
+        "deps-prefs-contract"
+      ],
+      "owns": [
+        "lib/screens/MAL/contentdetailedscreen.dart",
+        "lib/screens/MAL/detail/**",
+        "lib/l10n/units/detail-split/**",
+        "test/units/detail-split/**"
+      ],
+      "group": "detail",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "shared-kit",
+      "title": "Shared UI kit: share builder, app bar menu, select widgets, score reveal, web launcher",
+      "kind": "kit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P0",
+      "needs": [
+        "deps-prefs-contract"
+      ],
+      "owns": [
+        "lib/enums.dart",
+        "lib/widgets/common/share_builder.dart",
+        "lib/widgets/common/app_bar_menu.dart",
+        "lib/widgets/common/score_reveal.dart",
+        "lib/widgets/common/select/**",
+        "lib/widgets/common/adaptive_layout.dart",
+        "lib/utils/web_launcher.dart",
+        "lib/constants/constants.dart",
+        "lib/l10n/units/shared-kit/**",
+        "test/units/shared-kit/**"
+      ],
+      "group": "foundation",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "perf-foundation",
+      "title": "Fluidity foundation: 120 Hz, image decoding, shimmers, root rebuilds",
+      "kind": "foundation",
+      "entry": "",
+      "artifact": "",
+      "priority": "P0",
+      "needs": [
+        "deps-prefs-contract"
+      ],
+      "owns": [
+        "lib/main.dart",
+        "lib/widgets/common/app_image.dart",
+        "lib/widgets/common/avatar_widget.dart",
+        "lib/widgets/common/image_preview.dart",
+        "lib/widgets/loading/**",
+        "lib/utils/page_transitions.dart",
+        "android/app/src/main/AndroidManifest.xml",
+        "docs/PERFORMANCE.md",
+        "lib/l10n/units/perf-foundation/**",
+        "test/units/perf-foundation/**"
+      ],
+      "group": "foundation",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "accounts-ux",
+      "title": "Redesign the account picker, account switcher and account management",
+      "kind": "screen",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "app-shell"
+      ],
+      "owns": [
+        "lib/services/auth/kitsu_auth.dart",
+        "lib/user/user.dart",
+        "lib/user/base_user.dart",
+        "lib/screens/account_switcher_page.dart",
+        "lib/screens/manage_accounts_page.dart",
+        "lib/screens/onboarding_trackers.dart",
+        "lib/pages/login_page.dart",
+        "lib/screens/settings/accounts_settings.dart",
+        "lib/user/trackers/**",
+        "lib/widgets/common/acc_widget.dart",
+        "lib/widgets/common/signin_widget.dart",
+        "lib/widgets/common/logout_dialog.dart",
+        "lib/widgets/Kitsu/kitsu_login_dialog.dart",
+        "lib/user/accounts/**",
+        "lib/l10n/units/accounts-ux/**",
+        "test/units/accounts-ux/**"
+      ],
+      "group": "user",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: sonnet"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "edit-sheet",
+      "title": "Edit-entry sheet: fix pre-fill, dates, episodes, private notes",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P0",
+      "needs": [
+        "deps-prefs-contract"
+      ],
+      "owns": [
+        "lib/services/api/MAL/models/my_anime_list_status.dart",
+        "lib/services/api/MAL/models/my_manga_list_status.dart",
+        "lib/widgets/user/contenteditwidget.dart",
+        "lib/widgets/user/edit/**",
+        "lib/user/private_notes/**",
+        "lib/l10n/units/edit-sheet/**",
+        "test/units/edit-sheet/**"
+      ],
+      "group": "user",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: sonnet"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "user-list-mal",
+      "title": "MAL user anime/manga list (status tabs, sort/filter, view modes, status cache)",
+      "kind": "screen",
+      "entry": "",
+      "artifact": "",
+      "priority": "P0",
+      "needs": [
+        "perf-foundation",
+        "shared-kit",
+        "edit-sheet"
+      ],
+      "owns": [
+        "lib/pages/MAL/mal_user_page.dart",
+        "lib/widgets/user/list/**",
+        "lib/widgets/common/list_sort_filter.dart",
+        "lib/user/list_cache/**",
+        "lib/l10n/units/user-list-mal/**",
+        "test/units/user-list-mal/**"
+      ],
+      "group": "user",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "list-cards-dal",
+      "title": "My List grid display: the same visual as DailyAL's grid (the rest of MWL's My List stays)",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P0",
+      "needs": [
+        "user-list-mal",
+        "theme-colors"
+      ],
+      "owns": [
+        "lib/widgets/user/list/cards/**",
+        "lib/widgets/user/list/list_entry_view.dart",
+        "lib/l10n/units/list-cards-dal/**",
+        "test/units/list-cards-dal/**"
+      ],
+      "group": "user",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "user-profile-mal",
+      "title": "MAL user profile, stats charts and user pop-up",
+      "kind": "screen",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "mal-auth-calls",
+        "app-shell",
+        "shared-kit",
+        "backend-parsers"
+      ],
+      "owns": [
+        "lib/services/api/MAL/scrapper/user_profile_page.dart",
+        "test/units/profile-polish/profile_polish_test.dart",
+        "test/units/app-shell/app_routes_test.dart",
+        "lib/utils/app_routes.dart",
+        "lib/pages/MAL/mal_user_profile_page.dart",
+        "lib/screens/user_profile/**",
+        "lib/widgets/user/profile/**",
+        "lib/widgets/charts/**",
+        "lib/services/api/MAL/scrapper/user_anime_statistics.dart",
+        "lib/services/api/MAL/scrapper/user_friends.dart",
+        "lib/services/api/MAL/scrapper/user_history.dart",
+        "lib/services/api/MAL/user_anime_statistics.dart",
+        "lib/services/api/MAL/mal_user_prof.dart",
+        "lib/cache/cached_user_profile.dart",
+        "lib/l10n/units/user-profile-mal/**",
+        "test/units/user-profile-mal/**"
+      ],
+      "group": "user",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: sonnet"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "profile-polish",
+      "title": "Profile screen: readable themed header, chart colours from status tokens, lighter surfaces, no Jikan wait",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P0",
+      "needs": [
+        "user-profile-mal",
+        "theme-colors"
+      ],
+      "owns": [
+        "lib/screens/user_profile/**",
+        "lib/widgets/user/profile/**",
+        "lib/widgets/charts/**",
+        "lib/pages/MAL/mal_user_profile_page.dart",
+        "lib/l10n/units/profile-polish/**",
+        "test/units/profile-polish/**"
+      ],
+      "group": "user",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "profile-tabs",
+      "title": "Profile tabs (Friends, Clubs, History) never hang: timeout + MAL page fallback",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P0",
+      "needs": [
+        "profile-polish",
+        "backend-parsers"
+      ],
+      "owns": [
+        "lib/l10n/units/mal-friends-json/**",
+        "test/smoke/html_parsers_test.dart",
+        "lib/screens/user_profile/sections/**",
+        "lib/services/api/mwl_api.dart",
+        "mwl-api/**",
+        "lib/services/api/MAL/scrapper/user_friends.dart",
+        "lib/services/api/MAL/scrapper/user_history.dart",
+        "test/units/profile-tabs/**"
+      ],
+      "group": "user",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: sonnet"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "sync-dialog",
+      "title": "Cross-tracker sync: two-way dialog, cancel, lazy load, decimal scores",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "edit-sheet",
+        "auth-refresh"
+      ],
+      "owns": [
+        "lib/services/tracker_sync_service.dart",
+        "lib/widgets/user/cross_tracker_widget.dart",
+        "lib/widgets/user/tracker_search_sheet.dart",
+        "lib/widgets/user/sync/**",
+        "lib/l10n/units/sync-dialog/**",
+        "test/units/sync-dialog/**"
+      ],
+      "group": "user",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: sonnet"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "detail-header",
+      "title": "Detail header and actions: share, browser, bookmark, More Info, hide score, custom tabs, countdown",
+      "kind": "screen",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "detail-split",
+        "shared-kit",
+        "bookmarks"
+      ],
+      "owns": [
+        "lib/screens/MAL/detail/detail_data.dart",
+        "lib/screens/MAL/detail/detail_screen.dart",
+        "lib/screens/MAL/detail/sections/media_section.dart",
+        "lib/screens/MAL/detail/header/**",
+        "lib/screens/MAL/detail/actions/**",
+        "lib/screens/MAL/detail/detail_sections.dart",
+        "lib/screens/MAL/detail/tabs_customizer.dart",
+        "lib/l10n/units/detail-header/**",
+        "test/units/detail-header/**"
+      ],
+      "group": "detail",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: sonnet"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "detail-related-graph",
+      "title": "Related: view-all grid with statuses and the relation graph (share as PNG)",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "detail-split",
+        "shared-kit",
+        "user-list-mal"
+      ],
+      "owns": [
+        "lib/widgets/MAL/content/relatedanimewidget.dart",
+        "lib/widgets/graph/**",
+        "lib/l10n/units/detail-related-graph/**",
+        "test/units/detail-related-graph/**"
+      ],
+      "group": "detail",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: sonnet"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "detail-synopsis-media",
+      "title": "Synopsis translation, streaming links, videos fallback",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P2",
+      "needs": [
+        "detail-split",
+        "deps-prefs-contract"
+      ],
+      "owns": [
+        "lib/widgets/MAL/content/synopsis_widget.dart",
+        "lib/widgets/MAL/content/media_platforms.dart",
+        "lib/widgets/MAL/content/videowidget.dart",
+        "lib/widgets/common/translator.dart",
+        "lib/l10n/units/detail-synopsis-media/**",
+        "test/units/detail-synopsis-media/**"
+      ],
+      "group": "detail",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: sonnet"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "detail-social",
+      "title": "Reviews AI summary + share, interest stacks and user updates linking to profiles",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P2",
+      "needs": [
+        "detail-split",
+        "user-profile-mal",
+        "backend-parsers"
+      ],
+      "owns": [
+        "lib/widgets/MAL/content/show_reviews.dart",
+        "lib/widgets/MAL/review/**",
+        "lib/widgets/MAL/content/intereststackwidget.dart",
+        "lib/widgets/MAL/content/userupdate_widget.dart",
+        "lib/screens/MAL/interest_stack_detail_screen.dart",
+        "lib/l10n/units/detail-social/**",
+        "test/units/detail-social/**"
+      ],
+      "group": "detail",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: sonnet"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "detail-resilience",
+      "title": "Detail sections: no endless skeletons, MAL fallbacks when Jikan fails, round avatars without box shadows",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P0",
+      "needs": [
+        "detail-header",
+        "detail-social",
+        "cards-upgrade"
+      ],
+      "owns": [
+        "lib/screens/MAL/detail/actions/more_info_modal.dart",
+        "lib/widgets/MAL/content/more_info_widget.dart",
+        "lib/screens/MAL/detail/sections/**",
+        "lib/screens/MAL/detail/pages/**",
+        "lib/widgets/MAL/content/scorestatisticswidget.dart",
+        "lib/widgets/MAL/content/animestatisticswidget.dart",
+        "lib/widgets/MAL/content/userupdate_widget.dart",
+        "lib/widgets/MAL/content/show_forum.dart",
+        "lib/widgets/MAL/content/show_reviews.dart",
+        "lib/widgets/MAL/content/show_featured.dart",
+        "lib/widgets/MAL/content/intereststackwidget.dart",
+        "lib/widgets/MAL/home/animecharacterwidget.dart",
+        "lib/screens/MAL/characters_staff_screen.dart",
+        "lib/services/api/Jikan/**",
+        "lib/l10n/units/detail-resilience/**",
+        "test/units/detail-resilience/**"
+      ],
+      "group": "detail",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "detail-more-info",
+      "title": "More-info links: studios, magazines, authors, genres, season, media type",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P2",
+      "needs": [
+        "detail-resilience",
+        "detail-split",
+        "search-upgrade"
+      ],
+      "owns": [
+        "lib/widgets/MAL/content/more_info_widget.dart",
+        "lib/widgets/MAL/content/adaptation_widget.dart",
+        "lib/widgets/MAL/content/animestatisticswidget.dart",
+        "lib/widgets/MAL/content/scorestatisticswidget.dart",
+        "lib/l10n/units/detail-more-info/**",
+        "test/units/detail-more-info/**"
+      ],
+      "group": "detail",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: sonnet"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "bookmarks",
+      "title": "Bookmarks: store, screen, add/remove",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "app-shell",
+        "shared-kit"
+      ],
+      "owns": [
+        "test/units/app-shell/app_routes_test.dart",
+        "lib/cache/bookmarks.dart",
+        "lib/screens/bookmarks_screen.dart",
+        "lib/widgets/bookmarks/**",
+        "lib/screens/plainscreen.dart",
+        "lib/l10n/units/bookmarks/**",
+        "test/units/bookmarks/**"
+      ],
+      "group": "discovery",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: sonnet"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "calendar",
+      "title": "Anime calendar, weekly schedule, .ics export, add to device calendar",
+      "kind": "screen",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "perf-foundation",
+        "app-shell",
+        "shared-kit",
+        "backend-parsers",
+        "user-list-mal"
+      ],
+      "owns": [
+        "test/units/app-shell/app_routes_test.dart",
+        "lib/screens/calendar/**",
+        "lib/widgets/calendar/**",
+        "lib/l10n/units/calendar/**",
+        "test/units/calendar/**"
+      ],
+      "group": "discovery",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: sonnet"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "explore-seasonal",
+      "title": "Explore page and seasonal screen",
+      "kind": "screen",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "perf-foundation",
+        "shared-kit",
+        "backend-parsers",
+        "user-list-mal"
+      ],
+      "owns": [
+        "lib/pages/MAL/mal_explore_page.dart",
+        "lib/screens/explore/**",
+        "lib/screens/seasonal/**",
+        "lib/cache/top_characters.dart",
+        "lib/l10n/units/explore-seasonal/**",
+        "test/units/explore-seasonal/**"
+      ],
+      "group": "discovery",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: sonnet"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "search-upgrade",
+      "title": "Search: user results, search by id, autocomplete, searchable filters",
+      "kind": "screen",
+      "entry": "",
+      "artifact": "",
+      "priority": "P2",
+      "needs": [
+        "perf-foundation",
+        "shared-kit",
+        "user-profile-mal"
+      ],
+      "owns": [
+        "lib/utils/app_routes.dart",
+        "lib/screens/search/**",
+        "lib/widgets/MAL/search/**",
+        "lib/l10n/units/search-upgrade/**",
+        "test/units/search-upgrade/**"
+      ],
+      "group": "discovery",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: sonnet"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "home-wiring",
+      "title": "Home: working chips, bookmarks/calendar buttons, maintenance dialog, user-list and forum sections",
+      "kind": "screen",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "theme-colors",
+        "perf-foundation",
+        "bookmarks",
+        "calendar",
+        "explore-seasonal",
+        "user-list-mal"
+      ],
+      "owns": [
+        "lib/pages/MAL/mal_explore_page.dart",
+        "lib/widgets/common/bottomnavbar.dart",
+        "lib/pages/MAL/mal_home_page.dart",
+        "lib/widgets/MAL/home/homeappbar.dart",
+        "lib/widgets/MAL/home/accordion.dart",
+        "lib/widgets/MAL/home/section_header.dart",
+        "lib/widgets/MAL/home/news_widget.dart",
+        "lib/widgets/MAL/home/show_news.dart",
+        "lib/widgets/home/**",
+        "lib/user/MAL/**",
+        "lib/screens/settings/mal_home_settings.dart",
+        "lib/l10n/units/home-wiring/**",
+        "test/units/home-wiring/**"
+      ],
+      "group": "discovery",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: sonnet"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "cards-upgrade",
+      "title": "Anime cards: quick edit, status badges, score reveal, real airing progress",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "perf-foundation",
+        "user-list-mal",
+        "edit-sheet",
+        "shared-kit"
+      ],
+      "owns": [
+        "lib/widgets/MAL/home/animegridcard.dart",
+        "lib/widgets/MAL/home/animecardbar.dart",
+        "lib/widgets/MAL/home/contentlistwidget.dart",
+        "lib/widgets/MAL/home/animecharacterwidget.dart",
+        "lib/l10n/units/cards-upgrade/**",
+        "test/units/cards-upgrade/**"
+      ],
+      "group": "discovery",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: sonnet"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "settings-prefs-pages",
+      "title": "Settings pages: user prefs, anime/manga, list prefs",
+      "kind": "screen",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "app-shell"
+      ],
+      "owns": [
+        "lib/screens/settings/user_prefs_settings.dart",
+        "lib/screens/settings/anime_manga_settings.dart",
+        "lib/screens/settings/list_prefs_settings.dart",
+        "lib/screens/settings/prefs/**",
+        "lib/l10n/units/settings-prefs-pages/**",
+        "test/units/settings-prefs-pages/**"
+      ],
+      "group": "settings",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: sonnet"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "theme-colors",
+      "title": "Theme colours: status bar, coherent accents per theme, colour tokens, contrast",
+      "kind": "foundation",
+      "entry": "",
+      "artifact": "",
+      "priority": "P0",
+      "needs": [
+        "perf-foundation",
+        "deps-prefs-contract"
+      ],
+      "owns": [
+        "lib/widgets/charts/chart_palette.dart",
+        "lib/widgets/common/bottomnavbar.dart",
+        "lib/widgets/common/nav_indicator.dart",
+        "test/smoke/nav_indicator_test.dart",
+        "lib/user/theme/**",
+        "lib/screens/settings/theme_settings.dart",
+        "lib/widgets/common/app_colors.dart",
+        "lib/widgets/common/background.dart",
+        "lib/utils/sidebar_bg_manager.dart",
+        "lib/user/userpref.dart",
+        "docs/THEME.md",
+        "lib/l10n/units/theme-colors/**",
+        "test/units/theme-colors/**"
+      ],
+      "group": "settings",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "settings-theme-about-backup",
+      "title": "About, backup & restore, clear storage",
+      "kind": "screen",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "theme-colors",
+        "app-shell",
+        "edit-sheet",
+        "bookmarks"
+      ],
+      "owns": [
+        "test/units/app-shell/app_routes_test.dart",
+        "test/units/app-shell/settings_hub_test.dart",
+        "lib/screens/settings/about_settings.dart",
+        "lib/screens/settings/backup_settings.dart",
+        "lib/screens/settings/storage_settings.dart",
+        "lib/cache/cachemanager.dart",
+        "lib/screens/settings/download_settings.dart",
+        "lib/l10n/units/settings-theme-about-backup/**",
+        "test/units/settings-theme-about-backup/**"
+      ],
+      "group": "settings",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: sonnet"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "notifications",
+      "title": "Airing notifications",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "perf-foundation",
+        "app-shell",
+        "user-list-mal"
+      ],
+      "owns": [
+        "lib/main.dart",
+        "lib/services/notifications/**",
+        "lib/screens/settings/notifications_settings.dart",
+        "android/app/src/main/res/drawable/ic_stat_notification.xml",
+        "android/app/src/main/res/drawable-*/ic_stat_notification.png",
+        "lib/l10n/units/notifications/**",
+        "test/units/notifications/**"
+      ],
+      "group": "settings",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: sonnet"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "dub-info",
+      "title": "Dub info (MyDubList): icons, languages, settings",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P2",
+      "needs": [
+        "cards-upgrade",
+        "app-shell"
+      ],
+      "owns": [
+        "test/units/app-shell/app_routes_test.dart",
+        "lib/cache/dub_info.dart",
+        "lib/screens/settings/dub_settings.dart",
+        "lib/widgets/MAL/home/animegridcard.dart",
+        "lib/widgets/common/dub_icon.dart",
+        "lib/l10n/units/dub-info/**",
+        "test/units/dub-info/**"
+      ],
+      "group": "settings",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: sonnet"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "api-prefs",
+      "title": "API layer: NSFW, timezone, Jikan rate limits, MAL maintenance",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "deps-prefs-contract",
+        "mal-auth-calls"
+      ],
+      "owns": [
+        "lib/services/api/MAL/mal_api.dart",
+        "lib/services/api/MAL/mal_user.dart",
+        "lib/services/api/Jikan/**",
+        "lib/services/api/MAL/mal_anime.dart",
+        "lib/l10n/units/api-prefs/**",
+        "test/units/api-prefs/**"
+      ],
+      "group": "settings",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: sonnet"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "forum-clubs",
+      "title": "Forum posting, profile links, club members in-app",
+      "kind": "screen",
+      "entry": "",
+      "artifact": "",
+      "priority": "P2",
+      "needs": [
+        "mal-auth-calls",
+        "user-profile-mal",
+        "shared-kit"
+      ],
+      "owns": [
+        "lib/screens/forum/**",
+        "lib/widgets/forum/**",
+        "lib/pages/MAL/mal_forum_page.dart",
+        "lib/services/api/MAL/mal_clubs_api.dart",
+        "lib/services/api/MAL/mal_forum_api.dart",
+        "lib/l10n/units/forum-clubs/**",
+        "test/units/forum-clubs/**"
+      ],
+      "group": "community",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: sonnet"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "featured-characters",
+      "title": "Featured tags search, character screen sort/dedupe/bookmark/share",
+      "kind": "screen",
+      "entry": "",
+      "artifact": "",
+      "priority": "P2",
+      "needs": [
+        "detail-resilience",
+        "search-upgrade",
+        "bookmarks",
+        "detail-synopsis-media"
+      ],
+      "owns": [
+        "lib/services/api/MAL/scrapper/character_page.dart",
+        "lib/screens/MAL/featured_screen.dart",
+        "lib/widgets/MAL/content/show_featured.dart",
+        "lib/widgets/MAL/content/show_forum.dart",
+        "lib/widgets/MAL/content/show_news.dart",
+        "lib/screens/MAL/character_screen.dart",
+        "lib/screens/MAL/characters_staff_screen.dart",
+        "lib/l10n/units/featured-characters/**",
+        "test/units/featured-characters/**"
+      ],
+      "group": "community",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: sonnet"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "anilist-pages",
+      "title": "AniList: home, explore, user list, profile (replace placeholders)",
+      "kind": "screen",
+      "entry": "",
+      "artifact": "",
+      "priority": "P2",
+      "needs": [
+        "user-list-mal",
+        "user-profile-mal",
+        "home-wiring"
+      ],
+      "owns": [
+        "lib/pages/Anilist/**",
+        "lib/services/api/Anilist/**",
+        "lib/widgets/Anilist/**",
+        "lib/l10n/units/anilist-pages/**",
+        "test/units/anilist-pages/**"
+      ],
+      "group": "trackers",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: sonnet"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "kitsu-pages",
+      "title": "Kitsu: home, explore, user list, profile (replace placeholders)",
+      "kind": "screen",
+      "entry": "",
+      "artifact": "",
+      "priority": "P2",
+      "needs": [
+        "user-list-mal",
+        "user-profile-mal",
+        "home-wiring"
+      ],
+      "owns": [
+        "lib/pages/Kitsu/**",
+        "lib/services/api/Kitsu/**",
+        "lib/widgets/Kitsu/kitsu_*.dart",
+        "lib/l10n/units/kitsu-pages/**",
+        "test/units/kitsu-pages/**"
+      ],
+      "group": "trackers",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: sonnet"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "simkl-pages",
+      "title": "Simkl: home, explore, user list, profile (replace placeholders)",
+      "kind": "screen",
+      "entry": "",
+      "artifact": "",
+      "priority": "P2",
+      "needs": [
+        "user-list-mal",
+        "user-profile-mal",
+        "home-wiring"
+      ],
+      "owns": [
+        "lib/pages/Simkl/**",
+        "lib/services/api/SimKl/**",
+        "lib/widgets/Simkl/**",
+        "lib/l10n/units/simkl-pages/**",
+        "test/units/simkl-pages/**"
+      ],
+      "group": "trackers",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: sonnet"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "versioning-ci",
+      "title": "yyyy.m.n versioning and a release workflow that passes",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P2",
+      "needs": [
+        "deps-prefs-contract"
+      ],
+      "owns": [
+        ".github/**",
+        "analysis_options.yaml",
+        "tools/release/**",
+        "lib/l10n/units/versioning-ci/**",
+        "test/units/versioning-ci/**"
+      ],
+      "group": "release",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: sonnet"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "l10n-quality",
+      "title": "Final translation pass: French (and Arabic) wording of the base and of every unit",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P2",
+      "needs": [
+        "mal-hub-wiring",
+        "anilist-client-limits",
+        "anilist-list-fidelity",
+        "anilist-people-pages",
+        "anilist-search-filters",
+        "anilist-social",
+        "anilist-notifications",
+        "anilist-settings",
+        "anilist-media-page",
+        "anilist-profile-plus",
+        "anilist-home-extras",
+        "mal-episodes",
+        "mal-detail-sidebar",
+        "mal-seasonal-groups",
+        "mal-list-time",
+        "mal-profile-extras",
+        "mal-list-xml",
+        "mal-web-writes-2",
+        "mal-api-small",
+        "mal-notifications",
+        "mal-messages",
+        "ux-polish-2",
+        "home-rows-kinds",
+        "ux-explore",
+        "ux-search",
+        "ux-reviews",
+        "ux-detail-content",
+        "ux-edit-sheet",
+        "ux-calendar",
+        "ux-seasonal",
+        "ux-theme",
+        "ux-home",
+        "ux-stack",
+        "ux-forum",
+        "kitsu-graphql",
+        "kitsu-media-page",
+        "kitsu-community",
+        "kitsu-profile-plus",
+        "kitsu-home-extras",
+        "simkl-api-compliance",
+        "simkl-auth-v2",
+        "simkl-cdn-feeds",
+        "simkl-media-page",
+        "simkl-profile-plus",
+        "simkl-list-sync",
+        "mal-session",
+        "profile-lists",
+        "explore-weekly",
+        "jikan-leftovers",
+        "bookmarks-everywhere",
+        "home-rows",
+        "launch-update-check",
+        "small-fixes",
+        "tenrai-client",
+        "splash-screen",
+        "stack-polish",
+        "color-sweep",
+        "backup-fixes",
+        "release-fixes",
+        "explore-polish",
+        "tracker-wiring",
+        "gate-fix",
+        "auth-refresh",
+        "backend-parsers",
+        "mal-auth-calls",
+        "l10n-pipeline",
+        "deps-prefs-contract",
+        "app-shell",
+        "detail-split",
+        "shared-kit",
+        "perf-foundation",
+        "accounts-ux",
+        "edit-sheet",
+        "user-list-mal",
+        "user-profile-mal",
+        "sync-dialog",
+        "detail-header",
+        "detail-related-graph",
+        "detail-synopsis-media",
+        "detail-social",
+        "detail-more-info",
+        "bookmarks",
+        "calendar",
+        "explore-seasonal",
+        "search-upgrade",
+        "home-wiring",
+        "cards-upgrade",
+        "settings-prefs-pages",
+        "settings-theme-about-backup",
+        "notifications",
+        "dub-info",
+        "api-prefs",
+        "forum-clubs",
+        "featured-characters",
+        "anilist-pages",
+        "kitsu-pages",
+        "simkl-pages",
+        "versioning-ci",
+        "in-app-update",
+        "deep-links"
+      ],
+      "owns": [
+        "lib/services/updater/update_controller.dart",
+        "lib/l10n/units/*/intl_fr_FR.arb",
+        "lib/l10n/intl_fr_FR.arb",
+        "lib/l10n/intl_ar_EG.arb",
+        "lib/l10n/units/l10n-pipeline/**",
+        "test/units/l10n-quality/**"
+      ],
+      "group": "release",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: sonnet"
+      ],
+      "status": "⬜ todo"
+    },
+    {
+      "id": "color-sweep",
+      "title": "Colour sweep: hardcoded colours of already-merged screens onto the theme tokens",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "stack-polish",
+        "tracker-followups",
+        "search-sources",
+        "explore-polish",
+        "profile-tabs",
+        "theme-seasons",
+        "detail-polish",
+        "home-fixes",
+        "backup-fixes",
+        "tracker-wiring",
+        "profile-polish",
+        "list-cards-dal",
+        "detail-resilience",
+        "home-wiring",
+        "featured-characters",
+        "dub-info",
+        "detail-more-info",
+        "settings-theme-about-backup",
+        "in-app-update",
+        "forum-clubs",
+        "search-upgrade",
+        "theme-colors",
+        "cards-upgrade",
+        "detail-header",
+        "detail-social",
+        "detail-related-graph",
+        "detail-synopsis-media",
+        "user-list-mal",
+        "user-profile-mal",
+        "edit-sheet",
+        "sync-dialog",
+        "bookmarks",
+        "calendar",
+        "explore-seasonal",
+        "settings-prefs-pages",
+        "accounts-ux",
+        "app-shell",
+        "shared-kit",
+        "notifications"
+      ],
+      "owns": [
+        "lib/widgets/loading/**",
+        "lib/widgets/MAL/home/**",
+        "lib/widgets/MAL/content/**",
+        "lib/widgets/MAL/review/**",
+        "lib/widgets/user/**",
+        "lib/widgets/charts/**",
+        "lib/widgets/bookmarks/**",
+        "lib/widgets/calendar/**",
+        "lib/widgets/common/**",
+        "lib/screens/MAL/**",
+        "lib/screens/explore/**",
+        "lib/screens/seasonal/**",
+        "lib/screens/calendar/**",
+        "lib/screens/user_profile/**",
+        "lib/screens/settings/**",
+        "lib/screens/bookmarks_screen.dart",
+        "lib/pages/side_bar.dart",
+        "lib/constants/constants.dart",
+        "lib/l10n/units/color-sweep/**",
+        "test/units/color-sweep/**"
+      ],
+      "group": "release",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: sonnet"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "app-icon",
+      "title": "Circular adaptive launcher icon like DailyAL",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P0",
+      "needs": [
+        "deps-prefs-contract"
+      ],
+      "owns": [
+        "pubspec.yaml",
+        "android/app/src/main/res/mipmap-*/**",
+        "android/app/src/main/res/mipmap-anydpi-v26/**",
+        "android/app/src/main/res/values/ic_launcher_background.xml",
+        "assets/images/app_icon/**",
+        "ios/Runner/Assets.xcassets/AppIcon.appiconset/**",
+        "tools/icon/**",
+        "lib/l10n/units/app-icon/**",
+        "test/units/app-icon/**"
+      ],
+      "group": "release",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: sonnet"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "search-sources",
+      "title": "Search: every filter returns data without Jikan (MAL search page fallback, live-verified) + studios directory with logos",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P0",
+      "needs": [
+        "search-upgrade",
+        "profile-tabs"
+      ],
+      "owns": [
+        "lib/screens/search/**",
+        "lib/widgets/MAL/search/**",
+        "lib/screens/studios/**",
+        "mwl-api/**",
+        "lib/services/api/mwl_api.dart",
+        "lib/services/api/MAL/scrapper/mal_scrapper.dart",
+        "tools/search-live/**",
+        "lib/l10n/units/search-sources/**",
+        "test/units/search-sources/**"
+      ],
+      "group": "discovery",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "tracker-followups",
+      "title": "Tracker follow-ups: removed rows disappear, Simkl list categories, notifications for every tracker",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "tracker-wiring"
+      ],
+      "owns": [
+        "lib/pages/Anilist/anilist_home_page.dart",
+        "lib/pages/Anilist/anilist_explore_page.dart",
+        "lib/pages/Kitsu/kitsu_home_page.dart",
+        "lib/pages/Kitsu/kitsu_explore_page.dart",
+        "lib/pages/Simkl/simkl_home_page.dart",
+        "lib/pages/Simkl/simkl_explore_page.dart",
+        "lib/main.dart",
+        "test/units/drawer-icon/**",
+        "lib/widgets/Anilist/**/anilist_user_list_adapter.dart",
+        "lib/widgets/Kitsu/**/kitsu_user_list_adapter.dart",
+        "lib/widgets/user/cross_tracker_widget.dart",
+        "lib/pages/Simkl/**/simkl_user_page.dart",
+        "lib/screens/settings/notifications_settings.dart",
+        "lib/services/notifications/**",
+        "lib/l10n/units/tracker-followups/**",
+        "test/units/tracker-followups/**"
+      ],
+      "group": "trackers",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: sonnet"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "stack-polish",
+      "title": "Interest stack page: squeezed covers, localized date, readable tabs (DailyAL layout)",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P0",
+      "needs": [
+        "detail-polish"
+      ],
+      "owns": [
+        "lib/screens/MAL/interest_stack_detail_screen.dart",
+        "lib/l10n/units/stack-polish/**",
+        "test/units/stack-polish/**"
+      ],
+      "group": "detail",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: sonnet"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "splash-screen",
+      "title": "Launch splash like DailyAL: MWL logo centred on a dark background",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "app-icon",
+        "release-fixes"
+      ],
+      "owns": [
+        "android/app/src/main/res/values/**",
+        "android/app/src/main/res/values-night/**",
+        "android/app/src/main/res/values-v31/**",
+        "android/app/src/main/res/values-night-v31/**",
+        "android/app/src/main/res/drawable/**",
+        "android/app/src/main/res/drawable-v21/**",
+        "android/app/src/main/res/drawable-*/splash*",
+        "lib/main.dart",
+        "lib/l10n/units/splash-screen/**",
+        "test/units/splash-screen/**"
+      ],
+      "group": "release",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: sonnet"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "tenrai-client",
+      "title": "Tenrai API client (all endpoints) and automatic Jikan → Tenrai failover",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P0",
+      "needs": [
+        "detail-polish",
+        "search-sources"
+      ],
+      "owns": [
+        "lib/services/api/Jikan/**",
+        "lib/services/api/Tenrai/**",
+        "lib/services/api/jikan_source.dart",
+        "lib/screens/search/search_service.dart",
+        "lib/widgets/user/list/mal_user_list_adapter.dart",
+        "mwl-api/mwl_commons/lib/src/constants/constant.dart",
+        "mwl-api/lib/**",
+        "test/units/tenrai-client/**",
+        "tools/tenrai-live/**",
+        "lib/l10n/units/tenrai-client/**",
+        "test/units/tenrai-client/**"
+      ],
+      "group": "foundation",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "profile-lists",
+      "title": "Other users' anime/manga lists, weekly tab and sidebar shortcuts like DailyAL",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "mal-session",
+        "color-sweep",
+        "explore-weekly"
+      ],
+      "owns": [
+        "lib/screens/user_profile/sections/**",
+        "lib/screens/user_profile/user_profile_view.dart",
+        "lib/screens/user_profile/sections/list_section.dart",
+        "lib/screens/user_profile/sections/weekly_section.dart",
+        "lib/widgets/user/list/mal_user_list_adapter.dart",
+        "lib/widgets/user/profile/user_pop_sheet.dart",
+        "lib/pages/side_bar.dart",
+        "lib/utils/app_routes.dart",
+        "lib/l10n/units/profile-lists/**",
+        "test/units/profile-lists/**",
+        "test/units/profile-lists/**"
+      ],
+      "group": "user",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "explore-weekly",
+      "title": "Weekly anime per season (MAL broadcast weekday) and Random without Jikan",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "color-sweep"
+      ],
+      "owns": [
+        "lib/screens/weekly/**",
+        "lib/screens/explore/explore_sections.dart",
+        "lib/screens/explore/explore_data.dart",
+        "lib/screens/explore/random_picker.dart",
+        "lib/screens/seasonal/seasonal_screen.dart",
+        "lib/services/api/MAL/mal_api.dart",
+        "lib/l10n/units/explore-weekly/**",
+        "test/units/explore-weekly/**",
+        "test/units/explore-weekly/**"
+      ],
+      "group": "discovery",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "jikan-leftovers",
+      "title": "Videos, user updates and user probe without Jikan",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "tenrai-client",
+        "color-sweep"
+      ],
+      "owns": [
+        "lib/screens/MAL/detail/sections/featured_section.dart",
+        "lib/screens/MAL/detail/section_frame.dart",
+        "lib/widgets/MAL/content/show_featured.dart",
+        "lib/screens/MAL/detail/detail_screen.dart",
+        "lib/widgets/MAL/content/userupdate_widget.dart",
+        "lib/services/api/Jikan/jikan_fallbacks.dart",
+        "lib/services/api/mwl_api.dart",
+        "mwl-api/lib/handlers/handler_core.dart",
+        "mwl-api/mwl_commons/**",
+        "lib/screens/search/search_service.dart",
+        "test/units/jikan-leftovers/**",
+        "lib/l10n/units/jikan-leftovers/**",
+        "test/units/jikan-leftovers/**"
+      ],
+      "group": "detail",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "bookmarks-everywhere",
+      "title": "Bookmarks on forum topics, clubs, articles and stacks",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "color-sweep"
+      ],
+      "owns": [
+        "lib/cache/bookmarks.dart",
+        "lib/widgets/bookmarks/**",
+        "lib/screens/bookmarks_screen.dart",
+        "lib/screens/forum/forum_posts_screen.dart",
+        "lib/screens/forum/club_screen.dart",
+        "lib/screens/MAL/featured_screen.dart",
+        "lib/screens/MAL/interest_stack_detail_screen.dart",
+        "lib/l10n/units/bookmarks-everywhere/**",
+        "test/units/bookmarks-everywhere/**",
+        "test/units/bookmarks-everywhere/**"
+      ],
+      "group": "discovery",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "home-rows",
+      "title": "Home rows honour the 30-item slider; OVA/ONA and manhwa/manhua/novel rows",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "color-sweep"
+      ],
+      "owns": [
+        "lib/user/requests/requests_bloc.dart",
+        "lib/user/MAL/mal_home_page_preferences.dart",
+        "lib/pages/MAL/mal_home_page.dart",
+        "lib/screens/settings/mal_home_settings.dart",
+        "lib/l10n/units/home-rows/**",
+        "test/units/home-rows/**",
+        "test/units/home-rows/**"
+      ],
+      "group": "discovery",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "launch-update-check",
+      "title": "Check for an app update at launch like DailyAL",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "color-sweep"
+      ],
+      "owns": [
+        "lib/screens/home_screen.dart",
+        "lib/services/updater/update_controller.dart",
+        "lib/l10n/units/launch-update-check/**",
+        "test/units/launch-update-check/**",
+        "test/units/launch-update-check/**"
+      ],
+      "group": "release",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "small-fixes",
+      "title": "Dead settings switches, dub icon on cards and tiles, report recommendation, backup keys",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "mal-messages",
+        "profile-lists",
+        "ux-edit-sheet",
+        "mal-session",
+        "color-sweep"
+      ],
+      "owns": [
+        "lib/screens/user_profile/sections/friends_section.dart",
+        "test/units/home-wiring/home_preferences_test.dart",
+        "test/units/profile-tabs/profile_tabs_test.dart",
+        "lib/user/requests/requests_bloc.dart",
+        "lib/widgets/MAL/home/news_widget.dart",
+        "lib/l10n/units/home-wiring/**",
+        "lib/widgets/user/edit/edit_fields.dart",
+        "test/units/edit-sheet/**",
+        "lib/screens/settings/accounts_settings.dart",
+        "lib/widgets/forum/post_widget.dart",
+        "lib/widgets/user/list/cards/entry_parts.dart",
+        "lib/widgets/user/list/cards/entry_cards.dart",
+        "lib/screens/search/search_tiles.dart",
+        "lib/cache/cachemanager.dart",
+        "lib/user/preferences/notification_preferences.dart",
+        "lib/l10n/units/small-fixes/**",
+        "test/units/small-fixes/**",
+        "test/units/small-fixes/**"
+      ],
+      "group": "settings",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "mal-session",
+      "title": "Optional MAL website session (WebView login, native cookies, CSRF client) + profile comments",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P0",
+      "needs": [
+        "color-sweep"
+      ],
+      "owns": [
+        "lib/services/auth/**",
+        "lib/widgets/auth/**",
+        "android/app/src/main/kotlin/**",
+        "lib/services/api/MAL/web/**",
+        "lib/services/auth/mal_web_session*.dart",
+        "lib/screens/settings/mal_session_settings.dart",
+        "lib/widgets/user/profile/profile_comments*.dart",
+        "lib/screens/user_profile/sections/comments_section.dart",
+        "lib/l10n/units/mal-session/**",
+        "test/units/mal-session/**",
+        "pubspec.yaml",
+        "test/units/mal-session/**"
+      ],
+      "group": "foundation",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "kitsu-graphql",
+      "title": "kitsu-graphql",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "tracker-followups"
+      ],
+      "owns": [
+        "lib/services/api/Kitsu/kitsu_graphql.dart",
+        "test/units/kitsu-graphql/**",
+        "lib/l10n/units/kitsu-graphql/**",
+        "test/units/kitsu-graphql/**"
+      ],
+      "group": "trackers",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: sonnet"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "kitsu-media-page",
+      "title": "kitsu-media-page",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "kitsu-graphql",
+        "tracker-followups"
+      ],
+      "owns": [
+        "test/units/kitsu-pages/kitsu_browse_test.dart",
+        "lib/widgets/Kitsu/kitsu_user_list_adapter.dart",
+        "lib/pages/Kitsu/kitsu_media_page.dart",
+        "lib/services/api/Kitsu/kitsu_media_detail.dart",
+        "lib/widgets/Kitsu/media/**",
+        "lib/widgets/Kitsu/kitsu_open.dart",
+        "lib/widgets/Kitsu/kitsu_media_tile.dart",
+        "lib/l10n/units/kitsu-media-page/**",
+        "test/units/kitsu-media-page/**",
+        "test/units/kitsu-media-page/**"
+      ],
+      "group": "trackers",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "kitsu-community",
+      "title": "kitsu-community",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "kitsu-graphql",
+        "tracker-followups"
+      ],
+      "owns": [
+        "lib/pages/Kitsu/kitsu_forum_page.dart",
+        "lib/pages/Kitsu/kitsu_post_page.dart",
+        "lib/pages/Kitsu/kitsu_group_page.dart",
+        "lib/services/api/Kitsu/kitsu_feed.dart",
+        "lib/widgets/Kitsu/feed/**",
+        "lib/l10n/units/kitsu-community/**",
+        "test/units/kitsu-community/**",
+        "test/units/kitsu-community/**"
+      ],
+      "group": "trackers",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "kitsu-profile-plus",
+      "title": "kitsu-profile-plus",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "kitsu-graphql",
+        "tracker-followups"
+      ],
+      "owns": [
+        "lib/widgets/Kitsu/kitsu_profile_view.dart",
+        "lib/widgets/Kitsu/profile/**",
+        "lib/services/api/Kitsu/kitsu_profile.dart",
+        "lib/services/api/Kitsu/kitsu_social.dart",
+        "lib/pages/Kitsu/kitsu_user_profile_page.dart",
+        "lib/l10n/units/kitsu-profile-plus/**",
+        "test/units/kitsu-profile-plus/**",
+        "test/units/kitsu-profile-plus/**"
+      ],
+      "group": "trackers",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "kitsu-home-extras",
+      "title": "kitsu-home-extras",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "home-rows-kinds",
+        "kitsu-community",
+        "tracker-followups"
+      ],
+      "owns": [
+        "lib/pages/Kitsu/kitsu_home_page.dart",
+        "lib/pages/Kitsu/kitsu_explore_page.dart",
+        "lib/pages/Kitsu/kitsu_browse_screen.dart",
+        "lib/widgets/Kitsu/kitsu_rows.dart",
+        "lib/widgets/Kitsu/kitsu_media_row.dart",
+        "lib/services/api/Kitsu/kitsu_catalog.dart",
+        "lib/l10n/units/kitsu-home-extras/**",
+        "test/units/kitsu-home-extras/**",
+        "test/units/kitsu-home-extras/**"
+      ],
+      "group": "trackers",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "simkl-api-compliance",
+      "title": "simkl-api-compliance",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "tracker-followups"
+      ],
+      "owns": [
+        "lib/services/api/SimKl/simkl_client.dart",
+        "test/units/simkl-api-compliance/**",
+        "lib/l10n/units/simkl-api-compliance/**",
+        "test/units/simkl-api-compliance/**"
+      ],
+      "group": "trackers",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: sonnet"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "simkl-auth-v2",
+      "title": "simkl-auth-v2",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "ux-edit-sheet",
+        "simkl-api-compliance",
+        "tracker-followups"
+      ],
+      "owns": [
+        "lib/services/api/SimKl/simkl_api.dart",
+        "lib/widgets/user/sync/tracker_clients.dart",
+        "lib/services/auth/simkl_auth.dart",
+        "lib/services/auth/simkl_auth_v2.dart",
+        "lib/services/auth/simkl_authresp.dart",
+        "lib/user/user_simkl_v2.dart",
+        "test/units/simkl-auth-v2/**",
+        "lib/l10n/units/simkl-auth-v2/**",
+        "test/units/simkl-auth-v2/**"
+      ],
+      "group": "trackers",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "simkl-cdn-feeds",
+      "title": "simkl-cdn-feeds",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "home-rows-kinds",
+        "simkl-api-compliance",
+        "tracker-followups"
+      ],
+      "owns": [
+        "lib/services/api/SimKl/simkl_cdn.dart",
+        "lib/services/api/SimKl/simkl_discover_service.dart",
+        "lib/pages/Simkl/simkl_explore_page.dart",
+        "lib/pages/Simkl/simkl_home_page.dart",
+        "lib/widgets/Simkl/simkl_feeds.dart",
+        "lib/widgets/Simkl/simkl_home_plan.dart",
+        "lib/l10n/units/simkl-cdn-feeds/**",
+        "test/units/simkl-cdn-feeds/**",
+        "test/units/simkl-cdn-feeds/**"
+      ],
+      "group": "trackers",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "simkl-media-page",
+      "title": "simkl-media-page",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "simkl-api-compliance",
+        "tracker-followups"
+      ],
+      "owns": [
+        "lib/pages/Simkl/simkl_media_page.dart",
+        "lib/services/api/SimKl/simkl_detail_service.dart",
+        "lib/services/api/SimKl/simkl_detail_models.dart",
+        "lib/services/api/SimKl/scrapper/**",
+        "lib/widgets/Simkl/media/**",
+        "lib/widgets/Simkl/simkl_media_widgets.dart",
+        "lib/l10n/units/simkl-media-page/**",
+        "test/units/simkl-media-page/**",
+        "test/units/simkl-media-page/**"
+      ],
+      "group": "trackers",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "simkl-profile-plus",
+      "title": "simkl-profile-plus",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "simkl-cdn-feeds",
+        "simkl-media-page",
+        "simkl-api-compliance",
+        "tracker-followups"
+      ],
+      "owns": [
+        "lib/widgets/Simkl/simkl_profile_view.dart",
+        "lib/pages/Simkl/simkl_user_profile_page.dart",
+        "lib/services/api/SimKl/simkl_user_prof.dart",
+        "lib/services/api/SimKl/simkl_stats_service.dart",
+        "lib/services/api/SimKl/simkl_models.dart",
+        "lib/l10n/units/simkl-profile-plus/**",
+        "test/units/simkl-profile-plus/**",
+        "test/units/simkl-profile-plus/**"
+      ],
+      "group": "trackers",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "simkl-list-sync",
+      "title": "simkl-list-sync",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "simkl-cdn-feeds",
+        "simkl-media-page",
+        "simkl-api-compliance",
+        "simkl-profile-plus",
+        "tracker-followups"
+      ],
+      "owns": [
+        "test/units/simkl-pages/service_test.dart",
+        "test/units/simkl-pages/adapter_and_sheet_test.dart",
+        "lib/pages/Simkl/simkl_home_page.dart",
+        "lib/widgets/Simkl/simkl_home_plan.dart",
+        "test/units/simkl-pages/home_plan_test.dart",
+        "lib/widgets/Simkl/media/**",
+        "lib/services/api/SimKl/simkl_client.dart",
+        "lib/services/api/SimKl/simkl_list_service.dart",
+        "lib/services/api/SimKl/simkl_user.dart",
+        "lib/widgets/Simkl/simkl_user_list_adapter.dart",
+        "lib/widgets/Simkl/simkl_edit_sheet.dart",
+        "lib/widgets/Simkl/simkl_states.dart",
+        "lib/pages/Simkl/simkl_user_page.dart",
+        "lib/l10n/units/simkl-list-sync/**",
+        "test/units/simkl-list-sync/**",
+        "test/units/simkl-list-sync/**"
+      ],
+      "group": "trackers",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "ux-explore",
+      "title": "Explore like DailyAL: tonal buttons, arrow headers, no extra search, no captions",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "explore-weekly"
+      ],
+      "owns": [
+        "lib/pages/MAL/mal_explore_page.dart",
+        "lib/screens/explore/**",
+        "test/units/ux-explore/**",
+        "lib/l10n/units/ux-explore/**",
+        "test/units/ux-explore/**"
+      ],
+      "group": "settings",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "ux-search",
+      "title": "Search home and results like DailyAL; one season picker",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "small-fixes",
+        "ux-explore"
+      ],
+      "owns": [
+        "test/units/shared-kit/select_test.dart",
+        "lib/screens/search/search_home_view.dart",
+        "lib/screens/search/search_tiles.dart",
+        "lib/screens/search/search_filter_panel.dart",
+        "lib/widgets/common/select/searchable_select.dart",
+        "lib/l10n/units/ux-search/**",
+        "test/units/ux-search/**",
+        "test/units/ux-search/**"
+      ],
+      "group": "settings",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "ux-reviews",
+      "title": "Reviewer tap opens the profile directly; Helpful sort by default",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "mal-messages",
+        "profile-lists"
+      ],
+      "owns": [
+        "lib/widgets/MAL/review/**",
+        "lib/widgets/user/profile/user_pop_sheet.dart",
+        "lib/l10n/units/ux-reviews/**",
+        "test/units/ux-reviews/**",
+        "test/units/ux-reviews/**"
+      ],
+      "group": "settings",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "ux-detail-content",
+      "title": "Detail content like DailyAL: adaptation tiles, empty featured hidden, fixed cast thumbnails",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [],
+      "owns": [
+        "test/units/detail-resilience/score_stats_fallback_test.dart",
+        "lib/widgets/MAL/content/scorestatisticswidget.dart",
+        "lib/widgets/MAL/content/show_featured.dart",
+        "lib/widgets/MAL/content/adaptation_widget.dart",
+        "lib/screens/MAL/characters_staff_screen.dart",
+        "lib/l10n/units/ux-detail-content/**",
+        "test/units/ux-detail-content/**",
+        "test/units/ux-detail-content/**"
+      ],
+      "group": "settings",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "ux-edit-sheet",
+      "title": "Edit sheet as DailyAL's single compact card; sync panel behind More options",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [],
+      "owns": [
+        "lib/widgets/user/edit/**",
+        "lib/widgets/user/contenteditwidget.dart",
+        "lib/widgets/user/sync/**",
+        "lib/widgets/user/cross_tracker_widget.dart",
+        "lib/l10n/units/ux-edit-sheet/**",
+        "test/units/ux-edit-sheet/**",
+        "test/units/ux-edit-sheet/**"
+      ],
+      "group": "settings",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "ux-calendar",
+      "title": "Calendar as DailyAL's week grouped by day; never opens on an empty day",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [],
+      "owns": [
+        "lib/screens/calendar/**",
+        "lib/widgets/calendar/**",
+        "lib/l10n/units/ux-calendar/**",
+        "test/units/ux-calendar/**",
+        "test/units/ux-calendar/**"
+      ],
+      "group": "settings",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "ux-seasonal",
+      "title": "Seasonal header and list rows like DailyAL",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "explore-weekly"
+      ],
+      "owns": [
+        "lib/screens/seasonal/**",
+        "lib/l10n/units/ux-seasonal/**",
+        "test/units/ux-seasonal/**",
+        "test/units/ux-seasonal/**"
+      ],
+      "group": "settings",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "ux-theme",
+      "title": "Theme settings without captions or preview card",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [],
+      "owns": [
+        "lib/screens/settings/theme_settings.dart",
+        "lib/l10n/units/ux-theme/**",
+        "test/units/ux-theme/**",
+        "test/units/theme-seasons/theme_seasons_test.dart",
+        "test/units/ux-theme/**"
+      ],
+      "group": "settings",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "ux-home",
+      "title": "Home like DailyAL: status badge on cards, plain header icons, Fall row order",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "home-rows"
+      ],
+      "owns": [
+        "lib/pages/MAL/mal_home_page.dart",
+        "lib/widgets/home/**",
+        "lib/widgets/MAL/home/homeappbar.dart",
+        "lib/widgets/MAL/home/animegridcard.dart",
+        "lib/l10n/units/ux-home/**",
+        "test/units/ux-home/**",
+        "test/units/ux-home/**"
+      ],
+      "group": "settings",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "ux-stack",
+      "title": "Interest stack page: MAL title case, collapsing app bar, single-line tabs",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "bookmarks-everywhere"
+      ],
+      "owns": [
+        "lib/screens/MAL/interest_stack_detail_screen.dart",
+        "lib/widgets/MAL/content/intereststackwidget.dart",
+        "lib/l10n/units/ux-stack/**",
+        "test/units/ux-stack/**",
+        "test/units/ux-stack/**"
+      ],
+      "group": "settings",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "ux-forum",
+      "title": "Forum topic rows like DailyAL",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "bookmarks-everywhere"
+      ],
+      "owns": [
+        "lib/screens/forum/forum_topics_screen.dart",
+        "lib/widgets/forum/forum_topic_widget.dart",
+        "lib/l10n/units/ux-forum/**",
+        "test/units/ux-forum/**",
+        "test/units/ux-forum/**"
+      ],
+      "group": "settings",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "home-rows-kinds",
+      "title": "Home OVA/ONA and manhwa/manhua/novel ranking rows (H3) with tracker cases",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "home-rows"
+      ],
+      "owns": [
+        "lib/services/api/Anilist/anilist_discover_service.dart",
+        "test/units/home-rows-kinds/**",
+        "lib/user/MAL/mal_home_page_preferences.dart",
+        "lib/user/requests/requests_bloc.dart",
+        "lib/screens/settings/mal_home_settings.dart",
+        "lib/widgets/Anilist/anilist_home_sections.dart",
+        "lib/widgets/Kitsu/kitsu_rows.dart",
+        "lib/widgets/Simkl/simkl_home_plan.dart",
+        "lib/l10n/units/home-rows/**",
+        "test/units/home-rows/**",
+        "test/units/home-rows-kinds/**"
+      ],
+      "group": "discovery",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: sonnet"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "ux-polish-2",
+      "title": "Tonal buttons stay tonal; explicit card hidden with NSFW off like DailyAL",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "ux-explore",
+        "ux-theme"
+      ],
+      "owns": [
+        "lib/screens/search/search_results_part.dart",
+        "lib/user/theme/app_themes.dart",
+        "lib/pages/MAL/mal_explore_page.dart",
+        "lib/screens/explore/**",
+        "test/units/explore-polish/**",
+        "test/units/ux-polish-2/**",
+        "lib/l10n/units/explore-polish/**",
+        "test/units/ux-polish-2/**"
+      ],
+      "group": "settings",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: sonnet"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "mal-notifications",
+      "title": "MAL notifications in the app: notification hub, mark as read, background polling with Android notifications",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P0",
+      "needs": [
+        "mal-session"
+      ],
+      "owns": [
+        "lib/services/api/MAL/web/mal_notifications_api.dart",
+        "lib/screens/mal_web/notifications_screen.dart",
+        "lib/widgets/mal_web/notification_tiles.dart",
+        "lib/services/notifications/**",
+        "lib/l10n/units/mal-notifications/**",
+        "test/units/mal-notifications/**",
+        "test/units/mal-notifications/**"
+      ],
+      "group": "user",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "mal-messages",
+      "title": "MAL private messages: inbox, sent, thread, compose and reply",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P0",
+      "needs": [
+        "mal-session"
+      ],
+      "owns": [
+        "lib/services/api/MAL/web/mal_messages_api.dart",
+        "lib/screens/mal_web/messages_screen.dart",
+        "lib/screens/mal_web/message_thread_screen.dart",
+        "lib/screens/mal_web/compose_message_screen.dart",
+        "lib/widgets/mal_web/message_tiles.dart",
+        "lib/l10n/units/mal-messages/**",
+        "test/units/mal-messages/**",
+        "test/units/mal-messages/**"
+      ],
+      "group": "user",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "anilist-client-limits",
+      "title": "anilist-client-limits",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [],
+      "owns": [
+        "lib/services/api/Anilist/anilist_graphql.dart",
+        "lib/services/api/Anilist/anilist_media.dart",
+        "lib/services/api/Anilist/anilist_actions.dart",
+        "test/units/anilist-client-limits/**",
+        "lib/l10n/units/anilist-client-limits/**",
+        "test/units/anilist-client-limits/**",
+        "test/units/anilist-client-limits/**"
+      ],
+      "group": "trackers",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: sonnet"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "anilist-list-fidelity",
+      "title": "anilist-list-fidelity",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "anilist-client-limits"
+      ],
+      "owns": [
+        "lib/services/api/Anilist/anilist_user.dart",
+        "lib/services/api/Anilist/anilist_api.dart",
+        "lib/widgets/user/sync/tracker_clients.dart",
+        "lib/services/tracker_sync_service.dart",
+        "lib/services/api/Anilist/anilist_list_service.dart",
+        "lib/services/api/Anilist/anilist_list_write.dart",
+        "lib/widgets/Anilist/anilist_user_list_adapter.dart",
+        "lib/pages/Anilist/anilist_user_page.dart",
+        "lib/widgets/Anilist/list/**",
+        "lib/l10n/units/anilist-list-fidelity/**",
+        "test/units/anilist-list-fidelity/**",
+        "lib/l10n/units/anilist-list-fidelity/**",
+        "test/units/anilist-list-fidelity/**",
+        "test/units/anilist-list-fidelity/**"
+      ],
+      "group": "trackers",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "anilist-people-pages",
+      "title": "anilist-people-pages",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "anilist-client-limits"
+      ],
+      "owns": [
+        "lib/widgets/Anilist/social/anilist_links.dart",
+        "lib/pages/Anilist/anilist_character_page.dart",
+        "lib/pages/Anilist/anilist_staff_page.dart",
+        "lib/pages/Anilist/anilist_studio_page.dart",
+        "lib/services/api/Anilist/anilist_people_service.dart",
+        "lib/widgets/Anilist/people/**",
+        "lib/l10n/units/anilist-people-pages/**",
+        "test/units/anilist-people-pages/**",
+        "lib/l10n/units/anilist-people-pages/**",
+        "test/units/anilist-people-pages/**",
+        "test/units/anilist-people-pages/**"
+      ],
+      "group": "trackers",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "anilist-search-filters",
+      "title": "anilist-search-filters",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "anilist-client-limits"
+      ],
+      "owns": [
+        "lib/services/api/Anilist/anilist_discover_service.dart",
+        "lib/services/api/Anilist/anilist_catalog.dart",
+        "lib/widgets/Anilist/anilist_browse_screen.dart",
+        "lib/widgets/Anilist/anilist_chips.dart",
+        "lib/widgets/Anilist/search/**",
+        "lib/l10n/units/anilist-search-filters/**",
+        "test/units/anilist-search-filters/**",
+        "lib/l10n/units/anilist-search-filters/**",
+        "test/units/anilist-search-filters/**",
+        "test/units/anilist-search-filters/**"
+      ],
+      "group": "trackers",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "anilist-social",
+      "title": "anilist-social",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "anilist-client-limits"
+      ],
+      "owns": [
+        "lib/pages/Anilist/anilist_forum_page.dart",
+        "lib/widgets/Anilist/anilist_thread_tile.dart",
+        "lib/pages/Anilist/anilist_thread_page.dart",
+        "lib/pages/Anilist/anilist_activity_page.dart",
+        "lib/pages/Anilist/anilist_review_page.dart",
+        "lib/services/api/Anilist/anilist_social_service.dart",
+        "lib/widgets/Anilist/social/**",
+        "lib/l10n/units/anilist-social/**",
+        "test/units/anilist-social/**",
+        "lib/l10n/units/anilist-social/**",
+        "test/units/anilist-social/**",
+        "test/units/anilist-social/**"
+      ],
+      "group": "trackers",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "anilist-notifications",
+      "title": "anilist-notifications",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "anilist-client-limits",
+        "anilist-social"
+      ],
+      "owns": [
+        "lib/pages/Anilist/anilist_notifications_page.dart",
+        "lib/services/api/Anilist/anilist_notifications_service.dart",
+        "lib/widgets/Anilist/notifications/**",
+        "lib/l10n/units/anilist-notifications/**",
+        "test/units/anilist-notifications/**",
+        "lib/l10n/units/anilist-notifications/**",
+        "test/units/anilist-notifications/**",
+        "test/units/anilist-notifications/**"
+      ],
+      "group": "trackers",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "anilist-settings",
+      "title": "anilist-settings",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "anilist-client-limits"
+      ],
+      "owns": [
+        "lib/pages/Anilist/anilist_settings_page.dart",
+        "lib/services/api/Anilist/anilist_settings_service.dart",
+        "lib/widgets/Anilist/settings/**",
+        "lib/l10n/units/anilist-settings/**",
+        "test/units/anilist-settings/**",
+        "lib/l10n/units/anilist-settings/**",
+        "test/units/anilist-settings/**",
+        "test/units/anilist-settings/**"
+      ],
+      "group": "trackers",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "anilist-media-page",
+      "title": "anilist-media-page",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "anilist-list-fidelity",
+        "anilist-people-pages",
+        "anilist-social"
+      ],
+      "owns": [
+        "lib/widgets/Anilist/search/anilist_search_links.dart",
+        "lib/widgets/Anilist/search/anilist_result_tiles.dart",
+        "lib/widgets/Anilist/social/anilist_links.dart",
+        "lib/widgets/Anilist/anilist_user_list_adapter.dart",
+        "lib/pages/Anilist/anilist_media_page.dart",
+        "lib/services/api/Anilist/anilist_media_detail.dart",
+        "lib/widgets/Anilist/media/**",
+        "lib/widgets/Anilist/anilist_media_card.dart",
+        "lib/l10n/units/anilist-media-page/**",
+        "test/units/anilist-media-page/**",
+        "lib/l10n/units/anilist-media-page/**",
+        "test/units/anilist-media-page/**",
+        "test/units/anilist-media-page/**"
+      ],
+      "group": "trackers",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "anilist-profile-plus",
+      "title": "anilist-profile-plus",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "anilist-social",
+        "anilist-people-pages",
+        "anilist-settings",
+        "anilist-list-fidelity"
+      ],
+      "owns": [
+        "lib/widgets/Anilist/anilist_profile_view.dart",
+        "lib/services/api/Anilist/anilist_profile_service.dart",
+        "lib/pages/Anilist/anilist_user_profile_page.dart",
+        "lib/pages/Anilist/anilist_other_list_page.dart",
+        "lib/services/api/Anilist/anilist_follow_service.dart",
+        "lib/widgets/Anilist/profile/**",
+        "lib/l10n/units/anilist-profile-plus/**",
+        "test/units/anilist-profile-plus/**",
+        "lib/l10n/units/anilist-profile-plus/**",
+        "test/units/anilist-profile-plus/**",
+        "test/units/anilist-profile-plus/**"
+      ],
+      "group": "trackers",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "anilist-home-extras",
+      "title": "anilist-home-extras",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "anilist-search-filters",
+        "anilist-social",
+        "anilist-people-pages",
+        "anilist-notifications"
+      ],
+      "owns": [
+        "lib/services/notifications/notification_service.dart",
+        "lib/main.dart",
+        "lib/screens/settings/notifications_settings.dart",
+        "lib/pages/Anilist/anilist_home_page.dart",
+        "lib/pages/Anilist/anilist_explore_page.dart",
+        "lib/widgets/Anilist/anilist_home_sections.dart",
+        "lib/services/api/Anilist/anilist_feeds_service.dart",
+        "lib/widgets/Anilist/home/**",
+        "lib/l10n/units/anilist-home-extras/**",
+        "test/units/anilist-home-extras/**",
+        "lib/l10n/units/anilist-home-extras/**",
+        "test/units/anilist-home-extras/**",
+        "test/units/anilist-home-extras/**"
+      ],
+      "group": "trackers",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "mal-episodes",
+      "title": "mal-episodes",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [],
+      "owns": [
+        "lib/services/api/MAL/scrapper/episodes_page.dart",
+        "lib/screens/MAL/episodes/episodes_screen.dart",
+        "lib/screens/MAL/detail/sections/episodes_section.dart",
+        "lib/screens/MAL/detail/detail_sections.dart",
+        "lib/constants/constants.dart",
+        "lib/l10n/units/mal-episodes/**",
+        "lib/l10n/units/mal-episodes/**",
+        "test/units/mal-episodes/**",
+        "test/units/mal-episodes/**"
+      ],
+      "group": "trackers",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "mal-detail-sidebar",
+      "title": "mal-detail-sidebar",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "ux-home",
+        "jikan-leftovers",
+        "mal-episodes"
+      ],
+      "owns": [
+        "lib/user/preferences/content_preferences.dart",
+        "test/units/detail-split/detail_sections_test.dart",
+        "lib/widgets/user/contenteditwidget.dart",
+        "mwl-api/mwl_commons/lib/src/model/html/anime_detailed_html.dart",
+        "mwl-api/mwl_commons/lib/src/services/html_parser.dart",
+        "mwl-api/test/fixtures/anime_php.html",
+        "lib/widgets/MAL/content/more_info_widget.dart",
+        "lib/screens/MAL/detail/header/header_meta.dart",
+        "lib/screens/MAL/detail/sections/media_section.dart",
+        "lib/services/api/MAL/mal_anime.dart",
+        "lib/widgets/MAL/home/animegridcard.dart",
+        "lib/l10n/units/mal-detail-sidebar/**",
+        "lib/l10n/units/mal-detail-sidebar/**",
+        "test/units/mal-detail-sidebar/**",
+        "test/units/mal-detail-sidebar/**"
+      ],
+      "group": "trackers",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "mal-seasonal-groups",
+      "title": "mal-seasonal-groups",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [],
+      "owns": [
+        "lib/screens/seasonal/seasonal_data.dart",
+        "lib/screens/seasonal/seasonal_screen.dart",
+        "lib/screens/seasonal/season_utils.dart",
+        "lib/l10n/units/mal-seasonal-groups/**",
+        "lib/l10n/units/mal-seasonal-groups/**",
+        "test/units/mal-seasonal-groups/**",
+        "test/units/mal-seasonal-groups/**"
+      ],
+      "group": "trackers",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "mal-list-time",
+      "title": "mal-list-time",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "small-fixes"
+      ],
+      "owns": [
+        "lib/widgets/user/list/mal_user_list_adapter.dart",
+        "lib/widgets/user/list/list_entry_view.dart",
+        "lib/widgets/user/list/user_list_view.dart",
+        "lib/widgets/user/list/card_layout_editor.dart",
+        "lib/l10n/units/mal-list-time/**",
+        "lib/l10n/units/mal-list-time/**",
+        "test/units/mal-list-time/**",
+        "test/units/mal-list-time/**"
+      ],
+      "group": "trackers",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "mal-profile-extras",
+      "title": "mal-profile-extras",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "profile-lists"
+      ],
+      "owns": [
+        "lib/services/api/MAL/mal_user_prof.dart",
+        "lib/services/api/MAL/mal_user.dart",
+        "lib/screens/user_profile/user_profile_data.dart",
+        "lib/screens/user_profile/user_profile_view.dart",
+        "lib/screens/user_profile/sections/profile_tabs_source.dart",
+        "lib/screens/user_profile/sections/reviews_section.dart",
+        "lib/widgets/user/profile/profile_header.dart",
+        "lib/l10n/units/mal-profile-extras/**",
+        "lib/l10n/units/mal-profile-extras/**",
+        "test/units/mal-profile-extras/**",
+        "test/units/mal-profile-extras/**"
+      ],
+      "group": "trackers",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "mal-list-xml",
+      "title": "mal-list-xml",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [],
+      "owns": [
+        "lib/services/list_export/mal_xml.dart",
+        "lib/services/list_export/mal_xml_import.dart",
+        "lib/screens/settings/backup_settings.dart",
+        "lib/l10n/units/mal-list-xml/**",
+        "lib/l10n/units/mal-list-xml/**",
+        "test/units/mal-list-xml/**",
+        "test/units/mal-list-xml/**"
+      ],
+      "group": "trackers",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "mal-web-writes-2",
+      "title": "mal-web-writes-2",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "ux-reviews"
+      ],
+      "owns": [
+        "lib/services/api/MAL/web/forum_poll_api.dart",
+        "lib/services/api/MAL/web/review_write_api.dart",
+        "lib/services/api/MAL/web/recommendation_write_api.dart",
+        "lib/screens/forum/forum_posts_screen.dart",
+        "lib/widgets/MAL/review/reviews_list_screen.dart",
+        "lib/screens/MAL/detail/sections/recommendations_section.dart",
+        "lib/l10n/units/mal-web-writes-2/**",
+        "lib/l10n/units/mal-web-writes-2/**",
+        "test/units/mal-web-writes-2/**",
+        "test/units/mal-web-writes-2/**"
+      ],
+      "group": "trackers",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "mal-api-small",
+      "title": "mal-api-small",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [],
+      "owns": [
+        "lib/screens/search/search_queries.dart",
+        "lib/services/api/MAL/mal_api.dart",
+        "lib/enums.dart",
+        "lib/services/api/MAL/scrapper/title_clubs.dart",
+        "lib/screens/explore/explore_sections.dart",
+        "lib/l10n/units/mal-api-small/**",
+        "test/units/mal-api-small/**",
+        "test/units/mal-api-small/**"
+      ],
+      "group": "trackers",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: sonnet"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "mal-hub-wiring",
+      "title": "MAL notifications: bell, sidebar entry, background polling when the app is closed, settings switches",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P0",
+      "needs": [
+        "mal-notifications",
+        "ux-home",
+        "mal-messages"
+      ],
+      "owns": [
+        "lib/screens/user_profile/user_profile_view.dart",
+        "lib/widgets/MAL/home/homeappbar.dart",
+        "lib/pages/side_bar.dart",
+        "pubspec.yaml",
+        "pubspec.lock",
+        "lib/main.dart",
+        "docs/STACK.md",
+        "lib/screens/settings/notifications_settings.dart",
+        "lib/services/api/MAL/web/mal_web_client.dart",
+        "android/app/src/main/AndroidManifest.xml",
+        "lib/l10n/units/mal-hub-wiring/**",
+        "test/units/mal-hub-wiring/**",
+        "test/units/mal-hub-wiring/**"
+      ],
+      "group": "user",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "mal-hub-followups",
+      "title": "MAL hub follow-ups: in-app thread on message tap, JSON posts through postJson, message poller next to the hub poller",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "mal-hub-wiring"
+      ],
+      "owns": [
+        "lib/utils/app_routes.dart",
+        "lib/services/notifications/notification_service.dart",
+        "lib/services/notifications/mal_hub_poller.dart",
+        "lib/services/api/MAL/web/mal_notifications_api.dart",
+        "lib/main.dart",
+        "lib/l10n/units/mal-hub-followups/**",
+        "test/units/mal-hub-followups/**",
+        "test/units/mal-hub-followups/**"
+      ],
+      "group": "user",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "list-time-followups",
+      "title": "My List: time left card field, season/studio/author/rating filters, rewatch badge, time line for every tracker",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "mal-list-time",
+        "anilist-list-fidelity"
+      ],
+      "owns": [
+        "lib/user/preferences/content_card_props.dart",
+        "lib/widgets/user/list/cards/**",
+        "lib/widgets/user/list/list_query.dart",
+        "lib/widgets/user/list/user_list_view.dart",
+        "lib/widgets/user/list/user_list_adapter.dart",
+        "lib/widgets/user/list/card_layout_editor.dart",
+        "lib/widgets/user/list/user_list_tab.dart",
+        "lib/l10n/units/list-time-followups/**",
+        "test/units/list-time-followups/**",
+        "test/units/list-time-followups/**"
+      ],
+      "group": "user",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "mal-ona-ranking",
+      "title": "Top ONA through Jikan/Tenrai (MAL rejects ranking_type=ona); drop the anime_id list sort",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "mal-api-small"
+      ],
+      "owns": [
+        "lib/services/api/MAL/mal_api.dart",
+        "lib/enums.dart",
+        "lib/services/api/Jikan/jikan_api.dart",
+        "test/units/mal-ona-ranking/**",
+        "lib/l10n/units/mal-ona-ranking/**",
+        "test/units/mal-ona-ranking/**"
+      ],
+      "group": "trackers",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "simkl-redesign",
+      "title": "Simkl screens redesigned from the Simkl UI reference: title page, home, explore/calendar, profile, list rows",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "simkl-list-sync"
+      ],
+      "owns": [
+        "lib/pages/Simkl/simkl_media_page.dart",
+        "lib/pages/Simkl/simkl_home_page.dart",
+        "lib/pages/Simkl/simkl_explore_page.dart",
+        "lib/pages/Simkl/simkl_user_profile_page.dart",
+        "lib/pages/Simkl/simkl_user_page.dart",
+        "lib/widgets/Simkl/**",
+        "lib/l10n/units/simkl-redesign/**",
+        "test/units/simkl-redesign/**",
+        "test/units/simkl-redesign/**"
+      ],
+      "group": "trackers",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "kitsu-redesign",
+      "title": "Kitsu home, explore and library redesigned from the Kitsu UI reference",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "kitsu-home-extras",
+        "kitsu-media-page",
+        "kitsu-profile-plus"
+      ],
+      "owns": [
+        "lib/widgets/Kitsu/profile/kitsu_profile_rows.dart",
+        "lib/pages/Kitsu/kitsu_media_page.dart",
+        "lib/widgets/Kitsu/media/**",
+        "lib/widgets/Kitsu/kitsu_open.dart",
+        "lib/l10n/units/kitsu-pages/**",
+        "lib/pages/Kitsu/kitsu_home_page.dart",
+        "lib/pages/Kitsu/kitsu_explore_page.dart",
+        "lib/pages/Kitsu/kitsu_browse_screen.dart",
+        "lib/pages/Kitsu/kitsu_user_page.dart",
+        "lib/widgets/Kitsu/kitsu_rows.dart",
+        "lib/widgets/Kitsu/kitsu_media_row.dart",
+        "lib/widgets/Kitsu/kitsu_user_list_adapter.dart",
+        "lib/services/api/Kitsu/kitsu_catalog.dart",
+        "lib/l10n/units/kitsu-redesign/**",
+        "test/units/kitsu-redesign/**",
+        "test/units/kitsu-redesign/**"
+      ],
+      "group": "trackers",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "anilist-list-design",
+      "title": "AniList list and list rows redesigned from the AniList UI reference",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "anilist-list-fidelity",
+        "anilist-media-page"
+      ],
+      "owns": [
+        "test/units/mal-list-time/list_time_test.dart",
+        "lib/widgets/user/list/list_entry_view.dart",
+        "lib/pages/Anilist/anilist_user_page.dart",
+        "lib/widgets/Anilist/list/**",
+        "lib/widgets/Anilist/anilist_user_list_adapter.dart",
+        "lib/l10n/units/anilist-list-design/**",
+        "test/units/anilist-list-design/**",
+        "test/units/anilist-list-design/**"
+      ],
+      "group": "trackers",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "mal-web-recaptcha",
+      "title": "MAL writes protected by reCAPTCHA go through an invisible WebView; user pictures in messages",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P0",
+      "needs": [
+        "mal-messages"
+      ],
+      "owns": [
+        "lib/services/api/MAL/web/mal_web_form_submitter.dart",
+        "lib/services/api/MAL/web/mal_web_client.dart",
+        "lib/services/api/MAL/web/mal_messages_api.dart",
+        "lib/services/api/MAL/web/profile_comments_api.dart",
+        "lib/services/api/MAL/web/mal_notifications_api.dart",
+        "lib/screens/mal_web/**",
+        "lib/widgets/forum/forum_common.dart",
+        "lib/l10n/units/mal-web-recaptcha/**",
+        "test/units/mal-web-recaptcha/**",
+        "test/units/mal-messages/**",
+        "test/units/mal-session/**",
+        "test/units/mal-web-recaptcha/**"
+      ],
+      "group": "user",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "simkl-data-plus",
+      "title": "Simkl: full CDN fields, next_to_watch_info, external ids, title language, calendar route, check-in",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "simkl-redesign"
+      ],
+      "owns": [
+        "lib/services/api/SimKl/**",
+        "lib/pages/Simkl/**",
+        "lib/widgets/Simkl/**",
+        "lib/utils/app_routes.dart",
+        "lib/l10n/units/simkl-data-plus/**",
+        "test/units/simkl-data-plus/**",
+        "test/units/simkl-data-plus/**"
+      ],
+      "group": "trackers",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: sonnet"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "tracker-list-hooks",
+      "title": "Shared My List: adapter hooks for status labels, score display, card badges and a rating prompt",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "list-time-followups"
+      ],
+      "owns": [
+        "lib/widgets/user/list/**",
+        "lib/widgets/Kitsu/kitsu_user_list_adapter.dart",
+        "lib/widgets/Simkl/simkl_user_list_adapter.dart",
+        "lib/l10n/units/tracker-list-hooks/**",
+        "test/units/tracker-list-hooks/**",
+        "test/units/tracker-list-hooks/**"
+      ],
+      "group": "trackers",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: sonnet"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "kitsu-finish",
+      "title": "Kitsu: follow, groups and library count on profiles, % on every tile, sync editor in the account's rating system",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "kitsu-redesign"
+      ],
+      "owns": [
+        "lib/services/api/Kitsu/kitsu_profile.dart",
+        "lib/widgets/Kitsu/feed/**",
+        "lib/widgets/Kitsu/profile/**",
+        "lib/widgets/Kitsu/kitsu_profile_view.dart",
+        "lib/widgets/Kitsu/kitsu_media_tile.dart",
+        "lib/services/api/Kitsu/kitsu_http.dart",
+        "lib/services/api/Kitsu/kitsu_graphql.dart",
+        "lib/widgets/user/sync/tracker_entry_editor.dart",
+        "lib/l10n/units/kitsu-pages/**",
+        "test/units/kitsu-pages/**",
+        "lib/l10n/units/kitsu-finish/**",
+        "test/units/kitsu-finish/**",
+        "test/units/kitsu-finish/**"
+      ],
+      "group": "trackers",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: sonnet"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "anilist-polish",
+      "title": "AniList polish: standalone forum page, in-app activities, account title language, settings toggles, image placeholder",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P2",
+      "needs": [
+        "anilist-media-page",
+        "anilist-profile-plus",
+        "anilist-home-extras"
+      ],
+      "owns": [
+        "lib/pages/Anilist/anilist_forum_page.dart",
+        "lib/widgets/Anilist/social/anilist_activity_tile.dart",
+        "lib/services/api/Anilist/anilist_list_service.dart",
+        "lib/widgets/Anilist/settings/notification_types_sheet.dart",
+        "lib/widgets/common/app_image.dart",
+        "lib/l10n/units/anilist-polish/**",
+        "test/units/anilist-polish/**",
+        "test/units/anilist-polish/**"
+      ],
+      "group": "trackers",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: sonnet"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "kitsu-polish",
+      "title": "Kitsu polish: Quick update carousel, exact ratings and reactions in the library, histogram buckets, grid short words, status filter wording",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "kitsu-finish",
+        "tracker-list-hooks"
+      ],
+      "owns": [
+        "lib/widgets/Kitsu/kitsu_rows.dart",
+        "lib/pages/Kitsu/kitsu_home_page.dart",
+        "lib/widgets/Kitsu/media/**",
+        "lib/services/api/Kitsu/kitsu_library.dart",
+        "lib/widgets/Kitsu/kitsu_user_list_adapter.dart",
+        "lib/widgets/common/list_sort_filter.dart",
+        "lib/l10n/units/kitsu-polish/**",
+        "test/units/kitsu-polish/**",
+        "test/units/kitsu-polish/**"
+      ],
+      "group": "user",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: sonnet"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "mal-polish",
+      "title": "MAL polish: Accounts caption, MAL session from its tile, active account after the website login, bell label, Clubs row, Supporter badge for others, time zone in About",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "mal-hub-followups"
+      ],
+      "owns": [
+        "lib/screens/manage_accounts_page.dart",
+        "lib/user/accounts/**",
+        "lib/widgets/MAL/home/homeappbar.dart",
+        "lib/screens/MAL/detail/sections/forums_section.dart",
+        "lib/services/api/MAL/scrapper/user_profile_page.dart",
+        "lib/screens/user_profile/sections/about_section.dart",
+        "lib/widgets/user/profile/profile_header.dart",
+        "lib/l10n/units/mal-polish/**",
+        "test/units/mal-polish/**",
+        "test/units/mal-polish/**"
+      ],
+      "group": "user",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: sonnet"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "mal-polish-2",
+      "title": "MAL polish 2: Settings > Accounts uses the new page, Supporter badge for others, time zone in About, dead TrackerTile, cancelled MAL re-login keeps the session",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "mal-polish"
+      ],
+      "owns": [
+        "test/units/accounts-ux/account_tile_test.dart",
+        "lib/screens/settings/accounts_settings.dart",
+        "lib/utils/app_routes.dart",
+        "lib/screens/user_profile/user_profile_data.dart",
+        "lib/screens/user_profile/user_profile_view.dart",
+        "lib/user/trackers/widgets/tracker_tile.dart",
+        "test/units/accounts-ux/tracker_tile_test.dart",
+        "lib/services/auth/mal_auth_v2.dart",
+        "lib/screens/manage_accounts_page.dart",
+        "lib/l10n/units/mal-polish-2/**",
+        "test/units/mal-polish-2/**",
+        "test/units/mal-polish-2/**"
+      ],
+      "group": "user",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: sonnet"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "anilist-polish-2",
+      "title": "AniList polish 2: other users' lists in their score format, exact next airing in list rows, drop ListTimeSummary.of",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P2",
+      "needs": [
+        "anilist-list-design",
+        "anilist-polish"
+      ],
+      "owns": [
+        "lib/widgets/Anilist/profile/other_list_adapter.dart",
+        "lib/pages/Anilist/anilist_other_list_page.dart",
+        "lib/services/api/Anilist/anilist_list_service.dart",
+        "lib/widgets/user/list/list_entry_view.dart",
+        "test/units/tracker-list-hooks/list_hooks_test.dart",
+        "lib/widgets/Anilist/list/**",
+        "lib/l10n/units/anilist-polish-2/**",
+        "test/units/anilist-polish-2/**",
+        "test/units/anilist-polish-2/**"
+      ],
+      "group": "trackers",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: sonnet"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "mal-friends-feed",
+      "title": "MAL home: a Friends activity section (friends' latest list updates)",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "mal-polish-2"
+      ],
+      "owns": [
+        "lib/user/MAL/mal_home_page_preferences.dart",
+        "lib/screens/settings/mal_home_settings.dart",
+        "lib/pages/MAL/mal_home_page.dart",
+        "lib/widgets/MAL/home/friends_activity_row.dart",
+        "lib/l10n/units/mal-friends-feed/**",
+        "test/units/mal-friends-feed/**",
+        "test/units/mal-friends-feed/**"
+      ],
+      "group": "user",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: sonnet"
+      ],
+      "status": "⬜ todo"
+    },
+    {
+      "id": "mal-pm-composer",
+      "title": "MAL messages: WhatsApp-style formatting, photo upload to catbox.moe, BBCode rendering in threads",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "mal-web-recaptcha"
+      ],
+      "owns": [
+        "lib/screens/mal_web/compose_message_screen.dart",
+        "lib/screens/mal_web/message_thread_screen.dart",
+        "lib/widgets/mal_web/message_tiles.dart",
+        "lib/widgets/mal_web/message_composer/**",
+        "lib/services/upload/**",
+        "lib/l10n/units/mal-pm-composer/**",
+        "test/units/mal-pm-composer/**",
+        "test/units/mal-pm-composer/**"
+      ],
+      "group": "user",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "tracker-contracts",
+      "title": "Contracts for tracker isolation: tracker-tagged notification payloads, per-tracker preference reads, global notification gate",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P0",
+      "needs": [
+        "mal-hub-followups"
+      ],
+      "owns": [
+        "lib/services/notifications/notification_payload.dart",
+        "lib/user/preferences/tracker_scope.dart",
+        "lib/services/notifications/notification_gate.dart",
+        "test/units/tracker-contracts/**",
+        "lib/l10n/units/tracker-contracts/**",
+        "test/units/tracker-contracts/**"
+      ],
+      "group": "user",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "tracker-routes",
+      "title": "Routes and app bar per tracker: calendar, search, bookmarks, bell, sidebar, notification taps, startup page",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P0",
+      "needs": [
+        "tracker-contracts",
+        "mal-polish-2",
+        "anilist-calendar",
+        "kitsu-calendar",
+        "simkl-search"
+      ],
+      "owns": [
+        "lib/utils/app_routes.dart",
+        "lib/widgets/MAL/home/homeappbar.dart",
+        "lib/pages/side_bar.dart",
+        "lib/screens/home_screen.dart",
+        "lib/pages/Anilist/anilist_home_page.dart",
+        "lib/pages/Simkl/simkl_user_page.dart",
+        "lib/l10n/units/tracker-routes/**",
+        "test/units/tracker-routes/**",
+        "test/units/tracker-routes/**"
+      ],
+      "group": "user",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "⬜ todo"
+    },
+    {
+      "id": "anilist-calendar",
+      "title": "AniList calendar: the weekly airing schedule from AniList",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P0",
+      "needs": [
+        "tracker-contracts"
+      ],
+      "owns": [
+        "lib/widgets/Anilist/calendar/**",
+        "lib/services/api/Anilist/anilist_discover_service.dart",
+        "lib/l10n/units/anilist-calendar/**",
+        "test/units/anilist-calendar/**",
+        "test/units/anilist-calendar/**"
+      ],
+      "group": "user",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: sonnet"
+      ],
+      "status": "⬜ todo"
+    },
+    {
+      "id": "kitsu-calendar",
+      "title": "Kitsu calendar: upcoming episodes of the user's Kitsu library",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P0",
+      "needs": [
+        "tracker-contracts"
+      ],
+      "owns": [
+        "lib/widgets/Kitsu/calendar/**",
+        "lib/services/api/Kitsu/kitsu_library.dart",
+        "lib/l10n/units/kitsu-calendar/**",
+        "test/units/kitsu-calendar/**",
+        "test/units/kitsu-calendar/**"
+      ],
+      "group": "user",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: sonnet"
+      ],
+      "status": "⬜ todo"
+    },
+    {
+      "id": "simkl-search",
+      "title": "Simkl search screen so the search icon opens Simkl's search on Simkl",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P0",
+      "needs": [
+        "tracker-contracts"
+      ],
+      "owns": [
+        "lib/widgets/Simkl/search/**",
+        "lib/pages/Simkl/simkl_explore_page.dart",
+        "lib/l10n/units/simkl-search/**",
+        "test/units/simkl-search/**",
+        "test/units/simkl-search/**"
+      ],
+      "group": "user",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: sonnet"
+      ],
+      "status": "⬜ todo"
+    },
+    {
+      "id": "home-layout-per-tracker",
+      "title": "Home layout settings per tracker",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P0",
+      "needs": [
+        "tracker-contracts",
+        "mal-friends-feed"
+      ],
+      "owns": [
+        "lib/user/MAL/mal_home_page_preferences.dart",
+        "lib/user/MAL/mal_home_preferences_bloc.dart",
+        "lib/screens/settings/mal_home_settings.dart",
+        "lib/l10n/units/home-layout-per-tracker/**",
+        "test/units/home-layout-per-tracker/**",
+        "test/units/home-layout-per-tracker/**"
+      ],
+      "group": "user",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: sonnet"
+      ],
+      "status": "⬜ todo"
+    },
+    {
+      "id": "prefs-per-tracker",
+      "title": "Tracker settings per tracker (title language, NSFW, list, cards, detail tabs…)",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P0",
+      "needs": [
+        "tracker-contracts",
+        "home-layout-per-tracker"
+      ],
+      "owns": [
+        "lib/user/preferences/**",
+        "lib/screens/settings/user_prefs_settings.dart",
+        "lib/screens/settings/list_prefs_settings.dart",
+        "lib/screens/settings/anime_manga_settings.dart",
+        "lib/screens/settings/dub_settings.dart",
+        "lib/screens/settings/prefs/**",
+        "lib/widgets/user/list/card_layout_editor.dart",
+        "lib/screens/settings/settings_page.dart",
+        "lib/l10n/units/prefs-per-tracker/**",
+        "test/units/prefs-per-tracker/**",
+        "test/units/prefs-per-tracker/**"
+      ],
+      "group": "user",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "⬜ todo"
+    },
+    {
+      "id": "bookmarks-per-tracker",
+      "title": "Bookmarks per tracker",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P0",
+      "needs": [
+        "tracker-contracts"
+      ],
+      "owns": [
+        "lib/screens/bookmarks_screen.dart",
+        "lib/widgets/bookmarks/**",
+        "lib/cache/bookmarks.dart",
+        "lib/pages/Anilist/anilist_media_page.dart",
+        "lib/pages/Kitsu/kitsu_media_page.dart",
+        "lib/pages/Simkl/simkl_media_page.dart",
+        "lib/l10n/units/bookmarks-per-tracker/**",
+        "test/units/bookmarks-per-tracker/**",
+        "test/units/bookmarks-per-tracker/**"
+      ],
+      "group": "user",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: sonnet"
+      ],
+      "status": "⬜ todo"
+    },
+    {
+      "id": "notifications-all-trackers",
+      "title": "Notifications from every connected tracker, one group of switches per tracker",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P0",
+      "needs": [
+        "tracker-contracts",
+        "prefs-per-tracker"
+      ],
+      "owns": [
+        "lib/services/notifications/notification_service.dart",
+        "lib/services/notifications/mal_hub.dart",
+        "lib/services/notifications/anilist_*",
+        "lib/services/notifications/kitsu_*",
+        "lib/services/notifications/simkl_*",
+        "lib/main.dart",
+        "lib/screens/settings/notifications_settings.dart",
+        "lib/user/preferences/notification_preferences.dart",
+        "lib/services/api/Anilist/anilist_list_service.dart",
+        "lib/services/api/SimKl/simkl_list_service.dart",
+        "lib/l10n/units/notifications-all-trackers/**",
+        "test/units/notifications-all-trackers/**",
+        "test/units/notifications-all-trackers/**"
+      ],
+      "group": "user",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "⬜ todo"
+    },
+    {
+      "id": "mal-pm-chat-notifications",
+      "title": "MAL messages: chat-style phone notifications, fast while the app is open",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P0",
+      "needs": [
+        "tracker-contracts",
+        "mal-pm-composer"
+      ],
+      "owns": [
+        "lib/services/notifications/mal_hub_poller.dart",
+        "lib/widgets/mal_web/message_tiles.dart",
+        "lib/screens/mal_web/message_thread_screen.dart",
+        "lib/l10n/units/mal-pm-chat-notifications/**",
+        "test/units/mal-pm-chat-notifications/**",
+        "test/units/mal-pm-chat-notifications/**"
+      ],
+      "group": "user",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "⬜ todo"
+    },
+    {
+      "id": "mal-graph-local",
+      "title": "MAL relation graph built in the app (no backend needed)",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P0",
+      "needs": [
+        "mal-hub-followups"
+      ],
+      "owns": [
+        "lib/widgets/graph/**",
+        "lib/services/api/MAL/anime_graph_builder.dart",
+        "lib/l10n/units/mal-graph-local/**",
+        "test/units/mal-graph-local/**",
+        "test/units/mal-graph-local/**"
+      ],
+      "group": "trackers",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "mal-detail-friends",
+      "title": "MAL detail page: friends' scores and statuses (Friends / Top friends / Everyone)",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "mal-hub-followups"
+      ],
+      "owns": [
+        "lib/screens/MAL/detail/sections/user_updates_section.dart",
+        "lib/services/api/MAL/web/friends_updates_api.dart",
+        "lib/l10n/units/mal-detail-friends/**",
+        "test/units/mal-detail-friends/**",
+        "test/units/mal-detail-friends/**"
+      ],
+      "group": "user",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: sonnet"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "data-source-switch",
+      "title": "One data source at a time: probe Jikan at launch, mute it (1 month, configurable) and use Tenrai only",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P0",
+      "needs": [
+        "tracker-contracts"
+      ],
+      "owns": [
+        "lib/utils/app_routes.dart",
+        "lib/pages/settings/settings_section.dart",
+        "lib/widgets/MAL/content/userupdate_widget.dart",
+        "lib/services/api/MAL/web/friends_updates_api.dart",
+        "lib/widgets/user/list/mal_user_list_adapter.dart",
+        "lib/services/api/jikan_source.dart",
+        "lib/services/api/Jikan/jikan_client.dart",
+        "lib/services/api/Jikan/jikan_fallbacks.dart",
+        "lib/services/api/mwl_api.dart",
+        "lib/services/api/Tenrai/**",
+        "lib/screens/settings/data_source_settings.dart",
+        "lib/screens/settings/settings_page.dart",
+        "lib/main.dart",
+        "lib/widgets/MAL/review/reviews_feed.dart",
+        "lib/l10n/units/data-source-switch/**",
+        "test/units/data-source-switch/**",
+        "test/units/tenrai-client/**",
+        "test/units/data-source-switch/**"
+      ],
+      "group": "foundation",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "⬜ todo"
+    },
+    {
+      "id": "explore-polish",
+      "title": "Explore: DailyAL images on category and genre cards, explicit genres, recommendations/stacks fallbacks, favourites badges",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "search-sources",
+        "explore-seasonal",
+        "home-wiring",
+        "profile-tabs"
+      ],
+      "owns": [
+        "lib/services/api/MAL/scrapper/html_parsers.dart",
+        "test/units/explore-crash/**",
+        "lib/pages/MAL/mal_explore_page.dart",
+        "lib/screens/explore/**",
+        "assets/images/explore/**",
+        "pubspec.yaml",
+        "lib/cache/top_characters.dart",
+        "lib/l10n/units/explore-polish/**",
+        "test/units/explore-polish/**"
+      ],
+      "group": "discovery",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "tracker-wiring",
+      "title": "AniList / Kitsu / Simkl wiring: notifications, profile routes, remove action, MAL-only notes",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "anilist-pages",
+        "kitsu-pages",
+        "simkl-pages"
+      ],
+      "owns": [
+        "lib/widgets/user/list/user_list_view.dart",
+        "lib/services/notifications/notification_service.dart",
+        "lib/services/notifications/**",
+        "lib/utils/app_routes.dart",
+        "lib/widgets/user/sync/**",
+        "lib/screens/settings/user_prefs_settings.dart",
+        "lib/screens/settings/anime_manga_settings.dart",
+        "lib/screens/settings/list_prefs_settings.dart",
+        "lib/screens/settings/prefs/**",
+        "test/units/app-shell/app_routes_test.dart",
+        "lib/l10n/units/tracker-wiring/**",
+        "test/units/tracker-wiring/**"
+      ],
+      "group": "trackers",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: sonnet"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "theme-seasons",
+      "title": "Seasonal accents like DailyAL (spring pink, summer deep orange, fall brown, winter light blue)",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P0",
+      "needs": [
+        "theme-colors"
+      ],
+      "owns": [
+        "test/units/theme-colors/theme_test.dart",
+        "lib/user/theme/**",
+        "lib/widgets/common/app_colors.dart",
+        "lib/screens/settings/theme_settings.dart",
+        "docs/THEME.md",
+        "lib/l10n/units/theme-seasons/**",
+        "test/units/theme-seasons/**"
+      ],
+      "group": "settings",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "detail-polish",
+      "title": "Detail page polish: News never loads, faster fallbacks, status colours, tabs, numbers",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P0",
+      "needs": [
+        "detail-resilience",
+        "detail-header",
+        "home-wiring"
+      ],
+      "owns": [
+        "lib/widgets/MAL/home/animecharacterwidget.dart",
+        "lib/screens/MAL/characters_staff_screen.dart",
+        "lib/widgets/MAL/content/show_reviews.dart",
+        "lib/widgets/MAL/review/**",
+        "lib/screens/MAL/detail/**",
+        "lib/widgets/MAL/content/animestatisticswidget.dart",
+        "lib/widgets/MAL/home/show_news.dart",
+        "lib/services/api/Jikan/**",
+        "lib/l10n/units/detail-polish/**",
+        "test/units/detail-polish/**"
+      ],
+      "group": "detail",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: opus"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "home-fixes",
+      "title": "Home: user-list cache per account",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "home-wiring"
+      ],
+      "owns": [
+        "lib/widgets/MAL/home/homeappbar.dart",
+        "lib/widgets/home/**",
+        "lib/pages/MAL/mal_home_page.dart",
+        "lib/l10n/units/home-fixes/**",
+        "test/units/home-fixes/**"
+      ],
+      "group": "discovery",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: sonnet"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "backup-fixes",
+      "title": "Backup restore never stops halfway; About closes its HTTP client",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P1",
+      "needs": [
+        "in-app-update",
+        "settings-theme-about-backup"
+      ],
+      "owns": [
+        "lib/cache/cachemanager.dart",
+        "lib/screens/settings/backup_settings.dart",
+        "lib/screens/settings/about_settings.dart",
+        "lib/screens/settings/storage_settings.dart",
+        "lib/l10n/units/backup-fixes/**",
+        "test/units/backup-fixes/**"
+      ],
+      "group": "settings",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: sonnet"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "release-fixes",
+      "title": "Release: versionCode bump, launcher label, restricted update provider",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P2",
+      "needs": [
+        "versioning-ci",
+        "in-app-update"
+      ],
+      "owns": [
+        ".github/**",
+        "tools/release/**",
+        "android/app/src/main/AndroidManifest.xml",
+        "lib/services/updater/**",
+        "lib/l10n/units/release-fixes/**",
+        "test/units/release-fixes/**"
+      ],
+      "group": "release",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: sonnet"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "in-app-update",
+      "title": "In-app update: check GitHub releases, download and install APK",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P2",
+      "needs": [
+        "settings-theme-about-backup",
+        "versioning-ci"
+      ],
+      "owns": [
+        "lib/services/updater/**",
+        "lib/screens/settings/about_settings.dart",
+        "android/app/src/main/res/xml/updater_paths.xml",
+        "lib/l10n/units/in-app-update/**",
+        "test/units/in-app-update/**"
+      ],
+      "group": "release",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: sonnet"
+      ],
+      "status": "✅ done"
+    },
+    {
+      "id": "deep-links",
+      "title": "Open myanimelist.net links in the app",
+      "kind": "unit",
+      "entry": "",
+      "artifact": "",
+      "priority": "P2",
+      "needs": [
+        "app-shell",
+        "deps-prefs-contract"
+      ],
+      "owns": [
+        "lib/utils/deep_links.dart",
+        "lib/l10n/units/deep-links/**",
+        "test/units/deep-links/**"
+      ],
+      "group": "release",
+      "dropped": null,
+      "skills": [],
+      "states": [],
+      "notes": [
+        "model: sonnet"
+      ],
+      "status": "✅ done"
+    }
+  ]
+}

@@ -1,0 +1,173 @@
+{
+  "@@locale": "en",
+  "Sync_Section_Title": "Other trackers",
+  "Sync_Link": "Link",
+  "Sync_Unlink": "Unlink",
+  "Sync_Sync": "Sync",
+  "Sync_Edit": "Edit",
+  "Sync_Remove": "Remove",
+  "Sync_Not_Linked": "Not linked",
+  "Sync_Not_On_List": "Not on your list",
+  "Sync_Load_Failed": "Couldn't load your {tracker} entry.",
+  "@Sync_Load_Failed": {
+    "placeholders": {
+      "tracker": {
+        "type": "String"
+      }
+    }
+  },
+  "Sync_Retry": "Retry",
+  "Sync_Sign_In_Again": "Sign in to {tracker} again to use this entry.",
+  "@Sync_Sign_In_Again": {
+    "placeholders": {
+      "tracker": {
+        "type": "String"
+      }
+    }
+  },
+  "Sync_Manga_Unsupported": "{tracker} doesn't track manga.",
+  "@Sync_Manga_Unsupported": {
+    "placeholders": {
+      "tracker": {
+        "type": "String"
+      }
+    }
+  },
+  "Sync_Dialog_Title": "Sync with {tracker}",
+  "@Sync_Dialog_Title": {
+    "placeholders": {
+      "tracker": {
+        "type": "String"
+      }
+    }
+  },
+  "Sync_Dialog_Hint": "Pick the side that overwrites the other. Empty fields never erase anything.",
+  "Sync_Direction": "{source} to {target}",
+  "@Sync_Direction": {
+    "placeholders": {
+      "source": {
+        "type": "String"
+      },
+      "target": {
+        "type": "String"
+      }
+    }
+  },
+  "Sync_Source_Empty": "Not on your {tracker} list",
+  "@Sync_Source_Empty": {
+    "placeholders": {
+      "tracker": {
+        "type": "String"
+      }
+    }
+  },
+  "Sync_Running": "Syncing…",
+  "Sync_Cancel": "Cancel",
+  "Sync_Close": "Close",
+  "Sync_Cancelled": "Sync cancelled",
+  "Sync_Done_To": "Synced to {tracker}",
+  "@Sync_Done_To": {
+    "placeholders": {
+      "tracker": {
+        "type": "String"
+      }
+    }
+  },
+  "Sync_Failed": "Couldn't sync. Check your connection and try again.",
+  "Sync_Mal_Not_Connected": "Sign in to MyAnimeList to sync.",
+  "Sync_Whole_Points": "MyAnimeList keeps whole points: {score} becomes {rounded}.",
+  "@Sync_Whole_Points": {
+    "placeholders": {
+      "score": {
+        "type": "String"
+      },
+      "rounded": {
+        "type": "String"
+      }
+    }
+  },
+  "Sync_Simkl_Limited": "Simkl keeps the status and the score only.",
+  "Sync_Remove_Title": "Remove from list",
+  "Sync_Remove_Message": "Remove this entry from {tracker}?",
+  "@Sync_Remove_Message": {
+    "placeholders": {
+      "tracker": {
+        "type": "String"
+      }
+    }
+  },
+  "Sync_Removed": "Removed from {tracker}",
+  "@Sync_Removed": {
+    "placeholders": {
+      "tracker": {
+        "type": "String"
+      }
+    }
+  },
+  "Sync_Remove_Failed": "Couldn't remove the entry.",
+  "Sync_Edit_Title": "Edit on {tracker}",
+  "@Sync_Edit_Title": {
+    "placeholders": {
+      "tracker": {
+        "type": "String"
+      }
+    }
+  },
+  "Sync_Field_Status": "Status",
+  "Sync_Field_Score": "Score",
+  "Sync_Field_Episodes": "Episodes",
+  "Sync_Field_Chapters": "Chapters",
+  "Sync_Field_Volumes": "Volumes",
+  "Sync_Field_Start": "Start date",
+  "Sync_Field_Finish": "Finish date",
+  "Sync_No_Score": "No score",
+  "Sync_Pick_Date": "Pick a date",
+  "Sync_Decrease": "Decrease",
+  "Sync_Increase": "Increase",
+  "Sync_Save": "Save",
+  "Sync_Saved": "Saved on {tracker}",
+  "@Sync_Saved": {
+    "placeholders": {
+      "tracker": {
+        "type": "String"
+      }
+    }
+  },
+  "Sync_Save_Failed": "Couldn't save. Check your connection and try again.",
+  "Sync_Summary_Episodes": "Ep. {count}",
+  "@Sync_Summary_Episodes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "Sync_Summary_Chapters": "Ch. {count}",
+  "@Sync_Summary_Chapters": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "Sync_Link_To": "Link to {tracker}",
+  "@Sync_Link_To": {
+    "placeholders": {
+      "tracker": {
+        "type": "String"
+      }
+    }
+  },
+  "Sync_Search_Hint": "Search on {tracker}",
+  "@Sync_Search_Hint": {
+    "placeholders": {
+      "tracker": {
+        "type": "String"
+      }
+    }
+  },
+  "Sync_Search_Prompt": "Type to search",
+  "Sync_No_Results": "No results found",
+  "Sync_Clear": "Clear",
+  "Sync_Linked_Auto": "Linked automatically"
+}

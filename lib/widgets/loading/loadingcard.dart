@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mywatchlist/widgets/common/app_colors.dart';
 import 'package:mywatchlist/widgets/loading/shimmercolor.dart';
 
 
@@ -49,7 +50,7 @@ class LoadingCard extends StatelessWidget {
             child: Container(
               width: width,
               decoration: BoxDecoration(
-                color: Colors.grey[300],
+                color: AppColors.of(context).shimmerBase,
                 borderRadius: BorderRadius.circular(12),
               ),
             ),

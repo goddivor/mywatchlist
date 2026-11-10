@@ -1,234 +1,199 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
+import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/services/api/Jikan/jikan_anime_review.dart';
+import 'package:mywatchlist/utils/web_launcher.dart';
+import 'package:mywatchlist/widgets/MAL/review/review_item.dart';
+import 'package:mywatchlist/widgets/MAL/review/review_logic.dart';
+import 'package:mywatchlist/widgets/MAL/review/review_reactions.dart';
+import 'package:mywatchlist/widgets/common/share_builder.dart';
 
+/// A whole review: reviewer (tap = quick user sheet), score, tags, reactions, the
+/// selectable text, the date and the progress of the reviewer. Share and "open on
+/// MyAnimeList" sit in the header. The text scrolls inside the page; the page itself never
+/// sits in another scroll view.
 class ReviewDetailPage extends StatelessWidget {
   final AnimeReview review;
-  
-  const ReviewDetailPage({
-    super.key,
-    required this.review,
-  });
-  
+  final String category;
+
+  const ReviewDetailPage({super.key, required this.review, this.category = 'anime'});
+
+  void _share(BuildContext context) {
+    showShareBuilder(
+      context,
+      fields: reviewShareFields(review),
+      subject: review.user?.username,
+      title: S.current.Social_Review_Share,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
-    // Calculate score color
-    final score = review.score ?? 0;
-    final Color scoreColor = score >= 8 
-        ? Colors.green 
-        : (score >= 5 ? Colors.amber : Colors.red);
-    
-    // Format date
-    final dateStr = review.date != null 
-        ? DateFormat('dd MMM yyyy').format(DateTime.parse(review.date!))
-        : 'Date inconnue';
-    
-    return Container(
-      color: theme.scaffoldBackgroundColor,
-      height: MediaQuery.of(context).size.height * 0.9,
-      padding: const EdgeInsets.all(20.0),
+    final locale = Localizations.localeOf(context).toString();
+    final date = formatReviewDate(review.date, locale);
+    final url = review.url;
+    final progress = review.episodesWatched;
+    final reactions = sortedReactions(review.reactions);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header with close button
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              const Text(
-                'Critique',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
+              if (reviewShareFields(review).isNotEmpty)
+                IconButton(
+                  tooltip: S.current.Social_Review_Share,
+                  icon: const Icon(Icons.share_outlined),
+                  onPressed: () => _share(context),
                 ),
-              ),
+              if (url != null && url.isNotEmpty)
+                IconButton(
+                  tooltip: S.current.Social_Review_Open_Web,
+                  icon: const Icon(Icons.open_in_browser),
+                  onPressed: () => openLink(context, url),
+                ),
               IconButton(
+                tooltip: S.current.Social_Close,
                 icon: const Icon(Icons.close),
                 onPressed: () => Navigator.of(context).pop(),
               ),
             ],
           ),
-          
-          const Divider(),
-          
-          // User & Score Row
           Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // User Avatar
-              if (review.user?.images?.jpg?.imageUrl != null)
-                CircleAvatar(
-                  radius: 24,
-                  backgroundImage: NetworkImage(
-                    review.user!.images!.jpg!.imageUrl!,
-                  ),
-                )
-              else
-                const CircleAvatar(
-                  radius: 24,
-                  child: Icon(Icons.person),
-                ),
-              
-              const SizedBox(width: 16),
-              
-              // Username & Date
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      review.user?.username ?? 'Utilisateur inconnu',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 18,
+                    ReviewScoreBadge(score: review.score, size: 28),
+                    const SizedBox(height: 8),
+                    for (final tag in review.tags ?? const <String>[])
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 3),
+                        child: Text(
+                          tag,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.75),
+                          ),
+                        ),
                       ),
-                    ),
-                    Text(
-                      dateStr,
-                      style: theme.textTheme.bodyMedium,
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 4,
+                      children: [
+                        if (review.isPreliminary == true)
+                          ReviewTag(
+                            text: S.current.Social_Review_Preliminary,
+                            color: theme.colorScheme.primary,
+                            large: true,
+                          ),
+                        if (review.isSpoiler == true)
+                          ReviewTag(
+                            text: S.current.Social_Review_Spoiler,
+                            color: theme.colorScheme.error,
+                            large: true,
+                          ),
+                      ],
                     ),
                   ],
                 ),
               ),
-              
-              // Score
-              Row(
-                children: [
-                  Text(
-                    '$score',
-                    style: TextStyle(
-                      color: scoreColor,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 24,
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                  Image.asset(
-                    'assets/images/star.png',
-                    height: 24,
-                  ),
-                ],
-              ),
+              ReviewerChip(review: review, avatarSize: 52, nameWidth: 96),
             ],
           ),
-          
-          const SizedBox(height: 16),
-          
-          // Tags
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [
-                if (review.isPreliminary == true)
-                  _buildTag('Preliminary', theme.colorScheme.primary, Icons.hourglass_empty),
-                  
-                if (review.isSpoiler == true)
-                  _buildTag('Spoiler', Colors.red, Icons.warning),
-                  
-                // Add reaction tags if present
-                if ((review.reactions?.nice ?? 0) > 0)
-                  _buildTag('Nice', Colors.blue, Icons.thumb_up, review.reactions!.nice!),
-                  
-                if ((review.reactions?.loveIt ?? 0) > 0)
-                  _buildTag('Love it', Colors.pink, Icons.favorite, review.reactions!.loveIt!),
-                  
-                if ((review.reactions?.funny ?? 0) > 0)
-                  _buildTag('Funny', Colors.orange, Icons.mood, review.reactions!.funny!),
-                  
-                if ((review.reactions?.confusing ?? 0) > 0)
-                  _buildTag('Confusing', Colors.purple, Icons.question_mark, review.reactions!.confusing!),
-                  
-                if ((review.reactions?.informative ?? 0) > 0)
-                  _buildTag('Informative', Colors.blue, Icons.info, review.reactions!.informative!),
-                  
-                if ((review.reactions?.wellWritten ?? 0) > 0)
-                  _buildTag('Well-written', Colors.deepPurple, Icons.edit, review.reactions!.wellWritten!),
-                  
-                if ((review.reactions?.creative ?? 0) > 0)
-                  _buildTag('Creative', Colors.teal, Icons.auto_awesome, review.reactions!.creative!),
-              ],
+          if (reactions.isNotEmpty) ...[
+            const SizedBox(height: 14),
+            SizedBox(
+              height: 34,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: reactions.length,
+                separatorBuilder: (_, __) => const SizedBox(width: 8),
+                itemBuilder: (_, i) {
+                  final (kind, count) = reactions[i];
+                  return Tooltip(
+                    message: kind.label,
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.surfaceContainerHighest,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 10),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(kind.icon, size: 16, color: theme.colorScheme.onSurfaceVariant),
+                            const SizedBox(width: 5),
+                            Text(
+                              '$count',
+                              style: theme.textTheme.labelMedium?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
             ),
-          ),
-          
-          const SizedBox(height: 16),
-          const Divider(),
-          
-          // Review content
+          ],
+          const SizedBox(height: 12),
           Expanded(
             child: SingleChildScrollView(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8.0),
-                child: Text(
-                  review.review ?? 'Aucun contenu de critique',
-                  style: theme.textTheme.bodyLarge,
-                ),
+              padding: const EdgeInsets.only(bottom: 20),
+              child: SelectableText(
+                review.review?.trim() ?? '',
+                style: theme.textTheme.bodyMedium?.copyWith(height: 1.6),
               ),
             ),
           ),
-          
-          // Additional Info
-          if (review.episodesWatched != null) ...[
-            const Divider(),
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8.0),
+          DecoratedBox(
+            decoration: BoxDecoration(
+              border: Border(
+                top: BorderSide(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3)),
+              ),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 10),
               child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Icon(Icons.visibility),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Épisodes regardés: ${review.episodesWatched}',
-                    style: theme.textTheme.bodyMedium,
-                  ),
+                  if (date.isNotEmpty)
+                    Text(
+                      date,
+                      style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                    ),
+                  if (progress != null)
+                    Flexible(
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.visibility_outlined, size: 16, color: theme.colorScheme.onSurfaceVariant),
+                          const SizedBox(width: 4),
+                          Flexible(
+                            child: Text(
+                              category == 'manga'
+                                  ? S.current.Social_Review_Chapters_Read(progress)
+                                  : S.current.Social_Review_Episodes_Watched(progress),
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                 ],
               ),
             ),
-          ],
-        ],
-      ),
-    );
-  }
-  
-  Widget _buildTag(String text, Color color, IconData icon, [int? count]) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      margin: const EdgeInsets.only(right: 8),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withOpacity(0.3)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 16, color: color),
-          const SizedBox(width: 6),
-          Text(
-            text,
-            style: TextStyle(
-              fontSize: 14,
-              color: color,
-              fontWeight: FontWeight.w500,
-            ),
           ),
-          if (count != null) ...[
-            const SizedBox(width: 6),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                count.toString(),
-                style: TextStyle(
-                  fontSize: 12,
-                  color: color,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ],
         ],
       ),
     );

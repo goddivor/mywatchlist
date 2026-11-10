@@ -1,0 +1,123 @@
+{
+ "data": {
+  "findProfileBySlug": {
+   "mediaReactions": {
+    "totalCount": 13,
+    "pageInfo": {
+     "hasNextPage": true,
+     "endCursor": "Mw"
+    },
+    "nodes": [
+     {
+      "id": "325865",
+      "reaction": "Just let bro see his pandas",
+      "progress": 2,
+      "createdAt": "2024-01-21T20:57:26Z",
+      "author": {
+       "id": "286143",
+       "name": "Tamaya",
+       "slug": "Tamaya",
+       "avatarImage": {
+        "original": {
+         "url": "https://media.kitsu.app/user/286143/avatar/37ab3ead95d0102f45b2f3409d1f14de.png",
+         "width": 2160,
+         "height": 3840
+        }
+       }
+      },
+      "likes": {
+       "totalCount": 11
+      },
+      "media": {
+       "__typename": "Anime",
+       "id": "47153",
+       "slug": "kyuujitsu-no-warumono-san",
+       "titles": {
+        "canonical": "Kyuujitsu no Warumono-san"
+       },
+       "posterImage": {
+        "original": {
+         "url": "https://media.kitsu.app/anime/47153/poster_image/acfa2b0c6a7de3b55397920a8bc45db1.jpg",
+         "width": 460,
+         "height": 651
+        }
+       }
+      }
+     },
+     {
+      "id": "320005",
+      "reaction": "An elf deals with the fragile concept of mortality.\nSafe to say a must watch!",
+      "progress": 2,
+      "createdAt": "2023-09-29T22:01:09Z",
+      "author": {
+       "id": "286143",
+       "name": "Tamaya",
+       "slug": "Tamaya",
+       "avatarImage": {
+        "original": {
+         "url": "https://media.kitsu.app/user/286143/avatar/37ab3ead95d0102f45b2f3409d1f14de.png",
+         "width": 2160,
+         "height": 3840
+        }
+       }
+      },
+      "likes": {
+       "totalCount": 97
+      },
+      "media": {
+       "__typename": "Anime",
+       "id": "46474",
+       "slug": "sousou-no-frieren",
+       "titles": {
+        "canonical": "Sousou no Frieren"
+       },
+       "posterImage": {
+        "original": {
+         "url": "https://media.kitsu.app/anime/46474/poster_image/99d7df09d8cb9360b1e02825372ce612.jpg",
+         "width": 460,
+         "height": 649
+        }
+       }
+      }
+     },
+     {
+      "id": "311212",
+      "reaction": "Man I love this show",
+      "progress": 1,
+      "createdAt": "2023-05-28T15:59:16Z",
+      "author": {
+       "id": "286143",
+       "name": "Tamaya",
+       "slug": "Tamaya",
+       "avatarImage": {
+        "original": {
+         "url": "https://media.kitsu.app/user/286143/avatar/37ab3ead95d0102f45b2f3409d1f14de.png",
+         "width": 2160,
+         "height": 3840
+        }
+       }
+      },
+      "likes": {
+       "totalCount": 2
+      },
+      "media": {
+       "__typename": "Anime",
+       "id": "43910",
+       "slug": "yahari-ore-no-seishun-love-comedy-wa-machigatteiru-kan-ova",
+       "titles": {
+        "canonical": "Yahari Ore no Seishun Love Comedy wa Machigatteiru. Kan OVA"
+       },
+       "posterImage": {
+        "original": {
+         "url": "https://media.kitsu.app/anime/poster_images/43910/original.jpg",
+         "width": 1920,
+         "height": 1080
+        }
+       }
+      }
+     }
+    ]
+   }
+  }
+ }
+}

@@ -1,7 +1,9 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mywatchlist/constants/constants.dart';
+import 'package:mywatchlist/generated/l10n.dart';
+import 'package:mywatchlist/user/preferences/preferences.dart';
+import 'package:mywatchlist/widgets/common/app_image.dart';
 import 'package:mywatchlist/services/api/Jikan/jikan_anime_videos.dart';
 import 'package:mywatchlist/services/api/MAL/mal_anime.dart';
 import 'package:mywatchlist/widgets/common/custombutton.dart';
@@ -12,6 +14,39 @@ class VideoTile {
   final String? url;
   final String? imageUrl;
   VideoTile(this.title, this.url, this.imageUrl);
+
+  /// Extract YouTube video ID from an embed URL and build a proper VideoTile
+  /// with thumbnail and watch URL when the API returns nulls.
+  static VideoTile fromTrailer(String? title, Trailer? trailer) {
+    String? url = trailer?.url;
+    String? imageUrl = trailer?.images?.largeImageUrl ??
+        trailer?.images?.maximumImageUrl ??
+        trailer?.images?.mediumImageUrl ??
+        trailer?.images?.imageUrl;
+
+    // Fallback: extract video ID from embed_url
+    if ((url == null || imageUrl == null) && trailer?.embedUrl != null) {
+      final videoId = _extractYoutubeId(trailer!.embedUrl!);
+      if (videoId != null) {
+        url ??= 'https://www.youtube.com/watch?v=$videoId';
+        imageUrl ??= 'https://img.youtube.com/vi/$videoId/hqdefault.jpg';
+      }
+    }
+
+    // Fallback: build thumbnail from youtube_id
+    if ((url == null || imageUrl == null) && trailer?.youtubeId != null) {
+      url ??= 'https://www.youtube.com/watch?v=${trailer!.youtubeId}';
+      imageUrl ??= 'https://img.youtube.com/vi/${trailer!.youtubeId}/hqdefault.jpg';
+    }
+
+    return VideoTile(title, url, imageUrl);
+  }
+
+  static String? _extractYoutubeId(String embedUrl) {
+    final regex = RegExp(r'/embed/([a-zA-Z0-9_-]+)');
+    final match = regex.firstMatch(embedUrl);
+    return match?.group(1);
+  }
 }
 
 class VideosWidget extends StatefulWidget {
@@ -20,12 +55,16 @@ class VideosWidget extends StatefulWidget {
   final List<ThemeSong>? openingSongs;
   final List<ThemeSong>? endingSongs;
 
+  /// Picture (usually the cover) shown on a video that has no thumbnail.
+  final String? fallbackImageUrl;
+
   const VideosWidget({
     required this.horizPadding,
     this.videos,
     Key? key,
     this.openingSongs,
     this.endingSongs,
+    this.fallbackImageUrl,
   }) : super(key: key);
 
   @override
@@ -33,47 +72,46 @@ class VideosWidget extends StatefulWidget {
 }
 
 class _VideosWidgetState extends State<VideosWidget> {
-  late List<String> tabs;
   int pageIndex = 0;
-  bool hasPromos = false;
-  bool hasMusicVideos = false;
-  bool hasEpisodes = false;
-  bool hasOpenings = false;
-  bool hasEnding = false;
-
-  @override
-  void initState() {
-    super.initState();
-    hasPromos = !nullOrEmpty(widget.videos?.promo);
-    hasMusicVideos = !nullOrEmpty(widget.videos?.musicVideos);
-    hasEpisodes = !nullOrEmpty(widget.videos?.episodes);
-    hasOpenings = !nullOrEmpty(widget.openingSongs);
-    hasEnding = !nullOrEmpty(widget.endingSongs);
-    tabs = [
-      if (hasPromos) 'Promotional',
-      if (hasMusicVideos) 'Music Videos',
-      if (hasEpisodes) 'Episodes',
-      if (hasOpenings) 'Opening Songs',
-      if (hasEnding) 'Ending Songs',
-    ];
-  }
 
   @override
   Widget build(BuildContext context) {
+    final pages = <(String, Widget Function())>[
+      if (!nullOrEmpty(widget.videos?.promo))
+        (S.current.Promotional, () => promoWidget),
+      if (!nullOrEmpty(widget.videos?.musicVideos))
+        (S.current.Music_Videos, () => musicVidoeWidget),
+      if (!nullOrEmpty(widget.videos?.episodes))
+        (S.current.Episodes, () => episodesWidget),
+      if (!nullOrEmpty(widget.openingSongs))
+        (S.current.Opening_Songs, () => themesWidget(widget.openingSongs!)),
+      if (!nullOrEmpty(widget.endingSongs))
+        (S.current.Ending_Songs, () => themesWidget(widget.endingSongs!)),
+    ];
+    if (pages.isEmpty) return const SizedBox.shrink();
+    final index = pageIndex.clamp(0, pages.length - 1);
     return DefaultTabController(
-      length: tabs.length,
+      key: ValueKey(pages.length),
+      length: pages.length,
+      initialIndex: index,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _tabBar,
+          TabBar(
+            isScrollable: true,
+            onTap: (i) => setState(() => pageIndex = i),
+            tabAlignment: TabAlignment.start,
+            padding: EdgeInsets.symmetric(horizontal: widget.horizPadding),
+            tabs: [
+              for (final page in pages)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 6),
+                  child: Text(page.$1, style: const TextStyle(fontSize: 13.0)),
+                ),
+            ],
+          ),
           const SizedBox(height: 20),
-          IndexedStack(index: pageIndex, children: [
-            if (hasPromos) promoWidget,
-            if (hasMusicVideos) musicVidoeWidget,
-            if (hasEpisodes) episodesWidget,
-            if (hasOpenings) themesWidget(widget.openingSongs!),
-            if (hasEnding) themesWidget(widget.endingSongs!),
-          ]),
+          KeyedSubtree(key: ValueKey(index), child: pages[index].$2()),
         ],
       ),
     );
@@ -81,22 +119,14 @@ class _VideosWidgetState extends State<VideosWidget> {
 
   Widget get promoWidget {
     return videoTiles(widget.videos!.promo
-            ?.map((e) => VideoTile(
-                  e.title,
-                  e.trailer?.url,
-                  e.trailer?.images?.largeImageUrl,
-                ))
+            ?.map((e) => VideoTile.fromTrailer(e.title, e.trailer))
             .toList() ??
         []);
   }
 
   Widget get musicVidoeWidget {
     return videoTiles(widget.videos?.musicVideos
-            ?.map((e) => VideoTile(
-                  e.title,
-                  e.video?.url,
-                  e.video?.images?.largeImageUrl,
-                ))
+            ?.map((e) => VideoTile.fromTrailer(e.title, e.video))
             .toList() ??
         []);
   }
@@ -112,66 +142,83 @@ class _VideosWidgetState extends State<VideosWidget> {
   }
 
   Widget videoTiles(List<VideoTile> tiles, [bool useYTIcon = true]) {
-    BorderRadius borderRadius = BorderRadius.circular(6);
-    return Container(
+    final borderRadius = BorderRadius.circular(6);
+    final surface = Theme.of(context).colorScheme.surfaceContainerHighest;
+    return SizedBox(
       height: 170,
       child: ListView.builder(
         itemCount: tiles.length,
         padding: EdgeInsets.symmetric(horizontal: widget.horizPadding + 10),
         scrollDirection: Axis.horizontal,
-        itemBuilder: (_, i) => Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 7),
-          child: Container(
-            width: 200,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  height: 140,
-                  child: Material(
-                    color: Colors.transparent,
-                    borderRadius: borderRadius,
-                    child: Ink(
-                      decoration: BoxDecoration(
-                        borderRadius: borderRadius,
-                        image: DecorationImage(
-                          image: CachedNetworkImageProvider(
-                              tiles[i].imageUrl ?? ''),
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                      child: InkWell(
-                        borderRadius: borderRadius,
-                        child: Stack(
-                          children: [
-                            Align(
-                              alignment: Alignment.bottomLeft,
-                              child: _videoIconWidget(borderRadius, useYTIcon),
+        itemBuilder: (_, i) {
+          final tile = tiles[i];
+          final imageUrl = !nullOrEmpty(tile.imageUrl)
+              ? tile.imageUrl
+              : widget.fallbackImageUrl;
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 7),
+            child: SizedBox(
+              width: 200,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SizedBox(
+                    height: 140,
+                    child: Stack(
+                      children: [
+                        Positioned.fill(
+                          child: AppImage(
+                            url: imageUrl,
+                            width: 200,
+                            height: 140,
+                            borderRadius: borderRadius,
+                            placeholderColor: surface,
+                            errorWidget: (_) => DecoratedBox(
+                              decoration: BoxDecoration(
+                                color: surface,
+                                borderRadius: borderRadius,
+                              ),
                             ),
-                            if (tiles[i].url != null) _copyButton(tiles, i),
-                          ],
+                          ),
                         ),
-                        onTap: tiles[i].url == null
-                            ? () {}
-                            : () {
-                                showYouTubeVideo(
-                                    url: tiles[i].url!, context: context);
-                              },
-                      ),
+                        Positioned.fill(
+                          child: Material(
+                            type: MaterialType.transparency,
+                            child: _videoInkWell(tile, borderRadius, useYTIcon),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ),
-                const SizedBox(height: 10),
-                title(tiles[i].title, textOverflow: TextOverflow.ellipsis),
-              ],
+                  const SizedBox(height: 10),
+                  title(tile.title, textOverflow: TextOverflow.ellipsis),
+                ],
+              ),
             ),
-          ),
-        ),
+          );
+        },
       ),
     );
   }
 
-  Positioned _copyButton(List<VideoTile> tiles, int i) {
+  Widget _videoInkWell(VideoTile tile, BorderRadius borderRadius, bool useYTIcon) {
+    final url = tile.url;
+    return InkWell(
+      borderRadius: borderRadius,
+      onTap: url == null ? null : () => showYouTubeVideo(url: url, context: context),
+      child: Stack(
+        children: [
+          Align(
+            alignment: Alignment.bottomLeft,
+            child: _videoIconWidget(borderRadius, useYTIcon),
+          ),
+          if (url != null) _copyButton(url),
+        ],
+      ),
+    );
+  }
+
+  Positioned _copyButton(String url) {
     return Positioned(
       top: 5.0,
       left: 5.0,
@@ -179,9 +226,8 @@ class _VideosWidgetState extends State<VideosWidget> {
         height: 30.0,
         width: 30.0,
         child: IconButton.filledTonal(
-          onPressed: () => Clipboard.setData(
-            ClipboardData(text: tiles[i].url!),
-          ),
+          tooltip: S.current.Copy,
+          onPressed: () => Clipboard.setData(ClipboardData(text: url)),
           icon: const Icon(Icons.copy),
           iconSize: 14.0,
         ),
@@ -206,30 +252,8 @@ class _VideosWidgetState extends State<VideosWidget> {
     );
   }
 
-  Widget get _tabBar => TabBar(
-        isScrollable: true,
-        onTap: (index) {
-          if (mounted)
-            setState(() {
-              pageIndex = index;
-            });
-        },
-        tabAlignment: TabAlignment.start,
-        padding: EdgeInsets.symmetric(horizontal: widget.horizPadding),
-        tabs: tabs
-            .map((e) => Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 3, vertical: 6),
-                  child: Text(
-                    e,
-                    style: const TextStyle(fontSize: 13.0),
-                  ),
-                ))
-            .toList(),
-      );
-
   Widget themesWidget(List<ThemeSong> data) {
-    return Container(
+    return SizedBox(
       height: 170,
       child: GridView.builder(
         itemCount: data.length,
@@ -254,7 +278,7 @@ class _VideosWidgetState extends State<VideosWidget> {
           var songname = getSongName(song.name);
           launchURLWithConfirmation(
               'https://www.youtube.com/results?search_query=' +
-                  (songname == null ? song.name! : songname),
+                  Uri.encodeQueryComponent(songname ?? song.name ?? ''),
               context: context);
         },
         borderRadius: BorderRadius.circular(12),
@@ -281,7 +305,7 @@ class _VideosWidgetState extends State<VideosWidget> {
                   Icons.copy,
                   size: 16,
                 ),
-                message: 'Copy',
+                message: S.current.Copy,
               )
             ],
           ),
@@ -305,7 +329,8 @@ Future<void> showYouTubeVideo({
 }) async {
   final videoId = YoutubePlayer.convertUrlToId(url);
 
-  if (videoId != null) {
+  // The embedded player is opt-in (allowYoutubePlayer); otherwise open YouTube.
+  if (videoId != null && Preferences.general.allowYoutubePlayer) {
     YoutubePlayerController _controller = YoutubePlayerController(
       initialVideoId: videoId,
       flags: const YoutubePlayerFlags(
@@ -335,7 +360,7 @@ Future<void> showYouTubeVideo({
         return AlertDialog(
           insetPadding: EdgeInsets.zero,
           contentPadding: EdgeInsets.zero,
-          backgroundColor: Colors.black,
+          backgroundColor: Theme.of(context).colorScheme.scrim,
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           content: Stack(
@@ -343,7 +368,7 @@ Future<void> showYouTubeVideo({
               YoutubePlayer(
                 controller: _controller,
                 showVideoProgressIndicator: true,
-                progressIndicatorColor: Colors.red,
+                progressIndicatorColor: Theme.of(context).colorScheme.primary,
               ),
               closeButton,
             ],

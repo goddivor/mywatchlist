@@ -1,0 +1,148 @@
+{
+  "@@locale": "fr_FR",
+  "Aln_Title": "Notifications",
+  "Aln_Group_All": "Toutes",
+  "Aln_Group_Airing": "Diffusions",
+  "Aln_Group_Activity": "Activité",
+  "Aln_Group_Forum": "Forum",
+  "Aln_Group_Follows": "Abonnés",
+  "Aln_Group_Media": "Titres",
+  "Aln_Empty": "Aucune notification",
+  "Aln_Sign_In_Title": "Connectez-vous pour voir vos notifications",
+  "Aln_Thread_Fallback": "un fil",
+  "Aln_Following": "s’est abonné à votre profil",
+  "Aln_Activity_Message": "vous a envoyé un message",
+  "Aln_Activity_Mention": "vous a mentionné dans une activité",
+  "Aln_Activity_Reply": "a répondu à votre activité",
+  "Aln_Activity_Reply_Subscribed": "a répondu à une activité que vous suivez",
+  "Aln_Activity_Like": "a aimé votre activité",
+  "Aln_Activity_Reply_Like": "a aimé votre réponse",
+  "Aln_Thread_Comment_Mention": "vous a mentionné dans {thread}",
+  "@Aln_Thread_Comment_Mention": {
+    "placeholders": {
+      "thread": {
+        "type": "String"
+      }
+    }
+  },
+  "Aln_Thread_Comment_Reply": "a répondu à votre commentaire dans {thread}",
+  "@Aln_Thread_Comment_Reply": {
+    "placeholders": {
+      "thread": {
+        "type": "String"
+      }
+    }
+  },
+  "Aln_Thread_Subscribed": "a commenté dans {thread}",
+  "@Aln_Thread_Subscribed": {
+    "placeholders": {
+      "thread": {
+        "type": "String"
+      }
+    }
+  },
+  "Aln_Thread_Comment_Like": "a aimé votre commentaire dans {thread}",
+  "@Aln_Thread_Comment_Like": {
+    "placeholders": {
+      "thread": {
+        "type": "String"
+      }
+    }
+  },
+  "Aln_Thread_Like": "a aimé votre fil {thread}",
+  "@Aln_Thread_Like": {
+    "placeholders": {
+      "thread": {
+        "type": "String"
+      }
+    }
+  },
+  "Aln_Airing": "L’épisode {episode} de {title} est sorti",
+  "@Aln_Airing": {
+    "placeholders": {
+      "episode": {
+        "type": "int"
+      },
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "Aln_Airing_No_Episode": "{title} est sorti",
+  "@Aln_Airing_No_Episode": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "Aln_Related_Added": "{title} a été ajouté au site",
+  "@Aln_Related_Added": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "Aln_Data_Change": "{title} a été mis à jour",
+  "@Aln_Data_Change": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "Aln_Merge": "{other} a été fusionné dans {title}",
+  "@Aln_Merge": {
+    "placeholders": {
+      "other": {
+        "type": "String"
+      },
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "Aln_Deletion": "{title} a été supprimé",
+  "@Aln_Deletion": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "Aln_Media_Submission": "Votre proposition {title} a été mise à jour",
+  "@Aln_Media_Submission": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "Aln_Staff_Submission": "Votre proposition de fiche de staff {title} a été mise à jour",
+  "@Aln_Staff_Submission": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "Aln_Character_Submission": "Votre proposition de personnage {title} a été mise à jour",
+  "@Aln_Character_Submission": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "Aln_Unknown_Title": "Un titre",
+  "Aln_Unread": "Non lue",
+  "Aln_Unread_Badge": "{count} notifications non lues",
+  "@Aln_Unread_Badge": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
+}

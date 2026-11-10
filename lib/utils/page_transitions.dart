@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
 
+/// Route transitions stay under 300 ms and use a strong ease-out, so a page change feels
+/// immediate (docs/PERFORMANCE.md).
+const Duration kPageTransitionDuration = Duration(milliseconds: 250);
+const Curve kPageTransitionCurve = Cubic(0.23, 1, 0.32, 1);
+
 /// Page de transition avec fondu et zoom
 class FadeZoomPageRoute<T> extends PageRouteBuilder<T> {
   final Widget page;
@@ -8,8 +13,8 @@ class FadeZoomPageRoute<T> extends PageRouteBuilder<T> {
 
   FadeZoomPageRoute({
     required this.page,
-    this.duration = const Duration(milliseconds: 300),
-    this.curve = Curves.easeOut,
+    this.duration = kPageTransitionDuration,
+    this.curve = kPageTransitionCurve,
   }) : super(
           pageBuilder: (context, animation, secondaryAnimation) => page,
           transitionDuration: duration,
@@ -40,8 +45,8 @@ class SlidePageRoute<T> extends PageRouteBuilder<T> {
 
   SlidePageRoute({
     required this.page,
-    this.duration = const Duration(milliseconds: 300),
-    this.curve = Curves.easeOut,
+    this.duration = kPageTransitionDuration,
+    this.curve = kPageTransitionCurve,
     this.direction = SlideDirection.right,
   }) : super(
           pageBuilder: (context, animation, secondaryAnimation) => page,
@@ -70,15 +75,14 @@ class SlidePageRoute<T> extends PageRouteBuilder<T> {
                 break;
             }
 
+            // Slide only: a fade on top would composite the whole incoming page in an
+            // offscreen layer on every frame of the transition.
             return SlideTransition(
               position: Tween<Offset>(
                 begin: begin,
                 end: Offset.zero,
               ).animate(curvedAnimation),
-              child: FadeTransition(
-                opacity: Tween<double>(begin: 0.0, end: 1.0).animate(curvedAnimation),
-                child: child,
-              ),
+              child: child,
             );
           },
         );
@@ -135,7 +139,7 @@ class AnimatedPageSwitcher extends StatelessWidget {
   const AnimatedPageSwitcher({
     super.key,
     required this.child,
-    this.duration = const Duration(milliseconds: 300),
+    this.duration = kPageTransitionDuration,
     this.transitionType = PageTransitionType.fade,
   });
 

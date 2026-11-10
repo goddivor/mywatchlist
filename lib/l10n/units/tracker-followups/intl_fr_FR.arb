@@ -1,0 +1,5 @@
+{
+  "@@locale": "fr_FR",
+  "Notif_Needs_Account": "Les rappels suivent les listes de votre compte actif (MyAnimeList, AniList, Kitsu ou Simkl). Connectez-en un pour les recevoir.",
+  "Notif_Needs_Account_Action": "Comptes"
+}

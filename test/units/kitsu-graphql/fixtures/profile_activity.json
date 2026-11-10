@@ -1,0 +1,93 @@
+{
+ "data": {
+  "findProfileBySlug": {
+   "libraryEvents": {
+    "totalCount": 1979,
+    "pageInfo": {
+     "hasNextPage": true,
+     "endCursor": "Mw"
+    },
+    "nodes": [
+     {
+      "id": "98656309",
+      "kind": "UPDATED",
+      "changedData": {
+       "status": [
+        "current",
+        "planned"
+       ]
+      },
+      "createdAt": "2024-05-26T11:22:50Z",
+      "media": {
+       "__typename": "Anime",
+       "id": "45930",
+       "slug": "spice-and-wolf-merchant-meets-the-wise-wolf",
+       "titles": {
+        "canonical": "Ookami to Koushinryou: MERCHANT MEETS THE WISE WOLF"
+       },
+       "posterImage": {
+        "original": {
+         "url": "https://media.kitsu.app/anime/45930/poster_image/7b5422ebe9cc0a831ac57236bc2494c6.jpg",
+         "width": 2896,
+         "height": 4096
+        }
+       }
+      }
+     },
+     {
+      "id": "98656306",
+      "kind": "UPDATED",
+      "changedData": {
+       "status": [
+        "current",
+        "on_hold"
+       ]
+      },
+      "createdAt": "2024-05-26T11:22:39Z",
+      "media": {
+       "__typename": "Anime",
+       "id": "44434",
+       "slug": "isekai-shokudou-2",
+       "titles": {
+        "canonical": "Isekai Shokudou 2"
+       },
+       "posterImage": {
+        "original": {
+         "url": "https://media.kitsu.app/anime/poster_images/44434/original.jpg",
+         "width": 3000,
+         "height": 3930
+        }
+       }
+      }
+     },
+     {
+      "id": "98656303",
+      "kind": "UPDATED",
+      "changedData": {
+       "status": [
+        "current",
+        "on_hold"
+       ]
+      },
+      "createdAt": "2024-05-26T11:22:33Z",
+      "media": {
+       "__typename": "Anime",
+       "id": "45520",
+       "slug": "skip-to-loafer",
+       "titles": {
+        "canonical": "Skip to Loafer"
+       },
+       "posterImage": {
+        "original": {
+         "url": "https://media.kitsu.app/anime/45520/poster_image/a39abc4ca50e212d7a35bb24b7ca45a0.jpg",
+         "width": 460,
+         "height": 651
+        }
+       }
+      }
+     }
+    ]
+   }
+  }
+ }
+}

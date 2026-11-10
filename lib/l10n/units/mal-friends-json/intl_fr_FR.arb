@@ -1,0 +1,9 @@
+{
+  "@@locale": "fr_FR",
+  "Prof_Seen_Just_Now": "à l'instant",
+  "Prof_Seen_Minutes": "{count, plural, one{il y a {count} minute} other{il y a {count} minutes}}",
+  "Prof_Seen_Hours": "{count, plural, one{il y a {count} heure} other{il y a {count} heures}}",
+  "Prof_Seen_Days": "{count, plural, one{il y a {count} jour} other{il y a {count} jours}}",
+  "Prof_Seen_Months": "{count, plural, one{il y a {count} mois} other{il y a {count} mois}}",
+  "Prof_Seen_Years": "{count, plural, one{il y a {count} an} other{il y a {count} ans}}"
+}

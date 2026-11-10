@@ -1,0 +1,85 @@
+{
+  "@@locale": "en",
+  "Card_Status_Watching": "Watching",
+  "Card_Status_Reading": "Reading",
+  "Card_Status_Completed": "Completed",
+  "Card_Status_On_Hold": "On hold",
+  "Card_Status_Dropped": "Dropped",
+  "Card_Status_Plan_Watch": "Plan to watch",
+  "Card_Status_Plan_Read": "Plan to read",
+  "Card_Short_Watching": "CW",
+  "Card_Short_Reading": "CR",
+  "Card_Short_Completed": "CMP",
+  "Card_Short_On_Hold": "OH",
+  "Card_Short_Dropped": "DP",
+  "Card_Short_Plan_Watch": "PTW",
+  "Card_Short_Plan_Read": "PTR",
+  "Card_Edit": "Edit my list entry",
+  "Card_Edit_Status": "{status}, edit my list entry",
+  "@Card_Edit_Status": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "Card_Remove": "Remove",
+  "Card_No_Image": "No image",
+  "Card_Score": "Score {score}",
+  "@Card_Score": {
+    "placeholders": {
+      "score": {
+        "type": "String"
+      }
+    }
+  },
+  "Card_Members_Count": "{count, plural, =1{1 member} other{{count} members}}",
+  "@Card_Members_Count": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "Card_Favorites_Count": "{count, plural, =1{1 favorite} other{{count} favorites}}",
+  "@Card_Favorites_Count": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "Card_Recommendations_Count": "{count, plural, =1{1 recommendation} other{{count} recommendations}}",
+  "@Card_Recommendations_Count": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "Card_Progress": "{watched} of {total} watched",
+  "@Card_Progress": {
+    "placeholders": {
+      "watched": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "Card_Aired": "{aired} aired",
+  "@Card_Aired": {
+    "placeholders": {
+      "aired": {
+        "type": "int"
+      }
+    }
+  },
+  "Card_Adult_Hidden": "Adult content hidden",
+  "Card_Empty_Anime": "No anime available",
+  "Card_Empty_Manga": "No manga available",
+  "Card_Empty": "Nothing to show",
+  "Card_View_All": "View all",
+  "Card_Unknown": "Unknown"
+}

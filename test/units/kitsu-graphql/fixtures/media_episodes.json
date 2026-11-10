@@ -1,0 +1,72 @@
+{
+ "data": {
+  "findAnimeById": {
+   "episodes": {
+    "totalCount": 28,
+    "pageInfo": {
+     "hasNextPage": true,
+     "endCursor": "Mw"
+    },
+    "nodes": [
+     {
+      "id": "353471",
+      "number": 1,
+      "titles": {
+       "canonical": "The Journey's End"
+      },
+      "description": {
+       "en": "The world celebrates the Demon King's defeat at the hands of the Hero and his companions. Now that their great adventure is over, what will Frieren the mage do next?\n\n(Source: Crunchyroll)"
+      },
+      "releasedAt": "2023-09-29T00:00:00+00:00",
+      "length": 1440,
+      "thumbnail": {
+       "original": {
+        "url": "https://media.kitsu.app/episode/353471/thumbnail/586ff8f159af3cefedfe7c48d454c982.png",
+        "width": 1920,
+        "height": 1080
+       }
+      }
+     },
+     {
+      "id": "353472",
+      "number": 2,
+      "titles": {
+       "canonical": "It Didn't Have to Be Magic..."
+      },
+      "description": {
+       "en": "Frieren instructs Fern in the use of magic while deciphering a grimoire for Heiter.\n\n(Source: Crunchyroll)"
+      },
+      "releasedAt": "2023-09-29T00:00:00+00:00",
+      "length": 1440,
+      "thumbnail": {
+       "original": {
+        "url": "https://media.kitsu.app/episode/353472/thumbnail/4ea4ed39d5342b4f32e1c6b7f4a7183f.png",
+        "width": 1920,
+        "height": 1080
+       }
+      }
+     },
+     {
+      "id": "356650",
+      "number": 3,
+      "titles": {
+       "canonical": "Killing Magic"
+      },
+      "description": {
+       "en": "While retracing the path she took on her adventure with her former traveling companions, Frieren confronts an old enemy.\n\n(Source: Crunchyroll)"
+      },
+      "releasedAt": "2023-09-29T00:00:00+00:00",
+      "length": 1440,
+      "thumbnail": {
+       "original": {
+        "url": "https://media.kitsu.app/episode/356650/thumbnail/4747c5c35cf4f7c6ce781937beffbb14.png",
+        "width": 1920,
+        "height": 1080
+       }
+      }
+     }
+    ]
+   }
+  }
+ }
+}

@@ -1,0 +1,10 @@
+{
+  "@@locale": "fr_FR",
+  "Skp_Time_Spent": "Temps passé",
+  "Skp_Left_To_Watch": "Reste à voir",
+  "Skp_Top_Rated": "Mes mieux notés",
+  "Skp_Lists": "Listes",
+  "Skp_Dur_Days_Hours": "{days} j {hours} h",
+  "Skp_Dur_Hours_Mins": "{hours} h {mins} min",
+  "Skp_Dur_Mins": "{mins} min"
+}

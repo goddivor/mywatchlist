@@ -1,8 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:mywatchlist/constants/constants.dart';
+import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/services/api/MAL/mal_anime.dart';
 import 'package:mywatchlist/widgets/MAL/home/animegridcard.dart';
+import 'package:mywatchlist/widgets/common/app_colors.dart';
+import 'package:mywatchlist/widgets/common/score_reveal.dart';
 
+/// The bar under a comfortable card: mean score and members on the start side,
+/// the status button (status colour, short status, your score or a pencil) on
+/// the end side. Only the button is tappable (it opens the edit sheet).
+///
+/// Flat surface, no elevation: the bar repeats in every list.
 class AnimeCardBar extends StatelessWidget {
   final NodeStatusValue? nsv;
   final double smallHeight;
@@ -15,6 +22,9 @@ class AnimeCardBar extends StatelessWidget {
   final bool showEdit;
   final bool showSelfScoreInsteadOfStatus;
   final MyListStatus? myListStatus;
+
+  /// The user's entry for the title (cache first); falls back to [myListStatus].
+  final CardListEntry? entry;
 
   const AnimeCardBar({
     super.key,
@@ -29,115 +39,158 @@ class AnimeCardBar extends StatelessWidget {
     this.node,
     this.showSelfScoreInsteadOfStatus = false,
     this.myListStatus,
+    this.entry,
   });
 
   @override
   Widget build(BuildContext context) {
-    final editWidget = Icon(
-      Icons.edit,
-      color: nsv?.color == null ? Colors.black : Colors.white,
-      size: 16,
-    );
-
-    final badgeWidget = Center(
-      child: Text(
-        nsv?.status ?? "",
-        overflow: TextOverflow.ellipsis,
-        textAlign: TextAlign.center,
-        style: const TextStyle(color: Colors.white, fontSize: 12),
-      ),
-    );
-
-    const memberCountStyle = TextStyle(
-      overflow: TextOverflow.ellipsis,
-      fontSize: 13,
-    );
-
-    final badgeStatusWidget = Container(
-      decoration: BoxDecoration(
-          color: nsv?.color ?? Colors.white,
-          borderRadius: BorderRadius.only(
-            bottomRight: Radius.circular(radius),
-          )),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          const SizedBox(width: 5),
-          if (showSelfScoreInsteadOfStatus)
-            starField(
-              '${(myListStatus as dynamic)?.score?.toString() ?? '0'} · ',
-              starHeight: 10,
-              textStyle: memberCountStyle,
-            ),
-          badgeWidget,
-          const SizedBox(width: 5),
-          editWidget,
-          const SizedBox(width: 5),
-        ],
-      ),
-    );
-
-    starMemberWidget(detailed) => Row(
-          mainAxisAlignment: MainAxisAlignment.start,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            SB.w10,
-            SizedBox(
-              height: 14,
-              child: Image.asset("assets/images/star.png"),
-            ),
-            const SizedBox(width: 5),
-            title(
-                (detailed.score == null
-                    ? '-'
-                    : ratingFormat.format(detailed.score)),
-                fontSize: 14,
-                opacity: 1),
-            const SizedBox(width: 5),
-            if (showMemberCount && detailed.members != null)
-              Expanded(
-                child: title(
-                  '(${userCountFormat.format(detailed.members)})',
-                  textOverflow: TextOverflow.ellipsis,
-                  fontSize: 9,
-                  opacity: .7,
-                ),
-              )
-          ],
-        );
-
-    final borderRadius = BorderRadius.only(
-      bottomRight: Radius.circular(radius),
-      bottomLeft: Radius.circular(radius),
-    );
-
-    final materialWidget = Material(
-      elevation: 5,
-      borderRadius: borderRadius,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: borderRadius,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Expanded(child: starMemberWidget(node)),
-            if (showNsv && showEdit) ...[
-              const SizedBox(width: 5),
-              badgeStatusWidget,
-            ]
-          ],
-        ),
-      ),
-    );
+    final scheme = Theme.of(context).colorScheme;
+    final score = node?.score ?? 0;
+    final members = node?.members ?? 0;
+    final userScore = entry?.score ?? myListStatus?.score ?? 0;
+    final showButton = showNsv && showEdit;
 
     return SizedBox(
       width: smallWidth,
       height: smallHeight,
-      child: materialWidget,
+      child: Material(
+        color: scheme.surfaceContainerHigh,
+        borderRadius: BorderRadius.vertical(bottom: Radius.circular(radius)),
+        child: Row(
+          children: [
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsetsDirectional.only(start: 8, end: 4),
+                child: _stats(context, score, members),
+              ),
+            ),
+            if (showButton)
+              _StatusButton(
+                nsv: nsv,
+                radius: radius,
+                score: showSelfScoreInsteadOfStatus ? userScore : 0,
+                onTap: onTap,
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Score and members as separate widgets: digits stay in order in
+  /// right-to-left languages.
+  Widget _stats(BuildContext context, double score, int members) {
+    final scheme = Theme.of(context).colorScheme;
+    final hasMembers = showMemberCount && members > 0;
+    return FittedBox(
+        fit: BoxFit.scaleDown,
+        alignment: AlignmentDirectional.centerStart,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ScoreReveal(
+              iconSize: 14,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.star_rounded,
+                      size: 15, color: AppColors.of(context).score.color),
+                  const SizedBox(width: 3),
+                  Text(
+                    score > 0 ? ratingFormat.format(score) : '-',
+                    style: const TextStyle(fontSize: 13),
+                  ),
+                ],
+              ),
+            ),
+            if (hasMembers) ...[
+              const SizedBox(width: 6),
+              Icon(Icons.people_alt_outlined,
+                  size: 11, color: scheme.onSurfaceVariant),
+              const SizedBox(width: 2),
+              Text(
+                userCountFormat.format(members),
+                maxLines: 1,
+                style: TextStyle(fontSize: 10, color: scheme.onSurfaceVariant),
+              ),
+            ],
+          ],
+        ));
+  }
+}
+
+class _StatusButton extends StatelessWidget {
+  final NodeStatusValue? nsv;
+  final double radius;
+  final int score;
+  final VoidCallback? onTap;
+
+  const _StatusButton({
+    required this.nsv,
+    required this.radius,
+    required this.score,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final role = nsv?.role(context);
+    final background = role?.container ?? scheme.surfaceContainerHighest;
+    final foreground = role?.onContainer ?? scheme.onSurfaceVariant;
+    final hasScore = score > 0 && !scoreHiddenOf(context);
+    final label = nsv?.fullLabel;
+    return Semantics(
+      button: true,
+      label: label == null
+          ? S.current.Card_Edit
+          : S.current.Card_Edit_Status(label),
+      excludeSemantics: true,
+      child: Material(
+        color: background,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadiusDirectional.only(
+            bottomEnd: Radius.circular(radius),
+          ),
+        ),
+        child: InkWell(
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: SizedBox(
+              height: double.infinity,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (hasScore) ...[
+                    Icon(Icons.star_rounded, size: 13, color: foreground),
+                    Text('$score ',
+                        style: TextStyle(fontSize: 12, color: foreground)),
+                  ],
+                  if (nsv?.status != null)
+                    Text(
+                      nsv!.status!,
+                      maxLines: 1,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: foreground,
+                      ),
+                    ),
+                  const SizedBox(width: 4),
+                  Icon(Icons.edit, size: 14, color: foreground),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
 
+/// A small pill with the short status ("CW", "CMP"), used by the user-updates
+/// list.
 class StatusBadge extends StatelessWidget {
   final double height;
   final double width;
@@ -147,15 +200,31 @@ class StatusBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-        height: height,
-        width: width,
-        padding: EdgeInsets.zero,
+    final scheme = Theme.of(context).colorScheme;
+    final role = nsv.role(context);
+    final color = role?.container ?? scheme.surfaceContainerHighest;
+    final foreground = role?.onContainer ?? scheme.onSurfaceVariant;
+    return Semantics(
+      label: nsv.fullLabel,
+      excludeSemantics: nsv.fullLabel != null,
+      child: DecoratedBox(
         decoration: BoxDecoration(
-            color: nsv.color, borderRadius: BorderRadius.circular(16)),
-        child: Center(
-          child: title(nsv.status ?? "",
-              opacity: 1, fontSize: 11, colorVal: Colors.white.value),
-        ));
+          color: color,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: SizedBox(
+          height: height,
+          width: width,
+          child: Center(
+            child: Text(
+              nsv.status ?? '',
+              maxLines: 1,
+              style: TextStyle(
+                  fontSize: 11, fontWeight: FontWeight.bold, color: foreground),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }

@@ -1,15 +1,29 @@
 // ignore_for_file: constant_identifier_names
 
 import 'package:flutter/foundation.dart';
+import 'package:fluttertoast/fluttertoast.dart';
+import 'package:html/parser.dart' as parser;
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'dart:convert';
 
 import 'package:mywatchlist/constants/constants.dart';
 import 'package:mywatchlist/enums.dart';
+import 'package:mywatchlist/services/api/Jikan/jikan_api.dart';
+import 'package:mywatchlist/services/api/Jikan/jikan_client.dart';
 import 'package:mywatchlist/services/api/MAL/mal_anime.dart';
+import 'package:mywatchlist/services/api/MAL/mal_connect.dart';
+import 'package:mywatchlist/services/api/MAL/models/paging.dart';
+import 'package:mywatchlist/services/api/MAL/models/search_result.dart';
+import 'package:mywatchlist/services/api/MAL/models/all_search_result.dart';
+import 'package:mywatchlist/services/api/MAL/models/my_anime_list_status.dart'
+    as mal_status;
+import 'package:mywatchlist/services/api/MAL/models/my_manga_list_status.dart'
+    as manga_status;
+import 'package:mywatchlist/services/api/MAL/scrapper/html_parsers.dart';
 import 'package:mywatchlist/user/accounts/provider/account_manager_singleton.dart';
-import 'package:mywatchlist/user/user.dart';
+import 'package:mywatchlist/user/user_mal_v2.dart';
+import 'package:mywatchlist/user/preferences/preferences.dart';
 
 enum SeasonalAnimeSortOption {
   score,
@@ -29,12 +43,28 @@ enum AnimeListSort {
   listUpdatedAt,
   animeTitle,
   animeStartDate,
-  animeId,
+}
+
+enum MangaListStatus {
+  reading,
+  completed,
+  onHold,
+  dropped,
+  planToRead,
+}
+
+enum MangaListSort {
+  listScore,
+  listUpdatedAt,
+  mangaTitle,
+  mangaStartDate,
+  mangaId,
 }
 
 class MalApi {
   static String clientId = Constants.malclientId;
   static const String animeEndPoint = Constants.malanimeEndPoint;
+  static const String mangaEndPoint = Constants.malmangaEndPoint;
   static const String animeRankingEndPoint = Constants.malanimeRankingEndPoint;
   static const String mangaRankingEndPoint = Constants.malmangaRankingEndPoint;
   static const String malApiUrl = Constants.malapiUrl;
@@ -45,75 +75,126 @@ class MalApi {
   static const String mangaSuggestedEndPoint =
       Constants.malmangaSuggestedEndPoint;
   static const String userBaseEndPoint = Constants.maluserBaseEndPoint;
+  static const String forumEndPoint = Constants.malforumEndPoint;
 
-  AccountType selectedAcc = AccountType.none; // Valeur par défaut
+  AccountType selectedAcc = AccountType.none;
 
-  //implement Get anime details endpoint - https://api.myanimelist.net/v2/anime/{anime_id}
+  // Get anime details - GET /anime/{anime_id}
   Future<MalAnime> getAnimeDetails(int animeId) async {
-    const fields = Constants.malAnimeFields;
+    final fields = animeDetailFields;
 
     final url = '$animeEndPoint/$animeId?fields=$fields';
 
-    // Obtenir le type de compte sélectionné et les en-têtes appropriés
-
-    final selectedAcc = AccountManagerSingleton().selectedAcc;
-    // print(selectedAcc);
-    final Map<String, String> headers = getHeadersForAccountType(selectedAcc);
-
-    final response = await http.get(
-      Uri.parse(url),
-      headers: headers,
-    );
+    final response = await _get(url);
 
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
       return MalAnime.fromJson(data);
     } else {
-      throw Exception('Failed to load anime details');
+      debugPrint('MAL API error: ${response.statusCode} for $url');
+      throw Exception('Failed to load anime details (${response.statusCode})');
     }
   }
 
-  //implement Get anime list endpoint - https://api.myanimelist.net/v2/anime
-  Future<List<Anime>> searchAnime(String query,
+  /// Anime detail fields; [Constants.malAnimeFields] already asks for the
+  /// whole list entry (`my_list_status{...}`).
+  static const String animeDetailFields = Constants.malAnimeFields;
+
+  /// Manga detail fields; [Constants.malMangaFields] already asks for the
+  /// whole list entry.
+  static const String mangaDetailFields = Constants.malMangaFields;
+
+  // Get manga details - GET /manga/{manga_id}
+  Future<MalAnime> getMangaDetails(int mangaId) async {
+    final fields = mangaDetailFields;
+
+    final url = '$mangaEndPoint/$mangaId?fields=$fields';
+
+    final response = await _get(url);
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body) as Map<String, dynamic>;
+      return MalAnime.fromJson(data);
+    } else {
+      debugPrint('MAL API error: ${response.statusCode} for $url');
+      throw Exception('Failed to load manga details (${response.statusCode})');
+    }
+  }
+
+  // Search anime - GET /anime
+  Future<SearchResult> searchAnimeResult(String query,
       {int limit = 100, int offset = 0, List<String>? fields}) async {
-    // Construire l'URL avec les paramètres appropriés
     String url = '$animeEndPoint?q=$query&limit=$limit&offset=$offset';
 
     if (fields != null && fields.isNotEmpty) {
       url +=
           "&fields=${fields.reduce((value, element) => ("$value,$element"))}";
     } else {
-      url +=
-          "&fields=id,title,main_picture,alternative_titles,start_date,end_date,synopsis,mean,rank,popularity,num_list_users,num_scoring_users,nsfw,created_at,updated_at,media_type,status,genres,my_list_status,num_episodes,start_season,broadcast,source,average_episode_duration,rating,pictures,background,related_anime,related_manga,recommendations,studios,statistics";
+      url += "&fields=${Constants.malDefaultAnimeListFields}";
     }
 
-    // Obtenir le type de compte sélectionné et les en-têtes appropriés
-    final selectedAcc = AccountManagerSingleton().selectedAcc;
-    final Map<String, String> headers = getHeadersForAccountType(selectedAcc);
-
-    final response = await http.get(
-      Uri.parse(url),
-      headers: headers,
-    );
+    final response = await _get(url);
 
     if (response.statusCode == 200) {
-      List<dynamic> jsonData = json.decode(response.body)['data'];
-      return jsonData.map((data) => Anime.fromMAlJson(data['node'])).toList();
+      final fullResponse = json.decode(response.body) as Map<String, dynamic>;
+      return SearchResult.fromJson(fullResponse);
     } else {
       throw Exception('Failed to search anime');
     }
   }
 
-  //implement Get anime ranking endpoint - https://api.myanimelist.net/v2/anime/ranking
-  static Future<List<Anime>> getContentRanking(
+  Future<List<Anime>> searchAnime(String query,
+      {int limit = 100, int offset = 0, List<String>? fields}) async {
+    return (await searchAnimeResult(query,
+            limit: limit, offset: offset, fields: fields))
+        .data;
+  }
+
+  // Search manga - GET /manga
+  Future<SearchResult> searchMangaResult(String query,
+      {int limit = 100, int offset = 0, List<String>? fields}) async {
+    String url = '$mangaEndPoint?q=$query&limit=$limit&offset=$offset';
+
+    if (fields != null && fields.isNotEmpty) {
+      url +=
+          "&fields=${fields.reduce((value, element) => ("$value,$element"))}";
+    } else {
+      url +=
+          "&fields=id,title,main_picture,alternative_titles,start_date,end_date,synopsis,mean,rank,popularity,num_list_users,num_scoring_users,nsfw,media_type,status,genres,my_list_status,num_volumes,num_chapters";
+    }
+
+    final response = await _get(url);
+
+    if (response.statusCode == 200) {
+      final fullResponse = json.decode(response.body) as Map<String, dynamic>;
+      return SearchResult.fromJson(fullResponse);
+    } else {
+      throw Exception('Failed to search manga');
+    }
+  }
+
+  Future<List<Anime>> searchManga(String query,
+      {int limit = 100, int offset = 0, List<String>? fields}) async {
+    return (await searchMangaResult(query,
+            limit: limit, offset: offset, fields: fields))
+        .data;
+  }
+
+  // Get anime/manga ranking - GET /anime/ranking or /manga/ranking
+  static Future<SearchResult> getContentRankingResult(
     dynamic rankingType, {
     int limit = 100,
     int offset = 0,
     String category = "anime",
     List<String>? fields,
   }) async {
-    // Get the raking type name using enum
-    String rankingTypeValue = (category.equals("anime")
+    // MAL answers 400 to ranking_type=ona: Jikan (Tenrai when it is down) serves it.
+    if (category == "anime" && rankingType == RankingType.ONA) {
+      return JikanApi().getTopAnimeResult(
+          type: 'ona', limit: limit, offset: offset, sfw: !Preferences.general.nsfw);
+    }
+    // Get the ranking type name using enum
+    String rankingTypeValue = (category == "anime"
         ? rankingMap[rankingType]
         : mangaRankingMap[rankingType])!;
 
@@ -121,7 +202,6 @@ class MalApi {
     String endpoint =
         category == "anime" ? animeRankingEndPoint : mangaRankingEndPoint;
 
-    // Construire l'URL avec les paramètres appropriés
     String url =
         '$endpoint?ranking_type=$rankingTypeValue&limit=$limit&offset=$offset';
 
@@ -129,34 +209,38 @@ class MalApi {
       url +=
           "&fields=${fields.reduce((value, element) => ("$value,$element"))}";
     } else {
-      url +=
-          "&fields=id,title,main_picture,alternative_titles,start_date,end_date,synopsis,mean,rank,popularity,num_list_users,num_scoring_users,nsfw,created_at,updated_at,media_type,status,genres,my_list_status,num_episodes,start_season,broadcast,source,average_episode_duration,rating,pictures,background,related_anime,related_manga,recommendations,studios,statistics";
+      url += "&fields=${Constants.malDefaultAnimeListFields}";
     }
 
-    // Obtenir le type de compte sélectionné et les en-têtes appropriés
-    final selectedAcc = AccountManagerSingleton().selectedAcc;
-    final Map<String, String> headers = getHeadersForAccountType(selectedAcc);
-
-    final response = await http.get(
-      Uri.parse(url),
-      headers: headers,
-    );
+    final response = await _get(url);
 
     if (response.statusCode == 200) {
-      List<dynamic> jsonData = json.decode(response.body)['data'];
-      return jsonData.map((data) => Anime.fromMAlJson(data['node'])).toList();
+      final fullResponse = json.decode(response.body) as Map<String, dynamic>;
+      return SearchResult.fromJson(fullResponse);
     } else {
       throw Exception('Failed to get anime ranking');
     }
   }
 
-  static Future<List<Anime>> getCurrentSeason({
+  static Future<List<Anime>> getContentRanking(
+    dynamic rankingType, {
+    int limit = 100,
+    int offset = 0,
+    String category = "anime",
+    List<String>? fields,
+  }) async {
+    return (await getContentRankingResult(rankingType,
+            limit: limit, offset: offset, category: category, fields: fields))
+        .data;
+  }
+
+  static Future<SearchResult> getCurrentSeasonResult({
     SortType? sortType,
     int limit = 100,
     int offset = 0,
     List<String>? fields,
   }) async {
-    return await getAnimeSeasonal(
+    return await getAnimeSeasonalResult(
       MalApi.getSeasonType(),
       MalApi.getCurrentSeasonYear(),
       sortType: sortType,
@@ -166,7 +250,48 @@ class MalApi {
     );
   }
 
-  //implement Get seasonal anime endpoint - https://api.myanimelist.net/v2/anime/season/$year/$season
+  static Future<List<Anime>> getCurrentSeason({
+    SortType? sortType,
+    int limit = 100,
+    int offset = 0,
+    List<String>? fields,
+  }) async {
+    return (await getCurrentSeasonResult(
+            sortType: sortType, limit: limit, offset: offset, fields: fields))
+        .data;
+  }
+
+  // Get seasonal anime - GET /anime/season/{year}/{season}
+  static Future<SearchResult> getAnimeSeasonalResult(
+    SeasonType seasonType,
+    int year, {
+    SortType? sortType,
+    int limit = 100,
+    int offset = 0,
+    List<String>? fields,
+  }) async {
+    String season = getSeasonName(seasonType).toLowerCase();
+    String sortValue = sortMap[sortType] ?? 'anime_score';
+
+    String url =
+        '$animeSeasonalEndPoint/$year/$season?sort=$sortValue&limit=$limit&offset=$offset';
+
+    if (fields != null && fields.isNotEmpty) {
+      url += "&fields=${fields.join(',')}";
+    } else {
+      url += "&fields=${Constants.malDefaultAnimeListFields}";
+    }
+
+    final response = await _get(url);
+
+    if (response.statusCode == 200) {
+      final fullResponse = json.decode(response.body) as Map<String, dynamic>;
+      return SearchResult.fromJson(fullResponse);
+    } else {
+      throw Exception('Failed to get seasonal anime');
+    }
+  }
+
   static Future<List<Anime>> getAnimeSeasonal(
     SeasonType seasonType,
     int year, {
@@ -175,87 +300,53 @@ class MalApi {
     int offset = 0,
     List<String>? fields,
   }) async {
-    // Convert the SeasonType enum to a string using the getSeasonName function
-    String season = getSeasonName(seasonType).toLowerCase();
-
-    // Get the sort option value using the enum
-    String sortValue = sortMap[sortType]!;
-
-    // Construct the URL for the API request
-    String url =
-        '$animeSeasonalEndPoint/$year/$season?sort=$sortValue&limit=$limit&offset=$offset';
-
-    // Add fields to the URL if specified
-    if (fields != null && fields.isNotEmpty) {
-      url += "&fields=${fields.join(',')}";
-    } else {
-      url +=
-          "&fields=id,title,main_picture,alternative_titles,start_date,end_date,synopsis,mean,rank,popularity,num_list_users,num_scoring_users,nsfw,created_at,updated_at,media_type,status,genres,my_list_status,num_episodes,start_season,broadcast,source,average_episode_duration,rating,pictures,background,related_anime,related_manga,recommendations,studios,statistics";
-    }
-
-    // Obtenir le type de compte sélectionné et les en-têtes appropriés
-    final selectedAcc = AccountManagerSingleton().selectedAcc;
-    final Map<String, String> headers = getHeadersForAccountType(selectedAcc);
-
-    // Make the HTTP GET request
-    final response = await http.get(
-      Uri.parse(url),
-      headers: headers,
-    );
-
-    // Handle the response
-    if (response.statusCode == 200) {
-      List<dynamic> jsonData = json.decode(response.body)['data'];
-      return jsonData.map((data) => Anime.fromMAlJson(data['node'])).toList();
-    } else {
-      throw Exception('Failed to get seasonal anime');
-    }
+    return (await getAnimeSeasonalResult(seasonType, year,
+            sortType: sortType, limit: limit, offset: offset, fields: fields))
+        .data;
   }
 
-  //implement Get suggested anime endpoint - https://api.myanimelist.net/v2/anime/suggestions
-  static Future<List<Anime>> getContentSuggestions({
+  // Get suggested anime/manga - GET /anime/suggestions or /manga/suggestions
+  static Future<SearchResult> getContentSuggestionsResult({
     int limit = 100,
     int offset = 0,
     String category = "anime",
     List<String>? fields,
   }) async {
-    // Construire l'URL avec les paramètres appropriés
-    String endpoint =
-        category == "anime" ? animeSuggestedEndPoint : mangaSuggestedEndPoint;
+    // MAL v2 documents no manga suggestions: answer empty at once, no failing call.
+    if (category != "anime") return SearchResult();
+    String endpoint = animeSuggestedEndPoint;
     String url = '$endpoint?limit=$limit&offset=$offset';
 
     if (fields != null && fields.isNotEmpty) {
       url +=
           "&fields=${fields.reduce((value, element) => ("$value,$element"))}";
     } else {
-      // Définir les champs par défaut si aucun n'est fourni
-      url +=
-          "&fields=id,title,main_picture,alternative_titles,start_date,end_date,synopsis,mean,rank,popularity,num_list_users,num_scoring_users,nsfw,created_at,updated_at,media_type,status,genres,my_list_status,num_episodes,start_season,broadcast,source,average_episode_duration,rating,pictures,background,related_anime,related_manga,recommendations,studios,statistics";
+      url += "&fields=${Constants.malDefaultAnimeListFields}";
     }
 
-    // Obtenir le type de compte sélectionné et les en-têtes appropriés
+    final response = await _get(url);
 
-    final selectedAcc = AccountManagerSingleton().selectedAcc;
-    final Map<String, String> headers = getHeadersForAccountType(selectedAcc);
-
-    // Faire la requête HTTP
-    final response = await http.get(
-      Uri.parse(url),
-      headers: headers,
-    );
-
-    // Vérifier la réponse
     if (response.statusCode == 200) {
-      // Analyser les données JSON
-      List<dynamic> jsonData = json.decode(response.body)['data'];
-      return jsonData.map((data) => Anime.fromMAlJson(data['node'])).toList();
+      final fullResponse = json.decode(response.body) as Map<String, dynamic>;
+      return SearchResult.fromJson(fullResponse);
     } else {
       throw Exception('Failed to get suggested anime');
     }
   }
 
-  //implement Get user anime list endpoint - https://api.myanimelist.net/v2/users/{user_name}/animelist
-  Future<List<Anime>> getUserAnimeList({
+  static Future<List<Anime>> getContentSuggestions({
+    int limit = 100,
+    int offset = 0,
+    String category = "anime",
+    List<String>? fields,
+  }) async {
+    return (await getContentSuggestionsResult(
+            limit: limit, offset: offset, category: category, fields: fields))
+        .data;
+  }
+
+  // Get user anime list - GET /users/{user_name}/animelist
+  Future<SearchResult> getUserAnimeListResult({
     String userName = '@me',
     AnimeListStatus? status,
     AnimeListSort? sort,
@@ -263,10 +354,8 @@ class MalApi {
     int offset = 0,
     List<String>? fields,
   }) async {
-    // Construction de l'URL de base
     String url = '$userBaseEndPoint/$userName/animelist';
 
-    // Ajout des paramètres de requête
     List<String> queryParams = [];
 
     if (status != null) {
@@ -289,33 +378,43 @@ class MalApi {
           'fields=id,title,main_picture,mean,num_list_users,status,media_type,num_episodes,start_date,end_date,list_status{is_rewatching,is_rereading,num_times_rewatched,num_times_reread,priority,rewatch_value,reread_value,start_date,finish_date,tags,comments}');
     }
 
-    // Ajout des paramètres à l'URL
     if (queryParams.isNotEmpty) {
       url += '?${queryParams.join("&")}';
     }
 
-    // Obtenir le type de compte sélectionné et les en-têtes appropriés
-
-    final selectedAcc = AccountManagerSingleton().selectedAcc;
-    final Map<String, String> headers = getHeadersForAccountType(selectedAcc);
-
-    final response = await http.get(
-      Uri.parse(url),
-      headers: headers,
-    );
+    final response = await _get(url);
 
     if (response.statusCode == 200) {
-      List<dynamic> jsonData = json.decode(response.body)['data'];
-      return jsonData.map((data) => Anime.fromMAlJson(data['node'])).toList();
+      final fullResponse = json.decode(response.body) as Map<String, dynamic>;
+      return SearchResult.fromJson(fullResponse);
     } else {
       throw Exception('Failed to get user anime list');
     }
   }
 
-  //fonction a revoir de long en large avec des test
-  Future<void> updateMyAnimeListStatus({
+  Future<List<Anime>> getUserAnimeList({
+    String userName = '@me',
+    AnimeListStatus? status,
+    AnimeListSort? sort,
+    int limit = 1000,
+    int offset = 0,
+    List<String>? fields,
+  }) async {
+    return (await getUserAnimeListResult(
+            userName: userName,
+            status: status,
+            sort: sort,
+            limit: limit,
+            offset: offset,
+            fields: fields))
+        .data;
+  }
+
+  // Update anime list status - PUT /anime/{anime_id}/my_list_status
+  // MAL requires application/x-www-form-urlencoded format
+  Future<mal_status.MyAnimeListStatus?> updateMyAnimeListStatus({
     required int animeId,
-    required AnimeListStatus status,
+    String? status,
     bool? isRewatching,
     int? score,
     int? numWatchedEpisodes,
@@ -324,62 +423,232 @@ class MalApi {
     int? rewatchValue,
     String? tags,
     String? comments,
+    String? startDate,
+    String? finishDate,
   }) async {
-    // Get the status value from the enum
-    String statusValue = getAnimeListStatusValue(status);
-
-    // URL for the API endpoint
     String url = '$animeEndPoint/$animeId/my_list_status';
 
-    // Get the selected account type and headers
+    _requireMalAccount('Access token required for updating list status');
 
-    final selectedAcc = AccountManagerSingleton().selectedAcc;
-    final Map<String, String> headers = getHeadersForAccountType(selectedAcc);
+    // MAL requires form-urlencoded format, not JSON
+    Map<String, String> requestBody = {};
 
-    // Check if headers contain Authorization
-    if (!headers.containsKey('Authorization')) {
-      throw 'Access token required for updating list status';
+    if (status != null) requestBody['status'] = status;
+    if (isRewatching != null) {
+      requestBody['is_rewatching'] = isRewatching.toString();
     }
-
-    // Construct the request body
-    Map<String, dynamic> requestBody = {
-      'status': statusValue,
-    };
-
-    if (isRewatching != null) requestBody['is_rewatching'] = isRewatching;
-    if (score != null) requestBody['score'] = score;
+    if (score != null) requestBody['score'] = score.toString();
     if (numWatchedEpisodes != null) {
-      requestBody['num_watched_episodes'] = numWatchedEpisodes;
+      requestBody['num_watched_episodes'] = numWatchedEpisodes.toString();
     }
-    if (priority != null) requestBody['priority'] = priority;
+    if (priority != null) requestBody['priority'] = priority.toString();
     if (numTimesRewatched != null) {
-      requestBody['num_times_rewatched'] = numTimesRewatched;
+      requestBody['num_times_rewatched'] = numTimesRewatched.toString();
     }
-    if (rewatchValue != null) requestBody['rewatch_value'] = rewatchValue;
+    if (rewatchValue != null) {
+      requestBody['rewatch_value'] = rewatchValue.toString();
+    }
     if (tags != null) requestBody['tags'] = tags;
     if (comments != null) requestBody['comments'] = comments;
+    if (startDate != null) requestBody['start_date'] = startDate;
+    if (finishDate != null) requestBody['finish_date'] = finishDate;
 
-    // Make the PUT request to the API
-    final response = await http.put(
-      Uri.parse(url),
-      headers: headers,
-      body: jsonEncode(requestBody),
-    );
+    final response = await _signedWrite(() => MalConnect.authPut(
+          url,
+          headers: const {'Content-Type': 'application/x-www-form-urlencoded'},
+          body: requestBody,
+        ));
 
-    // Check the response status
     if (response.statusCode == 200) {
-      // Parse the response data if needed
-      final responseData = json.decode(response.body);
+      final responseData = json.decode(response.body) as Map<String, dynamic>;
       if (kDebugMode) {
         print('List status updated successfully: $responseData');
       }
+      return mal_status.MyAnimeListStatus.fromJson(responseData);
     } else {
       throw Exception(
           'Failed to update anime list status: ${response.statusCode}');
     }
   }
 
-  //utilities fonctions
+  // Update manga list status - PUT /manga/{manga_id}/my_list_status
+  Future<manga_status.MyMangaListStatus?> updateMyMangaListStatus({
+    required int mangaId,
+    String? status,
+    bool? isRereading,
+    int? score,
+    int? numVolumesRead,
+    int? numChaptersRead,
+    int? priority,
+    int? numTimesReread,
+    int? rereadValue,
+    String? tags,
+    String? comments,
+    String? startDate,
+    String? finishDate,
+  }) async {
+    String url = '$mangaEndPoint/$mangaId/my_list_status';
+
+    _requireMalAccount('Access token required for updating list status');
+
+    Map<String, String> requestBody = {};
+
+    if (status != null) requestBody['status'] = status;
+    if (isRereading != null) {
+      requestBody['is_rereading'] = isRereading.toString();
+    }
+    if (score != null) requestBody['score'] = score.toString();
+    if (numVolumesRead != null) {
+      requestBody['num_volumes_read'] = numVolumesRead.toString();
+    }
+    if (numChaptersRead != null) {
+      requestBody['num_chapters_read'] = numChaptersRead.toString();
+    }
+    if (priority != null) requestBody['priority'] = priority.toString();
+    if (numTimesReread != null) {
+      requestBody['num_times_reread'] = numTimesReread.toString();
+    }
+    if (rereadValue != null) {
+      requestBody['reread_value'] = rereadValue.toString();
+    }
+    if (tags != null) requestBody['tags'] = tags;
+    if (comments != null) requestBody['comments'] = comments;
+    if (startDate != null) requestBody['start_date'] = startDate;
+    if (finishDate != null) requestBody['finish_date'] = finishDate;
+
+    final response = await _signedWrite(() => MalConnect.authPut(
+          url,
+          headers: const {'Content-Type': 'application/x-www-form-urlencoded'},
+          body: requestBody,
+        ));
+
+    if (response.statusCode == 200) {
+      final responseData = json.decode(response.body) as Map<String, dynamic>;
+      if (kDebugMode) {
+        print('Manga list status updated successfully: $responseData');
+      }
+      return manga_status.MyMangaListStatus.fromJson(responseData);
+    } else {
+      throw Exception(
+          'Failed to update manga list status: ${response.statusCode}');
+    }
+  }
+
+  /// Updates an anime list entry and returns it with MAL's own text dates
+  /// (`YYYY`, `YYYY-MM`, `YYYY-MM-DD`), which [updateMyAnimeListStatus]'s
+  /// model would turn into a `DateTime` and so lose when partial. Dates are
+  /// sent as given.
+  Future<MyListStatus> saveAnimeListStatus({
+    required int animeId,
+    String? status,
+    bool? isRewatching,
+    int? score,
+    int? numWatchedEpisodes,
+    int? priority,
+    int? numTimesRewatched,
+    int? rewatchValue,
+    String? tags,
+    String? comments,
+    String? startDate,
+    String? finishDate,
+  }) =>
+      _saveListStatus('$animeEndPoint/$animeId/my_list_status', {
+        'status': status,
+        'is_rewatching': isRewatching,
+        'score': score,
+        'num_watched_episodes': numWatchedEpisodes,
+        'priority': priority,
+        'num_times_rewatched': numTimesRewatched,
+        'rewatch_value': rewatchValue,
+        'tags': tags,
+        'comments': comments,
+        'start_date': startDate,
+        'finish_date': finishDate,
+      });
+
+  /// Manga counterpart of [saveAnimeListStatus].
+  Future<MyListStatus> saveMangaListStatus({
+    required int mangaId,
+    String? status,
+    bool? isRereading,
+    int? score,
+    int? numVolumesRead,
+    int? numChaptersRead,
+    int? priority,
+    int? numTimesReread,
+    int? rereadValue,
+    String? tags,
+    String? comments,
+    String? startDate,
+    String? finishDate,
+  }) =>
+      _saveListStatus('$mangaEndPoint/$mangaId/my_list_status', {
+        'status': status,
+        'is_rereading': isRereading,
+        'score': score,
+        'num_volumes_read': numVolumesRead,
+        'num_chapters_read': numChaptersRead,
+        'priority': priority,
+        'num_times_reread': numTimesReread,
+        'reread_value': rereadValue,
+        'tags': tags,
+        'comments': comments,
+        'start_date': startDate,
+        'finish_date': finishDate,
+      });
+
+  /// Form body of a list update: only the fields that were given.
+  @visibleForTesting
+  static Map<String, String> listStatusBody(Map<String, Object?> fields) => {
+        for (final e in fields.entries)
+          if (e.value != null) e.key: e.value.toString(),
+      };
+
+  Future<MyListStatus> _saveListStatus(
+      String url, Map<String, Object?> fields) async {
+    _requireMalAccount('Access token required for updating list status');
+    final body = listStatusBody(fields);
+    final response = await _signedWrite(() => MalConnect.authPut(
+          url,
+          headers: const {'Content-Type': 'application/x-www-form-urlencoded'},
+          body: body,
+        ));
+    if (response.statusCode == 200) {
+      return MyListStatus.fromJson(
+          json.decode(response.body) as Map<String, dynamic>);
+    }
+    throw Exception('Failed to update list status: ${response.statusCode}');
+  }
+
+  // Delete anime from list - DELETE /anime/{anime_id}/my_list_status
+  Future<void> deleteAnimeFromList(int animeId) async {
+    String url = '$animeEndPoint/$animeId/my_list_status';
+
+    _requireMalAccount('Access token required for deleting from list');
+
+    final response = await _signedWrite(() => MalConnect.authDelete(url));
+
+    if (response.statusCode != 200 && response.statusCode != 404) {
+      throw Exception(
+          'Failed to delete anime from list: ${response.statusCode}');
+    }
+  }
+
+  // Delete manga from list - DELETE /manga/{manga_id}/my_list_status
+  Future<void> deleteMangaFromList(int mangaId) async {
+    String url = '$mangaEndPoint/$mangaId/my_list_status';
+
+    _requireMalAccount('Access token required for deleting from list');
+
+    final response = await _signedWrite(() => MalConnect.authDelete(url));
+
+    if (response.statusCode != 200 && response.statusCode != 404) {
+      throw Exception(
+          'Failed to delete manga from list: ${response.statusCode}');
+    }
+  }
+
+  // Utility methods
   static SeasonType getSeasonType() {
     final date = DateTime.now();
     final month = date.month;
@@ -442,7 +711,6 @@ class MalApi {
         return "favorite";
       case RankingType.ONA:
         return "ona";
-      // Default case
     }
   }
 
@@ -452,7 +720,6 @@ class MalApi {
         return "anime_score";
       case SeasonalAnimeSortOption.numListUsers:
         return "anime_num_list_users";
-      // Default case
     }
   }
 
@@ -481,8 +748,36 @@ class MalApi {
         return 'anime_title';
       case AnimeListSort.animeStartDate:
         return 'anime_start_date';
-      case AnimeListSort.animeId:
-        return 'anime_id';
+    }
+  }
+
+  String getMangaListStatusValue(MangaListStatus status) {
+    switch (status) {
+      case MangaListStatus.reading:
+        return 'reading';
+      case MangaListStatus.completed:
+        return 'completed';
+      case MangaListStatus.onHold:
+        return 'on_hold';
+      case MangaListStatus.dropped:
+        return 'dropped';
+      case MangaListStatus.planToRead:
+        return 'plan_to_read';
+    }
+  }
+
+  String getMangaListSortValue(MangaListSort sort) {
+    switch (sort) {
+      case MangaListSort.listScore:
+        return 'list_score';
+      case MangaListSort.listUpdatedAt:
+        return 'list_updated_at';
+      case MangaListSort.mangaTitle:
+        return 'manga_title';
+      case MangaListSort.mangaStartDate:
+        return 'manga_start_date';
+      case MangaListSort.mangaId:
+        return 'manga_id';
     }
   }
 
@@ -513,32 +808,151 @@ class MalApi {
     }
   }
 
-  static Map<String, String> getHeadersForAccountType(AccountType accountType) {
-    final Map<String, String> headers = {};
-
-    switch (accountType) {
-      case AccountType.myanimelist:
-        final accessToken = UserMal.instance.authResponse?.accessToken;
-        if (accessToken != null) {
-          headers.addAll({
-            'Authorization': 'Bearer $accessToken',
-          });
-        } else {
-          throw 'No access token found';
-        }
-        break;
-      // Ajoutez ici des cas pour d'autres types de comptes si nécessaire
-      default:
-        headers.addAll({
-          'Content-Type': 'application/x-www-form-urlencoded',
-          'X-MAL-CLIENT-ID': clientId,
-        });
+  /// GET on the MAL API for the selected account. A MyAnimeList account goes
+  /// through [signedGet]; any other account uses the public client id.
+  static Future<http.Response> _get(String url) {
+    if (AccountManagerSingleton().selectedAcc == AccountType.myanimelist) {
+      return signedGet(url);
     }
-
-    return headers;
+    return _publicGet(url);
   }
 
-  // Dans mal_api.dart, ajouter ces méthodes statiques
+  /// Same as [_get] for callers outside this class (forum client).
+  static Future<http.Response> authorizedGet(String url) => _get(url);
+
+  /// GET with the MyAnimeList session (token renewed before expiry, one
+  /// refresh and replay on 401). When the session is dead (refresh refused,
+  /// signed out), a public endpoint is replayed with the client id so that
+  /// browsing keeps working; an endpoint that needs the user (`/users/@me`,
+  /// suggestions) throws [MalSessionExpired]. Either way [sessionExpired]
+  /// turns true.
+  static Future<http.Response> signedGet(String url) async {
+    url = withNsfw(url);
+    final http.Response response;
+    try {
+      response = await MalConnect.authGet(url);
+    } on MalSessionExpired {
+      _markSessionExpired();
+      if (_needsUser(url)) rethrow;
+      return _publicGet(url);
+    }
+    if (response.statusCode == 401 && UserMalV2.instance.needsReLogin) {
+      _markSessionExpired();
+      if (_needsUser(url)) throw const MalSessionExpired();
+      return _publicGet(url);
+    }
+    return response;
+  }
+
+  /// Runs an authenticated write; a dead session raises [sessionExpired]
+  /// before the [MalSessionExpired] reaches the caller.
+  static Future<http.Response> _signedWrite(
+      Future<http.Response> Function() send) async {
+    try {
+      final response = await send();
+      if (response.statusCode == 401 && UserMalV2.instance.needsReLogin) {
+        _markSessionExpired();
+        throw const MalSessionExpired();
+      }
+      return response;
+    } on MalSessionExpired {
+      _markSessionExpired();
+      rethrow;
+    }
+  }
+
+  /// HTTP client of the public calls and of the maintenance probe; tests
+  /// replace it, the app leaves it null (default `http` client).
+  @visibleForTesting
+  static http.Client? httpClient;
+
+  static Future<http.Response> _publicGet(String url) {
+    final uri = Uri.parse(withNsfw(url));
+    return httpClient?.get(uri, headers: publicHeaders) ??
+        http.get(uri, headers: publicHeaders);
+  }
+
+  /// Adds the adult content choice (`nsfw=1` or `nsfw=0`) to a MAL API URL
+  /// that does not carry one yet: MAL hides adult entries from search,
+  /// rankings, seasons, suggestions and lists unless asked. [nsfw] defaults
+  /// to the saved preference. Pages (`paging.next`) already carry the
+  /// parameter and are left alone.
+  ///
+  /// The user's own lists (`/users/@me/animelist`, `/users/@me/mangalist`)
+  /// always ask for `nsfw=1`, whatever [nsfw] and the preference say: the
+  /// adult entries the user added stay in their list (and match the profile
+  /// counts). The preference filters browse, search, rankings and seasons.
+  static String withNsfw(String url, {bool? nsfw}) {
+    final uri = Uri.parse(url);
+    if (_isOwnList(uri)) {
+      final current = uri.queryParameters['nsfw'];
+      if (current == '1' || current == 'true') return url;
+      url = _withoutNsfw(url);
+      nsfw = true;
+    } else if (uri.queryParameters.containsKey('nsfw')) {
+      return url;
+    }
+    final value = (nsfw ?? Preferences.general.nsfw) ? '1' : '0';
+    final hash = url.indexOf('#');
+    final base = hash < 0 ? url : url.substring(0, hash);
+    final fragment = hash < 0 ? '' : url.substring(hash);
+    final separator = !base.contains('?')
+        ? '?'
+        : (base.endsWith('?') || base.endsWith('&') ? '' : '&');
+    return '$base${separator}nsfw=$value$fragment';
+  }
+
+  static final RegExp _ownListPath =
+      RegExp(r'/users/@me/(anime|manga)list/?$');
+
+  /// True for the signed in user's own anime or manga list.
+  static bool _isOwnList(Uri uri) =>
+      _ownListPath.hasMatch(Uri.decodeComponent(uri.path));
+
+  /// [url] without its `nsfw` query parameters, the rest kept as written.
+  static String _withoutNsfw(String url) => url
+      .replaceAll(RegExp(r'(?<=[?&])nsfw=[^&#]*(&|(?=#)|$)'), '')
+      .replaceFirst(RegExp(r'[?&](?=#|$)'), '');
+
+  /// Endpoints MAL only answers for the signed in user.
+  static bool _needsUser(String url) {
+    final path = Uri.parse(url).path;
+    return path.contains('/users/@me') || path.endsWith('/suggestions');
+  }
+
+  static final ValueNotifier<bool> _sessionExpired = _watchMalUser();
+
+  /// True while the MyAnimeList session is dead and the user must sign in
+  /// again. It turns true on the first failed call (one notification, not
+  /// one per request) and false again once the account signs in. The UI
+  /// listens to this single place to show its "sign in again" prompt.
+  static ValueListenable<bool> get sessionExpired => _sessionExpired;
+
+  static ValueNotifier<bool> _watchMalUser() {
+    final user = UserMalV2.instance;
+    final notifier = ValueNotifier<bool>(user.needsReLogin);
+    user.addListener(() {
+      notifier.value =
+          user.needsReLogin || (notifier.value && user.authResponse == null);
+    });
+    return notifier;
+  }
+
+  static void _markSessionExpired() => _sessionExpired.value = true;
+
+  /// Headers of a public (client id only) MAL call.
+  static Map<String, String> get publicHeaders => {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'X-MAL-CLIENT-ID': clientId,
+      };
+
+  /// List writes need a signed in MyAnimeList account.
+  static void _requireMalAccount(String message) {
+    if (AccountManagerSingleton().selectedAcc != AccountType.myanimelist) {
+      throw message;
+    }
+  }
+
   static const weekdaysOrderMap = {
     'Monday': 1,
     'Tuesday': 2,
@@ -552,7 +966,9 @@ class MalApi {
   static String? getFormattedAiringDate(
     Broadcast broadcast, [
     DateFormat? dateFormat,
+    TimezonePref? timezonePref,
   ]) {
+    timezonePref ??= Preferences.content.timezone;
     try {
       final weekday = weekdaysOrderMap[broadcast.dayOfTheWeek];
       if (weekday == null || broadcast.startTime.isEmpty) return null;
@@ -562,39 +978,22 @@ class MalApi {
       final mins = int.tryParse(timeSplit[1]);
       if (hours == null || mins == null) return null;
 
-      // Get current date and time in user's timezone
       final now = DateTime.now();
 
-      // Create a date in JST (UTC+9)
-      final jstTime =
-          DateTime.utc(now.year, now.month, now.day, hours - 9, mins);
+      // Get airing date in UTC (subtracts 9h from JST)
+      final airingDate = getAiringDate(broadcast);
+      if (airingDate == null) return null;
 
-      // Convert to user's local timezone
-      final localTime = jstTime.toLocal();
+      // Adjust time based on user's timezone preference
+      final adjustedTime = getAdjustedTime(airingDate, now, timezonePref);
 
-      // Adjust to the correct day of the week
-      final targetDay = localTime.nextDate(weekday);
-      final finalTime = DateTime(targetDay.year, targetDay.month, targetDay.day,
-          localTime.hour, localTime.minute);
-
-      // Format the result
       dateFormat ??= DateFormat('EEEE h:mm a');
 
-      // Get user's timezone name
-      String timezoneName;
-      try {
-        timezoneName = now.timeZoneName;
-      } catch (e) {
-        // Fallback si timeZoneName n'est pas disponible
-        final offsetHours = now.timeZoneOffset.inHours;
-        final offsetMinutes = now.timeZoneOffset.inMinutes.remainder(60);
-        timezoneName =
-            'UTC${offsetHours >= 0 ? '+' : ''}$offsetHours${offsetMinutes != 0 ? ':${offsetMinutes.abs().toString().padLeft(2, '0')}' : ''}';
-      }
+      final tzName = getTimezoneName(now, timezonePref);
 
-      return '${dateFormat.format(finalTime)} ($timezoneName)';
+      return '${dateFormat.format(adjustedTime)} ($tzName)';
     } catch (e) {
-      print('Error formatting airing date: $e');
+      debugPrint('Error formatting airing date: $e');
     }
     return null;
   }
@@ -620,15 +1019,274 @@ class MalApi {
     return null;
   }
 
-  static DateTime getAdjustedTime(DateTime airingTime, DateTime nowDate) {
-    // Convert from Japan time to local time
-    return airingTime;
+  /// Adjust airing time based on user's timezone preference.
+  /// [airingTime] is in UTC (already converted from JST by subtracting 9h).
+  static DateTime getAdjustedTime(
+    DateTime airingTime,
+    DateTime nowDate, [
+    TimezonePref? pref,
+  ]) {
+    switch (pref ?? Preferences.content.timezone) {
+      case TimezonePref.jst:
+        return airingTime.add(const Duration(hours: 9));
+      case TimezonePref.utc:
+        return airingTime;
+      case TimezonePref.local:
+        return airingTime.add(Duration(
+          minutes: nowDate.timeZoneOffset.inMinutes,
+        ));
+    }
   }
 
-// Dans mal_api.dart, remplacer la méthode timeZoneName
-  static String timeZoneName(DateTime dateTime) {
-    // Utiliser DateFormat pour obtenir l'abréviation de la timezone
-    final format = DateFormat('z');
-    return format.format(dateTime);
+  /// Get timezone display name based on user preference.
+  static String getTimezoneName(DateTime dateTime, [TimezonePref? pref]) {
+    switch (pref ?? Preferences.content.timezone) {
+      case TimezonePref.jst:
+        return 'JST';
+      case TimezonePref.utc:
+        return 'UTC';
+      case TimezonePref.local:
+        try {
+          return dateTime.timeZoneName;
+        } catch (_) {
+          final h = dateTime.timeZoneOffset.inHours;
+          final m = dateTime.timeZoneOffset.inMinutes.remainder(60);
+          return 'UTC${h >= 0 ? '+' : ''}$h${m != 0 ? ':${m.abs().toString().padLeft(2, '0')}' : ''}';
+        }
+    }
+  }
+
+  /// Load the next or previous page of a paginated MAL API response.
+  static Future<SearchResult> getContentListPage(Paging page,
+      {bool next = true}) async {
+    final url = next ? page.next : page.previous;
+    if (url == null) return SearchResult();
+
+    // A Jikan page (the ONA ranking) is not a MAL URL.
+    if (JikanClient.instance.source?.isJikan(Uri.parse(url)) ?? false) {
+      final u = Uri.parse(url);
+      final size = int.tryParse(u.queryParameters['limit'] ?? '') ??
+          JikanApi.topPageSize;
+      final page = int.tryParse(u.queryParameters['page'] ?? '') ?? 1;
+      return JikanApi().getTopAnimeResult(
+          type: u.queryParameters['type'] ?? 'ona',
+          limit: size,
+          offset: (page - 1) * size,
+          sfw: u.queryParameters['sfw'] == 'true');
+    }
+
+    final response = await _get(url);
+
+    if (response.statusCode == 200) {
+      return SearchResult.fromJson(json.decode(response.body));
+    } else {
+      throw Exception('Failed to load page');
+    }
+  }
+
+  /// Fields of each anime of [getSchedule]: what the weekly cards, sorts and filters use.
+  static const String scheduleFields = 'id,title,main_picture,start_date,end_date,mean,'
+      'popularity,num_list_users,num_scoring_users,media_type,status,genres,num_episodes,'
+      'broadcast,my_list_status{status,score,num_episodes_watched,is_rewatching,updated_at,priority}';
+
+  /// Weekly schedule of a season (DailyAL `getSchedule`): every anime of [seasonType] of
+  /// [year] (all pages of 500), as the raw MAL `node` maps grouped in 8 lists, Monday to
+  /// Sunday then "others" (no broadcast slot). The day is the broadcast day in the time zone
+  /// [pref] (the preference by default), see [scheduleWeekday].
+  static Future<List<List<Map<String, dynamic>>>> getSchedule({
+    SeasonType? seasonType,
+    int? currentYear,
+    TimezonePref? pref,
+    DateTime? now,
+  }) async {
+    seasonType ??= MalApi.getSeasonType();
+    currentYear ??= MalApi.getCurrentSeasonYear();
+    final season = getSeasonName(seasonType).toLowerCase();
+    final schedule = List.generate(8, (_) => <Map<String, dynamic>>[]);
+    String? url = '$animeSeasonalEndPoint/$currentYear/$season'
+        '?sort=anime_score&limit=500&offset=0&fields=$scheduleFields';
+    while (url != null) {
+      final response = await _get(url);
+      if (response.statusCode != 200) {
+        throw Exception('Failed to get the season schedule (${response.statusCode})');
+      }
+      final decoded = await _decode(response.body);
+      final body = decoded is Map ? decoded : const {};
+      final data = body['data'];
+      if (data is! List || data.isEmpty) break;
+      for (final item in data) {
+        final node = item is Map ? item['node'] : null;
+        if (node is! Map || node['id'] is! num) continue;
+        final broadcast = node['broadcast'];
+        final day = broadcast is Map
+            ? scheduleWeekday(broadcast['day_of_the_week'] as String?,
+                broadcast['start_time'] as String?,
+                pref: pref, now: now)
+            : 8;
+        schedule[day - 1].add(Map<String, dynamic>.from(node));
+      }
+      final paging = body['paging'];
+      final next = paging is Map ? paging['next'] : null;
+      url = next is String && next.isNotEmpty ? next : null;
+    }
+    return schedule;
+  }
+
+  /// Day (1 = Monday … 7 = Sunday) a MAL broadcast slot ([day] `monday`…, [time] `23:30`, both
+  /// Japan time) falls on in the time zone [pref]; 8 when the slot is unknown or `other`. A
+  /// late-night JST slot can be the day before in UTC or in the device zone; the device zone
+  /// is read at the next airing after [now], so summer time is taken into account.
+  static int scheduleWeekday(String? day, String? time, {TimezonePref? pref, DateTime? now}) {
+    final normalized = day == null || day.isEmpty
+        ? ''
+        : day[0].toUpperCase() + day.substring(1).toLowerCase();
+    final weekday = weekdaysOrderMap[normalized];
+    final parts = time?.split(':');
+    final hours = parts != null && parts.length >= 2 ? int.tryParse(parts[0]) : null;
+    final minutes = parts != null && parts.length >= 2 ? int.tryParse(parts[1]) : null;
+    if (weekday == null || hours == null || minutes == null) return 8;
+    final zone = pref ?? Preferences.content.timezone;
+    if (zone == TimezonePref.jst && hours < 24) return weekday;
+    // JST wall clock of the next airing, written in UTC fields, then shifted back by 9 hours.
+    final jstNow = (now ?? DateTime.now()).toUtc().add(const Duration(hours: 9));
+    final start = DateTime.utc(jstNow.year, jstNow.month, jstNow.day)
+        .add(Duration(days: (weekday - jstNow.weekday) % 7, hours: hours, minutes: minutes));
+    final airing = start.subtract(const Duration(hours: 9));
+    return switch (zone) {
+      TimezonePref.jst => start.weekday,
+      TimezonePref.utc => airing.weekday,
+      TimezonePref.local => airing.toLocal().weekday,
+    };
+  }
+
+  /// JSON body decoded off the UI isolate when large (a season of 500 anime).
+  static Future<Object?> _decode(String body) =>
+      body.length < 32 * 1024 ? Future.value(json.decode(body)) : compute(json.decode, body);
+
+  /// Wrap a single anime/manga detail lookup into a SearchResult.
+  Future<SearchResult> searchById(int id, {String category = "anime"}) async {
+    Anime content;
+    if (category == "anime") {
+      final details = await getAnimeDetails(id);
+      content = Anime(
+        id: details.id,
+        title: details.title,
+        imageUrl: details.mainPicture?.medium ?? '',
+        score: details.mean ?? 0.0,
+        members: details.numListUsers ?? 0,
+        mediaType: details.mediaType,
+        numEpisodes: details.numEpisodes,
+      );
+    } else {
+      final details = await getMangaDetails(id);
+      content = Anime(
+        id: details.id,
+        title: details.title,
+        imageUrl: details.mainPicture?.medium ?? '',
+        score: details.mean ?? 0.0,
+        members: details.numListUsers ?? 0,
+        mediaType: details.mediaType,
+        numVolumes: details.numVolumes,
+      );
+    }
+    return SearchResult(data: [content]);
+  }
+
+  /// Convenience method to update the episode count for an anime.
+  /// Validates bounds and auto-completes when reaching total episodes.
+  /// Returns the updated status or null on failure.
+  Future<mal_status.MyAnimeListStatus?> updateEpisodeCount(
+    dynamic content, {
+    int? episodes,
+    int? add,
+  }) async {
+    int totalEpisodes = (episodes ?? 0) + (add ?? 0);
+    if (totalEpisodes < 0) return null;
+
+    String? watchStatus;
+
+    // Check bounds if we have episode count info
+    int? maxEpisodes;
+    int? contentId;
+
+    if (content is MalAnime) {
+      maxEpisodes = content.numEpisodes;
+      contentId = content.id;
+    } else if (content is Anime) {
+      maxEpisodes = content.numEpisodes;
+      contentId = content.id;
+    }
+
+    if (contentId == null) return null;
+
+    if (maxEpisodes != null && maxEpisodes > 0) {
+      if (totalEpisodes > maxEpisodes) {
+        Fluttertoast.showToast(msg: "Maximum reached!");
+        return null;
+      }
+      if (totalEpisodes == maxEpisodes) {
+        watchStatus = "completed";
+      }
+    }
+
+    return await updateMyAnimeListStatus(
+      animeId: contentId,
+      numWatchedEpisodes: totalEpisodes,
+      status: watchStatus,
+    );
+  }
+
+  static bool? _maintenance;
+  static DateTime _maintenanceCheckedAt =
+      DateTime.fromMillisecondsSinceEpoch(0);
+
+  /// True while the MAL API answers 503 (maintenance). The probe is a public
+  /// call with the client id, bounded to 5 s, and its answer is kept for 60 s
+  /// so that several screens can ask without hitting MAL each time. Offline
+  /// or any other failure is not a maintenance. Home wiring calls this.
+  static Future<bool> isUnderMaintenance({bool force = false}) async {
+    final cached = _maintenance;
+    if (!force &&
+        cached != null &&
+        DateTime.now().difference(_maintenanceCheckedAt) <
+            const Duration(seconds: 60)) {
+      return cached;
+    }
+    if (httpClient == null && !await MalConnect.hasConnection()) return false;
+    try {
+      final uri = Uri.parse('$animeEndPoint/1?fields=id');
+      final request = httpClient?.get(uri, headers: publicHeaders) ??
+          http.get(uri, headers: publicHeaders);
+      final response = await request.timeout(const Duration(seconds: 5));
+      _maintenance = response.statusCode == 503;
+      _maintenanceCheckedAt = DateTime.now();
+      return _maintenance!;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  @visibleForTesting
+  static void resetMaintenanceCache() => _maintenance = null;
+
+  /// Check if the device has network connectivity.
+  static Future<bool> hasConnection() async {
+    return MalConnect.hasConnection();
+  }
+
+  /// Search across all MAL categories (anime, manga, character, person, etc.) via HTML scraping.
+  static Future<AllSearchResult?> searchAllCategories(String query) async {
+    try {
+      final url =
+          'https://myanimelist.net/search/all?q=${Uri.encodeComponent(query)}&cat=all';
+      final response = await http.get(Uri.parse(url));
+      if (response.statusCode == 200) {
+        final document = parser.parse(response.body);
+        return HtmlParsersApp.parseAllSearchResults(document);
+      }
+    } catch (e) {
+      debugPrint('Error searching all categories: $e');
+    }
+    return null;
   }
 }

@@ -1,460 +1,323 @@
 import 'package:flutter/material.dart';
-
-class AppTheme {
-  final String name;
-  final String displayName;
-  final ThemeData lightTheme;
-  final ThemeData darkTheme;
-  final String imagePath;
-
-  const AppTheme({
-    required this.name,
-    required this.displayName,
-    required this.lightTheme,
-    required this.darkTheme,
-    required this.imagePath,
-  });
-}
+import 'package:flutter/services.dart';
+import 'package:mywatchlist/widgets/common/app_colors.dart';
 
 class AppThemes {
-  static const String springName = 'spring';
-  static const String summerName = 'summer';
-  static const String autumnName = 'autumn';
-  static const String winterName = 'winter';
-
-  // Spring theme (light greens and pinks)
-  static final springTheme = AppTheme(
-    name: springName,
-    displayName: 'Spring',
-    imagePath: 'assets/images/spring.jpg',
-    lightTheme: ThemeData(
-      brightness: Brightness.light,
-      primarySwatch: Colors.green,
-      primaryColor: const Color(0xFF76C893),
-      scaffoldBackgroundColor: const Color(0xFFF6F7F9),
-      colorScheme: const ColorScheme.light(
-        primary: Color(0xFF76C893),
-        secondary: Color(0xFFFF9AA2),
-        surface: Color(0xFFFFFFFF),
-        background: Color(0xFFF6F7F9),
-        error: Color(0xFFB00020),
-        onPrimary: Color(0xFFFFFFFF),
-        onSecondary: Color(0xFF000000),
-        onSurface: Color(0xFF000000),
-        onBackground: Color(0xFF000000),
-        onError: Color(0xFFFFFFFF),
-      ),
-      textTheme: const TextTheme(
-        titleLarge: TextStyle(color: Color(0xFF1B4332)),
-        bodyLarge: TextStyle(color: Color(0xFF1B4332)),
-      ),
-      appBarTheme: const AppBarTheme(
-        color: Color(0xFF76C893),
-        elevation: 0,
-      ),
-      cardTheme: CardTheme(
-        color: Colors.white,
-        elevation: 2,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-      ),
-      buttonTheme: ButtonThemeData(
-        buttonColor: const Color(0xFF76C893),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
-      ),
-      elevatedButtonTheme: ElevatedButtonThemeData(
-        style: ButtonStyle(
-          backgroundColor: MaterialStateProperty.all(const Color(0xFF76C893)),
-          foregroundColor: MaterialStateProperty.all(Colors.white),
-          shape: MaterialStateProperty.all(
-            RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
-        ),
-      ),
-    ),
-    darkTheme: ThemeData(
-      brightness: Brightness.dark,
-      primarySwatch: Colors.green,
-      primaryColor: const Color(0xFF2D6A4F),
-      scaffoldBackgroundColor: const Color(0xFF1B4332),
-      colorScheme: const ColorScheme.dark(
-        primary: Color(0xFF2D6A4F),
-        secondary: Color(0xFFFF9AA2),
-        surface: Color(0xFF2D3B45),
-        background: Color(0xFF1B4332),
-        error: Color(0xFFCF6679),
-        onPrimary: Color(0xFFFFFFFF),
-        onSecondary: Color(0xFF000000),
-        onSurface: Color(0xFFFFFFFF),
-        onBackground: Color(0xFFFFFFFF),
-        onError: Color(0xFF000000),
-      ),
-      textTheme: const TextTheme(
-        titleLarge: TextStyle(color: Color(0xFFD8F3DC)),
-        bodyLarge: TextStyle(color: Color(0xFFD8F3DC)),
-      ),
-      appBarTheme: const AppBarTheme(
-        color: Color(0xFF2D6A4F),
-        elevation: 0,
-      ),
-      cardTheme: CardTheme(
-        color: const Color(0xFF2D3B45),
-        elevation: 2,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-      ),
-      buttonTheme: ButtonThemeData(
-        buttonColor: const Color(0xFF2D6A4F),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
-      ),
-      elevatedButtonTheme: ElevatedButtonThemeData(
-        style: ButtonStyle(
-          backgroundColor: MaterialStateProperty.all(const Color(0xFF2D6A4F)),
-          foregroundColor: MaterialStateProperty.all(Colors.white),
-          shape: MaterialStateProperty.all(
-            RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
-        ),
-      ),
-    ),
-  );
-
-  // Summer theme (blues and yellows)
-  static final summerTheme = AppTheme(
-    name: summerName,
-    displayName: 'Summer',
-    imagePath: 'assets/images/summer.jpg',
-    lightTheme: ThemeData(
-      brightness: Brightness.light,
-      primarySwatch: Colors.blue,
-      primaryColor: const Color(0xFF48CAE4),
-      scaffoldBackgroundColor: const Color(0xFFF8F9FA),
-      colorScheme: const ColorScheme.light(
-        primary: Color(0xFF48CAE4),
-        secondary: Color(0xFFFFD166),
-        surface: Color(0xFFFFFFFF),
-        background: Color(0xFFF8F9FA),
-        error: Color(0xFFB00020),
-        onPrimary: Color(0xFFFFFFFF),
-        onSecondary: Color(0xFF000000),
-        onSurface: Color(0xFF000000),
-        onBackground: Color(0xFF000000),
-        onError: Color(0xFFFFFFFF),
-      ),
-      textTheme: const TextTheme(
-        titleLarge: TextStyle(color: Color(0xFF03045E)),
-        bodyLarge: TextStyle(color: Color(0xFF03045E)),
-      ),
-      appBarTheme: const AppBarTheme(
-        color: Color(0xFF48CAE4),
-        elevation: 0,
-      ),
-      cardTheme: CardTheme(
-        color: Colors.white,
-        elevation: 2,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-      ),
-      buttonTheme: ButtonThemeData(
-        buttonColor: const Color(0xFF48CAE4),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
-      ),
-      elevatedButtonTheme: ElevatedButtonThemeData(
-        style: ButtonStyle(
-          backgroundColor: MaterialStateProperty.all(const Color(0xFF48CAE4)),
-          foregroundColor: MaterialStateProperty.all(Colors.white),
-          shape: MaterialStateProperty.all(
-            RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
-        ),
-      ),
-    ),
-    darkTheme: ThemeData(
-      brightness: Brightness.dark,
-      primarySwatch: Colors.blue,
-      primaryColor: const Color(0xFF0077B6),
-      scaffoldBackgroundColor: const Color(0xFF03045E),
-      colorScheme: const ColorScheme.dark(
-        primary: Color(0xFF0077B6),
-        secondary: Color(0xFFFFD166),
-        surface: Color(0xFF1E293B),
-        background: Color(0xFF03045E),
-        error: Color(0xFFCF6679),
-        onPrimary: Color(0xFFFFFFFF),
-        onSecondary: Color(0xFF000000),
-        onSurface: Color(0xFFFFFFFF),
-        onBackground: Color(0xFFFFFFFF),
-        onError: Color(0xFF000000),
-      ),
-      textTheme: const TextTheme(
-        titleLarge: TextStyle(color: Color(0xFFCAF0F8)),
-        bodyLarge: TextStyle(color: Color(0xFFCAF0F8)),
-      ),
-      appBarTheme: const AppBarTheme(
-        color: Color(0xFF0077B6),
-        elevation: 0,
-      ),
-      cardTheme: CardTheme(
-        color: const Color(0xFF1E293B),
-        elevation: 2,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-      ),
-      buttonTheme: ButtonThemeData(
-        buttonColor: const Color(0xFF0077B6),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
-      ),
-      elevatedButtonTheme: ElevatedButtonThemeData(
-        style: ButtonStyle(
-          backgroundColor: MaterialStateProperty.all(const Color(0xFF0077B6)),
-          foregroundColor: MaterialStateProperty.all(Colors.white),
-          shape: MaterialStateProperty.all(
-            RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
-        ),
-      ),
-    ),
-  );
-
-  // Autumn theme (oranges and browns)
-  static final autumnTheme = AppTheme(
-    name: autumnName,
-    displayName: 'Autumn',
-    imagePath: 'assets/images/fall.jpg',
-    lightTheme: ThemeData(
-      brightness: Brightness.light,
-      primarySwatch: Colors.orange,
-      primaryColor: const Color(0xFFF9A826),
-      scaffoldBackgroundColor: const Color(0xFFF9F7F3),
-      colorScheme: const ColorScheme.light(
-        primary: Color(0xFFF9A826),
-        secondary: Color(0xFF94414F),
-        surface: Color(0xFFFFFFFF),
-        background: Color(0xFFF9F7F3),
-        error: Color(0xFFB00020),
-        onPrimary: Color(0xFFFFFFFF),
-        onSecondary: Color(0xFFFFFFFF),
-        onSurface: Color(0xFF000000),
-        onBackground: Color(0xFF000000),
-        onError: Color(0xFFFFFFFF),
-      ),
-      textTheme: const TextTheme(
-        titleLarge: TextStyle(color: Color(0xFF4A4238)),
-        bodyLarge: TextStyle(color: Color(0xFF4A4238)),
-      ),
-      appBarTheme: const AppBarTheme(
-        color: Color(0xFFF9A826),
-        elevation: 0,
-      ),
-      cardTheme: CardTheme(
-        color: Colors.white,
-        elevation: 2,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-      ),
-      buttonTheme: ButtonThemeData(
-        buttonColor: const Color(0xFFF9A826),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
-      ),
-      elevatedButtonTheme: ElevatedButtonThemeData(
-        style: ButtonStyle(
-          backgroundColor: MaterialStateProperty.all(const Color(0xFFF9A826)),
-          foregroundColor: MaterialStateProperty.all(Colors.white),
-          shape: MaterialStateProperty.all(
-            RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
-        ),
-      ),
-    ),
-    darkTheme: ThemeData(
-      brightness: Brightness.dark,
-      primarySwatch: Colors.orange,
-      primaryColor: const Color(0xFFCB8A00),
-      scaffoldBackgroundColor: const Color(0xFF2F2519),
-      colorScheme: const ColorScheme.dark(
-        primary: Color(0xFFCB8A00),
-        secondary: Color(0xFF94414F),
-        surface: Color(0xFF3C2E23),
-        background: Color(0xFF2F2519),
-        error: Color(0xFFCF6679),
-        onPrimary: Color(0xFFFFFFFF),
-        onSecondary: Color(0xFFFFFFFF),
-        onSurface: Color(0xFFFFFFFF),
-        onBackground: Color(0xFFFFFFFF),
-        onError: Color(0xFF000000),
-      ),
-      textTheme: const TextTheme(
-        titleLarge: TextStyle(color: Color(0xFFF5DEB3)),
-        bodyLarge: TextStyle(color: Color(0xFFF5DEB3)),
-      ),
-      appBarTheme: const AppBarTheme(
-        color: Color(0xFFCB8A00),
-        elevation: 0,
-      ),
-      cardTheme: CardTheme(
-        color: const Color(0xFF3C2E23),
-        elevation: 2,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-      ),
-      buttonTheme: ButtonThemeData(
-        buttonColor: const Color(0xFFCB8A00),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
-      ),
-      elevatedButtonTheme: ElevatedButtonThemeData(
-        style: ButtonStyle(
-          backgroundColor: MaterialStateProperty.all(const Color(0xFFCB8A00)),
-          foregroundColor: MaterialStateProperty.all(Colors.white),
-          shape: MaterialStateProperty.all(
-            RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
-        ),
-      ),
-    ),
-  );
-
-  // Winter theme (blues and purples)
-  static final winterTheme = AppTheme(
-    name: winterName,
-    displayName: 'Winter',
-    imagePath: 'assets/images/winter.jpg',
-    lightTheme: ThemeData(
-      brightness: Brightness.light,
-      primarySwatch: Colors.indigo,
-      primaryColor: const Color(0xFF6B7FD7),
-      scaffoldBackgroundColor: const Color(0xFFF0F3FA),
-      colorScheme: const ColorScheme.light(
-        primary: Color(0xFF6B7FD7),
-        secondary: Color(0xFFBFDBFE),
-        surface: Color(0xFFFFFFFF),
-        background: Color(0xFFF0F3FA),
-        error: Color(0xFFB00020),
-        onPrimary: Color(0xFFFFFFFF),
-        onSecondary: Color(0xFF000000),
-        onSurface: Color(0xFF000000),
-        onBackground: Color(0xFF000000),
-        onError: Color(0xFFFFFFFF),
-      ),
-      textTheme: const TextTheme(
-        titleLarge: TextStyle(color: Color(0xFF1E293B)),
-        bodyLarge: TextStyle(color: Color(0xFF1E293B)),
-      ),
-      appBarTheme: const AppBarTheme(
-        color: Color(0xFF6B7FD7),
-        elevation: 0,
-      ),
-      cardTheme: CardTheme(
-        color: Colors.white,
-        elevation: 2,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-      ),
-      buttonTheme: ButtonThemeData(
-        buttonColor: const Color(0xFF6B7FD7),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
-      ),
-      elevatedButtonTheme: ElevatedButtonThemeData(
-        style: ButtonStyle(
-          backgroundColor: MaterialStateProperty.all(const Color(0xFF6B7FD7)),
-          foregroundColor: MaterialStateProperty.all(Colors.white),
-          shape: MaterialStateProperty.all(
-            RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
-        ),
-      ),
-    ),
-    darkTheme: ThemeData(
-      brightness: Brightness.dark,
-      primarySwatch: Colors.indigo,
-      primaryColor: const Color(0xFF4C5BA6),
-      scaffoldBackgroundColor: const Color(0xFF0F172A),
-      colorScheme: const ColorScheme.dark(
-        primary: Color(0xFF4C5BA6),
-        secondary: Color(0xFF93C5FD),
-        surface: Color(0xFF1E293B),
-        background: Color(0xFF0F172A),
-        error: Color(0xFFCF6679),
-        onPrimary: Color(0xFFFFFFFF),
-        onSecondary: Color(0xFF000000),
-        onSurface: Color(0xFFFFFFFF),
-        onBackground: Color(0xFFFFFFFF),
-        onError: Color(0xFF000000),
-      ),
-      textTheme: const TextTheme(
-        titleLarge: TextStyle(color: Color(0xFFE2E8F0)),
-        bodyLarge: TextStyle(color: Color(0xFFE2E8F0)),
-      ),
-      appBarTheme: const AppBarTheme(
-        color: Color(0xFF4C5BA6),
-        elevation: 0,
-      ),
-      cardTheme: CardTheme(
-        color: const Color(0xFF1E293B),
-        elevation: 2,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-      ),
-      buttonTheme: ButtonThemeData(
-        buttonColor: const Color(0xFF4C5BA6),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
-      ),
-      elevatedButtonTheme: ElevatedButtonThemeData(
-        style: ButtonStyle(
-          backgroundColor: MaterialStateProperty.all(const Color(0xFF4C5BA6)),
-          foregroundColor: MaterialStateProperty.all(Colors.white),
-          shape: MaterialStateProperty.all(
-            RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
-        ),
-      ),
-    ),
-  );
-
-  // List of all available themes
-  static final List<AppTheme> availableThemes = [
-    springTheme,
-    summerTheme,
-    autumnTheme,
-    winterTheme,
+  /// The 19 accent presets of the colour grid (seed colours of the whole scheme).
+  static const List<Color> predefinedColors = [
+    Color(0xFFFF4545), // Red
+    Color(0xFFE91E63), // Pink
+    Color(0xFF9C27B0), // Purple
+    Color(0xFF673AB7), // Deep Purple
+    Color(0xFF607D8B), // Blue Grey
+    Color(0xFF03A9F4), // Light Blue
+    Color(0xFF2196F3), // Blue
+    Color(0xFF00BCD4), // Cyan
+    Color(0xFF009688), // Teal
+    Color(0xFF4CAF50), // Green
+    Color(0xFF8BC34A), // Light Green
+    Color(0xFFCDDC39), // Lime
+    Color(0xFFFFEB3B), // Yellow
+    Color(0xFFFFC107), // Amber
+    Color(0xFFFF9800), // Orange
+    Color(0xFFFF5722), // Deep Orange
+    Color(0xFF795548), // Brown
+    Color(0xFF9E9E9E), // Grey
+    Color(0xFF263238), // Dark
   ];
+
+  /// Available background images
+  static const List<String> backgroundImages = [
+    'assets/images/fall.jpg',
+    'assets/images/summer.jpg',
+    'assets/images/spring.jpg',
+    'assets/images/winter.jpg',
+    'assets/images/anime-collage.jpg',
+  ];
+
+  /// Available font families
+  static const List<String> availableFonts = [
+    'Poppins',
+    'Roboto',
+    'OpenSans',
+    'Montserrat',
+    'Nunito',
+    'Quicksand',
+  ];
+
+  /// Display names for fonts (for UI)
+  static const Map<String, String> fontDisplayNames = {
+    'Poppins': 'Poppins',
+    'Roboto': 'Roboto',
+    'OpenSans': 'Open Sans',
+    'Montserrat': 'Montserrat',
+    'Nunito': 'Nunito',
+    'Quicksand': 'Quicksand',
+  };
+
+  /// Default accent (DailyAL's default theme: Brown).
+  static const Color defaultSeedColor = Color(0xFF795548);
+
+  /// Default home background (DailyAL's default theme: the Fall picture).
+  static const String defaultBackground = 'assets/images/fall.jpg';
+
+  /// The accent each seasonal background gives in "Auto (season)" (DailyAL's season themes:
+  /// spring pink, summer deep orange, fall brown, winter light blue). Values are presets of
+  /// [predefinedColors].
+  static const Map<String, Color> seasonAccents = {
+    'assets/images/spring.jpg': Color(0xFFE91E63), // Pink
+    'assets/images/summer.jpg': Color(0xFFFF5722), // Deep Orange
+    'assets/images/fall.jpg': Color(0xFF795548), // Brown
+    'assets/images/winter.jpg': Color(0xFF03A9F4), // Light Blue
+  };
+
+  /// The "Auto (season)" accent for a background: the season's accent, or the default accent
+  /// (Brown) for a picture without a season (collage, gallery image).
+  static Color seasonAccentFor(String? backgroundImagePath) =>
+      seasonAccents[backgroundImagePath ?? defaultBackground] ?? defaultSeedColor;
+
+  /// Default font family
+  static const String defaultFontFamily = 'Poppins';
+
+  /// Black mode surfaces (DailyAL's black): a near-black page (`#0C0404`), then dark greys
+  /// for the elevated levels so cards, sheets and dialogs stay distinguishable from the page.
+  static const Color blackSurface = Color(0xFF0C0404);
+  static const Color _blackLow = Color(0xFF161212);
+  static const Color _blackMid = Color(0xFF1D1919);
+  static const Color _blackHigh = Color(0xFF252121);
+  static const Color _blackHighest = Color(0xFF2E2A2A);
+
+  /// The colour scheme of one accent, DailyAL's recipe: `ColorScheme.fromSeed` with
+  /// Material's default variant (tonalSpot), which gives soft, pastel accents (tone 40 on light
+  /// surfaces, tone 80 on dark ones, so accent text keeps 4.5:1) and surfaces tinted by the
+  /// accent.
+  ///
+  /// The tertiary family is the accent's secondary tone (same hue, calmer) instead of
+  /// Material's default hue rotation, so no foreign colour (teal on pink…) appears in chips,
+  /// FABs or tabs.
+  static ColorScheme colorScheme({
+    required Color seedColor,
+    required Brightness brightness,
+    bool isBlack = false,
+  }) {
+    final base = ColorScheme.fromSeed(
+      seedColor: seedColor,
+      brightness: brightness,
+      contrastLevel: AppColors.contrastLevel,
+    );
+    final scheme = base.copyWith(
+      tertiary: base.secondary,
+      onTertiary: base.onSecondary,
+      tertiaryContainer: base.secondaryContainer,
+      onTertiaryContainer: base.onSecondaryContainer,
+      tertiaryFixed: base.secondaryFixed,
+      tertiaryFixedDim: base.secondaryFixedDim,
+      onTertiaryFixed: base.onSecondaryFixed,
+      onTertiaryFixedVariant: base.onSecondaryFixedVariant,
+    );
+    if (!isBlack || brightness != Brightness.dark) return scheme;
+    const white = Color(0xFFFFFFFF);
+    return scheme.copyWith(
+      surface: blackSurface,
+      surfaceDim: blackSurface,
+      surfaceBright: _blackHighest,
+      surfaceContainerLowest: blackSurface,
+      surfaceContainerLow: _blackLow,
+      surfaceContainer: _blackMid,
+      surfaceContainerHigh: _blackHigh,
+      surfaceContainerHighest: _blackHighest,
+      onSurface: white,
+      surfaceTint: Colors.transparent,
+    );
+  }
+
+  /// Status bar and navigation bar for a theme: transparent, icons dark on light themes and
+  /// light on dark ones (Android draws edge to edge from Android 15).
+  static SystemUiOverlayStyle systemOverlayStyle(Brightness brightness) {
+    final dark = brightness == Brightness.dark;
+    return SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: dark ? Brightness.light : Brightness.dark,
+      // iOS reads the bar's own brightness (the opposite of the icons').
+      statusBarBrightness: dark ? Brightness.dark : Brightness.light,
+      systemNavigationBarColor: Colors.transparent,
+      systemNavigationBarDividerColor: Colors.transparent,
+      systemNavigationBarIconBrightness: dark ? Brightness.light : Brightness.dark,
+      systemNavigationBarContrastEnforced: false,
+      systemStatusBarContrastEnforced: false,
+    );
+  }
+
+  /// Generate a ThemeData from a seed color, font family and brightness
+  static ThemeData generateThemeData({
+    required Color seedColor,
+    required String fontFamily,
+    required Brightness brightness,
+    bool isBlack = false,
+  }) {
+    final cs = colorScheme(
+      seedColor: seedColor,
+      brightness: brightness,
+      isBlack: isBlack,
+    );
+    final tokens = AppColors.fromScheme(cs, black: isBlack && brightness == Brightness.dark);
+    final overlay = systemOverlayStyle(brightness);
+    final base = ThemeData(
+      useMaterial3: true,
+      colorScheme: cs,
+      fontFamily: fontFamily,
+      brightness: brightness,
+    );
+
+    return base.copyWith(
+      extensions: <ThemeExtension<dynamic>>[tokens],
+      scaffoldBackgroundColor: cs.surface,
+      canvasColor: cs.surface,
+      cardColor: cs.surfaceContainerLow,
+      dividerColor: cs.outlineVariant,
+      disabledColor: cs.onSurface.withValues(alpha: 0.38),
+      hintColor: cs.onSurfaceVariant,
+      shadowColor: cs.shadow,
+      textTheme: base.textTheme.apply(bodyColor: cs.onSurface, displayColor: cs.onSurface),
+      iconTheme: IconThemeData(color: cs.onSurfaceVariant),
+      appBarTheme: AppBarTheme(
+        elevation: 0,
+        scrolledUnderElevation: 2,
+        centerTitle: true,
+        backgroundColor: cs.surface,
+        foregroundColor: cs.onSurface,
+        surfaceTintColor: cs.surfaceTint,
+        iconTheme: IconThemeData(color: cs.onSurface),
+        actionsIconTheme: IconThemeData(color: cs.onSurfaceVariant),
+        // Never derived from the bar colour: a transparent bar over a picture used to give
+        // white icons on light themes.
+        systemOverlayStyle: overlay,
+      ),
+      cardTheme: CardThemeData(
+        elevation: 0,
+        color: cs.surfaceContainerLow,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: cs.surfaceContainerLow,
+          foregroundColor: cs.primary,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      ),
+      // Only the shape is themed: colours come from the scheme, so FilledButton keeps the
+      // accent (primary) and FilledButton.tonal keeps secondaryContainer.
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          foregroundColor: cs.primary,
+          side: BorderSide(color: cs.outline),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(foregroundColor: cs.primary),
+      ),
+      floatingActionButtonTheme: FloatingActionButtonThemeData(
+        backgroundColor: cs.primaryContainer,
+        foregroundColor: cs.onPrimaryContainer,
+      ),
+      chipTheme: ChipThemeData(
+        backgroundColor: cs.surfaceContainerLow,
+        selectedColor: cs.secondaryContainer,
+        disabledColor: cs.onSurface.withValues(alpha: 0.12),
+        labelStyle: TextStyle(color: cs.onSurfaceVariant),
+        secondaryLabelStyle: TextStyle(color: cs.onSecondaryContainer),
+        iconTheme: IconThemeData(color: cs.onSurfaceVariant),
+        checkmarkColor: cs.onSecondaryContainer,
+        side: BorderSide(color: cs.outlineVariant),
+      ),
+      badgeTheme: BadgeThemeData(
+        backgroundColor: cs.error,
+        textColor: cs.onError,
+      ),
+      tabBarTheme: TabBarThemeData(
+        labelColor: cs.primary,
+        unselectedLabelColor: cs.onSurfaceVariant,
+        indicatorColor: cs.primary,
+        dividerColor: cs.outlineVariant,
+      ),
+      navigationBarTheme: NavigationBarThemeData(
+        backgroundColor: cs.surfaceContainer,
+        indicatorColor: cs.secondaryContainer,
+        surfaceTintColor: Colors.transparent,
+        iconTheme: WidgetStateProperty.resolveWith((states) => IconThemeData(
+              color: states.contains(WidgetState.selected)
+                  ? cs.onSecondaryContainer
+                  : cs.onSurfaceVariant,
+            )),
+        labelTextStyle: WidgetStateProperty.resolveWith((states) => TextStyle(
+              color: states.contains(WidgetState.selected) ? cs.onSurface : cs.onSurfaceVariant,
+            )),
+      ),
+      bottomNavigationBarTheme: BottomNavigationBarThemeData(
+        backgroundColor: cs.surfaceContainer,
+        selectedItemColor: cs.primary,
+        unselectedItemColor: cs.onSurfaceVariant,
+      ),
+      bottomSheetTheme: BottomSheetThemeData(
+        backgroundColor: cs.surfaceContainerLow,
+        modalBackgroundColor: cs.surfaceContainerLow,
+        surfaceTintColor: Colors.transparent,
+        dragHandleColor: cs.onSurfaceVariant.withValues(alpha: 0.4),
+      ),
+      dialogTheme: DialogThemeData(
+        backgroundColor: cs.surfaceContainerHigh,
+        surfaceTintColor: Colors.transparent,
+        titleTextStyle: base.textTheme.headlineSmall?.copyWith(color: cs.onSurface),
+        contentTextStyle: base.textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
+        iconColor: cs.secondary,
+      ),
+      popupMenuTheme: PopupMenuThemeData(
+        color: cs.surfaceContainer,
+        surfaceTintColor: Colors.transparent,
+      ),
+      drawerTheme: DrawerThemeData(
+        backgroundColor: cs.surfaceContainerLow,
+        surfaceTintColor: Colors.transparent,
+      ),
+      snackBarTheme: SnackBarThemeData(
+        backgroundColor: cs.inverseSurface,
+        contentTextStyle: TextStyle(color: cs.onInverseSurface),
+        actionTextColor: cs.inversePrimary,
+        closeIconColor: cs.onInverseSurface,
+      ),
+      listTileTheme: ListTileThemeData(
+        iconColor: cs.onSurfaceVariant,
+        textColor: cs.onSurface,
+      ),
+      progressIndicatorTheme: ProgressIndicatorThemeData(
+        color: cs.primary,
+        circularTrackColor: cs.surfaceContainerHighest,
+        linearTrackColor: cs.surfaceContainerHighest,
+        refreshBackgroundColor: cs.surfaceContainerHigh,
+      ),
+      dividerTheme: DividerThemeData(color: cs.outlineVariant),
+      tooltipTheme: TooltipThemeData(
+        decoration: BoxDecoration(
+          color: cs.inverseSurface,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        textStyle: TextStyle(color: cs.onInverseSurface),
+      ),
+    );
+  }
 }

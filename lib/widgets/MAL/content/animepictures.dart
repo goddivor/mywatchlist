@@ -16,7 +16,7 @@ class AnimePictures extends StatelessWidget {
         onTap: () {
           zoomInImageList(
             context,
-            pictures.map((e) => e.large).toList(),
+            pictures.map((e) => e.large).whereType<String>().toList(),
           );
         },
         url: pictures[index].large,

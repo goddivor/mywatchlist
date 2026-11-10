@@ -1,0 +1,27 @@
+{
+  "@@locale": "en",
+  "Lcd_Aired_Count": "{count, plural, =1{1 episode aired} other{{count} episodes aired}}",
+  "@Lcd_Aired_Count": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "Lcd_Released_Chapters": "{count, plural, =1{1 chapter released} other{{count} chapters released}}",
+  "@Lcd_Released_Chapters": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "Lcd_Unread_Count": "{count, plural, =1{1 chapter not read} other{{count} chapters not read}}",
+  "@Lcd_Unread_Count": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
+}

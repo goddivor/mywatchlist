@@ -1,0 +1,14 @@
+{
+  "@@locale": "fr_FR",
+  "Theme_Mode_Light": "Clair",
+  "Theme_Accent_Season": "Auto (saison)",
+  "Theme_Accent_Season_Label": "Auto (saison) : suit l'image de fond",
+  "Theme_Accent_Tip": "L'accent colore toute l'application. « Auto (saison) » prend la couleur de la saison de l'image de fond ; la pastille du fond d'écran suit votre fond d'écran (Android 12 ou plus récent).",
+  "Theme_Accent_Now_Spring": "Fond printanier : accent rose",
+  "Theme_Accent_Now_Summer": "Fond estival : accent orange foncé",
+  "Theme_Accent_Now_Fall": "Fond automnal : accent marron",
+  "Theme_Accent_Now_Winter": "Fond hivernal : accent bleu clair",
+  "Theme_Accent_Now_Other": "Fond sans saison : accent marron",
+  "Theme_Accent_Now_Wallpaper": "Accent tiré de votre fond d'écran",
+  "Theme_Accent_Now_Fixed": "Votre couleur reste, quel que soit le fond"
+}

@@ -1,0 +1,7 @@
+{
+  "@@locale": "en",
+  "Mgl_Rate_Limited": "MyAnimeList is limiting requests: the graph shows what has loaded so far.",
+  "Mgl_Rate_Limited_Root": "MyAnimeList is limiting requests. Wait a minute, then try again.",
+  "Mgl_Bounded": "Large franchise: the graph shows its first {count} titles.",
+  "@Mgl_Bounded": { "placeholders": { "count": { "type": "int" } } }
+}

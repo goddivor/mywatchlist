@@ -1,0 +1,90 @@
+{
+  "@@locale": "en",
+  "Kitsu_Trending": "Trending on Kitsu",
+  "Kitsu_Trending_Manga": "Trending manga on Kitsu",
+  "Kitsu_Search_Title": "Search Kitsu",
+  "Kitsu_Search_Hint": "Search the Kitsu catalogue",
+  "Kitsu_Search_Prompt": "Type a title to search the Kitsu catalogue.",
+  "Kitsu_Search_Empty": "Nothing found for “{query}”",
+  "@Kitsu_Search_Empty": {
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
+  "Kitsu_Row_Top_Rated": "Top rated",
+  "Kitsu_Row_Popular": "Most popular",
+  "Kitsu_Row_Airing": "Airing now",
+  "Kitsu_Row_Publishing": "Publishing now",
+  "Kitsu_Row_Upcoming": "Coming soon",
+  "Kitsu_Categories": "Categories",
+  "Kitsu_Sign_In_List": "Sign in to Kitsu to see your list here",
+  "Kitsu_List_Sign_In_Title": "Sign in to see your Kitsu list",
+  "Kitsu_List_Sign_In_Hint": "Connect your Kitsu account to browse, sort and update your anime and manga.",
+  "Kitsu_Session_Expired": "Your Kitsu session has expired",
+  "Kitsu_Session_Expired_Hint": "Sign in again to see and edit your list.",
+  "Kitsu_Prof_Loading": "Loading your profile…",
+  "Kitsu_Prof_Sign_In_Body": "Connect your Kitsu account to see your stats and favorites.",
+  "Kitsu_Open_Profile": "View on Kitsu",
+  "Kitsu_Open_Site": "Open Kitsu",
+  "Kitsu_Tab_Stats": "Stats",
+  "Kitsu_Tab_About": "About",
+  "Kitsu_Tab_Favorites": "Favorites",
+  "Kitsu_Followers": "{count, plural, =1{1 follower} other{{count} followers}}",
+  "@Kitsu_Followers": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "Kitsu_Following": "{count, plural, =1{1 following} other{{count} following}}",
+  "@Kitsu_Following": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "Kitsu_Time_Days": "{days} d {hours} h",
+  "@Kitsu_Time_Days": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      },
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
+  "Kitsu_Time_Hours": "{hours} h {minutes} min",
+  "@Kitsu_Time_Hours": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "Kitsu_Stats_Anime": "Anime on Kitsu",
+  "Kitsu_Stats_Manga": "Manga on Kitsu",
+  "Kitsu_Stat_Entries": "On the list",
+  "Kitsu_Stat_Episodes": "Episodes watched",
+  "Kitsu_Stat_Chapters": "Chapters read",
+  "Kitsu_Stat_Completed": "Completed",
+  "Kitsu_Stat_Time_Watched": "Time watching",
+  "Kitsu_Stat_Time_Read": "Time reading",
+  "Kitsu_Chart_Status": "List by status",
+  "Kitsu_Chart_Categories": "Top categories",
+  "Kitsu_Stats_Empty": "Nothing on this list yet.",
+  "Kitsu_Waifu": "Waifu",
+  "Kitsu_Husbando": "Husbando",
+  "Kitsu_Member_Since": "Member since",
+  "Kitsu_Favorite_Character": "Favorite character",
+  "Kitsu_Favorites_Empty": "No favorites yet.",
+  "Kitsu_Forum_Title": "No forum on Kitsu here",
+  "Kitsu_Forum_Body": "Kitsu’s community lives on its own site. Open it in your browser to join the conversation."
+}

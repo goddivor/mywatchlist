@@ -1,0 +1,14 @@
+{
+  "@@locale": "en",
+  "Kitsu_Following_Trending": "Popular with people you follow",
+  "Kitsu_Trending_In": "Trending in {category}",
+  "@Kitsu_Trending_In": {
+    "placeholders": {
+      "category": {
+        "type": "String"
+      }
+    }
+  },
+  "Kitsu_Surprise_Me": "Surprise me",
+  "Kitsu_Surprise_Failed": "Couldn’t find a title, try again"
+}

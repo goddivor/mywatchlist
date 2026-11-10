@@ -1,0 +1,148 @@
+{
+  "@@locale": "en",
+  "Aln_Title": "Notifications",
+  "Aln_Group_All": "All",
+  "Aln_Group_Airing": "Airing",
+  "Aln_Group_Activity": "Activity",
+  "Aln_Group_Forum": "Forum",
+  "Aln_Group_Follows": "Follows",
+  "Aln_Group_Media": "Media",
+  "Aln_Empty": "No notifications",
+  "Aln_Sign_In_Title": "Sign in to see your notifications",
+  "Aln_Thread_Fallback": "a thread",
+  "Aln_Following": "started following you",
+  "Aln_Activity_Message": "sent you a message",
+  "Aln_Activity_Mention": "mentioned you in an activity",
+  "Aln_Activity_Reply": "replied to your activity",
+  "Aln_Activity_Reply_Subscribed": "replied to an activity you follow",
+  "Aln_Activity_Like": "liked your activity",
+  "Aln_Activity_Reply_Like": "liked your reply",
+  "Aln_Thread_Comment_Mention": "mentioned you in {thread}",
+  "@Aln_Thread_Comment_Mention": {
+    "placeholders": {
+      "thread": {
+        "type": "String"
+      }
+    }
+  },
+  "Aln_Thread_Comment_Reply": "replied to your comment in {thread}",
+  "@Aln_Thread_Comment_Reply": {
+    "placeholders": {
+      "thread": {
+        "type": "String"
+      }
+    }
+  },
+  "Aln_Thread_Subscribed": "commented in {thread}",
+  "@Aln_Thread_Subscribed": {
+    "placeholders": {
+      "thread": {
+        "type": "String"
+      }
+    }
+  },
+  "Aln_Thread_Comment_Like": "liked your comment in {thread}",
+  "@Aln_Thread_Comment_Like": {
+    "placeholders": {
+      "thread": {
+        "type": "String"
+      }
+    }
+  },
+  "Aln_Thread_Like": "liked your thread {thread}",
+  "@Aln_Thread_Like": {
+    "placeholders": {
+      "thread": {
+        "type": "String"
+      }
+    }
+  },
+  "Aln_Airing": "Episode {episode} of {title} aired",
+  "@Aln_Airing": {
+    "placeholders": {
+      "episode": {
+        "type": "int"
+      },
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "Aln_Airing_No_Episode": "{title} aired",
+  "@Aln_Airing_No_Episode": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "Aln_Related_Added": "{title} was added to the site",
+  "@Aln_Related_Added": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "Aln_Data_Change": "{title} was updated",
+  "@Aln_Data_Change": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "Aln_Merge": "{other} was merged into {title}",
+  "@Aln_Merge": {
+    "placeholders": {
+      "other": {
+        "type": "String"
+      },
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "Aln_Deletion": "{title} was deleted",
+  "@Aln_Deletion": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "Aln_Media_Submission": "Your submission {title} was updated",
+  "@Aln_Media_Submission": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "Aln_Staff_Submission": "Your staff submission {title} was updated",
+  "@Aln_Staff_Submission": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "Aln_Character_Submission": "Your character submission {title} was updated",
+  "@Aln_Character_Submission": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "Aln_Unknown_Title": "A title",
+  "Aln_Unread": "Unread",
+  "Aln_Unread_Badge": "{count} unread notifications",
+  "@Aln_Unread_Badge": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
+}

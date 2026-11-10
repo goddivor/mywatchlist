@@ -1,0 +1,11 @@
+name: mwl_commons
+description: Shared models and utilities for MyWatchList backend and app.
+version: 1.0.0
+publish_to: none
+
+environment:
+  sdk: '>=3.1.0 <4.0.0'
+
+dependencies:
+  html_unescape: ^2.0.0
+  html: ^0.15.0

@@ -2,12 +2,20 @@
 
 import 'package:shared_preferences/shared_preferences.dart';
 
+// The timezone of airing times is a contract preference now (`Preferences.content.timezone`);
+// re-exported so the callers that only need the enum keep compiling.
+export 'package:mywatchlist/user/preferences/content_preferences.dart' show TimezonePref;
+
+/// MWL-only device settings (first launch, legacy theme flag, background, download folder,
+/// cross-tracker sync). DailyAL preferences live in `lib/user/preferences/` and the language
+/// in `LanguageBloc`.
 class UserPreference {
   static const String _keyFirstTime = "first_time";
-  static const String _keyLanguage = "language";
   static const String _keyTheme = "theme";
   static const String _keyBgImagePath = "bg_image_path";
   static const String _keyShowBg = "show_bg";
+  static const String _keyDownloadPath = "download_path";
+  static const String _keyCrossTracker = "cross_tracker_enabled";
 
   final Future<SharedPreferences> _prefs = SharedPreferences.getInstance();
 
@@ -21,18 +29,6 @@ class UserPreference {
   Future<void> setFirstTimeFalse() async {
     final prefs = await _prefs;
     await prefs.setBool(_keyFirstTime, false);
-  }
-
-  // Get preferred language
-  Future<String> getLanguage() async {
-    final prefs = await _prefs;
-    return prefs.getString(_keyLanguage) ?? "en";
-  }
-
-  // Set preferred language
-  Future<void> setLanguage(String language) async {
-    final prefs = await _prefs;
-    await prefs.setString(_keyLanguage, language);
   }
 
   // Get theme preference (light or dark)
@@ -73,5 +69,33 @@ class UserPreference {
   Future<void> setShowBackground(bool show) async {
     final prefs = await _prefs;
     await prefs.setBool(_keyShowBg, show);
+  }
+
+  // Get custom download path (null = use default)
+  Future<String?> getDownloadPath() async {
+    final prefs = await _prefs;
+    return prefs.getString(_keyDownloadPath);
+  }
+
+  // Set custom download path (null = reset to default)
+  Future<void> setDownloadPath(String? path) async {
+    final prefs = await _prefs;
+    if (path != null) {
+      await prefs.setString(_keyDownloadPath, path);
+    } else {
+      await prefs.remove(_keyDownloadPath);
+    }
+  }
+
+  // Get cross-tracker sync preference (enabled by default)
+  Future<bool> getCrossTrackerEnabled() async {
+    final prefs = await _prefs;
+    return prefs.getBool(_keyCrossTracker) ?? true;
+  }
+
+  // Set cross-tracker sync preference
+  Future<void> setCrossTrackerEnabled(bool enabled) async {
+    final prefs = await _prefs;
+    await prefs.setBool(_keyCrossTracker, enabled);
   }
 }

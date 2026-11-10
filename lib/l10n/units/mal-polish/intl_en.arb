@@ -1,0 +1,12 @@
+{
+  "@@locale": "en",
+  "Mpl_Bell_Unread": "Notifications, {count} unread",
+  "@Mpl_Bell_Unread": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "Mpl_Time_Zone": "Time zone:"
+}

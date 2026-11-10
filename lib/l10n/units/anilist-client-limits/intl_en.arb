@@ -1,0 +1,5 @@
+{
+  "@@locale": "en",
+  "Anilist_Rate_Limited": "AniList is receiving too many requests. Try again in {seconds} s.",
+  "@Anilist_Rate_Limited": { "placeholders": { "seconds": { "type": "int" } } }
+}

@@ -1,0 +1,124 @@
+{
+  "@@locale": "fr_FR",
+  "Kitsu_Tab_Activity": "Activité",
+  "Kitsu_Tab_Reactions": "Réactions",
+  "Kitsu_Tab_Posts": "Publications",
+  "Kitsu_Tab_List": "Liste",
+  "Kitsu_Fav_Characters": "Personnages",
+  "Kitsu_Fav_People": "Personnes",
+  "Kitsu_Activity_Progress_Anime": "A regardé l’épisode {number}",
+  "Kitsu_Activity_Progress_Manga": "A lu le chapitre {number}",
+  "Kitsu_Activity_Status": "Passé en « {status} »",
+  "Kitsu_Activity_Status_From": "Passé de « {from} » à « {to} »",
+  "Kitsu_Activity_Rated": "Noté {score}/10",
+  "Kitsu_Activity_Rated_From": "Note modifiée de {from} à {to}/10",
+  "Kitsu_Activity_Reacted": "A écrit une réaction",
+  "Kitsu_Activity_Annotated": "A modifié les notes",
+  "Kitsu_Activity_Updated": "A mis à jour cette entrée",
+  "Kitsu_Activity_Empty": "Aucune activité pour le moment",
+  "Kitsu_Reaction_Progress_Anime": "À l’épisode {number}",
+  "Kitsu_Reaction_Progress_Manga": "Au chapitre {number}",
+  "Kitsu_Reactions_Empty": "Aucune réaction pour le moment",
+  "Kitsu_Posts_Empty": "Aucune publication pour le moment",
+  "Kitsu_Post_Pinned": "Épinglée",
+  "Kitsu_Post_Show_Nsfw": "Afficher la publication NSFW",
+  "Kitsu_Followers_Title": "Abonnés",
+  "Kitsu_Following_Title": "Abonnements",
+  "Kitsu_People_Empty": "Personne pour le moment",
+  "Kitsu_User_Search_Tooltip": "Trouver des utilisateurs",
+  "Kitsu_User_Search_Title": "Trouver des utilisateurs",
+  "Kitsu_User_Search_Hint": "Rechercher par nom d’utilisateur",
+  "Kitsu_User_Search_Empty": "Aucun utilisateur nommé « {query} »",
+  "Kitsu_List_Empty": "Rien dans cette liste",
+  "Kitsu_List_All": "Tout",
+  "Kitsu_Stat_Posts": "Publications",
+  "Kitsu_Stat_Comments": "Commentaires",
+  "Kitsu_Stat_Reactions": "Réactions",
+  "Kitsu_Stat_Likes": "J’aime reçus",
+  "@Kitsu_Activity_Progress_Anime": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "@Kitsu_Activity_Progress_Manga": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "@Kitsu_Activity_Status": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "@Kitsu_Activity_Status_From": {
+    "placeholders": {
+      "from": {
+        "type": "String"
+      },
+      "to": {
+        "type": "String"
+      }
+    }
+  },
+  "@Kitsu_Activity_Rated": {
+    "placeholders": {
+      "score": {
+        "type": "String"
+      }
+    }
+  },
+  "@Kitsu_Activity_Rated_From": {
+    "placeholders": {
+      "from": {
+        "type": "String"
+      },
+      "to": {
+        "type": "String"
+      }
+    }
+  },
+  "@Kitsu_Reaction_Progress_Anime": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "@Kitsu_Reaction_Progress_Manga": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "@Kitsu_User_Search_Empty": {
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
+  "Kitsu_Recent_Activity": "Activité récente",
+  "Kitsu_Stat_Percentile": "Plus que {percent} % des utilisateurs",
+  "Kitsu_Status_Current_Anime": "En cours de visionnage",
+  "Kitsu_Status_Current_Manga": "En cours de lecture",
+  "Kitsu_Status_Planned_Anime": "À regarder",
+  "Kitsu_Status_Planned_Manga": "À lire",
+  "Kitsu_Status_Completed": "Terminé",
+  "Kitsu_Status_On_Hold": "En pause",
+  "Kitsu_Status_Dropped": "Abandonné",
+  "Kitsu_Categories_Other": "Autres",
+  "@Kitsu_Stat_Percentile": {
+    "placeholders": {
+      "percent": {
+        "type": "String"
+      }
+    }
+  }
+}

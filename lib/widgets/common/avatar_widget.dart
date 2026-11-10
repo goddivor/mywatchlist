@@ -2,8 +2,10 @@ import 'dart:io';
 
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
-import 'package:cached_network_image/cached_network_image.dart';
+import 'package:mywatchlist/widgets/loading/shimmercolor.dart';
 import 'package:mywatchlist/cache/cachemanager.dart';
+import 'package:mywatchlist/widgets/common/app_colors.dart';
+import 'package:mywatchlist/widgets/common/app_image.dart';
 import 'package:mywatchlist/widgets/common/image_preview.dart';
 
 class AvatarWidget extends StatelessWidget {
@@ -40,6 +42,31 @@ class AvatarWidget extends StatelessWidget {
     final theme = Theme.of(context);
     final effectiveBorderColor = borderColor ?? theme.colorScheme.primary;
 
+    final isCircular = userRoundBorderforLoading ?? true;
+
+    final clipRadius = radius ?? BorderRadius.circular(50);
+
+    final image = SizedBox(
+      height: height,
+      width: width,
+      child: url != null && isNetworkImage
+          ? AppImage(
+              url: url,
+              width: width,
+              height: height,
+              fit: fit ?? BoxFit.cover,
+              borderRadius: clipRadius,
+              placeholder: (context) => _buildShimmerLoader(context, radius),
+              errorWidget: (_) => PersonPlaceholder(radius: clipRadius),
+            )
+          : url == null
+              ? PersonPlaceholder(radius: clipRadius)
+              : ClipRRect(
+                  borderRadius: clipRadius,
+                  child: Image.asset(url!, fit: fit),
+                ),
+    );
+
     return GestureDetector(
       onTap: onTap as void Function()?,
       onLongPress: onLongPress != null
@@ -47,86 +74,76 @@ class AvatarWidget extends StatelessWidget {
           : (url != null
               ? () => zoomInImage(context, url!, isNetworkImage)
               : null),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          border: Border.all(
-            color: effectiveBorderColor,
-            width: borderWidth,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: effectiveBorderColor.withOpacity(0.4),
-              blurRadius: 8,
-              spreadRadius: 1,
-            ),
-          ],
-        ),
-        child: ClipRRect(
-          borderRadius: radius ?? BorderRadius.circular(50),
-          child: Container(
-            height: height,
-            width: width,
-            color: Colors.transparent,
-            child: url != null && isNetworkImage
-                ? CachedNetworkImage(
-                    imageUrl: url!,
-                    imageBuilder: (context, imageProvider) => Container(
-                      decoration: BoxDecoration(
-                          borderRadius: radius ?? BorderRadius.circular(50),
-                          image:
-                              DecorationImage(fit: fit, image: imageProvider)),
-                    ),
-                    placeholder: (context, url) =>
-                        _buildShimmerLoader(context, radius),
-                    errorWidget: (context, url, error) {
-                      return Container(
-                        decoration: BoxDecoration(
-                          borderRadius: radius ?? BorderRadius.circular(28),
-                          image: DecorationImage(
-                            fit: fit,
-                            image: const AssetImage(
-                              ("assets/images/user_dal_old.png"),
-                            ),
-                          ),
-                        ),
-                      );
-                    },
-                  )
-                : Image.asset(
-                    'assets/images/user_dal_old.png',
-                    fit: fit,
-                  ),
-          ),
-        ),
-      ),
+      // A plain border: avatars repeat in lists, a blurred shadow on each one is re-rasterized
+      // on every scrolled frame (docs/PERFORMANCE.md).
+      child: isCircular
+          ? DecoratedBox(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: effectiveBorderColor,
+                  width: borderWidth,
+                ),
+              ),
+              child: image,
+            )
+          : image,
     );
   }
 
   Widget _buildShimmerLoader(BuildContext context, BorderRadius? radius) {
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius:
-            userRoundBorderforLoading! ? BorderRadius.circular(32) : radius,
-        color: Theme.of(context).colorScheme.surfaceVariant,
-      ),
-      child: Center(
-        child: SizedBox(
-          width: (height ?? 35) * 0.5,
-          height: (width ?? 35) * 0.5,
-          child: CircularProgressIndicator(
-            strokeWidth: 2,
-            valueColor: AlwaysStoppedAnimation<Color>(
-              Theme.of(context).colorScheme.primary,
-            ),
-          ),
+    return ShimmerColor(
+      Container(
+        decoration: BoxDecoration(
+          borderRadius:
+              userRoundBorderforLoading! ? BorderRadius.circular(32) : radius,
+          color: AppColors.of(context).shimmerBase,
         ),
       ),
     );
   }
 }
 
+/// A missing or broken user picture: a person icon on a tonal circle (or
+/// rounded box with [radius]), the theme's colours in light, dark and black,
+/// like the detail sections' `RoundAvatar`.
+class PersonPlaceholder extends StatelessWidget {
+  final BorderRadius? radius;
+  final String? initials;
+
+  const PersonPlaceholder({super.key, this.radius, this.initials});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final initials = this.initials;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: scheme.secondaryContainer,
+        shape: radius == null ? BoxShape.circle : BoxShape.rectangle,
+        borderRadius: radius,
+      ),
+      child: LayoutBuilder(
+        builder: (context, box) {
+          final side = box.biggest.shortestSide.isFinite ? box.biggest.shortestSide : 40.0;
+          return Center(
+            child: initials == null
+                ? Icon(Icons.person, size: side * 0.55, color: scheme.onSecondaryContainer)
+                : AutoSizeText(
+                    initials,
+                    maxLines: 1,
+                    minFontSize: 10,
+                    style: TextStyle(fontSize: 22, color: scheme.onSecondaryContainer),
+                  ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+/// Network image with an `Ink` decoration (so the enclosing InkWell ripple stays visible),
+/// decoded at the slot's size and shown without fade (DailyAL: `fadeInDuration: Duration.zero`).
 Widget cachedImage(
   BorderRadius? radius,
   String? url, {
@@ -134,51 +151,40 @@ Widget cachedImage(
   BoxFit? fit = BoxFit.cover,
   userRoundBorderforLoading = true,
 }) {
-  return CachedNetworkImage(
-    imageUrl: url ?? '',
-    placeholder: (context, url) =>
+  final effectiveRadius = radius ?? BorderRadius.circular(28);
+  final effectiveFit = fit ?? BoxFit.cover;
+  return AppImage(
+    url: url,
+    fit: effectiveFit,
+    placeholder: (context) =>
         _shimmerLoader(context, radius, userRoundBorderforLoading),
-    errorWidget: (context, url, error) {
-      return Ink(
-        decoration: BoxDecoration(
-          borderRadius: radius ?? BorderRadius.circular(28),
-          image: DecorationImage(
-            fit: fit,
-            image: AssetImage(
-              (useUserImageOnError
-                  ? "assets/images/user_dal_old.png"
-                  : "assets/images/anime-collage.jpg"),
+    errorWidget: (context) => useUserImageOnError
+        ? PersonPlaceholder(radius: effectiveRadius)
+        : Ink(
+            decoration: BoxDecoration(
+              borderRadius: effectiveRadius,
+              image: DecorationImage(
+                fit: effectiveFit,
+                image: const AssetImage("assets/images/anime-collage.jpg"),
+              ),
             ),
           ),
-        ),
-      );
-    },
     imageBuilder: (context, imageProvider) => Ink(
       decoration: BoxDecoration(
-          borderRadius: radius ?? BorderRadius.circular(28),
-          image: DecorationImage(fit: fit, image: imageProvider)),
+          borderRadius: effectiveRadius,
+          image: DecorationImage(fit: effectiveFit, image: imageProvider)),
     ),
   );
 }
 
 Widget _shimmerLoader(BuildContext context, BorderRadius? radius,
     bool userRoundBorderforLoading) {
-  return Container(
-    decoration: BoxDecoration(
-      borderRadius:
-          userRoundBorderforLoading ? BorderRadius.circular(32) : radius,
-      color: Theme.of(context).colorScheme.surfaceVariant,
-    ),
-    child: Center(
-      child: SizedBox(
-        width: 20,
-        height: 20,
-        child: CircularProgressIndicator(
-          strokeWidth: 2,
-          valueColor: AlwaysStoppedAnimation<Color>(
-            Theme.of(context).colorScheme.primary,
-          ),
-        ),
+  return ShimmerColor(
+    Container(
+      decoration: BoxDecoration(
+        borderRadius:
+            userRoundBorderforLoading ? BorderRadius.circular(32) : radius,
+        color: AppColors.of(context).shimmerBase,
       ),
     ),
   );
@@ -216,7 +222,7 @@ class AvatarAspect extends StatelessWidget {
     return AspectRatio(
       aspectRatio: aspectRatio,
       child: Material(
-        color: Colors.transparent,
+        type: MaterialType.transparency,
         borderRadius: radius ?? BorderRadius.circular(28),
         child: InkWell(
           onTap: onTap == null
@@ -267,43 +273,18 @@ Widget userImage(BorderRadius? radius, String? url,
   if (useUserImageOnError && username != null) {
     username = username.toLowerCase();
     username = username.substring(0, username.length > 2 ? 2 : 1);
-    return Container(
-      decoration: BoxDecoration(
-        color: randomColor(username),
-        shape: BoxShape.circle,
-      ),
-      child: Center(
-        child: AutoSizeText(
-          username,
-          maxLines: 1,
-          minFontSize: 10,
-          style: TextStyle(
-            fontSize: 22,
-            color: Colors.white,
-          ),
-        ),
-      ),
-    );
+    return PersonPlaceholder(initials: username);
   }
-  return Container(
-    child: Ink(
-      decoration: BoxDecoration(
-        borderRadius: radius ?? BorderRadius.circular(28),
-        image: DecorationImage(
-          fit: BoxFit.cover,
-          image: AssetImage(
-            url ??
-                (useUserImageOnError
-                    ? "assets/images/user-unknown.jpg"
-                    : "assets/images/error_image.png"),
-          ),
-        ),
+  if (url == null && useUserImageOnError) {
+    return PersonPlaceholder(radius: radius ?? BorderRadius.circular(28));
+  }
+  return Ink(
+    decoration: BoxDecoration(
+      borderRadius: radius ?? BorderRadius.circular(28),
+      image: DecorationImage(
+        fit: BoxFit.cover,
+        image: AssetImage(url ?? "assets/images/error_image.png"),
       ),
     ),
   );
-}
-
-Color randomColor(String username) {
-  final cd = username.hashCode;
-  return Color.fromARGB(255, cd % 150, cd % 125, cd % 100);
 }

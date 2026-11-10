@@ -1,0 +1,9 @@
+{
+  "@@locale": "en",
+  "Pp_No_Value": "–",
+  "Pp_Gender_Male": "Male",
+  "Pp_Gender_Female": "Female",
+  "Pp_Gender_Non_Binary": "Non-binary",
+  "Pp_Extras_Loading": "Loading manga stats and favorites…",
+  "Pp_Extras_Unavailable": "Manga stats and favorites are unavailable right now"
+}

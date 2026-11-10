@@ -1,0 +1,56 @@
+{
+ "title": "Death Note",
+ "en_title": null,
+ "year": 2006,
+ "type": "anime",
+ "anime_type": "tv",
+ "ids": {
+  "simkl": 40190,
+  "slug": "death-note",
+  "imdb": "tt0877057",
+  "mal": "1535",
+  "tvdb": "79481",
+  "tvdbslug": "death-note",
+  "tmdb": "13916",
+  "anilist": "1535",
+  "kitsu": "1376",
+  "anidb": "4563"
+ },
+ "rank": 5,
+ "poster": "60/60822040ab21d22b",
+ "runtime": 25,
+ "country": "JP",
+ "original_language": "ja",
+ "genres": [
+  "Mystery",
+  "Psychological",
+  "Supernatural",
+  "Thriller"
+ ],
+ "network": "Nippon TV",
+ "status": "Ended",
+ "first_aired": "2006-10-04",
+ "last_aired": "2007-06-27",
+ "total_episodes": 37,
+ "year_start_end": "2006-2007",
+ "season_name_year": "Fall 2006",
+ "studios": [
+  {
+   "name": "Madhouse"
+  }
+ ],
+ "ratings": {
+  "simkl": {
+   "rating": 9.0,
+   "votes": 4200
+  },
+  "mal": {
+   "rating": 8.6,
+   "votes": 3700000
+  },
+  "imdb": {
+   "rating": 9.0,
+   "votes": 410000
+  }
+ }
+}

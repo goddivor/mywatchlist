@@ -1,0 +1,5 @@
+{
+  "@@locale": "fr_FR",
+  "Rc_Send_Timeout": "MyAnimeList a mis trop de temps à répondre. Le message n'a peut-être pas été envoyé.",
+  "Rc_Form_Missing": "Impossible d'ouvrir le formulaire de message de MyAnimeList. Réessayez ou envoyez-le depuis le site."
+}

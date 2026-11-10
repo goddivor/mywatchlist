@@ -1,0 +1,841 @@
+{
+ "errors": [
+  {
+   "message": "Cannot return null for non-nullable field MediaReaction.author"
+  }
+ ],
+ "data": {
+  "findAnimeBySlug": {
+   "__typename": "Anime",
+   "id": "46474",
+   "slug": "sousou-no-frieren",
+   "titles": {
+    "canonical": "Sousou no Frieren",
+    "romanized": "Sousou no Frieren",
+    "translated": "Frieren: Beyond Journey’s End",
+    "original": "葬送のフリーレン"
+   },
+   "description": {
+    "en": "After the party of heroes defeated the Demon King, they restored peace to the land and returned to lives of solitude. Generations pass, and the elven mage Frieren comes face to face with humanity’s mortality. She takes on a new apprentice and promises to fulfill old friends’ dying wishes. Can an elven mind make peace with the nature of life and death? Frieren embarks on her quest to find out.\n\n(Source: Crunchyroll)"
+   },
+   "posterImage": {
+    "original": {
+     "url": "https://media.kitsu.app/anime/46474/poster_image/99d7df09d8cb9360b1e02825372ce612.jpg",
+     "width": 460,
+     "height": 649
+    }
+   },
+   "bannerImage": {
+    "original": {
+     "url": "https://media.kitsu.app/anime/46474/cover_image/883c308356a4db76a9c0af900ada96ed.jpg",
+     "width": 3072,
+     "height": 984
+    }
+   },
+   "status": "FINISHED",
+   "startDate": "2023-09-29",
+   "endDate": "2024-03-22",
+   "ageRating": "PG",
+   "ageRatingGuide": "Teens 13 or Older",
+   "sfw": true,
+   "averageRating": 88.85,
+   "averageRatingRank": 2,
+   "userCount": 21409,
+   "userCountRank": 788,
+   "favoritesCount": 731,
+   "nextRelease": null,
+   "originCountries": [
+    "JP"
+   ],
+   "originLanguages": [
+    "ja"
+   ],
+   "categories": {
+    "nodes": [
+     {
+      "id": "156",
+      "slug": "fantasy",
+      "title": {
+       "en": "Fantasy"
+      }
+     },
+     {
+      "id": "10",
+      "slug": "elf",
+      "title": {
+       "en": "Elf"
+      }
+     },
+     {
+      "id": "157",
+      "slug": "adventure",
+      "title": {
+       "en": "Adventure"
+      }
+     },
+     {
+      "id": "184",
+      "slug": "drama",
+      "title": {
+       "en": "Drama"
+      }
+     },
+     {
+      "id": "25",
+      "slug": "magic",
+      "title": {
+       "en": "Magic"
+      }
+     },
+     {
+      "id": "243",
+      "slug": "shounen",
+      "title": {
+       "en": "Shounen"
+      }
+     },
+     {
+      "id": "169",
+      "slug": "slice-of-life",
+      "title": {
+       "en": "Slice of Life"
+      }
+     }
+    ]
+   },
+   "mappings": {
+    "nodes": [
+     {
+      "externalSite": "MYANIMELIST_ANIME",
+      "externalId": "52991"
+     },
+     {
+      "externalSite": "ANILIST_ANIME",
+      "externalId": "154587"
+     }
+    ]
+   },
+   "relationships": {
+    "nodes": [
+     {
+      "kind": "SEQUEL",
+      "destination": {
+       "__typename": "Anime",
+       "id": "49240",
+       "slug": "sousou-no-frieren-season-2",
+       "titles": {
+        "canonical": "Sousou no Frieren 2nd Season"
+       },
+       "posterImage": {
+        "original": {
+         "url": "https://media.kitsu.app/anime/49240/poster_image/127830b1fbf80dd13a604998ef10d12c.jpg",
+         "width": 2862,
+         "height": 4096
+        }
+       }
+      }
+     },
+     {
+      "kind": "OTHER",
+      "destination": {
+       "__typename": "Anime",
+       "id": "48642",
+       "slug": "haru",
+       "titles": {
+        "canonical": "Haru"
+       },
+       "posterImage": {
+        "original": {
+         "url": "https://media.kitsu.app/anime/48642/poster_image/7715ca64c901b374905cfbcde10a32d7.png",
+         "width": 460,
+         "height": 690
+        }
+       }
+      }
+     },
+     {
+      "kind": "OTHER",
+      "destination": {
+       "__typename": "Anime",
+       "id": "48113",
+       "slug": "yuusha",
+       "titles": {
+        "canonical": "Yuusha"
+       },
+       "posterImage": {
+        "original": {
+         "url": "https://media.kitsu.app/anime/48113/poster_image/69c2369748ce87ab6e9c048813163d5f.jpg",
+         "width": 460,
+         "height": 690
+        }
+       }
+      }
+     },
+     {
+      "kind": "SIDE_STORY",
+      "destination": {
+       "__typename": "Anime",
+       "id": "48105",
+       "slug": "sousou-no-frieren-marumaru-no-mahou",
+       "titles": {
+        "canonical": "Sousou no Frieren: Marumaru no Mahou"
+       },
+       "posterImage": {
+        "original": {
+         "url": "https://media.kitsu.app/anime/48105/poster_image/8c62225c07a87d0076da17ad6b2ffff5.jpg",
+         "width": 460,
+         "height": 690
+        }
+       }
+      }
+     },
+     {
+      "kind": "ADAPTATION",
+      "destination": {
+       "__typename": "Manga",
+       "id": "56355",
+       "slug": "sousou-no-frieren",
+       "titles": {
+        "canonical": "Sousou no Frieren"
+       },
+       "posterImage": {
+        "original": {
+         "url": "https://media.kitsu.app/manga/56355/poster_image/3886a7418a6843770baacca5e00cf70b.png",
+         "width": 1539,
+         "height": 2400
+        }
+       }
+      }
+     }
+    ]
+   },
+   "reactions": {
+    "totalCount": 219,
+    "nodes": [
+     {
+      "id": "320005",
+      "reaction": "An elf deals with the fragile concept of mortality.\nSafe to say a must watch!",
+      "progress": 2,
+      "createdAt": "2023-09-29T22:01:09Z",
+      "author": {
+       "id": "286143",
+       "name": "Tamaya",
+       "slug": "Tamaya",
+       "avatarImage": {
+        "original": {
+         "url": "https://media.kitsu.app/user/286143/avatar/37ab3ead95d0102f45b2f3409d1f14de.png",
+         "width": 2160,
+         "height": 3840
+        }
+       }
+      },
+      "likes": {
+       "totalCount": 97
+      }
+     },
+     {
+      "id": "319994",
+      "reaction": "Every frame of this show is full of care and love. Astonishing premiere.",
+      "progress": 2,
+      "createdAt": "2023-09-29T20:49:22Z",
+      "author": {
+       "id": "12205",
+       "name": "Yuntu",
+       "slug": "Yuntu",
+       "avatarImage": {
+        "original": {
+         "url": "https://media.kitsu.app/user/12205/avatar/9ba587ef16af8c787dacde7ab59f389d.jpeg",
+         "width": 901,
+         "height": 1080
+        }
+       }
+      },
+      "likes": {
+       "totalCount": 73
+      }
+     },
+     {
+      "id": "320322",
+      "reaction": "Exploring the regret of realising you actually know nothing about your friends. It's also too late to know them better as they have passed.",
+      "progress": 4,
+      "createdAt": "2023-10-03T08:06:08Z",
+      "author": {
+       "id": "109081",
+       "name": "qwert3425",
+       "slug": "qwert3425",
+       "avatarImage": {
+        "original": {
+         "url": "https://media.kitsu.app/users/avatars/109081/original.jpeg",
+         "width": 135,
+         "height": 140
+        }
+       }
+      },
+      "likes": {
+       "totalCount": 53
+      }
+     },
+     null,
+     {
+      "id": "320151",
+      "reaction": "Frieren the best elf",
+      "progress": 4,
+      "createdAt": "2023-09-30T05:15:51Z",
+      "author": {
+       "id": "385347",
+       "name": "Arthur Lee",
+       "slug": "arthurlee",
+       "avatarImage": {
+        "original": {
+         "url": "https://media.kitsu.app/users/avatars/385347/original.png",
+         "width": 566,
+         "height": 565
+        }
+       }
+      },
+      "likes": {
+       "totalCount": 23
+      }
+     },
+     {
+      "id": "320004",
+      "reaction": "I've been looking forward to the adaptation for a while and it looks like it isn't going to disappoint",
+      "progress": 0,
+      "createdAt": "2023-09-29T21:36:52Z",
+      "author": {
+       "id": "161543",
+       "name": "moodymania123",
+       "slug": "moodymania123",
+       "avatarImage": {
+        "original": {
+         "url": "https://media.kitsu.app/user/161543/avatar/b6079fb60c1ad344d0c9321221dbf6bf.jpeg",
+         "width": 250,
+         "height": 265
+        }
+       }
+      },
+      "likes": {
+       "totalCount": 15
+      }
+     }
+    ]
+   },
+   "posts": {
+    "totalCount": 967,
+    "nodes": [
+     {
+      "id": "9917984",
+      "content": "rewatching (again) the best media to ever media just to feel something\n\ni swear qual & zoltraak permanently altered my worldbuilding brain chemistry",
+      "contentFormatted": "<p>rewatching (again) the best media to ever media just to feel something</p>\n\n<p>i swear qual &amp; zoltraak permanently altered my worldbuilding brain chemistry</p>\n",
+      "isSpoiler": false,
+      "isNsfw": false,
+      "createdAt": "2026-09-28T21:25:14Z",
+      "author": {
+       "id": "42670",
+       "name": "AlexHallon",
+       "slug": "AlexHallon",
+       "avatarImage": {
+        "original": {
+         "url": "https://media.kitsu.app/user/42670/avatar/1bdc93eaf3e506e779dcd996278764a1.png",
+         "width": 766,
+         "height": 766
+        }
+       }
+      },
+      "media": {
+       "__typename": "Anime",
+       "id": "46474",
+       "slug": "sousou-no-frieren",
+       "titles": {
+        "canonical": "Sousou no Frieren"
+       },
+       "posterImage": {
+        "original": {
+         "url": "https://media.kitsu.app/anime/46474/poster_image/99d7df09d8cb9360b1e02825372ce612.jpg",
+         "width": 460,
+         "height": 649
+        }
+       }
+      },
+      "likes": {
+       "totalCount": 5
+      },
+      "comments": {
+       "totalCount": 0
+      }
+     },
+     {
+      "id": "9917665",
+      "content": "we chillin'",
+      "contentFormatted": "<p>we chillin’</p>\n",
+      "isSpoiler": false,
+      "isNsfw": false,
+      "createdAt": "2026-09-25T21:44:25Z",
+      "author": {
+       "id": "66861",
+       "name": "Supesharisuto",
+       "slug": "Supesharisuto",
+       "avatarImage": {
+        "original": {
+         "url": "https://media.kitsu.app/user/66861/avatar/72c1958ed0827d889f248dcd163ce849.jpeg",
+         "width": 447,
+         "height": 447
+        }
+       }
+      },
+      "media": {
+       "__typename": "Anime",
+       "id": "46474",
+       "slug": "sousou-no-frieren",
+       "titles": {
+        "canonical": "Sousou no Frieren"
+       },
+       "posterImage": {
+        "original": {
+         "url": "https://media.kitsu.app/anime/46474/poster_image/99d7df09d8cb9360b1e02825372ce612.jpg",
+         "width": 460,
+         "height": 649
+        }
+       }
+      },
+      "likes": {
+       "totalCount": 5
+      },
+      "comments": {
+       "totalCount": 1
+      }
+     },
+     {
+      "id": "9917664",
+      "content": "This anime is pretty, these scenes look amazing",
+      "contentFormatted": "<p>This anime is pretty, these scenes look amazing</p>\n",
+      "isSpoiler": false,
+      "isNsfw": false,
+      "createdAt": "2026-09-25T21:43:12Z",
+      "author": {
+       "id": "66861",
+       "name": "Supesharisuto",
+       "slug": "Supesharisuto",
+       "avatarImage": {
+        "original": {
+         "url": "https://media.kitsu.app/user/66861/avatar/72c1958ed0827d889f248dcd163ce849.jpeg",
+         "width": 447,
+         "height": 447
+        }
+       }
+      },
+      "media": {
+       "__typename": "Anime",
+       "id": "46474",
+       "slug": "sousou-no-frieren",
+       "titles": {
+        "canonical": "Sousou no Frieren"
+       },
+       "posterImage": {
+        "original": {
+         "url": "https://media.kitsu.app/anime/46474/poster_image/99d7df09d8cb9360b1e02825372ce612.jpg",
+         "width": 460,
+         "height": 649
+        }
+       }
+      },
+      "likes": {
+       "totalCount": 4
+      },
+      "comments": {
+       "totalCount": 1
+      }
+     },
+     {
+      "id": "9917663",
+      "content": "faces",
+      "contentFormatted": "<p>faces</p>\n",
+      "isSpoiler": false,
+      "isNsfw": false,
+      "createdAt": "2026-09-25T21:36:06Z",
+      "author": {
+       "id": "66861",
+       "name": "Supesharisuto",
+       "slug": "Supesharisuto",
+       "avatarImage": {
+        "original": {
+         "url": "https://media.kitsu.app/user/66861/avatar/72c1958ed0827d889f248dcd163ce849.jpeg",
+         "width": 447,
+         "height": 447
+        }
+       }
+      },
+      "media": {
+       "__typename": "Anime",
+       "id": "46474",
+       "slug": "sousou-no-frieren",
+       "titles": {
+        "canonical": "Sousou no Frieren"
+       },
+       "posterImage": {
+        "original": {
+         "url": "https://media.kitsu.app/anime/46474/poster_image/99d7df09d8cb9360b1e02825372ce612.jpg",
+         "width": 460,
+         "height": 649
+        }
+       }
+      },
+      "likes": {
+       "totalCount": 6
+      },
+      "comments": {
+       "totalCount": 2
+      }
+     },
+     {
+      "id": "9916432",
+      "content": "Another banger episode, guess I am finishing this anime",
+      "contentFormatted": "<p>Another banger episode, guess I am finishing this anime</p>\n",
+      "isSpoiler": true,
+      "isNsfw": false,
+      "createdAt": "2026-09-12T20:16:32Z",
+      "author": {
+       "id": "66861",
+       "name": "Supesharisuto",
+       "slug": "Supesharisuto",
+       "avatarImage": {
+        "original": {
+         "url": "https://media.kitsu.app/user/66861/avatar/72c1958ed0827d889f248dcd163ce849.jpeg",
+         "width": 447,
+         "height": 447
+        }
+       }
+      },
+      "media": {
+       "__typename": "Anime",
+       "id": "46474",
+       "slug": "sousou-no-frieren",
+       "titles": {
+        "canonical": "Sousou no Frieren"
+       },
+       "posterImage": {
+        "original": {
+         "url": "https://media.kitsu.app/anime/46474/poster_image/99d7df09d8cb9360b1e02825372ce612.jpg",
+         "width": 460,
+         "height": 649
+        }
+       }
+      },
+      "likes": {
+       "totalCount": 4
+      },
+      "comments": {
+       "totalCount": 1
+      }
+     }
+    ]
+   },
+   "characters": {
+    "totalCount": 0,
+    "nodes": []
+   },
+   "staff": {
+    "totalCount": 0,
+    "nodes": []
+   },
+   "productions": {
+    "nodes": [
+     {
+      "role": "PRODUCER",
+      "company": {
+       "id": "987",
+       "name": "TOHO animation"
+      }
+     },
+     {
+      "role": "PRODUCER",
+      "company": {
+       "id": "1022",
+       "name": "Shogakukan"
+      }
+     }
+    ]
+   },
+   "quotes": {
+    "nodes": []
+   },
+   "subtype": "TV",
+   "season": "FALL",
+   "episodeCount": 28,
+   "episodeLength": 1440,
+   "totalLength": null,
+   "youtubeTrailerVideoId": "qgQunxD0qCk",
+   "streamingLinks": {
+    "nodes": [
+     {
+      "url": "https://www.netflix.com/title/81726714",
+      "subs": [
+       "en"
+      ],
+      "dubs": [
+       "ja"
+      ],
+      "regions": [
+       "US"
+      ],
+      "streamer": {
+       "siteName": "Netflix"
+      }
+     },
+     {
+      "url": "https://www.crunchyroll.com/series/GG5H5XQX4/frieren-beyond-journeys-end",
+      "subs": [
+       "en"
+      ],
+      "dubs": [
+       "ja"
+      ],
+      "regions": [
+       "US"
+      ],
+      "streamer": {
+       "siteName": "Crunchyroll"
+      }
+     }
+    ]
+   },
+   "episodes": {
+    "totalCount": 28,
+    "pageInfo": {
+     "hasNextPage": true,
+     "endCursor": "MTI"
+    },
+    "nodes": [
+     {
+      "id": "353471",
+      "number": 1,
+      "titles": {
+       "canonical": "The Journey's End"
+      },
+      "description": {
+       "en": "The world celebrates the Demon King's defeat at the hands of the Hero and his companions. Now that their great adventure is over, what will Frieren the mage do next?\n\n(Source: Crunchyroll)"
+      },
+      "releasedAt": "2023-09-29T00:00:00+00:00",
+      "length": 1440,
+      "thumbnail": {
+       "original": {
+        "url": "https://media.kitsu.app/episode/353471/thumbnail/586ff8f159af3cefedfe7c48d454c982.png",
+        "width": 1920,
+        "height": 1080
+       }
+      }
+     },
+     {
+      "id": "353472",
+      "number": 2,
+      "titles": {
+       "canonical": "It Didn't Have to Be Magic..."
+      },
+      "description": {
+       "en": "Frieren instructs Fern in the use of magic while deciphering a grimoire for Heiter.\n\n(Source: Crunchyroll)"
+      },
+      "releasedAt": "2023-09-29T00:00:00+00:00",
+      "length": 1440,
+      "thumbnail": {
+       "original": {
+        "url": "https://media.kitsu.app/episode/353472/thumbnail/4ea4ed39d5342b4f32e1c6b7f4a7183f.png",
+        "width": 1920,
+        "height": 1080
+       }
+      }
+     },
+     {
+      "id": "356650",
+      "number": 3,
+      "titles": {
+       "canonical": "Killing Magic"
+      },
+      "description": {
+       "en": "While retracing the path she took on her adventure with her former traveling companions, Frieren confronts an old enemy.\n\n(Source: Crunchyroll)"
+      },
+      "releasedAt": "2023-09-29T00:00:00+00:00",
+      "length": 1440,
+      "thumbnail": {
+       "original": {
+        "url": "https://media.kitsu.app/episode/356650/thumbnail/4747c5c35cf4f7c6ce781937beffbb14.png",
+        "width": 1920,
+        "height": 1080
+       }
+      }
+     },
+     {
+      "id": "356901",
+      "number": 4,
+      "titles": {
+       "canonical": "The Land Where Souls Rest"
+      },
+      "description": {
+       "en": "Frieren and Fern pay a visit to Eisen, who requests their help in finding the notes of Flamme the Legendary Mage.\n\n(Source: Crunchyroll)"
+      },
+      "releasedAt": "2023-09-29T00:00:00+00:00",
+      "length": 1440,
+      "thumbnail": {
+       "original": {
+        "url": "https://media.kitsu.app/episode/356901/thumbnail/316546a9cde01b95320e8182c4446667.png",
+        "width": 1920,
+        "height": 1080
+       }
+      }
+     },
+     {
+      "id": "356902",
+      "number": 5,
+      "titles": {
+       "canonical": "Phantoms of the Dead"
+      },
+      "description": {
+       "en": "Frieren and Fern investigate ghost sightings at a village where people have started going missing.\n\n(Source: Crunchyroll)"
+      },
+      "releasedAt": "2023-10-06T00:00:00+00:00",
+      "length": 1440,
+      "thumbnail": {
+       "original": {
+        "url": "https://media.kitsu.app/episode/356902/thumbnail/6c3fec0bf76e67911a32b80a222db9bd.jpg",
+        "width": 1280,
+        "height": 720
+       }
+      }
+     },
+     {
+      "id": "356903",
+      "number": 6,
+      "titles": {
+       "canonical": "The Hero of the Village"
+      },
+      "description": {
+       "en": "Frieren and Fern enlist Stark's help to fight the solar dragon - but is he up to the task?\n\n(Source: Crunchyroll)"
+      },
+      "releasedAt": "2023-10-13T00:00:00+00:00",
+      "length": 1440,
+      "thumbnail": {
+       "original": {
+        "url": "https://media.kitsu.app/episode/356903/thumbnail/cb3aa4f1368ecad34c72a8c5f098257b.jpg",
+        "width": 800,
+        "height": 450
+       }
+      }
+     },
+     {
+      "id": "356904",
+      "number": 7,
+      "titles": {
+       "canonical": "Like a Fairy Tale"
+      },
+      "description": {
+       "en": "After reflecting on the transient nature of the past as it exists in people's collective memories, Frieren unexpectedly runs into a sworn enemy.\n\n(Source: Crunchyroll)"
+      },
+      "releasedAt": "2023-10-20T00:00:00+00:00",
+      "length": 1440,
+      "thumbnail": {
+       "original": {
+        "url": "https://media.kitsu.app/episode/356904/thumbnail/4e15cec0bcf202ec3118183cb92ff002.jpg",
+        "width": 800,
+        "height": 450
+       }
+      }
+     },
+     {
+      "id": "356905",
+      "number": 8,
+      "titles": {
+       "canonical": "Frieren the Slayer"
+      },
+      "description": {
+       "en": "As tensions in Graf Granat's domain reach a breaking point, Fern and Stark find their own resolve - and Frieren resumes an old duty.\n\n(Source: Crunchyroll)"
+      },
+      "releasedAt": "2023-10-27T00:00:00+00:00",
+      "length": 1440,
+      "thumbnail": {
+       "original": {
+        "url": "https://media.kitsu.app/episode/356905/thumbnail/95686f5614ee4c90d0602d229251631f.jpg",
+        "width": 1920,
+        "height": 1080
+       }
+      }
+     },
+     {
+      "id": "356906",
+      "number": 9,
+      "titles": {
+       "canonical": "Aura the Guillotine"
+      },
+      "description": {
+       "en": "While Fern and Stark make a temporary retreat with Graf Granat, Frieren's true foe awaits her outside the city.\n\n(Source: Crunchyroll)"
+      },
+      "releasedAt": "2023-11-03T00:00:00+00:00",
+      "length": 1440,
+      "thumbnail": {
+       "original": {
+        "url": "https://media.kitsu.app/episode/356906/thumbnail/8787a8bc118242ace3fc69d170eec960.jpg",
+        "width": 800,
+        "height": 450
+       }
+      }
+     },
+     {
+      "id": "356907",
+      "number": 10,
+      "titles": {
+       "canonical": "A Powerful Mage"
+      },
+      "description": {
+       "en": "Frieren's many years of training under her teacher Flamme are tested in her confrontation with Aura the Guillotine. Will Aura's scales find her wanting?\n\n(Source: Crunchyroll)"
+      },
+      "releasedAt": "2023-11-10T00:00:00+00:00",
+      "length": 1440,
+      "thumbnail": {
+       "original": {
+        "url": "https://media.kitsu.app/episode/356907/thumbnail/1fbe3a517fa505fecd2724ce8d5fbaaf.jpg",
+        "width": 800,
+        "height": 450
+       }
+      }
+     },
+     {
+      "id": "356908",
+      "number": 11,
+      "titles": {
+       "canonical": "Winter in the Northern Lands"
+      },
+      "description": {
+       "en": "Frieren and her companions continue their journey through the northern lands, but obstacles both natural and manmade still stand in their way.\n\n(Source: Crunchyroll)"
+      },
+      "releasedAt": "2023-11-17T00:00:00+00:00",
+      "length": 1440,
+      "thumbnail": {
+       "original": {
+        "url": "https://media.kitsu.app/episode/356908/thumbnail/84c7b1e6e866c3c517688ce0c3de9269.jpg",
+        "width": 800,
+        "height": 450
+       }
+      }
+     },
+     {
+      "id": "356909",
+      "number": 12,
+      "titles": {
+       "canonical": "A Real Hero"
+      },
+      "description": {
+       "en": "Deep in the mountains of the northern lands, Frieren and her party arrive at the Village of the Sword, where they have another job to do.\n\n(Source: Crunchyroll)"
+      },
+      "releasedAt": "2023-11-24T00:00:00+00:00",
+      "length": 1440,
+      "thumbnail": {
+       "original": {
+        "url": "https://media.kitsu.app/episode/356909/thumbnail/97302f2a07f2c27b9e86e843937be6ae.jpg",
+        "width": 1280,
+        "height": 720
+       }
+      }
+     }
+    ]
+   }
+  }
+ }
+}

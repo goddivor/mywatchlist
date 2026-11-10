@@ -1,15 +1,14 @@
-// ignore_for_file: use_build_context_synchronously
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:mywatchlist/main.dart';
+import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/user/language/language_bloc.dart';
 import 'package:mywatchlist/user/language/language_event.dart';
 import 'package:mywatchlist/user/language/language_state.dart';
 import 'package:mywatchlist/user/language/supported_languages.dart';
-import 'package:mywatchlist/user/user_preference.dart';
-import 'package:mywatchlist/widgets/common/background.dart';
 
+/// Language picker: one choice among "follow the device" and every shipped language.
+/// The pick applies immediately (the app rebuilds in the new language) and is persisted by
+/// [LanguageBloc].
 class LanguageSettings extends StatefulWidget {
   final bool isIntroPage;
 
@@ -20,178 +19,152 @@ class LanguageSettings extends StatefulWidget {
 }
 
 class _LanguageSettingsState extends State<LanguageSettings> {
-  final UserPreference userPref = UserPreference();
-  
+  /// Set when the user picks a language; the snackbar waits for the new strings to be loaded.
+  bool _confirmNextChange = false;
+
+  void _select(LanguageState current, {required bool system, String? code}) {
+    final next = LanguageChanged(
+      languageCode: code ?? current.languageCode,
+      useSystemLanguage: system,
+    );
+    if (next.languageCode == current.languageCode &&
+        next.useSystemLanguage == current.useSystemLanguage) {
+      return;
+    }
+    _confirmNextChange = true;
+    context.read<LanguageBloc>().add(next);
+  }
+
+  void _showConfirmation(LanguageState state) {
+    if (!_confirmNextChange) return;
+    _confirmNextChange = false;
+    final bloc = context.read<LanguageBloc>();
+    final code = state.effectiveCode(bloc.deviceLocales());
+    final name = SupportedLanguages.byCode(code)?.nativeName ?? code;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(S.current.Language_Changed_To(name)),
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 2),
+        ),
+      );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async => !widget.isIntroPage,
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return PopScope(
+      canPop: !widget.isIntroPage,
       child: Scaffold(
-        appBar: widget.isIntroPage 
-          ? null 
-          : AppBar(
-              title: const Text('Language Settings'),
-              elevation: 0,
-            ),
-        floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-        floatingActionButton: widget.isIntroPage 
-          ? FloatingActionButton(
-              onPressed: () async {
-                if (widget.isIntroPage) {
-                  // If it's intro page, just continue to next page
-                  Navigator.of(context).pop();
-                }
-              },
-              child: const Icon(Icons.check),
-            )
-          : null,
-        body: BlocBuilder<LanguageBloc, LanguageState>(
+        appBar: widget.isIntroPage
+            ? null
+            : AppBar(title: Text(S.current.Language_settings), elevation: 0),
+        body: BlocConsumer<LanguageBloc, LanguageState>(
+          listener: (context, state) => _showConfirmation(state),
           builder: (context, state) {
-            return Stack(
-              children: [
-                // Background for aesthetic
-                if (widget.isIntroPage)
-                  Background(
-                    isNetworkImage: false, 
-                    context: context, 
-                    forceBg: true,
-                    url: 'assets/images/languages_bg.jpg',
-                  ),
-                
-                // Main content
-                SafeArea(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const SizedBox(height: 20),
-                      
-                      // Header section
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Choose Your Language',
-                              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'Select your preferred language for the app interface',
-                              style: Theme.of(context).textTheme.bodyLarge,
-                            ),
-                            const SizedBox(height: 24),
-                            
-                            // System language toggle
-                            SwitchListTile(
-                              title: const Text('Use System Language'),
-                              subtitle: const Text(
-                                'App will follow your device language settings',
-                              ),
-                              value: state.useSystemLanguage,
-                              onChanged: (value) {
-                                context.read<LanguageBloc>().add(
-                                  LanguageChanged(
-                                    languageCode: state.languageCode,
-                                    useSystemLanguage: value,
-                                  ),
-                                );
-                              },
-                              secondary: const CircleAvatar(
-                                child: Icon(Icons.phone_android),
-                              ),
-                            ),
-                            
-                            const Divider(thickness: 1),
-                            const SizedBox(height: 8),
-                            
-                            Text(
-                              'Available Languages',
-                              style: Theme.of(context).textTheme.titleLarge,
-                            ),
-                          ],
+            final languages = SupportedLanguages.languages;
+            return SafeArea(
+              child: ListView(
+                padding: EdgeInsets.fromLTRB(16, widget.isIntroPage ? 48 : 8, 16, 32),
+                children: [
+                  if (widget.isIntroPage) ...[
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      child: Text(
+                        S.current.Choose_a_Language,
+                        style: theme.textTheme.headlineMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: colorScheme.onSurface,
                         ),
                       ),
-                      
-                      const SizedBox(height: 8),
-                      
-                      // Language list
-                      Expanded(
-                        child: ListView.builder(
-                          itemCount: SupportedLanguages.languages.length,
-                          itemBuilder: (context, index) {
-                            final language = SupportedLanguages.languages[index];
-                            final isSelected = language.code == state.languageCode;
-                            
-                            return ListTile(
-                              leading: Text(
-                                language.flag,
-                                style: const TextStyle(fontSize: 24),
-                              ),
-                              title: Text(language.name),
-                              trailing: isSelected 
-                                ? Icon(
-                                    Icons.check_circle,
-                                    color: Theme.of(context).colorScheme.primary,
-                                  )
-                                : null,
-                              selected: isSelected,
-                              onTap: () {
-                                if (state.languageCode != language.code) {
-                                  context.read<LanguageBloc>().add(
-                                    LanguageChanged(
-                                      languageCode: language.code,
-                                      useSystemLanguage: false,
-                                    ),
-                                  );
-                                  
-                                  // Save to preferences
-                                  userPref.setLanguage(language.code);
-                                  
-                                  // Show a confirmation snackbar
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(
-                                        'Language changed to ${language.name}',
-                                      ),
-                                      duration: const Duration(seconds: 2),
-                                    ),
-                                  );
-                                }
-                              },
-                            );
-                          },
-                        ),
-                      ),
-                      
-                      if (!widget.isIntroPage)
-                        Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton(
-                              onPressed: () async {
-                                // Apply language changes and restart app to apply
-                                restartApp(context);
-                              },
-                              style: ElevatedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(vertical: 16),
-                              ),
-                              child: const Text(
-                                'Apply Changes',
-                                style: TextStyle(fontSize: 16),
-                              ),
-                            ),
-                          ),
-                        ),
-                    ],
+                    ),
+                    const SizedBox(height: 24),
+                  ],
+                  _OptionTile(
+                    key: const ValueKey('language-system'),
+                    leading: Icon(Icons.phone_android_rounded, color: colorScheme.primary),
+                    title: S.current.Language_Use_System,
+                    subtitle: S.current.Language_Use_System_Desc,
+                    selected: state.useSystemLanguage,
+                    onTap: () => _select(state, system: true),
                   ),
-                ),
-              ],
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(4, 24, 4, 8),
+                    child: Text(
+                      S.current.Language_Available,
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: colorScheme.primary,
+                      ),
+                    ),
+                  ),
+                  for (final language in languages)
+                    _OptionTile(
+                      key: ValueKey('language-${language.code}'),
+                      title: language.nativeName,
+                      subtitle: _localizedSubtitle(language),
+                      selected: !state.useSystemLanguage && state.languageCode == language.code,
+                      onTap: () => _select(state, system: false, code: language.code),
+                    ),
+                ],
+              ),
             );
           },
+        ),
+      ),
+    );
+  }
+
+  /// The language's name in the current UI language, hidden when it repeats the native name.
+  String? _localizedSubtitle(SupportedLanguage language) {
+    final localized = language.localizedName();
+    return localized.toLowerCase() == language.nativeName.toLowerCase() ? null : localized;
+  }
+}
+
+class _OptionTile extends StatelessWidget {
+  final Widget? leading;
+  final String title;
+  final String? subtitle;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _OptionTile({
+    super.key,
+    this.leading,
+    required this.title,
+    this.subtitle,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Material(
+        color: selected ? colorScheme.secondaryContainer : Colors.transparent,
+        borderRadius: BorderRadius.circular(12),
+        clipBehavior: Clip.antiAlias,
+        child: ListTile(
+          leading: leading,
+          title: Text(
+            title,
+            style: TextStyle(fontWeight: selected ? FontWeight.w600 : FontWeight.normal),
+          ),
+          subtitle: subtitle == null ? null : Text(subtitle!),
+          selected: selected,
+          selectedColor: colorScheme.onSecondaryContainer,
+          trailing: Icon(
+            selected ? Icons.radio_button_checked_rounded : Icons.radio_button_off_rounded,
+            color: selected ? colorScheme.primary : colorScheme.outline,
+          ),
+          onTap: onTap,
         ),
       ),
     );

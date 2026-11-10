@@ -1,0 +1,20 @@
+{
+  "@@locale": "en",
+  "Kf_Follow": "Follow",
+  "Kf_Following_Button": "Following",
+  "Kf_Follow_Failed": "Couldn’t update the follow. Try again.",
+  "Kf_Tab_Groups": "Groups",
+  "Kf_Groups_Empty": "Not in any group yet",
+  "Kf_Library_Count": "{count, plural, =1{1 title in library} other{{count} titles in library}}",
+  "@Kf_Library_Count": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "Kf_Sync_Rating_Simple": "Rating (4 levels)",
+  "Kf_Sync_Rating_Regular": "Rating (stars)",
+  "Kf_Sync_Rating_Advanced": "Rating (out of 10)",
+  "Kf_Sync_Rating_None": "No rating"
+}

@@ -1,0 +1,55 @@
+# Handoff — `list-cards-dal`: My List grid display: the same visual as DailyAL's grid (the rest of MWL's My List stays)
+
+**Kind** unit · **Priority** P0 · **Group** user · **Model** opus
+
+## Needs done first
+- `user-list-mal` (MAL user anime/manga list (status tabs, sort/filter, view modes, status cache))
+- `theme-colors` (Theme colours: status bar, coherent accents per theme, colour tokens, contrast)
+
+## Owns (may create or edit ONLY these)
+- `lib/widgets/user/list/cards/**`
+- `lib/widgets/user/list/list_entry_view.dart`
+- `lib/l10n/units/list-cards-dal/**`
+- `test/units/list-cards-dal/**`
+
+Plus `PROJECT-STATE.md` (rewrite in place, within its cap) and `docs/DECISIONS.md` (append one line per decision). Anything else you need is a FINDING to report, never an edit.
+
+## Goal
+- OWNER'S FINAL DECISION: keep MWL's My List interface (header, tabs, toolbar, icons, list/compact/other non-grid modes) exactly as it is. The GRID display types must have THE SAME VISUAL AS DAILYAL'S GRID — this screen element only; everything else in the app follows the normal UI directive.
+- Reproduce DailyAL's grid card (read lib/widgets/home/animecard.dart and the grid branch of lib/widgets/user/contentlistwidget.dart): clean rounded cover with no text or gradient on the image; directly under it a compact bar — left ★ mean score (or '-'; hide-score tap-to-reveal respected); right a coloured status chip (CW / CMPL / OH / DR / PTW) containing the edit pencil; then the title on one line with ellipsis; then the genres in small text on one line; small badges top-right on the cover (unseen / behind counts). Same card proportions, cover ratio, spacing between cards, corner radius and border/elevation as DailyAL. Status chip colours come from the theme-colors status tokens so they stay readable in light, dark and black.
+- IMPORTANT FEATURE (owner): the two badges top-right of the cover, as in DailyAL — a BLUE badge = number of episodes already aired / available, a RED badge = aired episodes the user has NOT watched yet (aired − watched). Today MWL shows a single pink '+1'. Aired count: the calendar unit's `AiringSchedule.instance.nextEpisode(malId)` (next episode − 1) first, then the weekly estimate (`estimateAiredEpisodes`), then the total for finished shows; hide the red badge at 0, hide both when unknown. Same badges for manga only if a chapter count is known. Colours from the theme-colors tokens (readable in light/dark/black).
+- BADGE RULE PER DISPLAY MODE (owner): when the card already shows the progress text ('4 / 12 ep.') only the red unwatched badge ('+N') is needed; when the display mode does NOT show the progress (comfortable, cover-only, DailyAL-style grid card where the bar shows score/status, compact…) the card must show BOTH badges — blue = episodes aired, red = aired − watched — following DailyAL's rule (blue hidden when equal to red, i.e. nothing watched yet; both hidden when caught up). Apply this rule consistently in every display mode and in custom layouts (a layout without the progress field gets both badges).
+- EQUAL CARD HEIGHTS (owner): MWL's grid cards have different heights because titles wrap to 1 or 2 lines. DailyAL avoids it: the title is ONE line with ellipsis and the genres ONE line, inside a fixed-height text block, so every card in a row has the same height. Do the same (fixed mainAxisExtent / childAspectRatio computed from the cover ratio + fixed text block), whatever the title length or text scale (clamp, never overflow).
+- Keep MWL's behaviour: tap opens the detail, pencil / long press opens the edit sheet, the status cache updates the chip, airing info and priority prefs, the grid column/height settings, custom card layouts (the DailyAL grid card becomes the default grid layout).
+- Fluidity: AppImage at card size, no per-card Opacity/ClipRRect/blur, fixed extents.
+
+## Known bugs to fix in scope
+- none
+
+## DailyAL reference (read, never copy blindly)
+Checkout: `/home/thinkpad/.cache/mwl-mab/dailyal-108` (DAL `upstream/2026.2.6+108`, read-only).
+- `lib/widgets/home/animecard.dart`
+- `lib/widgets/home/nodebadge.dart`
+- `lib/widgets/user/contentlistwidget.dart (grid mode)`
+
+Port the behaviour into MWL's architecture: BLoC for app-wide state, Provider/ChangeNotifier user singletons, MWL's service layer (`lib/services/api/**`), `S` strings via your l10n fragment, multi-tracker awareness (never assume the active account is MAL without checking).
+
+## Inventory
+`work/inventory/*.md` lists, per feature, what MWL has and the bugs found on 2026-10-27.
+
+**UI directive (owner's rule).** MWL's current UI is NOT the reference: the owner wrote it early and calls parts of it badly done. For every screen you touch, read the DAL equivalent's UI code, keep whichever is better (often DAL's), and improve it (hierarchy, spacing, empty/loading/error states, no dead buttons). Stay consistent with the theme system in `lib/user/theme/` (accent color, fonts, dark/black modes). Describe the before/after in the PR body. **Strings:** every screen you own must be fully translatable — move its existing hardcoded literals (e.g. settings_page.dart:55,119, mal_home_page.dart:45-47, mal_home_page_preferences.dart:65) to `S` through your l10n fragment; the checker switches the app to French and flags any English left on your screens. **Colours:** no hardcoded `Colors.*` or `Color(0x…)` in your screens: use `Theme.of(context).colorScheme` and the semantic tokens of lib/widgets/common/app_colors.dart (theme-colors unit, see docs/THEME.md once merged); move the existing hardcoded colours of your files to them. Every text must stay readable on its background (buttons, chips, badges, text on images) in light, dark and black modes.
+
+**Fluidity rules (owner's rule: MWL must feel as smooth as DailyAL).** See `docs/PERFORMANCE.md` once perf-foundation has merged, and `work/inventory/performance.md`.
+- Network images only through `AppImage` (decode at displayed size); no `Image.network`.
+- Long or unbounded lists: `ListView.builder`/slivers, never a `Column` of many children in a `SingleChildScrollView`; no `shrinkWrap: true` list inside another scroll view; no scroll view per list item.
+- No `Opacity`, `BackdropFilter`, `ImageFilter.blur`, `ShaderMask` or blurred `BoxShadow` on repeated items or on whole pages during animations; use alpha colors / FadeTransition.
+- No `setState` in scroll listeners; listeners added once and removed in dispose; dispose every controller you create.
+- BlocBuilder/Consumer as low in the tree as possible, with `buildWhen`/`BlocSelector`/`context.select`; `const` constructors wherever possible.
+- Heavy JSON/HTML parsing off the UI isolate (`Isolate.run`/`compute`); no sync storage reads in `build`; no `print` in hot paths.
+- Look at how DAL makes the same screen fluid and do at least as well; the checker compares janky-frame % on a profile build.
+
+## Definition of Done
+- Checker: side-by-side screenshots of MWL's grid vs DailyAL's grid on the owner's account — same visual; other display modes unchanged.
+- Widget tests: grid card renders score/status/title/genres, hide-score, French labels.
+- `tools/heavy.sh flutter analyze` clean (the gate runs the full `tools/heavy.sh tools/verify.sh`).
+- PR against `dev` with `Closes #<issue>`, gate tail, decisions, findings.

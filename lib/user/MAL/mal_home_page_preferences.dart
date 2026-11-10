@@ -1,10 +1,15 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:mywatchlist/constants/constants.dart';
+import 'package:mywatchlist/constants/constants.dart' hide myAnimeStatusMap;
+import 'package:mywatchlist/enums.dart';
+import 'package:mywatchlist/generated/l10n.dart';
+import 'package:mywatchlist/screens/seasonal/season_utils.dart';
+import 'package:mywatchlist/services/api/MAL/mal_api.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 
 
+/// Kinds of home section. New kinds are only ever appended: the saved JSON stores the index.
 enum SectionType {
   news,
   seasonNow,
@@ -13,18 +18,150 @@ enum SectionType {
   topScore,
   topFavorites,
   topPopular,
+  topAnimeAiring,
+  topAnimeTV,
+  topAnimeMovie,
+  topAnimeSpecial,
+  topManga,
+  topMangaPopular,
+  features,
+  userList,
+  forum,
+  topAnimeOva,
+  topAnimeOna,
+  topMangaOnly,
+  topOneshots,
+  topDoujin,
+  topLightNovels,
+  topNovels,
+  topManhwa,
+  topManhua,
+  topMangaFavorites,
+}
+
+/// Bounds of the per-section item count (the slider of the home settings). MAL's ranking,
+/// seasonal and suggestion endpoints all accept that many in one call.
+const int kHomeRowMinItems = 5;
+const int kHomeRowMaxItems = 30;
+
+/// The order of the kinds in the "section type" picker: anime rows, then manga rows, then the
+/// others (the enum order is the storage order and cannot be regrouped).
+const List<SectionType> kSectionPickerOrder = [
+  SectionType.seasonNow,
+  SectionType.suggested,
+  SectionType.upcoming,
+  SectionType.topScore,
+  SectionType.topAnimeAiring,
+  SectionType.topPopular,
+  SectionType.topFavorites,
+  SectionType.topAnimeTV,
+  SectionType.topAnimeMovie,
+  SectionType.topAnimeOva,
+  SectionType.topAnimeOna,
+  SectionType.topAnimeSpecial,
+  SectionType.topManga,
+  SectionType.topMangaOnly,
+  SectionType.topMangaPopular,
+  SectionType.topMangaFavorites,
+  SectionType.topManhwa,
+  SectionType.topManhua,
+  SectionType.topLightNovels,
+  SectionType.topNovels,
+  SectionType.topOneshots,
+  SectionType.topDoujin,
+  SectionType.userList,
+  SectionType.forum,
+  SectionType.news,
+  SectionType.features,
+];
+
+extension SectionTypeRanking on SectionType {
+  /// The MAL anime ranking behind the row, null when it is not an anime ranking.
+  RankingType? get animeRanking => switch (this) {
+        SectionType.upcoming => RankingType.UPCOMING,
+        SectionType.topScore => RankingType.ALL,
+        SectionType.topFavorites => RankingType.FAVOURITE,
+        SectionType.topPopular => RankingType.BYPOPULARITY,
+        SectionType.topAnimeAiring => RankingType.AIRING,
+        SectionType.topAnimeTV => RankingType.TV,
+        SectionType.topAnimeMovie => RankingType.MOVIE,
+        SectionType.topAnimeSpecial => RankingType.SPECIAL,
+        SectionType.topAnimeOva => RankingType.OVA,
+        SectionType.topAnimeOna => RankingType.ONA,
+        _ => null,
+      };
+
+  /// The MAL manga ranking behind the row, null when it is not a manga ranking.
+  MangaRanking? get mangaRanking => switch (this) {
+        SectionType.topManga => MangaRanking.all,
+        SectionType.topMangaPopular => MangaRanking.bypopularity,
+        SectionType.topMangaOnly => MangaRanking.manga,
+        SectionType.topOneshots => MangaRanking.oneshots,
+        SectionType.topDoujin => MangaRanking.doujin,
+        SectionType.topLightNovels => MangaRanking.lightnovels,
+        SectionType.topNovels => MangaRanking.novels,
+        SectionType.topManhwa => MangaRanking.manhwa,
+        SectionType.topManhua => MangaRanking.manhua,
+        SectionType.topMangaFavorites => MangaRanking.favorite,
+        _ => null,
+      };
+
+  /// A row of anime or manga cards filled by the shared home requests (RequestsBloc).
+  bool get isContentRow =>
+      this == SectionType.seasonNow ||
+      this == SectionType.suggested ||
+      animeRanking != null ||
+      mangaRanking != null;
 }
 
 class HomeSectionPreference {
   SectionType type;
   bool enabled;
   int itemCount;
+  String? customTitle;
+  int cacheDurationHours;
+
+  /// [SectionType.userList]: `anime` or `manga`.
+  String userCategory;
+
+  /// [SectionType.userList]: the MAL status key (`watching`, `completed`…), null for all.
+  String? userStatus;
+
+  /// [SectionType.forum]: board and sub-board ids (MAL), null for the recent topics of the forum.
+  int? boardId;
+  int? subboardId;
+
+  /// [SectionType.seasonNow]: a fixed season, null for the current one.
+  SeasonType? season;
+  int? year;
 
   HomeSectionPreference({
     required this.type,
     this.enabled = true,
     this.itemCount = 15,
+    this.customTitle,
+    this.cacheDurationHours = 2,
+    this.userCategory = 'anime',
+    this.userStatus,
+    this.boardId,
+    this.subboardId,
+    this.season,
+    this.year,
   });
+
+  HomeSectionPreference copy() => HomeSectionPreference(
+        type: type,
+        enabled: enabled,
+        itemCount: itemCount,
+        customTitle: customTitle,
+        cacheDurationHours: cacheDurationHours,
+        userCategory: userCategory,
+        userStatus: userStatus,
+        boardId: boardId,
+        subboardId: subboardId,
+        season: season,
+        year: year,
+      );
 
   // Convert to JSON for storage
   Map<String, dynamic> toJson() {
@@ -32,35 +169,113 @@ class HomeSectionPreference {
       'type': type.index,
       'enabled': enabled,
       'itemCount': itemCount,
+      'customTitle': customTitle,
+      'cacheDurationHours': cacheDurationHours,
+      'userCategory': userCategory,
+      'userStatus': userStatus,
+      'boardId': boardId,
+      'subboardId': subboardId,
+      'season': season?.name,
+      'year': year,
     };
   }
 
-  // Create from JSON when loading
-  factory HomeSectionPreference.fromJson(Map<String, dynamic> json) {
+  // Create from JSON when loading (tolerant: a missing or odd field takes its default)
+  static HomeSectionPreference? tryFromJson(Map<String, dynamic> json) {
+    final typeIndex = json['type'];
+    if (typeIndex is! int || typeIndex < 0 || typeIndex >= SectionType.values.length) {
+      return null;
+    }
+    final seasonName = json['season'];
     return HomeSectionPreference(
-      type: SectionType.values[json['type'] as int],
-      enabled: json['enabled'] as bool,
-      itemCount: json['itemCount'] as int,
+      type: SectionType.values[typeIndex],
+      enabled: json['enabled'] as bool? ?? true,
+      itemCount: ((json['itemCount'] as num?)?.toInt() ?? 15)
+          .clamp(kHomeRowMinItems, kHomeRowMaxItems),
+      customTitle: json['customTitle'] as String?,
+      cacheDurationHours: json['cacheDurationHours'] as int? ?? 2,
+      userCategory: json['userCategory'] == 'manga' ? 'manga' : 'anime',
+      userStatus: json['userStatus'] as String?,
+      boardId: json['boardId'] as int?,
+      subboardId: json['subboardId'] as int?,
+      season: SeasonType.values.where((s) => s.name == seasonName).firstOrNull,
+      year: json['year'] as int?,
     );
   }
 
-  String getTitle(String seasonName, int seasonYear) {
+  /// The season a [SectionType.seasonNow] section shows.
+  SeasonType get effectiveSeason => season ?? MalApi.getSeasonType();
+  int get effectiveYear => year ?? MalApi.getCurrentSeasonYear();
+
+  /// The title of the section in the app language (read at each build, so a language change
+  /// applies at once).
+  String getDefaultTitle() {
+    final s = S.current;
     switch (type) {
       case SectionType.news:
-        return 'Anime News & Features';
+        return s.Hw_Sec_News;
       case SectionType.seasonNow:
-        return '$seasonName $seasonYear Anime';
+        return s.Hw_Sec_Season(seasonLabel(effectiveSeason), '$effectiveYear');
       case SectionType.suggested:
-        return 'Suggested For You';
+        return s.Hw_Sec_Suggested;
       case SectionType.upcoming:
-        return 'Top Upcoming Anime';
+        return s.Hw_Sec_Upcoming;
       case SectionType.topScore:
-        return 'Top Anime by Score';
+        return s.Hw_Sec_Top_Score;
       case SectionType.topFavorites:
-        return 'All-time Anime Favorites';
+        return s.Hw_Sec_Favorites;
       case SectionType.topPopular:
-        return 'Most Popular Anime';
+        return s.Hw_Sec_Popular;
+      case SectionType.topAnimeAiring:
+        return s.Hw_Sec_Airing;
+      case SectionType.topAnimeTV:
+        return s.Hw_Sec_Tv;
+      case SectionType.topAnimeMovie:
+        return s.Hw_Sec_Movie;
+      case SectionType.topAnimeSpecial:
+        return s.Hw_Sec_Special;
+      case SectionType.topManga:
+        return s.Hw_Sec_Top_Manga;
+      case SectionType.topMangaPopular:
+        return s.Hw_Sec_Popular_Manga;
+      case SectionType.features:
+        return s.Hw_Sec_Features;
+      case SectionType.userList:
+        final list = userCategory == 'manga' ? s.Hw_Sec_List_Manga : s.Hw_Sec_List_Anime;
+        final labels = userCategory == 'manga' ? myMangaStatusMap : myAnimeStatusMap;
+        final status = userStatus == null ? null : labels[userStatus];
+        return status == null ? list : s.Hw_Sec_List_Status(list, status);
+      case SectionType.forum:
+        final board = boardId == null ? null : ForumConstants.boards[boardId];
+        return board == null ? s.Hw_Sec_Forum : s.Hw_Sec_Forum_Board(board);
+      case SectionType.topAnimeOva:
+        return s.Hr_Sec_Ova;
+      case SectionType.topAnimeOna:
+        return s.Hr_Sec_Ona;
+      case SectionType.topMangaOnly:
+        return s.Hr_Sec_Manga_Only;
+      case SectionType.topOneshots:
+        return s.Hr_Sec_Oneshots;
+      case SectionType.topDoujin:
+        return s.Hr_Sec_Doujin;
+      case SectionType.topLightNovels:
+        return s.Hr_Sec_Light_Novels;
+      case SectionType.topNovels:
+        return s.Hr_Sec_Novels;
+      case SectionType.topManhwa:
+        return s.Hr_Sec_Manhwa;
+      case SectionType.topManhua:
+        return s.Hr_Sec_Manhua;
+      case SectionType.topMangaFavorites:
+        return s.Hr_Sec_Manga_Favorites;
     }
+  }
+
+  String getDisplayTitle() {
+    if (customTitle != null && customTitle!.isNotEmpty) {
+      return customTitle!;
+    }
+    return getDefaultTitle();
   }
 
   IconData getIcon() {
@@ -79,6 +294,44 @@ class HomeSectionPreference {
         return Icons.favorite;
       case SectionType.topPopular:
         return Icons.trending_up;
+      case SectionType.topAnimeAiring:
+        return Icons.live_tv;
+      case SectionType.topAnimeTV:
+        return Icons.connected_tv;
+      case SectionType.topAnimeMovie:
+        return Icons.movie;
+      case SectionType.topAnimeSpecial:
+        return Icons.auto_awesome;
+      case SectionType.topManga:
+        return Icons.menu_book;
+      case SectionType.topMangaPopular:
+        return Icons.auto_stories;
+      case SectionType.features:
+        return Icons.featured_play_list;
+      case SectionType.userList:
+        return Icons.video_library_outlined;
+      case SectionType.forum:
+        return Icons.forum_outlined;
+      case SectionType.topAnimeOva:
+        return Icons.album_outlined;
+      case SectionType.topAnimeOna:
+        return Icons.public;
+      case SectionType.topMangaOnly:
+        return Icons.import_contacts;
+      case SectionType.topOneshots:
+        return Icons.looks_one_outlined;
+      case SectionType.topDoujin:
+        return Icons.brush_outlined;
+      case SectionType.topLightNovels:
+        return Icons.lightbulb_outline;
+      case SectionType.topNovels:
+        return Icons.book_outlined;
+      case SectionType.topManhwa:
+        return Icons.view_day_outlined;
+      case SectionType.topManhua:
+        return Icons.view_agenda_outlined;
+      case SectionType.topMangaFavorites:
+        return Icons.favorite_border;
     }
   }
 }
@@ -90,13 +343,13 @@ class MalHomePreferences {
   // Constructor with default values
   MalHomePreferences({
     List<HomeSectionPreference>? sections,
-    this.tileSize = HomePageTileSize.m,
+    this.tileSize = HomePageTileSize.l,
   }) : sections = sections ?? _getDefaultSections();
 
   // Default section order and settings
   static List<HomeSectionPreference> _getDefaultSections() {
     return [
-      HomeSectionPreference(type: SectionType.news, itemCount: 10),
+      HomeSectionPreference(type: SectionType.news, itemCount: 10, cacheDurationHours: 8),
       HomeSectionPreference(type: SectionType.seasonNow, itemCount: 15),
       HomeSectionPreference(type: SectionType.suggested, itemCount: 15),
       HomeSectionPreference(type: SectionType.upcoming, itemCount: 15),
@@ -117,11 +370,14 @@ class MalHomePreferences {
   // Create from JSON when loading
   factory MalHomePreferences.fromJson(Map<String, dynamic> json) {
     return MalHomePreferences(
-      sections: (json['sections'] as List)
-          .map((section) =>
-              HomeSectionPreference.fromJson(section as Map<String, dynamic>))
-          .toList(),
-      tileSize: HomePageTileSize.values[json['tileSize'] as int],
+      sections: [
+        for (final section in json['sections'] as List)
+          if (section is Map<String, dynamic>)
+            if (HomeSectionPreference.tryFromJson(section) case final parsed?) parsed,
+      ],
+      tileSize: HomePageTileSize.values
+              .elementAtOrNull(json['tileSize'] as int? ?? -1) ??
+          HomePageTileSize.l,
     );
   }
 
@@ -132,7 +388,6 @@ class MalHomePreferences {
       // Convert to JSON string properly
       final jsonString = jsonEncode(toJson());
       await prefs.setString('mal_home_preferences', jsonString);
-      debugPrint('Saved preferences: $jsonString');
     } catch (e) {
       debugPrint('Error saving MAL home preferences: $e');
       // Rethrow to handle in UI
@@ -147,7 +402,6 @@ class MalHomePreferences {
       final jsonString = prefs.getString('mal_home_preferences');
 
       if (jsonString != null) {
-        debugPrint('Loading preferences: $jsonString');
         // Parse JSON string to Map
         final Map<String, dynamic> jsonMap = jsonDecode(jsonString);
         return MalHomePreferences.fromJson(jsonMap);
@@ -164,6 +418,6 @@ class MalHomePreferences {
   // Reset to default preferences
   void reset() {
     sections = _getDefaultSections();
-    tileSize = HomePageTileSize.m;
+    tileSize = HomePageTileSize.l;
   }
 }

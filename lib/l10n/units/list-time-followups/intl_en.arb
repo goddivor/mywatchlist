@@ -1,0 +1,15 @@
+{
+  "@@locale": "en",
+  "Ltf_Field_Time_Left": "Time left",
+  "Ltf_Field_Time_Left_Desc": "Time still to watch at the average episode length",
+  "Ltf_Time_Left_Value": "{time} left",
+  "@Ltf_Time_Left_Value": { "placeholders": { "time": { "type": "String" } } },
+  "Ltf_Rewatched": "Rewatched ×{count}",
+  "@Ltf_Rewatched": { "placeholders": { "count": { "type": "int" } } },
+  "Ltf_Reread": "Reread ×{count}",
+  "@Ltf_Reread": { "placeholders": { "count": { "type": "int" } } },
+  "Ltf_Facet_Season": "Season",
+  "Ltf_Facet_Studio": "Studio",
+  "Ltf_Facet_Author": "Author",
+  "Ltf_Facet_Rating": "Age rating"
+}

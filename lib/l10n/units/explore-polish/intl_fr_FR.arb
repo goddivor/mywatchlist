@@ -1,0 +1,8 @@
+{
+  "@@locale": "fr_FR",
+  "Exp_Genre_Count": "{count, plural, one{1 genre} other{{count} genres}}",
+  "Exp_Genre_Titles": "{count} titres",
+  "Exp_Studios": "Studios",
+  "Exp_Studios_Caption": "Tous les studios d’animation, avec leur logo et leurs animés",
+  "Exp_Favorites": "{count, plural, one{Dans les favoris de {count} personne} other{Dans les favoris de {count} personnes}}"
+}

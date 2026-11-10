@@ -1,0 +1,8 @@
+{
+  "@@locale": "en",
+  "Mdf_Tab_Friends": "Friends",
+  "Mdf_Tab_Top_Friends": "Top friends",
+  "Mdf_Tab_Everyone": "Everyone",
+  "Mdf_Friends_Empty": "None of your friends listed this title yet",
+  "Mdf_Friends_Failed": "Could not load your friends' updates"
+}

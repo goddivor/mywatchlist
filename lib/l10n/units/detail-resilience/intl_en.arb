@@ -1,0 +1,79 @@
+{
+  "@@locale": "en",
+  "Res_Retry": "Try again",
+  "Res_Section_Failed": "Couldn't load this section",
+  "Res_Score_Empty": "No score distribution yet",
+  "Res_Score_Unavailable": "The score distribution is unavailable right now",
+  "Res_Score_Total_Votes": "Total votes: {value}",
+  "@Res_Score_Total_Votes": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "Res_Score_Votes_Semantics": "Score {score}: {votes} votes, {percent}",
+  "@Res_Score_Votes_Semantics": {
+    "placeholders": {
+      "score": {
+        "type": "String"
+      },
+      "votes": {
+        "type": "String"
+      },
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "Res_Mean_Score": "Mean score",
+  "Res_Scored_By": "Scored by",
+  "Res_Ranked": "Ranked",
+  "Res_Popularity": "Popularity",
+  "Res_Members": "Members",
+  "Res_Source_Mal": "Source: MyAnimeList",
+  "Res_Status_Watching": "Watching",
+  "Res_Status_Completed": "Completed",
+  "Res_Status_On_Hold": "On hold",
+  "Res_Status_Dropped": "Dropped",
+  "Res_Status_Plan_To_Watch": "Plan to watch",
+  "Res_Total_Members": "{value} members in total",
+  "@Res_Total_Members": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "Res_Forum_Empty": "No forum topics yet",
+  "Res_Forum_Failed": "Couldn't load the forum topics",
+  "Res_Forum_Untitled": "Untitled topic",
+  "Res_Unknown": "Unknown",
+  "Res_Featured_Empty": "No featured articles yet",
+  "Res_Featured_Failed": "Couldn't load the featured articles",
+  "Res_Characters_Failed": "Couldn't load the characters and staff",
+  "Res_Voice_Actors_Count": "{count, plural, =1{1 voice actor} other{{count} voice actors}}",
+  "@Res_Voice_Actors_Count": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "Res_Favorites_Semantics": "{count, plural, =1{1 favorite} other{{count} favorites}}",
+  "@Res_Favorites_Semantics": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "Res_Open_Character": "Open {value}",
+  "@Res_Open_Character": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  }
+}

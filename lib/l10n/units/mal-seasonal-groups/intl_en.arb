@@ -1,0 +1,9 @@
+{
+  "@@locale": "en",
+  "Seasonal_Group_All": "All ({count})",
+  "@Seasonal_Group_All": { "placeholders": { "count": { "type": "int" } } },
+  "Seasonal_Group_New": "New ({count})",
+  "@Seasonal_Group_New": { "placeholders": { "count": { "type": "int" } } },
+  "Seasonal_Group_Continuing": "Continuing ({count})",
+  "@Seasonal_Group_Continuing": { "placeholders": { "count": { "type": "int" } } }
+}

@@ -1,0 +1,21 @@
+{
+  "@@locale": "en",
+  "Upd_No_Release": "No release has been published yet.",
+  "Upd_Download_Install": "Download and install",
+  "Upd_Package": "{name} ({size})",
+  "@Upd_Package": { "placeholders": { "name": { "type": "String" }, "size": { "type": "String" } } },
+  "Upd_Progress": "{received} of {total}",
+  "@Upd_Progress": { "placeholders": { "received": { "type": "String" }, "total": { "type": "String" } } },
+  "Upd_Progress_Unknown": "{received} downloaded",
+  "@Upd_Progress_Unknown": { "placeholders": { "received": { "type": "String" } } },
+  "Upd_Verifying": "Checking the download...",
+  "Upd_Install_Started": "The installer is open. Confirm there to finish updating.",
+  "Upd_Install_Again": "Install again",
+  "Upd_Download_Failed_Desc": "The download did not finish. Check your connection and try again.",
+  "Upd_Checksum_Failed": "The downloaded file does not match its checksum, so it was deleted. Try again, or get it from the release page.",
+  "Upd_Checksum_Missing": "This release has no checksum for your device, so the file cannot be verified and will not be installed.",
+  "Upd_No_Apk": "This release has no package for your device. You can get it from the release page.",
+  "Upd_Permission_Needed": "Allow MyWatchList to install apps in the system settings, then try again.",
+  "Upd_Install_Failed": "The system installer could not be opened.",
+  "Upd_Unsupported": "In-app installation is only available on Android. Open the release page to download the update."
+}

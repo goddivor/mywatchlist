@@ -1,9 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mywatchlist/constants/constants.dart';
+import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/services/api/MAL/mal_anime.dart';
+import 'package:mywatchlist/user/preferences/preferences.dart';
+import 'package:mywatchlist/widgets/common/translator.dart';
 
+const _collapsedHeight = 220.0;
+const _ease = Cubic(0.23, 1, 0.32, 1);
 
+/// Synopsis, genres and background of a detail page. Long texts start collapsed
+/// behind a fade; the synopsis can be translated into the app language
+/// ([TranslatorWidget]), automatically when `autoTranslateSynopsis` is on.
+/// Without a [synopsis] the widget is the page's loading placeholder.
 class SysonpsisWidget extends StatefulWidget {
   final String? synopsis;
   final List<Genre>? genres;
@@ -25,144 +34,141 @@ class SysonpsisWidget extends StatefulWidget {
   });
 
   @override
-  // ignore: library_private_types_in_public_api
-  _SysonpsisWidgetState createState() => _SysonpsisWidgetState();
+  State<SysonpsisWidget> createState() => _SysonpsisWidgetState();
 }
 
 class _SysonpsisWidgetState extends State<SysonpsisWidget>
     with AutomaticKeepAliveClientMixin {
-  String? synopsis;
-  bool expanded = false;
-  bool showExpand = false;
+  late bool _expanded;
+  late bool _showExpand;
+
+  bool get _hasBackground => !nullOrEmpty(widget.background);
 
   @override
   void initState() {
     super.initState();
-    if (widget.synopsis != null) {
-      synopsis = widget.synopsis;
-      showExpand = (synopsis != null &&
-          synopsis!.isNotEmpty &&
-          synopsis!.length > widget.characterLimit);
-      expanded = widget.expanded || !showExpand;
-    }
+    final synopsis = widget.synopsis ?? '';
+    _showExpand = synopsis.length > widget.characterLimit || _hasBackground;
+    _expanded = widget.expanded || !_showExpand;
   }
 
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    final scheme = Theme.of(context).colorScheme;
+    final padded = Padding(
+      padding: EdgeInsets.symmetric(horizontal: widget.horizPadding),
+      child: widget.synopsis == null ? loadingText(context) : _content(context),
+    );
     return Column(
       children: [
         ClipRRect(
           borderRadius: BorderRadius.circular(14),
-          child: CustomPaint(
-            foregroundPainter: FadingEffect(
-              extend: 5,
-              color: Theme.of(context).scaffoldBackgroundColor,
-              start: expanded ? 50 : 0,
-              end: expanded ? 50 : 255,
-            ),
-            child: Container(
-              height: expanded ? null : 220,
-              padding: EdgeInsets.fromLTRB(
-                widget.horizPadding,
-                0,
-                widget.horizPadding,
-                0,
+          child: AnimatedSize(
+            duration: const Duration(milliseconds: 220),
+            curve: _ease,
+            alignment: Alignment.topCenter,
+            child: CustomPaint(
+              foregroundPainter: _FadePainter(
+                color: Theme.of(context).scaffoldBackgroundColor,
+                start: _expanded ? 50 : 0,
+                end: _expanded ? 50 : 255,
               ),
-              child: synopsisContent(),
+              child: _expanded
+                  ? padded
+                  : SizedBox(
+                      height: _collapsedHeight,
+                      width: double.infinity,
+                      child: OverflowBox(
+                        alignment: Alignment.topCenter,
+                        minHeight: 0,
+                        maxHeight: 4000,
+                        child: padded,
+                      ),
+                    ),
             ),
           ),
         ),
-        if (showExpand)
+        if (_showExpand)
           Center(
             child: SizedBox(
               height: 40,
               child: IconButton(
-                onPressed: () {
-                  setState(() {
-                    expanded = !expanded;
-                  });
-                },
+                tooltip: _expanded
+                    ? S.current.Synopsis_Collapse
+                    : S.current.Synopsis_Expand,
+                onPressed: () => setState(() => _expanded = !_expanded),
                 padding: EdgeInsets.zero,
+                color: scheme.onSurfaceVariant,
                 icon: Icon(
-                  expanded
+                  _expanded
                       ? Icons.keyboard_arrow_up
                       : Icons.keyboard_arrow_down,
                   size: 24,
                 ),
               ),
             ),
-          )
+          ),
       ],
     );
   }
 
-  Container synopsisContent() {
-    // ignore: sized_box_for_whitespace
-    return Container(
-      width: double.infinity,
-      child: (widget.synopsis == null)
-          ? loadingText(context)
-          : ListView(
-              shrinkWrap: true,
-              padding: const EdgeInsets.fromLTRB(5, 5, 5, 10),
-              physics: const NeverScrollableScrollPhysics(),
-              children: [
-                genresWidget(widget.genres ?? [], widget.category, context),
-                const SizedBox(height: 5),
-                Text(
-                  synopsis ?? "No synopsis available.",
-                  textAlign: TextAlign.justify,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        fontSize: 14,
-                      ),
+  Widget _content(BuildContext context) {
+    final textStyle = Theme.of(context).textTheme.bodyMedium?.copyWith(fontSize: 14);
+    final synopsis = widget.synopsis!.trim();
+    final autoTranslate = context.select<PreferencesBloc?, bool>((bloc) =>
+        (bloc?.state ?? Preferences.current).general.autoTranslateSynopsis);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(5, 5, 5, 10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Center(
+            child: genresWidget(widget.genres ?? [], widget.category, context),
+          ),
+          const SizedBox(height: 5),
+          if (synopsis.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Text(
+                S.current.Synopsis_Empty,
+                style: textStyle?.copyWith(
+                  fontStyle: FontStyle.italic,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
-                const SizedBox(height: 5),
-                (widget.background == null || widget.background == "")
-                    ? Container()
-                    : Column(
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const SizedBox(
-                            height: 10,
-                          ),
-                          Text(
-                            Intl.message(
-                              'Background',
-                              name: 'Background',
-                              desc: '',
-                              args: [],
-                            ),
-                            textAlign: TextAlign.left,
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodyMedium
-                                ?.copyWith(
-                                  fontSize: 14,
-                                ),
-                          ),
-                          const SizedBox(height: 5),
-                          Text(
-                            widget.background ??
-                                Intl.message(
-                                  'None',
-                                  name: 'None',
-                                  desc: '',
-                                  args: [],
-                                ),
-                            textAlign: TextAlign.justify,
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodyMedium
-                                ?.copyWith(
-                                  fontSize: 14,
-                                ),
-                          )
-                        ],
-                      ),
-              ],
+              ),
+            )
+          else
+            TranslatorWidget(
+              content: synopsis,
+              autoTranslate: autoTranslate,
+              reversed: true,
+              translateLabel: S.current.Translate_Synopsis2,
+              originalLabel: S.current.Show_Original,
+              builder: (_, text) => SizedBox(
+                width: double.infinity,
+                child: Text(text, textAlign: TextAlign.justify, style: textStyle),
+              ),
             ),
+          if (_hasBackground) ...[
+            const SizedBox(height: 14),
+            Text(
+              S.current.Background,
+              style: textStyle?.copyWith(fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 5),
+            SizedBox(
+              width: double.infinity,
+              child: Text(
+                widget.background!,
+                textAlign: TextAlign.justify,
+                style: textStyle,
+              ),
+            ),
+          ],
+        ],
+      ),
     );
   }
 
@@ -170,32 +176,26 @@ class _SysonpsisWidgetState extends State<SysonpsisWidget>
   bool get wantKeepAlive => true;
 }
 
-class FadingEffect extends CustomPainter {
+class _FadePainter extends CustomPainter {
   final Color color;
   final int start;
   final int end;
-  final int extend;
 
-  FadingEffect({
-    required this.color,
-    required this.start,
-    required this.end,
-    this.extend = 0,
-  });
+  const _FadePainter({required this.color, required this.start, required this.end});
 
   @override
   void paint(Canvas canvas, Size size) {
+    final rect = Rect.fromLTWH(0, 0, size.width, size.height);
     final paint = Paint()
       ..shader = LinearGradient(
-        colors: [color.withOpacity(start / 255), color.withOpacity(end / 255)],
+        colors: [color.withValues(alpha: start / 255), color.withValues(alpha: end / 255)],
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
-      ).createShader(Rect.fromLTRB(0, 0, size.width, size.height + extend));
-    canvas.drawRect(Rect.fromLTRB(0, 0, size.width, size.height), paint);
+      ).createShader(rect);
+    canvas.drawRect(rect, paint);
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) {
-    return false;
-  }
+  bool shouldRepaint(_FadePainter old) =>
+      old.color != color || old.start != start || old.end != end;
 }

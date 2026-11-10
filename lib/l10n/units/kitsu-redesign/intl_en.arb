@@ -1,0 +1,183 @@
+{
+  "@@locale": "en",
+  "Kr_Rating_Awful": "Awful",
+  "Kr_Rating_Meh": "Meh",
+  "Kr_Rating_Good": "Good",
+  "Kr_Rating_Great": "Great",
+  "Kr_Rating_Stars": "{value} stars",
+  "@Kr_Rating_Stars": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "Kr_Rating_Points": "{value} out of 10",
+  "@Kr_Rating_Points": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "Kr_Rate_Title": "Your rating",
+  "Kr_Rate_Save": "Save rating",
+  "Kr_Rate_Remove": "Remove rating",
+  "Kr_Rate": "Rate",
+  "Kr_Completed_Rate": "Completed! Rate it",
+  "Kr_Save_Failed": "Couldn’t save on Kitsu",
+  "Kr_Load_Failed": "Couldn’t read your Kitsu library",
+  "Kr_Retry": "Retry",
+  "Kr_Remove_Title": "Remove from your library?",
+  "Kr_Remove_Body": "{title} and its progress, rating and notes will be removed from Kitsu.",
+  "@Kr_Remove_Body": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "Kr_Remove": "Remove",
+  "Kr_Episodes_Watched": "Episodes watched",
+  "Kr_Chapters_Read": "Chapters read",
+  "Kr_Minus_One": "One less",
+  "Kr_Plus_One": "+1",
+  "Kr_My_Rating": "My rating",
+  "Kr_Not_Rated": "Not rated",
+  "Kr_Rewatches": "Rewatches",
+  "Kr_Rereads": "Rereads",
+  "Kr_Started": "Started",
+  "Kr_Finished": "Finished",
+  "Kr_Notes": "Notes",
+  "Kr_Private": "Private",
+  "Kr_Add": "Add",
+  "Kr_Save": "Save",
+  "Kr_Add_To_Library": "Add to library",
+  "Kr_Ep_Of": "Ep {progress} / {total}",
+  "@Kr_Ep_Of": {
+    "placeholders": {
+      "progress": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "Kr_Ch_Of": "Ch {progress} / {total}",
+  "@Kr_Ch_Of": {
+    "placeholders": {
+      "progress": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "Kr_Ep_N": "Ep {progress}",
+  "@Kr_Ep_N": {
+    "placeholders": {
+      "progress": {
+        "type": "int"
+      }
+    }
+  },
+  "Kr_Ch_N": "Ch {progress}",
+  "@Kr_Ch_N": {
+    "placeholders": {
+      "progress": {
+        "type": "int"
+      }
+    }
+  },
+  "Kr_Edit_Entry": "Edit",
+  "Kr_Next_Release": "Next release: {when}",
+  "@Kr_Next_Release": {
+    "placeholders": {
+      "when": {
+        "type": "String"
+      }
+    }
+  },
+  "Kr_Next_Episode": "Episode {number}: {when}",
+  "@Kr_Next_Episode": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      },
+      "when": {
+        "type": "String"
+      }
+    }
+  },
+  "Kr_Next_Chapter": "Chapter {number}: {when}",
+  "@Kr_Next_Chapter": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      },
+      "when": {
+        "type": "String"
+      }
+    }
+  },
+  "Kr_Favourite": "Add to favourites",
+  "Kr_Unfavourite": "Remove from favourites",
+  "Kr_Progress_Back": "Set your progress back to {number}?",
+  "@Kr_Progress_Back": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "Kr_Confirm": "Confirm",
+  "Kr_Discussion": "Discussion",
+  "Kr_Unit_Discussion_Empty": "No one has posted about it yet",
+  "Kr_Watched_Up_To": "Watched up to here",
+  "Kr_Read_Up_To": "Read up to here",
+  "Kr_Watched": "Watched",
+  "Kr_Quick_Update": "Continue watching",
+  "Kr_Quick_Update_Manga": "Continue reading",
+  "Kr_Mark_Episode": "Episode {number}",
+  "@Kr_Mark_Episode": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "Kr_Mark_Chapter": "Chapter {number}",
+  "@Kr_Mark_Chapter": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "Kr_Complete": "Complete",
+  "Kr_Recent_Reactions": "Latest reactions",
+  "Kr_Reaction_Votes": "{count} upvotes",
+  "@Kr_Reaction_Votes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "Kr_Surprise_Planned": "From my Want to watch",
+  "Kr_Surprise_Planned_Manga": "From my Want to read",
+  "Kr_Planned_Empty": "Your Want to watch list is empty",
+  "Kr_Planned_Empty_Manga": "Your Want to read list is empty",
+  "Kr_Row_Airing_Followed": "Airing now, most followed",
+  "Kr_Row_Upcoming": "Upcoming",
+  "Kr_Community_Score": "{percent} community approval",
+  "@Kr_Community_Score": {
+    "placeholders": {
+      "percent": {
+        "type": "String"
+      }
+    }
+  }
+}

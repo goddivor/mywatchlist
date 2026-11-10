@@ -1,0 +1,8 @@
+{
+  "@@locale": "fr_FR",
+  "Mww_Poll_Vote": "Voter",
+  "Mww_Poll_Vote_Confirm": "Voter pour « {option} » ?",
+  "@Mww_Poll_Vote_Confirm": { "placeholders": { "option": { "type": "String" } } },
+  "Mww_Review_Write": "Écrire une critique",
+  "Mww_Recommend_Make": "Recommander un titre similaire"
+}

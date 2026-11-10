@@ -1,0 +1,6 @@
+{
+  "@@locale": "fr_FR",
+  "Seasonal_Group_All": "Tous ({count})",
+  "Seasonal_Group_New": "Nouveautés ({count})",
+  "Seasonal_Group_Continuing": "En cours ({count})"
+}

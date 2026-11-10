@@ -1,0 +1,11 @@
+{
+  "@@locale": "en",
+  "Exp_Genre_Count": "{count, plural, one{1 genre} other{{count} genres}}",
+  "@Exp_Genre_Count": { "placeholders": { "count": { "type": "int" } } },
+  "Exp_Genre_Titles": "{count} titles",
+  "@Exp_Genre_Titles": { "placeholders": { "count": { "type": "String" } } },
+  "Exp_Studios": "Studios",
+  "Exp_Studios_Caption": "Every anime studio, with its logo and its anime",
+  "Exp_Favorites": "{count, plural, one{Favorited by 1 person} other{Favorited by {count} people}}",
+  "@Exp_Favorites": { "placeholders": { "count": { "type": "int" } } }
+}

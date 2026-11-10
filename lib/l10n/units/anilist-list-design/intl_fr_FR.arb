@@ -1,0 +1,16 @@
+{
+  "@@locale": "fr_FR",
+  "Ald_Score_Stars": "{count} étoiles sur 5",
+  "Ald_Score_Face_Sad": "Ma note : je n’ai pas aimé",
+  "Ald_Score_Face_Neutral": "Ma note : c’était correct",
+  "Ald_Score_Face_Happy": "Ma note : j’ai aimé",
+  "Ald_My_Score": "Ma note : {score}",
+  "Ald_Average_Score": "Note moyenne {percent}",
+  "Ald_Notes": "Notes",
+  "Ald_Private": "Privé",
+  "Ald_Priority": "Priorité {value}",
+  "Ald_Airs_In": "Diffusion dans {time}",
+  "Ald_Complete_Title": "Marquer comme terminé ?",
+  "Ald_Complete_Yes": "Terminé",
+  "Ald_Complete_Only_Progress": "Seulement +1"
+}

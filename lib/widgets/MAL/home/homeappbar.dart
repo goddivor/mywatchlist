@@ -1,12 +1,26 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mywatchlist/constants/constants.dart';
+import 'package:mywatchlist/generated/l10n.dart';
+import 'package:mywatchlist/screens/mal_web/notifications_screen.dart' show MalNotificationsScreen;
+import 'package:mywatchlist/services/notifications/mal_hub.dart' show MalNotificationsHub;
 import 'package:mywatchlist/user/accounts/account_bloc.dart';
-import 'package:mywatchlist/user/accounts/models/account.dart';
-import 'package:mywatchlist/widgets/common/acc_widget.dart';
+import 'package:mywatchlist/user/trackers/models/tracker_model.dart';
+import 'package:mywatchlist/utils/app_routes.dart';
 import 'package:mywatchlist/widgets/common/avatar_widget.dart';
+import 'package:mywatchlist/widgets/home/account_switcher_sheet.dart';
+import 'package:mywatchlist/widgets/mal_web/notification_tiles.dart' show MalNotificationsBell;
 
-class AppBarHome extends StatefulWidget implements PreferredSizeWidget {
+/// The header of the home tabs: logo (or [titleWidget]), the shortcut buttons and the account
+/// avatar.
+///
+/// Every button works without a callback: search, bookmarks, calendar and settings open their
+/// screen through [AppRoutes]; pass an `on…Tap` only to do something else. The avatar opens the
+/// sidebar of the home shell; a long press (or the small switch badge) opens the account
+/// switcher as a bottom sheet.
+class AppBarHome extends StatelessWidget implements PreferredSizeWidget {
+  /// Called after another account became active from the switcher sheet.
   final VoidCallback? onUiChange;
   final Widget? titleWidget;
   final String? title;
@@ -14,11 +28,16 @@ class AppBarHome extends StatefulWidget implements PreferredSizeWidget {
   final bool showSearch;
   final bool showBookmarks;
   final bool showCalendar;
+  final bool showSettings;
+
+  /// The MyAnimeList notification bell (hidden for the other trackers).
+  final bool showNotifications;
   final bool transparent;
   final Color? backgroundColor;
   final VoidCallback? onSearchTap;
   final VoidCallback? onBookmarksTap;
   final VoidCallback? onCalendarTap;
+  final VoidCallback? onSettingsTap;
 
   const AppBarHome({
     super.key,
@@ -29,308 +48,234 @@ class AppBarHome extends StatefulWidget implements PreferredSizeWidget {
     this.showSearch = true,
     this.showBookmarks = true,
     this.showCalendar = true,
+    this.showSettings = false,
+    this.showNotifications = true,
     this.transparent = false,
     this.backgroundColor,
     this.onSearchTap,
     this.onBookmarksTap,
     this.onCalendarTap,
+    this.onSettingsTap,
   });
 
   @override
-  State<AppBarHome> createState() => _AppBarHomeState();
-
-  @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight + 8);
-}
-
-class _AppBarHomeState extends State<AppBarHome> with TickerProviderStateMixin {
-  late AnimationController _animationController;
-  late Animation<double> _fadeAnimation;
-
-  @override
-  void initState() {
-    super.initState();
-
-    _animationController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 500),
-    );
-
-    _fadeAnimation = CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeOut,
-    );
-
-    _animationController.forward();
-  }
-
-  @override
-  void dispose() {
-    _animationController.dispose();
-    super.dispose();
-  }
-
-  // Get color based on account type
-  Color _getAccountColor(AccountType type) {
-    switch (type) {
-      case AccountType.myanimelist:
-        return const Color(0xFF2E51A2); // MyAnimeList blue
-      case AccountType.anilist:
-        return const Color(0xFF02A9FF); // Anilist blue
-      case AccountType.kitsu:
-        return const Color(0xFFEF5D5D); // Kitsu red
-      case AccountType.simkl:
-        return const Color(0xFF343C42); // Simkl dark gray
-      default:
-        return Colors.grey; // Default color for no account
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<AccountBloc, AccountState>(
-      builder: (context, state) {
-        String? profileImageUrl;
-        AccountType currentAccountType = AccountType.none;
-        List<Account> accounts = [];
+    final theme = Theme.of(context);
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: transparent
+            ? Colors.transparent
+            : backgroundColor ?? theme.scaffoldBackgroundColor,
+      ),
+      child: SafeArea(
+        bottom: false,
+        child: SizedBox(
+          height: kToolbarHeight,
+          child: Padding(
+            padding: const EdgeInsetsDirectional.symmetric(horizontal: 16),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Align(
+                    alignment: AlignmentDirectional.centerStart,
+                    child: _buildTitle(context, theme),
+                  ),
+                ),
+                _buildActionButtons(context, theme),
+                if (showAvatar) ...[
+                  const SizedBox(width: 12),
+                  _AccountAvatar(onUiChange: onUiChange),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 
-        if (state is AccountLoaded) {
-          currentAccountType = state.selectedAccountType;
-          profileImageUrl = state.profileImageUrl;
-          accounts = state.availableAccounts;
-        }
+  Widget _buildTitle(BuildContext context, ThemeData theme) {
+    if (titleWidget != null) return titleWidget!;
+    if (title != null) {
+      return Text(title!, style: theme.textTheme.titleLarge, maxLines: 1, overflow: TextOverflow.ellipsis);
+    }
+    return CircleAvatar(
+      radius: 18,
+      backgroundImage: const AssetImage('assets/images/mwl-black-bg.png'),
+      backgroundColor: theme.colorScheme.surfaceContainerHighest,
+    );
+  }
 
-        return _buildAppBar(
-            context, profileImageUrl, currentAccountType, accounts);
+  Widget _buildActionButtons(BuildContext context, ThemeData theme) {
+    if (!(showSearch || showBookmarks || showCalendar || showSettings || showNotifications)) {
+      return const SizedBox.shrink();
+    }
+    final s = S.current;
+    // Plain icons like DailyAL's header (no container behind them).
+    return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (showSearch)
+              _BarButton(
+                icon: Icons.search_rounded,
+                tooltip: s.Hw_Search,
+                onTap: onSearchTap ?? () => AppRoutes.openSearch(context),
+              ),
+            if (showBookmarks)
+              _BarButton(
+                icon: Icons.bookmark_outline_rounded,
+                tooltip: s.Hw_Bookmarks,
+                onTap: onBookmarksTap ?? () => AppRoutes.openBookmarks(context),
+              ),
+            if (showCalendar)
+              _BarButton(
+                icon: Icons.calendar_today_outlined,
+                tooltip: s.Hw_Calendar,
+                onTap: onCalendarTap ?? () => AppRoutes.openCalendar(context),
+              ),
+            // The MyAnimeList hub: only when the active account is MyAnimeList.
+            if (showNotifications)
+              BlocSelector<AccountBloc, AccountState, bool>(
+                selector: (state) =>
+                    state is AccountLoaded && state.selectedAccountType == AccountType.myanimelist,
+                builder: (context, isMal) =>
+                    isMal ? const MalBellWithLabel() : const SizedBox.shrink(),
+              ),
+            if (showSettings)
+              _BarButton(
+                icon: Icons.settings_outlined,
+                tooltip: s.Hw_Settings,
+                onTap: onSettingsTap ?? () => AppRoutes.openSettings(context),
+              ),
+          ],
+    );
+  }
+}
+
+class _BarButton extends StatelessWidget {
+  final IconData icon;
+  final String tooltip;
+  final VoidCallback onTap;
+
+  const _BarButton({required this.icon, required this.tooltip, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      icon: Icon(icon, size: 20),
+      tooltip: tooltip,
+      onPressed: onTap,
+      color: Theme.of(context).colorScheme.onSurface,
+      visualDensity: VisualDensity.compact,
+      constraints: const BoxConstraints.tightFor(width: 44, height: 40),
+      padding: EdgeInsets.zero,
+    );
+  }
+}
+
+/// The account avatar: a tap opens the sidebar, a long press the account switcher sheet. The
+/// ring takes the colour of the active tracker; the badge shows that the account can be switched.
+class _AccountAvatar extends StatelessWidget {
+  final VoidCallback? onUiChange;
+
+  const _AccountAvatar({this.onUiChange});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return BlocSelector<AccountBloc, AccountState, ({AccountType type, String? image})>(
+      selector: (state) => state is AccountLoaded
+          ? (type: state.selectedAccountType, image: state.profileImageUrl)
+          : (type: AccountType.none, image: null),
+      builder: (context, account) {
+        final ring = TrackerInfo.of(account.type)?.color ?? scheme.outline;
+        void openSwitcher() => showAccountSwitcherSheet(context, onSwitched: onUiChange);
+        return Semantics(
+          button: true,
+          label: S.current.Hw_Menu_Tooltip,
+          onTap: () => AppRoutes.openSidebar(context),
+          onLongPress: openSwitcher,
+          customSemanticsActions: {
+            CustomSemanticsAction(label: S.current.Hw_Switch_Account): openSwitcher,
+          },
+          child: Tooltip(
+            message: S.current.Hw_Account_Tooltip,
+            excludeFromSemantics: true,
+            child: SizedBox(
+              width: 42,
+              height: 42,
+              child: Stack(
+                clipBehavior: Clip.none,
+                alignment: Alignment.center,
+                children: [
+                  ExcludeSemantics(
+                    child: AvatarWidget(
+                      url: account.image,
+                      isNetworkImage: account.image != null,
+                      height: 36,
+                      width: 36,
+                      borderColor: ring,
+                      borderWidth: 2,
+                      onTap: () => AppRoutes.openSidebar(context),
+                      onLongPress: openSwitcher,
+                    ),
+                  ),
+                  PositionedDirectional(
+                    end: -2,
+                    bottom: -2,
+                    child: ExcludeSemantics(
+                      child: GestureDetector(
+                        onTap: openSwitcher,
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            color: scheme.surfaceContainerHighest,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: scheme.surface, width: 1.5),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(2),
+                            child: Icon(Icons.swap_horiz_rounded,
+                                size: 12, color: scheme.onSurface),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
       },
     );
   }
+}
 
-  Widget _buildAppBar(BuildContext context, String? profileImageUrl,
-      AccountType currentAccountType, List<Account> accounts) {
-    final theme = Theme.of(context);
-    final effectiveColor = _getAccountColor(currentAccountType);
+/// The MAL bell with a spoken label that carries the count ("Notifications, 25 unread"):
+/// the badge alone would be read as a bare number.
+class MalBellWithLabel extends StatelessWidget {
+  const MalBellWithLabel({super.key});
 
-    return Container(
-      decoration: BoxDecoration(
-        color: widget.transparent
-            ? Colors.transparent
-            : widget.backgroundColor ?? theme.scaffoldBackgroundColor,
-        boxShadow: widget.transparent
-            ? null
-            : [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.04),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-      ),
-      child: SafeArea(
-        child: FadeTransition(
-          opacity: _fadeAnimation,
-          child: Container(
-            height: kToolbarHeight,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                // App logo or title
-                _buildTitle(theme),
-
-                // Actions
-                Row(
-                  children: [
-                    // Action buttons
-                    _buildActionButtons(theme),
-
-                    // Space between actions and avatar
-                    const SizedBox(width: 12),
-
-                    // User avatar
-                    if (widget.showAvatar)
-                      _buildAvatar(profileImageUrl, currentAccountType,
-                          accounts, effectiveColor),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTitle(ThemeData theme) {
-    if (widget.titleWidget != null) {
-      return widget.titleWidget!;
-    }
-
-    return Row(
-      children: [
-        Container(
-          height: 32,
-          width: 32,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                theme.colorScheme.primary,
-                theme.colorScheme.primary.withOpacity(0.7),
-              ],
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: theme.colorScheme.primary.withOpacity(0.3),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Center(
-            child: Text(
-              'M',
-              style: TextStyle(
-                color: theme.colorScheme.onPrimary,
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(width: 8),
-        Text(
-          widget.title ?? 'MyWatchList',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: theme.colorScheme.onBackground,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildActionButtons(ThemeData theme) {
-    final iconColor = theme.colorScheme.onBackground;
-
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 200),
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceVariant.withOpacity(0.3),
-        borderRadius: BorderRadius.circular(24),
-      ),
-      child: Row(
-        children: [
-          if (widget.showSearch)
-            _buildIconButton(
-              icon: Icons.search_rounded,
-              tooltip: 'Search',
-              onTap: widget.onSearchTap ?? () {},
-              iconColor: iconColor,
-              theme: theme,
-            ),
-          if (widget.showBookmarks)
-            _buildIconButton(
-              icon: Icons.bookmark_outline_rounded,
-              tooltip: 'Bookmarks',
-              onTap: widget.onBookmarksTap ?? () {},
-              iconColor: iconColor,
-              theme: theme,
-            ),
-          if (widget.showCalendar)
-            _buildIconButton(
-              icon: Icons.calendar_today_outlined,
-              tooltip: 'Calendar',
-              onTap: widget.onCalendarTap ?? () {},
-              iconColor: iconColor,
-              theme: theme,
-            ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildIconButton({
-    required IconData icon,
-    required String tooltip,
-    required VoidCallback onTap,
-    required Color iconColor,
-    required ThemeData theme,
-  }) {
-    return Tooltip(
-      message: tooltip,
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(20),
-          child: Container(
-            padding: const EdgeInsets.all(8),
-            child: Icon(
-              icon,
-              size: 20,
-              color: iconColor,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildAvatar(
-    String? profileImageUrl,
-    AccountType currentAccountType,
-    List<Account> accounts,
-    Color effectiveColor,
-  ) {
-    // Generate a placeholder URL if profileImageUrl is null
-    final imageUrl = profileImageUrl ??
-        'https://cdn-icons-png.flaticon.com/512/4140/4140037.png';
-
-    return Container(
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        boxShadow: [
-          BoxShadow(
-            color: effectiveColor.withOpacity(0.2),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: AvatarWidget(
-        url: imageUrl,
-        height: 36,
-        width: 36,
-        borderColor: effectiveColor,
-        borderWidth: 2,
-        onTap: () => _showAccountSelectionModal(
-          context,
-          currentAccountType,
-          accounts,
-        ),
-      ),
-    );
-  }
-
-  void _showAccountSelectionModal(BuildContext context,
-      AccountType currentAccountType, List<Account> accounts) {
-    showDialog(
-      context: context,
-      builder: (context) => AccountModal(
-        currentAccountType: currentAccountType,
-        accounts: accounts,
-        onAccountChanged: (AccountType newAccountType) {
-          context.read<AccountBloc>().add(ChangeAccountEvent(newAccountType));
-          if (widget.onUiChange != null) {
-            widget.onUiChange!();
-          }
-        },
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<int>(
+      valueListenable: MalNotificationsHub.instance.unread,
+      child: const MalNotificationsBell(),
+      builder: (context, count, bell) => Semantics(
+        container: true,
+        button: true,
+        excludeSemantics: true,
+        label: bellSemanticsLabel(count),
+        onTap: () => MalNotificationsScreen.open(context),
+        child: bell,
       ),
     );
   }
 }
+
+/// What a screen reader says for the bell with [unread] notifications.
+String bellSemanticsLabel(int unread) =>
+    unread > 0 ? S.current.Mpl_Bell_Unread(unread) : S.current.Mn_Title;

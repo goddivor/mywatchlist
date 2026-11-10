@@ -1,0 +1,97 @@
+{
+ "data": {
+  "currentProfile": {
+   "library": {
+    "current": {
+     "nodes": [
+      {
+       "id": "100072751",
+       "status": "CURRENT",
+       "progress": 3,
+       "rating": null,
+       "reconsumeCount": 0,
+       "reconsuming": false,
+       "private": false,
+       "notes": null,
+       "startedAt": "2024-04-07T13:30:01Z",
+       "finishedAt": null,
+       "nextUnit": {
+        "id": "307637",
+        "number": 4,
+        "titles": {
+         "canonical": "Divine Punishment for This Handsome Gentleman Thief!"
+        },
+        "thumbnail": {
+         "original": {
+          "url": "https://media.kitsu.app/episode/307637/thumbnail/16629d9480db868180fa3ad334cf19e0.jpg",
+          "width": 1920,
+          "height": 1080
+         }
+        }
+       },
+       "media": {
+        "__typename": "Anime",
+        "id": "44911",
+        "slug": "kono-subarashii-sekai-ni-shukufuku-wo-3",
+        "titles": {
+         "canonical": "Kono Subarashii Sekai ni Shukufuku wo! 3"
+        },
+        "posterImage": {
+         "original": {
+          "url": "https://media.kitsu.app/anime/44911/poster_image/04af94f3b0c7fe47f1a28c5d45737fe1.jpg",
+          "width": 400,
+          "height": 567
+         }
+        },
+        "bannerImage": {
+         "original": {
+          "url": "https://media.kitsu.app/anime/44911/cover_image/3fe2121c534ee19d0a63d2e27356dd8c.jpg",
+          "width": 1500,
+          "height": 570
+         }
+        },
+        "episodeCount": 11
+       }
+      },
+      {
+       "id": "100102361",
+       "status": "CURRENT",
+       "progress": 3,
+       "rating": null,
+       "reconsumeCount": 0,
+       "reconsuming": false,
+       "private": false,
+       "notes": null,
+       "startedAt": "2024-04-08T20:02:51Z",
+       "finishedAt": null,
+       "nextUnit": null,
+       "media": {
+        "__typename": "Anime",
+        "id": "47694",
+        "slug": "Mushoku-Tensei-Isekai-Ittara-Honki-Dasu-Season-2-Part-2",
+        "titles": {
+         "canonical": "Mushoku Tensei II: Isekai Ittara Honki Dasu Part 2"
+        },
+        "posterImage": {
+         "original": {
+          "url": "https://media.kitsu.app/anime/47694/poster_image/77936fa66d283d088a1b117b528283dc.jpg",
+          "width": 2000,
+          "height": 2790
+         }
+        },
+        "bannerImage": {
+         "original": {
+          "url": "https://media.kitsu.app/anime/47694/cover_image/5b30bac99ca6264a4a5c7b1bac2c83d7.jpg",
+          "width": 1000,
+          "height": 320
+         }
+        },
+        "episodeCount": 12
+       }
+      }
+     ]
+    }
+   }
+  }
+ }
+}

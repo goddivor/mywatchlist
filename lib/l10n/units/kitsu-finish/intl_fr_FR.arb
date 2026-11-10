@@ -1,0 +1,13 @@
+{
+  "@@locale": "fr_FR",
+  "Kf_Follow": "Suivre",
+  "Kf_Following_Button": "Abonné",
+  "Kf_Follow_Failed": "Impossible de mettre à jour l’abonnement. Réessayez.",
+  "Kf_Tab_Groups": "Groupes",
+  "Kf_Groups_Empty": "Aucun groupe pour l’instant",
+  "Kf_Library_Count": "{count, plural, =1{1 titre dans la bibliothèque} other{{count} titres dans la bibliothèque}}",
+  "Kf_Sync_Rating_Simple": "Note (4 niveaux)",
+  "Kf_Sync_Rating_Regular": "Note (étoiles)",
+  "Kf_Sync_Rating_Advanced": "Note (sur 10)",
+  "Kf_Sync_Rating_None": "Sans note"
+}

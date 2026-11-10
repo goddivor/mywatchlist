@@ -3,7 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:mywatchlist/constants/constants.dart';
 import 'package:mywatchlist/main.dart';
-import 'package:mywatchlist/user/user.dart';
+import 'package:mywatchlist/user/base_user.dart' show AuthStatus;
 import 'package:mywatchlist/widgets/MAL/home/accordion.dart';
 
 class OptionTile extends StatelessWidget {
@@ -36,7 +36,9 @@ class OptionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return (!authOnly || usermal.status == AuthStatus.AUTHENTICATED)
+    // Check if any tracker is authenticated when authOnly is true
+    final isAuthenticated = userManager.currentUser?.status == AuthStatus.AUTHENTICATED;
+    return (!authOnly || isAuthenticated)
         ? ListTile(
             onTap: onPressed,
             horizontalTitleGap: smallTiles ? 10.0 : 20.0,

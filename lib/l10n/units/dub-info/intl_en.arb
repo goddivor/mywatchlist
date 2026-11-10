@@ -1,0 +1,65 @@
+{
+  "@@locale": "en",
+  "Dub_Status_Full": "Fully dubbed",
+  "Dub_Status_Partial": "Partially dubbed",
+  "Dub_Sources": "{count, plural, =1{1 source} other{{count} sources}}",
+  "@Dub_Sources": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "Dub_Sources_Desc": "Fewer sources show more titles, more sources show fewer but surer ones",
+  "Dub_Sec_Display": "Icon",
+  "Dub_Sec_Data": "Dub data",
+  "Dub_Sec_Links": "MyDubList",
+  "Dub_Data_Loading": "Loading dub data...",
+  "Dub_Data_Ready": "{count, plural, =0{No title listed for this language} =1{1 title listed} other{{count} titles listed}}",
+  "@Dub_Data_Ready": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "Dub_Data_Failed": "Could not reach MyDubList. Check your connection and try again.",
+  "Dub_Data_Idle": "Dub data loads when a card needs it",
+  "Dub_Retry": "Retry",
+  "Dub_Link_Failed": "Could not open the link",
+  "Dub_Style_N": "Style {number}",
+  "@Dub_Style_N": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "Dub_Source_Credit": "Dub data comes from the MyDubList project.",
+  "Dub_Lang_English": "English",
+  "Dub_Lang_Spanish": "Spanish",
+  "Dub_Lang_German": "German",
+  "Dub_Lang_French": "French",
+  "Dub_Lang_Italian": "Italian",
+  "Dub_Lang_Portuguese": "Portuguese",
+  "Dub_Lang_Korean": "Korean",
+  "Dub_Lang_Tagalog": "Tagalog",
+  "Dub_Lang_Chinese": "Chinese",
+  "Dub_Lang_Arabic": "Arabic",
+  "Dub_Lang_Polish": "Polish",
+  "Dub_Lang_Hungarian": "Hungarian",
+  "Dub_Lang_Swedish": "Swedish",
+  "Dub_Lang_Norwegian": "Norwegian",
+  "Dub_Lang_Hebrew": "Hebrew",
+  "Dub_Lang_Dutch": "Dutch",
+  "Dub_Lang_Russian": "Russian",
+  "Dub_Lang_Indonesian": "Indonesian",
+  "Dub_Lang_Danish": "Danish",
+  "Dub_Lang_Thai": "Thai",
+  "Dub_Lang_Hindi": "Hindi",
+  "Dub_Lang_Finnish": "Finnish",
+  "Dub_Lang_Turkish": "Turkish",
+  "Dub_Lang_Catalan": "Catalan",
+  "Dub_Lang_Vietnamese": "Vietnamese",
+  "Dub_Lang_Lithuanian": "Lithuanian"
+}

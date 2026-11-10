@@ -1,129 +1,142 @@
-// Evénements BLoC
 import 'package:equatable/equatable.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mywatchlist/cache/cachemanager.dart';
 import 'package:mywatchlist/enums.dart';
 import 'package:mywatchlist/services/api/Jikan/jikan_api.dart';
 import 'package:mywatchlist/services/api/MAL/mal_anime.dart';
 import 'package:mywatchlist/services/api/MAL/mal_api.dart';
 import 'package:mywatchlist/services/api/MAL/scrapper/mal_scrapper.dart';
+import 'package:mywatchlist/user/MAL/mal_home_page_preferences.dart';
 
 abstract class RequestsEvent extends Equatable {
+  final bool forceUpdate;
+  final int cacheDurationHours;
+  const RequestsEvent({this.forceUpdate = false, this.cacheDurationHours = 2});
+
   @override
-  List<Object?> get props => [];
+  List<Object?> get props => [forceUpdate, cacheDurationHours];
 }
 
-class LoadNewsEvent extends RequestsEvent {}
+class LoadNewsEvent extends RequestsEvent {
+  const LoadNewsEvent({super.forceUpdate, super.cacheDurationHours = 8});
+}
 
-class LoadSeasonNowEvent extends RequestsEvent {}
+class LoadFeaturesEvent extends RequestsEvent {
+  const LoadFeaturesEvent({super.forceUpdate, super.cacheDurationHours = 8});
+}
 
-class LoadUpcomingAnimeEvent extends RequestsEvent {}
+/// Loads the anime or manga cards of a home row ([SectionType.isContentRow]): the current season,
+/// the suggestions or a MAL ranking, [limit] items (the largest item count among the enabled
+/// sections of that kind).
+class LoadHomeRowEvent extends RequestsEvent {
+  final SectionType type;
+  final int limit;
 
-class LoadTopAnimeFavoriteEvent extends RequestsEvent {}
+  const LoadHomeRowEvent(
+    this.type, {
+    this.limit = 15,
+    super.forceUpdate,
+    super.cacheDurationHours,
+  });
 
-class LoadTopAnimeByPopularityEvent extends RequestsEvent {}
+  @override
+  List<Object?> get props => [type, limit, ...super.props];
+}
 
-class LoadTopAnimeByScoreEvent extends RequestsEvent {}
-
-class LoadSuggestedAnimeEvent extends RequestsEvent {}
-
-// États BLoC
 class RequestsState extends Equatable {
   final List<Map<String, String>> news;
-  final List<Anime> seasonNow;
-  final List<Anime> upcomingAnime;
-  final List<Anime> topAnimeFavorite;
-  final List<Anime> topAnimeByPopularity;
-  final List<Anime> topAnimeByScore;
-  final List<Anime> suggestedAnime;
-
+  final List<Map<String, String>> features;
   final bool isNewsLoaded;
-  final bool isSeasonNowLoaded;
-  final bool isUpcomingAnimeLoaded;
-  final bool isTopAnimeFavoriteLoaded;
-  final bool isTopAnimeByPopularityLoaded;
-  final bool isTopAnimeByScoreLoaded;
-  final bool isSuggestedAnimeLoaded;
+  final bool isFeaturesLoaded;
+  final bool isNewsFailed;
+  final bool isFeaturesFailed;
+
+  /// The cards of each loaded home row.
+  final Map<SectionType, List<Anime>> rows;
+
+  /// The rows whose last load failed with nothing cached.
+  final Set<SectionType> failedRows;
 
   const RequestsState({
     this.news = const [],
-    this.seasonNow = const [],
-    this.upcomingAnime = const [],
-    this.topAnimeFavorite = const [],
-    this.topAnimeByPopularity = const [],
-    this.topAnimeByScore = const [],
-    this.suggestedAnime = const [],
+    this.features = const [],
     this.isNewsLoaded = false,
-    this.isSeasonNowLoaded = false,
-    this.isUpcomingAnimeLoaded = false,
-    this.isTopAnimeFavoriteLoaded = false,
-    this.isTopAnimeByPopularityLoaded = false,
-    this.isTopAnimeByScoreLoaded = false,
-    this.isSuggestedAnimeLoaded = false,
+    this.isFeaturesLoaded = false,
+    this.isNewsFailed = false,
+    this.isFeaturesFailed = false,
+    this.rows = const {},
+    this.failedRows = const {},
   });
+
+  bool isRowLoaded(SectionType type) => rows.containsKey(type);
+  bool isRowFailed(SectionType type) => failedRows.contains(type);
+  List<Anime> row(SectionType type) => rows[type] ?? const [];
 
   RequestsState copyWith({
     List<Map<String, String>>? news,
-    List<Anime>? seasonNow,
-    List<Anime>? upcomingAnime,
-    List<Anime>? topAnimeFavorite,
-    List<Anime>? topAnimeByPopularity,
-    List<Anime>? topAnimeByScore,
-    List<Anime>? suggestedAnime,
+    List<Map<String, String>>? features,
     bool? isNewsLoaded,
-    bool? isSeasonNowLoaded,
-    bool? isUpcomingAnimeLoaded,
-    bool? isTopAnimeFavoriteLoaded,
-    bool? isTopAnimeByPopularityLoaded,
-    bool? isTopAnimeByScoreLoaded,
-    bool? isSuggestedAnimeLoaded,
+    bool? isFeaturesLoaded,
+    bool? isNewsFailed,
+    bool? isFeaturesFailed,
+    Map<SectionType, List<Anime>>? rows,
+    Set<SectionType>? failedRows,
   }) {
     return RequestsState(
       news: news ?? this.news,
-      seasonNow: seasonNow ?? this.seasonNow,
-      upcomingAnime: upcomingAnime ?? this.upcomingAnime,
-      topAnimeFavorite: topAnimeFavorite ?? this.topAnimeFavorite,
-      topAnimeByPopularity: topAnimeByPopularity ?? this.topAnimeByPopularity,
-      topAnimeByScore: topAnimeByScore ?? this.topAnimeByScore,
-      suggestedAnime: suggestedAnime ?? this.suggestedAnime,
+      features: features ?? this.features,
       isNewsLoaded: isNewsLoaded ?? this.isNewsLoaded,
-      isSeasonNowLoaded: isSeasonNowLoaded ?? this.isSeasonNowLoaded,
-      isUpcomingAnimeLoaded:
-          isUpcomingAnimeLoaded ?? this.isUpcomingAnimeLoaded,
-      isTopAnimeFavoriteLoaded:
-          isTopAnimeFavoriteLoaded ?? this.isTopAnimeFavoriteLoaded,
-      isTopAnimeByPopularityLoaded:
-          isTopAnimeByPopularityLoaded ?? this.isTopAnimeByPopularityLoaded,
-      isTopAnimeByScoreLoaded:
-          isTopAnimeByScoreLoaded ?? this.isTopAnimeByScoreLoaded,
-      isSuggestedAnimeLoaded:
-          isSuggestedAnimeLoaded ?? this.isSuggestedAnimeLoaded,
+      isFeaturesLoaded: isFeaturesLoaded ?? this.isFeaturesLoaded,
+      isNewsFailed: isNewsFailed ?? this.isNewsFailed,
+      isFeaturesFailed: isFeaturesFailed ?? this.isFeaturesFailed,
+      rows: rows ?? this.rows,
+      failedRows: failedRows ?? this.failedRows,
     );
   }
+
+  /// This state with [items] as the cards of [type].
+  RequestsState withRow(SectionType type, List<Anime> items) => copyWith(
+        rows: {...rows, type: items},
+        failedRows: {...failedRows}..remove(type),
+      );
+
+  /// This state with [type] marked failed (its previous cards, if any, stay shown).
+  RequestsState withRowFailed(SectionType type) =>
+      copyWith(failedRows: {...failedRows, type});
 
   @override
   List<Object?> get props => [
         news,
-        seasonNow,
-        upcomingAnime,
-        topAnimeFavorite,
-        topAnimeByPopularity,
-        topAnimeByScore,
-        suggestedAnime,
+        features,
         isNewsLoaded,
-        isSeasonNowLoaded,
-        isUpcomingAnimeLoaded,
-        isTopAnimeFavoriteLoaded,
-        isTopAnimeByPopularityLoaded,
-        isTopAnimeByScoreLoaded,
-        isSuggestedAnimeLoaded,
+        isFeaturesLoaded,
+        isNewsFailed,
+        isFeaturesFailed,
+        rows,
+        failedRows,
       ];
 }
 
-// Bloc de gestion des requêtes
+/// The shared requests of the MAL home page: news, featured articles and the content rows.
 class RequestsBloc extends Bloc<RequestsEvent, RequestsState> {
   final MalScraper malScraper;
   final JikanApi jikanApi;
   final MalApi malApi;
+  final CacheManager _cache = CacheManager.instance;
+
+  // Fallback expiry: 7 days in seconds (for offline mode)
+  static const int _fallbackExpiry = 7 * 24 * 3600;
+
+  /// The item count each row holds (or is fetching): a row is fetched again only when a section
+  /// asks for more, or on a forced refresh.
+  final Map<SectionType, int> _rowLimits = {};
+
+  /// Rows being fetched, with the item count asked.
+  final Map<SectionType, int> _inFlight = {};
+
+  bool _newsInFlight = false;
+  bool _featuresInFlight = false;
 
   RequestsBloc({
     required this.malScraper,
@@ -131,108 +144,195 @@ class RequestsBloc extends Bloc<RequestsEvent, RequestsState> {
     required this.malApi,
   }) : super(const RequestsState()) {
     on<LoadNewsEvent>(_onLoadNews);
-    on<LoadSeasonNowEvent>(_onLoadSeasonNow);
-    on<LoadUpcomingAnimeEvent>(_onLoadUpcomingAnime);
-    on<LoadTopAnimeFavoriteEvent>(_onLoadTopAnimeFavorite);
-    on<LoadTopAnimeByPopularityEvent>(_onLoadTopAnimeByPopularity);
-    on<LoadTopAnimeByScoreEvent>(_onLoadTopAnimeByScore);
-    on<LoadSuggestedAnimeEvent>(_onLoadSuggestedAnime);
+    on<LoadFeaturesEvent>(_onLoadFeatures);
+    on<LoadHomeRowEvent>(_onLoadHomeRow);
+  }
+
+  /// The cache key of a row: the item count is part of it, so a longer row is never served from
+  /// the cache of a shorter one.
+  @visibleForTesting
+  static String rowCacheKey(SectionType type, int limit) {
+    final anime = type.animeRanking;
+    final manga = type.mangaRanking;
+    final base = switch (type) {
+      SectionType.seasonNow => 'seasonNow',
+      SectionType.suggested => 'suggested',
+      SectionType.upcoming => 'upcoming',
+      _ when anime != null => 'topAnime-${rankingMap[anime]}',
+      _ when manga != null => 'topManga-${mangaRankingMap[manga]}',
+      _ => type.name,
+    };
+    return '$base@$limit';
+  }
+
+  /// The MAL request behind [type].
+  static Future<List<Anime>> _fetchRow(SectionType type, int limit) {
+    if (type == SectionType.seasonNow) {
+      return MalApi.getAnimeSeasonal(
+          MalApi.getSeasonType(), MalApi.getCurrentSeasonYear(),
+          sortType: SortType.AnimeNumListUsers, limit: limit);
+    }
+    if (type == SectionType.suggested) {
+      return MalApi.getContentSuggestions(limit: limit);
+    }
+    final anime = type.animeRanking;
+    if (anime != null) return MalApi.getContentRanking(anime, limit: limit);
+    final manga = type.mangaRanking;
+    if (manga != null) {
+      return MalApi.getContentRanking(manga, limit: limit, category: 'manga');
+    }
+    throw ArgumentError.value(type, 'type', 'not a content row');
+  }
+
+  Future<void> _onLoadHomeRow(
+      LoadHomeRowEvent event, Emitter<RequestsState> emit) async {
+    final type = event.type;
+    if (!type.isContentRow) return;
+    final limit = event.limit.clamp(1, kHomeRowMaxItems);
+
+    final inFlight = _inFlight[type];
+    if (!event.forceUpdate && inFlight != null && inFlight >= limit) return;
+    if (!event.forceUpdate &&
+        state.isRowLoaded(type) &&
+        (_rowLimits[type] ?? 0) >= limit) {
+      return;
+    }
+
+    final cacheKey = rowCacheKey(type, limit);
+    _inFlight[type] = limit;
+    // A request for more items started meanwhile: its result wins.
+    bool superseded() => (_inFlight[type] ?? 0) > limit;
+    void show(List<Anime> items) {
+      if (superseded()) return;
+      _rowLimits[type] = limit;
+      emit(state.withRow(type, items));
+    }
+
+    try {
+      if (!event.forceUpdate) {
+        final cached = await _cache.getCachedAnimeList(
+            cacheKey, event.cacheDurationHours * 3600);
+        if (cached != null) {
+          debugPrint('📦 Cache hit: $cacheKey');
+          show(cached);
+          return;
+        }
+      }
+
+      try {
+        debugPrint('🌐 API call: $cacheKey');
+        final items = await _fetchRow(type, limit);
+        show(items);
+        await _cache.cacheAnimeList(cacheKey, items);
+      } catch (e) {
+        debugPrint('❌ Error loading $cacheKey: $e');
+        final fallback =
+            await _cache.getCachedAnimeList(cacheKey, _fallbackExpiry);
+        if (fallback != null) {
+          debugPrint('📦 Offline fallback: $cacheKey');
+          show(fallback);
+        } else if (!superseded()) {
+          emit(state.withRowFailed(type));
+        }
+      }
+    } finally {
+      if (_inFlight[type] == limit) _inFlight.remove(type);
+    }
   }
 
   Future<List<Map<String, String>>> getNewsorFeaturedList() async {
     Map<String, dynamic>? data = await malScraper.getAnimeNews();
-    if (data == null) return [];
+    return _articles(data);
+  }
 
-    List<dynamic> newsorfeaturedList = data['newsorfeatured'] ?? [];
-    List<Map<String, String>> formattedList = newsorfeaturedList
+  Future<List<Map<String, String>>> getFeaturedList() async {
+    Map<String, dynamic>? data = await malScraper.getAnimeFeatured();
+    return _articles(data);
+  }
+
+  static List<Map<String, String>> _articles(Map<String, dynamic>? data) {
+    if (data == null) return [];
+    final List<dynamic> list = data['newsorfeatured'] ?? [];
+    return list
         .map((item) => (item as Map<String, dynamic>).map(
               (key, value) => MapEntry(key, value.toString()),
             ))
         .toList()
         .cast<Map<String, String>>();
+  }
 
-    return formattedList;
+  Future<void> _onLoadFeatures(
+      LoadFeaturesEvent event, Emitter<RequestsState> emit) async {
+    if (_featuresInFlight) return;
+    if (!event.forceUpdate && state.isFeaturesLoaded) return;
+    const cacheKey = 'features';
+    _featuresInFlight = true;
+    try {
+      if (!event.forceUpdate) {
+        final cached = await _cache.getCachedNewsList(
+            cacheKey, event.cacheDurationHours * 3600);
+        if (cached != null) {
+          debugPrint('📦 Cache hit: $cacheKey');
+          emit(state.copyWith(
+              features: cached, isFeaturesLoaded: true, isFeaturesFailed: false));
+          return;
+        }
+      }
+      try {
+        debugPrint('🌐 API call: $cacheKey');
+        final features = await getFeaturedList();
+        emit(state.copyWith(
+            features: features, isFeaturesLoaded: true, isFeaturesFailed: false));
+        await _cache.cacheNewsList(cacheKey, features);
+      } catch (e) {
+        final fallback =
+            await _cache.getCachedNewsList(cacheKey, _fallbackExpiry);
+        if (fallback != null) {
+          debugPrint('📦 Offline fallback: $cacheKey');
+          emit(state.copyWith(
+              features: fallback, isFeaturesLoaded: true, isFeaturesFailed: false));
+        } else {
+          emit(state.copyWith(isFeaturesFailed: true));
+        }
+      }
+    } finally {
+      _featuresInFlight = false;
+    }
   }
 
   Future<void> _onLoadNews(
       LoadNewsEvent event, Emitter<RequestsState> emit) async {
+    if (_newsInFlight) return;
+    if (!event.forceUpdate && state.isNewsLoaded) return;
+    const cacheKey = 'news';
+    _newsInFlight = true;
     try {
-      final news = await getNewsorFeaturedList();
-      emit(state.copyWith(news: news, isNewsLoaded: true));
-    } catch (e) {
-      emit(state.copyWith(isNewsLoaded: false));
-    }
-  }
-
-  Future<void> _onLoadSeasonNow(
-      LoadSeasonNowEvent event, Emitter<RequestsState> emit) async {
-    try {
-      final seasonNow = await MalApi.getAnimeSeasonal(
-          MalApi.getSeasonType(), MalApi.getCurrentSeasonYear(),sortType: SortType.AnimeScore,
-          limit: 15);
-      emit(state.copyWith(seasonNow: seasonNow, isSeasonNowLoaded: true));
-    } catch (e) {
-      emit(state.copyWith(isSeasonNowLoaded: false));
-    }
-  }
-
-  Future<void> _onLoadUpcomingAnime(
-      LoadUpcomingAnimeEvent event, Emitter<RequestsState> emit) async {
-    try {
-      final upcomingAnime =
-          await MalApi.getContentRanking(RankingType.UPCOMING, limit: 15);
-      emit(state.copyWith(
-          upcomingAnime: upcomingAnime, isUpcomingAnimeLoaded: true));
-    } catch (e) {
-      emit(state.copyWith(isUpcomingAnimeLoaded: false));
-    }
-  }
-
-  Future<void> _onLoadTopAnimeFavorite(
-      LoadTopAnimeFavoriteEvent event, Emitter<RequestsState> emit) async {
-    try {
-      final topAnimeFavorite =
-          await MalApi.getContentRanking(RankingType.FAVOURITE, limit: 15);
-      emit(state.copyWith(
-          topAnimeFavorite: topAnimeFavorite, isTopAnimeFavoriteLoaded: true));
-    } catch (e) {
-      emit(state.copyWith(isTopAnimeFavoriteLoaded: false));
-    }
-  }
-
-  Future<void> _onLoadTopAnimeByPopularity(
-      LoadTopAnimeByPopularityEvent event, Emitter<RequestsState> emit) async {
-    try {
-      final topAnimeByPopularity =
-          await MalApi.getContentRanking(RankingType.BYPOPULARITY, limit: 15);
-      emit(state.copyWith(
-          topAnimeByPopularity: topAnimeByPopularity,
-          isTopAnimeByPopularityLoaded: true));
-    } catch (e) {
-      emit(state.copyWith(isTopAnimeByPopularityLoaded: false));
-    }
-  }
-
-  Future<void> _onLoadTopAnimeByScore(
-      LoadTopAnimeByScoreEvent event, Emitter<RequestsState> emit) async {
-    try {
-      final topAnimeByScore =
-          await MalApi.getContentRanking(RankingType.ALL, limit: 15);
-      emit(state.copyWith(
-          topAnimeByScore: topAnimeByScore, isTopAnimeByScoreLoaded: true));
-    } catch (e) {
-      emit(state.copyWith(isTopAnimeByScoreLoaded: false));
-    }
-  }
-
-  Future<void> _onLoadSuggestedAnime(
-      LoadSuggestedAnimeEvent event, Emitter<RequestsState> emit) async {
-    try {
-      final suggestedAnime = await MalApi.getContentSuggestions(limit: 15);
-      emit(state.copyWith(
-          suggestedAnime: suggestedAnime, isSuggestedAnimeLoaded: true));
-    } catch (e) {
-      emit(state.copyWith(isSuggestedAnimeLoaded: false));
+      if (!event.forceUpdate) {
+        final cached = await _cache.getCachedNewsList(
+            cacheKey, event.cacheDurationHours * 3600);
+        if (cached != null) {
+          debugPrint('📦 Cache hit: $cacheKey');
+          emit(state.copyWith(news: cached, isNewsLoaded: true, isNewsFailed: false));
+          return;
+        }
+      }
+      try {
+        debugPrint('🌐 API call: $cacheKey');
+        final news = await getNewsorFeaturedList();
+        emit(state.copyWith(news: news, isNewsLoaded: true, isNewsFailed: false));
+        await _cache.cacheNewsList(cacheKey, news);
+      } catch (e) {
+        final fallback =
+            await _cache.getCachedNewsList(cacheKey, _fallbackExpiry);
+        if (fallback != null) {
+          debugPrint('📦 Offline fallback: $cacheKey');
+          emit(state.copyWith(news: fallback, isNewsLoaded: true, isNewsFailed: false));
+        } else {
+          emit(state.copyWith(isNewsFailed: true));
+        }
+      }
+    } finally {
+      _newsInFlight = false;
     }
   }
 }

@@ -1,0 +1,36 @@
+[
+ {
+  "title": "Cruelty",
+  "description": "It is the Taisho Period. Tanjiro Kamado is living a modest but blissful life in the mountains with his family. One day, when he returns from selling charcoal in town, he finds his family slaughtered in pools of blood after a demon attack.",
+  "runtime": 25,
+  "episode": 1,
+  "type": "episode",
+  "aired": true,
+  "img": "83/8351897a97a89d0e7",
+  "date": "2019-04-06T23:30:00+09:00",
+  "ids": {
+   "simkl_id": 4170591
+  },
+  "tvdb": {
+   "season": 1,
+   "episode": 1
+  }
+ },
+ {
+  "title": "Trainer Sakonji Urokodaki",
+  "description": "Tanjiro encounters a man named Giyu Tomioka who recommends he learn from a man named Sakonji Urokodaki.",
+  "runtime": 25,
+  "episode": 2,
+  "type": "episode",
+  "aired": true,
+  "img": "83/8362c0d76f3a3a7f",
+  "date": "2019-04-13T23:30:00+09:00",
+  "ids": {
+   "simkl_id": 4170593
+  },
+  "tvdb": {
+   "season": 1,
+   "episode": 2
+  }
+ }
+]

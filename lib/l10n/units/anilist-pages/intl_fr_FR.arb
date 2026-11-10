@@ -1,0 +1,51 @@
+{
+  "@@locale": "fr_FR",
+  "Al_Episode_Short": "Ép. {n}",
+  "@Al_Episode_Short": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "Al_Replies": "{count, plural, =1{1 réponse} other{{count} réponses}}",
+  "@Al_Replies": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "Al_Views": "{count, plural, =1{1 vue} other{{count} vues}}",
+  "@Al_Views": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "Al_Search_Hint": "Rechercher un anime ou un manga sur AniList",
+  "Al_Search_Prompt": "Saisissez un titre pour chercher sur AniList",
+  "Al_No_Results": "Aucun résultat",
+  "Al_Load_Failed": "Impossible de charger cette page",
+  "Al_Retry": "Réessayer",
+  "Al_Sec_Trending": "Tendances du moment",
+  "Al_Sec_Airing_Soon": "Diffusés dans les 24 prochaines heures",
+  "Al_Sec_Publishing": "En cours de publication",
+  "Al_Sign_In_List": "Connectez-vous à AniList pour voir votre liste ici",
+  "Al_Sign_In": "Se connecter",
+  "Al_Sign_In_Again": "Se reconnecter",
+  "Al_Session_Expired": "Votre session AniList a expiré",
+  "Al_Session_Expired_Hint": "Reconnectez-vous pour voir et modifier votre liste.",
+  "Al_List_Sign_In_Title": "Votre liste vit ici",
+  "Al_List_Sign_In_Hint": "Connectez-vous avec AniList pour voir et modifier vos listes d’anime et de manga.",
+  "Al_Profile_Sign_In_Body": "Connectez votre compte AniList pour voir vos statistiques et vos favoris.",
+  "Al_Profile_Session_Expired_Body": "Votre session AniList a expiré. Reconnectez-vous pour voir votre profil.",
+  "Al_Edit_On_Anilist": "Modifier sur AniList",
+  "Al_Fav_Studios": "Studios",
+  "Al_Forum_Title": "Forum AniList",
+  "Al_Forum_Recent": "Activité récente",
+  "Al_Forum_Newest": "Plus récents",
+  "Al_Forum_Most_Viewed": "Plus vus",
+  "Al_Forum_Most_Replied": "Plus de réponses"
+}

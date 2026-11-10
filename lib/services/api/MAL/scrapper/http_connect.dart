@@ -1,14 +1,16 @@
+import 'package:flutter/foundation.dart';
 import 'package:html/dom.dart';
-import 'package:http/http.dart' as http;
+import 'package:mywatchlist/services/api/MAL/mal_connect.dart';
 
 /// A utility class for connecting to HTTP resources and parsing HTML responses.
+/// Uses MalConnect.retryGet for automatic retry on transient failures.
 class HttpConnect {
   static Future<Map<String, dynamic>?> htmlPage(
     String url, [
     dynamic Function(Document)? fromHtml,
     Map<String, String>? headers,
   ]) async {
-    final response = await http.get(Uri.parse(url), headers: headers);
+    final response = await MalConnect.retryGet(url, headers ?? {});
     if (response.statusCode == 200) {
       final document = Document.html(response.body);
       if (fromHtml != null) {
@@ -18,7 +20,8 @@ class HttpConnect {
         return {'html': response.body};
       }
     } else {
-      throw Exception('Failed to load page');
+      debugPrint('HttpConnect error: ${response.statusCode} for $url');
+      throw Exception('Failed to load page (${response.statusCode})');
     }
   }
 

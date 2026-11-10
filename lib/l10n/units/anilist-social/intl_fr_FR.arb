@@ -1,0 +1,217 @@
+{
+  "@@locale": "fr_FR",
+  "Als_Action_Failed": "L’action a échoué. Réessayez.",
+  "Als_Activity": "Activité",
+  "Als_Activity_Empty": "Aucune activité pour l’instant",
+  "Als_All_Categories": "Toutes les catégories",
+  "Als_Categories": "Catégories",
+  "Als_Cat_Anime": "Anime",
+  "Als_Cat_Manga": "Manga",
+  "Als_Cat_Light_Novels": "Light novels",
+  "Als_Cat_Visual_Novels": "Visual novels",
+  "Als_Cat_Release_Discussion": "Discussions des sorties",
+  "Als_Cat_General": "Général",
+  "Als_Cat_News": "Actualités",
+  "Als_Cat_Music": "Musique",
+  "Als_Cat_Gaming": "Jeux vidéo",
+  "Als_Cat_Site_Feedback": "Avis sur le site",
+  "Als_Cat_Bug_Reports": "Signalements de bogues",
+  "Als_Cat_Site_Announcements": "Annonces du site",
+  "Als_Cat_List_Customisation": "Personnalisation des listes",
+  "Als_Cat_Recommendations": "Recommandations",
+  "Als_Cat_Forum_Games": "Jeux du forum",
+  "Als_Cat_Anilist_Apps": "Applications AniList",
+  "Als_Cat_Events": "Événements",
+  "Als_Characters_Count": "{count} / {min} caractères",
+  "@Als_Characters_Count": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "min": {
+        "type": "int"
+      }
+    }
+  },
+  "Als_Composer_Hint": "Écrivez quelque chose…",
+  "Als_Delete_Activity": "Supprimer cette activité ?",
+  "Als_Delete_Comment": "Supprimer ce commentaire ?",
+  "Als_Delete_Reply": "Supprimer cette réponse ?",
+  "Als_Delete_Review": "Supprimer cette critique ?",
+  "Als_Edit_Review": "Modifier votre critique",
+  "Als_Edit_Status": "Modifier la publication",
+  "Als_Following": "Abonnements",
+  "Als_Global": "Global",
+  "Als_Hide_Replies": "Masquer les réponses",
+  "Als_Kind_List": "Mises à jour de liste",
+  "Als_Kind_Messages": "Messages",
+  "Als_Kind_Status": "Publications",
+  "Als_Latest_Reviews": "Dernières critiques",
+  "Als_Like": "J’aime",
+  "Als_Unlike": "Je n’aime plus",
+  "Als_Liked_By": "Aimé par",
+  "Als_Likes_Count": "{count, plural, =1{1 j’aime} other{{count} j’aime}}",
+  "@Als_Likes_Count": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "Als_Locked": "Verrouillé",
+  "Als_Message_To": "à {name}",
+  "@Als_Message_To": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "Als_Min_Characters": "Au moins {min} caractères",
+  "@Als_Min_Characters": {
+    "placeholders": {
+      "min": {
+        "type": "int"
+      }
+    }
+  },
+  "Als_New_Status": "Nouvelle publication",
+  "Als_New_Thread": "Nouveau sujet",
+  "Als_No_Comments": "Aucun commentaire pour l’instant",
+  "Als_No_Likes": "Aucun j’aime pour l’instant",
+  "Als_No_Replies": "Aucune réponse pour l’instant",
+  "Als_Nothing_To_Preview": "Rien à prévisualiser",
+  "Als_Pin": "Épingler au profil",
+  "Als_Unpin": "Désépingler",
+  "Als_Pinned": "Épinglé",
+  "Als_Play_Video": "Lire la vidéo",
+  "Als_Post": "Publier",
+  "Als_Private": "Privé",
+  "Als_Reply": "Répondre",
+  "Als_Reply_To": "Répondre à {name}",
+  "@Als_Reply_To": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "Als_Review_Helpful": "Utile : {rating} sur {total}",
+  "@Als_Review_Helpful": {
+    "placeholders": {
+      "rating": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "Als_Review_Helpful_Short": "Utile à {percent} %",
+  "@Als_Review_Helpful_Short": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "Als_Reviews_Empty": "Aucune critique pour l’instant",
+  "Als_Review_Was_Helpful": "Cette critique vous a-t-elle été utile ?",
+  "Als_Search_Threads": "Rechercher des sujets",
+  "Als_Sign_In_To_Act": "Connectez-vous à AniList pour aimer, répondre ou publier",
+  "Als_Sort_Newest": "Plus récentes",
+  "Als_Sort_Helpful": "Les plus utiles",
+  "Als_Sort_Highest": "Meilleure note",
+  "Als_Sort_Lowest": "Moins bonne note",
+  "Als_Sort_Updated": "Mises à jour récemment",
+  "Als_Spoiler": "Spoiler",
+  "Als_Status_Watched": "{count, plural, =1{A regardé l’épisode {progress} de} other{A regardé les épisodes {progress} de}}",
+  "@Als_Status_Watched": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "progress": {
+        "type": "String"
+      }
+    }
+  },
+  "Als_Status_Rewatched_Episode": "{count, plural, =1{A revu l’épisode {progress} de} other{A revu les épisodes {progress} de}}",
+  "@Als_Status_Rewatched_Episode": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "progress": {
+        "type": "String"
+      }
+    }
+  },
+  "Als_Status_Read": "{count, plural, =1{A lu le chapitre {progress} de} other{A lu les chapitres {progress} de}}",
+  "@Als_Status_Read": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "progress": {
+        "type": "String"
+      }
+    }
+  },
+  "Als_Status_Reread_Chapter": "{count, plural, =1{A relu le chapitre {progress} de} other{A relu les chapitres {progress} de}}",
+  "@Als_Status_Reread_Chapter": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "progress": {
+        "type": "String"
+      }
+    }
+  },
+  "Als_Status_Completed": "A terminé",
+  "Als_Status_Dropped": "A abandonné",
+  "Als_Status_Paused": "A mis en pause",
+  "Als_Status_Plans_Watch": "Prévoit de regarder",
+  "Als_Status_Plans_Read": "Prévoit de lire",
+  "Als_Status_Rewatched": "A revu",
+  "Als_Status_Reread": "A relu",
+  "Als_Subscribe": "S’abonner",
+  "Als_Unsubscribe": "Se désabonner",
+  "Als_Subscribed": "Suivis",
+  "Als_Tab_Forum": "Forum",
+  "Als_Thread": "Sujet",
+  "Als_Thread_Title": "Titre",
+  "Als_Time_Now": "à l’instant",
+  "Als_Time_Minutes": "{n} min",
+  "@Als_Time_Minutes": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "Als_Time_Hours": "{n} h",
+  "@Als_Time_Hours": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "Als_Time_Days": "{n} j",
+  "@Als_Time_Days": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "Als_Vote_Up": "Oui",
+  "Als_Vote_Down": "Non",
+  "Als_Write": "Écrire",
+  "Als_Write_Reply": "Écrire une réponse…",
+  "Als_Write_Review": "Écrire une critique",
+  "Als_Copy_Link": "Copier le lien",
+  "Als_Link_Copied": "Lien copié"
+}

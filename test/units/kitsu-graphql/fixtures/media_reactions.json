@@ -1,0 +1,78 @@
+{
+ "data": {
+  "findMediaByIdAndType": {
+   "reactions": {
+    "totalCount": 219,
+    "pageInfo": {
+     "hasNextPage": true,
+     "endCursor": "Mw"
+    },
+    "nodes": [
+     {
+      "id": "320005",
+      "reaction": "An elf deals with the fragile concept of mortality.\nSafe to say a must watch!",
+      "progress": 2,
+      "createdAt": "2023-09-29T22:01:09Z",
+      "author": {
+       "id": "286143",
+       "name": "Tamaya",
+       "slug": "Tamaya",
+       "avatarImage": {
+        "original": {
+         "url": "https://media.kitsu.app/user/286143/avatar/37ab3ead95d0102f45b2f3409d1f14de.png",
+         "width": 2160,
+         "height": 3840
+        }
+       }
+      },
+      "likes": {
+       "totalCount": 97
+      }
+     },
+     {
+      "id": "319994",
+      "reaction": "Every frame of this show is full of care and love. Astonishing premiere.",
+      "progress": 2,
+      "createdAt": "2023-09-29T20:49:22Z",
+      "author": {
+       "id": "12205",
+       "name": "Yuntu",
+       "slug": "Yuntu",
+       "avatarImage": {
+        "original": {
+         "url": "https://media.kitsu.app/user/12205/avatar/9ba587ef16af8c787dacde7ab59f389d.jpeg",
+         "width": 901,
+         "height": 1080
+        }
+       }
+      },
+      "likes": {
+       "totalCount": 73
+      }
+     },
+     {
+      "id": "320322",
+      "reaction": "Exploring the regret of realising you actually know nothing about your friends. It's also too late to know them better as they have passed.",
+      "progress": 4,
+      "createdAt": "2023-10-03T08:06:08Z",
+      "author": {
+       "id": "109081",
+       "name": "qwert3425",
+       "slug": "qwert3425",
+       "avatarImage": {
+        "original": {
+         "url": "https://media.kitsu.app/users/avatars/109081/original.jpeg",
+         "width": 135,
+         "height": 140
+        }
+       }
+      },
+      "likes": {
+       "totalCount": 53
+      }
+     }
+    ]
+   }
+  }
+ }
+}

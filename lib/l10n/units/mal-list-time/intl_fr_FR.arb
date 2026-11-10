@@ -1,0 +1,13 @@
+{
+  "@@locale": "fr_FR",
+  "ListTime_Left": "Temps restant : {time}",
+  "@ListTime_Left": { "placeholders": { "time": { "type": "String" } } },
+  "ListTime_Watched": "Temps visionné : {time}",
+  "@ListTime_Watched": { "placeholders": { "time": { "type": "String" } } },
+  "ListTime_Days_Hours": "{days} j {hours} h",
+  "@ListTime_Days_Hours": { "placeholders": { "days": { "type": "int" }, "hours": { "type": "int" } } },
+  "ListTime_Hours_Minutes": "{hours} h {minutes} min",
+  "@ListTime_Hours_Minutes": { "placeholders": { "hours": { "type": "int" }, "minutes": { "type": "int" } } },
+  "ListTime_Minutes": "{minutes} min",
+  "@ListTime_Minutes": { "placeholders": { "minutes": { "type": "int" } } }
+}

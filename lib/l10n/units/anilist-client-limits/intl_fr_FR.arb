@@ -1,0 +1,4 @@
+{
+  "@@locale": "fr_FR",
+  "Anilist_Rate_Limited": "AniList reçoit trop de requêtes. Réessayez dans {seconds} s."
+}

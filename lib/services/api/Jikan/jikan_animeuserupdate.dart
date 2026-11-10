@@ -4,6 +4,10 @@ class AnimeUserUpdate {
   final String? status;
   final int? episodesSeen;
   final int? episodesTotal;
+  final int? volumesRead;
+  final int? volumesTotal;
+  final int? chaptersRead;
+  final int? chaptersTotal;
   final String? date;
 
   AnimeUserUpdate({
@@ -12,6 +16,10 @@ class AnimeUserUpdate {
     this.status,
     this.episodesSeen,
     this.episodesTotal,
+    this.volumesRead,
+    this.volumesTotal,
+    this.chaptersRead,
+    this.chaptersTotal,
     this.date,
   });
 
@@ -22,6 +30,10 @@ class AnimeUserUpdate {
       status: json['status'],
       episodesSeen: json['episodes_seen'],
       episodesTotal: json['episodes_total'],
+      volumesRead: json['volumes_read'],
+      volumesTotal: json['volumes_total'],
+      chaptersRead: json['chapters_read'],
+      chaptersTotal: json['chapters_total'],
       date: json['date'],
     );
   }

@@ -1,0 +1,49 @@
+{
+  "@@locale": "en",
+  "Shell_Coming_Soon": "Coming soon",
+  "Shell_Coming_Soon_Desc": "This page is being built and will arrive in a future update.",
+  "Shell_Session_Expired": "{tracker} session expired. Sign in again.",
+  "@Shell_Session_Expired": {
+    "description": "Banner shown when a tracker session can no longer be renewed; {tracker} is the tracker name (MyAnimeList, AniList…).",
+    "placeholders": {
+      "tracker": {
+        "type": "String"
+      }
+    }
+  },
+  "Shell_Sign_In_Again": "Sign in",
+  "Shell_Loading": "Loading…",
+  "Settings_Section_Account": "Account",
+  "Settings_Section_Appearance": "Appearance",
+  "Settings_Section_Content": "Content",
+  "Settings_Section_Data": "Data and storage",
+  "Settings_Section_Info": "Information",
+  "Settings_Accounts": "Accounts",
+  "Settings_Accounts_Desc": "Connect, switch or sign out of your trackers",
+  "Settings_Accounts_Manage": "Manage trackers",
+  "Settings_Downloads": "Downloads",
+  "Settings_Downloads_Desc": "Choose where images are saved",
+  "Settings_Cross_Sync": "Cross-tracker sync",
+  "Settings_Cross_Sync_Desc": "Update an entry on every connected tracker at once",
+  "Settings_Storage": "Storage",
+  "Settings_Storage_Desc": "Cache size and app data",
+  "Settings_Notifications_Desc": "Episode reminders and airing alerts",
+  "Sidebar_Guest": "Guest",
+  "Sidebar_Not_Connected": "Not connected",
+  "Sidebar_Section_Profile": "My space",
+  "Sidebar_Section_App": "App",
+  "Sidebar_Background_Title": "Sidebar background",
+  "Sidebar_Background_Change": "Change background image",
+  "Sidebar_Background_Remove": "Remove background image",
+  "Sidebar_Background_Edit": "Change background",
+  "Sidebar_Version": "Version {version}",
+  "@Sidebar_Version": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "Shell_Back_Again_To_Exit": "Press Back again to exit",
+  "Sidebar_Add_Account": "Add an account"
+}

@@ -1,0 +1,108 @@
+{
+  "@@locale": "en",
+  "Alpp_Tab_Overview": "Overview",
+  "Alpp_Tab_Activity": "Activity",
+  "Alpp_Tab_Social": "Social",
+  "Alpp_Follow": "Follow",
+  "Alpp_Following": "Following",
+  "Alpp_Followers": "Followers",
+  "Alpp_Mutual": "Mutual",
+  "Alpp_Follows_You": "Follows you",
+  "Alpp_Follow_Each_Other": "Following each other",
+  "Alpp_Message": "Message",
+  "Alpp_Message_To": "Message to {name}",
+  "@Alpp_Message_To": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "Alpp_Lists": "Lists",
+  "Alpp_List_Of": "{name}’s list",
+  "@Alpp_List_Of": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "Alpp_Find_User": "Find a user",
+  "Alpp_No_Users": "No user found",
+  "Alpp_Social_Empty": "Nobody here yet",
+  "Alpp_Days_Watched": "Days watched",
+  "Alpp_Chapters_Read": "Chapters read",
+  "Alpp_Activity_History": "Activity",
+  "Alpp_Heatmap_Summary": "{count, plural, =1{1 action} other{{count} actions}} in the last weeks",
+  "@Alpp_Heatmap_Summary": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "Alpp_Previous_Names": "Previously known as {names}",
+  "@Alpp_Previous_Names": {
+    "placeholders": {
+      "names": {
+        "type": "String"
+      }
+    }
+  },
+  "Alpp_Role_Admin": "Admin",
+  "Alpp_Role_Moderator": "Moderator",
+  "Alpp_View_All": "View all",
+  "Alpp_View_Reorder": "View all and reorder",
+  "Alpp_Reorder": "Reorder",
+  "Alpp_Save_Order": "Save order",
+  "Alpp_Stats_Overview": "Overview",
+  "Alpp_Stats_Tags": "Tags",
+  "Alpp_Stats_Voice_Actors": "Voice actors",
+  "Alpp_Stats_Staff": "Staff",
+  "Alpp_Stats_Episode_Count": "Episode count",
+  "Alpp_Stats_Chapter_Count": "Chapter count",
+  "Alpp_Stats_Release_Year": "Release year",
+  "Alpp_Stats_Start_Year": "Year started",
+  "Alpp_Stats_Countries": "Countries",
+  "Alpp_Sort_Time": "Most time",
+  "Alpp_Hours": "{hours} h",
+  "@Alpp_Hours": {
+    "placeholders": {
+      "hours": {
+        "type": "String"
+      }
+    }
+  },
+  "Alpp_Chapters_Count": "{count, plural, =1{1 chapter} other{{count} chapters}}",
+  "@Alpp_Chapters_Count": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "Alpp_Score_Bad": "Bad",
+  "Alpp_Score_Neutral": "Neutral",
+  "Alpp_Score_Good": "Good",
+  "Alpp_Compare": "Compare with my list",
+  "Alpp_Compare_All": "All",
+  "Alpp_Compare_On_Mine": "On my list",
+  "Alpp_Compare_Not_On_Mine": "Not on my list",
+  "Alpp_Not_On_Your_List": "Not on your list",
+  "Alpp_Your_Score": "Your score: {score}",
+  "@Alpp_Your_Score": {
+    "placeholders": {
+      "score": {
+        "type": "String"
+      }
+    }
+  },
+  "Alpp_Your_Progress": "Your progress: {count}",
+  "@Alpp_Your_Progress": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
+}

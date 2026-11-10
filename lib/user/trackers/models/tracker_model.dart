@@ -1,207 +1,53 @@
 import 'package:flutter/material.dart';
+import 'package:mywatchlist/constants/constants.dart';
+import 'package:mywatchlist/generated/l10n.dart';
 
-class Tracker {
+/// Static facts about one tracker: brand name (never translated), logo, brand color and
+/// the one-line pitch. The state of the account lives in the user singletons.
+class TrackerInfo {
+  final AccountType type;
   final String name;
-  final String imageUrl;
-  bool isActive;
-  final Color primaryColor;
-  final String description;
+  final String logoAsset;
+  final Color color;
 
-  Tracker({
-    required this.name,
-    required this.imageUrl,
-    this.isActive = false,
-    this.primaryColor = Colors.blue,
-    this.description = '',
-  });
-}
+  const TrackerInfo._(this.type, this.name, this.logoAsset, this.color);
 
-/// Creates a beautiful animated connection status widget for trackers
-class TrackerConnectionStatus extends StatefulWidget {
-  final Tracker tracker;
-  final VoidCallback? onConnect;
+  static const TrackerInfo myAnimeList = TrackerInfo._(AccountType.myanimelist,
+      'MyAnimeList', 'assets/images/mal-icon.png', Color(0xFF2E51A2));
+  static const TrackerInfo aniList = TrackerInfo._(AccountType.anilist,
+      'AniList', 'assets/images/anilist-icon.png', Color(0xFF02A9FF));
+  static const TrackerInfo kitsu = TrackerInfo._(AccountType.kitsu, 'Kitsu',
+      'assets/images/kitsu-icon.png', Color(0xFFEF5D5D));
+  static const TrackerInfo simkl = TrackerInfo._(AccountType.simkl, 'Simkl',
+      'assets/images/simkl-icon.png', Color(0xFFCA1960));
 
-  const TrackerConnectionStatus({
-    super.key,
-    required this.tracker,
-    this.onConnect,
-  });
+  /// The four trackers, in display order.
+  static const List<TrackerInfo> all = [myAnimeList, aniList, kitsu, simkl];
 
-  @override
-  State<TrackerConnectionStatus> createState() =>
-      _TrackerConnectionStatusState();
-}
-
-class _TrackerConnectionStatusState extends State<TrackerConnectionStatus>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _animationController;
-  late Animation<double> _pulseAnimation;
-
-  @override
-  void initState() {
-    super.initState();
-
-    _animationController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1500),
-    )..repeat(reverse: true);
-
-    _pulseAnimation = Tween<double>(begin: 1.0, end: 1.2).animate(
-      CurvedAnimation(
-        parent: _animationController,
-        curve: Curves.easeInOut,
-      ),
-    );
+  /// Info of [type]; null for [AccountType.none].
+  static TrackerInfo? of(AccountType type) {
+    for (final info in all) {
+      if (info.type == type) return info;
+    }
+    return null;
   }
 
-  @override
-  void dispose() {
-    _animationController.dispose();
-    super.dispose();
-  }
+  /// Kitsu signs in with a username and a password; the others open their web sign in.
+  bool get usesPassword => type == AccountType.kitsu;
 
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final trackColor = widget.tracker.primaryColor;
-
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        // Logo with connection status indicator
-        Stack(
-          alignment: Alignment.center,
-          children: [
-            // Pulse animation for connected status
-            if (widget.tracker.isActive)
-              AnimatedBuilder(
-                animation: _animationController,
-                builder: (context, child) {
-                  return Container(
-                    height: 80 * _pulseAnimation.value,
-                    width: 80 * _pulseAnimation.value,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: trackColor.withOpacity(0.2),
-                    ),
-                  );
-                },
-              ),
-
-            // Outer circle
-            Container(
-              height: 80,
-              width: 80,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: widget.tracker.isActive
-                    ? trackColor.withOpacity(0.3)
-                    : theme.colorScheme.surfaceVariant,
-                border: Border.all(
-                  color: widget.tracker.isActive
-                      ? trackColor
-                      : theme.colorScheme.outline.withOpacity(0.5),
-                  width: 2,
-                ),
-              ),
-            ),
-
-            // Service logo
-            Container(
-              height: 60,
-              width: 60,
-              padding: const EdgeInsets.all(5),
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: theme.colorScheme.surface,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 5,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Image.asset(
-                widget.tracker.imageUrl,
-                fit: BoxFit.contain,
-              ),
-            ),
-
-            // Connection status indicator
-            Positioned(
-              bottom: 0,
-              right: 0,
-              child: Container(
-                height: 24,
-                width: 24,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: widget.tracker.isActive
-                      ? Colors.green
-                      : theme.colorScheme.onSurfaceVariant.withOpacity(0.4),
-                  border: Border.all(
-                    color: theme.colorScheme.surface,
-                    width: 2,
-                  ),
-                ),
-                child: Icon(
-                  widget.tracker.isActive ? Icons.check : Icons.close,
-                  color: Colors.white,
-                  size: 14,
-                ),
-              ),
-            ),
-          ],
-        ),
-
-        const SizedBox(height: 12),
-
-        // Service name
-        Text(
-          widget.tracker.name,
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: theme.colorScheme.onSurface,
-          ),
-        ),
-
-        const SizedBox(height: 4),
-
-        // Status text
-        Text(
-          widget.tracker.isActive ? 'Connected' : 'Not connected',
-          style: TextStyle(
-            fontSize: 14,
-            color: widget.tracker.isActive
-                ? trackColor
-                : theme.colorScheme.onSurface.withOpacity(0.6),
-          ),
-        ),
-
-        const SizedBox(height: 12),
-
-        // Connect button (only if not connected)
-        if (!widget.tracker.isActive && widget.onConnect != null)
-          ElevatedButton.icon(
-            onPressed: widget.onConnect,
-            icon: const Icon(Icons.login_rounded, size: 16),
-            label: const Text('Connect'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: trackColor,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 8,
-              ),
-              minimumSize: const Size(120, 36),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(18),
-              ),
-            ),
-          ),
-      ],
-    );
+  /// One line about the service, in the current language.
+  String get description {
+    switch (type) {
+      case AccountType.myanimelist:
+        return S.current.Acc_Desc_Mal;
+      case AccountType.anilist:
+        return S.current.Acc_Desc_Anilist;
+      case AccountType.kitsu:
+        return S.current.Acc_Desc_Kitsu;
+      case AccountType.simkl:
+        return S.current.Acc_Desc_Simkl;
+      case AccountType.none:
+        return '';
+    }
   }
 }

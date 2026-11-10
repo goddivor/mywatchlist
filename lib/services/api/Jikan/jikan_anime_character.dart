@@ -1,11 +1,13 @@
 class AnimeCharacter {
   final Character character;
   final String? role;
+  final int? favorites;
   final List<VoiceActor>? voiceActors;
 
   AnimeCharacter({
     required this.character,
     this.role,
+    this.favorites,
     this.voiceActors,
   });
 
@@ -13,6 +15,7 @@ class AnimeCharacter {
     return AnimeCharacter(
       character: Character.fromJson(json['character']),
       role: json['role'],
+      favorites: json['favorites'],
       voiceActors: json['voice_actors'] != null
           ? (json['voice_actors'] as List).map((e) => VoiceActor.fromJson(e)).toList()
           : null,

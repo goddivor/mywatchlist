@@ -1,0 +1,437 @@
+{
+ "data": [
+  {
+   "id": "1814092d-bb83-11f1-8080-8000214e67d3",
+   "type": "activityGroups",
+   "attributes": {
+    "createdAt": "2026-09-28T21:25:14.427217",
+    "updatedAt": "2026-09-28T21:25:14.427217",
+    "group": "9917984",
+    "isSeen": null,
+    "isRead": null
+   },
+   "relationships": {
+    "activities": {
+     "data": [
+      {
+       "type": "activities",
+       "id": "17d2d900-bb83-11f1-8080-80014d45d856"
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "66e1f083-b9bd-11f1-8080-800125f0cf57",
+   "type": "activityGroups",
+   "attributes": {
+    "createdAt": "2026-09-25T21:43:12.806700",
+    "updatedAt": "2026-09-26T15:17:35.123673",
+    "group": "9917664",
+    "isSeen": null,
+    "isRead": null
+   },
+   "relationships": {
+    "activities": {
+     "data": [
+      {
+       "type": "activities",
+       "id": "66367b00-b9bd-11f1-8080-80006a289e91"
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "61a8f3f2-b9bd-11f1-8080-8001051ef5b1",
+   "type": "activityGroups",
+   "attributes": {
+    "createdAt": "2026-09-25T21:44:25.532673",
+    "updatedAt": "2026-09-26T15:17:26.361598",
+    "group": "9917665",
+    "isSeen": null,
+    "isRead": null
+   },
+   "relationships": {
+    "activities": {
+     "data": [
+      {
+       "type": "activities",
+       "id": "6171c700-b9bd-11f1-8080-8000717cb774"
+      }
+     ]
+    }
+   }
+  }
+ ],
+ "included": [
+  {
+   "id": "17d2d900-bb83-11f1-8080-80014d45d856",
+   "type": "activities",
+   "attributes": {
+    "createdAt": null,
+    "updatedAt": "2026-09-28T21:57:18.455Z",
+    "status": null,
+    "verb": "post",
+    "time": "2026-09-28T21:25:14.000+00:00",
+    "streamId": null,
+    "foreignId": "Post:9917984",
+    "rating": null,
+    "progress": null,
+    "replyToType": null,
+    "replyToUser": null,
+    "nineteenScale": null,
+    "mentionedUsers": [],
+    "reason": null
+   },
+   "relationships": {
+    "subject": {
+     "data": {
+      "type": "posts",
+      "id": "9917984"
+     }
+    }
+   }
+  },
+  {
+   "id": "66367b00-b9bd-11f1-8080-80006a289e91",
+   "type": "activities",
+   "attributes": {
+    "createdAt": null,
+    "updatedAt": null,
+    "status": null,
+    "verb": "comment",
+    "time": "2026-09-26T15:17:34.000+00:00",
+    "streamId": null,
+    "foreignId": "Comment:32226925",
+    "rating": null,
+    "progress": null,
+    "replyToType": "post",
+    "replyToUser": "User:66861",
+    "nineteenScale": null,
+    "mentionedUsers": [],
+    "reason": null
+   },
+   "relationships": {
+    "subject": {
+     "data": {
+      "type": "comments",
+      "id": "32226925"
+     }
+    }
+   }
+  },
+  {
+   "id": "6171c700-b9bd-11f1-8080-8000717cb774",
+   "type": "activities",
+   "attributes": {
+    "createdAt": null,
+    "updatedAt": null,
+    "status": null,
+    "verb": "comment",
+    "time": "2026-09-26T15:17:26.000+00:00",
+    "streamId": null,
+    "foreignId": "Comment:32226924",
+    "rating": null,
+    "progress": null,
+    "replyToType": "post",
+    "replyToUser": "User:66861",
+    "nineteenScale": null,
+    "mentionedUsers": [],
+    "reason": null
+   },
+   "relationships": {
+    "subject": {
+     "data": {
+      "type": "comments",
+      "id": "32226924"
+     }
+    }
+   }
+  },
+  {
+   "id": "9917984",
+   "type": "posts",
+   "links": {
+    "self": "/posts/9917984"
+   },
+   "attributes": {
+    "createdAt": "2026-09-28T21:25:14.157Z",
+    "updatedAt": "2026-09-29T17:09:33.106Z",
+    "content": "rewatching (again) the best media to ever media just to feel something\n\ni swear qual & zoltraak permanently altered my worldbuilding brain chemistry",
+    "contentFormatted": "<p>rewatching (again) the best media to ever media just to feel something</p>\n\n<p>i swear qual &amp; zoltraak permanently altered my worldbuilding brain chemistry</p>\n",
+    "commentsCount": 0,
+    "postLikesCount": 5,
+    "spoiler": false,
+    "nsfw": false,
+    "blocked": false,
+    "deletedAt": null,
+    "topLevelCommentsCount": 0,
+    "editedAt": "2026-09-28T21:57:18.455Z",
+    "targetInterest": null,
+    "embed": null,
+    "embedUrl": null,
+    "heldReason": null,
+    "lockedAt": null,
+    "lockedReason": null
+   },
+   "relationships": {
+    "user": {
+     "data": {
+      "type": "users",
+      "id": "42670"
+     }
+    }
+   }
+  },
+  {
+   "id": "42670",
+   "type": "users",
+   "links": {
+    "self": "/users/42670"
+   },
+   "attributes": {
+    "createdAt": "2014-05-07T14:07:04.297Z",
+    "updatedAt": "2026-10-12T21:57:31.568Z",
+    "name": "AlexHallon",
+    "pastNames": [],
+    "slug": "AlexHallon",
+    "about": "like: fantasy, historical/mythlogical, comedy, romance (especially yuri), adult cast, writer/artist protagonists\n\navoid: horror, battle shounen, power gap shoujo romance, fake \"harem\" romance \n\nshoutouts to botan kamiina for bringing me back to seasonal watching\n\nwatchlist shrunk for the first time in 2026. on a quest to hit 0 non-upcoming titles\n\nalso into writing, dnd, atelier, umamusume and star rail\n\nworking on a web novel about a yuri fanatic falling in love with her favorite yuri author",
+    "location": "Sweden",
+    "waifuOrHusbando": "Waifu",
+    "followersCount": 46,
+    "followingCount": 3,
+    "lifeSpentOnAnime": 41562,
+    "birthday": "2000-04-06",
+    "gender": "Genderfluid",
+    "commentsCount": 54,
+    "favoritesCount": 98,
+    "likesGivenCount": 47,
+    "reviewsCount": 0,
+    "likesReceivedCount": 20,
+    "postsCount": 20,
+    "ratingsCount": 382,
+    "mediaReactionsCount": 327,
+    "proExpiresAt": null,
+    "title": null,
+    "profileCompleted": true,
+    "feedCompleted": true,
+    "website": null,
+    "proTier": null,
+    "avatar": {
+     "tiny": "https://media.kitsu.app/user/42670/avatar/tiny-258ed57cb4b10934e35b1bc1574d0107.jpeg",
+     "large": "https://media.kitsu.app/user/42670/avatar/large-e73ac271fab69431936869ce587bea05.jpeg",
+     "small": "https://media.kitsu.app/user/42670/avatar/small-6f0323820014536d2bdba5c3a26d861b.jpeg",
+     "medium": "https://media.kitsu.app/user/42670/avatar/medium-53ce556d1c27b9ca0ad9ba66df2d0874.jpeg",
+     "original": "https://media.kitsu.app/user/42670/avatar/1bdc93eaf3e506e779dcd996278764a1.png",
+     "meta": {
+      "dimensions": {
+       "tiny": {
+        "width": 40,
+        "height": 40
+       },
+       "large": {
+        "width": 200,
+        "height": 200
+       },
+       "small": {
+        "width": 64,
+        "height": 64
+       },
+       "medium": {
+        "width": 100,
+        "height": 100
+       }
+      }
+     }
+    },
+    "coverImage": {
+     "tiny": "https://media.kitsu.app/users/cover_images/42670/tiny.jpg",
+     "large": "https://media.kitsu.app/users/cover_images/42670/large.jpg",
+     "small": "https://media.kitsu.app/users/cover_images/42670/small.jpg",
+     "original": "https://media.kitsu.app/users/cover_images/42670/original.jpeg",
+     "meta": {
+      "dimensions": {
+       "tiny": {
+        "width": null,
+        "height": null
+       },
+       "large": {
+        "width": null,
+        "height": null
+       },
+       "small": {
+        "width": null,
+        "height": null
+       }
+      }
+     }
+    },
+    "status": "registered",
+    "subscribedToNewsletter": true,
+    "permissions": [],
+    "sfwFilterPreference": "nsfw_everywhere"
+   }
+  },
+  {
+   "id": "325731",
+   "type": "users",
+   "links": {
+    "self": "/users/325731"
+   },
+   "attributes": {
+    "createdAt": "2018-07-08T20:27:25.555Z",
+    "updatedAt": "2026-10-28T07:38:04.484Z",
+    "name": "shazbotian",
+    "pastNames": [
+     "OceanviewMcFloatFace",
+     "shazbotian"
+    ],
+    "slug": "shazbotian",
+    "about": "I play games! And make them, too...\n\nKitsu Newbie Guide: https://kitsu.io/posts/9089498\n\nLikes: thinking, games, history, yuri, emoji, talking about anime, seasonals, shows with adventure, serious fantasy, character growth, meaning\n\nDislikes: Using Kitsu for things that aren't anime or manga, fan-service, shows with over a hundred episodes, piracy, dubs",
+    "location": "Maryland, USA",
+    "waifuOrHusbando": "Waifu",
+    "followersCount": 1058,
+    "followingCount": 500,
+    "lifeSpentOnAnime": 0,
+    "birthday": null,
+    "gender": "male",
+    "commentsCount": 1569,
+    "favoritesCount": 30,
+    "likesGivenCount": 20,
+    "reviewsCount": 0,
+    "likesReceivedCount": 20,
+    "postsCount": 102,
+    "ratingsCount": 1412,
+    "mediaReactionsCount": 353,
+    "proExpiresAt": "2020-04-02T00:00:00.000Z",
+    "title": null,
+    "profileCompleted": true,
+    "feedCompleted": true,
+    "website": null,
+    "proTier": null,
+    "avatar": {
+     "tiny": "https://media.kitsu.app/users/avatars/325731/tiny.jpeg",
+     "large": "https://media.kitsu.app/users/avatars/325731/large.jpeg",
+     "small": "https://media.kitsu.app/users/avatars/325731/small.jpeg",
+     "medium": "https://media.kitsu.app/users/avatars/325731/medium.jpeg",
+     "original": "https://media.kitsu.app/users/avatars/325731/original.jpeg",
+     "meta": {
+      "dimensions": {
+       "tiny": {
+        "width": 40,
+        "height": 40
+       },
+       "large": {
+        "width": 200,
+        "height": 200
+       },
+       "small": {
+        "width": 64,
+        "height": 64
+       },
+       "medium": {
+        "width": 100,
+        "height": 100
+       }
+      }
+     }
+    },
+    "coverImage": {
+     "tiny": "https://media.kitsu.app/users/cover_images/325731/tiny.jpg",
+     "large": "https://media.kitsu.app/users/cover_images/325731/large.jpg",
+     "small": "https://media.kitsu.app/users/cover_images/325731/small.jpg",
+     "original": "https://media.kitsu.app/users/cover_images/325731/original.png",
+     "meta": {
+      "dimensions": {
+       "tiny": {
+        "width": 840,
+        "height": 200
+       },
+       "large": {
+        "width": 3360,
+        "height": 800
+       },
+       "small": {
+        "width": 1680,
+        "height": 400
+       }
+      }
+     }
+    },
+    "status": "registered",
+    "subscribedToNewsletter": true,
+    "permissions": [],
+    "sfwFilterPreference": "nsfw_everywhere"
+   }
+  },
+  {
+   "id": "32226925",
+   "type": "comments",
+   "links": {
+    "self": "/comments/32226925"
+   },
+   "attributes": {
+    "createdAt": "2026-09-26T15:17:34.850Z",
+    "updatedAt": "2026-09-26T15:44:47.711Z",
+    "content": "Yes",
+    "contentFormatted": "<p>Yes</p>\n",
+    "blocked": false,
+    "deletedAt": null,
+    "likesCount": 1,
+    "repliesCount": 1,
+    "editedAt": null,
+    "embed": null,
+    "embedUrl": null,
+    "heldReason": null
+   },
+   "relationships": {
+    "user": {
+     "data": {
+      "type": "users",
+      "id": "325731"
+     }
+    }
+   }
+  },
+  {
+   "id": "32226924",
+   "type": "comments",
+   "links": {
+    "self": "/comments/32226924"
+   },
+   "attributes": {
+    "createdAt": "2026-09-26T15:17:26.019Z",
+    "updatedAt": "2026-09-26T15:44:37.413Z",
+    "content": "literally, it seems",
+    "contentFormatted": "<p>literally, it seems</p>\n",
+    "blocked": false,
+    "deletedAt": null,
+    "likesCount": 1,
+    "repliesCount": 0,
+    "editedAt": null,
+    "embed": null,
+    "embedUrl": null,
+    "heldReason": null
+   },
+   "relationships": {
+    "user": {
+     "data": {
+      "type": "users",
+      "id": "325731"
+     }
+    }
+   }
+  }
+ ],
+ "meta": {
+  "feed": {
+   "group": "media_aggr",
+   "id": "Anime-46474"
+  },
+  "readonlyToken": "eyJhbGciOiJIUzI1NiJ9.eyJyZXNvdXJjZSI6IioiLCJhY3Rpb24iOiJyZWFkIiwiZmVlZF9pZCI6Im1lZGlhX2FnZ3JBbmltZS00NjQ3NCJ9.zEh5l4BJdZIXld-OvPYCPitr7vp3t0b17mKAKzSgWnY"
+ },
+ "links": {
+  "next": "https://kitsu.io/api/edge/feeds/media_aggr/Anime-46474?include=subject%2Csubject.user&filter%5Bkind%5D=posts&page%5Blimit%5D=3&page%5Bcursor%5D=61a8f3f2-b9bd-11f1-8080-8001051ef5b1"
+ }
+}

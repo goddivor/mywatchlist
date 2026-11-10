@@ -1,8 +1,73 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+    <!-- Required in release builds: every tracker API and scraper needs network access. -->
+    <uses-permission android:name="android.permission.INTERNET"/>
+
+    <!-- Notifications (flutter_local_notifications): show them (Android 13+), schedule airing
+         reminders at an exact time (the user grants it, requestExactAlarmsPermission), and
+         reschedule them after a reboot. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"/>
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+
+    <!-- MAL notifications while the app is closed (workmanager): the plugin's own manifest adds
+         the WorkManager services and the foreground-service permissions it needs, and WorkManager
+         re-registers the periodic job after a reboot by itself; nothing else is declared here. -->
+
+    <!-- Calendar (add_2_calendar): add an airing episode to the device calendar. -->
+    <uses-permission android:name="android.permission.READ_CALENDAR"/>
+    <uses-permission android:name="android.permission.WRITE_CALENDAR"/>
+
+    <!-- In-app updater: install the downloaded APK. -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES"/>
     <application
-        android:label="mywatchlist"
+        android:label="MyWatchList"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
+
+        <!-- Rendering backend: false = Skia (what DailyAL ships), true = Impeller (Flutter's
+             default). Skia since the batch-2 A/B (Impeller 14 to 40 % janky frames on the home
+             scroll, Skia 1.6 to 4 %): docs/PERFORMANCE.md, "Impeller vs Skia". Change it only with
+             measurements. -->
+        <meta-data
+            android:name="io.flutter.embedding.android.EnableImpeller"
+            android:value="false" />
+
+        <!-- In-app updater (#153): open_filex shares the downloaded APK with the package installer
+             through its own provider (authority ${applicationId}.fileProvider.com.crazecoder.openfile).
+             The plugin ships it with broad paths (root, files, cache, external); this entry replaces
+             only its paths resource so just <cache>/updates (UpdateEnvironment.downloadDir) can be
+             shared. The app declares no other FileProvider. -->
+        <provider
+            android:name="com.crazecoder.openfile.FileProvider"
+            android:authorities="${applicationId}.fileProvider.com.crazecoder.openfile"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/updater_paths"
+                tools:replace="android:resource"/>
+        </provider>
+
+        <!-- flutter_local_notifications: fires scheduled notifications, reschedules them after a
+             reboot or an app update, and handles notification actions. -->
+        <receiver
+            android:exported="false"
+            android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver"/>
+        <receiver
+            android:exported="false"
+            android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationBootReceiver">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED"/>
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED"/>
+                <action android:name="android.intent.action.QUICKBOOT_POWERON"/>
+                <action android:name="com.htc.intent.action.QUICKBOOT_POWERON"/>
+            </intent-filter>
+        </receiver>
+        <receiver
+            android:exported="false"
+            android:name="com.dexterous.flutterlocalnotifications.ActionBroadcastReceiver"/>
+
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -25,14 +90,52 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
 
-            <!-- Intent for web auth and callback deeplinking -->
+            <!-- Intent for OAuth callback deeplinking - Multiple trackers -->
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <!-- Accepts URIs that begin with YOUR_SCHEME://YOUR_HOST -->
-                <data android:scheme="mywatchlist" android:host="callback" />
+                <!-- MyAnimeList OAuth callback -->
+                <data android:scheme="com.teen.mywatchlist" android:host="myanimelist-callback" />
             </intent-filter>
+
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <!-- AniList OAuth callback -->
+                <data android:scheme="com.teen.mywatchlist" android:host="anilist-callback" />
+            </intent-filter>
+
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <!-- Simkl OAuth callback -->
+                <data android:scheme="com.teen.mywatchlist" android:host="simkl-callback" />
+            </intent-filter>
+            <!-- myanimelist.net pages open in the app (lib/utils/deep_links.dart). Not verified:
+                 MyAnimeList serves no assetlinks for this app, so on Android 12+ the user enables
+                 "Open by default" once. -->
+            <intent-filter android:autoVerify="false">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" />
+                <data android:host="myanimelist.net" />
+                <data android:host="www.myanimelist.net" />
+                <data android:host="m.myanimelist.net" />
+                <data android:pathPrefix="/anime" />
+                <data android:pathPrefix="/manga" />
+                <data android:pathPrefix="/character" />
+                <data android:pathPrefix="/people" />
+                <data android:pathPrefix="/profile" />
+                <data android:pathPrefix="/forum" />
+                <data android:pathPrefix="/clubs.php" />
+                <data android:pathPrefix="/featured" />
+                <data android:pathPrefix="/news" />
+            </intent-filter>
+
             <!-- Deep linking -->
             <meta-data
                 android:name="flutter_deeplinking_enabled"
@@ -53,6 +156,11 @@
         <intent>
             <action android:name="android.intent.action.PROCESS_TEXT"/>
             <data android:mimeType="text/plain"/>
+        </intent>
+        <!-- add_2_calendar: find the calendar app that inserts an event. -->
+        <intent>
+            <action android:name="android.intent.action.INSERT"/>
+            <data android:mimeType="vnd.android.cursor.item/event"/>
         </intent>
     </queries>
 </manifest>

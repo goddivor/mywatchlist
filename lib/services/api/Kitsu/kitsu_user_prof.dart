@@ -31,7 +31,7 @@ class KitsuUserProf {
 
   factory KitsuUserProf.fromJson(Map<String, dynamic> json) {
     return KitsuUserProf(
-      name: json['name'],
+      name: json['name'] ?? '',
       about: json['about'] ?? '',
       location: json['location'] ?? '',
       waifu: json['waifu'] ?? '',
@@ -43,7 +43,7 @@ class KitsuUserProf {
       gender: json['gender'] ?? '',
       birthday: json['birthday'] ?? '',
       joinDate: json['created_at'] ?? '',
-      avatar: json['avatar']['original'] ?? '',
+      avatar: (json['avatar'] is Map ? json['avatar']['original'] : null) ?? '',
     );
   }
 

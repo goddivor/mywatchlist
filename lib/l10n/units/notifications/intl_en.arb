@@ -1,0 +1,76 @@
+{
+  "@@locale": "en",
+  "Notif_Episode_Title": "Episode {episode} of {title} is out",
+  "@Notif_Episode_Title": {
+    "placeholders": {
+      "episode": {
+        "type": "int"
+      },
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "Notif_New_Episode_Title": "{title} has a new episode",
+  "@Notif_New_Episode_Title": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "Notif_Body_Watching": "Update your list once you have watched it.",
+  "Notif_Body_Plan": "An anime from your Plan to watch list is airing. Take a look.",
+  "Notif_Channel_Watching": "Watching list",
+  "Notif_Channel_Watching_Desc": "New episodes of the anime you are watching",
+  "Notif_Channel_Plan": "Plan to watch list",
+  "Notif_Channel_Plan_Desc": "Airing anime from your Plan to watch list",
+  "Notif_Test_Body": "This is a test notification. Tap it to open the anime.",
+  "Notif_Master_Title": "Airing reminders",
+  "Notif_Master_Desc": "Get a notification when an episode of your anime airs",
+  "Notif_Status_Scheduled": "{count, plural, one{1 reminder scheduled} other{{count} reminders scheduled}}",
+  "@Notif_Status_Scheduled": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "Notif_Status_Next": "Next: {date}",
+  "@Notif_Status_Next": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "Notif_Status_Empty": "Nothing to remind yet. Add an anime that is airing this season to your Watching or Plan to watch list.",
+  "Notif_Status_Working": "Preparing your reminders",
+  "Notif_Status_Failed": "Your lists could not be read. The reminders already scheduled were kept.",
+  "Notif_Status_Off": "Reminders are off",
+  "Notif_Needs_Mal": "Reminders follow your MyAnimeList lists. Connect a MyAnimeList account to receive them.",
+  "Notif_Needs_Mal_Action": "Accounts",
+  "Notif_Unsupported": "Airing reminders are only available on Android.",
+  "Notif_Blocked": "Notifications are blocked for this app. Allow them in the system settings.",
+  "Notif_Blocked_Action": "Open settings",
+  "Notif_Exact_Alarm": "Allow exact alarms so reminders arrive on time. Without it they can be a few minutes late.",
+  "Notif_Exact_Alarm_Action": "Allow",
+  "Notif_Denied": "Notifications were not allowed, so reminders stay off.",
+  "Notif_Sec_Notify": "Notify me for",
+  "Notif_Watching_Title": "Watching list",
+  "Notif_Watching_Desc": "Each new episode of an anime you are watching",
+  "Notif_Plan_Title": "Plan to watch list",
+  "Notif_Plan_Desc": "Each new episode of an airing anime you plan to watch",
+  "Notif_Sec_Look": "Appearance",
+  "Notif_Large_Image_Title": "Large cover",
+  "Notif_Large_Image_Desc": "Show the cover as a large picture instead of a small icon",
+  "Notif_Sec_Tools": "Tools",
+  "Notif_Test_Title_Action": "Send a test notification",
+  "Notif_Test_Action_Desc": "Appears in 2 seconds. Tap it to check that it opens the anime.",
+  "Notif_Test_Sent": "Test notification sent. It appears in 2 seconds.",
+  "Notif_Test_Failed": "The test notification could not be sent. Check that notifications are allowed.",
+  "Notif_Reschedule_Title": "Clear and reschedule all",
+  "Notif_Reschedule_Desc": "Rebuild the reminders from your current lists and the airing schedule",
+  "Notif_Reschedule_Done": "Reminders rescheduled",
+  "Notif_Footer": "Reminders are planned from your lists and the airing schedule when you open the app, at most once a day. Android keeps them and restores them after a restart."
+}
