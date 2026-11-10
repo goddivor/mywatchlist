@@ -1,12 +1,9 @@
-// ignore_for_file: use_build_context_synchronously
-
 import 'dart:io';
 
 import 'package:flex_color_picker/flex_color_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mywatchlist/generated/l10n.dart';
-import 'package:mywatchlist/main.dart';
 import 'package:mywatchlist/user/theme/app_themes.dart';
 import 'package:mywatchlist/user/theme/theme_bloc.dart';
 import 'package:mywatchlist/user/theme/theme_event.dart';
@@ -20,8 +17,9 @@ import 'package:mywatchlist/widgets/common/app_colors.dart';
 /// at once (no save step).
 class ThemeSettings extends StatefulWidget {
   final bool isIntroPage;
+  final VoidCallback? onDone;
 
-  const ThemeSettings({super.key, this.isIntroPage = false});
+  const ThemeSettings({super.key, this.isIntroPage = false, this.onDone});
 
   /// Names of [AppThemes.predefinedColors], in the same order.
   static List<String> presetNames() => [
@@ -66,7 +64,7 @@ class _ThemeSettingsState extends State<ThemeSettings> {
             ? FloatingActionButton.extended(
                 onPressed: () async {
                   await userPref.setFirstTimeFalse();
-                  restartApp(context);
+                  if (mounted) widget.onDone?.call();
                 },
                 icon: const Icon(Icons.check_rounded),
                 label: Text(S.current.Theme_Done),
