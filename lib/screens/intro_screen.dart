@@ -11,7 +11,8 @@ import 'package:mywatchlist/screens/settings/theme_settings.dart';
 class IntroScreen extends StatefulWidget {
   final int index; // start page index
   final Function(bool)? onRtlChange; // callback for RTL change
-  const IntroScreen({this.onRtlChange, super.key, this.index = 0});
+  final VoidCallback? onDone;
+  const IntroScreen({this.onRtlChange, this.onDone, super.key, this.index = 0});
 
   @override
   _IntroScreenState createState() => _IntroScreenState();
@@ -137,7 +138,7 @@ class _IntroScreenState extends State<IntroScreen> with TickerProviderStateMixin
               _welcomePage(),
               const OnboardingTrackers(fromIntro: true),
               const LanguageSettings(isIntroPage: true),
-              const ThemeSettings(isIntroPage: true)
+              ThemeSettings(isIntroPage: true, onDone: widget.onDone)
             ],
           ),
           // page navigation controls

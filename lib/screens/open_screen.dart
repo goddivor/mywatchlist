@@ -18,6 +18,7 @@ class OpenScreen extends StatefulWidget {
 
 class _OpenScreenState extends State<OpenScreen> {
   late final Future<bool> _firstTime = UserPreference().isFirstTime();
+  bool _onboardingCompleted = false;
 
   @override
   Widget build(BuildContext context) {
@@ -29,8 +30,10 @@ class _OpenScreenState extends State<OpenScreen> {
         }
         // A storage failure must not lock the user out: treat it as "not first time".
         final firstTime = snapshot.data ?? false;
-        return firstTime
-            ? IntroScreen()
+        return firstTime && !_onboardingCompleted
+            ? IntroScreen(onDone: () {
+                if (mounted) setState(() => _onboardingCompleted = true);
+              })
             : HomeScreen(notificationPayload: widget.notificationPayload);
       },
     );
