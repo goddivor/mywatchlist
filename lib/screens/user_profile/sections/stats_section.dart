@@ -13,6 +13,7 @@ import 'package:mywatchlist/user/preferences/preferences.dart';
 import 'package:mywatchlist/utils/app_routes.dart';
 import 'package:mywatchlist/widgets/charts/chart_card.dart';
 import 'package:mywatchlist/widgets/charts/chart_palette.dart';
+import 'package:mywatchlist/widgets/charts/distribution_radar.dart';
 import 'package:mywatchlist/widgets/charts/ranked_bar_list.dart';
 import 'package:mywatchlist/widgets/charts/score_stack_chart.dart';
 import 'package:mywatchlist/widgets/charts/status_bar_chart.dart';
@@ -420,6 +421,7 @@ class _InsightsSlivers extends StatelessWidget {
         title: title,
         statusKeys: statusKeys,
         statusLabels: labels,
+        statusColors: colors,
         color: primary,
         onItemTap: onTap,
       );
@@ -484,6 +486,9 @@ class _DistributionCard extends StatefulWidget {
   final String title;
   final List<String> statusKeys;
   final List<String> statusLabels;
+
+  /// One colour per status, in the order of [statusKeys] (the radar's shapes).
+  final List<Color> statusColors;
   final Color color;
   final void Function(DistributionItem item)? onItemTap;
 
@@ -493,6 +498,7 @@ class _DistributionCard extends StatefulWidget {
     required this.title,
     required this.statusKeys,
     required this.statusLabels,
+    required this.statusColors,
     required this.color,
     this.onItemTap,
   });
@@ -505,15 +511,28 @@ class _DistributionCardState extends State<_DistributionCard> {
   String? _status;
   bool _byMean = false;
 
+  /// This card's own view; null follows the preference (list or chart).
+  bool? _chart;
+
   @override
   Widget build(BuildContext context) {
     final s = S.of(context);
     final items = widget.insights.items(widget.kind, status: _status, byMean: _byMean);
     final onTap = widget.onItemTap;
+    // Always selected (provider's rule), then this card's own choice wins.
+    final preferred = context
+        .select<PreferencesBloc, bool>((bloc) => bloc.state.general.statsBreakdownChart);
+    final bool chart = _chart ?? preferred;
 
     return ChartCard(
       title: widget.title,
       actions: [
+        IconButton(
+          key: ValueKey('breakdown-view-${widget.kind.name}'),
+          tooltip: chart ? s.Sbc_Show_List : s.Sbc_Show_Chart,
+          icon: Icon(chart ? Icons.format_list_bulleted : Icons.donut_large_outlined),
+          onPressed: () => setState(() => _chart = !chart),
+        ),
         PopupMenuButton<bool>(
           tooltip: _byMean ? s.Prof_Dist_Sort_Mean : s.Prof_Dist_Sort_Count,
           icon: const Icon(Icons.sort),
@@ -545,6 +564,8 @@ class _DistributionCardState extends State<_DistributionCard> {
               padding: const EdgeInsets.symmetric(vertical: 16),
               child: Text(s.Prof_Dist_Empty),
             )
+          else if (chart)
+            _radar(items)
           else
             RankedBarList(
               key: ValueKey('${widget.kind.name}_${_status}_$_byMean'),
@@ -561,6 +582,46 @@ class _DistributionCardState extends State<_DistributionCard> {
             ),
         ],
       ),
+    );
+  }
+
+  Widget _radar(List<DistributionItem> items) {
+    final s = S.of(context);
+    final data = breakdownRadarData(
+      insights: widget.insights,
+      kind: widget.kind,
+      status: _status,
+      byMean: _byMean,
+      statusKeys: widget.statusKeys,
+      statusColors: widget.statusColors,
+      fallbackColor: widget.color,
+    );
+    if (data == null) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        child: Text(s.Sbc_Not_Enough),
+      );
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        DistributionRadar(
+          key: ValueKey('radar-${widget.kind.name}-${_status}_$_byMean'),
+          axes: [for (final name in data.axes) _label(name)],
+          series: data.series,
+        ),
+        if (data.statuses.length > 1)
+          Wrap(
+            spacing: 16,
+            runSpacing: 6,
+            children: [
+              for (var j = 0; j < data.series.length; j++)
+                LegendDot(
+                    color: data.series[j].color,
+                    label: widget.statusLabels[data.statuses[j]]),
+            ],
+          ),
+      ],
     );
   }
 
@@ -581,6 +642,57 @@ class _DistributionCardState extends State<_DistributionCard> {
         InsightKind.source => profileSourceLabel(name),
         _ => name,
       };
+}
+
+/// What a breakdown radar draws: the item names on the axes, the shapes, and for each
+/// shape the index of its status in the status keys.
+typedef BreakdownRadarData = ({
+  List<String> axes,
+  List<RadarSeries> series,
+  List<int> statuses,
+});
+
+/// The radar of one breakdown: the top items of [status] (all statuses when null) as the
+/// axes, at most [DistributionRadar.maxAxes]; with every status one shape per status that
+/// has any of them, in its colour, else one shape. Values follow the sort: mean scores when
+/// [byMean], else counts. Null below [DistributionRadar.minAxes] items.
+@visibleForTesting
+BreakdownRadarData? breakdownRadarData({
+  required UserInsights insights,
+  required InsightKind kind,
+  required String? status,
+  required bool byMean,
+  required List<String> statusKeys,
+  required List<Color> statusColors,
+  required Color fallbackColor,
+}) {
+  final top = insights
+      .items(kind, status: status, byMean: byMean)
+      .take(DistributionRadar.maxAxes)
+      .toList();
+  if (top.length < DistributionRadar.minAxes) return null;
+  double value(DistributionItem item) => byMean ? item.mean : item.count.toDouble();
+  Color colorAt(int i) => i >= 0 && i < statusColors.length ? statusColors[i] : fallbackColor;
+
+  final series = <RadarSeries>[];
+  final statuses = <int>[];
+  if (status == null) {
+    for (var i = 0; i < statusKeys.length; i++) {
+      final byName = {
+        for (final item in insights.items(kind, status: statusKeys[i], byMean: byMean))
+          item.name: value(item),
+      };
+      final values = [for (final item in top) byName[item.name] ?? 0.0];
+      if (values.every((v) => v == 0)) continue;
+      series.add(RadarSeries(colorAt(i), values));
+      statuses.add(i);
+    }
+  } else {
+    final i = statusKeys.indexOf(status);
+    series.add(RadarSeries(colorAt(i), [for (final item in top) value(item)]));
+    statuses.add(i);
+  }
+  return (axes: [for (final item in top) item.name], series: series, statuses: statuses);
 }
 
 class _AboveMeanShelf extends StatelessWidget {

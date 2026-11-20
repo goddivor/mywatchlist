@@ -1,0 +1,10 @@
+{
+  "@@locale": "fr_FR",
+  "Sbc_Breakdown_View": "Genres, types, sources et studios",
+  "Sbc_Breakdown_View_Desc": "Leur affichage par défaut dans les statistiques du profil",
+  "Sbc_View_List": "Liste",
+  "Sbc_View_Chart": "Graphique",
+  "Sbc_Show_Chart": "Afficher en graphique",
+  "Sbc_Show_List": "Afficher en liste",
+  "Sbc_Not_Enough": "Il faut au moins 3 éléments pour le graphique."
+}

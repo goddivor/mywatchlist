@@ -39,7 +39,7 @@ abstract final class TrackerScope {
   /// Fields (JSON names) of each scoped group shared by every tracker: app behaviour and
   /// looks. Every other field of a scoped group is tracker-scoped, new fields included.
   static const Map<String, Set<String>> appFields = {
-    PreferencesStore.keyGeneral: {'keepPagesInMemory', 'statsChartColors'},
+    PreferencesStore.keyGeneral: {'keepPagesInMemory', 'statsChartColors', 'statsBreakdownChart'},
     PreferencesStore.keyContent: {'timezone'},
     PreferencesStore.keyList: {},
   };
