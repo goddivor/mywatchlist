@@ -179,11 +179,19 @@ class _UpdateCard extends StatelessWidget {
                     child: ReviewScoreBadge(score: update.score, size: 14),
                   ),
                   if (date != null)
-                    Text(
-                      displayTimeAgo(date),
-                      style: theme.textTheme.bodySmall?.copyWith(fontStyle: FontStyle.italic, fontSize: 12),
+                    // Shrinks rather than overflowing the card ("3 weeks ago").
+                    Flexible(
+                      child: Text(
+                        displayTimeAgo(date),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.bodySmall?.copyWith(fontStyle: FontStyle.italic, fontSize: 12),
+                      ),
                     ),
-                  if (nsv?.status != null) StatusBadge(nsv!, height: 25),
+                  if (nsv?.status != null) ...[
+                    const SizedBox(width: 4),
+                    StatusBadge(nsv!, height: 25),
+                  ],
                 ],
               ),
             ],
