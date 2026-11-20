@@ -1,0 +1,7 @@
+{
+  "@@locale": "en",
+  "Cps_Start_From": "Start from",
+  "Cps_Default_Card": "Default custom card",
+  "Cps_Cover_Width": "Cover width: {width}",
+  "@Cps_Cover_Width": { "placeholders": { "width": { "type": "int" } } }
+}

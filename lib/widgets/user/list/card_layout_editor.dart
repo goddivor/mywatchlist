@@ -40,7 +40,7 @@ class CardLayoutsPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: Text(S.current.UserList_Custom_Cards)),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _edit(context, null),
+        onPressed: () => _create(context),
         icon: const Icon(Icons.add_rounded),
         label: Text(S.current.UserList_New_Card),
       ),
@@ -81,16 +81,47 @@ class CardLayoutsPage extends StatelessWidget {
     );
   }
 
-  Future<void> _edit(BuildContext context, ContentCardProps? props) async {
-    final saved = await Navigator.of(context).push<ContentCardProps>(MaterialPageRoute(
-      builder: (_) => CardLayoutEditor(
-        props: props ??
-            ContentCardProps.defaultObject().copyWith(
-              id: DateTime.now().microsecondsSinceEpoch.toRadixString(36),
-              profileName: S.current.UserList_New_Card,
+  /// A new card starts from a built-in style (Comfortable, Compact, Spacious) or the default
+  /// custom layout.
+  Future<void> _create(BuildContext context) async {
+    final start = await showModalBottomSheet<_CardStart>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheet) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 0, 24, 8),
+              child: Text(S.current.Cps_Start_From, style: Theme.of(sheet).textTheme.titleMedium),
             ),
-        sample: sample,
+            for (final start in _CardStart.values)
+              ListTile(
+                key: ValueKey('card-start-${start.name}'),
+                leading: Icon(start.icon),
+                title: Text(start.label),
+                onTap: () => Navigator.pop(sheet, start),
+              ),
+            const SizedBox(height: 8),
+          ],
+        ),
       ),
+    );
+    if (start == null || !context.mounted) return;
+    final base = start.style == null ? ContentCardProps.defaultObject() : builtInCardLayout(start.style!);
+    await _edit(
+      context,
+      base.copyWith(
+        id: DateTime.now().microsecondsSinceEpoch.toRadixString(36),
+        profileName: start.style == null ? S.current.UserList_New_Card : start.label,
+      ),
+    );
+  }
+
+  Future<void> _edit(BuildContext context, ContentCardProps props) async {
+    final saved = await Navigator.of(context).push<ContentCardProps>(MaterialPageRoute(
+      builder: (_) => CardLayoutEditor(props: props, sample: sample),
     ));
     if (saved == null || !context.mounted) return;
     _saveProfiles(context, (list) {
@@ -123,6 +154,25 @@ class CardLayoutsPage extends StatelessWidget {
   }
 }
 
+/// Where a new card starts.
+enum _CardStart {
+  comfortable(BuiltInCardStyle.comfortable, Icons.view_agenda_outlined),
+  compact(BuiltInCardStyle.compact, Icons.view_headline_rounded),
+  spacious(BuiltInCardStyle.spacious, Icons.view_day_outlined),
+  blank(null, Icons.dashboard_customize_outlined);
+
+  const _CardStart(this.style, this.icon);
+  final BuiltInCardStyle? style;
+  final IconData icon;
+
+  String get label => switch (this) {
+        _CardStart.comfortable => S.current.UserList_Comfortable,
+        _CardStart.compact => S.current.UserList_Compact,
+        _CardStart.spacious => S.current.UserList_Spacious,
+        _CardStart.blank => S.current.Cps_Default_Card,
+      };
+}
+
 /// Edits one card layout on a live preview; pops with the layout on save.
 class CardLayoutEditor extends StatefulWidget {
   final ContentCardProps props;
@@ -138,7 +188,11 @@ class _CardLayoutEditorState extends State<CardLayoutEditor> {
   late final TextEditingController _name =
       TextEditingController(text: widget.props.profileName);
   late List<CustomizableField> _fields = _completeFields(widget.props.fields);
-  late double _height = widget.props.height;
+  late double _height = widget.props.height.clamp(_minHeight, _maxHeight).toDouble();
+  late double _imageWidth = widget.props.imageWidth;
+
+  static const double _minHeight = 48;
+  static const double _maxHeight = 260;
   CustomizableFieldType? _selected;
   bool _changed = false;
 
@@ -224,6 +278,7 @@ class _CardLayoutEditorState extends State<CardLayoutEditor> {
         profileName: _name.text.trim(),
         height: _height,
         fields: _fields,
+        imageWidth: _imageWidth,
       );
 
   Future<bool> _confirmDiscard() async {
@@ -288,13 +343,30 @@ class _CardLayoutEditorState extends State<CardLayoutEditor> {
             ),
             Slider(
               value: _height,
-              min: 80,
-              max: 260,
-              divisions: 45,
+              min: _minHeight,
+              max: _maxHeight,
+              divisions: ((_maxHeight - _minHeight) / 4).round(),
               label: '${_height.round()}',
               onChanged: (v) => setState(() {
                 _changed = true;
                 _height = v;
+              }),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+              child: Text(S.current.Cps_Cover_Width(_imageWidth.round()),
+                  style: theme.textTheme.titleSmall),
+            ),
+            Slider(
+              key: const ValueKey('card-cover-width'),
+              value: _imageWidth,
+              min: ContentCardProps.minImageWidth,
+              max: ContentCardProps.maxImageWidth,
+              divisions: ((ContentCardProps.maxImageWidth - ContentCardProps.minImageWidth) / 4).round(),
+              label: '${_imageWidth.round()}',
+              onChanged: (v) => setState(() {
+                _changed = true;
+                _imageWidth = v;
               }),
             ),
             CustomEntryCard(

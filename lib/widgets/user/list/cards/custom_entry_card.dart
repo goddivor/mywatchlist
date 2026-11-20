@@ -120,7 +120,7 @@ class CustomEntryCard extends StatelessWidget {
         return Text(entry.title,
             maxLines: 2, overflow: TextOverflow.ellipsis, style: theme.textTheme.titleSmall);
       case CustomizableFieldType.image:
-        return EntryCover(entry: entry, width: 86, height: (props.height - 10).clamp(40.0, 400.0));
+        return EntryCover(entry: entry, width: props.imageWidth, height: (props.height - 8).clamp(24.0, 400.0));
       case CustomizableFieldType.media_type:
         return Text(entry.mediaType == null ? '' : mediaTypeLabel(entry.mediaType!),
             style: theme.textTheme.labelMedium);
