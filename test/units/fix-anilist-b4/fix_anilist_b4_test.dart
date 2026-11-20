@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/pages/Anilist/anilist_thread_page.dart';
 import 'package:mywatchlist/screens/user_profile/user_profile_data.dart';
@@ -108,6 +109,8 @@ void main() {
   setUpAll(() async {
     forbidNetwork();
     await S.load(const Locale('en'));
+    // As the app does at launch (LanguageBloc): comments older than a few days print a date.
+    await initializeDateFormatting();
   });
 
   group('AnilistHtml pictures', () {

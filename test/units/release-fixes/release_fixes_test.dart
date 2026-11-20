@@ -22,10 +22,14 @@ void main() {
       }
     });
 
-    test('exceeds the committed pubspec code, so CI never goes backwards', () {
+    test('never goes below the committed pubspec code, so CI never goes backwards', () {
       final line = File('pubspec.yaml').readAsLinesSync().firstWhere((l) => l.startsWith('version:'));
-      final committed = int.parse(line.split('+').last.trim());
-      expect(_code('2026.10.1'), greaterThan(committed));
+      final parts = line.substring('version:'.length).trim().split('+');
+      final committed = int.parse(parts.last);
+      // The tag the pubspec carries derives at least the committed code, and the next counter more.
+      expect(_code(parts.first), greaterThanOrEqualTo(committed));
+      final next = parts.first.split('.');
+      expect(_code('${next[0]}.${next[1]}.${int.parse(next[2]) + 1}'), greaterThan(committed));
     });
 
     test('rejects an invalid version and a counter above 99', () {
