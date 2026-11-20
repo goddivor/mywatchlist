@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mywatchlist/screens/studios/studio_screen.dart';
 import 'package:intl/intl.dart';
 import 'package:mywatchlist/constants/constants.dart';
 import 'package:mywatchlist/enums.dart';
@@ -104,7 +105,7 @@ class MoreInfoWidget extends StatelessWidget {
               _Link(
                 studio.name,
                 studio.id > 0
-                    ? () => _open(context, GeneralSearchScreen.byStudio(id: studio.id, name: studio.name))
+                    ? () => _open(context, StudioScreen(id: studio.id, name: studio.name))
                     : null,
               ),
           ]),
@@ -128,7 +129,7 @@ class MoreInfoWidget extends StatelessWidget {
                   _Link(
                     link.name,
                     link.id > 0
-                        ? () => _open(context, GeneralSearchScreen.byStudio(id: link.id, name: link.name))
+                        ? () => _open(context, StudioScreen(id: link.id, name: link.name))
                         : null,
                   ),
               ]),

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
+import 'package:mywatchlist/screens/studios/studio_screen.dart';
 import 'package:mywatchlist/enums.dart' show SeasonType;
 import 'package:mywatchlist/main.dart' show appNavigatorKey;
 import 'package:mywatchlist/screens/MAL/character_screen.dart';
@@ -162,7 +163,7 @@ abstract final class DeepLinks {
       case 'genre':
         return id == null ? null : GeneralSearchScreen.byGenre(ids: [id], category: category);
       case 'producer':
-        return manga || id == null ? null : GeneralSearchScreen.byStudio(id: id, name: _name(link));
+        return manga || id == null ? null : StudioScreen(id: id, name: _name(link) ?? '');
       case 'magazine':
         return !manga || id == null ? null : GeneralSearchScreen.byMagazine(id: id, name: _name(link));
       case 'season':

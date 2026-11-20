@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mywatchlist/screens/studios/studio_screen.dart';
 import 'package:mywatchlist/screens/MAL/character_screen.dart';
 import 'package:mywatchlist/screens/MAL/contentdetailedscreen.dart';
 import 'package:mywatchlist/screens/MAL/featured_screen.dart';
@@ -37,10 +38,10 @@ void main() {
     expect((screen('https://myanimelist.net/featured/55/x') as FeaturedScreen).id, 55);
   });
 
-  test('genre, studio, magazine, season and search links open a search', () {
+  test('genre, magazine, season and search links open a search; a studio its page', () {
     expect(screen('https://myanimelist.net/anime/genre/1/Action'), isA<GeneralSearchScreen>());
     expect(screen('https://myanimelist.net/manga/genre/1/Action'), isA<GeneralSearchScreen>());
-    expect(screen('https://myanimelist.net/anime/producer/11/Madhouse'), isA<GeneralSearchScreen>());
+    expect(screen('https://myanimelist.net/anime/producer/11/Madhouse'), isA<StudioScreen>());
     expect(screen('https://myanimelist.net/manga/magazine/83/Shounen_Jump'), isA<GeneralSearchScreen>());
     expect(screen('https://myanimelist.net/anime/season/2024/spring'), isA<GeneralSearchScreen>());
     expect(screen('https://myanimelist.net/anime.php?q=bebop'), isA<GeneralSearchScreen>());

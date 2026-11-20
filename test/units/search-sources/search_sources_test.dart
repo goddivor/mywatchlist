@@ -2,11 +2,11 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:mywatchlist/screens/studios/studio_screen.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:html/parser.dart' as html;
 import 'package:mwl_commons/mwl_commons.dart' hide Constants, ContentType;
 import 'package:mywatchlist/generated/l10n.dart';
-import 'package:mywatchlist/screens/search/general_search_screen.dart';
 import 'package:mywatchlist/screens/search/search_filters.dart';
 import 'package:mywatchlist/screens/search/search_service.dart';
 import 'package:mywatchlist/screens/search/search_sources.dart';
@@ -430,7 +430,7 @@ void main() {
       SearchFailures.reset();
     });
 
-    testWidgets('lists studios and opens the studio search on tap', (tester) async {
+    testWidgets('lists studios and opens the studio page on tap', (tester) async {
       final directory = _companies('company_directory.html');
       StudiosPager.defaultFetch = (q, p) async => directory;
       final pushed = <Route<dynamic>>[];
@@ -446,9 +446,9 @@ void main() {
       await tester.tap(find.text('Kyoto Animation'));
       // The route is checked without building the search screen (it would search).
       final route = pushed.single as MaterialPageRoute<dynamic>;
-      final screen = route.builder(tester.element(find.byType(StudiosScreen))) as GeneralSearchScreen;
-      expect(screen.filters?.integer(FilterKey.producer), 2);
-      expect(screen.category, SearchCategory.anime);
+      final screen = route.builder(tester.element(find.byType(StudiosScreen))) as StudioScreen;
+      expect(screen.id, 2);
+      expect(screen.name, 'Kyoto Animation');
     });
 
     testWidgets('a failure says whether the network or MyAnimeList failed', (tester) async {

@@ -79,7 +79,9 @@ class MalBadges {
     if (known != null) return known;
     final future = source(username);
     _session[key] = future;
-    future.then<void>((_) {}, onError: (_) => _session.remove(key));
+    future.then<void>((_) {}, onError: (_) {
+      _session.remove(key);
+    });
     return future;
   }
 

@@ -1,11 +1,11 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:mywatchlist/screens/studios/studio_screen.dart';
 import 'package:intl/intl.dart';
 import 'package:mwl_commons/mwl_commons.dart' show CompanyHtml;
 import 'package:mywatchlist/constants/constants.dart' show gotoPage;
 import 'package:mywatchlist/generated/l10n.dart';
-import 'package:mywatchlist/screens/search/general_search_screen.dart';
 import 'package:mywatchlist/screens/search/search_sources.dart';
 import 'package:mywatchlist/screens/studios/studios_pager.dart';
 import 'package:mywatchlist/widgets/common/app_colors.dart';
@@ -116,7 +116,7 @@ class _StudiosScreenState extends State<StudiosScreen> {
 
   void _open(CompanyHtml studio) => gotoPage(
         context: context,
-        newPage: GeneralSearchScreen.byStudio(id: studio.id, name: studio.name),
+        newPage: StudioScreen(id: studio.id, name: studio.name, logo: studio.logo),
       );
 
   @override
