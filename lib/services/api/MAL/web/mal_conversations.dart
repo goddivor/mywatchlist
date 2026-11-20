@@ -1,7 +1,10 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:html/dom.dart' as dom;
+import 'package:html/parser.dart' as html_parser;
 import 'package:mywatchlist/services/api/MAL/web/mal_messages_api.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// Everything exchanged with one person: the rows of the inbox and of the sent box that name
 /// them, newest first. MAL splits a conversation into threads (one per subject) and two boxes;
@@ -201,6 +204,9 @@ class MalChatHistory {
   });
 }
 
+/// How far apart two copies of one message may be dated by different MAL pages.
+const Duration duplicateWindow = Duration(minutes: 10);
+
 /// Reads the threads of [conversation] (the [maxThreads] newest ones), merges their messages
 /// into one chat ordered by date and works out which of the user's messages were read.
 Future<MalChatHistory> loadChatHistory(
@@ -228,15 +234,24 @@ Future<MalChatHistory> loadChatHistory(
   if (threads.isEmpty && firstError != null) throw firstError!;
 
   final items = <_ChatItem>[];
-  final seen = <String>{};
+  // One message read from two pages: same side, same text, times a few minutes apart (MAL
+  // writes "4 minutes ago" on one page and the clock time on another).
+  final seen = <String, List<DateTime?>>{};
+  bool known(String key, DateTime? time) {
+    final times = seen[key];
+    if (times == null) return false;
+    return times.any((t) => t == null || time == null || t.difference(time).abs() <= duplicateWindow);
+  }
+
   var order = 0;
   for (final (head, thread) in threads.reversed) {
     final subject = thread.subject.isNotEmpty ? thread.subject : head.subject;
     final headAt = parseMalMessageDate(head.date, now: at);
     for (final m in thread.messages) {
       final time = parseMalMessageDate(m.date, now: at);
-      final key = '${m.isMine}|${messageTextKey(m.html)}|${m.date ?? ''}';
-      if (!seen.add(key)) continue;
+      final key = '${m.isMine}|${messageTextKey(m.html)}';
+      if (known(key, time)) continue;
+      seen.putIfAbsent(key, () => []).add(time);
       items.add(_ChatItem(
         MalChatMessage(
           html: trimMessageHtml(m.html),
@@ -264,11 +279,27 @@ Future<MalChatHistory> loadChatHistory(
     lastSentRead: conversation.lastSentRead,
     sentRows: [for (final r in conversation.rows) if (r.isSent) r],
   );
+  // The answer goes to the newest thread the other person wrote in: their newest inbox row
+  // carries MAL's Reply ids (a page of the user's own message has no Reply button).
   MalMessageThread? replyTo;
-  for (final (_, thread) in threads) {
-    if (thread.canReply) {
-      replyTo = thread;
+  for (final r in conversation.rows) {
+    if (!r.isSent && r.replyId != null && r.threadId != null) {
+      replyTo = MalMessageThread(
+        subject: r.subject.replaceFirst(RegExp(r'^(Re:\s*)+', caseSensitive: false), ''),
+        counterpart: conversation.counterpart,
+        messages: const [],
+        replyId: r.replyId,
+        threadId: r.threadId,
+      );
       break;
+    }
+  }
+  if (replyTo == null) {
+    for (final (_, thread) in threads) {
+      if (thread.canReply) {
+        replyTo = thread;
+        break;
+      }
     }
   }
   String? avatar = conversation.avatarUrl;
@@ -309,9 +340,29 @@ List<MalMessage?> matchRows(List<MalChatMessage> messages, List<MalMessage> rows
   return out;
 }
 
-/// [html] without the blank end MAL adds to some messages (spaces, `&nbsp;`, line breaks).
-String trimMessageHtml(String html) =>
-    html.replaceFirst(RegExp(r'(\s|&nbsp;|&#160;|\u00a0|<br\s*/?>)+$', caseSensitive: false), '');
+/// [html] without the blank end MAL adds to some messages: trailing spaces, `&nbsp;`, line
+/// breaks, and elements holding nothing else.
+String trimMessageHtml(String html) {
+  final fragment = html_parser.parseFragment(html);
+  bool blank(dom.Node n) {
+    if (n is dom.Text) return n.text.replaceAll('\u00a0', ' ').trim().isEmpty;
+    if (n is dom.Element) {
+      if (n.localName == 'br') return true;
+      if (n.localName == 'img' || n.querySelector('img') != null) return false;
+      return n.nodes.every(blank);
+    }
+    return true;
+  }
+
+  final nodes = fragment.nodes;
+  var changed = false;
+  while (nodes.isNotEmpty && blank(nodes.last)) {
+    nodes.removeLast();
+    changed = true;
+  }
+  if (!changed) return html;
+  return fragment.outerHtml.trim();
+}
 
 class _ChatItem {
   final MalChatMessage message;
@@ -404,7 +455,7 @@ class MalConversationsSource {
   /// The conversation with [name], or the one holding message [messageId] (a notification
   /// knows only the id). Reads the first pages of the boxes; when the message is not there,
   /// its own page gives the person.
-  Future<MalConversation?> find({String? name, int? messageId, bool sent = false}) async {
+  Future<MalConversation?> find({String? name, int? messageId, int? threadId, bool sent = false}) async {
     final key = name?.trim().toLowerCase();
     final found = await load(pages: 1);
     for (final c in found.conversations) {
@@ -412,7 +463,14 @@ class MalConversationsSource {
       if (messageId != null && c.rows.any((r) => r.id == messageId)) return c;
     }
     if (messageId == null) return null;
-    final row = MalMessage(id: messageId, counterpart: name ?? '', subject: '', isSent: sent, isRead: sent);
+    final row = MalMessage(
+      id: messageId,
+      counterpart: name ?? '',
+      subject: '',
+      isSent: sent,
+      isRead: sent,
+      threadId: threadId,
+    );
     final thread = await api.thread(row);
     if (thread.counterpart.isEmpty) return null;
     return MalConversation(
@@ -423,7 +481,7 @@ class MalConversationsSource {
           counterpart: thread.counterpart,
           subject: thread.subject,
           isSent: sent,
-          threadId: thread.threadId,
+          threadId: thread.threadId ?? threadId,
           replyId: thread.replyId,
           avatarUrl: thread.avatarUrl,
         ),
@@ -452,5 +510,44 @@ abstract final class MalConversationsCache {
   static void clear() {
     list = null;
     chats.clear();
+  }
+}
+
+/// Messages the user deleted in the app. MAL removes a deleted message from the user's box,
+/// but the thread history it shares with the other person still shows it: the app hides it,
+/// as messaging apps do for "delete for me". Kept on the device.
+class MalHiddenMessages {
+  MalHiddenMessages({Future<SharedPreferences> Function()? storage})
+      : _storage = storage ?? SharedPreferences.getInstance;
+
+  static MalHiddenMessages instance = MalHiddenMessages();
+
+  static const String storageKey = 'mal_pm_hidden_v1';
+
+  final Future<SharedPreferences> Function() _storage;
+  Set<String> _keys = {};
+  Future<void>? _loading;
+
+  /// Person, side, text and day: a "hey" deleted once does not hide every other "hey".
+  static String keyOf(String person, MalChatMessage m) {
+    final at = m.at;
+    final day = at == null ? '' : '${at.year}-${at.month}-${at.day}';
+    return '${person.toLowerCase()}|${m.isMine}|${messageTextKey(m.html)}|$day';
+  }
+
+  Future<void> load() => _loading ??= () async {
+        try {
+          _keys = {...?(await _storage()).getStringList(storageKey), ..._keys};
+        } catch (_) {}
+      }();
+
+  bool hides(String person, MalChatMessage m) => _keys.contains(keyOf(person, m));
+
+  Future<void> hide(String person, MalChatMessage m) async {
+    _keys.add(keyOf(person, m));
+    try {
+      final list = _keys.toList();
+      await (await _storage()).setStringList(storageKey, list.length > 500 ? list.sublist(list.length - 500) : list);
+    } catch (_) {}
   }
 }

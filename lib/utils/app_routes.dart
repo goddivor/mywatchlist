@@ -30,7 +30,6 @@ import 'package:mywatchlist/screens/settings/storage_settings.dart';
 import 'package:mywatchlist/screens/settings/theme_settings.dart';
 import 'package:mywatchlist/screens/settings/user_prefs_settings.dart';
 import 'package:mywatchlist/screens/user_profile/user_profile_screen.dart';
-import 'package:mywatchlist/services/api/MAL/web/mal_messages_api.dart' show MalMessage;
 import 'package:mywatchlist/services/auth/anilist_auth_v2.dart';
 import 'package:mywatchlist/services/auth/mal_auth_v2.dart';
 import 'package:mywatchlist/services/auth/simkl_auth_v2.dart';
@@ -213,7 +212,10 @@ abstract final class AppRoutes {
   /// [sent]). Only the id is known (a notification, a link): the person comes from MAL.
   static Future<void> openMalMessage(BuildContext context,
           {required int id, bool sent = false, int? threadId}) =>
-      push<void>(context, MalChatScreen(counterpart: '', messageId: id, messageSent: sent));
+      push<void>(
+        context,
+        MalChatScreen(counterpart: '', messageId: id, messageSent: sent, messageThreadId: threadId),
+      );
 
   /// Opens the login screen (tracker picker), replacing nothing.
   static Future<void> openLogin(BuildContext context) =>

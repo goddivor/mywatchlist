@@ -10,6 +10,7 @@ import 'package:http/testing.dart';
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/screens/mal_web/notifications_screen.dart';
 import 'package:mywatchlist/services/api/MAL/scrapper/user_friends.dart';
+import 'package:mywatchlist/services/api/MAL/web/mal_messages_api.dart';
 import 'package:mywatchlist/services/api/MAL/web/mal_web_client.dart';
 import 'package:mywatchlist/services/auth/mal_authresp.dart';
 import 'package:mywatchlist/services/auth/mal_web_session.dart';
@@ -606,5 +607,59 @@ void main() {
       expect(find.byTooltip(s.Mn_Mark_All_Read), findsNothing);
       await S.load(const Locale('en'));
     });
+
+    testWidgets('a new message is listed with the notifications, with its own filter', (tester) async {
+      final session = await tester.runAsync(_connected);
+      final hub = MalNotificationsHub(
+        api: _FakeApi(const MalNotificationFeed()),
+        session: session,
+        malSignedIn: () => true,
+        malUsername: () => 'goddivor',
+      );
+      final feed = _FakeMessagesFeed([
+        const MalMessage(id: 9, counterpart: 'Kineta', subject: 'Frieren', preview: 'Rewatch this weekend?', isRead: false),
+      ]);
+      await tester.pumpWidget(host(MalNotificationsScreen(hub: hub, poller: poller(hub), feed: feed)));
+      await settle(tester);
+      expect(find.text(S.current.Pc_New_Message('Kineta')), findsOneWidget);
+      expect(find.text('Rewatch this weekend?'), findsOneWidget);
+      expect(find.widgetWithText(ChoiceChip, S.current.Pc_Filter_Messages), findsOneWidget);
+    });
   });
+
+  group('friends news', () {
+    FriendActivity row(String status, int? progress) => FriendActivity(
+          friend: 'Ren',
+          category: 'anime',
+          malId: 1,
+          title: 'Frieren',
+          link: '',
+          status: status,
+          progress: progress,
+        );
+
+    test('started, completed and dropped are news; later episodes are not', () {
+      expect(row('watching', 0).isNews, isTrue);
+      expect(row('watching', 1).isStarted, isTrue);
+      expect(row('watching', 5).isNews, isFalse);
+      expect(row('reading', null).isStarted, isTrue);
+      expect(row('completed', 12).isNews, isTrue);
+      expect(row('dropped', 3).isNews, isTrue);
+      expect(row('plan_to_watch', 0).isNews, isFalse);
+      final s = S.current;
+      expect(friendNewsHeadline(row('watching', 1), s), s.Pc_Friend_Started('Ren', 'Frieren'));
+      expect(friendNewsHeadline(row('completed', 12), s), s.Mn_Friend_Completed('Ren', 'Frieren'));
+    });
+  });
+}
+
+class _FakeMessagesFeed extends MalMessagesFeed {
+  _FakeMessagesFeed(this._rows);
+  final List<MalMessage> _rows;
+
+  @override
+  List<MalMessage> get messages => _rows;
+
+  @override
+  Future<void> load() async {}
 }

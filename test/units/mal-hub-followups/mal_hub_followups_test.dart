@@ -8,7 +8,8 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/main.dart' as app show MalMessagesWatcher, MalHubMessagesPoller;
-import 'package:mywatchlist/screens/mal_web/message_thread_screen.dart';
+import 'package:mywatchlist/screens/mal_web/mal_chat_screen.dart';
+import 'package:mywatchlist/widgets/mal_web/chat_tiles.dart';
 import 'package:mywatchlist/screens/mal_web/messages_screen.dart';
 import 'package:mywatchlist/services/api/MAL/web/mal_messages_api.dart';
 import 'package:mywatchlist/services/api/MAL/web/mal_web_client.dart';
@@ -174,7 +175,7 @@ void main() {
       return host;
     }
 
-    testWidgets('a tapped message notification opens its thread in the app', (tester) async {
+    testWidgets('a tapped message notification opens the chat with its sender', (tester) async {
       final session = (await tester.runAsync(_connected))!;
       final api = _FakeMessages(client: MalWebClient(session: session, minGap: Duration.zero));
       MalMessagesApi.instance = api;
@@ -182,12 +183,13 @@ void main() {
       unawaited(AppRoutes.openFromNotification(
           host, 'malhub:|https://myanimelist.net/mymessages.php?go=read&id=2&threadid=70'));
       await settle(tester);
-      expect(find.byType(MalMessageThreadScreen), findsOneWidget);
-      expect(api.opened.single.id, 2);
-      expect(api.opened.single.threadId, 70);
-      expect(api.opened.single.isSent, isFalse);
-      expect(find.text('Club night'), findsOneWidget);
+      expect(find.byType(MalChatScreen), findsOneWidget);
+      // Only the id is known: the message's page names the person, then the chat is read.
+      expect(api.opened.first.id, 2);
+      expect(api.opened.first.threadId, 70);
+      expect(api.opened.first.isSent, isFalse);
       expect(find.text('Ren_99'), findsWidgets);
+      expect(find.byType(MalChatBubble), findsOneWidget);
     });
 
     testWidgets('an inbox payload opens the messages screen', (tester) async {

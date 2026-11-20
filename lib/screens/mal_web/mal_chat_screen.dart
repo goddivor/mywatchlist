@@ -38,12 +38,14 @@ class MalChatScreen extends StatefulWidget {
     this.conversation,
     this.messageId,
     this.messageSent = false,
+    this.messageThreadId,
     this.api,
     this.outbox,
     this.source,
     this.uploader,
     this.pickImage,
     this.refreshEvery = const Duration(seconds: 45),
+    this.hidden,
   });
 
   /// The other person; may be empty when only [messageId] is known (a notification).
@@ -53,12 +55,16 @@ class MalChatScreen extends StatefulWidget {
   /// A message of the conversation (its id in MAL's inbox, or sent box with [messageSent]).
   final int? messageId;
   final bool messageSent;
+  final int? messageThreadId;
   final MalMessagesApi? api;
   final MalOutbox? outbox;
   final MalConversationsSource? source;
   final ImageUploader? uploader;
   final MalImagePick? pickImage;
   final Duration refreshEvery;
+
+  /// The messages deleted in the app (tests give their own).
+  final MalHiddenMessages? hidden;
 
   @override
   State<MalChatScreen> createState() => _MalChatScreenState();
@@ -83,6 +89,7 @@ class _MalChatScreenState extends State<MalChatScreen> {
 
   MalMessagesApi get _api => widget.api ?? MalMessagesApi.instance;
   MalOutbox get _outbox => widget.outbox ?? MalOutbox.instance;
+  MalHiddenMessages get _hidden => widget.hidden ?? MalHiddenMessages.instance;
   MalWebSession get _session => _api.client.session;
   MalConversationsSource get _source => widget.source ?? MalConversationsSource(api: _api);
 
@@ -101,6 +108,9 @@ class _MalChatScreenState extends State<MalChatScreen> {
     }
     _outbox.addListener(_onOutbox);
     unawaited(_outbox.load());
+    unawaited(_hidden.load().then((_) {
+      if (mounted) setState(() {});
+    }));
     unawaited(_load());
     _timer = Timer.periodic(widget.refreshEvery, (_) {
       if (!_loading) unawaited(_load(findAgain: true));
@@ -143,6 +153,7 @@ class _MalChatScreenState extends State<MalChatScreen> {
         conversation = await _source.find(
           name: _name,
           messageId: _name.isEmpty ? widget.messageId : null,
+          threadId: widget.messageThreadId,
           sent: widget.messageSent,
         );
         conversation ??= findAgain ? _conversation : null;
@@ -184,7 +195,7 @@ class _MalChatScreenState extends State<MalChatScreen> {
   List<MalChatMessage> _messages() {
     final history = [
       for (final m in _history?.messages ?? const <MalChatMessage>[])
-        if (m.row == null || !_deleted.contains(_rowKey(m.row!))) m,
+        if ((m.row == null || !_deleted.contains(_rowKey(m.row!))) && !_hidden.hides(_name, m)) m,
     ];
     final known = {for (final m in history) if (m.isMine) messageTextKey(m.html)};
     return [
@@ -203,14 +214,24 @@ class _MalChatScreenState extends State<MalChatScreen> {
     ];
   }
 
+  /// Deletes [message] from the user's MAL box when it has a row there, and hides it in the
+  /// app in any case (MAL keeps it in the history it shares with the other person).
   Future<void> _delete(MalChatMessage message) async {
     final row = message.row;
-    if (row == null) return;
     if (!await confirmDeleteMessage(context)) return;
+    if (row == null) {
+      await _hidden.hide(_name, message);
+      if (!mounted) return;
+      setState(() {});
+      showMessageSnack(context, S.current.Pm_Deleted);
+      return;
+    }
     final key = _rowKey(row);
     setState(() => _deleted.add(key));
     try {
       await _api.delete(row);
+      // MAL still shows it in the thread history it shares with the other person.
+      await _hidden.hide(_name, message);
       if (mounted) showMessageSnack(context, S.current.Pm_Deleted);
     } catch (e) {
       if (!mounted) return;
@@ -241,7 +262,7 @@ class _MalChatScreenState extends State<MalChatScreen> {
               title: Text(s.Pc_Copy),
               onTap: () => Navigator.pop(context, 1),
             ),
-            if (failed || message.row != null)
+            if (failed || message.outboxId == null)
               ListTile(
                 leading: Icon(Icons.delete_outline_rounded, color: scheme.error),
                 title: Text(s.Pc_Discard, style: TextStyle(color: scheme.error)),
@@ -384,7 +405,9 @@ class _MalChatScreenState extends State<MalChatScreen> {
       final topic = m.subject.replaceFirst(RegExp(r'^(Re:\s*)+', caseSensitive: false), '').trim();
       if (topic.isNotEmpty && topic != subject && m.outboxId == null) {
         subject = topic;
-        rows.add(MalChatChip(text: s.Pc_Subject(topic), subtle: true));
+        // A subject that is only the start of the message (a chat started here) says nothing.
+        final echo = previewMatches(topic.replaceFirst(RegExp(r'…$'), ''), messageTextKey(m.html));
+        if (!echo) rows.add(MalChatChip(text: s.Pc_Subject(topic), subtle: true));
       }
       rows.add(MalChatBubble(
         message: m,

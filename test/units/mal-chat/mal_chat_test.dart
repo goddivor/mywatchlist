@@ -96,6 +96,41 @@ void main() {
     });
   });
 
+  group('hidden messages', () {
+    test('a message deleted in the app stays hidden, on that day only', () async {
+      SharedPreferences.setMockInitialValues({});
+      final hidden = MalHiddenMessages();
+      await hidden.load();
+      final hey = MalChatMessage(html: 'hey', isMine: true, subject: '', at: DateTime(2026, 11, 20, 14, 1));
+      await hidden.hide('LolitaToka', hey);
+      // The same message read again from another page, dated a minute later.
+      expect(hidden.hides('lolitatoka', MalChatMessage(html: 'hey', isMine: true, subject: '', at: DateTime(2026, 11, 20, 14, 2))), isTrue);
+      expect(hidden.hides('lolitatoka', MalChatMessage(html: 'hey', isMine: true, subject: '', at: DateTime(2026, 11, 21))), isFalse);
+      expect(hidden.hides('lolitatoka', MalChatMessage(html: 'hey', isMine: false, subject: '', at: DateTime(2026, 11, 20))), isFalse);
+      final again = MalHiddenMessages();
+      await again.load();
+      expect(again.hides('LolitaToka', hey), isTrue);
+    });
+  });
+
+  group('bubbles and box rows', () {
+    test('each bubble gets the newest matching row of its own box, once', () {
+      const messages = [
+        MalChatMessage(html: 'hey', isMine: true, subject: ''),
+        MalChatMessage(html: 'hello you', isMine: false, subject: ''),
+        MalChatMessage(html: 'hey', isMine: true, subject: ''),
+      ];
+      const rows = [
+        MalMessage(id: 3, counterpart: 'A', subject: '', preview: 'hey', isSent: true),
+        MalMessage(id: 2, counterpart: 'A', subject: '', preview: 'hello you'),
+        MalMessage(id: 1, counterpart: 'A', subject: '', preview: 'hey', isSent: true),
+      ];
+      final matched = matchRows(messages, rows);
+      expect(matched.map((r) => r?.id), [1, 2, 3]);
+      expect(matchRows(const [MalChatMessage(html: 'other', isMine: true, subject: '')], rows), [null]);
+    });
+  });
+
   group('outbox', () {
     setUp(() {
       SharedPreferences.setMockInitialValues({});
@@ -145,6 +180,8 @@ void main() {
     test('the blank end MAL adds to a message is dropped', () {
       expect(trimMessageHtml('Hello<br>\u00a0\u00a0 &nbsp;<br />\n'), 'Hello');
       expect(trimMessageHtml('a<br>b'), 'a<br>b');
+      expect(trimMessageHtml('Test<br>\n<span>\u00a0\u00a0</span>\n'), 'Test');
+      expect(trimMessageHtml('Look<br><img src="x.png">'), 'Look<br><img src="x.png">');
     });
 
     test('a subject for a new conversation comes from the first line', () {

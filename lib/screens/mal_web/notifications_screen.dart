@@ -51,12 +51,15 @@ Future<void> openMalHubPayload(String payload) async {
 /// MAL's notification hub (all its types, mark read, friend requests) and the friends'
 /// activity (their list updates, from MAL's RSS feeds), in two tabs.
 class MalNotificationsScreen extends StatefulWidget {
-  const MalNotificationsScreen({super.key, this.initialTab = 0, this.hub, this.poller});
+  const MalNotificationsScreen({super.key, this.initialTab = 0, this.hub, this.poller, this.feed});
 
   /// 0 = notifications, 1 = friends' activity.
   final int initialTab;
   final MalNotificationsHub? hub;
   final MalHubPoller? poller;
+
+  /// The inbox messages listed with the notifications.
+  final MalMessagesFeed? feed;
 
   static Future<void> open(BuildContext context, {int tab = 0}) =>
       AppRoutes.push<void>(context, MalNotificationsScreen(initialTab: tab));
@@ -137,7 +140,7 @@ class _MalNotificationsScreenState extends State<MalNotificationsScreen> with Si
         child: TabBarView(
           controller: _tabs,
           children: [
-            _HubTab(hub: _hub, feed: MalMessagesFeed.instance, onFailed: () => _snack(S.current.Ms_Action_Failed)),
+            _HubTab(hub: _hub, feed: widget.feed ?? MalMessagesFeed.instance, onFailed: () => _snack(S.current.Ms_Action_Failed)),
             _FriendsTab(hub: _hub),
           ],
         ),

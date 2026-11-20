@@ -44,6 +44,10 @@ class MalMessage {
   /// The other person's picture, when the row shows one.
   final String? avatarUrl;
 
+  /// The id of the row itself (`div#message_<id>`, the `id` MAL's Delete form posts); it is
+  /// not the id of the message's page ([id]).
+  final int? rowId;
+
   /// A sent-box row: whether the recipient has opened it (MAL keeps the row `unread` until
   /// then). Null for inbox rows.
   final bool? recipientRead;
@@ -61,6 +65,7 @@ class MalMessage {
     int? box,
     this.avatarUrl,
     this.recipientRead,
+    this.rowId,
   }) : box = box ?? (isSent ? 2 : 1);
 
   MalMessage copyWith({bool? isRead, int? threadId, int? replyId}) => MalMessage(
@@ -76,6 +81,7 @@ class MalMessage {
         box: box,
         avatarUrl: avatarUrl,
         recipientRead: recipientRead,
+        rowId: rowId,
       );
 
   /// The page of this message on MAL.
@@ -122,6 +128,13 @@ class MalMessageThread {
   final int? threadId;
   final int? replyId;
 
+  /// The thread of the "View Message History" link, on a page shown without its history (a
+  /// message the user sent, opened without its thread).
+  final int? historyThreadId;
+
+  /// The page had MAL's history table.
+  final bool hasHistory;
+
   const MalMessageThread({
     required this.subject,
     required this.counterpart,
@@ -129,6 +142,8 @@ class MalMessageThread {
     this.avatarUrl,
     this.threadId,
     this.replyId,
+    this.historyThreadId,
+    this.hasHistory = true,
   });
 
   bool get canReply => replyId != null && threadId != null;
@@ -273,6 +288,7 @@ MalMessage? parseMessageRow(Element row, {required bool sent}) {
     isRead: sent || !row.classes.contains('unread'),
     isSent: sent,
     recipientRead: sent ? !row.classes.contains('unread') : null,
+    rowId: _int(_rowId.firstMatch(row.id)?.group(1)),
     threadId: threadId,
     replyId: replyId,
     box: box,
@@ -408,6 +424,15 @@ MalMessageThread? parseMessageThread(String raw, {String? subject, String? count
     if (replyId != null) break;
   }
 
+  int? historyThreadId;
+  if (threadId == null) {
+    for (final a in doc.querySelectorAll('a[href*="threadid="]')) {
+      final h = (a.attributes['href'] ?? '').replaceAll('&amp;', '&');
+      historyThreadId = _int(_threadParam.firstMatch(h)?.group(1));
+      if (historyThreadId != null) break;
+    }
+  }
+
   final history = <MalThreadMessage>[];
   final table = doc.querySelector('table.pmessage-message-history');
   for (final tr in table?.querySelectorAll('tr') ?? const <Element>[]) {
@@ -462,6 +487,8 @@ MalMessageThread? parseMessageThread(String raw, {String? subject, String? count
     messages: List.unmodifiable(messages),
     threadId: threadId,
     replyId: replyId,
+    historyThreadId: historyThreadId,
+    hasHistory: table != null,
   );
 }
 
@@ -480,6 +507,18 @@ void checkSendAnswer(http.Response response) {
   if (doc.querySelector('.goodresult') != null) return;
   if (doc.querySelector('textarea[name=message]') != null) {
     throw MalWebActionFailed(statusCode: code);
+  }
+}
+
+/// The answer of MAL's Delete form: its redirect back to the boxes, or a page without an error
+/// box. A refusal (`badresult`, an error status) throws [MalWebActionFailed].
+void checkDeleteAnswer(http.Response response) {
+  final code = response.statusCode;
+  if (code >= 300 && code < 400) return;
+  if (code != 200) throw MalWebActionFailed(message: 'MAL answered $code');
+  final bad = RegExp(r'class="[^"]*\bbadresult\b[^"]*"[^>]*>([\s\S]*?)</div>').firstMatch(response.body);
+  if (bad != null) {
+    throw MalWebActionFailed(message: html.parseFragment(bad.group(1)!).text?.trim());
   }
 }
 
@@ -664,6 +703,16 @@ class MalMessagesApi {
     );
     if (parsed == null) throw const FormatException('Not a MAL message page');
     _markRead(message);
+    // A message the user sent, opened without its thread, comes without its history: MAL's
+    // "View Message History" link gives the thread, read once more.
+    final history = parsed.historyThreadId;
+    if (!parsed.hasHistory && thread == null && history != null) {
+      try {
+        return await this.thread(message.copyWith(threadId: history));
+      } catch (_) {
+        return parsed;
+      }
+    }
     return parsed;
   }
 
@@ -703,16 +752,27 @@ class MalMessagesApi {
     checkSendPage(result);
   }
 
-  /// Deletes [message] from its box, as MAL's Delete link does
-  /// (`includes/ajax.inc.php?t=75`, `id` + `box`).
+  /// Deletes [message] from its box with the Delete form of its MAL page
+  /// (`POST mymessages.php?go=delete` for the inbox, `go=deletesent` for the sent box, `id` =
+  /// the row id). A row read without its own id falls back on MAL's AJAX delete.
   Future<void> delete(MalMessage message) async {
     await _requireSession();
-    final response = await client.postForm(
-      '/includes/ajax.inc.php?t=75',
-      {'id': '${message.id}', 'box': '${message.box}'},
-      referer: '${MalWebClient.base}/mymessages.php${message.isSent ? '?go=sent' : ''}',
-    );
-    checkWriteAnswer(response);
+    final rowId = message.rowId;
+    if (rowId == null) {
+      final response = await client.postForm(
+        '/includes/ajax.inc.php?t=75',
+        {'id': '${message.id}', 'box': '${message.box}'},
+        referer: '${MalWebClient.base}/mymessages.php${message.isSent ? '?go=sent' : ''}',
+      );
+      checkWriteAnswer(response);
+    } else {
+      final response = await client.postForm(
+        '/mymessages.php?go=${message.isSent ? 'deletesent' : 'delete'}',
+        {'id': '$rowId'},
+        referer: message.url,
+      );
+      checkDeleteAnswer(response);
+    }
     _markRead(message);
   }
 
