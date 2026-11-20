@@ -1,0 +1,19 @@
+{
+  "@@locale": "fr_FR",
+  "Bulk_Select": "Sélectionner des titres",
+  "Bulk_Close": "Arrêter la sélection",
+  "Bulk_Count": "{count, plural, =0{Choisissez des titres} =1{1 sélectionné} other{{count} sélectionnés}}",
+  "Bulk_All": "Tout",
+  "Bulk_None": "Aucun",
+  "Bulk_Status_Title": "{count, plural, =1{Statut de 1 titre} other{Statut de {count} titres}}",
+  "Bulk_Add_Title": "{count, plural, =1{Ajouter 1 titre à ma liste avec le statut} other{Ajouter {count} titres à ma liste avec le statut}}",
+  "Bulk_Add_Mine": "Ajouter à ma liste",
+  "Bulk_Set_Status": "Changer le statut",
+  "Bulk_Remove": "Retirer",
+  "Bulk_Remove_Mine": "Retirer de ma liste",
+  "Bulk_Remove_Confirm": "{count, plural, =1{Retirer 1 titre de votre liste ?} other{Retirer {count} titres de votre liste ?}}",
+  "Bulk_Remove_Desc": "Leur statut, leur note et leur progression sont supprimés sur MyAnimeList.",
+  "Bulk_Progress": "Enregistrement sur MyAnimeList… {done} / {total}",
+  "Bulk_Done": "{count, plural, =1{1 titre mis à jour} other{{count} titres mis à jour}}",
+  "Bulk_Partial": "{done} mis à jour, {failed} en échec"
+}

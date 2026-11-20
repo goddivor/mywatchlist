@@ -4,6 +4,8 @@ import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/user/preferences/preferences.dart';
 import 'package:mywatchlist/widgets/common/list_sort_filter.dart';
 import 'package:mywatchlist/widgets/loading/shimmercolor.dart';
+import 'package:mywatchlist/widgets/user/list/bulk/list_bulk.dart';
+import 'package:mywatchlist/widgets/user/list/list_entry_view.dart';
 import 'package:mywatchlist/widgets/user/list/cards/custom_entry_card.dart';
 import 'package:mywatchlist/widgets/user/list/cards/entry_cards.dart';
 import 'package:mywatchlist/widgets/user/list/cards/entry_parts.dart';
@@ -57,6 +59,9 @@ class UserListTab extends StatefulWidget {
   /// Clears the filter and the search (empty state button), null hides it.
   final VoidCallback? onClearFilters;
 
+  /// Selection mode of the list (checks on the cards), null when the list has none.
+  final ListSelection? selection;
+
   const UserListTab({
     super.key,
     required this.controller,
@@ -66,6 +71,7 @@ class UserListTab extends StatefulWidget {
     required this.actions,
     required this.style,
     this.onClearFilters,
+    this.selection,
   });
 
   @override
@@ -91,7 +97,9 @@ class _UserListTabState extends State<UserListTab> with AutomaticKeepAliveClient
     return ListEntryLookScope(
       look: widget.adapter,
       child: ListenableBuilder(
-        listenable: widget.controller,
+        listenable: widget.selection == null
+            ? widget.controller
+            : Listenable.merge([widget.controller, widget.selection!]),
         builder: (context, _) => _body(context),
       ),
     );
@@ -137,6 +145,9 @@ class _UserListTabState extends State<UserListTab> with AutomaticKeepAliveClient
     final now = DateTime.now();
     final locale = Localizations.localeOf(context).toString();
     final display = widget.display;
+    final selection = widget.selection;
+    Widget pickable(ListEntryView e, Widget card) =>
+        selection == null ? card : SelectableEntry(selection: selection, id: e.id, child: card);
     final Widget list;
     if (display.isGrid) {
       list = SliverPadding(
@@ -144,13 +155,16 @@ class _UserListTabState extends State<UserListTab> with AutomaticKeepAliveClient
         sliver: SliverGrid.builder(
           gridDelegate: listGridDelegate(display),
           itemCount: entries.length,
-          itemBuilder: (context, i) => EntryGridCard(
-            key: ValueKey(entries[i].id),
-            entry: entries[i],
-            subType: display.subType,
-            actions: widget.actions,
-            style: widget.style,
-            now: now,
+          itemBuilder: (context, i) => pickable(
+            entries[i],
+            EntryGridCard(
+              key: ValueKey(entries[i].id),
+              entry: entries[i],
+              subType: display.subType,
+              actions: widget.actions,
+              style: widget.style,
+              now: now,
+            ),
           ),
         ),
       );
@@ -162,7 +176,7 @@ class _UserListTabState extends State<UserListTab> with AutomaticKeepAliveClient
       list = SliverFixedExtentList.builder(
         itemExtent: profile != null ? profile.height + 8 : listRowExtent(subType),
         itemCount: entries.length,
-        itemBuilder: (context, i) => profile != null
+        itemBuilder: (context, i) => pickable(entries[i], profile != null
             ? CustomEntryCard(
                 key: ValueKey(entries[i].id),
                 props: profile,
@@ -179,7 +193,7 @@ class _UserListTabState extends State<UserListTab> with AutomaticKeepAliveClient
                 style: widget.style,
                 now: now,
                 locale: locale,
-              ),
+              )),
       );
     }
     return RefreshIndicator(
@@ -191,6 +205,8 @@ class _UserListTabState extends State<UserListTab> with AutomaticKeepAliveClient
           const SliverToBoxAdapter(child: SizedBox(height: 4)),
           list,
           SliverToBoxAdapter(child: _Footer(controller: c)),
+          // Room for the selection bar over the end of the list.
+          if (selection?.active ?? false) const SliverToBoxAdapter(child: SizedBox(height: 120)),
         ],
       ),
     );

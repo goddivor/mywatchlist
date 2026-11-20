@@ -8,6 +8,8 @@ import 'package:mywatchlist/user/list_cache/list_status_cache.dart';
 import 'package:mywatchlist/user/preferences/preferences.dart';
 import 'package:mywatchlist/widgets/common/list_sort_filter.dart';
 import 'package:mywatchlist/widgets/common/select/select_option.dart';
+import 'package:mywatchlist/widgets/user/list/mal_user_list_adapter.dart';
+import 'package:mywatchlist/widgets/user/list/bulk/list_bulk.dart';
 import 'package:mywatchlist/widgets/user/list/card_layout_editor.dart';
 import 'package:mywatchlist/widgets/user/list/cards/entry_parts.dart';
 import 'package:mywatchlist/widgets/user/list/list_entry_view.dart';
@@ -77,6 +79,12 @@ class _UserListViewState extends State<UserListView> with SingleTickerProviderSt
   String _category = 'anime';
   ListPlace _place = const ListPlace();
 
+  /// Titles picked to change or remove at once (MAL lists).
+  final ListSelection _selection = ListSelection();
+
+  /// Selection mode exists for the user's own MAL list (the writes are MAL's).
+  bool get _canSelect => _adapter is MalUserListAdapter && (_adapter as MalUserListAdapter).isSelf;
+
   UserListAdapter get _adapter => widget.adapter;
   bool get _isAnime => _category == 'anime';
 
@@ -130,6 +138,8 @@ class _UserListViewState extends State<UserListView> with SingleTickerProviderSt
 
   void _onTabChanged() {
     if (_tabs.indexIsChanging) return;
+    // The picks belong to the tab they were made in.
+    _selection.stop();
     final status = userListTabs[_tabs.index];
     _controllerFor(_category, status).activate();
     _place = _place.copyWith(tabCategory: _category, tab: status?.name ?? 'all');
@@ -335,6 +345,7 @@ class _UserListViewState extends State<UserListView> with SingleTickerProviderSt
     _search.dispose();
     _searchFocus.dispose();
     _busy.dispose();
+    _selection.dispose();
     for (final map in _controllers.values) {
       for (final c in map.values) {
         c.dispose();
@@ -389,7 +400,7 @@ class _UserListViewState extends State<UserListView> with SingleTickerProviderSt
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return NestedScrollView(
+    final view = NestedScrollView(
       floatHeaderSlivers: true,
       headerSliverBuilder: (context, innerBoxIsScrolled) => [
         SliverAppBar(
@@ -421,6 +432,18 @@ class _UserListViewState extends State<UserListView> with SingleTickerProviderSt
               ],
             ),
     );
+    if (!_canSelect) return view;
+    return Stack(
+      children: [
+        view,
+        ListenableBuilder(
+          listenable: _selection,
+          builder: (context, _) => _selection.active
+              ? PositionedDirectional(start: 0, end: 0, bottom: 0, child: _bulkBar(context))
+              : const SizedBox.shrink(),
+        ),
+      ],
+    );
   }
 
   Widget _tab(BuildContext context, ListEntryStatus? status) {
@@ -437,7 +460,71 @@ class _UserListViewState extends State<UserListView> with SingleTickerProviderSt
       actions: _actions,
       style: _style(context, showStatus: status == null),
       onClearFilters: _clearFilters,
+      selection: _canSelect ? _selection : null,
     );
+  }
+
+  /// The entries of the tab on screen.
+  List<ListEntryView> get _shownEntries => _controllerFor(_category, userListTabs[_tabs.index]).entries;
+
+  List<ListEntryView> _picked() => [for (final e in _shownEntries) if (_selection.contains(e.id)) e];
+
+  Widget _bulkBar(BuildContext context) {
+    final s = S.of(context);
+    final picked = _picked();
+    return BulkActionBar(
+      selection: _selection,
+      shown: [for (final e in _shownEntries) e.id],
+      actions: [
+        BulkAction(
+          icon: Icons.swap_horiz_rounded,
+          label: s.Bulk_Set_Status,
+          onPressed: picked.isEmpty ? null : () => _bulkStatus(picked),
+        ),
+        BulkAction(
+          icon: Icons.delete_outline_rounded,
+          label: s.Bulk_Remove,
+          destructive: true,
+          onPressed: picked.isEmpty ? null : () => _bulkRemove(picked),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _bulkStatus(List<ListEntryView> picked) async {
+    final status = await pickBulkStatus(context, isAnime: _isAnime, count: picked.length);
+    if (status == null || !mounted) return;
+    final writer = MalBulkWriter(cache: _cache);
+    await runBulkWithProgress(
+      context,
+      total: picked.length,
+      work: (onProgress) => writer.setStatus(
+        picked,
+        status,
+        onProgress: onProgress,
+        onSaved: (old, saved) {
+          if (mounted) _applyChange(saved, old: old);
+        },
+      ),
+    );
+    if (mounted) _selection.stop();
+  }
+
+  Future<void> _bulkRemove(List<ListEntryView> picked) async {
+    if (!await confirmBulkRemove(context, picked.length) || !mounted) return;
+    final writer = MalBulkWriter(cache: _cache);
+    await runBulkWithProgress(
+      context,
+      total: picked.length,
+      work: (onProgress) => writer.remove(
+        picked,
+        onProgress: onProgress,
+        onRemoved: (e) {
+          if (mounted) _removeEverywhere(e);
+        },
+      ),
+    );
+    if (mounted) _selection.stop();
   }
 
   Widget _header(ThemeData theme) {
@@ -530,6 +617,17 @@ class _UserListViewState extends State<UserListView> with SingleTickerProviderSt
                     ),
             ),
           ),
+          if (_canSelect)
+            ListenableBuilder(
+              listenable: _selection,
+              builder: (context, _) => IconButton(
+                tooltip: S.current.Bulk_Select,
+                isSelected: _selection.active,
+                icon: const Icon(Icons.checklist_rounded),
+                selectedIcon: Icon(Icons.checklist_rounded, color: theme.colorScheme.primary),
+                onPressed: () => _selection.active ? _selection.stop() : _selection.start(),
+              ),
+            ),
           IconButton(
             tooltip: S.current.UserList_Filter,
             onPressed: () => _openSheet(ListSortFilterTab.filter),

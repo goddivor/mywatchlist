@@ -12,6 +12,8 @@ import 'package:mywatchlist/utils/app_routes.dart';
 import 'package:mywatchlist/widgets/common/list_sort_filter.dart';
 import 'package:mywatchlist/widgets/user/list/cards/entry_cards.dart';
 import 'package:mywatchlist/widgets/user/list/cards/entry_parts.dart';
+import 'package:mywatchlist/widgets/user/edit/list_entry_service.dart';
+import 'package:mywatchlist/widgets/user/list/bulk/list_bulk.dart';
 import 'package:mywatchlist/widgets/user/list/cards/my_list_mark.dart';
 import 'package:mywatchlist/widgets/user/list/list_entry_view.dart';
 import 'package:mywatchlist/widgets/user/list/list_query.dart';
@@ -82,6 +84,15 @@ class _ListSectionState extends State<ListSection> with AutomaticKeepAliveClient
   String _category = 'anime';
   ListEntryStatus? _status;
   _Compare _compare = _Compare.all;
+
+  /// Titles picked to add to (or remove from) the signed-in user's list.
+  final ListSelection _selection = ListSelection();
+
+  /// The entries shown last (after the compare filter), for "select all".
+  List<ListEntryView> _shown = const [];
+
+  /// Whether the signed-in user can write a MAL list (bulk add needs it).
+  bool get _canWrite => const MalListEntryService().canEdit && UserMalV2.instance.username != null;
 
   /// The signed-in user's own statuses (the whole list is kept there).
   ListStatusCache get _mine => widget.myList ?? ListStatusCache.instance;
@@ -196,6 +207,7 @@ class _ListSectionState extends State<ListSection> with AutomaticKeepAliveClient
     }
     _busy.dispose();
     _cache.dispose();
+    _selection.dispose();
     super.dispose();
   }
 
@@ -204,8 +216,10 @@ class _ListSectionState extends State<ListSection> with AutomaticKeepAliveClient
     super.build(context);
     final controller = _current;
     return ListenableBuilder(
-      listenable: controller,
-      builder: (context, _) => ProfileTabScroll(
+      listenable: Listenable.merge([controller, _selection]),
+      builder: (context, _) => Stack(
+        children: [
+          ProfileTabScroll(
         storageKey: 'list_${widget.username}_$_category',
         slivers: [
           SliverPersistentHeader(
@@ -216,9 +230,68 @@ class _ListSectionState extends State<ListSection> with AutomaticKeepAliveClient
             ),
           ),
           ..._body(context, controller, comparing: _comparing(context)),
+          if (_selection.active) const SliverToBoxAdapter(child: SizedBox(height: 120)),
+        ],
+      ),
+          if (_selection.active)
+            PositionedDirectional(start: 0, end: 0, bottom: 0, child: _bulkBar(context)),
         ],
       ),
     );
+  }
+
+  List<ListEntryView> _picked() => [for (final e in _shown) if (_selection.contains(e.id)) e];
+
+  Widget _bulkBar(BuildContext context) {
+    final s = S.of(context);
+    final picked = _picked();
+    final inMine = [for (final e in picked) if (_inMine(e)) e];
+    return BulkActionBar(
+      selection: _selection,
+      shown: [for (final e in _shown) e.id],
+      actions: [
+        BulkAction(
+          icon: Icons.playlist_add_rounded,
+          label: s.Bulk_Add_Mine,
+          onPressed: picked.isEmpty ? null : () => _addToMine(picked),
+        ),
+        BulkAction(
+          icon: Icons.playlist_remove_rounded,
+          label: s.Bulk_Remove_Mine,
+          destructive: true,
+          onPressed: inMine.isEmpty ? null : () => _removeFromMine(inMine),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _addToMine(List<ListEntryView> picked) async {
+    final s = S.of(context);
+    final status = await pickBulkStatus(
+      context,
+      isAnime: _isAnime,
+      count: picked.length,
+      title: s.Bulk_Add_Title(picked.length),
+    );
+    if (status == null || !mounted) return;
+    final writer = MalBulkWriter(cache: _mine);
+    await runBulkWithProgress(
+      context,
+      total: picked.length,
+      work: (onProgress) => writer.setStatus(picked, status, onProgress: onProgress),
+    );
+    if (mounted) _selection.stop();
+  }
+
+  Future<void> _removeFromMine(List<ListEntryView> picked) async {
+    if (!await confirmBulkRemove(context, picked.length) || !mounted) return;
+    final writer = MalBulkWriter(cache: _mine);
+    await runBulkWithProgress(
+      context,
+      total: picked.length,
+      work: (onProgress) => writer.remove(picked, onProgress: onProgress),
+    );
+    if (mounted) _selection.stop();
   }
 
   Widget _header(BuildContext context, {required bool comparing}) {
@@ -250,6 +323,14 @@ class _ListSectionState extends State<ListSection> with AutomaticKeepAliveClient
                   onSelectionChanged: (v) => _select(category: v.first),
                 ),
                 const Spacer(),
+                if (_canWrite)
+                  IconButton(
+                    tooltip: s.Bulk_Select,
+                    isSelected: _selection.active,
+                    icon: const Icon(Icons.checklist_rounded),
+                    selectedIcon: Icon(Icons.checklist_rounded, color: Theme.of(context).colorScheme.primary),
+                    onPressed: () => _selection.active ? _selection.stop() : _selection.start(),
+                  ),
                 if (comparing)
                   _CompareButton(
                     value: _compare,
@@ -357,6 +438,11 @@ class _ListSectionState extends State<ListSection> with AutomaticKeepAliveClient
       return [fill(ProfileMessage(icon: Icons.inbox_outlined, title: s.Pl_List_Empty))];
     }
 
+    _shown = entries;
+    if (_selection.active) _selection.retain(entries.map((e) => e.id));
+    Widget pickable(ListEntryView e, Widget card) =>
+        SelectableEntry(selection: _selection, id: e.id, child: card);
+
     Widget? mark(ListEntryView e, {bool dense = false}) => comparing
         ? MyListMark(id: e.id, category: e.category, dense: dense, onImage: dense, cache: _mine)
         : null;
@@ -371,7 +457,7 @@ class _ListSectionState extends State<ListSection> with AutomaticKeepAliveClient
         sliver: SliverGrid.builder(
           gridDelegate: listGridDelegate(display),
           itemCount: entries.length,
-          itemBuilder: (context, i) => EntryGridCard(
+          itemBuilder: (context, i) => pickable(entries[i], EntryGridCard(
             key: ValueKey(entries[i].id),
             entry: entries[i],
             subType: display.subType,
@@ -379,7 +465,7 @@ class _ListSectionState extends State<ListSection> with AutomaticKeepAliveClient
             style: style,
             now: now,
             mark: mark(entries[i], dense: true),
-          ),
+          )),
         ),
       );
     } else {
@@ -389,7 +475,7 @@ class _ListSectionState extends State<ListSection> with AutomaticKeepAliveClient
       list = SliverFixedExtentList.builder(
         itemExtent: listRowExtent(subType),
         itemCount: entries.length,
-        itemBuilder: (context, i) => EntryListTile(
+        itemBuilder: (context, i) => pickable(entries[i], EntryListTile(
           key: ValueKey(entries[i].id),
           entry: entries[i],
           subType: subType,
@@ -398,7 +484,7 @@ class _ListSectionState extends State<ListSection> with AutomaticKeepAliveClient
           now: now,
           locale: locale,
           mark: mark(entries[i], dense: subType == DisplaySubType.compact),
-        ),
+        )),
       );
     }
     return [
