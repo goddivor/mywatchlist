@@ -3,7 +3,6 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mywatchlist/services/api/MAL/web/mal_conversations.dart';
 import 'package:mywatchlist/services/api/MAL/web/mal_messages_api.dart';
-import 'package:mywatchlist/services/api/MAL/web/mal_notifications_api.dart';
 import 'package:mywatchlist/services/api/MAL/web/mal_web_store.dart';
 import 'package:mywatchlist/services/auth/mal_web_session.dart';
 import 'package:mywatchlist/services/notifications/mal_hub.dart';
