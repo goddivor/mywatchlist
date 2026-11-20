@@ -34,7 +34,11 @@ class AnimeGraphNode extends StatelessWidget {
     required this.onTap,
     required this.onLongPress,
     this.fallbackStatus,
+    this.category = 'anime',
   });
+
+  /// `anime` or `manga`: the list the status badge reads.
+  final String category;
 
   @override
   Widget build(BuildContext context) {
@@ -69,7 +73,7 @@ class AnimeGraphNode extends StatelessWidget {
         child: Column(
           children: [
             ValueListenableBuilder<CachedListStatus?>(
-              valueListenable: ListStatusCache.instance.watch(node.id),
+              valueListenable: ListStatusCache.instance.watch(node.id, category: category),
               builder: (context, cached, _) {
                 final status = cached?.status ?? fallbackStatus;
                 final color = status == null

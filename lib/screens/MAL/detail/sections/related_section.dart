@@ -23,7 +23,7 @@ DetailSection? relatedSection(DetailData data) {
       ],
       horizPadding: detailHorizPadding,
       id: data.id,
-      // A manga page has no relation graph: the widget hides that button.
+      // Anime and manga pages both open the relation graph of their own kind.
       category: data.category,
       title: data.node?.title ?? content?.title,
     ),

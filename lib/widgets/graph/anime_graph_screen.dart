@@ -19,19 +19,32 @@ import 'package:mywatchlist/widgets/graph/graph_share.dart';
 /// Loads the relation graph of an anime: cached copy, mwl-rust-api when `API_URL` is set and
 /// answers, else built in the app from the MAL API ([AnimeGraphRepository]). Replaced in tests.
 @visibleForTesting
-Future<AnimeGraphData> Function(int id) animeGraphLoader = (id) async {
-  final result = await AnimeGraphRepository.instance.load(id);
+Future<AnimeGraphData> Function(int id) animeGraphLoader =
+    (id) => _loadGraph(AnimeGraphRepository.instance, id);
+
+/// The same for a manga (`related_manga`). Replaced in tests.
+@visibleForTesting
+Future<AnimeGraphData> Function(int id) mangaGraphLoader =
+    (id) => _loadGraph(AnimeGraphRepository.manga, id);
+
+Future<AnimeGraphData> _loadGraph(AnimeGraphRepository repository, int id) async {
+  final result = await repository.load(id);
   return AnimeGraphData.fromJson(result.json).withCompleteness(
       complete: result.complete, rateLimited: result.rateLimited);
-};
+}
 
 /// Titles found so far while the graph of an anime is built. Replaced in tests.
 @visibleForTesting
 ValueListenable<int> Function(int id) animeGraphProgress =
     (id) => AnimeGraphRepository.instance.progressOf(id);
 
+/// The same for a manga. Replaced in tests.
+@visibleForTesting
+ValueListenable<int> Function(int id) mangaGraphProgress =
+    (id) => AnimeGraphRepository.manga.progressOf(id);
+
 /// Graphs fetched during this session, so reopening one is instant.
-final Map<int, AnimeGraphData> _sessionCache = {};
+final Map<String, AnimeGraphData> _sessionCache = {};
 
 /// Forgets the graphs fetched so far.
 @visibleForTesting
@@ -53,10 +66,14 @@ class AnimeGraphScreen extends StatefulWidget {
   /// List statuses (MAL's words) for titles the status cache may not know yet.
   final Map<int, String> fallbackStatuses;
 
+  /// `anime` or `manga`.
+  final String category;
+
   const AnimeGraphScreen(
       {super.key,
       required this.id,
       this.title,
+      this.category = 'anime',
       this.fallbackStatuses = const {}});
 
   @override
@@ -104,17 +121,20 @@ class _AnimeGraphScreenState extends State<AnimeGraphScreen>
     super.dispose();
   }
 
+  bool get _isManga => widget.category == 'manga';
+  String get _cacheKey => '${widget.category}:${widget.id}';
+
   Future<void> _load() async {
-    final cached = _sessionCache[widget.id];
+    final cached = _sessionCache[_cacheKey];
     if (cached != null) {
       _show(cached);
       return;
     }
     setState(() => _state = _LoadState.loading);
     try {
-      final data = await animeGraphLoader(widget.id);
+      final data = await (_isManga ? mangaGraphLoader : animeGraphLoader)(widget.id);
       if (!mounted) return;
-      if (!data.isEmpty && data.complete) _sessionCache[widget.id] = data;
+      if (!data.isEmpty && data.complete) _sessionCache[_cacheKey] = data;
       _show(data);
     } on AnimeGraphUnavailable catch (e) {
       if (!mounted) return;
@@ -182,6 +202,7 @@ class _AnimeGraphScreenState extends State<AnimeGraphScreen>
           node: data,
           selectedId: _selected,
           fallbackStatus: widget.fallbackStatuses[id],
+          category: widget.category,
           onTap: () => _showNodeSheet(data),
           onLongPress: () => _select(id),
         );
@@ -262,6 +283,7 @@ class _AnimeGraphScreenState extends State<AnimeGraphScreen>
         isSelected: _selected.value == node.id,
         isCurrent: node.id == widget.id,
         fallbackStatus: widget.fallbackStatuses[node.id],
+        category: widget.category,
         onSelect: () {
           Navigator.pop(sheetContext);
           _select(node.id);
@@ -271,7 +293,7 @@ class _AnimeGraphScreenState extends State<AnimeGraphScreen>
           if (node.id == widget.id) {
             Navigator.pop(context);
           } else {
-            AppRoutes.openContent(context, id: node.id);
+            AppRoutes.openContent(context, id: node.id, category: widget.category);
           }
         },
       ),
@@ -393,7 +415,7 @@ class _AnimeGraphScreenState extends State<AnimeGraphScreen>
         _LoadState.loading => _Message(
             loading: true,
             text: S.current.Rg_Loading,
-            progress: animeGraphProgress(widget.id),
+            progress: (_isManga ? mangaGraphProgress : animeGraphProgress)(widget.id),
           ),
         _LoadState.empty =>
           _Message(icon: Icons.hub_outlined, text: S.current.Rg_Unavailable),
@@ -594,10 +616,12 @@ class _NodeSheet extends StatelessWidget {
   final bool isSelected;
   final bool isCurrent;
   final String? fallbackStatus;
+  final String category;
   final VoidCallback onSelect;
   final VoidCallback onOpen;
 
   const _NodeSheet({
+    required this.category,
     required this.node,
     required this.isSelected,
     required this.isCurrent,
@@ -609,7 +633,8 @@ class _NodeSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final cached = ListStatusCache.instance.statusOf(node.id) ?? fallbackStatus;
+    final cached =
+        ListStatusCache.instance.statusOf(node.id, category: category) ?? fallbackStatus;
     final status = cached == null ? null : NodeStatusValue.fromString(cached);
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),

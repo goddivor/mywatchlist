@@ -69,9 +69,15 @@ class AnimeGraphResult {
 class AnimeGraphBuilder {
   AnimeGraphBuilder({
     Future<GraphFetch> Function(int id)? fetch,
+    this.category = 'anime',
     this.maxNodes = 120,
     this.concurrency = 5,
-  }) : _fetch = fetch ?? fetchMalAnime;
+  }) : _fetch = fetch ??
+            (category == 'manga' ? fetchMalManga : fetchMalAnime);
+
+  /// `anime` or `manga`: which MAL endpoint is read and which relations are walked
+  /// (`related_anime` or `related_manga`; the other kind's adaptations are not followed).
+  final String category;
 
   final Future<GraphFetch> Function(int id) _fetch;
   final int maxNodes;
@@ -80,6 +86,10 @@ class AnimeGraphBuilder {
   /// Fields of `GET /anime/{id}`, as mwl-rust-api asks them (`main_picture` comes by default).
   static const String fields =
       'alternative_titles,mean,media_type,status,start_season,related_anime';
+
+  /// Fields of `GET /manga/{id}` (a manga has a start date, no season).
+  static const String mangaFields =
+      'alternative_titles,mean,media_type,status,start_date,related_manga';
 
   /// Relation words followed by the walk (`character` never, `other` only from the root).
   static const Set<String> _followed = {
@@ -100,10 +110,16 @@ class AnimeGraphBuilder {
 
   /// `GET /anime/{id}` through [MalApi.authorizedGet]: the MAL session when the selected
   /// account is MyAnimeList, the app's client id for any other tracker.
-  static Future<GraphFetch> fetchMalAnime(int id) async {
+  static Future<GraphFetch> fetchMalAnime(int id) =>
+      _fetchMal('${MalApi.animeEndPoint}/$id?fields=$fields', id);
+
+  /// `GET /manga/{id}`, like [fetchMalAnime].
+  static Future<GraphFetch> fetchMalManga(int id) =>
+      _fetchMal('${MalApi.mangaEndPoint}/$id?fields=$mangaFields', id);
+
+  static Future<GraphFetch> _fetchMal(String url, int id) async {
     try {
-      final response = await MalApi.authorizedGet(
-          '${MalApi.animeEndPoint}/$id?fields=$fields');
+      final response = await MalApi.authorizedGet(url);
       if (response.statusCode == 429) return const GraphFetch.rateLimited();
       if (response.statusCode != 200) return const GraphFetch.failed();
       final body = await MwlApi.decodeJson(response.body);
@@ -182,7 +198,7 @@ class _Walk {
   /// `get_unvisited_edges`: the followed relations of [anime], from [id].
   List<_Edge> edgesOf(int id, Map<String, dynamic> anime,
       {required bool includeOthers}) {
-    final related = anime['related_anime'];
+    final related = anime['related_${builder.category}'];
     if (related is! List) return const [];
     final result = <_Edge>[];
     for (final entry in related) {
@@ -244,8 +260,11 @@ class _Walk {
     }
   }
 
-  /// The node fields of mwl-rust-api's `ContentNodeDTO`.
+  /// The node fields of mwl-rust-api's `ContentNodeDTO`. A manga's `start_date`
+  /// (`2010-04-07`, `2010`) becomes a `start_season` so both kinds sort the same way.
   static Map<String, dynamic> _node(Map<String, dynamic> anime) => {
+        if (anime['start_season'] is! Map && anime['start_date'] is String)
+          ...?_seasonOfDate(anime['start_date'] as String),
         'id': anime['id'],
         'title': anime['title'] ?? '',
         if (anime['main_picture'] is Map) 'main_picture': anime['main_picture'],
@@ -259,6 +278,20 @@ class _Walk {
             'ja': (anime['alternative_titles'] as Map)['ja'],
           },
       };
+
+  static Map<String, dynamic>? _seasonOfDate(String date) {
+    final parts = date.split('-');
+    final year = int.tryParse(parts.first);
+    if (year == null) return null;
+    final month = parts.length > 1 ? int.tryParse(parts[1]) : null;
+    final season = month == null
+        ? null
+        : const ['winter', 'winter', 'winter', 'spring', 'spring', 'spring', 'summer',
+            'summer', 'summer', 'fall', 'fall', 'fall'][(month - 1).clamp(0, 11)];
+    return {
+      'start_season': {'year': year, if (season != null) 'season': season}
+    };
+  }
 
   Map<String, dynamic> toJson() => {
         'nodes': nodes.values.toList(),
@@ -277,12 +310,15 @@ abstract class AnimeGraphStore {
 /// One JSON file per title in the temporary directory (the system may clear it, which only
 /// means a new walk).
 class FileAnimeGraphStore implements AnimeGraphStore {
-  const FileAnimeGraphStore();
+  const FileAnimeGraphStore({this.folder = 'mwl_anime_graph'});
+
+  /// Folder of the temporary directory holding the files (one per kind of title).
+  final String folder;
 
   Future<File> _file(int id) async {
     final dir = await getTemporaryDirectory();
     final sep = Platform.pathSeparator;
-    return File('${dir.path}${sep}mwl_anime_graph$sep$id.json');
+    return File('${dir.path}$sep$folder$sep$id.json');
   }
 
   @override
@@ -328,6 +364,18 @@ class AnimeGraphRepository {
         _remote = remote ?? ((id) => MwlApi.i.getAnimeGraph(id));
 
   static AnimeGraphRepository instance = AnimeGraphRepository();
+
+  /// The graphs of MAL manga: built in the app from `related_manga` (mwl-rust-api only
+  /// serves anime), kept in their own folder.
+  static AnimeGraphRepository manga = AnimeGraphRepository(
+    builder: AnimeGraphBuilder(category: 'manga'),
+    store: const FileAnimeGraphStore(folder: 'mwl_manga_graph'),
+    remote: (_) async => null,
+  );
+
+  /// The repository of [category] (`anime` or `manga`).
+  static AnimeGraphRepository of(String category) =>
+      category == 'manga' ? manga : instance;
 
   final AnimeGraphBuilder _builder;
   final AnimeGraphStore _store;

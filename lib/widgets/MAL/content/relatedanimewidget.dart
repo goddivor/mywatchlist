@@ -54,7 +54,7 @@ class _RelatedAnimeWidgetState extends State<RelatedAnimeWidget>
     }
   }
 
-  bool get _hasGraph => widget.category == 'anime';
+  bool get _hasGraph => widget.category == 'anime' || widget.category == 'manga';
 
   void _openGraph() {
     AppRoutes.push(
@@ -62,6 +62,7 @@ class _RelatedAnimeWidgetState extends State<RelatedAnimeWidget>
       AnimeGraphScreen(
         id: widget.id,
         title: widget.title,
+        category: widget.category,
         fallbackStatuses: statusesOf(allRelatedNodes(_groups)),
       ),
     );
