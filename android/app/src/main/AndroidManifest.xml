@@ -2,6 +2,10 @@
     xmlns:tools="http://schemas.android.com/tools">
     <!-- Required in release builds: every tracker API and scraper needs network access. -->
     <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- Only Android 9 and older need it to put a saved graph in Pictures; later versions use
+         MediaStore without any permission. -->
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="28"/>
 
     <!-- Notifications (flutter_local_notifications): show them (Android 13+), schedule airing
          reminders at an exact time (the user grants it, requestExactAlarmsPermission), and

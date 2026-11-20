@@ -89,13 +89,12 @@ Future<Uint8List?> composeGraphPng({
   return data?.buffer.asUint8List();
 }
 
-/// Captures the graph under [boundary], brands it, writes it to a temporary file and opens the
-/// share sheet. Returns false when no image could be made.
+/// Captures the graph under [boundary], brands it and returns the PNG bytes, or null when no
+/// image could be made.
 ///
 /// [logoAsset] is the asset path of the app logo drawn in the strip.
-Future<bool> shareGraphImage({
+Future<Uint8List?> captureGraphPng({
   required RenderRepaintBoundary boundary,
-  required String fileStem,
   required Color background,
   required Color footerColor,
   required Color footerTextColor,
@@ -116,10 +115,10 @@ Future<bool> shareGraphImage({
         logo = (await codec.getNextFrame()).image;
         codec.dispose();
       } catch (e) {
-        debugPrint('Graph share: logo not loaded: $e');
+        debugPrint('Graph image: logo not loaded: $e');
       }
     }
-    final png = await composeGraphPng(
+    return await composeGraphPng(
       graph: captured,
       background: background,
       footerColor: footerColor,
@@ -127,7 +126,19 @@ Future<bool> shareGraphImage({
       brand: brand,
       logo: logo,
     );
-    if (png == null) return false;
+  } catch (e) {
+    debugPrint('Graph capture failed: $e');
+    return null;
+  } finally {
+    captured?.dispose();
+    logo?.dispose();
+  }
+}
+
+/// Writes [png] to a temporary file named after [fileStem] and opens the share sheet. Returns
+/// false when it could not.
+Future<bool> shareGraphPng(Uint8List png, String fileStem) async {
+  try {
     final dir = await getTemporaryDirectory();
     final file = File('${dir.path}/${safeFileStem(fileStem)}.png');
     await file.writeAsBytes(png, flush: true);
@@ -136,10 +147,16 @@ Future<bool> shareGraphImage({
   } catch (e) {
     debugPrint('Graph share failed: $e');
     return false;
-  } finally {
-    captured?.dispose();
-    logo?.dispose();
   }
+}
+
+/// The gallery file name for a graph: [fileStem] plus a timestamp, so saving the same graph
+/// twice keeps both images.
+String graphGalleryName(String fileStem, DateTime now) {
+  String two(int v) => v.toString().padLeft(2, '0');
+  final stamp = '${now.year}${two(now.month)}${two(now.day)}_'
+      '${two(now.hour)}${two(now.minute)}${two(now.second)}';
+  return '${safeFileStem(fileStem)}_$stamp';
 }
 
 /// [value] reduced to letters, digits and underscores, so it is safe as a file name.

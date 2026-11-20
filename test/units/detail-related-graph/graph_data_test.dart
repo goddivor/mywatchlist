@@ -185,5 +185,12 @@ void main() {
       expect(safeFileStem('日本語 タイトル'), '日本語_タイトル');
       expect(safeFileStem('a' * 100).length, 60);
     });
+
+    test('gallery names carry a timestamp so saves never overwrite', () {
+      expect(
+          graphGalleryName(
+              'Bakemonogatari: 2/3!', DateTime(2026, 11, 3, 9, 5, 7)),
+          'Bakemonogatari_2_3_20261103_090507');
+    });
   });
 }

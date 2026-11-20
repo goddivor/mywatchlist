@@ -14,6 +14,7 @@ import 'package:mywatchlist/widgets/common/app_image.dart';
 import 'package:mywatchlist/widgets/common/select/select.dart';
 import 'package:mywatchlist/widgets/graph/anime_graph_data.dart';
 import 'package:mywatchlist/widgets/graph/anime_graph_node.dart';
+import 'package:mywatchlist/utils/gallery_saver.dart';
 import 'package:mywatchlist/widgets/graph/graph_share.dart';
 
 /// Loads the relation graph of an anime: cached copy, mwl-rust-api when `API_URL` is set and
@@ -27,7 +28,8 @@ Future<AnimeGraphData> Function(int id) animeGraphLoader =
 Future<AnimeGraphData> Function(int id) mangaGraphLoader =
     (id) => _loadGraph(AnimeGraphRepository.manga, id);
 
-Future<AnimeGraphData> _loadGraph(AnimeGraphRepository repository, int id) async {
+Future<AnimeGraphData> _loadGraph(
+    AnimeGraphRepository repository, int id) async {
   final result = await repository.load(id);
   return AnimeGraphData.fromJson(result.json).withCompleteness(
       complete: result.complete, rateLimited: result.rateLimited);
@@ -56,8 +58,8 @@ enum _LoadState { loading, ready, empty, failed, rateLimited }
 ///
 /// Pan and zoom freely; tap a title for its details, long-press it to select it (the view
 /// centers on it and, in "from the selected title" layout, the graph grows from it). The
-/// layout button switches between that and a release-order layout, the camera button shares
-/// the graph as a branded PNG.
+/// layout button switches between that and a release-order layout, the download button saves
+/// the graph as a branded PNG in the gallery and the share button shares it.
 class AnimeGraphScreen extends StatefulWidget {
   /// MAL id of the anime whose page opened the graph; selected at first.
   final int id;
@@ -84,6 +86,7 @@ class _AnimeGraphScreenState extends State<AnimeGraphScreen>
     with SingleTickerProviderStateMixin {
   static const double _focusScale = 0.8;
   static const double _pad = 40;
+
   /// The share strip stays dark in every theme: the logo asset is drawn on black.
   static const Color _footerColor = Color(0xFF151515);
   static const Color _footerTextColor = Color(0xFFFFFFFF);
@@ -104,6 +107,8 @@ class _AnimeGraphScreenState extends State<AnimeGraphScreen>
   Widget? _graphView;
   ColorScheme? _builtForScheme;
   Size _viewport = Size.zero;
+
+  /// The image being made, for sharing or for the gallery; both buttons wait on it.
   bool _sharing = false;
 
   @override
@@ -132,7 +137,8 @@ class _AnimeGraphScreenState extends State<AnimeGraphScreen>
     }
     setState(() => _state = _LoadState.loading);
     try {
-      final data = await (_isManga ? mangaGraphLoader : animeGraphLoader)(widget.id);
+      final data =
+          await (_isManga ? mangaGraphLoader : animeGraphLoader)(widget.id);
       if (!mounted) return;
       if (!data.isEmpty && data.complete) _sessionCache[_cacheKey] = data;
       _show(data);
@@ -293,7 +299,8 @@ class _AnimeGraphScreenState extends State<AnimeGraphScreen>
           if (node.id == widget.id) {
             Navigator.pop(context);
           } else {
-            AppRoutes.openContent(context, id: node.id, category: widget.category);
+            AppRoutes.openContent(context,
+                id: node.id, category: widget.category);
           }
         },
       ),
@@ -317,11 +324,9 @@ class _AnimeGraphScreenState extends State<AnimeGraphScreen>
                 style: Theme.of(sheetContext).textTheme.titleLarge),
             const SizedBox(height: 16),
             _LegendRow(
-                color: colors.success.color,
-                label: S.current.Rg_Legend_Sequel),
+                color: colors.success.color, label: S.current.Rg_Legend_Sequel),
             _LegendRow(
-                color: colors.danger.color,
-                label: S.current.Rg_Legend_Prequel),
+                color: colors.danger.color, label: S.current.Rg_Legend_Prequel),
             _LegendRow(color: scheme.primary, label: S.current.Rg_Legend_Other),
             const SizedBox(height: 12),
             Text(
@@ -337,26 +342,40 @@ class _AnimeGraphScreenState extends State<AnimeGraphScreen>
     );
   }
 
-  Future<void> _share() async {
+  Future<void> _share() => _exportImage(save: false);
+
+  Future<void> _save() => _exportImage(save: true);
+
+  /// Captures the branded graph, then opens the share sheet or, with [save], puts it in the
+  /// phone's gallery.
+  Future<void> _exportImage({required bool save}) async {
     if (_sharing) return;
     final boundary = _captureKey.currentContext?.findRenderObject();
     if (boundary is! RenderRepaintBoundary) return;
     setState(() => _sharing = true);
-    final background = Theme.of(context).scaffoldBackgroundColor;
-    final brand = S.current.Rg_Brand;
     final stem = '${widget.title ?? 'anime_graph'}_${widget.id}';
-    final ok = await shareGraphImage(
+    final png = await captureGraphPng(
       boundary: boundary,
-      fileStem: stem,
-      background: background,
+      background: Theme.of(context).scaffoldBackgroundColor,
       footerColor: _footerColor,
       footerTextColor: _footerTextColor,
-      brand: brand,
+      brand: S.current.Rg_Brand,
       logoAsset: 'assets/images/mwl-black-bg.png',
     );
+    var ok = png != null;
+    if (png != null) {
+      ok = save
+          ? await GallerySaver.savePng(
+              png, graphGalleryName(stem, DateTime.now()))
+          : await shareGraphPng(png, stem);
+    }
     if (!mounted) return;
     setState(() => _sharing = false);
-    if (!ok) showToast(S.current.Rg_Share_Failed);
+    if (save) {
+      showToast(ok ? S.current.Rg_Saved : S.current.Rg_Save_Failed);
+    } else if (!ok) {
+      showToast(S.current.Rg_Share_Failed);
+    }
   }
 
   // ---------------------------------------------------------------- build
@@ -399,6 +418,11 @@ class _AnimeGraphScreenState extends State<AnimeGraphScreen>
               icon: const Icon(Icons.info_outline),
             ),
             IconButton(
+              tooltip: S.current.Rg_Save,
+              onPressed: _sharing ? null : _save,
+              icon: const Icon(Icons.download_outlined),
+            ),
+            IconButton(
               tooltip: S.current.Rg_Share,
               onPressed: _sharing ? null : _share,
               icon: _sharing
@@ -415,7 +439,8 @@ class _AnimeGraphScreenState extends State<AnimeGraphScreen>
         _LoadState.loading => _Message(
             loading: true,
             text: S.current.Rg_Loading,
-            progress: (_isManga ? mangaGraphProgress : animeGraphProgress)(widget.id),
+            progress:
+                (_isManga ? mangaGraphProgress : animeGraphProgress)(widget.id),
           ),
         _LoadState.empty =>
           _Message(icon: Icons.hub_outlined, text: S.current.Rg_Unavailable),
@@ -634,7 +659,8 @@ class _NodeSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final cached =
-        ListStatusCache.instance.statusOf(node.id, category: category) ?? fallbackStatus;
+        ListStatusCache.instance.statusOf(node.id, category: category) ??
+            fallbackStatus;
     final status = cached == null ? null : NodeStatusValue.fromString(cached);
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
