@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mywatchlist/widgets/user/list/list_status_pill.dart';
 import 'package:mywatchlist/constants/constants.dart';
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/screens/MAL/character_screen.dart';
@@ -215,6 +216,11 @@ class MediaTile extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                         style: theme.textTheme.bodySmall?.copyWith(color: muted),
                       ),
+                    ],
+                    // The user's own status and score when it is in their list.
+                    if (editable) ...[
+                      const SizedBox(height: 6),
+                      ListStatusPill(id: item.id, category: category),
                     ],
                     const Spacer(),
                     if (size == MediaTileSize.spacious &&

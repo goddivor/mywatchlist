@@ -1,5 +1,6 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:mywatchlist/widgets/user/list/list_status_pill.dart';
 import 'package:intl/intl.dart';
 import 'package:mywatchlist/cache/bookmarks.dart';
 import 'package:mywatchlist/constants/constants.dart';
@@ -873,6 +874,12 @@ class StackEntryTile extends StatelessWidget {
                           fontSize: 18,
                           opacity: 1,
                         ),
+                        // The user's own status and score when it is in their list.
+                        if (malId != null)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 6),
+                            child: ListStatusPill(id: malId, category: category),
+                          ),
                         SB.h15,
                         // Media info line: "TV · Finished · 25eps, 24min"
                         if (mediaInfo.isNotEmpty)

@@ -13,6 +13,7 @@ import 'package:mywatchlist/widgets/common/list_sort_filter.dart';
 import 'package:mywatchlist/widgets/common/select/select_option.dart';
 import 'package:mywatchlist/widgets/user/list/list_entry_view.dart';
 import 'package:mywatchlist/widgets/user/list/list_query.dart';
+import 'package:mywatchlist/user/list_cache/list_status_cache.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// One MAL `node` of a seasonal answer as a card entry, with the user's list status when MAL
@@ -24,6 +25,8 @@ ListEntryView weeklyEntryFromNode(Map<String, dynamic> node) {
   final picture = node['main_picture'];
   final broadcast = node['broadcast'];
   final ls = node['my_list_status'] is Map ? node['my_list_status'] as Map : const {};
+  // MAL sends no list status (another tracker is active): the user's list cache tells it.
+  final cached = ls.isEmpty ? ListStatusCache.instance.entryOf(toInt(node['id'])) : null;
   return ListEntryView(
     id: toInt(node['id']),
     malId: toInt(node['id']),
@@ -48,9 +51,9 @@ ListEntryView weeklyEntryFromNode(Map<String, dynamic> node) {
     broadcast: broadcast is Map
         ? BroadcastSlot.fromMal(text(broadcast['day_of_the_week']), text(broadcast['start_time']))
         : null,
-    status: ListEntryStatus.fromMal(text(ls['status'])),
-    score: toInt(ls['score']),
-    progress: toInt(ls['num_episodes_watched']),
+    status: ListEntryStatus.fromMal(text(ls['status']) ?? cached?.status),
+    score: cached?.score ?? toInt(ls['score']),
+    progress: cached?.progress ?? toInt(ls['num_episodes_watched']),
     repeating: ls['is_rewatching'] == true,
     priority: toInt(ls['priority']),
     updatedAt: DateTime.tryParse(text(ls['updated_at']) ?? ''),

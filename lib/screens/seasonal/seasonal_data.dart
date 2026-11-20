@@ -11,12 +11,15 @@ import 'package:mywatchlist/user/preferences/preferences.dart';
 import 'package:mywatchlist/widgets/common/list_sort_filter.dart';
 import 'package:mywatchlist/widgets/user/list/list_entry_view.dart';
 import 'package:mywatchlist/widgets/user/list/list_query.dart';
+import 'package:mywatchlist/user/list_cache/list_status_cache.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// A MAL seasonal anime as a card entry, with the signed-in user's list status when MAL sent one.
 ListEntryView entryFromAnime(Anime a) {
   final ls = a.myListStatus;
-  final status = ListEntryStatus.fromMal(ls?.status);
+  // MAL sends no list status (another tracker is active): the user's list cache tells it.
+  final cached = ls == null ? ListStatusCache.instance.entryOf(a.id) : null;
+  final status = ListEntryStatus.fromMal(ls?.status ?? cached?.status);
   final broadcast = a.broadcast;
   return ListEntryView(
     id: a.id,
@@ -38,8 +41,8 @@ ListEntryView entryFromAnime(Anime a) {
         ? null
         : BroadcastSlot.fromMal(broadcast.dayOfTheWeek, broadcast.startTime),
     status: status,
-    score: ls?.score ?? 0,
-    progress: ls?.numEpisodesWatched ?? 0,
+    score: ls?.score ?? cached?.score ?? 0,
+    progress: ls?.numEpisodesWatched ?? cached?.progress ?? 0,
     repeating: ls?.isRewatching ?? false,
     priority: ls?.priority ?? 0,
     updatedAt: DateTime.tryParse(ls?.updatedAt ?? ''),

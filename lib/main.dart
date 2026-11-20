@@ -31,6 +31,7 @@ import 'package:mywatchlist/utils/app_routes.dart';
 import 'package:mywatchlist/utils/deep_links.dart';
 import 'package:mywatchlist/user/accounts/account_bloc.dart';
 import 'package:mywatchlist/user/accounts/provider/account_manager_singleton.dart';
+import 'package:mywatchlist/user/list_cache/list_status_sync.dart';
 import 'package:mywatchlist/user/language/language_bloc.dart';
 import 'package:mywatchlist/user/language/language_state.dart';
 import 'package:mywatchlist/user/language/supported_languages.dart';
@@ -95,6 +96,11 @@ void main() async {
   // Initialize UserManager (POO architecture with BaseUser inheritance)
   userManager = UserManager.instance;
   await userManager.initializeAllUsers();
+
+  // The whole MAL lists in the status cache (every 12 h, at once for another account), so
+  // every card and row can show "in my list" with its status and score.
+  unawaited(ListStatusSync.instance.syncIfDue());
+  userManager.addListener(() => unawaited(ListStatusSync.instance.syncIfDue()));
 
   // MAL notifications and messages, and AniList notifications, while the app is closed
   // (Android WorkManager, every 30 min).
