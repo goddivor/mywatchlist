@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/widgets/user/contenteditwidget.dart';
 import 'package:mywatchlist/widgets/user/edit/edit_rules.dart';
+import 'package:mywatchlist/widgets/user/edit/edit_swipe.dart';
 import 'package:mywatchlist/widgets/user/edit/list_entry.dart';
 import 'package:mywatchlist/widgets/user/edit/list_entry_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -98,5 +99,34 @@ void main() {
     await tester.fling(_handle, const Offset(0, 200), 1000);
     await tester.pumpAndSettle();
     expect(find.byType(BottomSheet), findsNothing);
+  });
+
+  testWidgets('a slow swipe on the body of the sheet works too', (tester) async {
+    await _open(tester);
+    final body = find.byKey(const ValueKey('edit-form'));
+    // Slow drag (no fling) away from the handle.
+    await tester.timedDrag(body, const Offset(0, -120), const Duration(milliseconds: 900));
+    await tester.pumpAndSettle();
+    expect(_expanded(tester), isTrue);
+
+    await tester.timedDrag(body, const Offset(0, 120), const Duration(milliseconds: 900));
+    await tester.pumpAndSettle();
+    expect(_expanded(tester), isFalse);
+    expect(find.byType(BottomSheet), findsOneWidget);
+
+    await tester.timedDrag(body, const Offset(0, 120), const Duration(milliseconds: 900));
+    await tester.pumpAndSettle();
+    expect(find.byType(BottomSheet), findsNothing);
+  });
+
+  test('swipe decision', () {
+    EditSwipe f(double dy, double v, bool e) => editSwipeFor(dy: dy, velocity: v, expanded: e);
+    expect(f(-60, 0, false), EditSwipe.expand);
+    expect(f(-10, -900, false), EditSwipe.expand);
+    expect(f(-60, 0, true), EditSwipe.none);
+    expect(f(60, 0, true), EditSwipe.collapse);
+    expect(f(60, 0, false), EditSwipe.dismiss);
+    expect(f(10, 100, false), EditSwipe.none, reason: 'a small move is not a swipe');
+    expect(f(-60, 900, false), EditSwipe.none, reason: 'contradictory signals');
   });
 }

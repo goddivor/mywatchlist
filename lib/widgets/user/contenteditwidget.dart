@@ -14,6 +14,7 @@ import 'package:mywatchlist/widgets/user/edit/edit_fields.dart';
 import 'package:mywatchlist/widgets/user/edit/edit_labels.dart';
 import 'package:mywatchlist/widgets/user/edit/edit_rules.dart';
 import 'package:mywatchlist/widgets/user/edit/edit_sections.dart';
+import 'package:mywatchlist/widgets/user/edit/edit_swipe.dart';
 import 'package:mywatchlist/widgets/user/edit/list_entry.dart';
 import 'package:mywatchlist/widgets/user/edit/list_entry_service.dart';
 import 'package:mywatchlist/widgets/user/edit/number_bar.dart';
@@ -496,8 +497,31 @@ class _ContentEditWidgetState extends State<ContentEditWidget> {
   }
 
   Widget _editor(EditableContent content, ListEntry entry) {
-    return Column(
+    return EditSwipeArea(
       key: const ValueKey('edit-form'),
+      expanded: _advanced,
+      onSwipe: _onSwipe,
+      child: _editorColumn(content, entry),
+    );
+  }
+
+  /// Up expands "More options"; down collapses them, or closes the sheet
+  /// once they are collapsed (MoeList-like), anywhere on the sheet.
+  void _onSwipe(EditSwipe swipe) {
+    switch (swipe) {
+      case EditSwipe.expand:
+        _toggleAdvanced(true);
+      case EditSwipe.collapse:
+        _toggleAdvanced(false);
+      case EditSwipe.dismiss:
+        widget.onDismiss?.call();
+      case EditSwipe.none:
+        break;
+    }
+  }
+
+  Widget _editorColumn(EditableContent content, ListEntry entry) {
+    return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -537,20 +561,7 @@ class _ContentEditWidgetState extends State<ContentEditWidget> {
         key: const ValueKey('edit-handle'),
         behavior: HitTestBehavior.opaque,
         onTap: _toggleAdvanced,
-        // The only handle of the sheet (MoeList-like): up expands, down collapses and,
-        // once collapsed, closes; a tap toggles.
-        onVerticalDragEnd: (details) {
-          final v = details.primaryVelocity ?? 0;
-          if (v < -100) {
-            _toggleAdvanced(true);
-          } else if (v > 100) {
-            if (_advanced) {
-              _toggleAdvanced(false);
-            } else {
-              widget.onDismiss?.call();
-            }
-          }
-        },
+        // The only handle of the sheet; swipes are caught by [EditSwipeArea].
         child: SizedBox(
           height: 24,
           child: Center(
