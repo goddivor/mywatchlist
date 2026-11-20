@@ -47,8 +47,10 @@ class _FriendsSectionState extends State<FriendsSection> with AutomaticKeepAlive
       final known = {for (final f in _friends) f.username};
       setState(() {
         _page++;
+        final before = _friends.length;
         _friends.addAll(page.friends.where((f) => known.add(f.username)));
-        _hasNext = page.hasNextPage;
+        // A page that brings nobody new ends the list: no endless "load more".
+        _hasNext = page.hasNextPage && _friends.length > before;
         _cursor = page.cursor;
         _loading = false;
       });

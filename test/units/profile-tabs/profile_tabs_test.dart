@@ -215,14 +215,18 @@ void main() {
       expect(page.hasNextPage, isFalse);
     });
 
-    test('second friends page asks MAL for offset=100', () async {
-      Uri? asked;
+    test('the next friends pages ask MAL for p=2, p=3 (it ignores offset=)', () async {
+      final asked = <Uri>[];
       ProfileTabsSource.fetchPage = (url, timeout) async {
-        asked = url;
+        asked.add(url);
         return _fixture('friends_page.html');
       };
+      await ProfileTabsSource.friends('Xinil');
       await ProfileTabsSource.friends('Xinil', page: 2);
-      expect(asked!.queryParameters['offset'], '100');
+      await ProfileTabsSource.friends('Xinil', page: 3);
+      expect(asked[0].queryParameters, isEmpty);
+      expect(asked[1].queryParameters, {'p': '2'});
+      expect(asked[2].queryParameters, {'p': '3'});
     });
 
     test('friends fall back to the mwl-api route when the MAL page fails', () async {
@@ -299,6 +303,40 @@ void main() {
       expect(find.textContaining('Friends since'), findsNothing);
       expect(find.textContaining('Last seen '), findsWidgets);
       expect(find.text('Load more'), findsNothing);
+    });
+
+    testWidgets('Load more goes through every classic page (456 friends)', (tester) async {
+      // MAL's classic page: 100 friends a page, then `?p=2`… (KyoyaTempest: 4 × 100 + 56).
+      String page(int p) {
+        final count = p < 5 ? 100 : (p == 5 ? 56 : 0);
+        final rows = [
+          for (var i = 0; i < count; i++)
+            '<div class="boxlist"><div class="picSurround"><a href="/profile/u${p}_$i">'
+                '<img src=""></a></div><div class="data"><div class="title">'
+                '<a href="/profile/u${p}_$i">u${p}_$i</a></div></div></div>'
+        ].join();
+        return '<html><body><div id="contentWrapper"><div class="friend">$rows</div></div>'
+            '</body></html>';
+      }
+
+      ProfileTabsSource.fetchPage = (url, timeout) async =>
+          page(int.tryParse(url.queryParameters['p'] ?? '') ?? 1);
+      await tester.pumpWidget(_host(const FriendsSection(username: 'KyoyaTempest')));
+      await _pumpFor(tester, const Duration(seconds: 1));
+      expect(find.text('100 friends'), findsOneWidget);
+      for (var i = 0; i < 4; i++) {
+        await tester.scrollUntilVisible(find.text('Load more'), 600,
+            scrollable: find.byType(Scrollable).first);
+        await tester.tap(find.text('Load more'));
+        await _pumpFor(tester, const Duration(seconds: 1));
+      }
+      expect(find.text('Load more'), findsNothing, reason: 'the last page had fewer than 100');
+      await tester.scrollUntilVisible(find.text('u5_55'), 600,
+          scrollable: find.byType(Scrollable).first);
+      expect(find.text('u5_55'), findsOneWidget, reason: 'the last friend of the last page');
+      await tester.scrollUntilVisible(find.text('456 friends'), -3000,
+          scrollable: find.byType(Scrollable).first);
+      expect(find.text('456 friends'), findsOneWidget);
     });
 
     testWidgets('Friends with no friend shows the empty state', (tester) async {

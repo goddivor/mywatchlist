@@ -88,9 +88,10 @@ class ProfileTabsSource {
     }
     return _withFallback<ProfileFriendsPage>(
       (timeout) async {
-        final offset = (page - 1) * ProfileFriendsPage.pageSize;
+        // The classic page goes on with `?p=2`, `?p=3`…: it ignores `?offset=` and would
+        // give the first 100 friends again.
         final body = await fetchPage(
-          _profileUrl(username, 'friends', query: offset == 0 ? null : 'offset=$offset'),
+          _profileUrl(username, 'friends', query: page <= 1 ? null : 'p=$page'),
           timeout,
         );
         return _parse(parseFriendsPage, body);
@@ -254,7 +255,7 @@ Document _malDocument(String body) {
 }
 
 /// The friends of `/profile/<name>/friends`: the classic rows (100 per page, next page by
-/// `?offset=`) or the new page's JSON (30, next page by [FriendsCursor]).
+/// `?p=`) or the new page's JSON (30, next page by [FriendsCursor]).
 ProfileFriendsPage parseFriendsPage(String body) {
   final doc = _malDocument(body);
   return _friendsPage(HtmlParsers.parseUserFriends(doc));

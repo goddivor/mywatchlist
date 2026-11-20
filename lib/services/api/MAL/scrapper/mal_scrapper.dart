@@ -147,11 +147,12 @@ class MalScraper {
 
     // Paginate through all friends pages
     List<dynamic> allFriends = [];
-    int offset = 0;
+    int page = 1;
     const int pageSize = 100;
 
+    // MAL pages the classic list with `?p=` (it ignores `?offset=`).
     while (true) {
-      final url = offset == 0 ? baseUrl : '$baseUrl?offset=$offset';
+      final url = page == 1 ? baseUrl : '$baseUrl?p=$page';
       final result = await HttpConnect.htmlPage(url, HtmlParsers.parseUserFriends);
       if (result == null) break;
 
@@ -162,7 +163,7 @@ class MalScraper {
 
       // MAL shows 100 friends per page; if fewer, we've reached the last page
       if (friends.length < pageSize) break;
-      offset += pageSize;
+      page++;
     }
 
     return {'friends': allFriends};
