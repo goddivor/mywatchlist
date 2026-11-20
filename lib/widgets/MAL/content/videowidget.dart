@@ -340,9 +340,22 @@ Future<void> showYouTubeVideo({
       ),
     );
 
+    // A video its owner keeps off other sites (YouTube errors 101, 150, 152) never plays
+    // here: close the player and offer YouTube instead of a spinner that never ends.
+    var failed = false;
+    BuildContext? dialogContext;
+    void onPlayerChange() {
+      if (failed || _controller.value.errorCode == 0) return;
+      failed = true;
+      final open = dialogContext;
+      if (open != null && open.mounted) Navigator.of(open).pop();
+    }
+
+    _controller.addListener(onPlayerChange);
     await showDialog(
       context: context,
       builder: (context) {
+        dialogContext = context;
         final aspectRatio = MediaQuery.of(context).size.aspectRatio;
         final closeButton = Positioned(
           right: 10,
@@ -377,7 +390,9 @@ Future<void> showYouTubeVideo({
       },
     );
 
+    _controller.removeListener(onPlayerChange);
     _controller.dispose();
+    if (failed && context.mounted) launchURLWithConfirmation(url, context: context);
   } else {
     launchURLWithConfirmation(url, context: context);
   }
