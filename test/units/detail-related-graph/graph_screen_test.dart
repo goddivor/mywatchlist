@@ -68,6 +68,26 @@ void main() {
     expect(find.text('Selected'), findsOneWidget);
   });
 
+  testWidgets('changing the layout builds a new graph view (no stale node positions)',
+      (tester) async {
+    animeGraphLoader = (_) async => _franchise();
+    await _pump(tester, const AnimeGraphScreen(id: 2, title: 'Show'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    Key? viewKey() => tester.widget(find.byWidgetPredicate(
+        (w) => w.runtimeType.toString() == 'GraphView')).key;
+    final before = viewKey();
+
+    await tester.tap(find.byTooltip('Layout'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('By release order'));
+    await tester.pumpAndSettle();
+    final after = viewKey();
+    expect(after, isNotNull);
+    expect(after, isNot(before),
+        reason: 'a reused view keeps the old positions while the edges follow the new order');
+  });
+
   testWidgets('a list status from the cache shows in the sheet',
       (tester) async {
     ListStatusCache.instance

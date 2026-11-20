@@ -83,6 +83,7 @@ class _AnimeGraphScreenState extends State<AnimeGraphScreen>
   GraphOrder _order = GraphOrder.fromSelected;
 
   SugiyamaAlgorithm? _algorithm;
+  int _builds = 0;
   Widget? _graphView;
   ColorScheme? _builtForScheme;
   Size _viewport = Size.zero;
@@ -167,6 +168,9 @@ class _AnimeGraphScreenState extends State<AnimeGraphScreen>
     _algorithm = algorithm;
     _builtForScheme = scheme;
     return GraphView(
+      // A new graph needs a new view: a reused one keeps the nodes where the previous
+      // order placed them while the edges follow the new one.
+      key: ValueKey(Object.hash(_order, ++_builds)),
       graph: graph,
       algorithm: algorithm,
       animated: false,
