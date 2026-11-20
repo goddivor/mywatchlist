@@ -236,44 +236,44 @@ ContentCardProps builtInCardLayout(BuiltInCardStyle style) {
   final double imageWidth;
   switch (style) {
     case BuiltInCardStyle.compact:
+      // Title, then your score, progress and stepper on the right.
       height = 56;
       imageWidth = 36;
       shown = [
         _at(CustomizableFieldType.image, top: 4, left: 6),
-        _at(CustomizableFieldType.title, top: 8, left: 52, right: 110),
-        _at(CustomizableFieldType.list_score, bottom: 8, left: 52),
-        _at(CustomizableFieldType.un_seen_episodes, top: 16, right: 116),
-        _at(CustomizableFieldType.edit_and_watched_button, top: 10, right: 8),
+        // The title field takes two lines: the score sits between it and the progress.
+        _at(CustomizableFieldType.title, top: 8, left: 52, right: 256),
+        _at(CustomizableFieldType.list_score, top: 18, right: 214),
+        _at(CustomizableFieldType.edit_and_watched_button, top: 8, right: 8),
       ];
     case BuiltInCardStyle.comfortable:
+      // Mean score, title, media line; your score, progress and stepper at the bottom.
       height = 128;
       imageWidth = 84;
       shown = [
         _at(CustomizableFieldType.image, top: 4, left: 4),
         _at(CustomizableFieldType.un_seen_episodes, bottom: 10, left: 56),
-        _at(CustomizableFieldType.list_status, top: 6, left: 100),
-        _at(CustomizableFieldType.mean_score, top: 8, right: 12),
-        _at(CustomizableFieldType.title, top: 30, left: 100, right: 8),
-        _at(CustomizableFieldType.media_type, top: 70, left: 100),
-        _at(CustomizableFieldType.next_episode_full_counter, top: 88, left: 100, right: 8),
-        _at(CustomizableFieldType.list_score, bottom: 10, left: 100),
-        _at(CustomizableFieldType.edit_and_watched_button, bottom: 4, right: 8),
+        _at(CustomizableFieldType.mean_score, top: 6, left: 100),
+        _at(CustomizableFieldType.title, top: 26, left: 100, right: 8),
+        _at(CustomizableFieldType.media_type, top: 68, left: 100),
+        _at(CustomizableFieldType.list_score, bottom: 14, left: 100),
+        _at(CustomizableFieldType.edit_and_watched_button, bottom: 6, right: 8),
       ];
     case BuiltInCardStyle.spacious:
+      // As Comfortable, plus members, genres and the next episode line.
       height = 168;
       imageWidth = 112;
       shown = [
         _at(CustomizableFieldType.image, top: 4, left: 4),
         _at(CustomizableFieldType.un_seen_episodes, bottom: 10, left: 84),
-        _at(CustomizableFieldType.list_status, top: 6, left: 128),
-        _at(CustomizableFieldType.mean_score, top: 8, right: 60),
-        _at(CustomizableFieldType.num_list_users, top: 9, right: 12),
-        _at(CustomizableFieldType.title, top: 30, left: 128, right: 8),
-        _at(CustomizableFieldType.media_type, top: 72, left: 128),
-        _at(CustomizableFieldType.genre, top: 90, left: 128, right: 8),
-        _at(CustomizableFieldType.next_episode_full_counter, top: 110, left: 128, right: 8),
-        _at(CustomizableFieldType.list_score, bottom: 10, left: 128),
-        _at(CustomizableFieldType.edit_and_watched_button, bottom: 4, right: 8),
+        _at(CustomizableFieldType.mean_score, top: 6, left: 128),
+        _at(CustomizableFieldType.num_list_users, top: 8, left: 190),
+        _at(CustomizableFieldType.title, top: 26, left: 128, right: 8),
+        _at(CustomizableFieldType.media_type, top: 68, left: 128),
+        _at(CustomizableFieldType.genre, top: 86, left: 128, right: 8),
+        _at(CustomizableFieldType.next_episode_full_counter, top: 104, left: 128, right: 8),
+        _at(CustomizableFieldType.list_score, bottom: 14, left: 128),
+        _at(CustomizableFieldType.edit_and_watched_button, bottom: 6, right: 8),
       ];
   }
   final types = {for (final f in shown) f.type};
