@@ -248,6 +248,7 @@ class MalChatHistory {
                 'counterpart': replyTo!.counterpart,
                 'replyId': replyTo!.replyId,
                 'threadId': replyTo!.threadId,
+                'pageId': replyTo!.pageId,
               },
         'avatarUrl': avatarUrl,
         'olderThreads': olderThreads,
@@ -265,6 +266,7 @@ class MalChatHistory {
               messages: const [],
               replyId: reply['replyId'] as int,
               threadId: reply['threadId'] as int,
+              pageId: reply['pageId'] is int ? reply['pageId'] as int : null,
             )
           : null,
       avatarUrl: json['avatarUrl'] is String ? json['avatarUrl'] as String : null,
@@ -380,6 +382,7 @@ Future<MalChatHistory> loadChatHistory(
         messages: const [],
         replyId: r.replyId,
         threadId: r.threadId,
+        pageId: r.id,
       );
       break;
     }

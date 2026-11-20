@@ -24,6 +24,9 @@ class MalOutboxMessage {
   final int? replyId;
   final int? threadId;
 
+  /// The page of the message answered, read again to check a send MAL did not confirm.
+  final int? pageId;
+
   final DateTime createdAt;
 
   /// False while waiting for MAL, true once MAL refused it or could not be reached.
@@ -40,6 +43,7 @@ class MalOutboxMessage {
     required this.createdAt,
     this.replyId,
     this.threadId,
+    this.pageId,
     this.failed = false,
     this.sent = false,
   });
@@ -54,6 +58,7 @@ class MalOutboxMessage {
         createdAt: createdAt,
         replyId: replyId,
         threadId: threadId,
+        pageId: pageId,
         failed: failed ?? this.failed,
         sent: sent ?? this.sent,
       );
@@ -65,6 +70,7 @@ class MalOutboxMessage {
         'subject': subject,
         'replyId': replyId,
         'threadId': threadId,
+        'pageId': pageId,
         'at': createdAt.millisecondsSinceEpoch,
       };
 
@@ -84,6 +90,7 @@ class MalOutboxMessage {
       subject: json['subject'] is String ? json['subject'] as String : '',
       replyId: json['replyId'] is int ? json['replyId'] as int : null,
       threadId: json['threadId'] is int ? json['threadId'] as int : null,
+      pageId: json['pageId'] is int ? json['pageId'] as int : null,
       createdAt: DateTime.fromMillisecondsSinceEpoch(at),
       failed: true,
     );
@@ -120,8 +127,15 @@ class MalOutbox extends ChangeNotifier {
 
   /// The comparison key of a typed body (BBCode tags dropped), as [messageTextKey] gives it
   /// for MAL's rendering of the same text.
-  static String textKey(String body) =>
-      messageTextKey(messageBody(body).replaceAll(RegExp(r'\[/?[a-zA-Z*]+(=[^\]]*)?\]'), ''));
+  static String textKey(String body) {
+    final typed = messageBody(body);
+    final pictures = RegExp(r'\[img[^\]]*\]', caseSensitive: false).allMatches(typed).length;
+    // A picture's address is not text: only the mark counts.
+    final text = typed
+        .replaceAll(RegExp(r'\[img[^\]]*\][\s\S]*?\[/img\]', caseSensitive: false), ' ')
+        .replaceAll(RegExp(r'\[/?[a-zA-Z*]+(=[^\]]*)?\]'), '');
+    return pictureKey(messageTextKey(text), pictures);
+  }
 
   final MalMessagesApi? _api;
   final Future<SharedPreferences> Function() _storage;
@@ -189,6 +203,7 @@ class MalOutbox extends ChangeNotifier {
       subject: reply != null ? replySubject(reply.subject) : subjectFromBody(body),
       replyId: reply?.replyId,
       threadId: reply?.threadId,
+      pageId: reply?.pageId,
       createdAt: now,
     );
     _messages.add(message);
@@ -235,9 +250,9 @@ class MalOutbox extends ChangeNotifier {
     try {
       await Future<void>.delayed(verifyDelay);
       final key = textKey(m.body);
-      if (m.isReply) {
+      if (m.isReply && m.pageId != null) {
         final thread = await api.thread(MalMessage(
-          id: m.replyId!,
+          id: m.pageId!,
           counterpart: m.to,
           subject: m.subject,
           threadId: m.threadId,
@@ -246,7 +261,15 @@ class MalOutbox extends ChangeNotifier {
       }
       final page = await api.sent();
       final name = m.to.toLowerCase();
-      final found = page.messages.any((r) => r.counterpart.toLowerCase() == name && previewMatches(r.preview, key));
+      final since = m.createdAt.subtract(const Duration(minutes: 2));
+      final found = page.messages.any((r) {
+        if (r.counterpart.toLowerCase() != name) return false;
+        if (previewMatches(r.preview, key)) return true;
+        // A message of pictures only has no preview: the newest row to the person, sent
+        // since, is it.
+        final at = parseMalMessageDate(r.date);
+        return r.preview.trim().isEmpty && at != null && at.isAfter(since);
+      });
       if (!found) debugPrint('MAL message to ${m.to} not sent: $error');
       return found;
     } catch (e) {

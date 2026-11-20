@@ -177,6 +177,10 @@ class MalMessageThread {
   /// The page had MAL's history table.
   final bool hasHistory;
 
+  /// The id of the page of the message answered ([MalMessage.id]), to read the thread again;
+  /// [replyId] is the id of its row, which MAL's pages do not take.
+  final int? pageId;
+
   const MalMessageThread({
     required this.subject,
     required this.counterpart,
@@ -186,6 +190,7 @@ class MalMessageThread {
     this.replyId,
     this.historyThreadId,
     this.hasHistory = true,
+    this.pageId,
   });
 
   bool get canReply => replyId != null && threadId != null;
@@ -430,7 +435,17 @@ String _norm(String htmlBody) => _clean(html.parseFragment(htmlBody).text).toLow
 
 /// The text of a message body (HTML) reduced for comparison: tags dropped, spaces folded,
 /// lower case. Two copies of one message (thread page, sent locally) give the same key.
-String messageTextKey(String htmlBody) => _norm(htmlBody);
+///
+/// Pictures count too (`[img]` becomes MAL's `<img>`): a message of one picture has a key.
+String messageTextKey(String htmlBody) {
+  final text = _norm(htmlBody);
+  final pictures = RegExp(r'<img\b', caseSensitive: false).allMatches(htmlBody).length;
+  return pictureKey(text, pictures);
+}
+
+/// [text] followed by a mark for [pictures] pictures (none: [text] alone).
+String pictureKey(String text, int pictures) =>
+    pictures == 0 ? text : (text.isEmpty ? '[img$pictures]' : '$text [img$pictures]');
 
 /// A `mymessages.php?go=read&id=…[&threadid=…]` page: the message in `td.dialog-text`, the
 /// Reply button's ids (`replyid`, `threadid`, `toname` in its `onclick`, as MALClient read

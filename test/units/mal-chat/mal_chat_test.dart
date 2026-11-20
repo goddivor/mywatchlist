@@ -22,6 +22,22 @@ class _FakeApi extends MalMessagesApi {
   @override
   Future<MalMessagesPage> sent({int offset = 0}) async => MalMessagesPage(sentBox);
 
+  /// Pages read to check a send; the thread holds what was sent.
+  final List<MalMessage> threadsRead = [];
+
+  @override
+  Future<MalMessageThread> thread(MalMessage message) async {
+    threadsRead.add(message);
+    return MalMessageThread(
+      subject: 'yooooo',
+      counterpart: 'LolitaToka',
+      messages: [
+        for (final b in bodies)
+          MalThreadMessage(sender: 'me', html: b.replaceAll(RegExp(r'\[img\][^\[]*\[/img\]'), '<img src="p">'), isMine: true),
+      ],
+    );
+  }
+
   @override
   Future<void> send({required String to, required String subject, required String body}) async {
     await gate?.future;
@@ -37,6 +53,7 @@ class _FakeApi extends MalMessagesApi {
     if (fail) throw Exception('offline');
     subjects.add(replySubject(thread.subject));
     bodies.add(body);
+    if (late) throw const MalWebFormTimeout();
   }
 }
 
@@ -94,6 +111,15 @@ void main() {
       expect(readStates(messages, lastSentRead: true),
           [MalSendState.read, null, MalSendState.read, MalSendState.read]);
     });
+  });
+
+  test('a message of pictures only is recognised in MAL\'s copy', () {
+    final typed = MalOutbox.textKey('[img]https://iili.io/oF8Tc2S.png[/img]');
+    expect(typed, '[img1]');
+    expect(messageTextKey('<img class="userimg" src="https://image.myanimelist.net/ui/abc">'), typed);
+    expect(MalOutbox.textKey('Look [b]this[/b] [img]https://x/y.png[/img]'),
+        messageTextKey('Look <b>this</b> <img class="userimg" src="z">'));
+    expect(messageTextKey('hey'), 'hey');
   });
 
   test('relative MAL dates are known as such', () {
@@ -158,6 +184,25 @@ void main() {
       outbox.send(to: 'Archaeon', body: 'Are you there?');
       await pumpEventQueue();
       expect(outbox.to('Archaeon').single.failed, isTrue);
+    });
+
+    test('a picture answer MAL took without confirming is checked on the answered page', () async {
+      final api = _FakeApi()..late = true;
+      final outbox = MalOutbox(api: api);
+      const thread = MalMessageThread(
+        subject: 'yooooo',
+        counterpart: 'LolitaToka',
+        messages: [],
+        replyId: 30819527,
+        threadId: 19830857,
+        pageId: 15296290,
+      );
+      outbox.send(to: 'LolitaToka', body: '[img]https://iili.io/oF8Tc2S.png[/img]', thread: thread);
+      await pumpEventQueue(times: 100);
+      // The page id, not the row id MAL answers 404 to.
+      expect(api.threadsRead.single.id, 15296290);
+      expect(api.threadsRead.single.threadId, 19830857);
+      expect(outbox.to('LolitaToka').single.sent, isTrue);
     });
 
     test('a failed message MAL shows after all leaves the outbox', () async {
