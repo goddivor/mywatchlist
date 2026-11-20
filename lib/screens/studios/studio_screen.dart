@@ -1,23 +1,24 @@
-import 'dart:ui' show ImageFilter;
-
 import 'package:flutter/material.dart';
 import 'package:mywatchlist/constants/constants.dart' show gotoPage;
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/screens/search/general_search_screen.dart';
-import 'package:mywatchlist/screens/search/search_tiles.dart' show openMedia;
+import 'package:mywatchlist/screens/search/search_tiles.dart'
+    show MediaTile, openMedia;
 import 'package:mywatchlist/services/api/MAL/mal_anime.dart';
 import 'package:mywatchlist/services/api/MAL/scrapper/studio_page.dart';
 import 'package:mywatchlist/utils/web_launcher.dart';
 import 'package:mywatchlist/widgets/MAL/home/animegridcard.dart';
 import 'package:mywatchlist/widgets/common/app_image.dart';
 import 'package:mywatchlist/widgets/common/image_preview.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// The page of one studio (MyAnimeList's producer page): its logo in big over a blurred copy,
 /// its facts, its description and its links, then every anime of the studio under a bar that
 /// stays pinned once scrolled to (kind tabs and sort). The anime cards show the user's own
 /// list status. [name] and [logo] draw the header before the page answers.
 class StudioScreen extends StatefulWidget {
-  const StudioScreen({super.key, required this.id, required this.name, this.logo});
+  const StudioScreen(
+      {super.key, required this.id, required this.name, this.logo});
 
   final int id;
   final String name;
@@ -29,11 +30,58 @@ class StudioScreen extends StatefulWidget {
 
 enum _Sort { score, members, newest, title }
 
+/// How the studio's anime are laid out.
+enum StudioAnimeDisplay { grid3, grid2, list }
+
 class _StudioScreenState extends State<StudioScreen> {
   late Future<StudioPage> _page = StudioPages.of(widget.id);
   StudioAnimeType? _type;
   _Sort _sort = _Sort.score;
   bool _aboutOpen = false;
+  StudioAnimeDisplay _display = StudioAnimeDisplay.grid3;
+  bool _collapsed = false;
+
+  static const String _displayKey = 'studio_anime_display_v1';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadDisplay();
+  }
+
+  Future<void> _loadDisplay() async {
+    try {
+      final saved =
+          (await SharedPreferences.getInstance()).getString(_displayKey);
+      final display =
+          StudioAnimeDisplay.values.where((d) => d.name == saved).firstOrNull;
+      if (display != null && mounted) setState(() => _display = display);
+    } catch (_) {}
+  }
+
+  Future<void> _setDisplay(StudioAnimeDisplay display) async {
+    setState(() => _display = display);
+    try {
+      await (await SharedPreferences.getInstance())
+          .setString(_displayKey, display.name);
+    } catch (_) {}
+  }
+
+  /// The logo takes the screen's width (a square), at most 55 % of its height.
+  double _headerHeight(BuildContext context) {
+    final size = MediaQuery.sizeOf(context);
+    final side =
+        size.width < size.height * 0.55 ? size.width : size.height * 0.55;
+    return side;
+  }
+
+  bool _onScroll(ScrollNotification n) {
+    if (n.depth != 0) return false;
+    final collapsed =
+        n.metrics.pixels > _headerHeight(context) - kToolbarHeight * 2;
+    if (collapsed != _collapsed) setState(() => _collapsed = collapsed);
+    return false;
+  }
 
   void _retry() => setState(() => _page = StudioPages.of(widget.id));
 
@@ -43,13 +91,18 @@ class _StudioScreenState extends State<StudioScreen> {
       );
 
   List<StudioAnime> _visible(List<StudioAnime> all) {
-    final list = [for (final a in all) if (_type == null || a.type == _type) a];
-    int byScore(StudioAnime a, StudioAnime b) => (b.score ?? 0).compareTo(a.score ?? 0);
+    final list = [
+      for (final a in all)
+        if (_type == null || a.type == _type) a
+    ];
+    int byScore(StudioAnime a, StudioAnime b) =>
+        (b.score ?? 0).compareTo(a.score ?? 0);
     list.sort(switch (_sort) {
       _Sort.score => byScore,
       _Sort.members => (a, b) => b.members.compareTo(a.members),
       _Sort.newest => (a, b) => b.startDate.compareTo(a.startDate),
-      _Sort.title => (a, b) => a.title.toLowerCase().compareTo(b.title.toLowerCase()),
+      _Sort.title => (a, b) =>
+          a.title.toLowerCase().compareTo(b.title.toLowerCase()),
     });
     return list;
   }
@@ -62,51 +115,66 @@ class _StudioScreenState extends State<StudioScreen> {
         builder: (context, snapshot) {
           final page = snapshot.data;
           final logo = page?.logo ?? widget.logo;
-          return CustomScrollView(
-            slivers: [
-              SliverAppBar(
-                pinned: true,
-                expandedHeight: 300,
-                title: Text(page?.name ?? widget.name),
-                actions: [
-                  IconButton(
-                    tooltip: S.current.Stp_In_Search,
-                    icon: const Icon(Icons.manage_search_rounded),
-                    onPressed: _openInSearch,
-                  ),
-                ],
-                flexibleSpace: FlexibleSpaceBar(
-                  collapseMode: CollapseMode.pin,
-                  background: _Header(name: page?.name ?? widget.name, logo: logo),
-                ),
-              ),
-              if (snapshot.hasError)
-                SliverFillRemaining(
-                  hasScrollBody: false,
-                  child: _Failed(onRetry: _retry),
-                )
-              else if (page == null)
-                const SliverFillRemaining(
-                  hasScrollBody: false,
-                  child: Center(child: CircularProgressIndicator()),
-                )
-              else ...[
-                SliverToBoxAdapter(child: _details(context, page)),
-                SliverPersistentHeader(
+          return NotificationListener<ScrollNotification>(
+            onNotification: _onScroll,
+            child: CustomScrollView(
+              slivers: [
+                SliverAppBar(
                   pinned: true,
-                  delegate: _AnimeBar(
-                    count: page.anime.length,
-                    types: {for (final a in page.anime) a.type},
-                    selected: _type,
-                    sort: _sort,
-                    onType: (t) => setState(() => _type = t),
-                    onSort: (s) => setState(() => _sort = s),
+                  expandedHeight: _headerHeight(context),
+                  // The name shows once the logo has scrolled away.
+                  title: AnimatedOpacity(
+                    opacity: _collapsed ? 1 : 0,
+                    duration: const Duration(milliseconds: 180),
+                    child: Text(page?.name ?? widget.name),
+                  ),
+                  actions: [
+                    IconButton(
+                      tooltip: S.current.Stp_In_Search,
+                      icon: const Icon(Icons.manage_search_rounded),
+                      onPressed: _openInSearch,
+                    ),
+                  ],
+                  flexibleSpace: FlexibleSpaceBar(
+                    collapseMode: CollapseMode.pin,
+                    background:
+                        _Header(name: page?.name ?? widget.name, logo: logo),
                   ),
                 ),
-                _grid(context, _visible(page.anime)),
-                const SliverToBoxAdapter(child: SizedBox(height: 32)),
+                if (snapshot.hasError)
+                  SliverFillRemaining(
+                    hasScrollBody: false,
+                    child: _Failed(onRetry: _retry),
+                  )
+                else if (page == null)
+                  const SliverFillRemaining(
+                    hasScrollBody: false,
+                    child: Center(child: CircularProgressIndicator()),
+                  )
+                else ...[
+                  SliverToBoxAdapter(child: _details(context, page)),
+                  SliverPersistentHeader(
+                    pinned: true,
+                    delegate: _AnimeBar(
+                      count: page.anime.length,
+                      types: {for (final a in page.anime) a.type},
+                      selected: _type,
+                      sort: _sort,
+                      display: _display,
+                      onType: (t) => setState(() => _type = t),
+                      onSort: (s) => setState(() => _sort = s),
+                      onDisplay: _setDisplay,
+                    ),
+                  ),
+                  _display == StudioAnimeDisplay.list
+                      ? _list(context, _visible(page.anime))
+                      : _grid(context, _visible(page.anime),
+                          columns:
+                              _display == StudioAnimeDisplay.grid2 ? 2 : 3),
+                  const SliverToBoxAdapter(child: SizedBox(height: 32)),
+                ],
               ],
-            ],
+            ),
           );
         },
       ),
@@ -141,7 +209,8 @@ class _StudioScreenState extends State<StudioScreen> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(label(fact.label),
-                          style: theme.textTheme.labelSmall?.copyWith(color: scheme.onSurfaceVariant)),
+                          style: theme.textTheme.labelSmall
+                              ?.copyWith(color: scheme.onSurfaceVariant)),
                       Text(fact.value, style: theme.textTheme.titleSmall),
                     ],
                   ),
@@ -156,7 +225,8 @@ class _StudioScreenState extends State<StudioScreen> {
               child: Text(
                 about,
                 maxLines: _aboutOpen ? null : 5,
-                overflow: _aboutOpen ? TextOverflow.visible : TextOverflow.ellipsis,
+                overflow:
+                    _aboutOpen ? TextOverflow.visible : TextOverflow.ellipsis,
                 style: theme.textTheme.bodyMedium,
               ),
             ),
@@ -169,44 +239,46 @@ class _StudioScreenState extends State<StudioScreen> {
             const SizedBox(height: 8),
             Text(s.Stp_Links, style: theme.textTheme.titleSmall),
             const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                for (final link in page.links)
-                  ActionChip(
-                    avatar: Icon(_linkIcon(link.url), size: 18),
-                    label: Text(link.label),
-                    onPressed: () => openLink(context, link.url),
-                  ),
-              ],
-            ),
+            _StudioLinks(links: page.links),
           ],
         ],
       ),
     );
   }
 
-  static IconData _linkIcon(String url) {
-    final host = Uri.tryParse(url)?.host ?? '';
-    if (host.contains('youtube')) return Icons.smart_display_outlined;
-    if (host.contains('twitter') || host.contains('x.com')) return Icons.alternate_email;
-    if (host.contains('facebook') || host.contains('instagram')) return Icons.people_outline;
-    return Icons.link;
+  Anime _node(StudioAnime a) => Anime(
+        id: a.id,
+        title: a.title,
+        imageUrl: a.imageUrl ?? '',
+        score: a.score ?? 0,
+        members: a.members,
+      );
+
+  Widget _list(BuildContext context, List<StudioAnime> anime) {
+    if (anime.isEmpty) return _empty();
+    return SliverList.builder(
+      itemCount: anime.length,
+      itemBuilder: (context, i) {
+        final node = _node(anime[i]);
+        return MediaTile(item: node, category: 'anime');
+      },
+    );
   }
 
-  Widget _grid(BuildContext context, List<StudioAnime> anime) {
-    if (anime.isEmpty) {
-      return SliverToBoxAdapter(
+  Widget _empty() => SliverToBoxAdapter(
         child: Padding(
           padding: const EdgeInsets.all(32),
           child: Center(child: Text(S.current.Stp_Empty)),
         ),
       );
-    }
-    const columns = 3;
+
+  Widget _grid(BuildContext context, List<StudioAnime> anime,
+      {required int columns}) {
+    if (anime.isEmpty) return _empty();
     const spacing = 8.0;
-    final width = (MediaQuery.sizeOf(context).width - 24 - spacing * (columns - 1)) / columns;
+    final width =
+        (MediaQuery.sizeOf(context).width - 24 - spacing * (columns - 1)) /
+            columns;
     final height = width * 1.5;
     return SliverPadding(
       padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -219,14 +291,7 @@ class _StudioScreenState extends State<StudioScreen> {
         ),
         itemCount: anime.length,
         itemBuilder: (context, i) {
-          final a = anime[i];
-          final node = Anime(
-            id: a.id,
-            title: a.title,
-            imageUrl: a.imageUrl ?? '',
-            score: a.score ?? 0,
-            members: a.members,
-          );
+          final node = _node(anime[i]);
           return AnimeGridCard(
             node: node,
             category: 'anime',
@@ -245,7 +310,8 @@ class _StudioScreenState extends State<StudioScreen> {
   }
 }
 
-/// The logo in big on a white card, over a blurred copy faded into the page.
+/// The logo across the screen's width on white (MAL's logos are drawn for a white page), a
+/// shade at the top for the back and search buttons. A tap shows it alone.
 class _Header extends StatelessWidget {
   const _Header({required this.name, this.logo});
 
@@ -254,61 +320,97 @@ class _Header extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final page = Theme.of(context).scaffoldBackgroundColor;
     final url = logo;
     final top = MediaQuery.paddingOf(context).top + kToolbarHeight;
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        ColoredBox(color: page),
-        if (url != null)
-          ImageFiltered(
-            imageFilter: ImageFilter.blur(sigmaX: 24, sigmaY: 24, tileMode: TileMode.decal),
-            child: Opacity(
-              opacity: 0.55,
-              child: AppImage(url: url, fit: BoxFit.cover, errorWidget: (_) => const SizedBox.shrink()),
-            ),
+    return GestureDetector(
+      onTap: url == null ? null : () => zoomInImage(context, url, false),
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          const ColoredBox(color: Colors.white),
+          Padding(
+            padding: EdgeInsets.fromLTRB(16, top * 0.6, 16, 16),
+            child: url == null
+                ? Center(
+                    child: Text(
+                      name.characters.first.toUpperCase(),
+                      style:
+                          const TextStyle(fontSize: 96, color: Colors.black38),
+                    ),
+                  )
+                : Semantics(
+                    image: true,
+                    label: name,
+                    child: AppImage(url: url, fit: BoxFit.contain),
+                  ),
           ),
-        DecoratedBox(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [page.withValues(alpha: 0.35), page],
-            ),
-          ),
-        ),
-        Padding(
-          padding: EdgeInsets.only(top: top, bottom: 16),
-          child: Center(
-            child: GestureDetector(
-              onTap: url == null ? null : () => zoomInImage(context, url, false),
-              child: Container(
-                width: 180,
-                height: 180,
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(24),
-                  boxShadow: const [BoxShadow(blurRadius: 18, color: Color(0x40000000))],
+          Align(
+            alignment: Alignment.topCenter,
+            child: Container(
+              height: top + 24,
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [Color(0x99000000), Color(0x00000000)],
                 ),
-                child: url == null
-                    ? Center(
-                        child: Text(
-                          name.characters.first.toUpperCase(),
-                          style: const TextStyle(fontSize: 56, color: Colors.black54),
-                        ),
-                      )
-                    : Semantics(
-                        image: true,
-                        label: name,
-                        child: AppImage(url: url, fit: BoxFit.contain),
-                      ),
               ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
+    );
+  }
+}
+
+/// The studio's links as the anime page draws its media links: a row of round buttons, the
+/// name in the tooltip.
+class _StudioLinks extends StatelessWidget {
+  const _StudioLinks({required this.links});
+
+  final List<StudioLink> links;
+
+  static IconData _icon(String url) {
+    final host = Uri.tryParse(url)?.host ?? '';
+    if (host.contains('youtube')) return Icons.smart_display_rounded;
+    if (host.contains('twitter') || host.contains('x.com'))
+      return Icons.alternate_email_rounded;
+    if (host.contains('facebook')) return Icons.facebook_rounded;
+    if (host.contains('instagram')) return Icons.camera_alt_outlined;
+    if (host.contains('tiktok')) return Icons.music_note_rounded;
+    return Icons.language_rounded;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return SizedBox(
+      height: 48,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: links.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 12),
+        itemBuilder: (context, i) {
+          final link = links[i];
+          return Tooltip(
+            message: link.label,
+            child: Semantics(
+              button: true,
+              label: link.label,
+              excludeSemantics: true,
+              child: InkWell(
+                customBorder: const CircleBorder(),
+                onTap: () => openLink(context, link.url),
+                child: CircleAvatar(
+                  radius: 22,
+                  backgroundColor: scheme.surfaceContainerHigh,
+                  child: Icon(_icon(link.url), color: scheme.onSurface),
+                ),
+              ),
+            ),
+          );
+        },
+      ),
     );
   }
 }
@@ -320,16 +422,20 @@ class _AnimeBar extends SliverPersistentHeaderDelegate {
     required this.types,
     required this.selected,
     required this.sort,
+    required this.display,
     required this.onType,
     required this.onSort,
+    required this.onDisplay,
   });
 
   final int count;
   final Set<StudioAnimeType> types;
   final StudioAnimeType? selected;
   final _Sort sort;
+  final StudioAnimeDisplay display;
   final ValueChanged<StudioAnimeType?> onType;
   final ValueChanged<_Sort> onSort;
+  final ValueChanged<StudioAnimeDisplay> onDisplay;
 
   static const double _height = 104;
 
@@ -341,7 +447,23 @@ class _AnimeBar extends SliverPersistentHeaderDelegate {
 
   @override
   bool shouldRebuild(_AnimeBar old) =>
-      old.count != count || old.selected != selected || old.sort != sort || old.types != types;
+      old.count != count ||
+      old.selected != selected ||
+      old.sort != sort ||
+      old.display != display ||
+      old.types != types;
+
+  static IconData _displayIcon(StudioAnimeDisplay d) => switch (d) {
+        StudioAnimeDisplay.grid3 => Icons.apps_rounded,
+        StudioAnimeDisplay.grid2 => Icons.grid_view_rounded,
+        StudioAnimeDisplay.list => Icons.view_list_rounded,
+      };
+
+  static String _displayLabel(StudioAnimeDisplay d) => switch (d) {
+        StudioAnimeDisplay.grid3 => S.current.Sdv_Grid_3,
+        StudioAnimeDisplay.grid2 => S.current.Sdv_Grid_2,
+        StudioAnimeDisplay.list => S.current.Sdv_List,
+      };
 
   static String _typeLabel(StudioAnimeType t) => switch (t) {
         StudioAnimeType.tv => S.current.Stp_Tv,
@@ -359,7 +481,8 @@ class _AnimeBar extends SliverPersistentHeaderDelegate {
       };
 
   @override
-  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+  Widget build(
+      BuildContext context, double shrinkOffset, bool overlapsContent) {
     final theme = Theme.of(context);
     final s = S.of(context);
     return Material(
@@ -372,7 +495,29 @@ class _AnimeBar extends SliverPersistentHeaderDelegate {
             padding: const EdgeInsets.fromLTRB(16, 6, 4, 0),
             child: Row(
               children: [
-                Expanded(child: Text(s.Stp_Anime_Title(count), style: theme.textTheme.titleMedium)),
+                Expanded(
+                    child: Text(s.Stp_Anime_Title(count),
+                        style: theme.textTheme.titleMedium)),
+                PopupMenuButton<StudioAnimeDisplay>(
+                  key: const ValueKey('studio-display'),
+                  tooltip: s.Sdv_Display,
+                  initialValue: display,
+                  onSelected: onDisplay,
+                  icon: Icon(_displayIcon(display), size: 20),
+                  itemBuilder: (_) => [
+                    for (final d in StudioAnimeDisplay.values)
+                      PopupMenuItem(
+                        value: d,
+                        child: Row(
+                          children: [
+                            Icon(_displayIcon(d), size: 20),
+                            const SizedBox(width: 12),
+                            Text(_displayLabel(d)),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
                 PopupMenuButton<_Sort>(
                   key: const ValueKey('studio-sort'),
                   tooltip: s.Stp_Sort,
@@ -380,16 +525,19 @@ class _AnimeBar extends SliverPersistentHeaderDelegate {
                   onSelected: onSort,
                   itemBuilder: (_) => [
                     for (final option in _Sort.values)
-                      PopupMenuItem(value: option, child: Text(_sortLabel(option))),
+                      PopupMenuItem(
+                          value: option, child: Text(_sortLabel(option))),
                   ],
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         const Icon(Icons.sort_rounded, size: 18),
                         const SizedBox(width: 6),
-                        Text(_sortLabel(sort), style: theme.textTheme.labelLarge),
+                        Text(_sortLabel(sort),
+                            style: theme.textTheme.labelLarge),
                       ],
                     ),
                   ),
@@ -405,7 +553,8 @@ class _AnimeBar extends SliverPersistentHeaderDelegate {
               children: [
                 _chip(s.Stp_All, selected == null, () => onType(null)),
                 for (final t in StudioAnimeType.values)
-                  if (types.contains(t)) _chip(_typeLabel(t), selected == t, () => onType(t)),
+                  if (types.contains(t))
+                    _chip(_typeLabel(t), selected == t, () => onType(t)),
               ],
             ),
           ),
@@ -416,7 +565,8 @@ class _AnimeBar extends SliverPersistentHeaderDelegate {
 
   Widget _chip(String label, bool on, VoidCallback onTap) => Padding(
         padding: const EdgeInsetsDirectional.only(end: 8),
-        child: ChoiceChip(label: Text(label), selected: on, onSelected: (_) => onTap()),
+        child: ChoiceChip(
+            label: Text(label), selected: on, onSelected: (_) => onTap()),
       );
 }
 

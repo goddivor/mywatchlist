@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mywatchlist/generated/l10n.dart';
+import 'package:mywatchlist/screens/search/search_tiles.dart' show MediaTile;
 import 'package:mywatchlist/screens/studios/studio_screen.dart';
 import 'package:mywatchlist/services/api/MAL/scrapper/studio_page.dart';
 import 'package:mywatchlist/user/list_cache/list_status_cache.dart';
@@ -83,7 +84,6 @@ void main() {
       await pump(tester);
       expect(find.text('Established'), findsOneWidget);
       expect(find.text('Jul 12, 1985'), findsOneWidget);
-      expect(find.text('YouTube'), findsOneWidget);
       expect(find.text('Anime · 8'), findsOneWidget);
       expect(find.widgetWithText(ChoiceChip, 'TV'), findsOneWidget);
       expect(find.widgetWithText(ChoiceChip, 'OVA'), findsNothing, reason: 'no OVA in the page');
@@ -98,6 +98,20 @@ void main() {
           scrollable: find.byType(Scrollable).first);
       expect(find.text(movies.first.title), findsWidgets);
       expect(find.text('Full Metal Panic? Fumoffu'), findsNothing);
+    });
+
+    testWidgets('the display menu switches the grid to a list', (tester) async {
+      await pump(tester);
+      await tester.tap(find.byKey(const ValueKey('studio-display')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('List').last);
+      await tester.pumpAndSettle();
+      expect(find.byType(MediaTile), findsWidgets);
+    });
+
+    testWidgets('links are round buttons named in their tooltip', (tester) async {
+      await pump(tester);
+      expect(find.byTooltip('YouTube'), findsOneWidget);
     });
 
     testWidgets('a failed page offers Retry', (tester) async {
