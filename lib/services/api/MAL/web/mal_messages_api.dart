@@ -10,6 +10,7 @@ import 'package:mywatchlist/cache/cachemanager.dart';
 import 'package:mywatchlist/screens/user_profile/sections/profile_tabs_source.dart';
 import 'package:mywatchlist/services/api/MAL/web/mal_web_client.dart';
 import 'package:mywatchlist/services/api/MAL/web/mal_web_form_submitter.dart';
+import 'package:mywatchlist/services/api/MAL/web/mal_web_store.dart';
 import 'package:mywatchlist/services/api/MAL/web/profile_comments_api.dart' show checkWriteAnswer;
 import 'package:mywatchlist/services/auth/mal_web_session.dart';
 import 'package:mywatchlist/user/user_mal_v2.dart';
@@ -84,6 +85,46 @@ class MalMessage {
         recipientRead: recipientRead,
         rowId: rowId,
       );
+
+  Map<String, Object?> toJson() => {
+        'id': id,
+        'counterpart': counterpart,
+        'subject': subject,
+        'preview': preview,
+        'date': date,
+        'isRead': isRead,
+        'isSent': isSent,
+        'threadId': threadId,
+        'replyId': replyId,
+        'box': box,
+        'avatarUrl': avatarUrl,
+        'recipientRead': recipientRead,
+        'rowId': rowId,
+      };
+
+  static MalMessage? fromJson(Object? json) {
+    if (json is! Map) return null;
+    final id = json['id'];
+    final who = json['counterpart'];
+    if (id is! int || who is! String) return null;
+    String? str(String k) => json[k] is String ? json[k] as String : null;
+    int? number(String k) => json[k] is int ? json[k] as int : null;
+    return MalMessage(
+      id: id,
+      counterpart: who,
+      subject: str('subject') ?? '',
+      preview: str('preview') ?? '',
+      date: str('date'),
+      isRead: json['isRead'] != false,
+      isSent: json['isSent'] == true,
+      threadId: number('threadId'),
+      replyId: number('replyId'),
+      box: number('box'),
+      avatarUrl: str('avatarUrl'),
+      recipientRead: json['recipientRead'] is bool ? json['recipientRead'] as bool : null,
+      rowId: number('rowId'),
+    );
+  }
 
   /// The page of this message on MAL.
   String get url => '${MalWebClient.base}/mymessages.php?go=read&id=$id${isSent ? '&f=1' : ''}';
@@ -630,6 +671,15 @@ class MalMessagesApi {
 
   static const int pageSize = 20;
 
+  /// The section of [MalWebStore] holding the inbox's first page.
+  static const String inboxSection = 'pm_inbox';
+
+  /// The inbox's first page as last read (by the app or the background job), or empty.
+  static List<MalMessage> savedInbox() {
+    final saved = MalWebStore.instance.read(inboxSection);
+    return saved is List ? [...saved.map(MalMessage.fromJson).whereType<MalMessage>()] : const [];
+  }
+
   /// Unread messages of the inbox's first page (MAL lists unread first), for a badge.
   static final ValueNotifier<int> unread = ValueNotifier<int>(0);
 
@@ -681,6 +731,8 @@ class MalMessagesApi {
     if (offset == 0) {
       unread.value = page.unread;
       _readSinceInbox.clear();
+      // For the notifications tab, the badges and the chats, at once next time.
+      MalWebStore.instance.write(inboxSection, [for (final m in page.messages) m.toJson()]);
     }
     return page;
   }

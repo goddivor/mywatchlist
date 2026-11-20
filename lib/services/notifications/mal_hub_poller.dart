@@ -6,6 +6,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:mywatchlist/constants/constants.dart' show AccountType;
 import 'package:mywatchlist/generated/l10n.dart';
+import 'package:mywatchlist/services/api/MAL/web/mal_conversations.dart';
 import 'package:mywatchlist/services/api/MAL/web/mal_messages_api.dart';
 import 'package:mywatchlist/user/preferences/preferences.dart';
 import 'package:mywatchlist/user/user_manager.dart';
@@ -590,6 +591,13 @@ class MalMessagesWatcher {
     try {
       if (!_canRead()) return 0;
       final page = await api.inbox(); // also refreshes MalMessagesApi.unread
+      // The conversations too, so the messages screen opens on them (one page of each box,
+      // added to what the list kept). Reading a box does not mark anything read.
+      try {
+        await MalConversationsSource(api: api).load(pages: 1, merge: true, firstInbox: page);
+      } catch (e) {
+        debugPrint('MAL conversations in the background: $e');
+      }
       final prefs = await _storage();
       // The background job writes the same list from another isolate.
       try {

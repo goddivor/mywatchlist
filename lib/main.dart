@@ -12,6 +12,7 @@ import 'package:mywatchlist/pages/login_page.dart';
 import 'package:mywatchlist/screens/explore/explore_images.dart';
 import 'package:mywatchlist/screens/open_screen.dart';
 import 'package:flutter_phoenix/flutter_phoenix.dart';
+import 'package:mywatchlist/services/api/MAL/web/mal_web_store.dart';
 import 'package:mywatchlist/services/api/Jikan/jikan_api.dart';
 import 'package:mywatchlist/services/api/MAL/mal_api.dart';
 import 'package:mywatchlist/services/api/jikan_source.dart';
@@ -23,6 +24,7 @@ import 'package:mywatchlist/constants/constants.dart' show AccountType;
 import 'package:mywatchlist/services/notifications/mal_hub_poller.dart';
 import 'package:mywatchlist/services/notifications/notification_backend.dart' show PluginNotificationBackend;
 import 'package:mywatchlist/services/notifications/notification_service.dart';
+import 'package:mywatchlist/user/user_mal_v2.dart';
 import 'package:mywatchlist/user/user_manager.dart';
 import 'package:app_links/app_links.dart';
 import 'package:mywatchlist/user/MAL/mal_home_preferences_bloc.dart';
@@ -96,6 +98,11 @@ void main() async {
   // Initialize UserManager (POO architecture with BaseUser inheritance)
   userManager = UserManager.instance;
   await userManager.initializeAllUsers();
+
+  // What the app last read of the MAL website (notifications, friends, messages, chats), so
+  // those screens show it at once; again when the MAL account changes.
+  await MalWebStore.instance.load(UserMalV2.instance.username);
+  userManager.addListener(() => unawaited(MalWebStore.instance.load(UserMalV2.instance.username)));
 
   // The whole MAL lists in the status cache (every 12 h, at once for another account), so
   // every card and row can show "in my list" with its status and score.
@@ -381,6 +388,7 @@ Future<void> runMalHubWorker({
     // The app process wrote the switches: read the file again, not this isolate's copy.
     await prefs.reload();
     await UserManager.instance.mal.loadFromPreferences();
+    await MalWebStore.instance.load(UserMalV2.instance.username);
     final language = LanguageBloc(prefs: prefs);
     await language.applyCurrent();
     await language.close();
@@ -390,6 +398,8 @@ Future<void> runMalHubWorker({
     MalHubPoller.instance = round;
     if (poller == null) await PluginNotificationBackend().init((_) {});
     await MalHubPoller.instance.poll(forceHub: true);
+    // What the round read is on the device for the screens before the isolate ends.
+    await MalWebStore.instance.flush();
   } catch (e) {
     debugPrint('MAL hub worker: $e');
   }

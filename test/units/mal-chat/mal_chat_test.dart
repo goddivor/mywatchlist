@@ -96,6 +96,12 @@ void main() {
     });
   });
 
+  test('relative MAL dates are known as such', () {
+    expect(isRelativeMalDate('2 hours ago'), isTrue);
+    expect(isRelativeMalDate('Nov 20, 2026 1:31 PM'), isFalse);
+    expect(isRelativeMalDate(null), isFalse);
+  });
+
   group('hidden messages', () {
     test('a message deleted in the app stays hidden, on that day only', () async {
       SharedPreferences.setMockInitialValues({});

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -99,7 +100,7 @@ class _MalChatScreenState extends State<MalChatScreen> {
   void initState() {
     super.initState();
     _conversation = widget.conversation ?? (widget.counterpart.isEmpty ? null : MalConversationsCache.conversation(widget.counterpart));
-    final cached = _name.isEmpty ? null : MalConversationsCache.chats[_name.toLowerCase()];
+    final cached = _name.isEmpty ? null : MalConversationsCache.chat(_name);
     if (cached != null) {
       _history = cached;
     }
@@ -160,10 +161,10 @@ class _MalChatScreenState extends State<MalChatScreen> {
       }
       final history = conversation == null
           ? const MalChatHistory(messages: [])
-          : await loadChatHistory(_api, conversation, maxThreads: _threads);
+          : await loadChatHistory(_api, conversation, maxThreads: _threads, previous: _history);
       if (!mounted || generation != _generation) return;
       final name = conversation?.counterpart ?? _name;
-      if (name.isNotEmpty) MalConversationsCache.chats[name.toLowerCase()] = history;
+      if (name.isNotEmpty) MalConversationsCache.putChat(name, history);
       final onMal = {for (final m in history.messages) if (m.isMine) messageTextKey(m.html)};
       _outbox.reconcile(name, (m) => onMal.contains(MalOutbox.textKey(m.body)));
       final listed = {for (final m in history.messages) if (m.row != null) _rowKey(m.row!)};
@@ -200,6 +201,7 @@ class _MalChatScreenState extends State<MalChatScreen> {
     final known = {for (final m in history) if (m.isMine) messageTextKey(m.html)};
     return [
       ...history,
+      ..._arrived(history),
       for (final m in _outbox.to(_name))
         // A copy MAL already shows is not drawn twice (only a message still waiting is).
         if ((!m.sent && !m.failed) || !known.contains(MalOutbox.textKey(m.body)))
@@ -216,6 +218,32 @@ class _MalChatScreenState extends State<MalChatScreen> {
 
   /// Deletes [message] from the user's MAL box when it has a row there, and hides it in the
   /// app in any case (MAL keeps it in the history it shares with the other person).
+  /// Messages the boxes list (the background check read them) that the chat read before does
+  /// not have yet: shown at once from the start MAL prints in the box, until the chat is read
+  /// again with their whole text.
+  List<MalChatMessage> _arrived(List<MalChatMessage> history) {
+    final conversation = _conversation;
+    if (conversation == null || _history == null) return const [];
+    final shown = {for (final m in history) if (m.row != null) '${m.row!.isSent}:${m.row!.id}'};
+    final last = history.isEmpty ? null : history.last.at;
+    final out = <MalChatMessage>[];
+    for (final r in conversation.rows.reversed) {
+      if (r.isSent || shown.contains('${r.isSent}:${r.id}')) continue;
+      final at = parseMalMessageDate(r.date);
+      if (at == null || (last != null && !at.isAfter(last))) continue;
+      final text = r.preview.isNotEmpty ? r.preview : r.subject;
+      if (history.any((m) => !m.isMine && previewMatches(text, messageTextKey(m.html)))) continue;
+      out.add(MalChatMessage(
+        html: const HtmlEscape(HtmlEscapeMode.element).convert(text),
+        isMine: false,
+        subject: r.subject,
+        at: at,
+        row: r,
+      ));
+    }
+    return out;
+  }
+
   Future<void> _delete(MalChatMessage message) async {
     final row = message.row;
     if (!await confirmDeleteMessage(context)) return;
@@ -348,7 +376,6 @@ class _MalChatScreenState extends State<MalChatScreen> {
     final rows = _rows(context, messages, history);
     return Column(
       children: [
-        SizedBox(height: 2, child: _loading ? const LinearProgressIndicator(minHeight: 2) : null),
         Expanded(
           child: RefreshIndicator(
             onRefresh: () => _load(findAgain: true),

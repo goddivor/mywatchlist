@@ -267,8 +267,10 @@ class MalMessagesFeed extends ChangeNotifier {
   final MalMessagesApi? _api;
   MalMessagesApi get api => _api ?? MalMessagesApi.instance;
 
-  List<MalMessage> _messages = const [];
-  List<MalMessage> get messages => _messages;
+  List<MalMessage>? _messages;
+
+  /// The inbox's first page: as last read, from the device until this feed reads it.
+  List<MalMessage> get messages => _messages ??= MalMessagesApi.savedInbox();
 
   Future<void>? _loading;
 
@@ -282,7 +284,7 @@ class MalMessagesFeed extends ChangeNotifier {
       if (!session.isConnected) return;
       final page = await api.inbox();
       _messages = page.messages;
-      api.prefetchPictures(_messages);
+      api.prefetchPictures(page.messages);
       notifyListeners();
     } catch (e) {
       debugPrint('MAL messages feed: $e');
@@ -291,7 +293,7 @@ class MalMessagesFeed extends ChangeNotifier {
 
   /// The message was opened in its chat.
   void markRead(MalMessage message) {
-    _messages = [for (final m in _messages) m.id == message.id ? m.copyWith(isRead: true) : m];
+    _messages = [for (final m in messages) m.id == message.id ? m.copyWith(isRead: true) : m];
     notifyListeners();
   }
 }

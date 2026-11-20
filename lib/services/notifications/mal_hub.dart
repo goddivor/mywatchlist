@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:mywatchlist/constants/constants.dart' show AccountType;
 import 'package:mywatchlist/services/api/MAL/web/mal_notifications_api.dart';
 import 'package:mywatchlist/services/api/MAL/web/mal_web_client.dart';
+import 'package:mywatchlist/services/api/MAL/web/mal_web_store.dart';
 import 'package:mywatchlist/services/auth/mal_web_session.dart';
 import 'package:mywatchlist/user/user_mal_v2.dart';
 import 'package:mywatchlist/user/user_manager.dart';
@@ -43,8 +44,10 @@ class MalNotificationsHub extends ChangeNotifier {
     bool Function()? malSignedIn,
     String? Function()? malUsername,
     DateTime Function()? clock,
+    MalWebStore? store,
     this.activityMaxAge = const Duration(minutes: 15),
   })  : _api = api,
+        _storeOverride = store,
         _friends = friends,
         _sessionOverride = session,
         _malSignedIn = malSignedIn ?? _defaultSignedIn,
@@ -56,6 +59,7 @@ class MalNotificationsHub extends ChangeNotifier {
   final MalNotificationsApi? _api;
   final FriendsActivityApi? _friends;
   final MalWebSession? _sessionOverride;
+  final MalWebStore? _storeOverride;
   final bool Function() _malSignedIn;
   final String? Function() _malUsername;
   final DateTime Function() _clock;
@@ -112,8 +116,59 @@ class MalNotificationsHub extends ChangeNotifier {
     }
   }
 
+  // ---- kept on the device ----
+
+  static const String _itemsSection = 'hub_items';
+  static const String _itemsAtSection = 'hub_at';
+  static const String _activitySection = 'friends_activity';
+  static const String _activityAtSection = 'friends_at';
+
+  /// The store of what the hub last read (the background job writes it too).
+  MalWebStore get store => _storeOverride ?? MalWebStore.instance;
+  String? _restoredFor;
+
+  /// Puts back what was last read for the signed-in user, once, so a screen opened shows it
+  /// at once; the network read that follows refreshes it quietly.
+  void restore() {
+    final user = _malUsername();
+    if (user == null || user.isEmpty || store.user?.toLowerCase() != user.toLowerCase()) return;
+    if (_restoredFor == user.toLowerCase()) return;
+    _restoredFor = user.toLowerCase();
+    var changed = false;
+    final items = store.read(_itemsSection);
+    if (_items.isEmpty && items is List) {
+      _items = [...items.map(MalNotificationItem.fromJson).whereType<MalNotificationItem>()];
+      final at = store.read(_itemsAtSection);
+      _loadedAt = at is int ? DateTime.fromMillisecondsSinceEpoch(at) : null;
+      if (_items.isNotEmpty && _status == MalHubStatus.idle) _status = MalHubStatus.ready;
+      _syncUnread();
+      changed = true;
+    }
+    final rows = store.read(_activitySection);
+    if (_activity.isEmpty && rows is List) {
+      _activity = [...rows.map(FriendActivity.fromJson).whereType<FriendActivity>()];
+      final at = store.read(_activityAtSection);
+      _activityAt = at is int ? DateTime.fromMillisecondsSinceEpoch(at) : null;
+      _activityUser = user;
+      if (_activity.isNotEmpty) _activityStatus = MalHubStatus.ready;
+      changed = true;
+    }
+    if (changed) notifyListeners();
+  }
+
+  void _saveItems() {
+    store.write(_itemsSection, [for (final i in _items) i.toJson()]);
+    store.write(_itemsAtSection, _loadedAt?.millisecondsSinceEpoch);
+  }
+
+  void _saveActivity() {
+    store.write(_activitySection, [for (final a in _activity) a.toJson()]);
+    store.write(_activityAtSection, _activityAt?.millisecondsSinceEpoch);
+  }
+
   /// Follows the website session: a new session reloads, a lost one clears the items.
   void bindSession() {
+    restore();
     if (_bound) return;
     _bound = true;
     _lastSessionState = session.state;
@@ -148,6 +203,8 @@ class MalNotificationsHub extends ChangeNotifier {
 
   Future<MalNotificationFeed?> _refresh(bool quiet) async {
     bindSession();
+    // What the device kept counts as shown: the read below does not blank it.
+    if (_items.isNotEmpty && _status == MalHubStatus.ready) quiet = true;
     await session.ensureLoaded();
     final access = this.access;
     if (access != MalHubStatus.ready) {
@@ -167,6 +224,7 @@ class MalNotificationsHub extends ChangeNotifier {
       _loadedAt = _clock();
       _status = MalHubStatus.ready;
       _syncUnread();
+      _saveItems();
       notifyListeners();
       return feed;
     } on MalWebNoSession {
@@ -211,6 +269,7 @@ class MalNotificationsHub extends ChangeNotifier {
     }
     _confirmedRead.addAll(ids);
     onItemsRead?.call(ids);
+    _saveItems();
     return true;
   }
 
@@ -274,6 +333,8 @@ class MalNotificationsHub extends ChangeNotifier {
   }
 
   Future<List<FriendActivity>?> _loadActivity(bool force, bool quiet) async {
+    restore();
+    if (_activity.isNotEmpty) quiet = true;
     final user = _malUsername();
     if (!_malSignedIn() || user == null || user.isEmpty) {
       _activityStatus = MalHubStatus.noAccount;
@@ -304,6 +365,7 @@ class MalNotificationsHub extends ChangeNotifier {
       _activity = rows;
       _activityAt = _clock();
       _activityStatus = MalHubStatus.ready;
+      _saveActivity();
       notifyListeners();
       return rows;
     } catch (e) {

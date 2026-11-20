@@ -147,7 +147,7 @@ class _MalMessagesScreenState extends State<MalMessagesScreen> {
         failed++;
       }
     }
-    MalConversationsCache.chats.remove(conversation.key);
+    MalConversationsCache.removeChat(conversation.counterpart);
     if (!mounted) return;
     if (failed > 0) {
       setState(() => _deleted.remove(conversation.key));
@@ -236,7 +236,6 @@ class _MalMessagesScreenState extends State<MalMessagesScreen> {
     }
     return Column(
       children: [
-        SizedBox(height: 2, child: _loading ? const LinearProgressIndicator(minHeight: 2) : null),
         Expanded(child: RefreshIndicator(
       onRefresh: _refresh,
       child: ListView.separated(

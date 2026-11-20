@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:html/dom.dart' as dom;
 import 'package:html/parser.dart' as html_parser;
 import 'package:mywatchlist/services/api/MAL/web/mal_messages_api.dart';
+import 'package:mywatchlist/services/api/MAL/web/mal_web_store.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Everything exchanged with one person: the rows of the inbox and of the sent box that name
@@ -18,6 +19,15 @@ class MalConversation {
   final List<MalMessage> rows;
 
   const MalConversation({required this.counterpart, required this.rows});
+
+  Map<String, Object?> toJson() => {'counterpart': counterpart, 'rows': [for (final r in rows) r.toJson()]};
+
+  static MalConversation? fromJson(Object? json) {
+    if (json is! Map || json['counterpart'] is! String || json['rows'] is! List) return null;
+    final rows = [...(json['rows'] as List).map(MalMessage.fromJson).whereType<MalMessage>()];
+    if (rows.isEmpty) return null;
+    return MalConversation(counterpart: json['counterpart'] as String, rows: rows);
+  }
 
   /// Lower-case name, the key of a conversation.
   String get key => counterpart.toLowerCase();
@@ -169,6 +179,32 @@ class MalChatMessage {
     this.row,
   });
 
+  Map<String, Object?> toJson() => {
+        'html': html,
+        'isMine': isMine,
+        'subject': subject,
+        'at': at?.millisecondsSinceEpoch,
+        'dateText': dateText,
+        'state': state?.name,
+        'row': row?.toJson(),
+      };
+
+  /// A message saved by [toJson]; never an outbox message (the outbox keeps its own).
+  static MalChatMessage? fromJson(Object? json) {
+    if (json is! Map || json['html'] is! String) return null;
+    final at = json['at'];
+    final state = json['state'];
+    return MalChatMessage(
+      html: json['html'] as String,
+      isMine: json['isMine'] == true,
+      subject: json['subject'] is String ? json['subject'] as String : '',
+      at: at is int ? DateTime.fromMillisecondsSinceEpoch(at) : null,
+      dateText: json['dateText'] is String ? json['dateText'] as String : null,
+      state: MalSendState.values.where((v) => v.name == state).firstOrNull,
+      row: MalMessage.fromJson(json['row']),
+    );
+  }
+
   MalChatMessage copyWith({MalSendState? state, MalMessage? row}) => MalChatMessage(
         html: html,
         isMine: isMine,
@@ -202,6 +238,53 @@ class MalChatHistory {
     this.avatarUrl,
     this.olderThreads = 0,
   });
+
+  Map<String, Object?> toJson() => {
+        'messages': [for (final m in messages) m.toJson()],
+        'replyTo': replyTo == null
+            ? null
+            : {
+                'subject': replyTo!.subject,
+                'counterpart': replyTo!.counterpart,
+                'replyId': replyTo!.replyId,
+                'threadId': replyTo!.threadId,
+              },
+        'avatarUrl': avatarUrl,
+        'olderThreads': olderThreads,
+      };
+
+  static MalChatHistory? fromJson(Object? json) {
+    if (json is! Map || json['messages'] is! List) return null;
+    final reply = json['replyTo'];
+    return MalChatHistory(
+      messages: [...(json['messages'] as List).map(MalChatMessage.fromJson).whereType<MalChatMessage>()],
+      replyTo: reply is Map && reply['replyId'] is int && reply['threadId'] is int
+          ? MalMessageThread(
+              subject: reply['subject'] is String ? reply['subject'] as String : '',
+              counterpart: reply['counterpart'] is String ? reply['counterpart'] as String : '',
+              messages: const [],
+              replyId: reply['replyId'] as int,
+              threadId: reply['threadId'] as int,
+            )
+          : null,
+      avatarUrl: json['avatarUrl'] is String ? json['avatarUrl'] as String : null,
+      olderThreads: json['olderThreads'] is int ? json['olderThreads'] as int : 0,
+    );
+  }
+}
+
+/// MAL's "N minutes / hours / days ago": a time rounded to its unit.
+bool isRelativeMalDate(String? raw) => RegExp(r'\bago$', caseSensitive: false).hasMatch((raw ?? '').trim());
+
+/// The time [previous] gave the same message (side and text), when it is close to [time]
+/// (within the rounding of a relative date).
+DateTime? _earlierTime(MalChatHistory? previous, bool mine, String key, DateTime time) {
+  for (final m in previous?.messages ?? const <MalChatMessage>[]) {
+    final at = m.at;
+    if (at == null || m.isMine != mine || messageTextKey(m.html) != key) continue;
+    if (at.difference(time).abs() <= const Duration(hours: 24)) return at;
+  }
+  return null;
 }
 
 /// How far apart two copies of one message may be dated by different MAL pages.
@@ -209,11 +292,15 @@ const Duration duplicateWindow = Duration(minutes: 10);
 
 /// Reads the threads of [conversation] (the [maxThreads] newest ones), merges their messages
 /// into one chat ordered by date and works out which of the user's messages were read.
+///
+/// [previous] is the chat read before: MAL writes recent times as "2 hours ago", so a message
+/// it gave an exact time to then keeps that time.
 Future<MalChatHistory> loadChatHistory(
   MalMessagesApi api,
   MalConversation conversation, {
   int maxThreads = 4,
   DateTime? now,
+  MalChatHistory? previous,
 }) async {
   final at = now ?? DateTime.now();
   final heads = conversation.threadHeads;
@@ -248,7 +335,10 @@ Future<MalChatHistory> loadChatHistory(
     final subject = thread.subject.isNotEmpty ? thread.subject : head.subject;
     final headAt = parseMalMessageDate(head.date, now: at);
     for (final m in thread.messages) {
-      final time = parseMalMessageDate(m.date, now: at);
+      var time = parseMalMessageDate(m.date, now: at);
+      if (time != null && isRelativeMalDate(m.date)) {
+        time = _earlierTime(previous, m.isMine, messageTextKey(m.html), time) ?? time;
+      }
       final key = '${m.isMine}|${messageTextKey(m.html)}';
       if (known(key, time)) continue;
       seen.putIfAbsent(key, () => []).add(time);
@@ -426,12 +516,20 @@ class MalConversationsSource {
 
   /// Reads [pages] pages of each box (20 rows a page) and groups them. A failing sent box
   /// still gives the inbox's conversations; a failing inbox throws.
-  Future<({List<MalConversation> conversations, bool hasMore})> load({int pages = 2}) async {
+  ///
+  /// With [merge], the rows read are added to the conversations kept from before (the
+  /// background job reads one page, the list may hold more).
+  /// [firstInbox] is the inbox's first page when the caller has just read it.
+  Future<({List<MalConversation> conversations, bool hasMore})> load({
+    int pages = 2,
+    bool merge = false,
+    MalMessagesPage? firstInbox,
+  }) async {
     final inbox = <MalMessage>[];
     final sent = <MalMessage>[];
     var more = false;
     for (var p = 0; p < pages; p++) {
-      final page = await api.inbox(offset: p * MalMessagesApi.pageSize);
+      final page = p == 0 && firstInbox != null ? firstInbox : await api.inbox(offset: p * MalMessagesApi.pageSize);
       inbox.addAll(page.messages);
       if (page.messages.length < MalMessagesApi.pageSize) break;
       if (p == pages - 1) more = true;
@@ -447,6 +545,15 @@ class MalConversationsSource {
       if (sent.isEmpty) debugPrint('MAL sent box: $e');
     }
     api.prefetchPictures([...inbox, ...sent]);
+    if (merge) {
+      final known = {for (final m in [...inbox, ...sent]) '${m.isSent}:${m.id}'};
+      for (final c in MalConversationsCache.list ?? const <MalConversation>[]) {
+        for (final r in c.rows) {
+          if (!known.add('${r.isSent}:${r.id}')) continue;
+          (r.isSent ? sent : inbox).add(r);
+        }
+      }
+    }
     final conversations = groupConversations(inbox, sent);
     MalConversationsCache.put(conversations);
     return (conversations: conversations, hasMore: more);
@@ -490,13 +597,42 @@ class MalConversationsSource {
   }
 }
 
-/// What was last read of the conversations and chats, kept while the app runs: a screen opened
-/// again shows it at once and refreshes it quietly.
+/// What was last read of the conversations and chats: in memory, and on the device through
+/// [MalWebStore] (the background job fills it too), so a screen opened shows it at once and
+/// refreshes it quietly.
 abstract final class MalConversationsCache {
-  static List<MalConversation>? list;
-  static final Map<String, MalChatHistory> chats = {};
+  static const String listSection = 'pm_list';
+  static const String chatPrefix = 'pm_chat:';
 
-  static void put(List<MalConversation> conversations) => list = conversations;
+  static List<MalConversation>? _list;
+  static final Map<String, MalChatHistory> _chats = {};
+  static String? _user;
+
+  static MalWebStore get _store => MalWebStore.instance;
+
+  /// Forgets what belongs to another MAL user.
+  static void _sync() {
+    final user = _store.user?.toLowerCase();
+    if (user == _user) return;
+    _user = user;
+    _list = null;
+    _chats.clear();
+  }
+
+  /// The conversations last read (from the device when the app has just started).
+  static List<MalConversation>? get list {
+    _sync();
+    if (_list != null) return _list;
+    final saved = _store.read(listSection);
+    if (saved is! List) return null;
+    return _list = [...saved.map(MalConversation.fromJson).whereType<MalConversation>()];
+  }
+
+  static void put(List<MalConversation> conversations) {
+    _sync();
+    _list = conversations;
+    _store.write(listSection, [for (final c in conversations) c.toJson()]);
+  }
 
   static MalConversation? conversation(String name) {
     final key = name.toLowerCase();
@@ -506,10 +642,36 @@ abstract final class MalConversationsCache {
     return null;
   }
 
+  /// The chat with [name] last read, or null.
+  static MalChatHistory? chat(String name) {
+    _sync();
+    final key = name.toLowerCase();
+    final known = _chats[key];
+    if (known != null) return known;
+    final saved = MalChatHistory.fromJson(_store.read('$chatPrefix$key'));
+    if (saved != null) _chats[key] = saved;
+    return saved;
+  }
+
+  static void putChat(String name, MalChatHistory history) {
+    _sync();
+    final key = name.toLowerCase();
+    _chats[key] = history;
+    _store.write('$chatPrefix$key', history.toJson());
+  }
+
+  static void removeChat(String name) {
+    _sync();
+    final key = name.toLowerCase();
+    _chats.remove(key);
+    _store.write('$chatPrefix$key', null);
+  }
+
   @visibleForTesting
   static void clear() {
-    list = null;
-    chats.clear();
+    _list = null;
+    _chats.clear();
+    _user = null;
   }
 }
 
