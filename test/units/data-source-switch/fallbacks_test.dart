@@ -83,41 +83,28 @@ void main() {
       expect(result.winner, RaceWinner.fallback);
     });
 
-    test('One Piece reviews: mwl-api unreachable, Jikan muted, Tenrai answers -> reviews shown',
-        () async {
+    test('reviews come from MAL only: Tenrai and Jikan are never asked', () async {
       final rig = SourceRig(probe: false);
-      rig.tenraiServer.body = (_) =>
-          '{"data":[{"mal_id":9,"review":"Peak fiction","score":10,"user":{"username":"luffy"}}],'
-          '"pagination":{"has_next_page":false}}';
+      rig.tenraiServer.body = (_) => '{"data":[],"pagination":{"has_next_page":false}}';
       await rig.source.start(await SharedPreferences.getInstance());
       JikanClient.instance = rig.client;
-      JikanFallbacks.headStart = Duration.zero;
       JikanFallbacks.reviews = (id, category, page) async =>
-          throw const MwlApiNoAnswer('reviews', 'no answer');
+          [AnimeReview(malId: 9, review: 'Peak fiction', score: 10)];
       final feed = ReviewsFeed(id: 21);
       await feed.start();
       expect(feed.failed, isFalse);
       expect(feed.reviews.single.review, 'Peak fiction');
-      expect(rig.tenraiServer.requests.single.path, '/v1/anime/21/reviews');
+      expect(rig.tenraiServer.requests, isEmpty);
       expect(rig.jikanServer.requests, isEmpty);
       feed.dispose();
     });
 
-    test('an empty mwl-api page no longer hides the Jikan reviews', () async {
-      JikanFallbacks.headStart = Duration.zero;
-      JikanFallbacks.reviews = (id, category, page) async => <AnimeReview>[];
-      JikanClient.instance = JikanClient(
-        minInterval: Duration.zero,
-        client: MockClient((r) => Future.delayed(
-            const Duration(milliseconds: 40),
-            () => http.Response(
-                '{"data":[{"mal_id":1,"review":"From Jikan","score":8,"user":{"username":"a"}}],'
-                '"pagination":{"has_next_page":false}}',
-                200))),
-      );
+    test('MAL unreachable: the feed fails instead of showing nothing', () async {
+      JikanFallbacks.reviews = (id, category, page) async =>
+          throw const MwlApiNoAnswer('reviews', 'no answer');
       final feed = ReviewsFeed(id: 21);
       await feed.start();
-      expect(feed.reviews.single.review, 'From Jikan');
+      expect(feed.failed, isTrue);
       feed.dispose();
     });
 

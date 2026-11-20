@@ -80,7 +80,10 @@ class JikanFallbacks {
   /// EMPTY fallback answer ([isEmpty]; by default null, an empty list or map)
   /// is held while the Jikan leg is still running: it is returned only when
   /// that leg fails or the [budget] ends, so a fallback with nothing to say
-  /// never hides Jikan's data (#361). When both fail, or nothing answered
+  /// never hides Jikan's data (#361). The other way round too: an empty
+  /// Jikan-leg answer starts the fallback at once and is returned only when
+  /// the fallback fails or is empty too (Tenrai answers an empty review list
+  /// for every title). When both fail, or nothing answered
   /// within [budget], it throws [NoSourceAnswered].
   static Future<RaceResult<T>> race<T>({
     required Future<T> Function() jikan,
@@ -126,8 +129,14 @@ class JikanFallbacks {
       Future<T>.sync(fallback).then(
         (value) {
           final result = RaceResult(value, RaceWinner.fallback);
-          if (jikanDone || !empty(value)) {
+          if (!empty(value)) {
             finish(result);
+            return;
+          }
+          if (jikanDone) {
+            // Both legs done: an empty Jikan answer held beats the failure
+            // of nothing, otherwise this empty fallback answer is the result.
+            finish(heldEmpty ?? result);
             return;
           }
           heldEmpty = result;
@@ -152,7 +161,19 @@ class JikanFallbacks {
     } else {
       headTimer = Timer(headStart, startFallback);
       Future<T>.sync(jikan).then(
-        (value) => finish(RaceResult(value, RaceWinner.jikan)),
+        (value) {
+          final result = RaceResult(value, RaceWinner.jikan);
+          if (!empty(value) || fallbackDone) {
+            // An empty fallback already held loses to any Jikan answer.
+            finish(result);
+            return;
+          }
+          // An EMPTY Jikan-leg answer (Tenrai has no reviews, for one) is
+          // held while the fallback runs, so it never hides MAL's data.
+          jikanDone = true;
+          heldEmpty = result;
+          startFallback();
+        },
         onError: (Object e) {
           jikanDone = true;
           jikanError = e;
