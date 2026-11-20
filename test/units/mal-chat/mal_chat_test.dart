@@ -1,0 +1,156 @@
+import 'dart:async';
+import 'dart:convert';
+
+import 'package:flutter_test/flutter_test.dart';
+import 'package:mywatchlist/services/api/MAL/web/mal_conversations.dart';
+import 'package:mywatchlist/services/api/MAL/web/mal_messages_api.dart';
+import 'package:mywatchlist/services/api/MAL/web/mal_outbox.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+/// Records what would go to MAL; [fail] makes every send throw, [gate] holds them.
+class _FakeApi extends MalMessagesApi {
+  final List<String> bodies = [];
+  final List<String> subjects = [];
+  bool fail = false;
+  Completer<void>? gate;
+
+  @override
+  Future<void> send({required String to, required String subject, required String body}) async {
+    await gate?.future;
+    if (fail) throw Exception('offline');
+    subjects.add(subject);
+    bodies.add(body);
+  }
+
+  @override
+  Future<void> reply(MalMessageThread thread, String body) async {
+    await gate?.future;
+    if (fail) throw Exception('offline');
+    subjects.add(replySubject(thread.subject));
+    bodies.add(body);
+  }
+}
+
+MalMessage _row(int id, String who, String date, {bool sent = false, bool read = true, int? thread, bool? seen}) =>
+    MalMessage(
+      id: id,
+      counterpart: who,
+      subject: 's$id',
+      preview: 'p$id',
+      date: date,
+      isSent: sent,
+      isRead: read,
+      threadId: thread,
+      recipientRead: sent ? (seen ?? true) : null,
+    );
+
+MalChatMessage _chat(bool mine) => MalChatMessage(html: mine ? 'me' : 'them', isMine: mine, subject: '');
+
+void main() {
+  final now = DateTime(2026, 11, 20, 12);
+
+  group('conversations', () {
+    test('one per person (any case), newest first, rows of both boxes', () {
+      final list = groupConversations(
+        [
+          _row(1, 'Kineta', 'Nov 19, 2026 9:00 AM', read: false, thread: 7),
+          _row(2, 'Xinil', 'Nov 20, 2026 8:00 AM'),
+        ],
+        [_row(3, 'kineta', 'Nov 20, 2026 10:00 AM', sent: true, thread: 7)],
+        now: now,
+      );
+      expect(list.map((c) => c.counterpart), ['Kineta', 'Xinil']);
+      final kineta = list.first;
+      expect(kineta.rows.map((m) => m.id), [3, 1]);
+      expect(kineta.last.isSent, isTrue);
+      expect(kineta.unread, 1);
+      // Both rows are in thread 7: reading one gives the thread.
+      expect(kineta.threadHeads.map((m) => m.id), [3]);
+      expect(kineta.lastSentRead, isTrue);
+    });
+
+    test('rows without a readable date keep MAL\'s order behind the dated ones', () {
+      final list = groupConversations(
+        [_row(1, 'A', 'sometime'), _row(2, 'B', 'Nov 20, 2026 8:00 AM')],
+        const [],
+        now: now,
+      );
+      expect(list.map((c) => c.counterpart), ['B', 'A']);
+    });
+
+    test('ticks: answered messages are read, the last ones follow MAL\'s sent box', () {
+      final messages = [_chat(true), _chat(false), _chat(true), _chat(true)];
+      expect(readStates(messages, lastSentRead: false),
+          [MalSendState.read, null, MalSendState.sent, MalSendState.sent]);
+      expect(readStates(messages, lastSentRead: true),
+          [MalSendState.read, null, MalSendState.read, MalSendState.read]);
+    });
+  });
+
+  group('outbox', () {
+    setUp(() => SharedPreferences.setMockInitialValues({}));
+
+    test('a subject for a new conversation comes from the first line', () {
+      expect(subjectFromBody('\n  Hello [b]there[/b]\nSecond line'), 'Hello there');
+      expect(subjectFromBody('a' * 80).length, 60);
+      expect(subjectFromBody('   '), '…');
+    });
+
+    test('shows the message at once, then sent; replies keep the thread subject', () async {
+      final api = _FakeApi()..gate = Completer<void>();
+      final outbox = MalOutbox(api: api);
+      const thread = MalMessageThread(
+        subject: 'Frieren rewatch',
+        counterpart: 'Kineta',
+        messages: [],
+        replyId: 9,
+        threadId: 7,
+      );
+      final m = outbox.send(to: 'Kineta', body: 'Count me in', thread: thread);
+      expect(outbox.to('kineta').single.id, m.id);
+      expect(outbox.to('Kineta').single.sent, isFalse);
+      expect(outbox.to('Kineta').single.failed, isFalse);
+      // Waiting for MAL: the text is already saved on the device.
+      await pumpEventQueue();
+      final saved = (await SharedPreferences.getInstance()).getString(MalOutbox.storageKey);
+      expect(jsonDecode(saved!), hasLength(1));
+
+      api.gate!.complete();
+      await pumpEventQueue();
+      expect(api.bodies, ['Count me in']);
+      expect(api.subjects, ['Re: Frieren rewatch']);
+      expect(outbox.to('Kineta').single.sent, isTrue);
+      expect((await SharedPreferences.getInstance()).getString(MalOutbox.storageKey), isNull);
+
+      outbox.clearSent('kineta');
+      expect(outbox.to('Kineta'), isEmpty);
+    });
+
+    test('a failed message keeps its text, survives a restart and is sent again', () async {
+      final api = _FakeApi()..fail = true;
+      final outbox = MalOutbox(api: api);
+      final m = outbox.send(to: 'Xinil', body: 'Hello there');
+      await pumpEventQueue();
+      expect(outbox.to('Xinil').single.failed, isTrue);
+      expect(api.bodies, isEmpty);
+
+      // The app restarts: the message is still there, as failed.
+      final again = MalOutbox(api: api);
+      await again.load();
+      final back = again.to('Xinil').single;
+      expect(back.body, 'Hello there');
+      expect(back.subject, 'Hello there');
+      expect(back.failed, isTrue);
+
+      api.fail = false;
+      again.retry(back.id);
+      expect(again.to('Xinil').single.failed, isFalse);
+      await pumpEventQueue();
+      expect(api.bodies, ['Hello there']);
+      expect(again.to('Xinil').single.sent, isTrue);
+
+      outbox.discard(m.id);
+      expect(outbox.to('Xinil'), isEmpty);
+    });
+  });
+}

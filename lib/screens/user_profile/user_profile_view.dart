@@ -5,7 +5,7 @@ import 'package:mwl_commons/mwl_commons.dart' show UserAboutHtml;
 import 'package:mywatchlist/cache/bookmarks.dart' show BookmarkKind;
 import 'package:mywatchlist/constants/constants.dart' show AccountType;
 import 'package:mywatchlist/generated/l10n.dart';
-import 'package:mywatchlist/screens/mal_web/compose_message_screen.dart' show openComposeMalMessage;
+import 'package:mywatchlist/screens/mal_web/messages_screen.dart' show openComposeMalMessage;
 import 'package:mywatchlist/screens/user_profile/sections/about_section.dart';
 import 'package:mywatchlist/screens/user_profile/sections/clubs_section.dart';
 import 'package:mywatchlist/screens/user_profile/sections/comments_section.dart';

@@ -1,0 +1,22 @@
+{
+  "@@locale": "fr_FR",
+  "Pc_Empty": "Aucune conversation pour l'instant",
+  "Pc_New": "Nouvelle conversation",
+  "Pc_Search_Hint": "Rechercher un utilisateur MyAnimeList",
+  "Pc_Friends": "Amis",
+  "Pc_Users": "Utilisateurs",
+  "Pc_No_User": "Aucun utilisateur trouvé",
+  "Pc_Hint": "Message",
+  "Pc_Start": "Écrivez votre premier message à {name}",
+  "Pc_Sending": "Envoi en cours",
+  "Pc_Sent": "Envoyé",
+  "Pc_Read": "Lu",
+  "Pc_Failed": "Non envoyé. Touchez pour réessayer.",
+  "Pc_Retry": "Renvoyer",
+  "Pc_Discard": "Supprimer ce message",
+  "Pc_Copy": "Copier le texte",
+  "Pc_Copied": "Texte copié",
+  "Pc_Earlier": "Afficher les messages précédents",
+  "Pc_Subject": "Sujet : {subject}",
+  "Pc_Unread": "{count, plural, =1{1 non lu} other{{count} non lus}}"
+}

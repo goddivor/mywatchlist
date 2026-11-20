@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mywatchlist/constants/constants.dart' show AccountType;
 import 'package:mywatchlist/generated/l10n.dart';
-import 'package:mywatchlist/screens/mal_web/compose_message_screen.dart';
+import 'package:mywatchlist/screens/mal_web/messages_screen.dart' show openComposeMalMessage;
 import 'package:mywatchlist/screens/user_profile/sections/profile_tab.dart';
 import 'package:mywatchlist/screens/user_profile/sections/profile_tabs_source.dart';
 import 'package:mywatchlist/services/api/MAL/scrapper/user_friends.dart';

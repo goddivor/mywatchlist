@@ -1,56 +1,126 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/material.dart';
 import 'package:mywatchlist/generated/l10n.dart';
-import 'package:mywatchlist/screens/mal_web/compose_message_screen.dart';
-import 'package:mywatchlist/screens/mal_web/message_thread_screen.dart';
+import 'package:mywatchlist/screens/mal_web/mal_chat_screen.dart';
+import 'package:mywatchlist/services/api/MAL/web/mal_conversations.dart';
 import 'package:mywatchlist/services/api/MAL/web/mal_messages_api.dart';
+import 'package:mywatchlist/services/api/MAL/web/mal_outbox.dart';
 import 'package:mywatchlist/services/api/MAL/web/mal_web_client.dart';
 import 'package:mywatchlist/services/auth/mal_web_session.dart';
 import 'package:mywatchlist/utils/app_routes.dart';
 import 'package:mywatchlist/utils/web_launcher.dart';
+import 'package:mywatchlist/widgets/forum/forum_common.dart';
+import 'package:mywatchlist/widgets/mal_web/chat_tiles.dart';
 import 'package:mywatchlist/widgets/mal_web/message_tiles.dart';
 
-export 'package:mywatchlist/screens/mal_web/compose_message_screen.dart' show openComposeMalMessage;
+export 'package:mywatchlist/screens/mal_web/mal_chat_screen.dart' show openMalChat;
 
-/// Opens the MAL messages (Inbox / Sent).
+/// Opens the MAL conversations.
 Future<void> openMalMessages(BuildContext context) =>
     AppRoutes.push<void>(context, const MalMessagesScreen());
 
-/// MAL private messages: Inbox (unread count in the tab) and Sent, a compose button.
+/// Opens the chat with [to], or the screen that picks a person when [to] is empty. Completes
+/// with true (kept for the callers of the former compose screen).
+Future<bool> openComposeMalMessage(BuildContext context, {String? to}) async {
+  final name = (to ?? '').trim();
+  if (name.isEmpty) {
+    await AppRoutes.push<void>(context, const NewMalChatScreen());
+  } else {
+    await openMalChat(context, name);
+  }
+  return true;
+}
+
+/// The MAL private messages as a messaging app lists them: one row per person (inbox and
+/// sent box together), the newest conversation first, with the start of its last message, its
+/// time and the unread count. A button starts a new conversation.
 class MalMessagesScreen extends StatefulWidget {
-  const MalMessagesScreen({super.key, this.api, this.session, this.initialTab = 0});
+  const MalMessagesScreen({super.key, this.api, this.source, this.outbox, this.initialTab = 0});
 
   final MalMessagesApi? api;
-  final MalWebSession? session;
+  final MalConversationsSource? source;
+  final MalOutbox? outbox;
 
-  /// 0 = inbox, 1 = sent.
+  /// Kept for the routes that opened the former Inbox / Sent tabs; the list has both.
   final int initialTab;
 
   @override
   State<MalMessagesScreen> createState() => _MalMessagesScreenState();
 }
 
-class _MalMessagesScreenState extends State<MalMessagesScreen> with SingleTickerProviderStateMixin {
-  late final TabController _tabs = TabController(length: 2, vsync: this, initialIndex: widget.initialTab.clamp(0, 1));
-
-  /// Bumped after a message was sent: the boxes read their first page again.
-  final ValueNotifier<int> _reload = ValueNotifier<int>(0);
+class _MalMessagesScreenState extends State<MalMessagesScreen> {
+  List<MalConversation> _items = const [];
+  bool _loading = true;
+  bool _hasMore = false;
+  int _pages = 2;
+  Object? _error;
+  int _generation = 0;
 
   MalMessagesApi get _api => widget.api ?? MalMessagesApi.instance;
-  MalWebSession get _session => widget.session ?? _api.client.session;
+  MalOutbox get _outbox => widget.outbox ?? MalOutbox.instance;
+  MalConversationsSource get _source => widget.source ?? MalConversationsSource(api: _api);
+  MalWebSession get _session => _api.client.session;
+
+  @override
+  void initState() {
+    super.initState();
+    _outbox.addListener(_onOutbox);
+    unawaited(_outbox.load());
+    unawaited(_refresh());
+  }
 
   @override
   void dispose() {
-    _tabs.dispose();
-    _reload.dispose();
+    _outbox.removeListener(_onOutbox);
     super.dispose();
   }
 
-  Future<void> _compose() async {
-    final sent = await AppRoutes.push<bool>(context, ComposeMalMessageScreen(api: widget.api, session: widget.session));
-    if (sent ?? false) _reload.value++;
+  void _onOutbox() {
+    if (mounted) setState(() {});
+  }
+
+  Future<void> _refresh() async {
+    final generation = ++_generation;
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final result = await _source.load(pages: _pages);
+      if (!mounted || generation != _generation) return;
+      setState(() {
+        _items = result.conversations;
+        _hasMore = result.hasMore;
+        _loading = false;
+      });
+    } catch (e) {
+      if (!mounted || generation != _generation) return;
+      setState(() {
+        _error = e;
+        _loading = false;
+      });
+    }
+  }
+
+  Future<void> _open(MalConversation conversation) async {
+    await openMalChat(context, conversation.counterpart, conversation: conversation);
+    if (mounted) unawaited(_refresh());
+  }
+
+  Future<void> _newChat() async {
+    await AppRoutes.push<void>(context, NewMalChatScreen(api: widget.api));
+    if (mounted) unawaited(_refresh());
+  }
+
+  /// The state of the newest outbox message to [conversation]'s person, when it is newer
+  /// than what MAL listed.
+  MalSendState? _pending(MalConversation conversation) {
+    final mine = _outbox.to(conversation.counterpart);
+    if (mine.isEmpty) return null;
+    final last = mine.last;
+    if (last.failed) return MalSendState.failed;
+    return last.sent ? MalSendState.sent : MalSendState.sending;
   }
 
   @override
@@ -65,170 +135,22 @@ class _MalMessagesScreenState extends State<MalMessagesScreen> with SingleTicker
             itemBuilder: (context) => [PopupMenuItem(value: 0, child: Text(s.Mn_Open_Web))],
           ),
         ],
-        bottom: TabBar(
-          controller: _tabs,
-          tabs: [
-            Tab(
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(s.Pm_Inbox),
-                  const SizedBox(width: 6),
-                  const MalMessagesUnreadBadge(),
-                ],
-              ),
-            ),
-            Tab(text: s.Pm_Sent_Box),
-          ],
-        ),
       ),
       floatingActionButton: ListenableBuilder(
         listenable: _session,
         builder: (context, _) => _session.isConnected
             ? FloatingActionButton(
-                tooltip: s.Pm_Compose,
-                onPressed: _compose,
-                child: const Icon(Icons.edit_outlined),
+                tooltip: s.Pc_New,
+                onPressed: _newChat,
+                child: const Icon(Icons.chat_outlined),
               )
             : const SizedBox.shrink(),
       ),
-      body: MalSessionGate(
-        session: _session,
-        connected: (context) => TabBarView(
-          controller: _tabs,
-          children: [
-            _MessageBox(api: _api, session: widget.session, sent: false, reload: _reload),
-            _MessageBox(api: _api, session: widget.session, sent: true, reload: _reload),
-          ],
-        ),
-      ),
+      body: MalSessionGate(session: _session, connected: _list),
     );
   }
-}
 
-/// One box, a page of 20 at a time, the next page loaded when the end comes into view.
-class _MessageBox extends StatefulWidget {
-  const _MessageBox({required this.api, required this.sent, required this.reload, this.session});
-
-  final MalMessagesApi api;
-  final MalWebSession? session;
-  final bool sent;
-  final ValueListenable<int> reload;
-
-  @override
-  State<_MessageBox> createState() => _MessageBoxState();
-}
-
-class _MessageBoxState extends State<_MessageBox> with AutomaticKeepAliveClientMixin {
-  List<MalMessage> _items = const [];
-  bool _loading = true;
-  bool _loadingMore = false;
-  bool _moreFailed = false;
-  bool _hasMore = false;
-  Object? _error;
-  int _generation = 0;
-
-  @override
-  bool get wantKeepAlive => true;
-
-  @override
-  void initState() {
-    super.initState();
-    widget.reload.addListener(_refresh);
-    unawaited(_refresh());
-  }
-
-  @override
-  void dispose() {
-    widget.reload.removeListener(_refresh);
-    super.dispose();
-  }
-
-  Future<MalMessagesPage> _fetch(int offset) =>
-      widget.sent ? widget.api.sent(offset: offset) : widget.api.inbox(offset: offset);
-
-  Future<void> _refresh() async {
-    final generation = ++_generation;
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
-    try {
-      final page = await _fetch(0);
-      if (!mounted || generation != _generation) return;
-      widget.api.prefetchPictures(page.messages);
-      setState(() {
-        _items = page.messages;
-        _hasMore = page.messages.length >= MalMessagesApi.pageSize;
-        _moreFailed = false;
-        _loading = false;
-      });
-    } catch (e) {
-      if (!mounted || generation != _generation) return;
-      setState(() {
-        _error = e;
-        _loading = false;
-      });
-    }
-  }
-
-  Future<void> _loadMore() async {
-    if (_loadingMore || !_hasMore) return;
-    final generation = _generation;
-    setState(() {
-      _loadingMore = true;
-      _moreFailed = false;
-    });
-    try {
-      final page = await _fetch(_items.length);
-      if (!mounted || generation != _generation) return;
-      widget.api.prefetchPictures(page.messages);
-      final known = {for (final m in _items) m.id};
-      final fresh = page.messages.where((m) => known.add(m.id)).toList();
-      setState(() {
-        _items = [..._items, ...fresh];
-        _hasMore = fresh.isNotEmpty && page.messages.length >= MalMessagesApi.pageSize;
-        _loadingMore = false;
-      });
-    } catch (_) {
-      if (!mounted || generation != _generation) return;
-      setState(() {
-        _loadingMore = false;
-        _moreFailed = true;
-      });
-    }
-  }
-
-  Future<void> _open(MalMessage message) async {
-    final index = _items.indexWhere((m) => m.id == message.id);
-    if (!message.isRead && index >= 0) {
-      setState(() => _items = [..._items]..[index] = message.copyWith(isRead: true));
-    }
-    final result = await AppRoutes.push<MessageThreadResult>(
-      context,
-      MalMessageThreadScreen(message: message, api: widget.api, session: widget.session),
-    );
-    if (result == MessageThreadResult.deleted && mounted) {
-      setState(() => _items = _items.where((m) => m.id != message.id).toList());
-    }
-  }
-
-  Future<bool> _delete(MalMessage message) async {
-    if (!await confirmDeleteMessage(context)) return false;
-    try {
-      await widget.api.delete(message);
-      if (!mounted) return true;
-      showMessageSnack(context, S.current.Pm_Deleted);
-      return true;
-    } catch (e) {
-      if (mounted) showMessageSnack(context, messageErrorText(e));
-      return false;
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    super.build(context);
+  Widget _list(BuildContext context) {
     final s = S.of(context);
     final scheme = Theme.of(context).colorScheme;
     if (_items.isEmpty) {
@@ -242,55 +164,161 @@ class _MessageBoxState extends State<_MessageBox> with AutomaticKeepAliveClientM
                 action: s.Ms_Retry,
                 onAction: _refresh,
               )
-            : MalMessagesStateView(
-                icon: widget.sent ? Icons.outbox_outlined : Icons.inbox_outlined,
-                text: widget.sent ? s.Pm_Sent_Empty : s.Pm_Inbox_Empty,
-              ),
+            : MalMessagesStateView(icon: Icons.forum_outlined, text: s.Pc_Empty),
       );
     }
-    final footer = _hasMore ? 1 : 0;
     return RefreshIndicator(
       onRefresh: _refresh,
       child: ListView.separated(
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.only(bottom: 88),
-        itemCount: _items.length + footer,
-        separatorBuilder: (context, i) => Divider(height: 1, indent: 68, color: scheme.outlineVariant.withValues(alpha: 0.5)),
+        itemCount: _items.length + (_hasMore ? 1 : 0),
+        separatorBuilder: (context, i) =>
+            Divider(height: 1, indent: 78, color: scheme.outlineVariant.withValues(alpha: 0.4)),
         itemBuilder: (context, i) {
           if (i >= _items.length) {
-            if (!_loadingMore && !_moreFailed) {
-              WidgetsBinding.instance.addPostFrameCallback((_) {
-                if (mounted) _loadMore();
-              });
-            }
             return Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(12),
               child: Center(
-                child: _moreFailed
-                    ? TextButton(onPressed: _loadMore, child: Text(s.Ms_Retry))
-                    : const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2)),
+                child: _loading
+                    ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2))
+                    : TextButton(
+                        onPressed: () {
+                          _pages += 2;
+                          _refresh();
+                        },
+                        child: Text(s.Pc_Earlier),
+                      ),
               ),
             );
           }
-          final m = _items[i];
-          return Dismissible(
-            key: ValueKey('pm_${widget.sent}_${m.id}'),
-            direction: DismissDirection.endToStart,
-            confirmDismiss: (_) => _delete(m),
-            onDismissed: (_) => setState(() => _items = _items.where((x) => x.id != m.id).toList()),
-            background: ColoredBox(
-              color: scheme.errorContainer,
-              child: Align(
-                alignment: AlignmentDirectional.centerEnd,
-                child: Padding(
-                  padding: const EdgeInsetsDirectional.only(end: 24),
-                  child: Icon(Icons.delete_outline, color: scheme.onErrorContainer),
-                ),
-              ),
-            ),
-            child: MalMessageTile(message: m, onTap: () => _open(m)),
-          );
+          final c = _items[i];
+          return MalConversationTile(conversation: c, pending: _pending(c), onTap: () => _open(c));
         },
+      ),
+    );
+  }
+}
+
+/// Picks the person of a new conversation: the user's friends, and MAL's user search once
+/// three letters are typed. Tapping a person opens the chat with them.
+class NewMalChatScreen extends StatefulWidget {
+  const NewMalChatScreen({super.key, this.api});
+
+  final MalMessagesApi? api;
+
+  @override
+  State<NewMalChatScreen> createState() => _NewMalChatScreenState();
+}
+
+class _NewMalChatScreenState extends State<NewMalChatScreen> {
+  final TextEditingController _query = TextEditingController();
+  List<MalUserSuggestion> _friends = const [];
+  List<MalUserSuggestion> _found = const [];
+  bool _searching = false;
+  int _search = 0;
+  Timer? _debounce;
+
+  MalMessagesApi get _api => widget.api ?? MalMessagesApi.instance;
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_loadFriends());
+  }
+
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    _query.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadFriends() async {
+    try {
+      await _api.client.session.ensureLoaded();
+      final friends = await _api.friends();
+      if (mounted) setState(() => _friends = friends);
+    } catch (_) {
+      // The search still answers.
+    }
+  }
+
+  void _onChanged(String value) {
+    _debounce?.cancel();
+    final q = value.trim();
+    if (q.length < 3) {
+      setState(() {
+        _found = const [];
+        _searching = false;
+      });
+      return;
+    }
+    setState(() => _searching = true);
+    _debounce = Timer(const Duration(milliseconds: 350), () async {
+      final generation = ++_search;
+      List<MalUserSuggestion> found;
+      try {
+        found = await _api.searchUsers(q);
+      } catch (_) {
+        found = const [];
+      }
+      if (!mounted || generation != _search) return;
+      setState(() {
+        _found = found;
+        _searching = false;
+      });
+    });
+  }
+
+  void _pick(String name) {
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute<void>(builder: (_) => MalChatScreen(counterpart: name, api: widget.api)),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final s = S.of(context);
+    final theme = Theme.of(context);
+    final q = _query.text.trim().toLowerCase();
+    final friends = q.isEmpty ? _friends : _friends.where((f) => f.name.toLowerCase().contains(q)).toList();
+    final friendNames = {for (final f in friends) f.name.toLowerCase()};
+    final others = [for (final u in _found) if (!friendNames.contains(u.name.toLowerCase())) u];
+    Widget header(String text) => Padding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 6),
+          child: Text(text, style: theme.textTheme.labelLarge?.copyWith(color: theme.colorScheme.primary)),
+        );
+    Widget tile(MalUserSuggestion u) => ListTile(
+          leading: ForumAvatar(username: u.name, url: u.imageUrl, size: 40, tappable: false),
+          title: Text(u.name),
+          onTap: () => _pick(u.name),
+        );
+    final typed = _query.text.trim();
+    return Scaffold(
+      appBar: AppBar(
+        title: TextField(
+          controller: _query,
+          autofocus: true,
+          textInputAction: TextInputAction.go,
+          decoration: InputDecoration(hintText: s.Pc_Search_Hint, border: InputBorder.none),
+          onChanged: _onChanged,
+          onSubmitted: (v) {
+            if (v.trim().isNotEmpty) _pick(v.trim());
+          },
+        ),
+      ),
+      body: ListView(
+        children: [
+          if (_searching) const LinearProgressIndicator(minHeight: 2),
+          if (friends.isNotEmpty) ...[header(s.Pc_Friends), ...friends.map(tile)],
+          if (others.isNotEmpty) ...[header(s.Pc_Users), ...others.map(tile)],
+          if (typed.length >= 3 && !_searching && friends.isEmpty && others.isEmpty)
+            ListTile(
+              leading: const Icon(Icons.person_search_outlined),
+              title: Text(s.Pc_No_User),
+            ),
+        ],
       ),
     );
   }

@@ -6,16 +6,21 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/screens/mal_web/compose_message_screen.dart';
+import 'package:mywatchlist/screens/mal_web/mal_chat_screen.dart';
 import 'package:mywatchlist/screens/mal_web/message_thread_screen.dart';
 import 'package:mywatchlist/screens/mal_web/messages_screen.dart';
+import 'package:mywatchlist/services/api/MAL/web/mal_conversations.dart';
 import 'package:mywatchlist/services/api/MAL/web/mal_messages_api.dart';
+import 'package:mywatchlist/services/api/MAL/web/mal_outbox.dart';
 import 'package:mywatchlist/services/api/MAL/web/mal_web_client.dart';
 import 'package:mywatchlist/services/api/MAL/web/mal_web_form_submitter.dart';
 import 'package:mywatchlist/services/auth/mal_authresp.dart';
 import 'package:mywatchlist/services/auth/mal_web_session.dart';
 import 'package:mywatchlist/user/user_mal_v2.dart';
+import 'package:mywatchlist/widgets/mal_web/chat_tiles.dart';
 import 'package:mywatchlist/widgets/mal_web/message_tiles.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -90,6 +95,8 @@ MalWebFormSubmitter _submitter(MalWebClient client) =>
     MalWebFormSubmitter(client: client, pageFactory: _pages, pollInterval: Duration.zero);
 
 void main() {
+  setUpAll(() => initializeDateFormatting());
+
   setUp(() {
     _pages = FakeMalWebPages();
     MalWebFormSubmitter.instance = MalWebFormSubmitter(pageFactory: _pages, pollInterval: Duration.zero);
@@ -146,6 +153,14 @@ void main() {
       expect(m.isRead, isTrue);
       expect(m.box, 2);
       expect(m.url, 'https://myanimelist.net/mymessages.php?go=read&id=80000002&f=1');
+      expect(m.recipientRead, isTrue);
+      // MAL keeps a sent row unread until the recipient opens it.
+      final unopened = parseMessagesPage(
+        _fixture('sent_reconstructed.html').replaceFirst('message read spot2', 'message unread spot2'),
+        sent: true,
+      )!;
+      expect(unopened.messages.single.recipientRead, isFalse);
+      expect(unopened.messages.single.isRead, isTrue);
     });
 
     test('an empty box, and a non-MAL page', () {
@@ -324,7 +339,7 @@ void main() {
     testWidgets('without a website session: one-tap Connect, no compose button', (tester) async {
       final session = _disconnected();
       final mal = _FakeMal();
-      await tester.pumpWidget(app(MalMessagesScreen(api: MalMessagesApi(client: mal.client(session)), session: session)));
+      await tester.pumpWidget(app(MalMessagesScreen(api: MalMessagesApi(client: mal.client(session)), outbox: MalOutbox())));
       await settle(tester);
       expect(find.text(S.current.Pm_Connect_Title), findsOneWidget);
       expect(find.text(S.current.Ms_Connect), findsOneWidget);
@@ -332,22 +347,56 @@ void main() {
       expect(mal.sent, isEmpty);
     });
 
-    testWidgets('inbox rows, unread badge, sent tab', (tester) async {
+    testWidgets('one row per person, inbox and sent box together', (tester) async {
       late MalWebSession session;
       await tester.runAsync(() async => session = await _connected());
       final mal = _FakeMal();
-      await tester.pumpWidget(app(MalMessagesScreen(api: MalMessagesApi(client: mal.client(session)), session: session)));
+      await tester.pumpWidget(app(MalMessagesScreen(api: MalMessagesApi(client: mal.client(session)), outbox: MalOutbox())));
       await settle(tester);
-      expect(find.text('Frieren rewatch'), findsOneWidget);
+      // Kineta wrote to the user and got an answer: one conversation, not two rows.
+      expect(find.byType(MalConversationTile), findsNWidgets(3));
       expect(find.text('Kineta'), findsOneWidget);
-      expect(find.byType(MalMessageTile), findsNWidgets(3));
-      expect(find.byType(Badge), findsOneWidget);
-      expect(find.text('2'), findsOneWidget);
+      expect(find.text('Archaeon'), findsOneWidget);
+      expect(find.text('Xinil'), findsOneWidget);
+      expect(find.byType(TabBar), findsNothing);
       expect(find.byType(FloatingActionButton), findsOneWidget);
+      expect(mal.sent.map((r) => r.url.toString()), contains('https://myanimelist.net/mymessages.php?go=sent'));
+    });
 
-      await tester.tap(find.text(S.current.Pm_Sent_Box));
+    testWidgets('chat: one thread of bubbles, a message shows at once and gets its ticks', (tester) async {
+      late MalWebSession session;
+      await tester.runAsync(() async => session = await _connected());
+      final mal = _FakeMal();
+      final client = mal.client(session);
+      final api = MalMessagesApi(client: client, submitter: _submitter(client));
+      final outbox = MalOutbox(api: api);
+      final inbox = parseMessagesPage(_fixture('inbox_reconstructed.html'))!;
+      final sentBox = parseMessagesPage(_fixture('sent_reconstructed.html'), sent: true)!;
+      final kineta = groupConversations(inbox.messages, sentBox.messages).firstWhere((c) => c.key == 'kineta');
+      await tester.pumpWidget(app(MalChatScreen(counterpart: 'Kineta', conversation: kineta, api: api, outbox: outbox)));
       await settle(tester);
-      expect(find.text('Re: Frieren rewatch'), findsOneWidget);
+      // The inbox message and the sent one belong to the same thread: no bubble twice.
+      expect(find.byType(MalChatBubble), findsNWidgets(3));
+      expect(find.text(S.current.Pc_Subject('Frieren rewatch')), findsOneWidget);
+
+      await tester.enterText(find.byType(TextField), 'Count me in');
+      await tester.pump();
+      await tester.tap(find.byIcon(Icons.send_rounded));
+      await tester.pump();
+      // At once: the bubble, a clock, an empty field.
+      expect(find.byType(MalChatBubble), findsNWidgets(4));
+      expect(find.byIcon(Icons.schedule_rounded), findsOneWidget);
+      expect(tester.widget<TextField>(find.byType(TextField)).controller!.text, isEmpty);
+
+      await settle(tester);
+      expect(_pages.last.submitted, isTrue);
+      expect(_pages.last.filled['message'], 'Count me in');
+      expect(find.byIcon(Icons.schedule_rounded), findsNothing);
+      // The list runs from the bottom: the newest bubble is built first.
+      final newest = tester.widgetList<MalChatBubble>(find.byType(MalChatBubble)).first;
+      expect(newest.message.html, contains('Count me in'));
+      expect(newest.message.state, MalSendState.sent);
+      expect(find.byIcon(Icons.done_all_rounded), findsWidgets);
     });
 
     testWidgets('thread: bubbles, own messages labelled, reply box', (tester) async {

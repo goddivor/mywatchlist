@@ -44,6 +44,10 @@ class MalMessage {
   /// The other person's picture, when the row shows one.
   final String? avatarUrl;
 
+  /// A sent-box row: whether the recipient has opened it (MAL keeps the row `unread` until
+  /// then). Null for inbox rows.
+  final bool? recipientRead;
+
   const MalMessage({
     required this.id,
     required this.counterpart,
@@ -56,6 +60,7 @@ class MalMessage {
     this.replyId,
     int? box,
     this.avatarUrl,
+    this.recipientRead,
   }) : box = box ?? (isSent ? 2 : 1);
 
   MalMessage copyWith({bool? isRead, int? threadId, int? replyId}) => MalMessage(
@@ -70,6 +75,7 @@ class MalMessage {
         replyId: replyId ?? this.replyId,
         box: box,
         avatarUrl: avatarUrl,
+        recipientRead: recipientRead,
       );
 
   /// The page of this message on MAL.
@@ -266,6 +272,7 @@ MalMessage? parseMessageRow(Element row, {required bool sent}) {
     date: date.isEmpty ? null : date,
     isRead: sent || !row.classes.contains('unread'),
     isSent: sent,
+    recipientRead: sent ? !row.classes.contains('unread') : null,
     threadId: threadId,
     replyId: replyId,
     box: box,
@@ -362,6 +369,10 @@ String _bodyHtml(Element td) {
 }
 
 String _norm(String htmlBody) => _clean(html.parseFragment(htmlBody).text).toLowerCase();
+
+/// The text of a message body (HTML) reduced for comparison: tags dropped, spaces folded,
+/// lower case. Two copies of one message (thread page, sent locally) give the same key.
+String messageTextKey(String htmlBody) => _norm(htmlBody);
 
 /// A `mymessages.php?go=read&id=…[&threadid=…]` page: the message in `td.dialog-text`, the
 /// Reply button's ids (`replyid`, `threadid`, `toname` in its `onclick`, as MALClient read

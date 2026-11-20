@@ -7,17 +7,9 @@ import 'package:mywatchlist/services/api/MAL/web/mal_messages_api.dart';
 import 'package:mywatchlist/services/api/MAL/web/mal_web_form_submitter.dart';
 import 'package:mywatchlist/services/auth/mal_web_session.dart';
 import 'package:mywatchlist/services/upload/image_upload.dart';
-import 'package:mywatchlist/utils/app_routes.dart';
 import 'package:mywatchlist/widgets/forum/forum_common.dart';
 import 'package:mywatchlist/widgets/mal_web/message_composer/composer_controls.dart';
 import 'package:mywatchlist/widgets/mal_web/message_tiles.dart';
-
-/// Opens the compose screen, the recipient filled with [to] when given. Completes with true
-/// once a message was sent.
-Future<bool> openComposeMalMessage(BuildContext context, {String? to}) async {
-  final sent = await AppRoutes.push<bool>(context, ComposeMalMessageScreen(to: to));
-  return sent ?? false;
-}
 
 /// A new private message: recipient (friends first, then MAL's user search), subject, body.
 /// The body is formatted like a chat app (selection toolbar and a formatting row write MAL
