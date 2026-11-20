@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/screens/mal_web/notifications_screen.dart';
+import 'package:mywatchlist/services/api/MAL/web/mal_messages_api.dart';
 import 'package:mywatchlist/services/notifications/mal_hub.dart';
 import 'package:mywatchlist/services/notifications/mal_hub_texts.dart';
 import 'package:mywatchlist/utils/sidebar_extension.dart' show SidebarMenuItem;
 import 'package:mywatchlist/widgets/common/app_colors.dart';
 import 'package:mywatchlist/widgets/common/app_image.dart';
+import 'package:mywatchlist/widgets/forum/forum_common.dart' show ForumAvatar;
 
 /// "3 hours ago" in the app's language (the profile's wording).
 String hubAgo(DateTime at, {S? strings, DateTime? now}) {
@@ -341,6 +343,135 @@ class _UnreadCount extends StatelessWidget {
               textColor: scheme.onError,
               label: Text(count > 99 ? '99+' : '$count'),
             ),
+    );
+  }
+}
+
+/// The sentence of a friend's news: started, completed or dropped [FriendActivity.title].
+String friendNewsHeadline(FriendActivity a, S s) {
+  if (a.isDropped) return s.Mn_Friend_Dropped(a.friend, a.title);
+  if (a.isCompleted) return s.Mn_Friend_Completed(a.friend, a.title);
+  return s.Pc_Friend_Started(a.friend, a.title);
+}
+
+/// A row of the notifications tab with a round picture, a sentence, an optional detail line
+/// and the time; tinted while unread.
+class _NewsRow extends StatelessWidget {
+  const _NewsRow({
+    required this.picture,
+    required this.headline,
+    required this.onTap,
+    this.detail,
+    this.time,
+    this.unread = false,
+  });
+
+  final Widget picture;
+  final String headline;
+  final String? detail;
+  final String? time;
+  final bool unread;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    return Material(
+      color: unread ? scheme.secondaryContainer.withValues(alpha: 0.35) : Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsetsDirectional.fromSTEB(16, 12, 48, 12),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              picture,
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      headline,
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        fontWeight: unread ? FontWeight.w600 : FontWeight.w400,
+                        color: scheme.onSurface,
+                      ),
+                    ),
+                    if (detail != null && detail!.isNotEmpty) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        detail!,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
+                      ),
+                    ],
+                    if (time != null && time!.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        time!,
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: unread ? scheme.primary : scheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// A private message in the notifications tab: "New message from …", its start, the time.
+class MalMessageNotificationTile extends StatelessWidget {
+  const MalMessageNotificationTile({super.key, required this.message, required this.onTap, this.now});
+
+  final MalMessage message;
+  final VoidCallback onTap;
+  final DateTime? now;
+
+  @override
+  Widget build(BuildContext context) {
+    final s = S.of(context);
+    final at = parseMalMessageDate(message.date, now: now);
+    final text = message.preview.isNotEmpty ? message.preview : message.subject;
+    return _NewsRow(
+      picture: ForumAvatar(username: message.counterpart, url: message.avatarUrl, size: 40, tappable: false),
+      headline: s.Pc_New_Message(message.counterpart),
+      detail: text,
+      time: at != null ? hubAgo(at, strings: s, now: now) : message.date,
+      unread: !message.isRead,
+      onTap: onTap,
+    );
+  }
+}
+
+/// A friend's news in the notifications tab: started, completed or dropped a title.
+class FriendNewsTile extends StatelessWidget {
+  const FriendNewsTile({super.key, required this.activity, required this.onTap, this.now});
+
+  final FriendActivity activity;
+  final VoidCallback onTap;
+  final DateTime? now;
+
+  @override
+  Widget build(BuildContext context) {
+    final s = S.of(context);
+    final date = activity.date;
+    return _NewsRow(
+      picture: _HubAvatar(url: activity.friendImageUrl, icon: Icons.person_outline),
+      headline: friendNewsHeadline(activity, s),
+      detail: friendProgressLabel(activity, s),
+      time: date == null ? null : hubAgo(date.toLocal(), strings: s, now: now),
+      onTap: onTap,
     );
   }
 }

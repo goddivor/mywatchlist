@@ -3,6 +3,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/main.dart' show appNavigatorKey;
+import 'package:mywatchlist/screens/mal_web/mal_chat_screen.dart' show openMalChat;
+import 'package:mywatchlist/services/api/MAL/web/mal_messages_api.dart';
+import 'package:mywatchlist/services/api/MAL/web/mal_notifications_api.dart' show FriendActivity;
 import 'package:mywatchlist/services/api/MAL/web/mal_web_form_submitter.dart' show MalWebFormHost;
 import 'package:mywatchlist/services/auth/mal_auth_v2.dart';
 import 'package:mywatchlist/services/notifications/mal_hub.dart';
@@ -134,7 +137,7 @@ class _MalNotificationsScreenState extends State<MalNotificationsScreen> with Si
         child: TabBarView(
           controller: _tabs,
           children: [
-            _HubTab(hub: _hub, onFailed: () => _snack(S.current.Ms_Action_Failed)),
+            _HubTab(hub: _hub, feed: MalMessagesFeed.instance, onFailed: () => _snack(S.current.Ms_Action_Failed)),
             _FriendsTab(hub: _hub),
           ],
         ),
@@ -165,7 +168,7 @@ class _Menu extends StatelessWidget {
       itemBuilder: (context) => [
         if (poller.notifier.isSupported) ...[
           CheckedPopupMenuItem(value: 0, checked: poller.pushHub.value, child: Text(s.Mn_Push_Hub)),
-          CheckedPopupMenuItem(value: 1, checked: poller.pushFriends.value, child: Text(s.Mn_Push_Friends)),
+          CheckedPopupMenuItem(value: 1, checked: poller.pushFriends.value, child: Text(s.Pc_Push_Friends)),
           const PopupMenuDivider(),
         ],
         PopupMenuItem(value: 2, child: Text(s.Mn_Open_Web)),
@@ -252,18 +255,93 @@ class _Message extends StatelessWidget {
   }
 }
 
-/// The filter chips: All, Unread, then the groups the items have.
-enum _HubFilterKind { all, unread, group }
+/// The newest messages of the MAL inbox, for the notifications tab (MAL's own hub has no
+/// message items).
+class MalMessagesFeed extends ChangeNotifier {
+  MalMessagesFeed({MalMessagesApi? api}) : _api = api;
+
+  static MalMessagesFeed instance = MalMessagesFeed();
+
+  final MalMessagesApi? _api;
+  MalMessagesApi get api => _api ?? MalMessagesApi.instance;
+
+  List<MalMessage> _messages = const [];
+  List<MalMessage> get messages => _messages;
+
+  Future<void>? _loading;
+
+  /// Reads the first inbox page; nothing (and no error) without a website session.
+  Future<void> load() => _loading ??= _load().whenComplete(() => _loading = null);
+
+  Future<void> _load() async {
+    try {
+      final session = api.client.session;
+      await session.ensureLoaded();
+      if (!session.isConnected) return;
+      final page = await api.inbox();
+      _messages = page.messages;
+      api.prefetchPictures(_messages);
+      notifyListeners();
+    } catch (e) {
+      debugPrint('MAL messages feed: $e');
+    }
+  }
+
+  /// The message was opened in its chat.
+  void markRead(MalMessage message) {
+    _messages = [for (final m in _messages) m.id == message.id ? m.copyWith(isRead: true) : m];
+    notifyListeners();
+  }
+}
+
+/// One row of the notifications tab: a hub item, a message or a friend's news.
+sealed class _Entry {
+  const _Entry();
+  DateTime? get at;
+  bool get isRead;
+}
+
+class _HubEntry extends _Entry {
+  const _HubEntry(this.item);
+  final MalNotificationItem item;
+  @override
+  DateTime? get at => item.createdAt;
+  @override
+  bool get isRead => item.isRead;
+}
+
+class _MessageEntry extends _Entry {
+  const _MessageEntry(this.message, this.at);
+  final MalMessage message;
+  @override
+  final DateTime? at;
+  @override
+  bool get isRead => message.isRead;
+}
+
+class _FriendEntry extends _Entry {
+  const _FriendEntry(this.activity);
+  final FriendActivity activity;
+  @override
+  DateTime? get at => activity.date;
+  @override
+  bool get isRead => true;
+}
+
+/// The filter chips: All, Unread, Messages, Friends, then the groups the hub items have.
+enum _HubFilterKind { all, unread, messages, friends, group }
 
 class _HubFilter {
   const _HubFilter(this.kind, [this.group]);
   final _HubFilterKind kind;
   final MalNotificationGroup? group;
 
-  bool accepts(MalNotificationItem i) => switch (kind) {
+  bool accepts(_Entry e) => switch (kind) {
         _HubFilterKind.all => true,
-        _HubFilterKind.unread => !i.isRead,
-        _HubFilterKind.group => i.kind.group == group,
+        _HubFilterKind.unread => !e.isRead,
+        _HubFilterKind.messages => e is _MessageEntry,
+        _HubFilterKind.friends => e is _FriendEntry || (e is _HubEntry && e.item.kind.group == MalNotificationGroup.friends),
+        _HubFilterKind.group => e is _HubEntry && e.item.kind.group == group,
       };
 
   @override
@@ -274,10 +352,14 @@ class _HubFilter {
 }
 
 class _HubTab extends StatefulWidget {
-  const _HubTab({required this.hub, required this.onFailed});
+  const _HubTab({required this.hub, required this.feed, required this.onFailed});
 
   final MalNotificationsHub hub;
+  final MalMessagesFeed feed;
   final VoidCallback onFailed;
+
+  /// How far back friends' news and messages are listed.
+  static const Duration window = Duration(days: 7);
 
   @override
   State<_HubTab> createState() => _HubTabState();
@@ -289,11 +371,32 @@ class _HubTabState extends State<_HubTab> with AutomaticKeepAliveClientMixin {
   @override
   bool get wantKeepAlive => true;
 
+  @override
+  void initState() {
+    super.initState();
+    unawaited(widget.feed.load());
+    unawaited(widget.hub.loadActivity(quiet: true));
+  }
+
+  Future<void> _refresh() async {
+    await Future.wait([
+      widget.hub.refresh(),
+      widget.feed.load(),
+      widget.hub.loadActivity(force: true, quiet: true).then((_) {}),
+    ]);
+  }
+
   Future<void> _open(MalNotificationItem item) async {
     if (!item.isRead) unawaited(widget.hub.markRead([item]));
     final url = item.targetUrl;
     if (url == null) return;
     await openLink(context, url, confirm: false);
+  }
+
+  Future<void> _openMessage(MalMessage message) async {
+    widget.feed.markRead(message);
+    await openMalChat(context, message.counterpart);
+    if (mounted) unawaited(widget.feed.load());
   }
 
   Future<void> _answer(MalNotificationItem item, bool accept) async {
@@ -313,39 +416,73 @@ class _HubTabState extends State<_HubTab> with AutomaticKeepAliveClientMixin {
     if (!ok && mounted) widget.onFailed();
   }
 
+  /// Hub items, the inbox's recent messages and the friends' recent news, newest first.
+  List<_Entry> _entries() {
+    final now = DateTime.now();
+    bool recent(DateTime? at) => at != null && now.difference(at) <= _HubTab.window;
+    final entries = <_Entry>[
+      for (final i in widget.hub.items) _HubEntry(i),
+      for (final m in widget.feed.messages)
+        if (!m.isRead || recent(parseMalMessageDate(m.date, now: now)))
+          _MessageEntry(m, parseMalMessageDate(m.date, now: now)),
+      for (final a in widget.hub.activity)
+        if (a.isNews && recent(a.date)) _FriendEntry(a),
+    ];
+    final order = {for (var i = 0; i < entries.length; i++) entries[i]: i};
+    entries.sort((a, b) {
+      final x = a.at;
+      final y = b.at;
+      if (x != null && y != null) {
+        final c = y.compareTo(x);
+        if (c != 0) return c;
+      }
+      if (x == null && y != null) return 1;
+      if (x != null && y == null) return -1;
+      return order[a]!.compareTo(order[b]!);
+    });
+    return entries;
+  }
+
   @override
   Widget build(BuildContext context) {
     super.build(context);
     return ListenableBuilder(
-      listenable: widget.hub,
+      listenable: Listenable.merge([widget.hub, widget.feed]),
       builder: (context, _) {
         final hub = widget.hub;
         final s = S.of(context);
         final status = hub.status;
-        final items = hub.items;
         if (status == MalHubStatus.noAccount || status == MalHubStatus.noSession) {
           return const _ConnectState(expired: false);
         }
         if (status == MalHubStatus.expired) return const _ConnectState(expired: true);
-        if (items.isEmpty && (status == MalHubStatus.loading || status == MalHubStatus.idle)) {
+        final entries = _entries();
+        if (entries.isEmpty && (status == MalHubStatus.loading || status == MalHubStatus.idle)) {
           return const Center(child: CircularProgressIndicator());
         }
         Widget body;
-        if (items.isEmpty && status == MalHubStatus.error) {
-          body = _Message(icon: Icons.cloud_off_rounded, text: s.Mn_Error, onRetry: hub.refresh);
-        } else if (items.isEmpty) {
+        if (entries.isEmpty && status == MalHubStatus.error) {
+          body = _Message(icon: Icons.cloud_off_rounded, text: s.Mn_Error, onRetry: _refresh);
+        } else if (entries.isEmpty) {
           body = _Message(icon: Icons.notifications_none_rounded, text: s.Mn_Empty);
         } else {
-          final groups = <MalNotificationGroup>{for (final i in items) i.kind.group};
+          final groups = <MalNotificationGroup>{
+            for (final e in entries)
+              if (e is _HubEntry) e.item.kind.group,
+          };
+          final hasFriends = entries.any((e) => e is _FriendEntry);
           final filters = [
             const _HubFilter(_HubFilterKind.all),
-            if (items.any((i) => !i.isRead)) const _HubFilter(_HubFilterKind.unread),
+            if (entries.any((e) => !e.isRead)) const _HubFilter(_HubFilterKind.unread),
+            if (entries.any((e) => e is _MessageEntry)) const _HubFilter(_HubFilterKind.messages),
+            if (hasFriends) const _HubFilter(_HubFilterKind.friends),
             if (groups.length > 1)
               for (final g in MalNotificationGroup.values)
-                if (groups.contains(g)) _HubFilter(_HubFilterKind.group, g),
+                if (groups.contains(g) && !(hasFriends && g == MalNotificationGroup.friends))
+                  _HubFilter(_HubFilterKind.group, g),
           ];
           final filter = filters.contains(_filter) ? _filter : filters.first;
-          final shown = items.where(filter.accepts).toList();
+          final shown = entries.where(filter.accepts).toList();
           body = CustomScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
             slivers: [
@@ -363,6 +500,8 @@ class _HubTabState extends State<_HubTab> with AutomaticKeepAliveClientMixin {
                         final label = switch (f.kind) {
                           _HubFilterKind.all => s.Mn_Filter_All,
                           _HubFilterKind.unread => s.Mn_Filter_Unread,
+                          _HubFilterKind.messages => s.Pc_Filter_Messages,
+                          _HubFilterKind.friends => s.Pc_Filter_Friends,
                           _HubFilterKind.group => malNotificationGroupLabel(f.group!, s),
                         };
                         return ChoiceChip(
@@ -383,23 +522,32 @@ class _HubTabState extends State<_HubTab> with AutomaticKeepAliveClientMixin {
                 SliverList.separated(
                   itemCount: shown.length,
                   separatorBuilder: (_, __) => const Divider(height: 1),
-                  itemBuilder: (context, index) {
-                    final item = shown[index];
-                    return MalNotificationTile(
-                      key: ValueKey(item.id),
-                      item: item,
-                      onTap: () => _open(item),
-                      onMarkRead: () => _markRead(item),
-                      onAccept: () => _answer(item, true),
-                      onDeny: () => _answer(item, false),
-                    );
+                  itemBuilder: (context, index) => switch (shown[index]) {
+                    _HubEntry(:final item) => MalNotificationTile(
+                        key: ValueKey(item.id),
+                        item: item,
+                        onTap: () => _open(item),
+                        onMarkRead: () => _markRead(item),
+                        onAccept: () => _answer(item, true),
+                        onDeny: () => _answer(item, false),
+                      ),
+                    _MessageEntry(:final message) => MalMessageNotificationTile(
+                        key: ValueKey('pm_${message.id}'),
+                        message: message,
+                        onTap: () => _openMessage(message),
+                      ),
+                    _FriendEntry(:final activity) => FriendNewsTile(
+                        key: ValueKey('fr_${activity.key}'),
+                        activity: activity,
+                        onTap: () => openLink(context, activity.link, confirm: false),
+                      ),
                   },
                 ),
               const SliverToBoxAdapter(child: SizedBox(height: 24)),
             ],
           );
         }
-        return RefreshIndicator(onRefresh: hub.refresh, child: body);
+        return RefreshIndicator(onRefresh: _refresh, child: body);
       },
     );
   }

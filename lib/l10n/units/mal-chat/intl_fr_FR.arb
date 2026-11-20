@@ -18,5 +18,13 @@
   "Pc_Copied": "Texte copié",
   "Pc_Earlier": "Afficher les messages précédents",
   "Pc_Subject": "Sujet : {subject}",
-  "Pc_Unread": "{count, plural, =1{1 non lu} other{{count} non lus}}"
+  "Pc_Unread": "{count, plural, =1{1 non lu} other{{count} non lus}}",
+  "Pc_Delete_Conversation": "Supprimer la conversation",
+  "Pc_Delete_Conversation_Confirm": "Supprimer votre conversation avec {name} ? MyAnimeList retire ses messages de votre boîte de réception et de vos messages envoyés.",
+  "Pc_Delete_Failed": "Certains messages n'ont pas pu être supprimés",
+  "Pc_Friend_Started": "{friend} a commencé {title}",
+  "Pc_New_Message": "Nouveau message de {name}",
+  "Pc_Filter_Messages": "Messages",
+  "Pc_Filter_Friends": "Amis",
+  "Pc_Push_Friends": "Titres commencés, terminés et abandonnés par vos amis"
 }

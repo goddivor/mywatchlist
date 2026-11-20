@@ -62,9 +62,17 @@ class _MalMessagesScreenState extends State<MalMessagesScreen> {
   MalConversationsSource get _source => widget.source ?? MalConversationsSource(api: _api);
   MalWebSession get _session => _api.client.session;
 
+  /// Conversations deleted here, hidden while MAL deletes them.
+  final Set<String> _deleted = {};
+
   @override
   void initState() {
     super.initState();
+    final cached = MalConversationsCache.list;
+    if (cached != null && widget.source == null) {
+      _items = cached;
+      _loading = false;
+    }
     _outbox.addListener(_onOutbox);
     unawaited(_outbox.load());
     unawaited(_refresh());
@@ -96,6 +104,7 @@ class _MalMessagesScreenState extends State<MalMessagesScreen> {
           (m) => sent.any((r) => previewMatches(r.preview, MalOutbox.textKey(m.body))),
         );
       }
+      _deleted.retainAll({for (final c in result.conversations) c.key});
       setState(() {
         _items = result.conversations;
         _hasMore = result.hasMore;
@@ -113,6 +122,57 @@ class _MalMessagesScreenState extends State<MalMessagesScreen> {
   Future<void> _open(MalConversation conversation) async {
     await openMalChat(context, conversation.counterpart, conversation: conversation);
     if (mounted) unawaited(_refresh());
+  }
+
+  Future<void> _deleteConversation(MalConversation conversation) async {
+    final s = S.of(context);
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(s.Pc_Delete_Conversation),
+        content: Text(s.Pc_Delete_Conversation_Confirm(conversation.counterpart)),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: Text(s.Cancel)),
+          TextButton(onPressed: () => Navigator.pop(context, true), child: Text(s.Delete)),
+        ],
+      ),
+    );
+    if (ok != true || !mounted) return;
+    setState(() => _deleted.add(conversation.key));
+    var failed = 0;
+    for (final row in conversation.rows) {
+      try {
+        await _api.delete(row);
+      } catch (_) {
+        failed++;
+      }
+    }
+    MalConversationsCache.chats.remove(conversation.key);
+    if (!mounted) return;
+    if (failed > 0) {
+      setState(() => _deleted.remove(conversation.key));
+      showMessageSnack(context, s.Pc_Delete_Failed);
+    } else {
+      showMessageSnack(context, s.Pm_Deleted);
+    }
+    unawaited(_refresh());
+  }
+
+  Future<void> _conversationActions(MalConversation conversation) async {
+    final s = S.of(context);
+    final scheme = Theme.of(context).colorScheme;
+    final choice = await showModalBottomSheet<int>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) => SafeArea(
+        child: ListTile(
+          leading: Icon(Icons.delete_outline_rounded, color: scheme.error),
+          title: Text(s.Pc_Delete_Conversation, style: TextStyle(color: scheme.error)),
+          onTap: () => Navigator.pop(context, 0),
+        ),
+      ),
+    );
+    if (choice == 0 && mounted) await _deleteConversation(conversation);
   }
 
   Future<void> _newChat() async {
@@ -174,7 +234,10 @@ class _MalMessagesScreenState extends State<MalMessagesScreen> {
             : MalMessagesStateView(icon: Icons.forum_outlined, text: s.Pc_Empty),
       );
     }
-    return RefreshIndicator(
+    return Column(
+      children: [
+        SizedBox(height: 2, child: _loading ? const LinearProgressIndicator(minHeight: 2) : null),
+        Expanded(child: RefreshIndicator(
       onRefresh: _refresh,
       child: ListView.separated(
         physics: const AlwaysScrollableScrollPhysics(),
@@ -200,10 +263,16 @@ class _MalMessagesScreenState extends State<MalMessagesScreen> {
             );
           }
           final c = _items[i];
-          return MalConversationTile(conversation: c, pending: _pending(c), onTap: () => _open(c));
+          if (_deleted.contains(c.key)) return const SizedBox.shrink();
+          return MalConversationTile(
+            conversation: c,
+            pending: _pending(c),
+            onTap: () => _open(c),
+            onLongPress: () => _conversationActions(c),
+          );
         },
       ),
-    );
+    ))]);
   }
 }
 

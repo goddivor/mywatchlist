@@ -10,7 +10,7 @@ import 'package:mywatchlist/screens/MAL/contentdetailedscreen.dart';
 import 'package:mywatchlist/screens/bookmarks_screen.dart';
 import 'package:mywatchlist/screens/calendar/calendar_screen.dart';
 import 'package:mywatchlist/screens/home_screen.dart';
-import 'package:mywatchlist/screens/mal_web/message_thread_screen.dart';
+import 'package:mywatchlist/screens/mal_web/mal_chat_screen.dart';
 import 'package:mywatchlist/screens/mal_web/messages_screen.dart';
 import 'package:mywatchlist/screens/manage_accounts_page.dart';
 import 'package:mywatchlist/screens/search/general_search_screen.dart';
@@ -209,24 +209,11 @@ abstract final class AppRoutes {
   static Future<void> openMalMessages(BuildContext context, {bool sent = false}) =>
       push<void>(context, MalMessagesScreen(initialTab: sent ? 1 : 0));
 
-  /// Opens the thread of MyAnimeList message [id] (a message of the sent box with [sent]).
-  /// Only the id is known (a notification, a link): subject and names come from the page.
+  /// Opens the chat that holds MyAnimeList message [id] (a message of the sent box with
+  /// [sent]). Only the id is known (a notification, a link): the person comes from MAL.
   static Future<void> openMalMessage(BuildContext context,
           {required int id, bool sent = false, int? threadId}) =>
-      push<void>(
-        context,
-        MalMessageThreadScreen(
-          message: MalMessage(
-            id: id,
-            counterpart: '',
-            subject: '',
-            // An inbox message reached from its notification is unread: reading it lowers the badge.
-            isRead: sent,
-            isSent: sent,
-            threadId: threadId,
-          ),
-        ),
-      );
+      push<void>(context, MalChatScreen(counterpart: '', messageId: id, messageSent: sent));
 
   /// Opens the login screen (tracker picker), replacing nothing.
   static Future<void> openLogin(BuildContext context) =>

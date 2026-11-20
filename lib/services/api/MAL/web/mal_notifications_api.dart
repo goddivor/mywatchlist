@@ -635,6 +635,13 @@ class FriendActivity {
   bool get isDropped => status == 'dropped';
   bool get isCompleted => status == 'completed';
 
+  /// A title the friend has just begun: watching or reading, at most one episode or chapter
+  /// in (MAL's feed has a row for every later episode too, which are not news).
+  bool get isStarted => (status == 'watching' || status == 'reading') && (progress ?? 0) <= 1;
+
+  /// A change worth a notification: started, completed or dropped.
+  bool get isNews => isStarted || isCompleted || isDropped;
+
   /// Same friend, title and state: the same update seen twice.
   String get key => '$friend|$category|$malId|${status ?? statusText}|${progress ?? ''}';
 

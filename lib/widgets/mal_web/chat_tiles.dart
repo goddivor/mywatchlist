@@ -56,10 +56,11 @@ Color _readColor(ColorScheme scheme) =>
 /// One person in the list of conversations: picture, name, time of the last message, its
 /// start (with the ticks when the user wrote it) and the unread count.
 class MalConversationTile extends StatelessWidget {
-  const MalConversationTile({super.key, required this.conversation, this.onTap, this.pending});
+  const MalConversationTile({super.key, required this.conversation, this.onTap, this.onLongPress, this.pending});
 
   final MalConversation conversation;
   final VoidCallback? onTap;
+  final VoidCallback? onLongPress;
 
   /// The state of a message of the user still in the outbox, newer than the rows.
   final MalSendState? pending;
@@ -76,6 +77,7 @@ class MalConversationTile extends StatelessWidget {
     final text = last.preview.isNotEmpty ? last.preview : last.subject;
     return InkWell(
       onTap: onTap,
+      onLongPress: onLongPress,
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
         child: Row(

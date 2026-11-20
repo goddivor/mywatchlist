@@ -8,7 +8,13 @@
   "Pc_No_User": "No user found",
   "Pc_Hint": "Message",
   "Pc_Start": "Write your first message to {name}",
-  "@Pc_Start": { "placeholders": { "name": { "type": "String" } } },
+  "@Pc_Start": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "Pc_Sending": "Sending",
   "Pc_Sent": "Sent",
   "Pc_Read": "Read",
@@ -19,7 +25,51 @@
   "Pc_Copied": "Text copied",
   "Pc_Earlier": "Show earlier messages",
   "Pc_Subject": "Subject: {subject}",
-  "@Pc_Subject": { "placeholders": { "subject": { "type": "String" } } },
+  "@Pc_Subject": {
+    "placeholders": {
+      "subject": {
+        "type": "String"
+      }
+    }
+  },
   "Pc_Unread": "{count, plural, =1{1 unread} other{{count} unread}}",
-  "@Pc_Unread": { "placeholders": { "count": { "type": "int" } } }
+  "@Pc_Unread": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "Pc_Delete_Conversation": "Delete the conversation",
+  "Pc_Delete_Conversation_Confirm": "Delete your conversation with {name}? MyAnimeList removes its messages from your inbox and sent box.",
+  "@Pc_Delete_Conversation_Confirm": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "Pc_Delete_Failed": "Some messages couldn't be deleted",
+  "Pc_Friend_Started": "{friend} started {title}",
+  "@Pc_Friend_Started": {
+    "placeholders": {
+      "friend": {
+        "type": "String"
+      },
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "Pc_New_Message": "New message from {name}",
+  "@Pc_New_Message": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "Pc_Filter_Messages": "Messages",
+  "Pc_Filter_Friends": "Friends",
+  "Pc_Push_Friends": "Friends' started, completed and dropped titles"
 }
