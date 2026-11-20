@@ -9,7 +9,6 @@ import 'package:mywatchlist/screens/user_profile/sections/list_section.dart';
 import 'package:mywatchlist/services/api/MAL/user_anime_statistics.dart' show ListStats;
 import 'package:mywatchlist/user/list_cache/list_status_cache.dart';
 import 'package:mywatchlist/user/preferences/preferences.dart';
-import 'package:mywatchlist/user/preferences/preferences_bloc.dart';
 import 'package:mywatchlist/widgets/user/list/cards/my_list_mark.dart';
 import 'package:mywatchlist/widgets/user/list/mal_user_list_adapter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
