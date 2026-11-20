@@ -356,6 +356,7 @@ void malHubCallbackDispatcher() {
   Workmanager().executeTask((task, inputData) async {
     await runMalHubWorker();
     await runAnilistWorker();
+    await runAiringWorker();
     // Never "retry": the next period comes in 30 minutes anyway.
     return true;
   });
@@ -385,6 +386,35 @@ Future<void> runMalHubWorker({
     await MalHubPoller.instance.poll(forceHub: true);
   } catch (e) {
     debugPrint('MAL hub worker: $e');
+  }
+}
+
+/// The airing part of a background round: plans the episode alarms again from the lists as
+/// they are now (once a day, [NotificationService.refreshEvery]), so an anime that left the
+/// watching / plan-to-watch lists, or the lists of an account signed out, stops notifying
+/// even when the app is not opened. Never throws.
+Future<void> runAiringWorker({Future<SharedPreferences> Function()? storage}) async {
+  try {
+    WidgetsFlutterBinding.ensureInitialized();
+    final prefs = await (storage ?? SharedPreferences.getInstance)();
+    await prefs.reload();
+    final store = PreferencesStore(prefs);
+    if (!store.read().notifications.enabled) return;
+    await dotenv.load(fileName: 'assets/.env');
+    await UserManager.instance.initializeAllUsers();
+    await UserManager.instance.loadCurrentTracker();
+    AccountManagerSingleton().updateAccountType(
+        NotificationService.candidateTracker(
+            UserManager.instance.currentTracker, UserManager.instance.isAuthenticated));
+    final language = LanguageBloc(prefs: prefs);
+    await language.applyCurrent();
+    await language.close();
+    final backend = PluginNotificationBackend();
+    await backend.init((_) {});
+    await NotificationService(backend: backend, readPrefs: () => store.read().notifications)
+        .scheduleAll();
+  } catch (e) {
+    debugPrint('Airing worker: $e');
   }
 }
 
@@ -459,8 +489,9 @@ class WorkmanagerMalHubScheduler implements MalHubScheduler {
 
 /// Keeps the background job registered exactly while it can be useful: the notification
 /// master switch is on and either a MyAnimeList account is signed in with at least one of
-/// the MAL switches (hub, friends, messages) on, or an AniList account is signed in with
-/// its switch on ([AnilistBackgroundNotifier.wanted]).
+/// the MAL switches (hub, friends, messages) on, an AniList account is signed in with its
+/// switch on ([AnilistBackgroundNotifier.wanted]), or any tracker is signed in (the airing
+/// alarms are refreshed from its lists, [runAiringWorker]).
 class MalBackgroundPolling {
   MalBackgroundPolling({MalHubScheduler? scheduler, bool Function()? wanted})
       : _scheduler = scheduler ?? WorkmanagerMalHubScheduler(),
@@ -479,7 +510,10 @@ class MalBackgroundPolling {
     final mal = Preferences.current.notifications.enabled &&
         UserManager.instance.isAuthenticated(AccountType.myanimelist) &&
         (poller.pushHub.value || poller.pushFriends.value || MalMessagesWatcher.instance.push.value);
-    return mal || AnilistBackgroundNotifier.instance.wanted;
+    // Airing alarms: refreshed in the background so they follow the lists (any tracker).
+    final airing = Preferences.current.notifications.enabled &&
+        AccountType.values.any((t) => t != AccountType.none && UserManager.instance.isAuthenticated(t));
+    return mal || airing || AnilistBackgroundNotifier.instance.wanted;
   }
 
   /// Registers the job at start and follows what decides it.

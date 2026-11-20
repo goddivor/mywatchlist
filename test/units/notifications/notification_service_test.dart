@@ -56,12 +56,12 @@ void main() {
     final service = build();
     await service.scheduleAll();
     expect(backend.cancelAllCalls, 1);
-    expect(backend.scheduled.map((n) => n.episode), [3, 4, 5, 6]);
+    expect(backend.scheduled.map((n) => n.episode), [3, 4]);
     expect(backend.looks.first.imagePath, '/covers/1.jpg');
     expect(backend.looks.first.bigPicture, isTrue);
     expect(backend.looks.first.channelName, 'Watching');
     expect(coverCalls, ['https://img/1.jpg'], reason: 'one download per anime');
-    expect(service.summary.value.scheduled, 4);
+    expect(service.summary.value.scheduled, 2);
     expect(service.summary.value.next, DateTime.utc(2026, 10, 28, 15));
     expect(service.summary.value.running, isFalse);
   });
@@ -106,9 +106,9 @@ void main() {
     failLists = true;
     await service.scheduleAll(force: true);
     expect(backend.cancelAllCalls, 1);
-    expect(backend.scheduled, hasLength(4));
+    expect(backend.scheduled, hasLength(2));
     expect(service.summary.value.failed, isTrue);
-    expect(service.summary.value.scheduled, 4);
+    expect(service.summary.value.scheduled, 2);
   });
 
   test('unsupported platforms do nothing and never throw', () async {

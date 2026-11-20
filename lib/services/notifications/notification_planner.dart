@@ -9,9 +9,14 @@ import 'notification_models.dart';
 /// the calendar unit's `AiringSchedule`), then the weekly MAL broadcast slot when the anime
 /// is not in the schedule.
 abstract final class NotificationPlanner {
-  /// Weeks projected after the last scheduled episode (one episode per week), so the user
-  /// is still notified if they do not open the app for a few weeks.
-  static const int projectedWeeks = 3;
+  /// Weeks projected after the last scheduled episode (one episode per week). Kept short:
+  /// an alarm stays in place even if the anime leaves the list, and the daily background
+  /// refresh replaces the alarms long before then.
+  static const int projectedWeeks = 1;
+
+  /// Broadcast slots planned for an anime missing from the schedule (this week and the
+  /// next). Never a repeating alarm: it would fire forever after the anime left the list.
+  static const int broadcastWeeks = 2;
 
   /// Android keeps all pending alarms; stay far below any vendor limit.
   static const int maxNotifications = 200;
@@ -70,17 +75,18 @@ abstract final class NotificationPlanner {
       if (c.airingStatus != 'currently_airing') continue;
       final next = nextBroadcast(c.broadcastDay, c.broadcastTime, at);
       if (next == null) continue;
-      out.add(PlannedNotification(
-        id: c.malId * slotsPerAnime,
-        kind: kind,
-        at: next,
-        title: texts.newEpisodeTitle(c.title),
-        body: body,
-        payload: payload,
-        malId: c.malId,
-        repeatsWeekly: true,
-        imageUrl: c.imageUrl,
-      ));
+      for (var week = 0; week < broadcastWeeks; week++) {
+        out.add(PlannedNotification(
+          id: c.malId * slotsPerAnime + week,
+          kind: kind,
+          at: next.add(Duration(days: 7 * week)),
+          title: texts.newEpisodeTitle(c.title),
+          body: body,
+          payload: payload,
+          malId: c.malId,
+          imageUrl: c.imageUrl,
+        ));
+      }
     }
     out.sort((a, b) => a.at.compareTo(b.at));
     return out.length > maxNotifications ? out.sublist(0, maxNotifications) : out;

@@ -161,6 +161,15 @@ class ListStatusCache extends ChangeNotifier {
         key, () => ValueNotifier(entryOf(id, category: category, tracker: tracker)));
   }
 
+  /// Id to status of every entry known for [tracker] and [category] (scores and progress
+  /// left out): what decides which anime get airing notifications.
+  Map<int, String> statusesOf(
+      {String category = 'anime', AccountType tracker = AccountType.myanimelist}) {
+    final items = _items[_bucket(tracker, category)];
+    if (items == null) return const {};
+    return {for (final e in items.entries) e.key: e.value.status};
+  }
+
   /// Number of entries known for [tracker] and [category].
   int countOf({String category = 'anime', AccountType tracker = AccountType.myanimelist}) =>
       _items[_bucket(tracker, category)]?.length ?? 0;

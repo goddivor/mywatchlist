@@ -62,7 +62,7 @@ void main() {
     test('projects the following weeks, one episode each', () {
       final at = DateTime.utc(2026, 10, 28, 15);
       final result = plan([anime(7)], [ep(7, 5, at)]);
-      expect(result.map((n) => n.episode), [5, 6, 7, 8]);
+      expect(result.map((n) => n.episode), [5, 6]);
       expect(result[1].at, at.add(const Duration(days: 7)));
     });
 
@@ -132,14 +132,18 @@ void main() {
   });
 
   group('weekly broadcast fallback', () {
-    test('used when the anime is not in the schedule, repeating weekly', () {
+    test('used when the anime is not in the schedule: this week and next, never repeating',
+        () {
       // Wednesday 23:00 JST = Wednesday 14:00 UTC; now is Tuesday 12:00 UTC.
       final result = plan([anime(9, day: 'wednesday', time: '23:00')], const []);
-      expect(result, hasLength(1));
-      expect(result.single.at, DateTime.utc(2026, 10, 28, 14));
-      expect(result.single.repeatsWeekly, isTrue);
-      expect(result.single.episode, isNull);
-      expect(result.single.title, 'New: Anime 9');
+      expect(result, hasLength(NotificationPlanner.broadcastWeeks));
+      expect(result.first.at, DateTime.utc(2026, 10, 28, 14));
+      expect(result.last.at, DateTime.utc(2026, 11, 4, 14));
+      expect(result.map((n) => n.id).toSet().length, result.length);
+      // A repeating alarm would keep firing after the anime left the list.
+      expect(result.any((n) => n.repeatsWeekly), isFalse);
+      expect(result.first.episode, isNull);
+      expect(result.first.title, 'New: Anime 9');
     });
 
     test('not used for a series that has not started', () {
@@ -165,9 +169,9 @@ void main() {
   });
 
   test('the list is sorted by time and capped', () {
-    final candidates = [for (var i = 1; i <= 80; i++) anime(i)];
+    final candidates = [for (var i = 1; i <= 120; i++) anime(i)];
     final schedule = [
-      for (var i = 1; i <= 80; i++) ep(i, 1, DateTime.utc(2026, 10, 28).add(Duration(minutes: 81 - i))),
+      for (var i = 1; i <= 120; i++) ep(i, 1, DateTime.utc(2026, 10, 28).add(Duration(minutes: 121 - i))),
     ];
     final result = plan(candidates, schedule);
     expect(result.length, NotificationPlanner.maxNotifications);
