@@ -28,3 +28,9 @@
 -dontwarn sun.misc.Unsafe
 -keepattributes SourceFile,LineNumberTable
 -renamesourcefileattribute SourceFile
+
+# Play Core (deferred components): Flutter's embedding refers to it, the app does not ship it.
+# Without these rules R8 stops on the missing classes (release build of 2026.11.3).
+-dontwarn com.google.android.play.core.splitcompat.SplitCompatApplication
+-dontwarn com.google.android.play.core.splitinstall.**
+-dontwarn com.google.android.play.core.tasks.**
