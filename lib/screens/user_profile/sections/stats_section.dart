@@ -68,8 +68,6 @@ class _StatsSectionState extends State<StatsSection> with AutomaticKeepAliveClie
     return ProfileTabScroll(
       storageKey: 'stats_${widget.data.username}',
       slivers: [
-        // MyAnimeList badges, on top; draws nothing when the user has none.
-        SliverToBoxAdapter(child: ProfileBadgesCard(username: widget.data.username)),
         SliverToBoxAdapter(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(12, 14, 12, 6),
@@ -85,6 +83,9 @@ class _StatsSectionState extends State<StatsSection> with AutomaticKeepAliveClie
           ),
         ),
         SliverToBoxAdapter(child: _SummaryCard(data: widget.data, stats: stats, manga: manga)),
+        // MyAnimeList badges, under the summary and before the list charts; draws nothing
+        // when the user has none.
+        SliverToBoxAdapter(child: ProfileBadgesCard(username: widget.data.username)),
         if (waitingForJikan)
           SliverToBoxAdapter(
             child: Padding(
