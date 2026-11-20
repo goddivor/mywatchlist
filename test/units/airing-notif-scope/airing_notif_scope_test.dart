@@ -128,4 +128,33 @@ void main() {
     expect(backend.scheduled, isEmpty);
     service.dispose();
   });
+
+  test('only the covers of the planned anime stay on the phone', () async {
+    final kept = <Set<int>>[];
+    final service = NotificationService(
+      backend: backend,
+      texts: const FakeTexts(),
+      readPrefs: () => prefs,
+      clock: () => DateTime.utc(2026, 10, 27, 12),
+      loadCandidates: () async => const [
+        AiringCandidate(
+          malId: 7,
+          title: 'Seven',
+          status: 'watching',
+          airingStatus: 'currently_airing',
+          broadcastDay: 'wednesday',
+          broadcastTime: '23:00',
+        ),
+      ],
+      loadEpisodes: () async => const [],
+      fetchCover: (_, __) async => null,
+      pruneCovers: (keep) async => kept.add(keep),
+    );
+    await service.scheduleAll(force: true);
+    expect(kept.single, {7});
+
+    prefs = const NotificationPreferences(); // reminders off
+    await service.scheduleAll(force: true);
+    expect(kept.last, isEmpty, reason: 'no reminder left: no cover kept');
+  });
 }

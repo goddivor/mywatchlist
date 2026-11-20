@@ -39,6 +39,9 @@ typedef CandidateLoader = Future<List<AiringCandidate>> Function();
 typedef CoverFetcher = Future<String?> Function(String url, int malId);
 
 /// Airing times, loaded on demand.
+/// Deletes the stored covers of every anime not in [keep] (MAL ids).
+typedef CoverPruner = Future<void> Function(Set<int> keep);
+
 typedef EpisodeSource = Future<List<AiringEpisode>> Function();
 
 /// What the last scheduling run did, for the settings page.
@@ -104,6 +107,7 @@ class NotificationService {
     CandidateLoader? loadCandidates,
     EpisodeSource? loadEpisodes,
     CoverFetcher? fetchCover,
+    CoverPruner? pruneCovers,
     NotificationTexts? texts,
     NotificationPreferences Function()? readPrefs,
     DateTime Function()? clock,
@@ -121,6 +125,7 @@ class NotificationService {
         _loadCandidates = loadCandidates ?? _loadMalCandidates,
         _loadEpisodes = loadEpisodes ?? _loadScheduleEpisodes,
         _fetchCover = fetchCover ?? _downloadCover,
+        _pruneCovers = pruneCovers ?? _deleteCoversExcept,
         _texts = texts ?? const _SNotificationTexts(),
         _readPrefs = readPrefs ?? (() => Preferences.current.notifications),
         _clock = clock ?? DateTime.now,
@@ -161,6 +166,7 @@ class NotificationService {
   final CandidateLoader _loadCandidates;
   final EpisodeSource _loadEpisodes;
   final CoverFetcher _fetchCover;
+  final CoverPruner _pruneCovers;
   final NotificationTexts _texts;
   final NotificationPreferences Function() _readPrefs;
   final DateTime Function() _clock;
@@ -417,6 +423,7 @@ class NotificationService {
       final prefs = _readPrefs();
       if (!prefs.enabled) {
         await _backend.cancelAll();
+        unawaited(_prune(const {}));
         summary.value = const NotificationSummary();
         return;
       }
@@ -442,6 +449,7 @@ class NotificationService {
         // No account to read the lists from (signed out): the alarms planned from the old
         // lists must not keep firing.
         await _backend.cancelAll();
+        unawaited(_prune(const {}));
         summary.value = const NotificationSummary(needsMal: true);
         return;
       } catch (e) {
@@ -474,6 +482,7 @@ class NotificationService {
         }
       }
       await _saveLastRun(now, feed);
+      unawaited(_prune({for (final n in planned) if (n.malId != null) n.malId!}));
       summary.value = NotificationSummary(
         scheduled: count,
         next: planned.isEmpty ? null : planned.first.at,
@@ -482,6 +491,16 @@ class NotificationService {
     } catch (e) {
       debugPrint('Notifications: $e');
       summary.value = summary.value.copyWith(running: false);
+    }
+  }
+
+  /// Keeps only the covers of the planned anime: a cover is stored for each notified anime,
+  /// and one that left the lists must not stay on the phone. Never throws.
+  Future<void> _prune(Set<int> keep) async {
+    try {
+      await _pruneCovers(keep);
+    } catch (e) {
+      debugPrint('Notifications: covers not pruned ($e)');
     }
   }
 
@@ -663,12 +682,30 @@ class NotificationService {
     ];
   }
 
+  static Future<Directory> _coverDir() async =>
+      Directory('${(await getApplicationSupportDirectory()).path}/notification_covers');
+
+  /// Deletes the covers of the anime not in [keep], and the folder the older versions kept
+  /// in the cache.
+  static Future<void> _deleteCoversExcept(Set<int> keep) async {
+    final dir = await _coverDir();
+    if (await dir.exists()) {
+      await for (final entity in dir.list()) {
+        if (entity is! File) continue;
+        final name = entity.uri.pathSegments.last;
+        final id = int.tryParse(name.split('.').first);
+        if (id == null || !keep.contains(id)) await entity.delete();
+      }
+    }
+    final legacy = Directory('${(await getTemporaryDirectory()).path}/notification_covers');
+    if (await legacy.exists()) await legacy.delete(recursive: true);
+  }
+
   static Future<String?> _downloadCover(String url, int malId) async {
     try {
       // Not the cache folder: Android may empty it before the alarm fires, and the
       // notification is then shown without its cover.
-      final dir =
-          Directory('${(await getApplicationSupportDirectory()).path}/notification_covers');
+      final dir = await _coverDir();
       await dir.create(recursive: true);
       final file = File('${dir.path}/$malId.jpg');
       if (await file.exists() && await file.length() > 0) return file.path;
