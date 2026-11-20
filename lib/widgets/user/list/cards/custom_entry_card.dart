@@ -46,7 +46,10 @@ class CustomEntryCard extends StatelessWidget {
           f.type == CustomizableFieldType.watched_eps));
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) =>
+      AiringScheduleListener(entry: entry, builder: _build);
+
+  Widget _build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final radius = BorderRadius.circular(10);
     return Padding(
@@ -114,7 +117,7 @@ class CustomEntryCard extends StatelessWidget {
   Widget _field(BuildContext context, CustomizableFieldType type) {
     final theme = Theme.of(context);
     final muted = theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant);
-    final airing = entry.releaseState == ReleaseState.releasing ? entry.broadcast : null;
+    final airing = entry.upcomingAiring(now);
     switch (type) {
       case CustomizableFieldType.title:
         return Text(entry.title,
@@ -146,7 +149,7 @@ class CustomEntryCard extends StatelessWidget {
         ]);
       case CustomizableFieldType.next_episode_counter:
         if (airing == null) return const SizedBox.shrink();
-        return Text(_shortCountdown(airing.nextAiring(now).difference(now.toUtc())),
+        return Text(_shortCountdown(airing.difference(now.toUtc())),
             style: theme.textTheme.labelMedium?.copyWith(color: theme.colorScheme.primary));
       case CustomizableFieldType.un_seen_episodes:
         // Both badges unless the layout already prints the progress (DailyAL's rule).
@@ -168,7 +171,7 @@ class CustomEntryCard extends StatelessWidget {
         );
       case CustomizableFieldType.airing_date:
         if (airing == null) return const SizedBox.shrink();
-        final next = airing.nextAiring(now);
+        final next = airing;
         final shown = switch (Preferences.content.timezone) {
           TimezonePref.utc => next,
           TimezonePref.jst => next.add(const Duration(hours: 9)),

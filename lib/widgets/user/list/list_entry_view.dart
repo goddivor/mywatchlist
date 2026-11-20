@@ -311,6 +311,19 @@ class ListEntryView {
     return aired > total ? null : aired;
   }
 
+  /// Next air time after [now] (UTC) of an airing anime, or null: the real
+  /// schedule first ([AiringSchedule], LiveChart; it also knows ONAs and
+  /// titles MAL gives no broadcast slot), then the tracker's own
+  /// [nextAiringAt], then MAL's weekly [broadcast] slot.
+  DateTime? upcomingAiring(DateTime now) {
+    if (!isAnime || releaseState != ReleaseState.releasing) return null;
+    final scheduled = AiringSchedule.instance.nextEpisode(malId, now: now);
+    if (scheduled != null) return scheduled.airingAt;
+    final exact = nextAiringAt;
+    if (exact != null && exact.isAfter(now.toUtc())) return exact;
+    return broadcast?.nextAiring(now);
+  }
+
   /// Released episodes (chapters) the user has not watched yet (0 when none or unknown).
   int unseenCount(DateTime now) {
     final released = releasedCount(now);

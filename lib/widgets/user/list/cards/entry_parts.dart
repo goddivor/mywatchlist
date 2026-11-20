@@ -332,6 +332,38 @@ class _EpisodeBadge extends StatelessWidget {
   }
 }
 
+/// Rebuilds [builder] when the calendar's [AiringSchedule] loads, for an
+/// airing anime only (its countdown can come from that schedule), and asks
+/// the schedule to load once.
+class AiringScheduleListener extends StatefulWidget {
+  final ListEntryView entry;
+  final WidgetBuilder builder;
+  const AiringScheduleListener({super.key, required this.entry, required this.builder});
+
+  @override
+  State<AiringScheduleListener> createState() => _AiringScheduleListenerState();
+}
+
+class _AiringScheduleListenerState extends State<AiringScheduleListener> {
+  bool get _airing =>
+      widget.entry.isAnime && widget.entry.releaseState == ReleaseState.releasing;
+
+  @override
+  void initState() {
+    super.initState();
+    if (_airing) requestAiringSchedule();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_airing) return widget.builder(context);
+    return ListenableBuilder(
+      listenable: AiringSchedule.instance,
+      builder: (context, _) => widget.builder(context),
+    );
+  }
+}
+
 DateTime? _lastScheduleRequest;
 
 /// Asks the calendar's [AiringSchedule] to load (shared request, no-op while
@@ -527,10 +559,8 @@ double? progressRatio(ListEntryView e) {
 
 /// Next episode of an airing anime: "Ep. 8 · Sat 23:30 · in 2 d 4 h".
 String? airingText(ListEntryView e, DateTime now, String locale) {
-  if (!e.isAnime || e.releaseState != ReleaseState.releasing) return null;
-  final slot = e.broadcast;
-  if (slot == null) return null;
-  final next = slot.nextAiring(now);
+  final next = e.upcomingAiring(now);
+  if (next == null) return null;
   final shown = _inTimezone(next, now);
   final when = DateFormat('E HH:mm', locale).format(shown);
   final released = e.releasedCount(now);

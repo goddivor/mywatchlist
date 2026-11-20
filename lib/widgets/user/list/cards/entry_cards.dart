@@ -35,7 +35,10 @@ class EntryListTile extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) =>
+      AiringScheduleListener(entry: entry, builder: _build);
+
+  Widget _build(BuildContext context) {
     final body = switch (subType) {
       DisplaySubType.compact => _compact(context),
       DisplaySubType.spacious => _rich(context, spacious: true),
@@ -349,7 +352,10 @@ class EntryGridCard extends StatelessWidget {
   void _edit() => actions.onEdit?.call(entry);
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) =>
+      AiringScheduleListener(entry: entry, builder: _build);
+
+  Widget _build(BuildContext context) {
     final card = switch (subType) {
       DisplaySubType.compact => _compact(context),
       DisplaySubType.cover_only_grid => _cover(context, rounded: BorderRadius.circular(gridCardRadius)),

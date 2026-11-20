@@ -363,9 +363,7 @@ Comparable<dynamic>? _sortValue(ListEntryView e, String key, DateTime now) => sw
       ListSortKeys.total => e.total == 0 ? null : e.total,
       ListSortKeys.priority => e.priority,
       ListSortKeys.listStart => _dateKey(e.listStartDate),
-      ListSortKeys.nextAiring => e.releaseState == ReleaseState.releasing
-          ? e.broadcast?.nextAiring(now).millisecondsSinceEpoch
-          : null,
+      ListSortKeys.nextAiring => e.upcomingAiring(now)?.millisecondsSinceEpoch,
       ListSortKeys.unseen => e.unseenCount(now),
       _ => null,
     };
