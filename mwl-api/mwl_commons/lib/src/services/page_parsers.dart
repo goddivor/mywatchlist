@@ -375,36 +375,38 @@ class PageParsers {
       text = _textWithBreaks(textEl);
     }
 
+    // The real counts are in the element's `data-reactions` JSON; the buttons
+    // show "0" until MAL's script fills them, so they only serve as a last resort.
     final reactions = <String, int>{};
-    for (final button in review.querySelectorAll('.btn-reaction')) {
-      final count = _intOf(button.querySelector('.num')?.text);
-      final name = _clean(button.nodes
-          .where((n) => n.nodeType == Node.TEXT_NODE)
-          .map((n) => n.text)
-          .join(' '));
-      if (name.isNotEmpty) reactions[name] = count ?? 0;
+    final raw = review.attributes['data-reactions'] ?? '';
+    if (raw.trim().isNotEmpty) {
+      try {
+        final decoded = jsonDecode(raw);
+        final counts = decoded is Map ? decoded['count'] : null;
+        if (counts is List) {
+          const names = [
+            'Nice',
+            'Love it',
+            'Funny',
+            'Confusing',
+            'Informative',
+            'Well-written',
+            'Creative',
+          ];
+          for (var i = 0; i < counts.length && i < names.length; i++) {
+            reactions[names[i]] = int.tryParse('${counts[i]}') ?? 0;
+          }
+        }
+      } catch (_) {}
     }
     if (reactions.isEmpty) {
-      final raw = review.attributes['data-reactions'] ?? '';
-      if (raw.trim().isNotEmpty) {
-        try {
-          final decoded = jsonDecode(raw);
-          final counts = decoded is Map ? decoded['count'] : null;
-          if (counts is List) {
-            const names = [
-              'Nice',
-              'Love it',
-              'Funny',
-              'Confusing',
-              'Informative',
-              'Well-written',
-              'Creative',
-            ];
-            for (var i = 0; i < counts.length && i < names.length; i++) {
-              reactions[names[i]] = int.tryParse('${counts[i]}') ?? 0;
-            }
-          }
-        } catch (_) {}
+      for (final button in review.querySelectorAll('.btn-reaction')) {
+        final count = _intOf(button.querySelector('.num')?.text);
+        final name = _clean(button.nodes
+            .where((n) => n.nodeType == Node.TEXT_NODE)
+            .map((n) => n.text)
+            .join(' '));
+        if (name.isNotEmpty) reactions[name] = count ?? 0;
       }
     }
 

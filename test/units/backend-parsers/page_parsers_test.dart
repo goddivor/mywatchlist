@@ -153,6 +153,33 @@ void main() {
       expect(first.reactions.keys, contains('Nice'));
     });
 
+    test('reactions come from data-reactions, not the "0" of the buttons', () {
+      // MAL's buttons show 0 until its script fills them in.
+      final doc = Document.html("""
+<div class="review-element user js-review-element" data-reactions='{"icon":["1","2","4"],"num":6059,"count":["5621","204","40","138","7","46","3"]}'>
+  <div class="body"><div class="username"><a href="/profile/u">u</a></div><div class="text">Great.</div></div>
+  <div class="reaction-box">
+    <div class="btn-reaction js-btn-reaction nice" data-id="2772" data-val="1">Nice<span class="num js-num">0</span></div>
+    <div class="btn-reaction js-btn-reaction loveit" data-id="2772" data-val="2">Love it<span class="num js-num">0</span></div>
+  </div>
+</div>""");
+      final review = PageParsers.getReviews(doc).single;
+      expect(review.id, 2772);
+      expect(review.reactions['Nice'], 5621);
+      expect(review.reactions['Love it'], 204);
+      expect(review.reactions['Creative'], 3);
+      expect(review.reactions.values.fold<int>(0, (a, b) => a + b), 6059);
+    });
+
+    test('without data-reactions the buttons still give the counts', () {
+      final doc = Document.html("""
+<div class="review-element user js-review-element">
+  <div class="body"><div class="username"><a href="/profile/u">u</a></div><div class="text">Great.</div></div>
+  <div class="btn-reaction nice" data-id="1">Nice<span class="num">12</span></div>
+</div>""");
+      expect(PageParsers.getReviews(doc).single.reactions['Nice'], 12);
+    });
+
     test('review text is whole, unescaped and keeps paragraphs', () {
       final text = PageParsers.getReviews(fixture('reviews_all.html')).first.reviewText!;
       expect(text, contains("you're stuck"));
