@@ -30,6 +30,9 @@ class AppBarHome extends StatelessWidget implements PreferredSizeWidget {
   final bool showCalendar;
   final bool showSettings;
 
+  /// Settings sit before the bell (My List) instead of at the end (home).
+  final bool settingsBeforeNotifications;
+
   /// The MyAnimeList notification bell (hidden for the other trackers).
   final bool showNotifications;
   final bool transparent;
@@ -49,6 +52,7 @@ class AppBarHome extends StatelessWidget implements PreferredSizeWidget {
     this.showBookmarks = true,
     this.showCalendar = true,
     this.showSettings = false,
+    this.settingsBeforeNotifications = false,
     this.showNotifications = true,
     this.transparent = false,
     this.backgroundColor,
@@ -114,6 +118,11 @@ class AppBarHome extends StatelessWidget implements PreferredSizeWidget {
       return const SizedBox.shrink();
     }
     final s = S.current;
+    final settings = _BarButton(
+      icon: Icons.settings_outlined,
+      tooltip: s.Hw_Settings,
+      onTap: onSettingsTap ?? () => AppRoutes.openSettings(context),
+    );
     // Plain icons like DailyAL's header (no container behind them).
     return Row(
           mainAxisSize: MainAxisSize.min,
@@ -136,6 +145,7 @@ class AppBarHome extends StatelessWidget implements PreferredSizeWidget {
                 tooltip: s.Hw_Calendar,
                 onTap: onCalendarTap ?? () => AppRoutes.openCalendar(context),
               ),
+            if (showSettings && settingsBeforeNotifications) settings,
             // The MyAnimeList hub: only when the active account is MyAnimeList.
             if (showNotifications)
               BlocSelector<AccountBloc, AccountState, bool>(
@@ -144,12 +154,7 @@ class AppBarHome extends StatelessWidget implements PreferredSizeWidget {
                 builder: (context, isMal) =>
                     isMal ? const MalBellWithLabel() : const SizedBox.shrink(),
               ),
-            if (showSettings)
-              _BarButton(
-                icon: Icons.settings_outlined,
-                tooltip: s.Hw_Settings,
-                onTap: onSettingsTap ?? () => AppRoutes.openSettings(context),
-              ),
+            if (showSettings && !settingsBeforeNotifications) settings,
           ],
     );
   }

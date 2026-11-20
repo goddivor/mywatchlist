@@ -32,7 +32,10 @@ class _MalUserPageState extends State<MalUserPage> {
         showAvatar: true,
         showSearch: true,
         showBookmarks: false,
-        showCalendar: false,
+        // Search, calendar, settings, then the bell (owner's order).
+        showCalendar: true,
+        showSettings: true,
+        settingsBeforeNotifications: true,
         onSearchTap: () => AppRoutes.openSearch(context),
       );
 
