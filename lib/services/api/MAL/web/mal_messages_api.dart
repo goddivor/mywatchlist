@@ -48,8 +48,9 @@ class MalMessage {
   /// not the id of the message's page ([id]).
   final int? rowId;
 
-  /// A sent-box row: whether the recipient has opened it (MAL keeps the row `unread` until
-  /// then). Null for inbox rows.
+  /// A sent-box row the recipient has not opened yet: false when MAL marks the row `unread`.
+  /// MAL marks its sent rows `read` as soon as they are sent (seen 2026-11-20), so `read`
+  /// says nothing: null then, and for inbox rows.
   final bool? recipientRead;
 
   const MalMessage({
@@ -287,7 +288,7 @@ MalMessage? parseMessageRow(Element row, {required bool sent}) {
     date: date.isEmpty ? null : date,
     isRead: sent || !row.classes.contains('unread'),
     isSent: sent,
-    recipientRead: sent ? !row.classes.contains('unread') : null,
+    recipientRead: sent && row.classes.contains('unread') ? false : null,
     rowId: _int(_rowId.firstMatch(row.id)?.group(1)),
     threadId: threadId,
     replyId: replyId,

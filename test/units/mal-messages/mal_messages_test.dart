@@ -153,7 +153,8 @@ void main() {
       expect(m.isRead, isTrue);
       expect(m.box, 2);
       expect(m.url, 'https://myanimelist.net/mymessages.php?go=read&id=80000002&f=1');
-      expect(m.recipientRead, isTrue);
+      // MAL marks sent rows read at once: it does not mean the recipient opened it.
+      expect(m.recipientRead, isNull);
       // MAL keeps a sent row unread until the recipient opens it.
       final unopened = parseMessagesPage(
         _fixture('sent_reconstructed.html').replaceFirst('message read spot2', 'message unread spot2'),
