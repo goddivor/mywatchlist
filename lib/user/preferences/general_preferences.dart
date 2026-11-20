@@ -60,6 +60,10 @@ class GeneralPreferences extends Equatable {
   /// (DailyAL's) instead of the ranked list; each card can still switch.
   final bool statsBreakdownChart;
 
+  /// On another user's list, the signed-in user's own status and score on each title, and a
+  /// filter by what both lists hold.
+  final bool showMyListOnProfiles;
+
   /// Link group opened first in the "Available at" section of a detail page.
   final LinkType preferredLinkType;
 
@@ -92,6 +96,7 @@ class GeneralPreferences extends Equatable {
     this.autoAddStartEndDate = true,
     this.showAiringInfo = false,
     this.statsBreakdownChart = false,
+    this.showMyListOnProfiles = true,
     this.statsChartColors = const [
       themeChartColor,
       themeChartColor,
@@ -131,6 +136,7 @@ class GeneralPreferences extends Equatable {
     bool? showAiringInfo,
     List<int>? statsChartColors,
     bool? statsBreakdownChart,
+    bool? showMyListOnProfiles,
     LinkType? preferredLinkType,
     bool? detailsExpanded,
     DisplayType? defaultDisplayType,
@@ -154,6 +160,7 @@ class GeneralPreferences extends Equatable {
       autoAddStartEndDate: autoAddStartEndDate ?? this.autoAddStartEndDate,
       showAiringInfo: showAiringInfo ?? this.showAiringInfo,
       statsBreakdownChart: statsBreakdownChart ?? this.statsBreakdownChart,
+      showMyListOnProfiles: showMyListOnProfiles ?? this.showMyListOnProfiles,
       statsChartColors: statsChartColors != null
           ? List.unmodifiable(_normalizeChartColors(statsChartColors))
           : this.statsChartColors,
@@ -191,6 +198,7 @@ class GeneralPreferences extends Equatable {
         'showAiringInfo': showAiringInfo,
         'statsChartColors': statsChartColors,
         'statsBreakdownChart': statsBreakdownChart,
+        'showMyListOnProfiles': showMyListOnProfiles,
         'preferredLinkType': preferredLinkType.name,
         'detailsExpanded': detailsExpanded,
         'defaultDisplayType': defaultDisplayType.name,
@@ -217,6 +225,7 @@ class GeneralPreferences extends Equatable {
       autoAddStartEndDate: readBool(json, 'autoAddStartEndDate', d.autoAddStartEndDate),
       showAiringInfo: readBool(json, 'showAiringInfo', d.showAiringInfo),
       statsBreakdownChart: readBool(json, 'statsBreakdownChart', d.statsBreakdownChart),
+      showMyListOnProfiles: readBool(json, 'showMyListOnProfiles', d.showMyListOnProfiles),
       statsChartColors: List.unmodifiable(
           _normalizeChartColors(readIntList(json, 'statsChartColors', d.statsChartColors))),
       preferredLinkType:
@@ -254,6 +263,7 @@ class GeneralPreferences extends Equatable {
         showAiringInfo,
         statsChartColors,
         statsBreakdownChart,
+        showMyListOnProfiles,
         preferredLinkType,
         detailsExpanded,
         defaultDisplayType,

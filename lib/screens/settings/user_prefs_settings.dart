@@ -68,6 +68,7 @@ class UserPrefSettingsPage extends StatelessWidget {
           showAiringInfo: d.showAiringInfo,
           statsChartColors: d.statsChartColors,
           statsBreakdownChart: d.statsBreakdownChart,
+          showMyListOnProfiles: d.showMyListOnProfiles,
           preferredLinkType: d.preferredLinkType,
           detailsExpanded: d.detailsExpanded,
         )));
@@ -230,6 +231,20 @@ class UserPrefSettingsPage extends StatelessWidget {
                   GeneralPreferencesChanged((p) => p.copyWith(statsBreakdownChart: v)),
             ),
             for (var i = 0; i < statsChartStatuses.length; i++) StatsChartColorTile(index: i),
+          ],
+        ),
+        PrefGroup(
+          title: s.Mlp_Group,
+          description: s.Mlp_Group_Desc,
+          children: [
+            PrefSwitchTile(
+              icon: Icons.compare_arrows_rounded,
+              title: s.Mlp_Setting,
+              subtitle: s.Mlp_Setting_Desc,
+              read: (p) => p.general.showMyListOnProfiles,
+              toEvent: (v) =>
+                  GeneralPreferencesChanged((p) => p.copyWith(showMyListOnProfiles: v)),
+            ),
           ],
         ),
       ],

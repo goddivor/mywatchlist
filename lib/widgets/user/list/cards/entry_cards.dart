@@ -24,6 +24,9 @@ class EntryListTile extends StatelessWidget {
   final DateTime now;
   final String locale;
 
+  /// A mark of the signed-in user's own entry (another user's list), after the status.
+  final Widget? mark;
+
   const EntryListTile({
     super.key,
     required this.entry,
@@ -32,6 +35,7 @@ class EntryListTile extends StatelessWidget {
     required this.style,
     required this.now,
     required this.locale,
+    this.mark,
   });
 
   @override
@@ -100,6 +104,7 @@ class EntryListTile extends StatelessWidget {
                     ),
                     const SizedBox(width: 8),
                     MyScore(entry: entry, fontSize: 11),
+                    if (mark != null) ...[const SizedBox(width: 6), mark!],
                     if (entry.timesRewatched > 0) ...[
                       const SizedBox(width: 6),
                       RewatchPill(entry: entry, short: true),
@@ -128,6 +133,7 @@ class EntryListTile extends StatelessWidget {
     final airing = style.showAiringInfo || spacious ? airingText(entry, now, locale) : null;
     final badges = <Widget>[
       if (style.showStatus) StatusPill(entry: entry),
+      if (mark != null) mark!,
       if (style.showPriority && entry.priority > 0) PriorityPill(priority: entry.priority),
       if (entry.timesRewatched > 0) RewatchPill(entry: entry),
       MeanScore(entry: entry, showMembers: spacious),
@@ -340,6 +346,9 @@ class EntryGridCard extends StatelessWidget {
   final EntryCardStyle style;
   final DateTime now;
 
+  /// A mark of the signed-in user's own entry (another user's list), drawn on the cover.
+  final Widget? mark;
+
   const EntryGridCard({
     super.key,
     required this.entry,
@@ -347,6 +356,7 @@ class EntryGridCard extends StatelessWidget {
     required this.actions,
     required this.style,
     required this.now,
+    this.mark,
   });
 
   void _edit() => actions.onEdit?.call(entry);
@@ -424,6 +434,14 @@ class EntryGridCard extends StatelessWidget {
           start: 5,
           child: EntryDubBadge(entry: entry),
         ),
+        // The compact card has its title at the bottom: the mark goes under the top badges.
+        if (mark != null)
+          PositionedDirectional(
+            top: subType == DisplaySubType.compact ? (airing != null ? 22 : 7) + 24 : null,
+            bottom: subType == DisplaySubType.compact ? null : 5,
+            end: 5,
+            child: mark!,
+          ),
         if ((style.showPriority && entry.priority > 0) ||
             entry.timesRewatched > 0 ||
             look.cardBadges(entry).isNotEmpty)

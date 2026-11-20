@@ -1,0 +1,22 @@
+{
+  "@@locale": "en",
+  "Mlp_Group": "Other users' profiles",
+  "Mlp_Group_Desc": "How another user's list shows next to yours.",
+  "Mlp_Setting": "My list on other profiles",
+  "Mlp_Setting_Desc": "On another user's list, show your own status and score on each title, and compare both lists.",
+  "Mlp_Me": "Me",
+  "Mlp_Mine": "In my list: {status}",
+  "@Mlp_Mine": { "placeholders": { "status": { "type": "String" } } },
+  "Mlp_Mine_Score": "In my list: {status}, my score {score}",
+  "@Mlp_Mine_Score": { "placeholders": { "status": { "type": "String" }, "score": { "type": "int" } } },
+  "Mlp_Compare": "Compare with my list",
+  "Mlp_All": "All their titles",
+  "Mlp_Common": "Also in my list",
+  "Mlp_Missing": "Not in my list",
+  "Mlp_Count": "{label} ({count})",
+  "@Mlp_Count": { "placeholders": { "label": { "type": "String" }, "count": { "type": "int" } } },
+  "Mlp_Loaded_Hint": "Counts cover the titles loaded so far.",
+  "Mlp_None_Common": "None of the titles loaded so far is in your list",
+  "Mlp_None_Missing": "You have every title loaded so far in your list",
+  "Mlp_Show_All": "Show all their titles"
+}

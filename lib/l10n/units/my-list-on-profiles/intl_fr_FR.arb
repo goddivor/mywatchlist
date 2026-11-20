@@ -1,0 +1,19 @@
+{
+  "@@locale": "fr_FR",
+  "Mlp_Group": "Profils des autres utilisateurs",
+  "Mlp_Group_Desc": "Comment la liste d'un autre utilisateur s'affiche à côté de la vôtre.",
+  "Mlp_Setting": "Ma liste sur les autres profils",
+  "Mlp_Setting_Desc": "Sur la liste d'un autre utilisateur, affiche votre statut et votre note sur chaque titre, et compare les deux listes.",
+  "Mlp_Me": "Moi",
+  "Mlp_Mine": "Dans ma liste : {status}",
+  "Mlp_Mine_Score": "Dans ma liste : {status}, ma note {score}",
+  "Mlp_Compare": "Comparer avec ma liste",
+  "Mlp_All": "Tous ses titres",
+  "Mlp_Common": "Aussi dans ma liste",
+  "Mlp_Missing": "Absents de ma liste",
+  "Mlp_Count": "{label} ({count})",
+  "Mlp_Loaded_Hint": "Les nombres portent sur les titres déjà chargés.",
+  "Mlp_None_Common": "Aucun des titres chargés n'est dans votre liste",
+  "Mlp_None_Missing": "Vous avez tous les titres chargés dans votre liste",
+  "Mlp_Show_All": "Afficher tous ses titres"
+}
