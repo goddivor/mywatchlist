@@ -106,13 +106,15 @@ void main() {
     });
 
     test('section titles are translated', () {
-      expect(detailTabLabel(TabType.Interest_Stacks), S.current.Interest_Stacks);
+      expect(
+          detailTabLabel(TabType.Interest_Stacks), S.current.Interest_Stacks);
       expect(detailTabLabel(TabType.ScoreStats), S.current.Score_Stats);
     });
   });
 
   group('resolveDetailTitle', () {
-    final node = Anime(id: 1, title: 'Node', imageUrl: '', score: 0, members: 0);
+    final node =
+        Anime(id: 1, title: 'Node', imageUrl: '', score: 0, members: 0);
 
     test('romaji is the main title, the card title while loading', () {
       expect(resolveDetailTitle(_data(node: node), TitleLang.ro), 'Node');
@@ -122,7 +124,8 @@ void main() {
 
     test('English and Japanese fall back when MAL has none', () {
       final data = _data(
-          content: _content(alt: AlternativeTitles(en: 'Attack on Titan', ja: '')));
+          content:
+              _content(alt: AlternativeTitles(en: 'Attack on Titan', ja: '')));
       expect(resolveDetailTitle(data, TitleLang.en), 'Attack on Titan');
       expect(resolveDetailTitle(data, TitleLang.ja), 'Shingeki no Kyojin');
     });
@@ -165,6 +168,19 @@ void main() {
       expect(find.text(S.current.Forums), findsOneWidget);
       await tester.tap(find.byIcon(Icons.arrow_forward));
       expect(opened, 1);
+    });
+
+    testWidgets('section frame: trailing buttons take the arrow place',
+        (tester) async {
+      const section = DetailSection(
+        TabType.Related,
+        Text('body'),
+        trailing: Icon(Icons.hub_outlined),
+      );
+      await pumpInApp(
+          tester, const DetailSectionFrame(section: section, isFirst: false));
+      expect(find.byIcon(Icons.hub_outlined), findsOneWidget);
+      expect(find.byIcon(Icons.arrow_forward), findsNothing);
     });
   });
 }

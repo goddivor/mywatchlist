@@ -10,9 +10,8 @@ import 'package:mywatchlist/widgets/graph/anime_graph_screen.dart';
 import 'package:mywatchlist/widgets/graph/related_grid_screen.dart';
 import 'package:mywatchlist/widgets/graph/related_groups.dart';
 
-/// "Related" section of a detail page: one tab per relation over a horizontal row of cards, a
-/// "view all" grid with the user's list statuses, and (for an anime) the relation graph of the
-/// whole franchise, which can be shared as an image.
+/// "Related" section of a detail page: one tab per relation over a horizontal row of cards.
+/// The "view all" grid and the relation graph open from [RelatedActions], in the section title.
 class RelatedAnimeWidget extends StatefulWidget {
   final List<RelatedAnime> relatedAnimeList;
 
@@ -52,31 +51,6 @@ class _RelatedAnimeWidgetState extends State<RelatedAnimeWidget>
       _groups = groupRelated(widget.relatedAnimeList);
       if (_tab >= _groups.length) _tab = 0;
     }
-  }
-
-  bool get _hasGraph => widget.category == 'anime' || widget.category == 'manga';
-
-  void _openGraph() {
-    AppRoutes.push(
-      context,
-      AnimeGraphScreen(
-        id: widget.id,
-        title: widget.title,
-        category: widget.category,
-        fallbackStatuses: statusesOf(allRelatedNodes(_groups)),
-      ),
-    );
-  }
-
-  void _openGrid() {
-    AppRoutes.push(
-      context,
-      RelatedGridScreen(
-        category: widget.category,
-        groups: _groups,
-        onOpenGraph: _hasGraph ? _openGraph : null,
-      ),
-    );
   }
 
   @override
@@ -133,19 +107,6 @@ class _RelatedAnimeWidgetState extends State<RelatedAnimeWidget>
                 ],
               ),
             ),
-            IconButton(
-              tooltip: S.current.Rg_View_All,
-              visualDensity: VisualDensity.compact,
-              onPressed: _openGrid,
-              icon: const Icon(Icons.grid_view_rounded),
-            ),
-            if (_hasGraph)
-              IconButton(
-                tooltip: S.current.Rg_Graph,
-                visualDensity: VisualDensity.compact,
-                onPressed: _openGraph,
-                icon: const Icon(Icons.hub_outlined),
-              ),
             SizedBox(
                 width: widget.horizPadding > 4 ? widget.horizPadding - 4 : 0),
           ],
@@ -156,4 +117,74 @@ class _RelatedAnimeWidgetState extends State<RelatedAnimeWidget>
 
   @override
   bool get wantKeepAlive => true;
+}
+
+/// The two buttons of the "Related" title row: the "view all" grid with the user's list
+/// statuses, and the relation graph of the whole franchise (anime and manga).
+class RelatedActions extends StatelessWidget {
+  final List<RelatedAnime> relatedAnimeList;
+
+  /// `anime` or `manga`, the category of the page.
+  final String category;
+
+  /// MAL id of the page.
+  final int id;
+
+  /// Name of the page's title, used to name the saved or shared graph image.
+  final String? title;
+
+  const RelatedActions({
+    super.key,
+    required this.relatedAnimeList,
+    required this.category,
+    required this.id,
+    this.title,
+  });
+
+  bool get _hasGraph => category == 'anime' || category == 'manga';
+
+  void _openGraph(BuildContext context, List<RelatedGroup> groups) {
+    AppRoutes.push(
+      context,
+      AnimeGraphScreen(
+        id: id,
+        title: title,
+        category: category,
+        fallbackStatuses: statusesOf(allRelatedNodes(groups)),
+      ),
+    );
+  }
+
+  void _openGrid(BuildContext context) {
+    final groups = groupRelated(relatedAnimeList);
+    AppRoutes.push(
+      context,
+      RelatedGridScreen(
+        category: category,
+        groups: groups,
+        onOpenGraph: _hasGraph ? () => _openGraph(context, groups) : null,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        IconButton(
+          tooltip: S.current.Rg_View_All,
+          onPressed: () => _openGrid(context),
+          icon: const Icon(Icons.grid_view_rounded),
+        ),
+        if (_hasGraph)
+          IconButton(
+            tooltip: S.current.Rg_Graph,
+            onPressed: () =>
+                _openGraph(context, groupRelated(relatedAnimeList)),
+            icon: const Icon(Icons.hub_outlined),
+          ),
+      ],
+    );
+  }
 }

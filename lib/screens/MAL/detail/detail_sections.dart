@@ -54,10 +54,10 @@ class DetailSection {
   /// Hides the title row above [child].
   final bool skipTitle;
 
-  /// Arrow button of the title row ("view all").
+  /// Arrow button of the title row ("view all"); without it the row has no arrow.
   final void Function(BuildContext context)? onViewAll;
 
-  /// Extra widget of the title row, left of the arrow.
+  /// Extra widget of the title row, left of the arrow (at the end of the row without one).
   final Widget? trailing;
 
   const DetailSection(

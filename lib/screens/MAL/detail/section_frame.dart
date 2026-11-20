@@ -26,24 +26,33 @@ class DetailSectionFrame extends StatelessWidget {
       children: [
         if (!isFirst && !section.skipTitle)
           Padding(
-            padding: const EdgeInsets.only(left: _pad + 10, top: 25, right: _pad + 10),
+            padding: const EdgeInsets.only(
+                left: _pad + 10, top: 25, right: _pad + 10),
             child: Row(
               children: [
                 text(section.title, fontSize: 22),
                 if (onViewAll != null || trailing != null) ...[
                   const Spacer(),
-                  if (trailing != null) ...[trailing, const SizedBox(width: 15)],
-                  Padding(
-                    padding: const EdgeInsets.only(right: _pad),
-                    child: PlainButton(
-                      padding: const EdgeInsets.symmetric(horizontal: _pad),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12)),
-                      onPressed:
-                          onViewAll == null ? null : () => onViewAll(context),
-                      child: const Icon(Icons.arrow_forward),
+                  if (trailing != null && onViewAll != null) ...[
+                    trailing,
+                    const SizedBox(width: 15),
+                  ],
+                  // Without an arrow, the trailing buttons take its place at the end of the row.
+                  if (trailing != null && onViewAll == null)
+                    Padding(
+                        padding: const EdgeInsets.only(right: _pad),
+                        child: trailing),
+                  if (onViewAll != null)
+                    Padding(
+                      padding: const EdgeInsets.only(right: _pad),
+                      child: PlainButton(
+                        padding: const EdgeInsets.symmetric(horizontal: _pad),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
+                        onPressed: () => onViewAll(context),
+                        child: const Icon(Icons.arrow_forward),
+                      ),
                     ),
-                  ),
                 ],
               ],
             ),
