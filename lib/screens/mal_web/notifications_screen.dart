@@ -5,7 +5,6 @@ import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/main.dart' show appNavigatorKey;
 import 'package:mywatchlist/screens/mal_web/mal_chat_screen.dart' show openMalChat;
 import 'package:mywatchlist/services/api/MAL/web/mal_messages_api.dart';
-import 'package:mywatchlist/services/api/MAL/web/mal_notifications_api.dart' show FriendActivity;
 import 'package:mywatchlist/services/api/MAL/web/mal_web_form_submitter.dart' show MalWebFormHost;
 import 'package:mywatchlist/services/auth/mal_auth_v2.dart';
 import 'package:mywatchlist/services/notifications/mal_hub.dart';
