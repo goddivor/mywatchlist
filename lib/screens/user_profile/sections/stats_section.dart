@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mywatchlist/widgets/user/profile/profile_badges.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mywatchlist/constants/constants.dart' show AccountType, gotoPage;
 import 'package:mywatchlist/generated/l10n.dart';
@@ -67,6 +68,8 @@ class _StatsSectionState extends State<StatsSection> with AutomaticKeepAliveClie
     return ProfileTabScroll(
       storageKey: 'stats_${widget.data.username}',
       slivers: [
+        // MyAnimeList badges, on top; draws nothing when the user has none.
+        SliverToBoxAdapter(child: ProfileBadgesCard(username: widget.data.username)),
         SliverToBoxAdapter(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(12, 14, 12, 6),

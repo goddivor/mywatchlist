@@ -1,0 +1,6 @@
+{
+  "@@locale": "en",
+  "Mb_Badges": "Badges",
+  "Mb_Badge_Earned": "Earned in {date}",
+  "@Mb_Badge_Earned": { "placeholders": { "date": { "type": "String" } } }
+}
