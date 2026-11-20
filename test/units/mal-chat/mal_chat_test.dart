@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mywatchlist/services/api/MAL/web/mal_conversations.dart';
 import 'package:mywatchlist/services/api/MAL/web/mal_messages_api.dart';
 import 'package:mywatchlist/services/api/MAL/web/mal_outbox.dart';
+import 'package:mywatchlist/services/api/MAL/web/mal_web_form_submitter.dart' show MalWebFormTimeout;
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Records what would go to MAL; [fail] makes every send throw, [gate] holds them.
@@ -14,12 +15,20 @@ class _FakeApi extends MalMessagesApi {
   bool fail = false;
   Completer<void>? gate;
 
+  /// MAL takes the message but its answer never comes.
+  bool late = false;
+  List<MalMessage> sentBox = const [];
+
+  @override
+  Future<MalMessagesPage> sent({int offset = 0}) async => MalMessagesPage(sentBox);
+
   @override
   Future<void> send({required String to, required String subject, required String body}) async {
     await gate?.future;
     if (fail) throw Exception('offline');
     subjects.add(subject);
     bodies.add(body);
+    if (late) throw const MalWebFormTimeout();
   }
 
   @override
@@ -88,7 +97,55 @@ void main() {
   });
 
   group('outbox', () {
-    setUp(() => SharedPreferences.setMockInitialValues({}));
+    setUp(() {
+      SharedPreferences.setMockInitialValues({});
+      MalOutbox.verifyDelay = Duration.zero;
+    });
+
+    test('no answer from MAL: the sent box decides, so nothing is sent twice', () async {
+      final api = _FakeApi()..late = true;
+      final outbox = MalOutbox(api: api);
+      api.sentBox = [
+        const MalMessage(id: 5, counterpart: 'Xinil', subject: 'Hello', preview: 'Hello there friend...', isSent: true),
+      ];
+      outbox.send(to: 'Xinil', body: 'Hello [b]there[/b] friend, how are you?');
+      await pumpEventQueue();
+      expect(outbox.to('Xinil').single.sent, isTrue);
+
+      // Not in the sent box: it failed, the text stays.
+      api.sentBox = const [];
+      outbox.send(to: 'Archaeon', body: 'Are you there?');
+      await pumpEventQueue();
+      expect(outbox.to('Archaeon').single.failed, isTrue);
+    });
+
+    test('a failed message MAL shows after all leaves the outbox', () async {
+      final api = _FakeApi()..fail = true;
+      final outbox = MalOutbox(api: api);
+      outbox.send(to: 'Xinil', body: 'Hello there');
+      outbox.send(to: 'Xinil', body: 'Second');
+      await pumpEventQueue();
+      outbox.reconcile('xinil', (m) => m.body == 'Hello there');
+      expect(outbox.to('Xinil').map((m) => m.body), ['Second']);
+    });
+
+    test('ticks follow each message\'s own row of the sent box', () {
+      const messages = [
+        MalChatMessage(html: 'them', isMine: false, subject: ''),
+        MalChatMessage(html: 'hey', isMine: true, subject: ''),
+        MalChatMessage(html: 'Test du chat', isMine: true, subject: ''),
+      ];
+      final states = readStates(messages, lastSentRead: false, sentRows: const [
+        MalMessage(id: 2, counterpart: 'A', subject: '', preview: 'Test du chat', isSent: true, recipientRead: false),
+        MalMessage(id: 1, counterpart: 'A', subject: '', preview: 'hey', isSent: true, recipientRead: true),
+      ]);
+      expect(states, [null, MalSendState.read, MalSendState.sent]);
+    });
+
+    test('the blank end MAL adds to a message is dropped', () {
+      expect(trimMessageHtml('Hello<br>\u00a0\u00a0 &nbsp;<br />\n'), 'Hello');
+      expect(trimMessageHtml('a<br>b'), 'a<br>b');
+    });
 
     test('a subject for a new conversation comes from the first line', () {
       expect(subjectFromBody('\n  Hello [b]there[/b]\nSecond line'), 'Hello there');
@@ -122,7 +179,7 @@ void main() {
       expect(outbox.to('Kineta').single.sent, isTrue);
       expect((await SharedPreferences.getInstance()).getString(MalOutbox.storageKey), isNull);
 
-      outbox.clearSent('kineta');
+      outbox.reconcile('kineta', (m) => true);
       expect(outbox.to('Kineta'), isEmpty);
     });
 

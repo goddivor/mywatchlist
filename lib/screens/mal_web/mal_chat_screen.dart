@@ -104,7 +104,8 @@ class _MalChatScreenState extends State<MalChatScreen> {
           ? const MalChatHistory(messages: [])
           : await loadChatHistory(_api, conversation, maxThreads: _threads);
       if (!mounted) return;
-      _outbox.clearSent(widget.counterpart);
+      final onMal = {for (final m in history.messages) if (m.isMine) messageTextKey(m.html)};
+      _outbox.reconcile(widget.counterpart, (m) => onMal.contains(MalOutbox.textKey(m.body)));
       setState(() {
         _conversation = conversation;
         _history = history;
@@ -133,7 +134,8 @@ class _MalChatScreenState extends State<MalChatScreen> {
     return [
       ...history,
       for (final m in _outbox.to(widget.counterpart))
-        if (!(m.sent && known.contains(messageTextKey(bbcodeToHtml(messageBody(m.body))))))
+        // A copy MAL already shows is not drawn twice (only a message still waiting is).
+        if ((!m.sent && !m.failed) || !known.contains(MalOutbox.textKey(m.body)))
           MalChatMessage(
             html: bbcodeToHtml(messageBody(m.body)),
             isMine: true,

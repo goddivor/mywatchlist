@@ -2,7 +2,9 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
+import 'package:mywatchlist/services/api/MAL/web/mal_conversations.dart' show previewMatches;
 import 'package:mywatchlist/services/api/MAL/web/mal_messages_api.dart';
+import 'package:mywatchlist/services/api/MAL/web/mal_web_form_submitter.dart' show MalWebFormTimeout;
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// A message the user wrote that MAL has not confirmed yet, or refused.
@@ -113,6 +115,14 @@ class MalOutbox extends ChangeNotifier {
 
   static const String storageKey = 'mal_pm_outbox_v1';
 
+  /// Pause before reading MAL again after a send without an answer.
+  static Duration verifyDelay = const Duration(seconds: 3);
+
+  /// The comparison key of a typed body (BBCode tags dropped), as [messageTextKey] gives it
+  /// for MAL's rendering of the same text.
+  static String textKey(String body) =>
+      messageTextKey(messageBody(body).replaceAll(RegExp(r'\[/?[a-zA-Z*]+(=[^\]]*)?\]'), ''));
+
   final MalMessagesApi? _api;
   final Future<SharedPreferences> Function() _storage;
   final DateTime Function() _clock;
@@ -204,13 +214,45 @@ class MalOutbox extends ChangeNotifier {
     unawaited(_save());
   }
 
-  /// Forgets the sent messages to [name]: the conversation was read again from MAL and shows
-  /// them from there.
-  void clearSent(String name) {
+  /// Forgets the messages to [name] that MAL now shows ([isOnMal]): the conversation was read
+  /// again and has them. A failed one found there went through after all (MAL answered too
+  /// late). The ones still waiting stay, and so do sent ones MAL does not list yet.
+  void reconcile(String name, bool Function(MalOutboxMessage m) isOnMal) {
     final key = name.toLowerCase();
     final before = _messages.length;
-    _messages.removeWhere((m) => m.sent && m.to.toLowerCase() == key);
-    if (_messages.length != before) notifyListeners();
+    _messages.removeWhere((m) => m.to.toLowerCase() == key && (m.sent || m.failed) && isOnMal(m));
+    if (_messages.length != before) {
+      notifyListeners();
+      unawaited(_save());
+    }
+  }
+
+  /// MAL did not answer in time, or with a page the app cannot read: the message may have
+  /// gone all the same. MAL is read once more (the thread of a reply, the sent box for a new
+  /// message) and the message counts as sent when its text is there, so a "send again" never
+  /// writes it twice.
+  Future<bool> _landed(MalOutboxMessage m, Object error) async {
+    try {
+      await Future<void>.delayed(verifyDelay);
+      final key = textKey(m.body);
+      if (m.isReply) {
+        final thread = await api.thread(MalMessage(
+          id: m.replyId!,
+          counterpart: m.to,
+          subject: m.subject,
+          threadId: m.threadId,
+        ));
+        if (thread.messages.any((x) => x.isMine && messageTextKey(x.html) == key)) return true;
+      }
+      final page = await api.sent();
+      final name = m.to.toLowerCase();
+      final found = page.messages.any((r) => r.counterpart.toLowerCase() == name && previewMatches(r.preview, key));
+      if (!found) debugPrint('MAL message to ${m.to} not sent: $error');
+      return found;
+    } catch (e) {
+      debugPrint('MAL message to ${m.to} not sent: $error (check failed: $e)');
+      return false;
+    }
   }
 
   void _enqueue(String id) {
@@ -238,6 +280,10 @@ class MalOutbox extends ChangeNotifier {
         await api.send(to: m.to, subject: m.subject, body: m.body);
       }
       ok = true;
+    } on MalWebSendUnconfirmed catch (e) {
+      ok = await _landed(m, e);
+    } on MalWebFormTimeout catch (e) {
+      ok = await _landed(m, e);
     } catch (e) {
       debugPrint('MAL message to ${m.to} not sent: $e');
     }

@@ -89,6 +89,13 @@ class _MalMessagesScreenState extends State<MalMessagesScreen> {
     try {
       final result = await _source.load(pages: _pages);
       if (!mounted || generation != _generation) return;
+      for (final c in result.conversations) {
+        final sent = [for (final r in c.rows) if (r.isSent) r];
+        _outbox.reconcile(
+          c.counterpart,
+          (m) => sent.any((r) => previewMatches(r.preview, MalOutbox.textKey(m.body))),
+        );
+      }
       setState(() {
         _items = result.conversations;
         _hasMore = result.hasMore;

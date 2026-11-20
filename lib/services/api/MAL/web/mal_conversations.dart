@@ -219,7 +219,7 @@ Future<MalChatHistory> loadChatHistory(
       if (!seen.add(key)) continue;
       items.add(_ChatItem(
         MalChatMessage(
-          html: m.html,
+          html: trimMessageHtml(m.html),
           isMine: m.isMine,
           subject: subject,
           at: time,
@@ -239,7 +239,11 @@ Future<MalChatHistory> loadChatHistory(
   });
 
   final messages = [for (final i in items) i.message];
-  final states = readStates(messages, lastSentRead: conversation.lastSentRead);
+  final states = readStates(
+    messages,
+    lastSentRead: conversation.lastSentRead,
+    sentRows: [for (final r in conversation.rows) if (r.isSent) r],
+  );
   MalMessageThread? replyTo;
   for (final (_, thread) in threads) {
     if (thread.canReply) {
@@ -271,6 +275,10 @@ Future<MalChatHistory> loadChatHistory(
   );
 }
 
+/// [html] without the blank end MAL adds to some messages (spaces, `&nbsp;`, line breaks).
+String trimMessageHtml(String html) =>
+    html.replaceFirst(RegExp(r'(\s|&nbsp;|&#160;|\u00a0|<br\s*/?>)+$', caseSensitive: false), '');
+
 class _ChatItem {
   final MalChatMessage message;
   final DateTime? at;
@@ -279,23 +287,47 @@ class _ChatItem {
   const _ChatItem(this.message, this.at, this.order);
 }
 
+/// Whether the start of a message that MAL prints in a box row ([preview]) is the start of
+/// the message whose text key ([messageTextKey]) is [textKey]. MAL cuts long previews and may
+/// end them with dots.
+bool previewMatches(String preview, String textKey) {
+  final start = messageTextKey(preview).replaceFirst(RegExp(r'(\.\.\.|…)$'), '').trim();
+  if (start.isEmpty || textKey.isEmpty) return false;
+  return textKey.startsWith(start) || start.startsWith(textKey);
+}
+
 /// The state of each of the user's messages in [messages] (oldest first; null for the other
-/// person's). A message followed by an answer of the other person was read; the ones after
-/// their last answer are read when MAL's sent box says the newest one was opened
-/// ([lastSentRead]), sent otherwise.
-List<MalSendState?> readStates(List<MalChatMessage> messages, {bool? lastSentRead}) {
+/// person's). A message followed by an answer of the other person was read. The others take
+/// the state of their own row in MAL's sent box ([sentRows], matched by the start of the
+/// text; `unread` there means not opened yet); without a row, the newest sent row decides
+/// ([lastSentRead]).
+List<MalSendState?> readStates(
+  List<MalChatMessage> messages, {
+  bool? lastSentRead,
+  List<MalMessage> sentRows = const [],
+}) {
   var lastTheirs = -1;
   for (var i = 0; i < messages.length; i++) {
     if (!messages[i].isMine) lastTheirs = i;
   }
+  MalSendState? fromRow(MalChatMessage m) {
+    final key = messageTextKey(m.html);
+    for (final row in sentRows) {
+      if (row.recipientRead != null && previewMatches(row.preview, key)) {
+        return row.recipientRead! ? MalSendState.read : MalSendState.sent;
+      }
+    }
+    return null;
+  }
+
   return [
     for (var i = 0; i < messages.length; i++)
       if (!messages[i].isMine)
         null
-      else if (i < lastTheirs || lastSentRead == true)
+      else if (i < lastTheirs)
         MalSendState.read
       else
-        MalSendState.sent,
+        fromRow(messages[i]) ?? (lastSentRead == true ? MalSendState.read : MalSendState.sent),
   ];
 }
 
