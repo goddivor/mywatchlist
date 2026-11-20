@@ -59,6 +59,10 @@ class ContentEditWidget extends StatefulWidget {
   final ValueChanged<dynamic>? onListStatusChange;
   final VoidCallback? onDelete;
 
+  /// Closes the sheet or panel holding the editor: a swipe down on the handle while
+  /// "More options" is collapsed. Without it the swipe only collapses.
+  final VoidCallback? onDismiss;
+
   /// Defaults to MyAnimeList; tests inject a fake.
   final ListEntryService? service;
   final PrivateNotesStore? notesStore;
@@ -72,6 +76,7 @@ class ContentEditWidget extends StatefulWidget {
     this.onUpdate,
     this.onListStatusChange,
     this.onDelete,
+    this.onDismiss,
     this.service,
     this.notesStore,
     this.clock,
@@ -529,12 +534,22 @@ class _ContentEditWidgetState extends State<ContentEditWidget> {
           ? S.current.Edit_Fewer_Options
           : S.current.Edit_More_Options,
       child: GestureDetector(
+        key: const ValueKey('edit-handle'),
         behavior: HitTestBehavior.opaque,
         onTap: _toggleAdvanced,
+        // The only handle of the sheet (MoeList-like): up expands, down collapses and,
+        // once collapsed, closes; a tap toggles.
         onVerticalDragEnd: (details) {
           final v = details.primaryVelocity ?? 0;
-          if (v < -100) _toggleAdvanced(true);
-          if (v > 100) _toggleAdvanced(false);
+          if (v < -100) {
+            _toggleAdvanced(true);
+          } else if (v > 100) {
+            if (_advanced) {
+              _toggleAdvanced(false);
+            } else {
+              widget.onDismiss?.call();
+            }
+          }
         },
         child: SizedBox(
           height: 24,

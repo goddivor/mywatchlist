@@ -254,12 +254,13 @@ class MalUserListAdapter extends UserListAdapter {
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
-      showDragHandle: true,
+      showDragHandle: false,
       builder: (sheetContext) => ConstrainedBox(
         constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(sheetContext).height * 0.85),
         child: SingleChildScrollView(
           padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(sheetContext).bottom),
           child: ContentEditWidget(
+          onDismiss: () => Navigator.pop(sheetContext),
             id: entry.id,
             category: entry.category,
             service: _entryService,

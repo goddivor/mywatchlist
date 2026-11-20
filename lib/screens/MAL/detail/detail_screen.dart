@@ -369,6 +369,7 @@ class _ContentDetailedScreenState extends State<ContentDetailedScreen>
                     setState(() => _showContentEdit = false);
                     _loadMal();
                   },
+                  onClose: () => setState(() => _showContentEdit = false),
                 ),
               ),
           ],

@@ -1235,7 +1235,7 @@ Future<void> showContentEditSheet(
     context: context,
     isScrollControlled: true,
     useSafeArea: true,
-    showDragHandle: true,
+    showDragHandle: false,
     builder: (sheetContext) => ConstrainedBox(
       constraints: BoxConstraints(
         maxHeight: MediaQuery.sizeOf(sheetContext).height * 0.85,
@@ -1245,6 +1245,7 @@ Future<void> showContentEditSheet(
           bottom: MediaQuery.viewInsetsOf(sheetContext).bottom,
         ),
         child: ContentEditWidget(
+          onDismiss: () => Navigator.pop(sheetContext),
           id: node.id,
           category: category,
           onListStatusChange: remember,

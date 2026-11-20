@@ -47,6 +47,9 @@ class DetailEditPanel extends StatelessWidget {
   final ValueChanged<LiveListStatus> onLiveStatus;
   final VoidCallback onDelete;
 
+  /// Closes the panel (a swipe down on the editor's handle).
+  final VoidCallback? onClose;
+
   const DetailEditPanel({
     super.key,
     required this.data,
@@ -55,6 +58,7 @@ class DetailEditPanel extends StatelessWidget {
     required this.onUpdate,
     required this.onLiveStatus,
     required this.onDelete,
+    this.onClose,
   });
 
   @override
@@ -79,6 +83,7 @@ class DetailEditPanel extends StatelessWidget {
                 if (value != null) onLiveStatus(value);
               },
               onDelete: onDelete,
+              onDismiss: onClose,
             ),
             if (showCrossTracker)
               CrossTrackerWidget(
