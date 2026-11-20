@@ -374,8 +374,17 @@ class EntryGridCard extends StatelessWidget {
   }
 
   /// Cover with the episode badges, the airing band and the priority flag.
-  Widget _cover(BuildContext context, {required BorderRadius rounded, List<Widget> extra = const []}) {
-    final airing = style.showAiringInfo ? airingText(entry, now, Localizations.localeOf(context).toString()) : null;
+  /// The airing line drawn over the top of the cover, null when off or not airing.
+  String? _airing(BuildContext context) =>
+      style.showAiringInfo ? airingText(entry, now, Localizations.localeOf(context).toString()) : null;
+
+  /// Top of the first badge row: under the airing band when it is drawn.
+  double _badgeTop(BuildContext context) => _airing(context) != null ? 22 : 7;
+
+  /// [dubBelow] moves the dub badge down past a badge the caller draws at the top start.
+  Widget _cover(BuildContext context,
+      {required BorderRadius rounded, List<Widget> extra = const [], double dubBelow = 0}) {
+    final airing = _airing(context);
     final tokens = AppColors.of(context);
     final look = ListEntryLookScope.of(context);
     return Stack(
@@ -411,7 +420,7 @@ class EntryGridCard extends StatelessWidget {
           child: EntryEpisodeBadges(entry: entry, now: now),
         ),
         PositionedDirectional(
-          top: airing != null ? 22 : 7,
+          top: (airing != null ? 22 : 7) + dubBelow,
           start: 5,
           child: EntryDubBadge(entry: entry),
         ),
@@ -495,7 +504,7 @@ class EntryGridCard extends StatelessWidget {
       if (hasMembers) format.format(members),
     ].join(' | ');
     final onEdit = actions.onEdit == null ? null : _edit;
-    return _cover(context, rounded: radius, extra: [
+    return _cover(context, rounded: radius, dubBelow: meanText.isNotEmpty ? 24 : 0, extra: [
       // Static scrim (no blur) under the title, as DailyAL's fading effect.
       PositionedDirectional(
         start: 0,
@@ -541,7 +550,8 @@ class EntryGridCard extends StatelessWidget {
         ),
       if (meanText.isNotEmpty)
         PositionedDirectional(
-          top: 7,
+          // Under the airing band when it is shown, never over it.
+          top: _badgeTop(context),
           start: 5,
           child: DecoratedBox(
             decoration: BoxDecoration(color: tokens.imageScrim, borderRadius: radius),
