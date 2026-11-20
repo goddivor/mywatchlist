@@ -109,7 +109,10 @@ extension _SearchBody on _GeneralSearchScreenState {
           SliverList.builder(
             itemCount: items.length,
             itemBuilder: (context, index) => media
-                ? MediaTile(item: items[index], category: tab)
+                ? SizedBox(
+                    height: listRowExtent(DisplaySubType.compact),
+                    child: _entryCard(items[index], tab, grid: false, subType: DisplaySubType.compact),
+                  )
                 : tab == SearchCategory.character || tab == SearchCategory.person
                     ? PersonTile(item: items[index], isCharacter: tab == SearchCategory.character)
                     : AllItemTile(item: items[index], category: tab),
@@ -180,14 +183,15 @@ extension _SearchBody on _GeneralSearchScreenState {
           content = _gridSliver(page.media, category,
               columns: display.gridColumns, height: display.gridHeight, subType: display.subType);
         } else {
-          final size = switch (display.subType) {
-            DisplaySubType.compact => MediaTileSize.compact,
-            DisplaySubType.spacious => MediaTileSize.spacious,
-            _ => MediaTileSize.comfortable,
+          // The rows of the user's list (same styles), with the user's status.
+          final subType = switch (display.subType) {
+            DisplaySubType.compact || DisplaySubType.spacious => display.subType,
+            _ => DisplaySubType.comfortable,
           };
-          content = SliverList.builder(
+          content = SliverFixedExtentList.builder(
+            itemExtent: listRowExtent(subType),
             itemCount: page.media.length,
-            itemBuilder: (_, i) => MediaTile(item: page.media[i], category: category, size: size),
+            itemBuilder: (_, i) => _entryCard(page.media[i], category, grid: false, subType: subType),
           );
         }
     }
@@ -204,6 +208,7 @@ extension _SearchBody on _GeneralSearchScreenState {
     );
   }
 
+  /// The grid of the user's list (same cards, same gaps), with the user's status.
   Widget _gridSliver(
     List<Anime> items,
     String category, {
@@ -211,33 +216,59 @@ extension _SearchBody on _GeneralSearchScreenState {
     required double height,
     required DisplaySubType subType,
   }) {
-    final width = height * (2 / 3);
-    final coverOnly = subType == DisplaySubType.cover_only_grid;
+    final type = switch (subType) {
+      DisplaySubType.compact || DisplaySubType.cover_only_grid => subType,
+      _ => DisplaySubType.comfortable,
+    };
+    // The list cards need the list's height to fit their bar and title.
+    final display = ListDisplay(
+      type: DisplayType.grid,
+      subType: type,
+      gridColumns: columns,
+      gridHeight: height < 230 ? 230 : height,
+    );
     return SliverPadding(
-      padding: const EdgeInsets.symmetric(horizontal: 12),
+      padding: listGridPadding(type),
       sliver: SliverGrid.builder(
-        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: columns,
-          childAspectRatio: width / (height + 36),
-          crossAxisSpacing: 8,
-          mainAxisSpacing: 8,
-        ),
+        gridDelegate: listGridDelegate(display),
         itemCount: items.length,
-        itemBuilder: (context, index) {
-          final item = items[index];
-          return AnimeGridCard(
-            node: item,
-            category: category,
-            width: width,
-            height: height,
-            gridHeight: height + 36,
-            showMemberCount: !coverOnly,
-            showText: !coverOnly,
-            displaySubType: subType,
-            onTap: () => openMedia(context, item, category),
-          );
-        },
+        itemBuilder: (context, index) =>
+            _entryCard(items[index], category, grid: true, subType: type),
       ),
+    );
+  }
+
+  /// One result as a card of the user's list: rebuilt when its list entry changes (an edit,
+  /// the background list read), so the status is always the user's current one.
+  Widget _entryCard(Anime item, String category,
+      {required bool grid, required DisplaySubType subType}) {
+    final cacheCategory = category == SearchCategory.manga ? 'manga' : 'anime';
+    final editable = category == SearchCategory.anime || category == SearchCategory.manga;
+    final actions = EntryActions(
+      onOpen: (_) => openMedia(context, item, category),
+      onEdit: editable ? (_) => showContentEditSheet(context, category, item) : null,
+      onStep: null,
+      canStep: (_) => false,
+      busy: _noBusy,
+    );
+    final style = EntryCardStyle.fromPreferences(Preferences.general, showStatus: true);
+    return ValueListenableBuilder<CachedListStatus?>(
+      key: ValueKey('$category:${item.id}'),
+      valueListenable: ListStatusCache.instance.watch(item.id, category: cacheCategory),
+      builder: (context, _, __) {
+        final entry = entryFromAnime(item, category: cacheCategory);
+        final now = DateTime.now();
+        return grid
+            ? EntryGridCard(entry: entry, subType: subType, actions: actions, style: style, now: now)
+            : EntryListTile(
+                entry: entry,
+                subType: subType,
+                actions: actions,
+                style: style,
+                now: now,
+                locale: Localizations.localeOf(context).toString(),
+              );
+      },
     );
   }
 
@@ -299,3 +330,6 @@ class _UserFoundCard extends StatelessWidget {
     );
   }
 }
+
+/// No write is ever in progress on a search card (the edit sheet does its own).
+final ValueNotifier<Set<int>> _noBusy = ValueNotifier(const {});

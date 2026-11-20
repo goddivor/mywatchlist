@@ -14,17 +14,19 @@ import 'package:mywatchlist/widgets/user/list/list_query.dart';
 import 'package:mywatchlist/user/list_cache/list_status_cache.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// A MAL seasonal anime as a card entry, with the signed-in user's list status when MAL sent one.
-ListEntryView entryFromAnime(Anime a) {
+/// A MAL anime (or manga, [category]) as a card entry of the user's list cards, with the
+/// signed-in user's list status when MAL sent one, else the one of the list cache.
+ListEntryView entryFromAnime(Anime a, {String category = 'anime'}) {
   final ls = a.myListStatus;
-  // MAL sends no list status (another tracker is active): the user's list cache tells it.
-  final cached = ls == null ? ListStatusCache.instance.entryOf(a.id) : null;
-  final status = ListEntryStatus.fromMal(ls?.status ?? cached?.status);
+  // The list cache first (kept current by every edit and the background list read), then
+  // what MAL sent (nothing when another tracker is active).
+  final cached = ListStatusCache.instance.entryOf(a.id, category: category);
+  final status = ListEntryStatus.fromMal(cached?.status ?? ls?.status);
   final broadcast = a.broadcast;
   return ListEntryView(
     id: a.id,
     malId: a.id,
-    category: 'anime',
+    category: category,
     title: a.title,
     imageUrl: a.imageUrl.isEmpty ? null : mediumCover(a.imageUrl),
     largeImageUrl: a.imageUrl.isEmpty ? null : a.imageUrl,
@@ -33,7 +35,7 @@ ListEntryView entryFromAnime(Anime a) {
     meanScore: a.score > 0 ? a.score : null,
     members: a.members > 0 ? a.members : null,
     popularity: a.popularity,
-    total: a.numEpisodes ?? 0,
+    total: (category == 'manga' ? null : a.numEpisodes) ?? 0,
     genres: a.genres ?? const [],
     releaseStart: a.startDate,
     releaseEnd: a.endDate,
@@ -41,8 +43,8 @@ ListEntryView entryFromAnime(Anime a) {
         ? null
         : BroadcastSlot.fromMal(broadcast.dayOfTheWeek, broadcast.startTime),
     status: status,
-    score: ls?.score ?? cached?.score ?? 0,
-    progress: ls?.numEpisodesWatched ?? cached?.progress ?? 0,
+    score: cached?.score ?? ls?.score ?? 0,
+    progress: cached?.progress ?? ls?.numEpisodesWatched ?? 0,
     repeating: ls?.isRewatching ?? false,
     priority: ls?.priority ?? 0,
     updatedAt: DateTime.tryParse(ls?.updatedAt ?? ''),
