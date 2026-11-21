@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/services/api/SimKl/simkl_discover_service.dart';
-import 'package:mywatchlist/services/api/SimKl/simkl_kind.dart';
 import 'package:mywatchlist/services/api/SimKl/simkl_models.dart';
 import 'package:mywatchlist/pages/Simkl/simkl_media_page.dart';
 import 'package:mywatchlist/widgets/common/app_image.dart';
@@ -18,6 +17,7 @@ Future<void> openSimklMedia(
     openSimklTitle(
       context,
       simklId: media.simklId,
+      kind: media.kind,
       slug: media.slug,
       title: media.title,
       posterUrl: media.posterUrl,

@@ -14,6 +14,7 @@ import 'package:mywatchlist/services/api/SimKl/simkl_stats_service.dart';
 import 'package:mywatchlist/services/api/SimKl/simkl_user_prof.dart';
 import 'package:mywatchlist/widgets/Simkl/calendar/simkl_calendar.dart';
 import 'package:mywatchlist/widgets/Simkl/media/simkl_media_progress.dart';
+import 'package:mywatchlist/widgets/Simkl/simkl_catalogue.dart';
 import 'package:mywatchlist/widgets/Simkl/simkl_feeds.dart';
 import 'package:mywatchlist/widgets/Simkl/simkl_profile_view.dart';
 import 'package:mywatchlist/widgets/home/home_sections.dart';
@@ -32,7 +33,11 @@ void main() {
     await initializeDateFormatting();
   });
 
-  setUp(HomeSectionCache.clear);
+  setUp(() {
+    HomeSectionCache.clear();
+    // These screens were written for the anime catalogue (the app opens on TV shows).
+    SimklCatalogue.instance.reset(SimklKind.anime);
+  });
 
   FakeSimkl titleSite() => FakeSimkl(
         api: {

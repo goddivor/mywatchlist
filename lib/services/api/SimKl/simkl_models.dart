@@ -74,6 +74,10 @@ String? _firstOfficial(Object? alt) {
 class SimklMedia {
   final int simklId;
 
+  /// The catalogue of the title (from the item's `url`, `endpoint_type` or `type`; the
+  /// catalogue that was asked otherwise).
+  final SimklKind kind;
+
   /// MyAnimeList id when the answer carries it (otherwise resolved on tap).
   final int? malId;
   final String? slug;
@@ -106,12 +110,14 @@ class SimklMedia {
   /// Calendar answers: this episode ends the title (`finale_type` of the calendar file).
   final bool finale;
 
-  /// Airing answers: the episode number and its air time.
+  /// Airing answers: the episode number (inside [season] for a show) and its air time.
+  final int? season;
   final int? episode;
   final DateTime? airDate;
 
   const SimklMedia({
     required this.simklId,
+    this.kind = SimklKind.anime,
     this.malId,
     this.slug,
     required this.title,
@@ -130,19 +136,28 @@ class SimklMedia {
     this.titleRomaji,
     this.titleNative,
     this.finale = false,
+    this.season,
     this.episode,
     this.airDate,
   });
+
+  /// The same item in [kind] (a list asked from that catalogue that does not say it).
+  SimklMedia ofKind(SimklKind kind) => kind == this.kind ? this : _copy(kind: kind);
 
   /// The same item titled for [lang] (the Simkl profile's title language).
   SimklMedia retitled(SimklTitleLanguage lang) {
     final next = SimklTitlePreference.pick(lang, title, romaji: titleRomaji, original: titleNative);
     if (next == title) return this;
+    return _copy(title: next);
+  }
+
+  SimklMedia _copy({SimklKind? kind, String? title}) {
     return SimklMedia(
       simklId: simklId,
+      kind: kind ?? this.kind,
       malId: malId,
       slug: slug,
-      title: next,
+      title: title ?? this.title,
       posterUrl: posterUrl,
       year: year,
       rating: rating,
@@ -158,13 +173,26 @@ class SimklMedia {
       titleRomaji: titleRomaji,
       titleNative: titleNative,
       finale: finale,
+      season: season,
       episode: episode,
       airDate: airDate,
     );
   }
 
-  /// Null when the item has no Simkl id or no title.
-  static SimklMedia? fromJson(Object? raw) {
+  /// The catalogue an item names: `url` (`/tv/1/x`, `/movies/2/y`), then `endpoint_type`, then
+  /// `type`.
+  static SimklKind? kindOf(Map<Object?, Object?> m) {
+    final url = m['url'];
+    if (url is String) {
+      final folder = RegExp(r'^/?(tv|anime|movies)/').firstMatch(url)?.group(1);
+      if (folder != null) return SimklKind.ofType(folder);
+    }
+    return SimklKind.ofType(m['endpoint_type']) ?? SimklKind.ofType(m['type']);
+  }
+
+  /// Null when the item has no Simkl id or no title. [kind] is the catalogue that was asked,
+  /// used when the item does not say.
+  static SimklMedia? fromJson(Object? raw, [SimklKind kind = SimklKind.anime]) {
     if (raw is! Map) return null;
     // Some answers wrap the title in `show`.
     final m = raw['show'] is Map ? {...raw, ...(raw['show'] as Map)} : raw;
@@ -189,6 +217,7 @@ class SimklMedia {
     final genres = m['genres'];
     return SimklMedia(
       simklId: id,
+      kind: kindOf(m) ?? kind,
       malId: _int(ids['mal']),
       slug: _text(ids['slug']),
       title: title,
@@ -207,22 +236,23 @@ class SimklMedia {
       titleRomaji: _text(m['title_romaji']),
       titleNative: _firstOfficial(m['alt_titles']),
       finale: _text(m['finale_type']) != null,
+      season: episode is Map ? _int(episode['season']) : _int(m['season']),
       episode: episode is Map ? _int(episode['episode']) : _int(episode),
       airDate: DateTime.tryParse(_text(m['date']) ?? '')?.toUtc(),
     );
   }
 
-  static List<SimklMedia> listFrom(Object? data) {
+  static List<SimklMedia> listFrom(Object? data, [SimklKind kind = SimklKind.anime]) {
     final list = data is List
         ? data
         : data is Map
-            ? (data['anime'] ?? data['results'] ?? data['items'])
+            ? (data[kind.syncKey] ?? data['anime'] ?? data['results'] ?? data['items'])
             : null;
     if (list is! List) return const [];
     final seen = <int>{};
     return [
       for (final raw in list)
-        if (fromJson(raw) case final item? when seen.add(item.simklId)) item,
+        if (fromJson(raw, kind) case final item? when seen.add(item.simklId)) item,
     ];
   }
 }

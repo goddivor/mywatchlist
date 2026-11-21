@@ -228,6 +228,25 @@ void main() {
     });
   });
 
+  test("a show's next episode comes from next_to_watch and its overview loses the HTML", () {
+    final next = SimklNextToWatch.parseAll({
+      'shows': [
+        {
+          ..._show(1, 'watching', watched: 16),
+          'next_to_watch': 'S02E09',
+          'next_to_watch_info': {'title': 'High Treason', 'episode': 17},
+        },
+      ],
+    }, SimklKind.tv)[1]!;
+    expect((next.season, next.episode, next.title), (2, 9, 'High Treason'));
+    final t = SimklTitle.fromJson({
+      'title': 'BMF',
+      'overview': 'Late 1980s. <br><br>The journey of two brothers.',
+      'ids': {'simkl': 1},
+    }, kind: SimklKind.tv)!;
+    expect(t.overview, 'Late 1980s.\n\nThe journey of two brothers.');
+  });
+
   test('the next episode of a show is named by season', () {
     final next = simklNextUp(
       title: const SimklTitle(simklId: 1, title: 'Show', kind: SimklKind.tv),

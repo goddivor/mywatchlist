@@ -1,10 +1,12 @@
 import 'package:mywatchlist/services/api/SimKl/simkl_cdn.dart';
 import 'package:mywatchlist/services/api/SimKl/simkl_client.dart';
+import 'package:mywatchlist/services/api/SimKl/simkl_kind.dart';
 import 'package:mywatchlist/services/api/SimKl/simkl_models.dart';
 import 'package:mywatchlist/user/base_user.dart' show AuthStatus;
 import 'package:mywatchlist/user/user_simkl_v2.dart';
 
 export 'package:mywatchlist/services/api/SimKl/simkl_cdn.dart' show SimklTrendingWindow;
+export 'package:mywatchlist/services/api/SimKl/simkl_kind.dart' show SimklKind;
 
 /// Anime format filter of the Simkl catalogue calls (`type` of best, premieres and genres).
 enum SimklFormat {
@@ -32,6 +34,27 @@ enum SimklGenreSort {
   const SimklGenreSort(this.api);
   final String api;
 }
+
+/// The genre slugs of each catalogue (checked against the API on 2026-11-21), `all` first.
+List<String> simklGenresOf(SimklKind kind) => switch (kind) {
+      SimklKind.anime => simklGenres,
+      SimklKind.tv => simklTvGenres,
+      SimklKind.movie => simklMovieGenres,
+    };
+
+const List<String> simklTvGenres = [
+  'all', 'action', 'adventure', 'animation', 'awards-show', 'children', 'comedy', 'crime',
+  'documentary', 'drama', 'family', 'fantasy', 'food', 'game-show', 'history', 'home-and-garden',
+  'horror', 'indie', 'martial-arts', 'mini-series', 'musical', 'mystery', 'news', 'podcast',
+  'reality', 'romance', 'science-fiction', 'soap', 'sport', 'suspense', 'talk-show', 'thriller',
+  'travel', 'video-game-play', 'war', 'western',
+];
+
+const List<String> simklMovieGenres = [
+  'all', 'action', 'adventure', 'animation', 'comedy', 'crime', 'documentary', 'drama', 'erotica',
+  'family', 'fantasy', 'history', 'horror', 'music', 'mystery', 'romance', 'science-fiction',
+  'thriller', 'tv-movie', 'war', 'western',
+];
 
 /// The genre slugs `GET /anime/genres/{genre}/...` accepts (https://api.simkl.org), `all` first.
 const List<String> simklGenres = [
@@ -94,86 +117,111 @@ class SimklDiscoverService {
 
   SimklCdn get cdn => _cdn ?? SimklCdn.instance;
 
-  /// Trending anime of [window] (CDN), the API's trending list when the CDN fails.
+  /// Trending titles of [kind] in [window] (CDN), the API's trending list when the CDN fails.
   Future<List<SimklMedia>> trending({
     SimklTrendingWindow window = SimklTrendingWindow.today,
+    SimklKind kind = SimklKind.anime,
     int limit = 100,
   }) async {
     List<SimklMedia> items;
     try {
-      items = await cdn.trending(window);
+      items = await cdn.trending(window, kind: kind);
     } catch (_) {
-      items = SimklMedia.listFrom(await _get('/anime/trending', query: {'extended': 'overview'}));
+      items = SimklMedia.listFrom(await _get('/${kind.api}/trending', query: {'extended': 'overview'}), kind);
     }
     return _take(items, limit);
   }
 
-  /// The episodes airing on the local day of [date] (today by default), by air time: the CDN
-  /// calendar, the API's `/anime/airing` when the CDN fails.
-  Future<List<SimklMedia>> airingToday({DateTime? date, int limit = 40}) async {
+  /// The episodes (movies: the releases) of [kind] on the local day of [date] (today by
+  /// default), by air time: the CDN calendar, the API's `/{tv|anime}/airing` when the CDN fails.
+  Future<List<SimklMedia>> airingToday({DateTime? date, SimklKind kind = SimklKind.anime, int limit = 40}) async {
     final day = date ?? DateTime.now();
     try {
-      return _take(await cdn.airingOn(day), limit);
+      return _take(await cdn.airingOn(day, kind: kind), limit);
     } catch (_) {
+      if (kind == SimklKind.movie) rethrow; // the API has no movie airing list
       final text = '${day.year.toString().padLeft(4, '0')}-${day.month.toString().padLeft(2, '0')}-'
           '${day.day.toString().padLeft(2, '0')}';
-      final data = await _get('/anime/airing', query: {'date': text, 'sort': 'time'});
-      return _take(SimklMedia.listFrom(data), limit);
+      final data = await _get('/${kind.api}/airing', query: {'date': text, 'sort': 'time'});
+      return _take(SimklMedia.listFrom(data, kind), limit);
     }
   }
 
-  /// The whole CDN calendar (rolling 33 days), by air time.
-  Future<List<SimklMedia>> calendar() => cdn.calendar();
+  /// The whole CDN calendar of [kind] (rolling 33 days), by air time.
+  Future<List<SimklMedia>> calendar({SimklKind kind = SimklKind.anime}) => cdn.calendar(kind: kind);
 
-  /// `GET /anime/premieres/new`: the latest premieres.
-  Future<List<SimklMedia>> premieres({SimklFormat format = SimklFormat.all, int limit = pageSize}) =>
-      _premieres('new', format, limit);
+  /// `GET /{tv|anime}/premieres/new`: the latest premieres (Simkl has none for movies).
+  Future<List<SimklMedia>> premieres({
+    SimklFormat format = SimklFormat.all,
+    SimklKind kind = SimklKind.anime,
+    int limit = pageSize,
+  }) =>
+      _premieres('new', format, kind, limit);
 
-  /// `GET /anime/premieres/soon`: the upcoming titles, soonest first.
-  Future<List<SimklMedia>> comingSoon({SimklFormat format = SimklFormat.all, int limit = pageSize}) =>
-      _premieres('soon', format, limit);
+  /// `GET /{tv|anime}/premieres/soon`: the upcoming titles, soonest first.
+  Future<List<SimklMedia>> comingSoon({
+    SimklFormat format = SimklFormat.all,
+    SimklKind kind = SimklKind.anime,
+    int limit = pageSize,
+  }) =>
+      _premieres('soon', format, kind, limit);
 
-  Future<List<SimklMedia>> _premieres(String which, SimklFormat format, int limit) async {
-    final data = await _get('/anime/premieres/$which', query: {
-      'type': format.api,
+  Future<List<SimklMedia>> _premieres(String which, SimklFormat format, SimklKind kind, int limit) async {
+    final data = await _get('/${kind.api}/premieres/$which', query: {
+      'type': kind == SimklKind.anime ? format.api : 'all',
       'limit': '${limit.clamp(1, pageSize)}',
     });
-    return _take(SimklMedia.listFrom(data), limit);
+    return _take(SimklMedia.listFrom(data, kind), limit);
   }
 
-  /// `GET /anime/best/{filter}`: the best rated anime of the bucket (Simkl answers `null` when
-  /// the format leaves nothing).
-  Future<List<SimklMedia>> best({SimklBest filter = SimklBest.all, SimklFormat format = SimklFormat.all}) async {
-    final data = await _get('/anime/best/${filter.name}', query: {'type': format.api});
-    return SimklMedia.listFrom(data);
+  /// `GET /{tv|anime}/best/{filter}`: the best rated titles of the bucket (Simkl answers `null`
+  /// when the format leaves nothing; it has no such list for movies).
+  Future<List<SimklMedia>> best({
+    SimklBest filter = SimklBest.all,
+    SimklFormat format = SimklFormat.all,
+    SimklKind kind = SimklKind.anime,
+  }) async {
+    final data = await _get('/${kind.api}/best/${filter.name}', query: {
+      'type': kind == SimklKind.anime ? format.api : 'all',
+    });
+    return SimklMedia.listFrom(data, kind);
   }
 
-  /// `GET /anime/genres/{genre}/{type}/all/all/{sort}`: one page of the genre browse.
+  /// One page of the genre browse:
+  /// - anime `GET /anime/genres/{genre}/{type}/all/all/{sort}`;
+  /// - shows `GET /tv/genres/{genre}/all-types/all-countries/all-networks/all-years/{sort}`;
+  /// - movies `GET /movies/genres/{genre}/all-types/all-countries/all-years/{sort}`.
   Future<SimklPage> byGenre({
     String genre = 'all',
     SimklFormat format = SimklFormat.all,
     SimklGenreSort sort = SimklGenreSort.popularMonth,
+    SimklKind kind = SimklKind.anime,
     int page = 1,
   }) async {
     final type = format == SimklFormat.all ? 'all' : format.api;
-    final data = await _get('/anime/genres/$genre/$type/all/all/${sort.api}', query: {
+    final path = switch (kind) {
+      SimklKind.anime => '/anime/genres/$genre/$type/all/all/${sort.api}',
+      SimklKind.tv => '/tv/genres/$genre/all-types/all-countries/all-networks/all-years/${sort.api}',
+      SimklKind.movie => '/movies/genres/$genre/all-types/all-countries/all-years/${sort.api}',
+    };
+    final data = await _get(path, query: {
       'page': '$page',
       'limit': '$pageSize',
     });
-    final items = SimklMedia.listFrom(data);
+    final items = SimklMedia.listFrom(data, kind);
     return SimklPage(items, hasMore: items.length >= pageSize && page < maxPage);
   }
 
-  /// `GET /search/anime`.
-  Future<List<SimklMedia>> search(String query, {int limit = 30}) async {
+  /// `GET /search/{tv|anime|movie}`.
+  Future<List<SimklMedia>> search(String query, {SimklKind kind = SimklKind.anime, int limit = 30}) async {
     final q = query.trim();
     if (q.isEmpty) return const [];
-    final data = await _get('/search/anime', query: {
+    final data = await _get('/search/${kind.searchKey}', query: {
       'q': q,
       'limit': '$limit',
       'extended': 'full',
     });
-    return SimklMedia.listFrom(data);
+    return SimklMedia.listFrom(data, kind);
   }
 
   /// The MyAnimeList id of a Simkl title (`GET /anime/{id}`), null when Simkl has none.

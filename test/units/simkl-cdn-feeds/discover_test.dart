@@ -137,9 +137,16 @@ void main() {
 
   group('SimklFeedQuery', () {
     test('a default query shares the home row cache key, options make their own', () {
-      for (final feed in SimklFeed.values) {
-        expect(SimklFeedQuery(feed).cacheKey, feed.cacheKey);
+      for (final kind in SimklKind.values) {
+        for (final feed in SimklFeed.values) {
+          expect(SimklFeedQuery(feed, kind: kind).cacheKey, feed.cacheKeyOf(kind));
+        }
       }
+      expect(
+        const SimklFeedQuery(SimklFeed.trending, kind: SimklKind.tv).cacheKey,
+        isNot(const SimklFeedQuery(SimklFeed.trending).cacheKey),
+        reason: 'each catalogue keeps its own answers',
+      );
       final keys = {
         const SimklFeedQuery(SimklFeed.trending).cacheKey,
         const SimklFeedQuery(SimklFeed.trending, window: SimklTrendingWindow.week).cacheKey,

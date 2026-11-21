@@ -11,6 +11,19 @@ String? _text(Object? v) => v is String && v.trim().isNotEmpty ? v.trim() : null
 List<Object?> _list(Object? v) => v is List ? v : const [];
 Map<String, Object?> _map(Object? v) => v is Map ? v.cast<String, Object?>() : const {};
 
+/// Text of an overview that may carry HTML line breaks (`<br>`, shows and movies).
+String? _plain(Object? v) {
+  final t = _text(v);
+  if (t == null) return null;
+  final out = t
+      .replaceAll(RegExp(r'<br\s*/?>', caseSensitive: false), '\n')
+      .replaceAll(RegExp(r'<[^>]+>'), '')
+      .replaceAll(RegExp(r'[ \t]+\n'), '\n')
+      .replaceAll(RegExp(r'\n{3,}'), '\n\n')
+      .trim();
+  return out.isEmpty ? null : out;
+}
+
 /// `"24%"` → 24.
 double? parsePercent(Object? v) {
   if (v is num) return v.toDouble();
@@ -288,7 +301,7 @@ class SimklTitle {
       certification: _text(m['certification']),
       country: _text(m['country']),
       originalLanguage: _text(m['original_language']),
-      overview: _text(m['overview']),
+      overview: _plain(m['overview']),
       genres: _list(m['genres']).map(_text).whereType<String>().toList(),
       network: _text(m['network']),
       status: _text(m['status']),

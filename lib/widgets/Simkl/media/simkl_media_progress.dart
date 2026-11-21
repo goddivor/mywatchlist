@@ -256,7 +256,7 @@ class SimklNextEpisodeCard extends StatelessWidget {
                           child: SizedBox.square(dimension: 22, child: CircularProgressIndicator(strokeWidth: 2.5)),
                         )
                       : IconButton.filled(
-                          tooltip: s.Skr_Mark_Watched(next.episode!),
+                          tooltip: next.code != null ? s.Skm_Mark_Episode_Watched(next.code!) : s.Skr_Mark_Watched(next.episode!),
                           onPressed: mark,
                           icon: const Icon(Icons.check_rounded),
                         )

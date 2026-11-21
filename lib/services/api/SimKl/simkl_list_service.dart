@@ -89,13 +89,18 @@ class SimklNextToWatch {
       final show = raw['show'];
       final ids = show is Map && show['ids'] is Map ? show['ids'] as Map : const {};
       final id = SimklPlayback._int(ids['simkl'] ?? ids['simkl_id']);
-      final info = raw['next_to_watch_info'];
-      if (id == null || info is! Map) continue;
-      final episode = SimklPlayback._int(info['episode']);
+      final raw0 = raw['next_to_watch_info'];
+      final info = raw0 is Map ? raw0 : const {};
+      // Shows: `next_to_watch` names the episode inside its season ("S02E09").
+      final code = kind == SimklKind.tv && raw['next_to_watch'] is String
+          ? RegExp(r'S(\d+)E(\d+)', caseSensitive: false).firstMatch(raw['next_to_watch'] as String)
+          : null;
+      if (id == null || (raw0 is! Map && code == null)) continue;
+      final episode = code != null ? int.parse(code.group(2)!) : SimklPlayback._int(info['episode']);
       if (episode == null) continue;
       final title = info['title'];
       out[id] = SimklNextToWatch(
-        season: kind == SimklKind.tv ? SimklPlayback._int(info['season']) : null,
+        season: code != null ? int.parse(code.group(1)!) : null,
         episode: episode,
         title: title is String && title.trim().isNotEmpty ? title.trim() : null,
         date: DateTime.tryParse(info['date'] is String ? info['date'] as String : '')?.toUtc(),

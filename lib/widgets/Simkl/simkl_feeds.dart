@@ -18,6 +18,16 @@ enum SimklFeed {
   best,
   genres;
 
+  /// The lists Simkl has for [kind]: movies have no premieres and no best list, and their
+  /// "airing" list is the release calendar.
+  static List<SimklFeed> of(SimklKind kind) => kind == SimklKind.movie
+      ? const [SimklFeed.trending, SimklFeed.airing, SimklFeed.genres]
+      : SimklFeed.values;
+
+  /// Translated title of the home row of [kind].
+  String titleOf(SimklKind kind) =>
+      kind == SimklKind.movie && this == SimklFeed.airing ? S.current.Skm_Feed_Releases_Today : title;
+
   /// Translated title of the home row.
   String get title => switch (this) {
         SimklFeed.airing => S.current.Sk_Feed_Airing,
@@ -29,19 +39,27 @@ enum SimklFeed {
       };
 
   /// Translated label of the Explore chip (the airing list there covers several days).
-  String get exploreTitle => this == SimklFeed.airing ? S.current.Scf_Feed_Schedule : title;
+  String exploreTitleOf(SimklKind kind) => this != SimklFeed.airing
+      ? title
+      : kind == SimklKind.movie
+          ? S.current.Skm_Feed_Releases
+          : S.current.Scf_Feed_Schedule;
 
   /// The default list of the feed (home rows, "View all").
-  Future<List<SimklMedia>> load(SimklDiscoverService service) => SimklFeedQuery(this).loadAll(service);
+  Future<List<SimklMedia>> load(SimklDiscoverService service, [SimklKind kind = SimklKind.anime]) =>
+      SimklFeedQuery(this, kind: kind).loadAll(service);
 
   /// Key of the in-memory answer (`HomeSectionCache`).
-  String get cacheKey => 'simkl_feed_$name';
+  String cacheKeyOf(SimklKind kind) => 'simkl_feed_${kind.name}_$name';
 }
 
 /// One Explore list: a feed and its options. Options that do not apply to the feed are ignored.
 @immutable
 class SimklFeedQuery {
   final SimklFeed feed;
+
+  /// The catalogue: shows, anime or movies.
+  final SimklKind kind;
   final SimklTrendingWindow window;
   final SimklBest best;
   final SimklFormat format;
@@ -53,6 +71,7 @@ class SimklFeedQuery {
 
   const SimklFeedQuery(
     this.feed, {
+    this.kind = SimklKind.anime,
     this.window = SimklTrendingWindow.today,
     this.best = SimklBest.all,
     this.format = SimklFormat.all,
@@ -61,8 +80,8 @@ class SimklFeedQuery {
     this.dayOffset = 0,
   });
 
-  /// Whether the feed has a format filter.
-  bool get hasFormat => switch (feed) {
+  /// Whether the feed has a format filter (anime only: TV, movies, OVAs, ONAs).
+  bool get hasFormat => kind == SimklKind.anime && switch (feed) {
         SimklFeed.premieres || SimklFeed.soon || SimklFeed.best || SimklFeed.genres => true,
         _ => false,
       };
@@ -72,6 +91,7 @@ class SimklFeedQuery {
 
   SimklFeedQuery copyWith({
     SimklFeed? feed,
+    SimklKind? kind,
     SimklTrendingWindow? window,
     SimklBest? best,
     SimklFormat? format,
@@ -81,6 +101,7 @@ class SimklFeedQuery {
   }) =>
       SimklFeedQuery(
         feed ?? this.feed,
+        kind: kind ?? this.kind,
         window: window ?? this.window,
         best: best ?? this.best,
         format: format ?? this.format,
@@ -91,7 +112,7 @@ class SimklFeedQuery {
 
   /// Key of the answer in `HomeSectionCache`; the default query of a feed shares the home row's.
   String get cacheKey {
-    final base = feed.cacheKey;
+    final base = feed.cacheKeyOf(kind);
     final extra = switch (feed) {
       SimklFeed.trending => window == SimklTrendingWindow.today ? '' : window.name,
       SimklFeed.airing => dayOffset == 0 ? '' : 'd$dayOffset:${_day(DateTime.now()).toIso8601String()}',
@@ -106,27 +127,29 @@ class SimklFeedQuery {
 
   /// One page of the list ([page] counts from 1; only the genre browse has more than one).
   Future<SimklPage> load(SimklDiscoverService service, {int page = 1}) async => switch (feed) {
-        SimklFeed.genres => service.byGenre(genre: genre, format: format, sort: sort, page: page),
+        SimklFeed.genres => service.byGenre(genre: genre, format: format, sort: sort, kind: kind, page: page),
         _ => SimklPage(await loadAll(service), hasMore: false),
       };
 
   /// The first page as a plain list.
   Future<List<SimklMedia>> loadAll(SimklDiscoverService service) async => switch (feed) {
-        SimklFeed.trending => service.trending(window: window),
+        SimklFeed.trending => service.trending(window: window, kind: kind),
         SimklFeed.airing => service.airingToday(
             date: _day(DateTime.now()).add(Duration(days: dayOffset, hours: 12)),
+            kind: kind,
             limit: 500,
           ),
-        SimklFeed.premieres => service.premieres(format: format),
-        SimklFeed.soon => service.comingSoon(format: format),
-        SimklFeed.best => service.best(filter: best, format: format),
-        SimklFeed.genres => (await service.byGenre(genre: genre, format: format, sort: sort)).items,
+        SimklFeed.premieres => service.premieres(format: format, kind: kind),
+        SimklFeed.soon => service.comingSoon(format: format, kind: kind),
+        SimklFeed.best => service.best(filter: best, format: format, kind: kind),
+        SimklFeed.genres => (await service.byGenre(genre: genre, format: format, sort: sort, kind: kind)).items,
       };
 
   @override
   bool operator ==(Object other) =>
       other is SimklFeedQuery &&
       other.feed == feed &&
+      other.kind == kind &&
       other.window == window &&
       other.best == best &&
       other.format == format &&
@@ -135,7 +158,7 @@ class SimklFeedQuery {
       other.dayOffset == dayOffset;
 
   @override
-  int get hashCode => Object.hash(feed, window, best, format, genre, sort, dayOffset);
+  int get hashCode => Object.hash(feed, kind, window, best, format, genre, sort, dayOffset);
 }
 
 DateTime _day(DateTime t) => DateTime(t.year, t.month, t.day);
@@ -230,15 +253,44 @@ abstract final class SimklFeedLabels {
         'vampire' => S.current.Scf_Genre_Vampire,
         'yaoi' => S.current.Scf_Genre_Yaoi,
         'yuri' => S.current.Scf_Genre_Yuri,
+        // Shows and movies.
+        'animation' => S.current.Skm_Genre_Animation,
+        'awards-show' => S.current.Skm_Genre_Awards_Show,
+        'children' => S.current.Skm_Genre_Children,
+        'crime' => S.current.Skm_Genre_Crime,
+        'documentary' => S.current.Skm_Genre_Documentary,
+        'erotica' => S.current.Skm_Genre_Erotica,
+        'family' => S.current.Skm_Genre_Family,
+        'food' => S.current.Skm_Genre_Food,
+        'game-show' => S.current.Skm_Genre_Game_Show,
+        'history' => S.current.Skm_Genre_History,
+        'home-and-garden' => S.current.Skm_Genre_Home_Garden,
+        'indie' => S.current.Skm_Genre_Indie,
+        'mini-series' => S.current.Skm_Genre_Mini_Series,
+        'musical' => S.current.Skm_Genre_Musical,
+        'news' => S.current.Skm_Genre_News,
+        'podcast' => S.current.Skm_Genre_Podcast,
+        'reality' => S.current.Skm_Genre_Reality,
+        'science-fiction' => S.current.Scf_Genre_Sci_Fi,
+        'soap' => S.current.Skm_Genre_Soap,
+        'sport' => S.current.Scf_Genre_Sports,
+        'suspense' => S.current.Skm_Genre_Suspense,
+        'talk-show' => S.current.Skm_Genre_Talk_Show,
+        'travel' => S.current.Skm_Genre_Travel,
+        'tv-movie' => S.current.Skm_Genre_Tv_Movie,
+        'video-game-play' => S.current.Skm_Genre_Video_Games,
+        'war' => S.current.Skm_Genre_War,
+        'western' => S.current.Skm_Genre_Western,
         _ => slug,
       };
 }
 
 /// "View all" of a home row: the whole default list of [feed] as a poster grid.
 class SimklFeedPage extends StatefulWidget {
-  const SimklFeedPage({super.key, required this.feed, this.service});
+  const SimklFeedPage({super.key, required this.feed, this.kind = SimklKind.anime, this.service});
 
   final SimklFeed feed;
+  final SimklKind kind;
 
   /// Test hook; defaults to the shared Simkl discover service.
   final SimklDiscoverService? service;
@@ -253,7 +305,7 @@ class _SimklFeedPageState extends State<SimklFeedPage> {
   SimklDiscoverService get _service => widget.service ?? SimklDiscoverService.instance;
 
   Future<void> _onRefresh() async {
-    HomeSectionCache.clearPrefix(widget.feed.cacheKey);
+    HomeSectionCache.clearPrefix(widget.feed.cacheKeyOf(widget.kind));
     _service.cdn.invalidate();
     setState(() => _refresh++);
   }
@@ -262,14 +314,14 @@ class _SimklFeedPageState extends State<SimklFeedPage> {
   Widget build(BuildContext context) {
     final s = S.of(context);
     return Scaffold(
-      appBar: AppBar(title: Text(widget.feed.title)),
+      appBar: AppBar(title: Text(widget.feed.titleOf(widget.kind))),
       body: RefreshIndicator(
         onRefresh: _onRefresh,
         child: HomeAsync<List<SimklMedia>>(
-          cacheKey: widget.feed.cacheKey,
+          cacheKey: widget.feed.cacheKeyOf(widget.kind),
           maxAge: const Duration(minutes: 30),
           refresh: _refresh,
-          load: () => widget.feed.load(_service),
+          load: () => widget.feed.load(_service, widget.kind),
           loading: const Align(
             alignment: Alignment.topCenter,
             child: Padding(padding: EdgeInsets.only(top: 16), child: SimklRowSkeleton()),
