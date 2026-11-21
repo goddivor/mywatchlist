@@ -232,6 +232,7 @@ Map<String, dynamic> parseMalPersonPage(String body) {
     'name': _name(document, null),
     'given_name': _labelled(content, 'Given name:'),
     'family_name': _labelled(content, 'Family name:'),
+    'birthday': malBirthday(_labelled(content, 'Birthday:')),
     'about': _cleanBlock(buffer.toString()),
     'favorites': _favoriteCount(content),
     'images': _images(_portrait(content)),
@@ -245,6 +246,19 @@ Map<String, dynamic> parseMalPersonPage(String body) {
         {'position': work.subtitle, 'manga': work.node},
     ],
   };
+}
+
+/// MAL's "Feb  27, 1994" (or "Feb 27" when the year is unknown, then year 2000) as Jikan's
+/// ISO date; null for "Unknown" or anything else.
+String? malBirthday(String? text) {
+  const months = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
+  final m = RegExp(r'^([A-Za-z]{3})[a-z]*\s+(\d{1,2})(?:,\s*(\d{4}))?').firstMatch((text ?? '').trim());
+  if (m == null) return null;
+  final month = months.indexOf(m[1]!.toLowerCase()) + 1;
+  final day = int.parse(m[2]!);
+  if (month == 0 || day < 1 || day > 31) return null;
+  final year = m[3] ?? '2000';
+  return '$year-${'$month'.padLeft(2, '0')}-${'$day'.padLeft(2, '0')}T00:00:00+00:00';
 }
 
 /// The value after a `span.dark_text` label of the person's side column.

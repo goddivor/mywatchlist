@@ -1,0 +1,8 @@
+{
+  "@@locale": "fr_FR",
+  "Vc_Open": "Mosaïque des personnages",
+  "Vc_Title": "Personnages",
+  "Vc_Count": "{count, plural, =1{1 personnage} other{{count} personnages}}",
+  "Vc_Fit": "Tout afficher",
+  "Vc_Center": "Revenir au doubleur"
+}
