@@ -1,0 +1,9 @@
+{
+  "@@locale": "en",
+  "Vc_Open": "Characters collage",
+  "Vc_Title": "Characters",
+  "Vc_Count": "{count, plural, =1{1 character} other{{count} characters}}",
+  "@Vc_Count": { "placeholders": { "count": { "type": "int" } } },
+  "Vc_Fit": "Show everything",
+  "Vc_Center": "Back to the voice actor"
+}
