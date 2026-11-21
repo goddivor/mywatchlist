@@ -48,9 +48,9 @@ These screens come from a **MyAnimeList** account. AniList, Kitsu, and Simkl hav
 | :---: | :---: | :---: |
 | <img src="docs/screenshots/schedule.jpg" alt="Airing schedule" width="250"/> | <img src="docs/screenshots/messages.jpg" alt="A conversation in the messages" width="250"/> | <img src="docs/screenshots/clubs.jpg" alt="Clubs list" width="250"/> |
 
-| Club details |
-| :---: |
-| <img src="docs/screenshots/club-detail.jpg" alt="Club details page" width="250"/> |
+| Club details | Studios | Studio details |
+| :---: | :---: | :---: |
+| <img src="docs/screenshots/club-detail.jpg" alt="Club details page" width="250"/> | <img src="docs/screenshots/studios.jpg" alt="Studios list" width="250"/> | <img src="docs/screenshots/studio-detail.jpg" alt="Studio details page of MAPPA" width="250"/> |
 
 **Relation graph**, as the app saves it to the gallery
 
