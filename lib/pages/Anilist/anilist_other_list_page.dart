@@ -253,8 +253,8 @@ class _AnilistOtherListPageState extends State<AnilistOtherListPage> {
               children: [
                 SegmentedButton<String>(
                   segments: [
-                    ButtonSegment(value: 'anime', label: Text(s.UserList_Anime)),
-                    ButtonSegment(value: 'manga', label: Text(s.UserList_Manga)),
+                    ButtonSegment(value: 'anime', label: Text(s.UserList_Anime, maxLines: 1, softWrap: false)),
+                    ButtonSegment(value: 'manga', label: Text(s.UserList_Manga, maxLines: 1, softWrap: false)),
                   ],
                   selected: {_category},
                   showSelectedIcon: false,

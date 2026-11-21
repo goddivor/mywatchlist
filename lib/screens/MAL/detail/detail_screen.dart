@@ -14,7 +14,6 @@ import 'package:mywatchlist/screens/MAL/detail/detail_fab.dart';
 import 'package:mywatchlist/screens/MAL/detail/detail_sections.dart';
 import 'package:mywatchlist/screens/MAL/detail/header/detail_header.dart';
 import 'package:mywatchlist/screens/MAL/detail/header/detail_title.dart';
-import 'package:mywatchlist/screens/MAL/detail/header/header_background.dart' show contentPref;
 import 'package:mywatchlist/screens/MAL/detail/header/next_episode.dart';
 import 'package:mywatchlist/screens/MAL/detail/section_frame.dart';
 import 'package:mywatchlist/screens/MAL/detail/sections/featured_section.dart' show FeaturedArticles;
@@ -384,13 +383,11 @@ class _ContentDetailedScreenState extends State<ContentDetailedScreen>
 
   SliverAppBar _appBar(BuildContext context) {
     final theme = Theme.of(context);
-    final countdown = contentPref(context, (c) => c.showCountdownOnDetail);
     return SliverAppBar(
       pinned: true,
       expandedHeight: DetailHeader.extentFor(
         _data,
         topInset: MediaQuery.paddingOf(context).top,
-        countdown: countdown,
       ),
       toolbarHeight: DetailHeader.toolbarHeight,
       title: ValueListenableBuilder<bool>(

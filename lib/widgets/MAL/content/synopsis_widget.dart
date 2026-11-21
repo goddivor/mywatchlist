@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mywatchlist/constants/constants.dart';
 import 'package:mywatchlist/generated/l10n.dart';
+import 'package:mywatchlist/screens/MAL/detail/header/next_episode.dart';
+import 'package:mywatchlist/screens/MAL/detail/sections/next_episode_card.dart';
 import 'package:mywatchlist/services/api/MAL/mal_anime.dart';
 import 'package:mywatchlist/user/preferences/preferences.dart';
 import 'package:mywatchlist/widgets/common/translator.dart';
@@ -22,6 +24,10 @@ class SysonpsisWidget extends StatefulWidget {
   final int characterLimit;
   final bool expanded;
 
+  /// The next episode of an airing anime: DailyAL's countdown above the genres (when the
+  /// "countdown on the detail page" setting is on).
+  final NextEpisode? nextEpisode;
+
   const SysonpsisWidget({
     super.key,
     this.synopsis,
@@ -31,6 +37,7 @@ class SysonpsisWidget extends StatefulWidget {
     this.expanded = false,
     this.characterLimit = 300,
     this.horizPadding = 15.0,
+    this.nextEpisode,
   });
 
   @override
@@ -118,12 +125,20 @@ class _SysonpsisWidgetState extends State<SysonpsisWidget>
     final synopsis = widget.synopsis!.trim();
     final autoTranslate = context.select<PreferencesBloc?, bool>((bloc) =>
         (bloc?.state ?? Preferences.current).general.autoTranslateSynopsis);
+    final showCountdown = context.select<PreferencesBloc?, bool>((bloc) =>
+        (bloc?.state ?? Preferences.current).content.showCountdownOnDetail);
+    final next = widget.nextEpisode;
     return Padding(
       padding: const EdgeInsets.fromLTRB(5, 5, 5, 10),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
+          if (next != null && showCountdown)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 15),
+              child: NextEpisodeCard(episode: next),
+            ),
           Center(
             child: genresWidget(widget.genres ?? [], widget.category, context),
           ),
