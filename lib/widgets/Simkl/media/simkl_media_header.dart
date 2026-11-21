@@ -77,7 +77,7 @@ class SimklHeroButton extends StatelessWidget {
   }
 }
 
-/// Poster (overlapping the hero's bottom when there is one), the title, the other form of the
+/// Poster (under the hero when there is one), the title, the other form of the
 /// title and Simkl's meta line: years · network · total time · episodes · format · age rating.
 class SimklTitleBlock extends StatelessWidget {
   static const double posterWidth = 108;
@@ -104,27 +104,25 @@ class SimklTitleBlock extends StatelessWidget {
     final name = t?.title ?? fallbackTitle;
     final other = t?.enTitle != null && t!.enTitle != name ? t.enTitle : null;
     final meta = t == null ? '' : metaLine(t);
-    final shift = overlap ? 48.0 : 0.0;
+    // The poster sits under the backdrop, whole: pulled up over it, its top went behind the
+    // pinned app bar (painted above the page) and the cover looked cut.
     return Padding(
-      padding: EdgeInsets.fromLTRB(simklPagePadding, overlap ? 0 : 8, simklPagePadding, 0),
+      padding: const EdgeInsets.fromLTRB(simklPagePadding, 12, simklPagePadding, 0),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Transform.translate(
-            offset: Offset(0, -shift),
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: theme.scaffoldBackgroundColor, width: 2),
-              ),
-              child: AppImage(
-                url: t?.posterUrl ?? fallbackPoster,
-                width: posterWidth,
-                height: posterHeight,
-                borderRadius: BorderRadius.circular(10),
-                placeholderColor: scheme.surfaceContainerHighest,
-                semanticLabel: name,
-              ),
+          DecoratedBox(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: theme.scaffoldBackgroundColor, width: 2),
+            ),
+            child: AppImage(
+              url: t?.posterUrl ?? fallbackPoster,
+              width: posterWidth,
+              height: posterHeight,
+              borderRadius: BorderRadius.circular(10),
+              placeholderColor: scheme.surfaceContainerHighest,
+              semanticLabel: name,
             ),
           ),
           const SizedBox(width: 14),
@@ -221,9 +219,11 @@ class SimklRatingStrip extends StatelessWidget {
       if (t.simklRating case final r?) _RatingChip(source: 'Simkl', rating: r, star: colors.score.color),
       if (t.malRating case final r?) _RatingChip(source: 'MAL', rating: r),
       if (t.imdbRating case final r?) _RatingChip(source: S.current.Smp_Imdb, rating: r),
-      if (t.rank != null) _PlainChip(value: S.current.Smp_Rank(SimklFormat.count(t.rank!)), icon: Icons.leaderboard_outlined),
+      if (t.rank != null)
+        _PlainChip(value: S.current.Smp_Rank(SimklFormat.count(t.rank!)), icon: Icons.leaderboard_outlined),
       if (t.dropRate != null)
-        _PlainChip(label: S.current.Smp_Drop_Rate, value: SimklFormat.percent(t.dropRate!), icon: Icons.trending_down_rounded),
+        _PlainChip(
+            label: S.current.Smp_Drop_Rate, value: SimklFormat.percent(t.dropRate!), icon: Icons.trending_down_rounded),
     ];
     if (chips.isEmpty) return const SizedBox.shrink();
     return Padding(
@@ -298,8 +298,7 @@ class _PlainChip extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (label != null)
-            Text(label!, style: theme.textTheme.labelSmall?.copyWith(color: scheme.onSurfaceVariant)),
+          if (label != null) Text(label!, style: theme.textTheme.labelSmall?.copyWith(color: scheme.onSurfaceVariant)),
           Row(mainAxisSize: MainAxisSize.min, children: [
             Icon(icon, size: 16, color: scheme.primary),
             const SizedBox(width: 4),
