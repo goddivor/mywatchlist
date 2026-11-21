@@ -4,7 +4,6 @@ import 'package:flutter/services.dart';
 import 'package:mywatchlist/constants/constants.dart' show TitleLang;
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/screens/MAL/detail/detail_data.dart';
-import 'package:mywatchlist/screens/MAL/detail/header/countdown_chip.dart';
 import 'package:mywatchlist/screens/MAL/detail/header/cover_card.dart';
 import 'package:mywatchlist/screens/MAL/detail/header/header_background.dart';
 import 'package:mywatchlist/screens/MAL/detail/header/header_meta.dart';
@@ -19,7 +18,6 @@ class DetailHeader extends StatelessWidget {
   static const double tabBarHeight = 48.0;
   static const double _titleHeight = 62.0;
   static const double _gap = 10.0;
-  static const double _countdownHeight = 38.0;
 
   final DetailData data;
   final String title;
@@ -36,29 +34,20 @@ class DetailHeader extends StatelessWidget {
     this.onMoreInfo,
   });
 
-  /// Whether the header reserves the countdown row: an anime MAL says is
-  /// airing, with the countdown preference on.
-  static bool reservesCountdown(DetailData data, {required bool enabled}) =>
-      enabled && data.isAnime && data.content?.status == 'currently_airing';
-
   /// Total height of the app bar when expanded (status bar, toolbar, header
-  /// content, tab bar).
-  static double extentFor(DetailData data, {required double topInset, required bool countdown}) =>
+  /// content, tab bar). The next-episode countdown sits in the synopsis, not here.
+  static double extentFor(DetailData data, {required double topInset}) =>
       topInset +
       toolbarHeight +
       _titleHeight +
       _gap +
       DetailCoverCard.height +
       _gap +
-      (reservesCountdown(data, enabled: countdown) ? _countdownHeight : 0) +
       tabBarHeight;
 
   @override
   Widget build(BuildContext context) {
     final topInset = MediaQuery.paddingOf(context).top;
-    final countdownOn = contentPref(context, (c) => c.showCountdownOnDetail);
-    final reserve = reservesCountdown(data, enabled: countdownOn);
-    final next = data.nextEpisode;
     final content = Padding(
       padding: EdgeInsets.only(top: topInset + toolbarHeight, bottom: tabBarHeight),
       child: Column(
@@ -93,14 +82,6 @@ class DetailHeader extends StatelessWidget {
               ),
             ),
           ),
-          if (reserve)
-            SizedBox(
-              height: _countdownHeight + _gap,
-              child: Align(
-                alignment: Alignment.bottomCenter,
-                child: next == null ? null : CountdownChip(episode: next),
-              ),
-            ),
         ],
       ),
     );

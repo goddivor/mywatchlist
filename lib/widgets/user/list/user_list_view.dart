@@ -379,12 +379,19 @@ class _UserListViewState extends State<UserListView> with SingleTickerProviderSt
 
   Widget _categorySwitch() {
     if (widget.categories.length < 2) return const SizedBox.shrink();
-    return SegmentedButton<String>(
+    // One line at any font size: "Manga" never breaks into "Mang / a" in the header.
+    return MediaQuery.withClampedTextScaling(
+      maxScaleFactor: 1.15,
+      child: SegmentedButton<String>(
       segments: [
         for (final c in widget.categories)
           ButtonSegment(
             value: c,
-            label: Text(c == 'anime' ? S.current.UserList_Anime : S.current.UserList_Manga),
+            label: Text(
+              c == 'anime' ? S.current.UserList_Anime : S.current.UserList_Manga,
+              maxLines: 1,
+              softWrap: false,
+            ),
           ),
       ],
       selected: {_category},
@@ -394,6 +401,7 @@ class _UserListViewState extends State<UserListView> with SingleTickerProviderSt
         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
       ),
       onSelectionChanged: (s) => _changeCategory(s.first),
+      ),
     );
   }
 
