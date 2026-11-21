@@ -49,8 +49,8 @@ void main() {
   testWidgets('random buttons are raised surface buttons with coloured icons', (tester) async {
     await pumpInApp(tester, const SizedBox(width: 600, child: RandomPickerRow(isAnime: true)));
     expect(find.byType(FilledButton), findsNothing);
-    expect(find.byType(ShadowButton), findsNWidgets(3));
-    for (final label in [S.current.Random, S.current.Watching, S.current.Plan_To_Watch]) {
+    expect(find.byType(ShadowButton), findsNWidgets(4));
+    for (final label in [S.current.Random, S.current.Watching, S.current.Plan_To_Watch, S.current.Dropped]) {
       expect(find.text(label), findsOneWidget);
     }
     final colours = tester
@@ -58,8 +58,8 @@ void main() {
             of: find.byType(RandomPickerRow), matching: find.byType(Icon)))
         .map((i) => i.color)
         .toSet();
-    // Three different hues, none left to the button's own foreground.
-    expect(colours.length, 3);
+    // Four different hues, none left to the button's own foreground.
+    expect(colours.length, 4);
     expect(colours, isNot(contains(null)));
   });
 
