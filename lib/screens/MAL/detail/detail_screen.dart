@@ -385,10 +385,7 @@ class _ContentDetailedScreenState extends State<ContentDetailedScreen>
     final theme = Theme.of(context);
     return SliverAppBar(
       pinned: true,
-      expandedHeight: DetailHeader.extentFor(
-        _data,
-        topInset: MediaQuery.paddingOf(context).top,
-      ),
+      expandedHeight: DetailHeader.extentFor(_data),
       toolbarHeight: DetailHeader.toolbarHeight,
       title: ValueListenableBuilder<bool>(
         valueListenable: _scrollingUp,

@@ -97,7 +97,7 @@ void main() {
     test('the header keeps one height: the countdown lives in the synopsis', () {
       final airing = _data(content: _content(status: 'currently_airing'));
       final done = _data(content: _content(status: 'finished_airing'));
-      expect(DetailHeader.extentFor(airing, topInset: 24), DetailHeader.extentFor(done, topInset: 24));
+      expect(DetailHeader.extentFor(airing), DetailHeader.extentFor(done));
     });
 
     test('season names are translated', () {
