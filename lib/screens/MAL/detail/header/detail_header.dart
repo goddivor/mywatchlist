@@ -34,10 +34,11 @@ class DetailHeader extends StatelessWidget {
     this.onMoreInfo,
   });
 
-  /// Total height of the app bar when expanded (status bar, toolbar, header
-  /// content, tab bar). The next-episode countdown sits in the synopsis, not here.
-  static double extentFor(DetailData data, {required double topInset}) =>
-      topInset +
+  /// Height of the app bar when expanded, without the status bar: `SliverAppBar` adds the top
+  /// padding to `expandedHeight` itself (counted twice, it left a status bar of empty space
+  /// under the cover). Toolbar, header content and tab bar; the next-episode countdown sits
+  /// in the synopsis.
+  static double extentFor(DetailData data) =>
       toolbarHeight +
       _titleHeight +
       _gap +
