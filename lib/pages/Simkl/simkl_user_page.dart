@@ -8,9 +8,9 @@ import 'package:mywatchlist/widgets/Simkl/simkl_states.dart';
 import 'package:mywatchlist/widgets/Simkl/simkl_user_list_adapter.dart';
 import 'package:mywatchlist/widgets/user/list/user_list_view.dart';
 
-/// "My list" tab for Simkl: the signed-in user's anime list (status tabs with counts, search,
-/// sort and filter, list and grid cards, quick +1 / -1, edit sheet). Simkl has no manga, so the
-/// anime / manga switch is not shown.
+/// "My list" tab for Simkl: the signed-in user's TV shows, anime and movies, switched like
+/// Simkl's own apps (status tabs with counts, search, sort and filter, list and grid cards,
+/// quick +1 / -1, edit sheet). Simkl has no manga.
 class SimklUserPage extends StatefulWidget {
   const SimklUserPage({super.key});
 
@@ -23,11 +23,17 @@ class _SimklUserPageState extends State<SimklUserPage> {
   final SimklUserListAdapter _adapter =
       SimklUserListAdapter(schedule: () => SimklDiscoverService.instance.calendar());
 
-  /// Simkl has a single category, so the list gets no switch (`categories`) and the bar
-  /// names the list instead.
+  static const List<String> categories = ['tv', 'anime', 'movie'];
+
+  static String label(String category) => switch (category) {
+        'tv' => S.current.Skm_Shows,
+        'movie' => S.current.Skm_Movies,
+        _ => S.current.UserList_Anime,
+      };
+
   Widget _title(BuildContext context, Widget categorySwitch) {
     return AppBarHome(
-      titleWidget: Text(S.current.UserList_Anime, style: Theme.of(context).textTheme.titleLarge),
+      titleWidget: categorySwitch,
       showAvatar: true,
       showSearch: true,
       showBookmarks: false,
@@ -46,7 +52,8 @@ class _SimklUserPageState extends State<SimklUserPage> {
             ? UserListView(
                 adapter: _adapter,
                 titleBuilder: _title,
-                categories: const ['anime'],
+                categories: categories,
+                categoryLabel: label,
               )
             : Column(
                 children: [

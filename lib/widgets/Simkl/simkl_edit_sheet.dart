@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/services/api/SimKl/simkl_client.dart';
+import 'package:mywatchlist/services/api/SimKl/simkl_kind.dart';
 import 'package:mywatchlist/services/api/SimKl/simkl_list_service.dart';
 import 'package:mywatchlist/widgets/user/list/list_entry_view.dart';
 import 'package:mywatchlist/widgets/user/list/user_list_adapter.dart';
 
 /// Opens the Simkl edit sheet of [entry] (status, episodes watched, score, remove) and reports
-/// what was saved. An entry without a status is created on Save.
+/// what was saved. An entry without a status is created on Save. The entry's category picks the
+/// list (shows, anime or movies); a movie has no episodes and only Plan to watch, Completed and
+/// Dropped.
 Future<ListEditResult> showSimklEditSheet(
   BuildContext context,
   ListEntryView entry, {
@@ -17,7 +20,10 @@ Future<ListEditResult> showSimklEditSheet(
     isScrollControlled: true,
     useSafeArea: true,
     showDragHandle: true,
-    builder: (_) => SimklEditSheet(entry: entry, service: service ?? SimklListService.instance),
+    builder: (_) => SimklEditSheet(
+      entry: entry,
+      service: service ?? SimklListService.of(SimklKind.ofCategory(entry.category)),
+    ),
   );
   return result ?? const ListEditUnchanged();
 }
@@ -33,6 +39,7 @@ class SimklEditSheet extends StatefulWidget {
 }
 
 class _SimklEditSheetState extends State<SimklEditSheet> {
+  late final bool _movie = widget.entry.category == 'movie';
   late ListEntryStatus _status = widget.entry.status ?? ListEntryStatus.planned;
   late int _progress = widget.entry.progress;
   late double _score = widget.entry.score.toDouble();
@@ -115,6 +122,7 @@ class _SimklEditSheetState extends State<SimklEditSheet> {
             runSpacing: 4,
             children: [
               for (final status in ListEntryStatus.values)
+                if (!_movie || simklMovieStatuses.contains(status))
                 ChoiceChip(
                   avatar: Icon(status.icon, size: 18),
                   label: Text(status.label(isAnime: true)),
@@ -123,6 +131,7 @@ class _SimklEditSheetState extends State<SimklEditSheet> {
                 ),
             ],
           ),
+          if (!_movie) ...[
           const SizedBox(height: 16),
           Text(s.Sk_Edit_Progress, style: theme.textTheme.labelLarge),
           const SizedBox(height: 4),
@@ -147,6 +156,7 @@ class _SimklEditSheetState extends State<SimklEditSheet> {
               ),
             ],
           ),
+          ],
           const SizedBox(height: 8),
           Row(
             children: [

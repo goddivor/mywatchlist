@@ -1,0 +1,11 @@
+{
+  "@@locale": "en",
+  "Skm_Shows": "TV shows",
+  "Skm_Movies": "Movies",
+  "Skm_Show": "TV show",
+  "Skm_Movie": "Movie",
+  "Skm_Released": "Released",
+  "Skm_Budget": "Budget",
+  "Skm_Box_Office": "Box office",
+  "Skm_Mark_Movie_Watched": "Mark as watched"
+}

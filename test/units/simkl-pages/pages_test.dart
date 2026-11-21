@@ -138,7 +138,8 @@ void main() {
   testWidgets('list and profile ask to sign in when Simkl is not connected', (tester) async {
     await pump(tester, const SimklUserPage());
     expect(find.text('Sign in with Simkl'), findsOneWidget);
-    expect(find.text('Anime'), findsOneWidget, reason: 'no anime / manga switch');
+    // Signed out: no list, so no TV shows / Anime / Movies switch either.
+    expect(find.text('Anime'), findsNothing);
     expect(find.text('Manga'), findsNothing);
 
     await pump(tester, const SimklUserProfilePage(isSelf: true));

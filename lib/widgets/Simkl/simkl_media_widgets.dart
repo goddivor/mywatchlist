@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/services/api/SimKl/simkl_discover_service.dart';
+import 'package:mywatchlist/services/api/SimKl/simkl_kind.dart';
 import 'package:mywatchlist/services/api/SimKl/simkl_models.dart';
 import 'package:mywatchlist/pages/Simkl/simkl_media_page.dart';
 import 'package:mywatchlist/widgets/common/app_image.dart';
@@ -26,12 +27,13 @@ Future<void> openSimklMedia(
 Future<void> openSimklTitle(
   BuildContext context, {
   required int simklId,
+  SimklKind kind = SimklKind.anime,
   String? slug,
   String? title,
   String? posterUrl,
 }) =>
     Navigator.of(context).push(MaterialPageRoute<void>(
-      builder: (_) => SimklMediaPage(simklId: simklId, slug: slug, title: title, posterUrl: posterUrl),
+      builder: (_) => SimklMediaPage(simklId: simklId, kind: kind, slug: slug, title: title, posterUrl: posterUrl),
     ));
 
 /// A poster card of the discover rows and grids: cover, a two-line title, and the rating or the

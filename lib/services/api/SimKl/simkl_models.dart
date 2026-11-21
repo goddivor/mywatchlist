@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:mywatchlist/services/api/SimKl/simkl_kind.dart';
 import 'package:mywatchlist/services/api/SimKl/simkl_title_language.dart';
 import 'package:mywatchlist/widgets/user/list/list_entry_view.dart';
 
@@ -227,36 +228,42 @@ class SimklMedia {
 }
 
 /// Parses `GET /sync/all-items/anime` into list entries (top level so `compute` can run it).
-List<ListEntryView> parseSimklAnimeList(Object? data) {
-  final list = data is Map ? data['anime'] : null;
+List<ListEntryView> parseSimklAnimeList(Object? data) => parseSimklList(data, SimklKind.anime);
+
+/// The items of [kind] of a `/sync/all-items` answer (`shows`, `anime` or `movies`).
+List<ListEntryView> parseSimklList(Object? data, SimklKind kind) {
+  final list = data is Map ? data[kind.syncKey] : null;
   if (list is! List) return const [];
   final entries = <ListEntryView>[];
   for (final raw in list) {
-    final entry = simklEntryFromJson(raw);
+    final entry = simklEntryFromJson(raw, kind);
     if (entry != null) entries.add(entry);
   }
   return entries;
 }
 
-/// One `anime` item of the user's list; null when it has no Simkl id or title.
-ListEntryView? simklEntryFromJson(Object? raw) {
+/// One item of the user's list (`show` inside for shows and anime, `movie` for movies); null
+/// when it has no Simkl id or title. A movie counts as one episode, watched once completed.
+ListEntryView? simklEntryFromJson(Object? raw, [SimklKind kind = SimklKind.anime]) {
   if (raw is! Map) return null;
-  final show = raw['show'];
+  final show = raw[kind.itemKey] ?? raw['show'];
   if (show is! Map) return null;
   final ids = show['ids'] is Map ? show['ids'] as Map : const {};
   final id = _int(ids['simkl'] ?? ids['simkl_id']);
   final title = _text(show['title']);
   if (id == null || title == null) return null;
-  final total = _int(raw['total_episodes_count']) ?? 0;
+  final movie = kind == SimklKind.movie;
+  final status = SimklStatus.parse(raw['status']);
+  final total = movie ? 1 : _int(raw['total_episodes_count']) ?? 0;
   final notAired = _int(raw['not_aired_episodes_count']) ?? 0;
   final genres = show['genres'];
   final poster = SimklImages.poster(show['poster']);
-  final type = _text(raw['anime_type']) ?? _text(show['anime_type']);
+  final type = _text(raw['anime_type']) ?? _text(show['anime_type']) ?? (movie ? 'movie' : null);
   final year = _int(show['year']);
   return ListEntryView(
     id: id,
     malId: _int(ids['mal']),
-    category: 'anime',
+    category: kind.category,
     title: title,
     imageUrl: poster,
     largeImageUrl: poster,
@@ -270,9 +277,9 @@ ListEntryView? simklEntryFromJson(Object? raw) {
     total: total,
     genres: genres is List ? [for (final g in genres) if (g is String && g.isNotEmpty) g] : const [],
     releaseStart: year?.toString(),
-    status: SimklStatus.parse(raw['status']),
+    status: status,
     score: (_int(raw['user_rating']) ?? 0).clamp(0, 10),
-    progress: _int(raw['watched_episodes_count']) ?? 0,
+    progress: movie ? (status == ListEntryStatus.completed ? 1 : 0) : _int(raw['watched_episodes_count']) ?? 0,
     updatedAt: DateTime.tryParse(_text(raw['last_watched_at']) ?? _text(raw['user_rated_at']) ?? '')?.toUtc(),
   );
 }

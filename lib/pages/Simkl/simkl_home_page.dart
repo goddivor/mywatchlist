@@ -53,7 +53,7 @@ class _SimklHomePageState extends State<SimklHomePage> {
 
   Future<void> _onRefresh() async {
     HomeSectionCache.clear();
-    SimklListService.instance.invalidate();
+    SimklListService.forEach((s) => s.invalidate());
     SimklDiscoverService.instance.cdn.invalidate();
     setState(() => _refresh++);
     await Future<void>.delayed(const Duration(milliseconds: 600));
