@@ -1,0 +1,11 @@
+{
+  "@@locale": "fr_FR",
+  "Kta_Tab_Feed": "Fil",
+  "Kta_Tab_Quick_Update": "Suivi",
+  "Kta_Tab_Library": "Bibliothèque",
+  "Kta_Settings_Title": "Paramètres Kitsu",
+  "Kta_Settings_Account": "Compte Kitsu · changer ou gérer",
+  "Kta_Settings_On_Kitsu": "Compte sur kitsu.app",
+  "Kta_Settings_On_Kitsu_Desc": "Profil, bibliothèque, notifications et confidentialité",
+  "Kta_Quick_Update_Title": "Mise à jour rapide"
+}

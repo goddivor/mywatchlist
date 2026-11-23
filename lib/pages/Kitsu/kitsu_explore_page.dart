@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mywatchlist/apps/kitsu/kitsu_top_bar.dart';
 import 'package:mywatchlist/constants/constants.dart' show AccountType, HomePageTileSize, getTileSizeValues;
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/pages/Kitsu/kitsu_browse_screen.dart';
@@ -19,7 +20,10 @@ import 'package:mywatchlist/widgets/home/home_sections.dart';
 /// "Want to watch" when signed in), then trending this week, airing now, upcoming, highest
 /// rated, most popular and the biggest categories. Each row has its own "View all" grid.
 class KitsuExplorePage extends StatefulWidget {
-  const KitsuExplorePage({super.key});
+  const KitsuExplorePage({super.key, this.embedded = false});
+
+  /// The Kitsu app's "Search" tab: its title with the Kitsu bar buttons.
+  final bool embedded;
 
   @override
   State<KitsuExplorePage> createState() => _KitsuExplorePageState();
@@ -101,7 +105,9 @@ class _KitsuExplorePageState extends State<KitsuExplorePage> {
               titleSpacing: 0,
               toolbarHeight: kToolbarHeight,
               backgroundColor: Colors.transparent,
-              title: AppBarHome(title: s.Explore_Title, transparent: true, showSettings: true),
+              title: widget.embedded
+                  ? KitsuTitleRow(title: s.Search)
+                  : AppBarHome(title: s.Explore_Title, transparent: true, showSettings: true),
             ),
             SliverToBoxAdapter(
               child: _SearchTile(

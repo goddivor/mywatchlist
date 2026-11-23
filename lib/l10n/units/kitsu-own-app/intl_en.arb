@@ -1,0 +1,11 @@
+{
+  "@@locale": "en",
+  "Kta_Tab_Feed": "Feed",
+  "Kta_Tab_Quick_Update": "Update",
+  "Kta_Tab_Library": "Library",
+  "Kta_Settings_Title": "Kitsu settings",
+  "Kta_Settings_Account": "Kitsu account · switch or manage",
+  "Kta_Settings_On_Kitsu": "Account on kitsu.app",
+  "Kta_Settings_On_Kitsu_Desc": "Profile, library, notifications and privacy",
+  "Kta_Quick_Update_Title": "Quick update"
+}
