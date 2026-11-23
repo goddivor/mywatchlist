@@ -18,7 +18,10 @@ import 'package:mywatchlist/widgets/home/home_sections.dart' show HomeSectionCac
 /// follows did and today's birthdays. Every AniList row of the page comes in one request
 /// ([AnilistFeedsService.home]); News and features are MyAnimeList's and are skipped.
 class AnilistHomePage extends StatefulWidget {
-  const AnilistHomePage({super.key, this.service});
+  const AnilistHomePage({super.key, this.service, this.embedded = false});
+
+  /// Inside the AniList app's home tab, which has its own app bar: the shortcut chips stay.
+  final bool embedded;
 
   /// Replaced in tests.
   final AnilistFeedsService? service;
@@ -72,9 +75,14 @@ class _AnilistHomePageState extends State<AnilistHomePage> {
       backgroundColor: Colors.transparent,
       body: RefreshIndicator(
         onRefresh: _onRefresh,
-        edgeOffset: kToolbarHeight + 60,
+        edgeOffset: widget.embedded ? 0 : kToolbarHeight + 60,
         child: CustomScrollView(
           slivers: [
+            if (widget.embedded)
+              const SliverToBoxAdapter(
+                child: Padding(padding: EdgeInsets.only(bottom: 10, top: 7), child: AnilistChipsBar()),
+              )
+            else
             SliverAppBar(
               automaticallyImplyLeading: false,
               // Empty list does not suppress the automatic endDrawer button; a placeholder does.

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:mywatchlist/widgets/common/app_colors.dart';
+import 'package:flutter/services.dart' show SystemUiOverlayStyle;
 import 'package:mywatchlist/constants/constants.dart' show AccountType;
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/pages/Anilist/anilist_settings_page.dart';
@@ -32,12 +34,16 @@ class AnilistProfileView extends StatefulWidget {
   final AnilistProfileService? service;
   final AnilistFollowService? follow;
 
+  /// Buttons shown before the menu of the header (the AniList app's bar buttons).
+  final List<Widget> barActions;
+
   const AnilistProfileView({
     super.key,
     this.username,
     this.showBack = false,
     this.service,
     this.follow,
+    this.barActions = const [],
   });
 
   @override
@@ -134,6 +140,7 @@ class _AnilistProfileViewState extends State<AnilistProfileView> {
       showBack: widget.showBack,
       service: widget.service,
       follow: widget.follow,
+      barActions: widget.barActions,
     );
   }
 }
@@ -144,12 +151,14 @@ class _Body extends StatefulWidget {
   final bool showBack;
   final AnilistProfileService? service;
   final AnilistFollowService? follow;
+  final List<Widget> barActions;
 
   const _Body({
     super.key,
     required this.profile,
     required this.isSelf,
     required this.showBack,
+    this.barActions = const [],
     this.service,
     this.follow,
   });
@@ -217,9 +226,13 @@ class _BodyState extends State<_Body> with SingleTickerProviderStateMixin {
             forceElevated: innerBoxIsScrolled,
             expandedHeight: kToolbarHeight + AnilistProfileBanner.bandHeight + _tabBarHeight,
             backgroundColor: cs.surface,
-            foregroundColor: cs.onSurface,
+            // Over the banner (it reaches the top of the screen), the buttons and the status bar
+            // are light.
+            foregroundColor: profile.bannerUrl != null ? AppColors.of(context).onImageScrim : cs.onSurface,
+            systemOverlayStyle: profile.bannerUrl != null ? SystemUiOverlayStyle.light : null,
             title: _CollapsedTitle(profile.data.username),
             actions: [
+              ...widget.barActions,
               AppBarMenu(
                 onShare: _share,
                 onOpenInBrowser: () => openLink(context, profile.url),

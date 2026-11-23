@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mywatchlist/apps/anilist/anilist_top_bar.dart';
 import 'package:mywatchlist/constants/constants.dart' show AccountType;
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/user/accounts/provider/account_manager_singleton.dart';
@@ -17,7 +18,10 @@ import 'package:mywatchlist/widgets/MAL/home/homeappbar.dart';
 /// rows (score in the account's format, label rail, community %), edited with the AniList
 /// editor.
 class AnilistUserPage extends StatefulWidget {
-  const AnilistUserPage({super.key});
+  const AnilistUserPage({super.key, this.embedded = false});
+
+  /// The AniList app's "List" tab: the Anime / Manga switch with the AniList app bar buttons.
+  final bool embedded;
 
   @override
   State<AnilistUserPage> createState() => _AnilistUserPageState();
@@ -30,7 +34,17 @@ class _AnilistUserPageState extends State<AnilistUserPage> {
       AccountManagerSingleton().selectedAcc == AccountType.anilist &&
       UserAnilistV2.instance.status == AuthStatus.AUTHENTICATED;
 
-  Widget _title(BuildContext context, Widget categorySwitch) => AppBarHome(
+  Widget _title(BuildContext context, Widget categorySwitch) => widget.embedded
+      ? Row(
+          children: [
+            const SizedBox(width: 12),
+            // The list has its own search row: the bar keeps the bell, settings and avatar.
+            categorySwitch,
+            const Spacer(),
+            const AnilistBarActions(showSearch: false),
+          ],
+        )
+      : AppBarHome(
         titleWidget: categorySwitch,
         showAvatar: true,
         showSearch: true,

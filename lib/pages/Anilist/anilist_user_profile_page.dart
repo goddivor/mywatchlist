@@ -12,7 +12,10 @@ class AnilistUserProfilePage extends StatelessWidget {
   final bool isSelf;
   final String? username;
 
-  const AnilistUserProfilePage({super.key, required this.isSelf, this.username});
+  const AnilistUserProfilePage({super.key, required this.isSelf, this.username, this.barActions = const []});
+
+  /// The AniList app's bar buttons, in the profile header (it has no other app bar).
+  final List<Widget> barActions;
 
   @override
   Widget build(BuildContext context) {
@@ -36,7 +39,7 @@ class AnilistUserProfilePage extends StatelessWidget {
           );
         }
         // Rebuilt from scratch when the signed-in account changes.
-        return AnilistProfileView(key: ValueKey(user.username));
+        return AnilistProfileView(key: ValueKey(user.username), barActions: barActions);
       },
     );
   }

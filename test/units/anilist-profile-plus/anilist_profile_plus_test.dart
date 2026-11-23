@@ -170,7 +170,10 @@ void main() {
         'donatorBadge': 'Supporter',
         'donatorTier': 3,
         'moderatorRoles': ['ADMIN', ''],
-        'previousNames': ['older'],
+        'previousNames': [
+          {'name': 'older'},
+          {'name': ' '},
+        ],
         'isFollowing': true,
         'isFollower': true,
         'statistics': {
@@ -272,6 +275,19 @@ void main() {
   });
 
   group('services over a fake client', () {
+    test('the profile query selects what AniList requires', () async {
+      String? sent;
+      final client = _client((q, v) {
+        sent = q;
+        return {'Viewer': {'id': 1, 'name': 'me'}};
+      });
+      await AnilistProfileService(client: client, signedIn: true).load(force: true);
+      // AniList rejects the whole query (every profile failed) on a bare previousNames or a
+      // MEAN_DESC sort of the score statistics.
+      expect(sent, contains('previousNames { name }'));
+      expect(sent, isNot(contains('MEAN_DESC')));
+    });
+
     test('follow service reads counts, cuts mutuals and sends a message once', () async {
       final writes = <Map<String, dynamic>>[];
       final client = _client((q, v) {
