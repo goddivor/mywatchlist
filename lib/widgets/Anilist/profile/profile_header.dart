@@ -22,21 +22,73 @@ class AnilistProfileBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final settings = context.dependOnInheritedWidgetOfExactType<FlexibleSpaceBarSettings>();
-    final band = _Band(profile: profile);
-    if (settings == null) return Padding(padding: EdgeInsets.only(bottom: bottomInset), child: band);
+    if (settings == null) {
+      return Padding(
+        padding: EdgeInsets.only(bottom: bottomInset),
+        child: Stack(fit: StackFit.expand, children: [_Backdrop(profile: profile), _Band(profile: profile)]),
+      );
+    }
     final top = settings.minExtent - bottomInset;
     final height = settings.maxExtent - settings.minExtent;
     if (height <= 0) return const SizedBox.shrink();
-    return Padding(
-      padding: EdgeInsets.only(top: top, bottom: bottomInset),
-      child: ClipRect(
-        child: OverflowBox(
-          alignment: Alignment.bottomCenter,
-          minHeight: height,
-          maxHeight: height,
-          child: band,
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        // The banner covers the whole header, up to the top of the screen (under the status
+        // bar and the buttons), like the title pages.
+        Positioned.fill(bottom: bottomInset, child: _Backdrop(profile: profile)),
+        Padding(
+          padding: EdgeInsets.only(top: top, bottom: bottomInset),
+          child: ClipRect(
+            child: OverflowBox(
+              alignment: Alignment.bottomCenter,
+              minHeight: height,
+              maxHeight: height,
+              child: _Band(profile: profile),
+            ),
+          ),
         ),
-      ),
+      ],
+    );
+  }
+}
+
+/// The banner (or the profile colour) behind the whole header: darker at the top for the
+/// status bar and the buttons, and under the name.
+class _Backdrop extends StatelessWidget {
+  final AnilistProfile profile;
+  const _Backdrop({required this.profile});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final tokens = AppColors.of(context);
+    final banner = profile.bannerUrl;
+    final accent = anilistProfileColor(profile.profileColor);
+    if (banner == null) {
+      return accent == null ? const SizedBox.shrink() : ColoredBox(color: accent.withValues(alpha: 0.14));
+    }
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        AppImage(url: banner, fit: BoxFit.cover, placeholderColor: cs.surfaceContainerHighest),
+        DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              // Dark down to under the buttons (about a third of the header), then the image.
+              stops: const [0, 0.38, 0.62, 1],
+              colors: [
+                Colors.black.withValues(alpha: 0.7),
+                Colors.black.withValues(alpha: 0.45),
+                tokens.imageScrim.withValues(alpha: 0.4),
+                tokens.imageScrim,
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -65,20 +117,6 @@ class _Band extends StatelessWidget {
     return Stack(
       fit: StackFit.expand,
       children: [
-        if (onBanner) ...[
-          AppImage(url: banner, fit: BoxFit.cover, placeholderColor: cs.surfaceContainerHighest),
-          DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                stops: const [0, 0.3],
-                colors: [tokens.imageScrim.withValues(alpha: 0.25), tokens.imageScrim],
-              ),
-            ),
-          ),
-        ] else if (accent != null)
-          ColoredBox(color: accent.withValues(alpha: 0.14)),
         Align(
           alignment: AlignmentDirectional.bottomStart,
           child: Padding(

@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart' show ValueListenable, debugPrint, kIsWe
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mywatchlist/constants/constants.dart' show AccountType, Constants;
+import 'package:mywatchlist/apps/anilist/anilist_app.dart';
 import 'package:mywatchlist/apps/simkl/simkl_app.dart';
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/pages/Anilist/anilist_explore_page.dart';
@@ -416,6 +417,7 @@ class _HomeScreenState extends State<HomeScreen> {
         }
         _shownTracker = tracker;
         if (tracker == AccountType.simkl) return const SimklApp();
+        if (tracker == AccountType.anilist) return const AnilistApp();
         return _buildShell(context, tracker);
       },
     );

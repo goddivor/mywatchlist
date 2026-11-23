@@ -1,0 +1,10 @@
+{
+  "@@locale": "fr_FR",
+  "Ala_Tab_List": "Liste",
+  "Ala_Tab_Browse": "Parcourir",
+  "Ala_Tab_Overview": "Aperçu",
+  "Ala_Settings_Title": "Paramètres AniList",
+  "Ala_Settings_Account": "Compte AniList · changer ou gérer",
+  "Ala_Settings_Anilist": "Réglages du compte AniList",
+  "Ala_Settings_Anilist_Desc": "Titres, listes, contenu adulte, notifications, activité et profil"
+}
