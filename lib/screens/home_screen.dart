@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart' show ValueListenable, debugPrint, kIsWe
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mywatchlist/constants/constants.dart' show AccountType, Constants;
+import 'package:mywatchlist/apps/simkl/simkl_app.dart';
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/pages/Anilist/anilist_explore_page.dart';
 import 'package:mywatchlist/pages/Anilist/anilist_forum_page.dart';
@@ -210,6 +211,12 @@ class _HomeScreenState extends State<HomeScreen> {
   final Map<int, Widget> _pages = {};
   AccountType? _pagesFor;
 
+  /// The tracker whose app is on screen; another selected tracker first shows
+  /// [TrackerSwitchScreen] for [switchDelay], then its own app on its home.
+  AccountType? _shownTracker;
+  Timer? _switching;
+  static const Duration switchDelay = Duration(milliseconds: 700);
+
   /// Trackers whose "session expired" prompt was already shown.
   final Set<AccountType> _reLoginPrompted = {};
   bool _redirectingToLogin = false;
@@ -273,6 +280,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void dispose() {
     UserManager.instance.removeListener(_onUsersChanged);
     MalApi.sessionExpired.removeListener(_onUsersChanged);
+    _switching?.cancel();
     _sidebarOpen.dispose();
     super.dispose();
   }
@@ -385,6 +393,29 @@ class _HomeScreenState extends State<HomeScreen> {
           return const AppStartupLoader();
         }
         _redirectingToLogin = false;
+        // Another account is another app: a short loading screen, then that tracker's app on
+        // its home (never the tab the previous one was on).
+        if (_shownTracker != null && _shownTracker != tracker) {
+          if (_switching == null) {
+            // Switched from a page on top (settings, accounts...): those pages belong to the
+            // previous app, so they close and the new app shows at once.
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) Navigator.of(context).popUntil((route) => route.isFirst);
+            });
+            _switching = Timer(switchDelay, () {
+              if (!mounted) return;
+              setState(() {
+                _switching = null;
+                _shownTracker = tracker;
+                _pageIndex = HomeTab.home;
+                _navBarGeneration++;
+              });
+            });
+          }
+          return TrackerSwitchScreen(tracker: tracker);
+        }
+        _shownTracker = tracker;
+        if (tracker == AccountType.simkl) return const SimklApp();
         return _buildShell(context, tracker);
       },
     );
@@ -515,6 +546,33 @@ class _HomeBackground extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+/// Shown while MyWatchList turns into the app of another tracker (account switch).
+class TrackerSwitchScreen extends StatelessWidget {
+  const TrackerSwitchScreen({super.key, required this.tracker});
+
+  final AccountType tracker;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Scaffold(
+      body: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox.square(dimension: 36, child: CircularProgressIndicator(strokeWidth: 3)),
+            const SizedBox(height: 20),
+            Text(
+              S.current.Skm_Opening(AppRoutes.trackerLabel(tracker)),
+              style: theme.textTheme.titleMedium,
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

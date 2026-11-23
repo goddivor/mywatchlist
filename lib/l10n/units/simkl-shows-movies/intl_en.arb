@@ -46,5 +46,37 @@
       }
     }
   },
-  "Skm_Movies_Watched": "Watched"
+  "Skm_Movies_Watched": "Watched",
+  "Skm_Search_In": "Search {catalogue}",
+  "Skm_Profile": "Profile",
+  "Skm_Tab_Discover": "Discover",
+  "Skm_Tab_My_List": "My list",
+  "Skm_Settings_Title": "Simkl settings",
+  "Skm_Settings_Account": "Simkl account · switch or manage",
+  "Skm_Settings_Start_Catalogue": "Open on",
+  "Skm_Settings_Title_Language": "Title language",
+  "Skm_Title_English": "English",
+  "Skm_Title_Romaji": "Romaji",
+  "Skm_Title_Original": "Original",
+  "Skm_Settings_On_Simkl": "Account on simkl.com",
+  "Skm_Settings_On_Simkl_Desc": "Notifications, privacy, connected apps and plan",
+  "Skm_Settings_App": "MyWatchList",
+  "Skm_Opening": "Opening {tracker}",
+  "@Skm_Search_In": {
+    "placeholders": {
+      "catalogue": {
+        "type": "String"
+      }
+    }
+  },
+  "@Skm_Opening": {
+    "placeholders": {
+      "tracker": {
+        "type": "String"
+      }
+    }
+  },
+  "Skm_My_Movies": "My movies",
+  "Skm_All_Shows": "All shows",
+  "Skm_All_Movies": "All movies"
 }

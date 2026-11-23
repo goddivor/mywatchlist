@@ -33,7 +33,13 @@ import 'package:mywatchlist/widgets/user/list/list_entry_view.dart';
 /// from the API (none for movies). Each catalogue header opens the whole list. Simkl has no
 /// manga, news or forum, so those MyAnimeList sections are skipped.
 class SimklHomePage extends StatefulWidget {
-  const SimklHomePage({super.key});
+  /// A fixed catalogue (the Simkl app's catalogue tabs): no switch; null = the shared one.
+  final SimklKind? kind;
+
+  /// Inside the Simkl app's catalogue tab, which has its own app bar.
+  final bool embedded;
+
+  const SimklHomePage({super.key, this.kind, this.embedded = false});
 
   @override
   State<SimklHomePage> createState() => _SimklHomePageState();
@@ -43,7 +49,7 @@ class _SimklHomePageState extends State<SimklHomePage> {
   /// Bumped by a pull to refresh: every section reloads when it changes.
   int _refresh = 0;
 
-  SimklKind get _kind => SimklCatalogue.instance.value;
+  SimklKind get _kind => widget.kind ?? SimklCatalogue.instance.value;
 
   void _onCatalogue() {
     if (mounted) setState(() {});
@@ -88,19 +94,23 @@ class _SimklHomePageState extends State<SimklHomePage> {
         onRefresh: _onRefresh,
         child: CustomScrollView(
           slivers: [
-            SliverAppBar(
-              automaticallyImplyLeading: false,
-              // Empty list does not suppress the automatic endDrawer button; a placeholder does.
-              actions: const [SizedBox.shrink()],
-              floating: true,
-              snap: true,
-              titleSpacing: 0,
-              toolbarHeight: kToolbarHeight,
-              title: const AppBarHome(transparent: true, showSettings: true),
-            ),
-            SliverToBoxAdapter(
-              child: SimklKindSwitch(value: _kind, onChanged: SimklCatalogue.instance.pick),
-            ),
+            if (!widget.embedded)
+              SliverAppBar(
+                automaticallyImplyLeading: false,
+                // Empty list does not suppress the automatic endDrawer button; a placeholder does.
+                actions: const [SizedBox.shrink()],
+                floating: true,
+                snap: true,
+                titleSpacing: 0,
+                toolbarHeight: kToolbarHeight,
+                title: const AppBarHome(transparent: true, showSettings: true),
+              ),
+            if (widget.kind == null)
+              SliverToBoxAdapter(
+                child: SimklKindSwitch(value: _kind, onChanged: SimklCatalogue.instance.pick),
+              )
+            else
+              const SliverToBoxAdapter(child: SizedBox(height: 4)),
             BlocBuilder<HomePreferencesBloc, HomePreferencesState>(
               buildWhen: (a, b) => a.isLoading != b.isLoading || a.preferences != b.preferences,
               builder: (context, state) {
