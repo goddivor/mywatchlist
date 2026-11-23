@@ -397,6 +397,11 @@ class _HomeScreenState extends State<HomeScreen> {
         // its home (never the tab the previous one was on).
         if (_shownTracker != null && _shownTracker != tracker) {
           if (_switching == null) {
+            // Switched from a page on top (settings, accounts...): those pages belong to the
+            // previous app, so they close and the new app shows at once.
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) Navigator.of(context).popUntil((route) => route.isFirst);
+            });
             _switching = Timer(switchDelay, () {
               if (!mounted) return;
               setState(() {

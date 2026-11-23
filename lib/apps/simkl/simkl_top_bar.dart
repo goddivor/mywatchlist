@@ -7,8 +7,8 @@ import 'package:mywatchlist/widgets/common/avatar_widget.dart';
 import 'package:mywatchlist/widgets/home/account_switcher_sheet.dart';
 
 /// The app bar of the Simkl app: the page title, then the Simkl search of the page (when it has
-/// one), the Simkl settings and the account avatar (a tap opens the account switcher; Simkl
-/// has no sidebar).
+/// one), the Simkl settings and the account avatar: a long press opens the account switcher, as
+/// on every tracker; a tap too (Simkl has no sidebar).
 class SimklTopBar extends StatelessWidget implements PreferredSizeWidget {
   const SimklTopBar({super.key, required this.title, this.onSearch, this.bottom});
 
@@ -57,6 +57,7 @@ class _Avatar extends StatelessWidget {
       button: true,
       label: S.current.Hw_Switch_Account,
       onTap: open,
+      onLongPress: open,
       child: Tooltip(
         message: S.current.Hw_Switch_Account,
         excludeFromSemantics: true,
@@ -69,6 +70,7 @@ class _Avatar extends StatelessWidget {
             borderColor: Theme.of(context).colorScheme.primary,
             borderWidth: 2,
             onTap: open,
+            onLongPress: open,
           ),
         ),
       ),
