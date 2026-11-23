@@ -12,7 +12,11 @@ import 'package:mywatchlist/widgets/user/list/user_list_view.dart';
 /// Simkl's own apps (status tabs with counts, search, sort and filter, list and grid cards,
 /// quick +1 / -1, edit sheet). Simkl has no manga.
 class SimklUserPage extends StatefulWidget {
-  const SimklUserPage({super.key});
+  /// One catalogue only, inside the Simkl app's catalogue tab (it has the app bar); null = the
+  /// three catalogues with their switch.
+  final SimklKind? kind;
+
+  const SimklUserPage({super.key, this.kind});
 
   @override
   State<SimklUserPage> createState() => _SimklUserPageState();
@@ -52,8 +56,9 @@ class _SimklUserPageState extends State<SimklUserPage> {
             ? UserListView(
                 adapter: _adapter,
                 titleBuilder: _title,
-                categories: categories,
+                categories: widget.kind == null ? categories : [widget.kind!.category],
                 categoryLabel: label,
+                showToolbar: widget.kind == null,
               )
             : Column(
                 children: [

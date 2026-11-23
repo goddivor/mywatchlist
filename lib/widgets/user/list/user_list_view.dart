@@ -53,6 +53,10 @@ class UserListView extends StatefulWidget {
   /// The name of a category in the switch; null = Anime / Manga.
   final String Function(String category)? categoryLabel;
 
+  /// False inside a page that already has its own app bar (the Simkl app's catalogue tabs):
+  /// the list keeps only its search, sort and status rows.
+  final bool showToolbar;
+
   const UserListView({
     super.key,
     required this.adapter,
@@ -61,6 +65,7 @@ class UserListView extends StatefulWidget {
     this.cache,
     this.categories = const ['anime', 'manga'],
     this.categoryLabel,
+    this.showToolbar = true,
   }) : assert(categories.length > 0);
 
   @override
@@ -423,8 +428,8 @@ class _UserListViewState extends State<UserListView> with SingleTickerProviderSt
           floating: true,
           forceElevated: innerBoxIsScrolled,
           titleSpacing: 0,
-          toolbarHeight: kToolbarHeight + 8,
-          title: widget.titleBuilder(context, _categorySwitch()),
+          toolbarHeight: widget.showToolbar ? kToolbarHeight + 8 : 0,
+          title: widget.showToolbar ? widget.titleBuilder(context, _categorySwitch()) : null,
           // The home shell's sidebar is an end drawer: without a non-empty
           // actions list Flutter adds its own ☰ next to the header's avatar.
           actions: const [SizedBox.shrink()],

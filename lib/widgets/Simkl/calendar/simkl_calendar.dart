@@ -154,7 +154,7 @@ class SimklAiringTile extends StatelessWidget {
                         Icon(Icons.circle, size: 9, color: status.colors(context).color),
                       if (m.episode != null)
                         Text(
-                          S.current.Sk_Episode_Short(m.episode!),
+                          m.season != null ? 'S${m.season}E${m.episode}' : S.current.Sk_Episode_Short(m.episode!),
                           style: theme.textTheme.labelMedium?.copyWith(color: scheme.onSurfaceVariant),
                         ),
                       if (airing.premiere) SimklBadge(S.current.Skr_Premiere),
@@ -181,14 +181,27 @@ class SimklMineSwitch extends StatelessWidget {
   final bool mine;
   final ValueChanged<bool> onChanged;
 
-  const SimklMineSwitch({super.key, required this.mine, required this.onChanged});
+  /// The catalogue listed: "All anime", "All shows" or "All movies".
+  final SimklKind kind;
+
+  const SimklMineSwitch({super.key, required this.mine, required this.onChanged, this.kind = SimklKind.anime});
 
   @override
   Widget build(BuildContext context) => SegmentedButton<bool>(
         showSelectedIcon: false,
         segments: [
-          ButtonSegment(value: true, label: Text(S.current.Skr_My_Shows)),
-          ButtonSegment(value: false, label: Text(S.current.Skr_All_Anime)),
+          ButtonSegment(
+            value: true,
+            label: Text(kind == SimklKind.movie ? S.current.Skm_My_Movies : S.current.Skr_My_Shows),
+          ),
+          ButtonSegment(
+            value: false,
+            label: Text(switch (kind) {
+              SimklKind.tv => S.current.Skm_All_Shows,
+              SimklKind.anime => S.current.Skr_All_Anime,
+              SimklKind.movie => S.current.Skm_All_Movies,
+            }),
+          ),
         ],
         selected: {mine},
         onSelectionChanged: (v) => onChanged(v.first),
@@ -204,7 +217,20 @@ class SimklCalendarPage extends StatefulWidget {
   final SimklListService? listService;
   final DateTime Function()? now;
 
-  const SimklCalendarPage({super.key, this.service, this.listService, this.now});
+  /// The calendar of shows, anime or movie releases.
+  final SimklKind kind;
+
+  /// False inside the Simkl app's calendar tab, which has its own app bar.
+  final bool showAppBar;
+
+  const SimklCalendarPage({
+    super.key,
+    this.service,
+    this.listService,
+    this.now,
+    this.kind = SimklKind.anime,
+    this.showAppBar = true,
+  });
 
   @override
   State<SimklCalendarPage> createState() => _SimklCalendarPageState();
@@ -223,7 +249,7 @@ class _SimklCalendarPageState extends State<SimklCalendarPage> {
 
   Future<(List<SimklMedia>, Map<int, ListEntryView>)> _load() async {
     final list = simklListById(service: widget.listService);
-    final calendar = await _service.calendar();
+    final calendar = await _service.calendar(kind: widget.kind);
     return (calendar, await list);
   }
 
@@ -241,7 +267,9 @@ class _SimklCalendarPageState extends State<SimklCalendarPage> {
     final e = a.entry;
     final n = a.media.episode;
     final at = a.media.airDate;
-    return e != null &&
+    // Anime only: a show numbers its episodes per season, a movie has none.
+    return widget.kind == SimklKind.anime &&
+        e != null &&
         e.status != null &&
         n != null &&
         n > e.progress &&
@@ -293,7 +321,10 @@ class _SimklCalendarPageState extends State<SimklCalendarPage> {
   Widget build(BuildContext context) {
     final days = [for (var i = -1; i < _days - 1; i++) DateTime(_today.year, _today.month, _today.day + i)];
     return Scaffold(
-      appBar: AppBar(title: Text(S.current.Skr_Calendar), actions: const [SizedBox.shrink()]),
+      backgroundColor: widget.showAppBar ? null : Colors.transparent,
+      appBar: widget.showAppBar
+          ? AppBar(title: Text(S.current.Skr_Calendar), actions: const [SizedBox.shrink()])
+          : null,
       body: RefreshIndicator(
         onRefresh: _refresh,
         child: CustomScrollView(
@@ -322,7 +353,7 @@ class _SimklCalendarPageState extends State<SimklCalendarPage> {
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(15, 4, 15, 8),
-                  child: SimklMineSwitch(mine: _mine, onChanged: (v) => setState(() => _mine = v)),
+                  child: SimklMineSwitch(kind: widget.kind, mine: _mine, onChanged: (v) => setState(() => _mine = v)),
                 ),
               ),
             FutureBuilder<(List<SimklMedia>, Map<int, ListEntryView>)>(

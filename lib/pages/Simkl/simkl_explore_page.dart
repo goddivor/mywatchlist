@@ -20,7 +20,11 @@ import 'package:mywatchlist/widgets/user/list/list_entry_view.dart';
 /// the API. Movies have no premieres and no best list. Each list has its own options row
 /// (period, day, bucket, genre, sort, and the format of anime).
 class SimklExplorePage extends StatefulWidget {
-  const SimklExplorePage({super.key, this.service});
+  const SimklExplorePage({super.key, this.service, this.kind});
+
+  /// A fixed catalogue: the Simkl app's search page of one catalogue (back button, no switch,
+  /// the keyboard opens on the search field). Null = the Explore tab with the shared switch.
+  final SimklKind? kind;
 
   /// Test hook; defaults to the shared Simkl discover service.
   final SimklDiscoverService? service;
@@ -47,7 +51,9 @@ class _SimklExplorePageState extends State<SimklExplorePage> {
   /// The options last picked per feed, so switching feeds keeps them.
   final Map<SimklFeed, SimklFeedQuery> _perFeed = {};
   Timer? _debounce;
-  late SimklFeedQuery _query = SimklFeedQuery(SimklFeed.trending, kind: SimklCatalogue.instance.value);
+  late SimklFeedQuery _query =
+      SimklFeedQuery(SimklFeed.trending, kind: widget.kind ?? SimklCatalogue.instance.value);
+  bool get _fixed => widget.kind != null;
   _Load _feedState = _Load.loading;
   bool _loadingMore = false;
   bool _moreFailed = false;
@@ -68,10 +74,12 @@ class _SimklExplorePageState extends State<SimklExplorePage> {
   @override
   void initState() {
     super.initState();
-    SimklCatalogue.instance.addListener(_onCatalogue);
-    SimklCatalogue.instance.ensureLoaded().then((_) {
-      if (mounted) _onCatalogue();
-    });
+    if (!_fixed) {
+      SimklCatalogue.instance.addListener(_onCatalogue);
+      SimklCatalogue.instance.ensureLoaded().then((_) {
+        if (mounted) _onCatalogue();
+      });
+    }
     _loadFeed();
     if (simklSignedIn) {
       simklListById().then((list) {
@@ -223,29 +231,38 @@ class _SimklExplorePageState extends State<SimklExplorePage> {
     final pages = _loaded[_query];
     final items = _searching ? _results : (pages?.items ?? const <SimklMedia>[]);
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: _fixed ? null : Colors.transparent,
       body: RefreshIndicator(
         onRefresh: _onRefresh,
         child: CustomScrollView(
           slivers: [
-            SliverAppBar(
-              automaticallyImplyLeading: false,
-              // Empty list does not suppress the automatic endDrawer button; a placeholder does.
-              actions: const [SizedBox.shrink()],
-              floating: true,
-              snap: true,
-              titleSpacing: 0,
-              toolbarHeight: kToolbarHeight,
-              title: AppBarHome(title: s.Hw_Tab_Explore, transparent: true, showSettings: true),
-            ),
-            SliverToBoxAdapter(
-              child: SimklKindSwitch(value: _kind, onChanged: SimklCatalogue.instance.pick),
-            ),
+            if (_fixed)
+              SliverAppBar(
+                floating: true,
+                snap: true,
+                title: Text(s.Skm_Search_In(simklKindLabel(_kind))),
+              )
+            else ...[
+              SliverAppBar(
+                automaticallyImplyLeading: false,
+                // Empty list does not suppress the automatic endDrawer button; a placeholder does.
+                actions: const [SizedBox.shrink()],
+                floating: true,
+                snap: true,
+                titleSpacing: 0,
+                toolbarHeight: kToolbarHeight,
+                title: AppBarHome(title: s.Hw_Tab_Explore, transparent: true, showSettings: true),
+              ),
+              SliverToBoxAdapter(
+                child: SimklKindSwitch(value: _kind, onChanged: SimklCatalogue.instance.pick),
+              ),
+            ],
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(15, 4, 15, 8),
                 child: SearchBar(
                   controller: _controller,
+                  autoFocus: _fixed,
                   hintText: switch (_kind) {
                     SimklKind.tv => s.Skm_Search_Shows,
                     SimklKind.anime => s.Sk_Search_Hint,
@@ -303,7 +320,7 @@ class _SimklExplorePageState extends State<SimklExplorePage> {
         SliverToBoxAdapter(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(15, 0, 15, 8),
-            child: SimklMineSwitch(mine: _mine, onChanged: (v) => setState(() => _mine = v)),
+            child: SimklMineSwitch(kind: _kind, mine: _mine, onChanged: (v) => setState(() => _mine = v)),
           ),
         ),
       if (rows.isEmpty)
