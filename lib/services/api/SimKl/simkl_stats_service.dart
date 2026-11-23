@@ -1,12 +1,13 @@
 import 'package:flutter/foundation.dart';
 import 'package:mywatchlist/services/api/SimKl/simkl_client.dart';
 import 'package:mywatchlist/services/api/SimKl/simkl_detail_models.dart' show SimklMediaImages;
+import 'package:mywatchlist/services/api/SimKl/simkl_kind.dart';
 import 'package:mywatchlist/services/api/SimKl/simkl_models.dart';
 
 int? _int(Object? v) => v is num ? v.toInt() : (v is String ? int.tryParse(v) : null);
 String? _text(Object? v) => v is String && v.trim().isNotEmpty ? v.trim() : null;
 
-/// Anime watch time of the user (`GET /users/{id}/stats`), all in minutes.
+/// Watch time of the user in one catalogue (`GET /users/{id}/stats`), all in minutes.
 @immutable
 class SimklWatchStats {
   /// Time spent watching anime.
@@ -23,10 +24,12 @@ class SimklWatchStats {
 
   bool get isEmpty => totalMins == 0 && leftMins == 0 && lastWeekMins == 0;
 
-  /// Null when [data] is not the stats answer.
-  static SimklWatchStats? fromJson(Object? data) {
+  /// The block of [kind] of the stats answer (`tv`, `anime`, `movies`); null when [data] is
+  /// not the stats answer.
+  static SimklWatchStats? fromJson(Object? data, [SimklKind kind = SimklKind.anime]) {
     if (data is! Map) return null;
-    final anime = data['anime'] is Map ? data['anime'] as Map : const {};
+    final key = kind.api;
+    final anime = data[key] is Map ? data[key] as Map : const {};
     var leftMins = 0;
     var leftEpisodes = 0;
     for (final value in anime.values) {
@@ -39,20 +42,35 @@ class SimklWatchStats {
       totalMins: _int(anime['total_mins']) ?? 0,
       leftMins: leftMins,
       leftEpisodes: leftEpisodes,
-      lastWeekMins: _int(week['anime_mins']) ?? 0,
+      lastWeekMins: _int(week['${key}_mins']) ?? 0,
     );
   }
+
+  /// Every catalogue of the stats answer.
+  static Map<SimklKind, SimklWatchStats> allFrom(Object? data) => {
+        for (final k in SimklKind.values)
+          if (fromJson(data, k) case final w?) k: w,
+      };
 }
 
 /// The title the user is watching now (`GET /users/recently-watched-background/{id}`).
 @immutable
 class SimklNowWatching {
   final int? simklId;
+
+  /// The catalogue of the title when the answer says it (`type` or `url`), anime otherwise.
+  final SimklKind kind;
   final String title;
   final String coverUrl;
   final String? posterUrl;
 
-  const SimklNowWatching({this.simklId, required this.title, required this.coverUrl, this.posterUrl});
+  const SimklNowWatching({
+    this.simklId,
+    this.kind = SimklKind.anime,
+    required this.title,
+    required this.coverUrl,
+    this.posterUrl,
+  });
 
   /// Null when the answer has no picture to show.
   static SimklNowWatching? fromJson(Object? data) {
@@ -61,6 +79,7 @@ class SimklNowWatching {
     if (cover == null) return null;
     return SimklNowWatching(
       simklId: _int(data['id']),
+      kind: SimklMedia.kindOf(data) ?? SimklKind.anime,
       title: _text(data['title']) ?? '',
       coverUrl: cover,
       posterUrl: SimklImages.poster(data['poster']),
@@ -107,9 +126,13 @@ class SimklStatsService {
 
   final SimklClient _client;
 
-  /// `GET /users/{id}/stats`; null when the answer is not usable.
+  /// `GET /users/{id}/stats` (anime); null when the answer is not usable.
   Future<SimklWatchStats?> watchStats(int accountId) async =>
       SimklWatchStats.fromJson(await _client.getAuth('/users/$accountId/stats'));
+
+  /// `GET /users/{id}/stats`, every catalogue (one call).
+  Future<Map<SimklKind, SimklWatchStats>> watchStatsByKind(int accountId) async =>
+      SimklWatchStats.allFrom(await _client.getAuth('/users/$accountId/stats'));
 
   /// `GET /users/recently-watched-background/{id}`; null when nothing was watched.
   Future<SimklNowWatching?> nowWatching(int accountId) async =>

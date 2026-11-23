@@ -283,7 +283,8 @@ class ListEntryView {
     this.authors = const [],
   });
 
-  bool get isAnime => category == 'anime';
+  /// Watched in episodes, not read: anime, and Simkl's shows and movies.
+  bool get isAnime => category != 'manga';
 
   /// Episodes (or chapters) released so far, or null when unknown:
   /// 1. airing anime: the real schedule ([AiringSchedule.nextEpisode] of

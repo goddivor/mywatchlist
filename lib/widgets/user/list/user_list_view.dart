@@ -50,6 +50,9 @@ class UserListView extends StatefulWidget {
   /// always opens on that category, whatever the "default category" preference says.
   final List<String> categories;
 
+  /// The name of a category in the switch; null = Anime / Manga.
+  final String Function(String category)? categoryLabel;
+
   const UserListView({
     super.key,
     required this.adapter,
@@ -57,6 +60,7 @@ class UserListView extends StatefulWidget {
     this.store = const ListViewStore(),
     this.cache,
     this.categories = const ['anime', 'manga'],
+    this.categoryLabel,
   }) : assert(categories.length > 0);
 
   @override
@@ -86,7 +90,8 @@ class _UserListViewState extends State<UserListView> with SingleTickerProviderSt
   bool get _canSelect => _adapter is MalUserListAdapter && (_adapter as MalUserListAdapter).isSelf;
 
   UserListAdapter get _adapter => widget.adapter;
-  bool get _isAnime => _category == 'anime';
+  /// Watched in episodes (anime, and Simkl's shows and movies), not read.
+  bool get _isAnime => _category != 'manga';
 
   /// Whether the header carries the "time left" line: anime lists of a tracker whose adapter
   /// fills `ListEntryView.episodeSeconds` ([UserListAdapter.fillsEpisodeLength]).
@@ -105,14 +110,14 @@ class _UserListViewState extends State<UserListView> with SingleTickerProviderSt
     _cache.bindOwner(_adapter.tracker, _adapter.owner);
     final tracker = _adapter.tracker;
     final results = await Future.wait([
-      widget.store.readView(tracker, 'anime'),
-      widget.store.readView(tracker, 'manga'),
+      for (final c in widget.categories) widget.store.readView(tracker, c),
     ]);
     final place = await widget.store.readPlace(tracker);
     if (!mounted) return;
     final prefs = Preferences.list;
-    _settings['anime'] = results[0];
-    _settings['manga'] = results[1];
+    for (var i = 0; i < widget.categories.length; i++) {
+      _settings[widget.categories[i]] = results[i];
+    }
     _place = place;
     final wanted = switch (prefs.defaultCategory) {
       ListCategory.anime => 'anime',
@@ -128,7 +133,7 @@ class _UserListViewState extends State<UserListView> with SingleTickerProviderSt
   /// Tab of [category] at opening: the preference when set, else the last one.
   int _initialTab(String category) {
     final prefs = Preferences.list;
-    final forced = category == 'anime' ? prefs.defaultAnimeTab : prefs.defaultMangaTab;
+    final forced = category == 'manga' ? prefs.defaultMangaTab : prefs.defaultAnimeTab;
     final value = forced != ListPreferences.noDefaultTab ? forced : _place.tabs[category];
     if (value == null || value == 'all') return 0;
     final status = ListEntryStatus.fromMal(value) ??
@@ -388,7 +393,8 @@ class _UserListViewState extends State<UserListView> with SingleTickerProviderSt
           ButtonSegment(
             value: c,
             label: Text(
-              c == 'anime' ? S.current.UserList_Anime : S.current.UserList_Manga,
+              widget.categoryLabel?.call(c) ??
+                  (c == 'anime' ? S.current.UserList_Anime : S.current.UserList_Manga),
               maxLines: 1,
               softWrap: false,
             ),

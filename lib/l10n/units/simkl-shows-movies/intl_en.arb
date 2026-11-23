@@ -1,0 +1,50 @@
+{
+  "@@locale": "en",
+  "Skm_Shows": "TV shows",
+  "Skm_Movies": "Movies",
+  "Skm_Show": "TV show",
+  "Skm_Movie": "Movie",
+  "Skm_Released": "Released",
+  "Skm_Budget": "Budget",
+  "Skm_Box_Office": "Box office",
+  "Skm_Mark_Movie_Watched": "Mark as watched",
+  "Skm_Search_Shows": "Search Simkl TV shows",
+  "Skm_Search_Movies": "Search Simkl movies",
+  "Skm_Feed_Releases": "Releases",
+  "Skm_Feed_Releases_Today": "Out today",
+  "Skm_Genre_Animation": "Animation",
+  "Skm_Genre_Awards_Show": "Awards show",
+  "Skm_Genre_Children": "Children",
+  "Skm_Genre_Crime": "Crime",
+  "Skm_Genre_Documentary": "Documentary",
+  "Skm_Genre_Erotica": "Erotica",
+  "Skm_Genre_Family": "Family",
+  "Skm_Genre_Food": "Food",
+  "Skm_Genre_Game_Show": "Game show",
+  "Skm_Genre_History": "History",
+  "Skm_Genre_Home_Garden": "Home and garden",
+  "Skm_Genre_Indie": "Indie",
+  "Skm_Genre_Mini_Series": "Mini-series",
+  "Skm_Genre_Musical": "Musical",
+  "Skm_Genre_News": "News",
+  "Skm_Genre_Podcast": "Podcast",
+  "Skm_Genre_Reality": "Reality",
+  "Skm_Genre_Soap": "Soap",
+  "Skm_Genre_Suspense": "Suspense",
+  "Skm_Genre_Talk_Show": "Talk show",
+  "Skm_Genre_Travel": "Travel",
+  "Skm_Genre_Tv_Movie": "TV movie",
+  "Skm_Genre_Video_Games": "Video games",
+  "Skm_Genre_War": "War",
+  "Skm_Genre_Western": "Western",
+  "Skm_No_Planned_Movies": "No movies planned yet",
+  "Skm_Mark_Episode_Watched": "Mark {episode} watched",
+  "@Skm_Mark_Episode_Watched": {
+    "placeholders": {
+      "episode": {
+        "type": "String"
+      }
+    }
+  },
+  "Skm_Movies_Watched": "Watched"
+}

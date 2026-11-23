@@ -60,14 +60,19 @@ List<SimklAiring> simklAiringOn(
 }
 
 /// The signed-in user's list by Simkl id, or empty (signed out, dead session, network).
+///
+/// Without [service], every list of the account (shows, anime and movies: Simkl ids are unique
+/// across them); a list that fails is left out.
 Future<Map<int, ListEntryView>> simklListById({SimklListService? service}) async {
   if (!simklSignedIn && service == null) return const {};
-  try {
-    final list = await (service ?? SimklListService.instance).anime();
-    return {for (final e in list) e.id: e};
-  } catch (_) {
-    return const {};
-  }
+  final services = service != null ? [service] : [for (final k in SimklKind.values) SimklListService.of(k)];
+  final lists = await Future.wait([
+    for (final s in services) s.entries().catchError((Object _) => const <ListEntryView>[]),
+  ]);
+  return {
+    for (final list in lists)
+      for (final e in list) e.id: e,
+  };
 }
 
 /// A small tonal badge (Premiere, Finale).

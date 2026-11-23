@@ -17,6 +17,7 @@ Future<void> openSimklMedia(
     openSimklTitle(
       context,
       simklId: media.simklId,
+      kind: media.kind,
       slug: media.slug,
       title: media.title,
       posterUrl: media.posterUrl,
@@ -26,12 +27,13 @@ Future<void> openSimklMedia(
 Future<void> openSimklTitle(
   BuildContext context, {
   required int simklId,
+  SimklKind kind = SimklKind.anime,
   String? slug,
   String? title,
   String? posterUrl,
 }) =>
     Navigator.of(context).push(MaterialPageRoute<void>(
-      builder: (_) => SimklMediaPage(simklId: simklId, slug: slug, title: title, posterUrl: posterUrl),
+      builder: (_) => SimklMediaPage(simklId: simklId, kind: kind, slug: slug, title: title, posterUrl: posterUrl),
     ));
 
 /// A poster card of the discover rows and grids: cover, a two-line title, and the rating or the

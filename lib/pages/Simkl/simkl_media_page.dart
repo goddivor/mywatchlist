@@ -5,6 +5,7 @@ import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/screens/MAL/detail/sections/section_states.dart';
 import 'package:mywatchlist/services/api/SimKl/simkl_detail_models.dart';
 import 'package:mywatchlist/services/api/SimKl/simkl_detail_service.dart';
+import 'package:mywatchlist/services/api/SimKl/simkl_kind.dart';
 import 'package:mywatchlist/services/api/SimKl/simkl_list_service.dart';
 import 'package:mywatchlist/services/api/SimKl/simkl_title_language.dart';
 import 'package:mywatchlist/user/base_user.dart' show AuthStatus;
@@ -33,6 +34,9 @@ import 'package:share_plus/share_plus.dart';
 /// `docs/tracker-ui-references.md` (§ 2.3).
 class SimklMediaPage extends StatefulWidget {
   final int simklId;
+
+  /// The catalogue of the title: a show, an anime or a movie.
+  final SimklKind kind;
   final String? slug;
 
   /// Shown while the record loads (the tile that was tapped).
@@ -49,6 +53,7 @@ class SimklMediaPage extends StatefulWidget {
   const SimklMediaPage({
     super.key,
     required this.simklId,
+    this.kind = SimklKind.anime,
     this.slug,
     this.title,
     this.posterUrl,
@@ -81,12 +86,15 @@ class _SimklMediaPageState extends State<SimklMediaPage> {
 
   bool get _signedIn => UserSimklV2.instance.getStatus() == AuthStatus.AUTHENTICATED;
 
+  SimklKind get _kind => widget.kind;
+  SimklListService get _lists => widget.listService ?? SimklListService.of(_kind);
+
   @override
   void initState() {
     super.initState();
-    _title = _service.peek<SimklTitle>(SimklDetailService.titleKey(widget.simklId));
-    _episodes = _service.peek<List<SimklEpisode>>(SimklDetailService.episodesKey(widget.simklId));
-    _page = _service.peek<SimklTitlePage>(SimklDetailService.pageKey(widget.simklId));
+    _title = _service.peek<SimklTitle>(SimklDetailService.titleKey(widget.simklId, _kind));
+    _episodes = _service.peek<List<SimklEpisode>>(SimklDetailService.episodesKey(widget.simklId, _kind));
+    _page = _service.peek<SimklTitlePage>(SimklDetailService.pageKey(widget.simklId, _kind));
     if (_title != null) _phase = _Phase.ready;
     if (_page != null) _pageLoading = false;
     _load();
@@ -97,8 +105,8 @@ class _SimklMediaPageState extends State<SimklMediaPage> {
     // The profile's title language, read once per run (tests inject a service and skip it).
     if (_signedIn && widget.service == null) await SimklTitlePreference.ensureLoaded();
     final id = widget.simklId;
-    final record = _service.title(id, force: force);
-    unawaited(_service.episodes(id, force: force).then((v) {
+    final record = _service.title(id, kind: _kind, force: force);
+    unawaited(_service.episodes(id, kind: _kind, force: force).then((v) {
       if (mounted) setState(() => _episodes = v);
     }, onError: (_) {
       if (mounted) setState(() => _episodes = const []);
@@ -122,7 +130,7 @@ class _SimklMediaPageState extends State<SimklMediaPage> {
     if (force && mounted && _page == null) setState(() => _pageLoading = true);
     try {
       final s = await slug; // no record, no page: an unknown id is not fetched from simkl.com
-      final page = await _service.page(widget.simklId, s, force: force);
+      final page = await _service.page(widget.simklId, s, kind: _kind, force: force);
       if (mounted) setState(() => _page = page);
     } catch (_) {
       // Cloudflare challenge, network: the scraped sections are simply not shown.
@@ -134,7 +142,7 @@ class _SimklMediaPageState extends State<SimklMediaPage> {
   Future<void> _loadListEntry({bool force = false}) async {
     if (!_signedIn) return;
     try {
-      final list = await (widget.listService ?? SimklListService.instance).anime(force: force);
+      final list = await _lists.entries(force: force);
       final found = list.where((e) => e.id == widget.simklId).firstOrNull;
       if (mounted) setState(() {
         _entry = found;
@@ -147,16 +155,18 @@ class _SimklMediaPageState extends State<SimklMediaPage> {
   }
 
   String? get _slug => _title?.slug ?? widget.slug;
-  String get _pageUrl => SimklDetailService.pageUrl(widget.simklId, _slug);
+  String get _pageUrl => SimklDetailService.pageUrl(widget.simklId, _slug, _kind);
 
   void _openTitle(SimklLinkedTitle item) => Navigator.of(context).push(MaterialPageRoute<void>(
         builder: (_) => SimklMediaPage(
           simklId: item.simklId,
+          kind: item.kind ?? _kind,
           slug: item.slug,
           title: item.title,
           posterUrl: item.posterUrl,
           service: widget.service,
-          listService: widget.listService,
+          // Another catalogue has its own list.
+          listService: (item.kind ?? _kind) == _kind ? widget.listService : null,
           now: widget.now,
         ),
       ));
@@ -170,15 +180,15 @@ class _SimklMediaPageState extends State<SimklMediaPage> {
         ListEntryView(
           id: t.simklId,
           malId: t.malId,
-          category: 'anime',
+          category: _kind.category,
           title: t.title,
           imageUrl: t.posterUrl,
           largeImageUrl: t.posterUrl,
-          mediaType: t.animeType,
-          total: t.totalEpisodes ?? 0,
+          mediaType: t.animeType ?? (_kind == SimklKind.movie ? 'movie' : null),
+          total: _kind == SimklKind.movie ? 1 : t.totalEpisodes ?? 0,
           genres: t.genres,
         );
-    final result = await showSimklEditSheet(context, entry, service: widget.listService);
+    final result = await showSimklEditSheet(context, entry, service: _lists);
     if (!mounted) return;
     switch (result) {
       case ListEditUpdated(entry: final saved):
@@ -248,7 +258,7 @@ class _SimklMediaPageState extends State<SimklMediaPage> {
   }
 
   Widget _menu(BuildContext context) {
-    final mal = _title?.malId;
+    final mal = _kind == SimklKind.anime ? _title?.malId : null;
     final colors = AppColors.of(context);
     return PopupMenuButton<String>(
       style: IconButton.styleFrom(backgroundColor: colors.imageScrim, foregroundColor: colors.onImageScrim),
@@ -284,22 +294,23 @@ class _SimklMediaPageState extends State<SimklMediaPage> {
 
   /// "Watching now": Simkl shows the episode on the dashboard and marks it watched when its
   /// runtime has elapsed. Only on the viewer's tap.
-  Future<void> _checkIn(int number) async {
+  Future<void> _checkIn(int number, {int? season, int? place}) async {
     final t = _title;
     if (t == null || _checkingIn) return;
     setState(() => _checkingIn = true);
     final messenger = ScaffoldMessenger.maybeOf(context);
     String message;
     try {
-      await (widget.listService ?? SimklListService.instance).checkIn(
+      await _lists.checkIn(
         simklId: t.simklId,
         title: t.enTitle ?? t.title,
         episode: number,
+        season: season,
         year: t.year,
         malId: t.malId,
         ids: t.externalIds,
       );
-      message = S.current.Sdp_Check_In_Done(number);
+      message = S.current.Sdp_Check_In_Done(place ?? number);
     } on SimklCheckInTooSoon catch (e) {
       message = S.current.Sdp_Check_In_Wait(e.wait.inSeconds + 1);
     } catch (_) {
@@ -314,7 +325,7 @@ class _SimklMediaPageState extends State<SimklMediaPage> {
     if (entry == null || _marking) return;
     setState(() => _marking = true);
     try {
-      final saved = await (widget.listService ?? SimklListService.instance).setProgress(entry, number);
+      final saved = await _lists.setProgress(entry, number);
       if (mounted) setState(() => _entry = saved);
     } catch (_) {
       if (mounted) {
@@ -382,12 +393,12 @@ class _SimklMediaPageState extends State<SimklMediaPage> {
     if (_signedIn && _listKnown) {
       out.add(SimklMyStatusBar(entry: entry, total: t.totalEpisodes ?? 0, onEdit: _editList));
     }
-    final next = simklNextUp(
+    final next = _kind == SimklKind.movie ? null : simklNextUp(
       title: t,
       episodes: episodes,
       entry: entry,
       now: now,
-      info: (widget.listService ?? SimklListService.instance).nextToWatch(widget.simklId),
+      info: _lists.nextToWatch(widget.simklId),
     );
     if (next != null) {
       out.add(SimklNextEpisodeCard(
@@ -395,10 +406,16 @@ class _SimklMediaPageState extends State<SimklMediaPage> {
         now: now,
         marking: _marking,
         checkingIn: _checkingIn,
-        onCheckIn: _signedIn && _listKnown && next.episode != null ? () => _checkIn(next.episode!) : null,
+        onCheckIn: _signedIn && _listKnown && next.episode != null
+            ? () => _checkIn(next.seasonEpisode ?? next.episode!, season: next.season, place: next.episode)
+            : null,
         onMark: next.episode == null ? null : () => _markWatched(next.episode!),
         onOpenSequel: next.sequel == null ? null : () => _openTitle(next.sequel!),
       ));
+    }
+
+    if (_kind == SimklKind.movie && _signedIn && _listKnown && entry?.status != ListEntryStatus.completed) {
+      out.add(_MovieWatchedButton(busy: _marking, onPressed: _markMovieWatched));
     }
 
     if (t.overview != null || t.genres.isNotEmpty) {
@@ -518,13 +535,13 @@ class _SimklMediaPageState extends State<SimklMediaPage> {
 
     if ((counters?.comments ?? 0) > 0) {
       out.add(_LazyComments(
-        load: () => _service.comments(widget.simklId, _slug),
+        load: () => _service.comments(widget.simklId, _slug, kind: _kind),
         onViewAll: _openComments,
       ));
     }
     if ((counters?.memos ?? 0) > 0) {
       out.add(_LazyMemos(
-        load: () => _service.memos(widget.simklId, _slug),
+        load: () => _service.memos(widget.simklId, _slug, kind: _kind),
         onViewAll: _openMemos,
       ));
     }
@@ -537,16 +554,51 @@ class _SimklMediaPageState extends State<SimklMediaPage> {
     final entry = _entry;
     final n = e.number;
     if (entry == null || entry.status == null || n == null || e.isSpecial) return false;
-    return n <= entry.progress;
+    if (e.season == null) return n <= entry.progress;
+    // Shows: the place in the watch order, seasons one after the other.
+    final place = regularEpisodes(_episodes ?? const []).indexOf(e) + 1;
+    return place > 0 && place <= entry.progress;
+  }
+
+  /// A movie off the list or planned: one tap marks it watched (completed, in the history).
+  Future<void> _markMovieWatched() async {
+    final t = _title;
+    if (t == null || _marking) return;
+    setState(() => _marking = true);
+    try {
+      final entry = _entry ??
+          ListEntryView(
+            id: t.simklId,
+            category: _kind.category,
+            title: t.title,
+            imageUrl: t.posterUrl,
+            largeImageUrl: t.posterUrl,
+            mediaType: 'movie',
+            total: 1,
+            genres: t.genres,
+          );
+      final saved = await _lists.save(entry, status: ListEntryStatus.completed);
+      if (mounted) setState(() => _entry = saved);
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.maybeOf(context)?.showSnackBar(SnackBar(content: Text(S.current.Sk_Edit_Failed)));
+      }
+    } finally {
+      if (mounted) setState(() => _marking = false);
+    }
   }
 
   Widget _info(BuildContext context, SimklTitle t, SimklTitlePage? page) {
     final studios = page?.studios?.isNotEmpty == true ? page!.studios! : t.studios;
+    final movie = _kind == SimklKind.movie;
     final rows = <(String, String?)>[
-      (S.current.Smp_Type, SimklFormat.type(t.animeType)),
+      (S.current.Smp_Type, movie ? S.current.Skm_Movie : SimklFormat.type(t.animeType) ?? (_kind == SimklKind.tv ? S.current.Skm_Show : null)),
       (S.current.Smp_Episodes, t.totalEpisodes != null && t.totalEpisodes! > 0 ? SimklFormat.count(t.totalEpisodes!) : null),
       (S.current.Smp_Status, SimklFormat.status(t.status)),
-      (S.current.Smp_Aired, SimklFormat.aired(t)),
+      if (movie) (S.current.Skm_Released, SimklFormat.date(t.released)) else (S.current.Smp_Aired, SimklFormat.aired(t)),
+      if (movie) (S.current.Director, t.director),
+      if (movie && (t.budget ?? 0) > 0) (S.current.Skm_Budget, SimklFormat.money(t.budget!)),
+      if (movie && (t.revenue ?? 0) > 0) (S.current.Skm_Box_Office, SimklFormat.money(t.revenue!)),
       (S.current.Smp_Season, t.seasonNameYear),
       (S.current.Smp_Airs, SimklFormat.airs(t.airs)),
       (S.current.Smp_Runtime, t.runtime != null && t.runtime! > 0 ? S.current.Smp_Minutes(t.runtime!) : null),
@@ -557,7 +609,7 @@ class _SimklMediaPageState extends State<SimklMediaPage> {
       (S.current.Smp_Certification, t.certification),
       (S.current.Smp_Alt_Titles, t.altTitles.isEmpty ? null : t.altTitles.join('\n')),
     ];
-    final ids = simklExternalLinks(t.externalIds, animeType: t.animeType);
+    final ids = simklExternalLinks(t.externalIds, animeType: t.animeType, kind: _kind);
     final tags = page?.tags ?? const <String>[];
     final links = page?.links ?? const <SimklLink>[];
     return SimklSection(
@@ -591,7 +643,11 @@ class _SimklMediaPageState extends State<SimklMediaPage> {
 
   void _openEpisode(SimklEpisode e) {
     final n = e.number;
-    final url = n != null && !e.isSpecial ? '$_pageUrl/episode-$n/' : _pageUrl;
+    final url = n == null || e.isSpecial
+        ? _pageUrl
+        : e.season != null
+            ? '$_pageUrl/season-${e.season}/episode-$n/'
+            : '$_pageUrl/episode-$n/';
     launchWebView(url, context: context);
   }
 
@@ -600,7 +656,7 @@ class _SimklMediaPageState extends State<SimklMediaPage> {
     _push(SimklListScreen<SimklEpisode>(
       title: S.current.Smp_Episodes,
       initial: episodes,
-      load: ({bool force = false}) => _service.episodes(widget.simklId, force: force),
+      load: ({bool force = false}) => _service.episodes(widget.simklId, kind: _kind, force: force),
       itemBuilder: (context, e) => SimklEpisodeRow(
         episode: e,
         watched: _isWatched(e),
@@ -616,7 +672,7 @@ class _SimklMediaPageState extends State<SimklMediaPage> {
       title: S.current.Smp_Reviews,
       initial: first,
       load: ({bool force = false}) async =>
-          (await _service.reviews(widget.simklId, _slug, force: force))?.items,
+          (await _service.reviews(widget.simklId, _slug, kind: _kind, force: force))?.items,
       itemBuilder: (context, r) => Padding(
         padding: const EdgeInsets.symmetric(horizontal: simklPagePadding, vertical: 6),
         child: SimklReviewCard(
@@ -630,14 +686,14 @@ class _SimklMediaPageState extends State<SimklMediaPage> {
 
   void _openComments() => _push(SimklListScreen<SimklComment>(
         title: S.current.Smp_Comments,
-        load: ({bool force = false}) => _service.comments(widget.simklId, _slug, force: force),
+        load: ({bool force = false}) => _service.comments(widget.simklId, _slug, kind: _kind, force: force),
         itemBuilder: (context, c) => SimklCommentTile(c),
       ));
 
   void _openMemos() => _push(SimklListScreen<Object>(
         title: S.current.Smp_Memos,
         load: ({bool force = false}) async {
-          final memos = await _service.memos(widget.simklId, _slug, force: force);
+          final memos = await _service.memos(widget.simklId, _slug, kind: _kind, force: force);
           return memos == null ? null : groupMemos(memos);
         },
         itemBuilder: (context, item) =>
@@ -809,6 +865,28 @@ class _LazyMemosState extends State<_LazyMemos> {
       title: S.current.Smp_Memos,
       onViewAll: widget.onViewAll,
       child: Column(children: [for (final m in top.take(_shown)) SimklMemoTile(m)]),
+    );
+  }
+}
+
+/// "Mark as watched" of a movie that is not completed yet.
+class _MovieWatchedButton extends StatelessWidget {
+  final bool busy;
+  final VoidCallback onPressed;
+
+  const _MovieWatchedButton({required this.busy, required this.onPressed});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(simklPagePadding, 10, simklPagePadding, 0),
+      child: FilledButton.tonalIcon(
+        onPressed: busy ? null : onPressed,
+        icon: busy
+            ? const SizedBox.square(dimension: 18, child: CircularProgressIndicator(strokeWidth: 2.5))
+            : const Icon(Icons.check_rounded),
+        label: Text(S.current.Skm_Mark_Movie_Watched),
+      ),
     );
   }
 }

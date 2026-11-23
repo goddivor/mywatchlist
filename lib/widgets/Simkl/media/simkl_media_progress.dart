@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/services/api/SimKl/simkl_detail_models.dart';
-import 'package:mywatchlist/services/api/SimKl/simkl_list_service.dart' show SimklNextToWatch;
+import 'package:mywatchlist/services/api/SimKl/simkl_list_service.dart' show SimklNextToWatch, regularEpisodes;
 import 'package:mywatchlist/widgets/Simkl/media/simkl_media_format.dart';
 import 'package:mywatchlist/widgets/Simkl/media/simkl_media_sections.dart' show simklPagePadding;
 import 'package:mywatchlist/widgets/common/app_colors.dart';
@@ -27,12 +27,29 @@ enum SimklNextKind {
 @immutable
 class SimklNextUp {
   final SimklNextKind kind;
+
+  /// The episode's place in the watch order (what "Mark watched" sets the progress to).
   final int? episode;
+
+  /// Shows: the season and the number inside it, shown as `S2E5`.
+  final int? season;
+  final int? seasonEpisode;
   final String? episodeTitle;
   final DateTime? date;
   final SimklLinkedTitle? sequel;
 
-  const SimklNextUp(this.kind, {this.episode, this.episodeTitle, this.date, this.sequel});
+  const SimklNextUp(
+    this.kind, {
+    this.episode,
+    this.season,
+    this.seasonEpisode,
+    this.episodeTitle,
+    this.date,
+    this.sequel,
+  });
+
+  /// `S2E5` for a show's episode, null otherwise.
+  String? get code => season != null && seasonEpisode != null ? 'S${season}E$seasonEpisode' : null;
 }
 
 /// Computes the next-episode card from the record, its episodes and the user's entry (null =
@@ -44,10 +61,18 @@ SimklNextUp? simklNextUp({
   required DateTime now,
   SimklNextToWatch? info,
 }) {
-  final regular = [
-    for (final e in episodes ?? const <SimklEpisode>[])
-      if (!e.isSpecial && e.number != null) e,
-  ]..sort((a, b) => a.number!.compareTo(b.number!));
+  // Watch order: by season (shows), then number. The n-th one is the n-th watched.
+  final regular = regularEpisodes(episodes ?? const <SimklEpisode>[]);
+  final seasons = regular.any((e) => e.season != null && e.season! > 1);
+  int? place(SimklEpisode e) => regular.indexOf(e) + 1;
+  SimklNextUp up(SimklNextKind kind, SimklEpisode e) => SimklNextUp(
+        kind,
+        episode: place(e),
+        season: seasons ? e.season : null,
+        seasonEpisode: seasons ? e.number : null,
+        episodeTitle: _t(e),
+        date: e.date,
+      );
   bool aired(SimklEpisode e) => e.aired && (e.date == null || !e.date!.isAfter(now));
   final ended = SimklFormat.status(title.status) == S.current.Smp_Status_Ended;
   final sequel = title.relations
@@ -58,11 +83,19 @@ SimklNextUp? simklNextUp({
   final status = entry?.status;
   // Simkl's own answer (`next_to_watch_info`) wins over the computation below while it is about
   // the episode right after the user's progress.
-  if (info != null && entry != null && status == ListEntryStatus.current && info.episode == entry.progress + 1) {
+  final infoPlace = info == null
+      ? null
+      : info.season == null
+          ? info.episode
+          : place(regular.firstWhere((e) => e.season == info.season && e.number == info.episode,
+              orElse: () => const SimklEpisode(title: '')));
+  if (info != null && entry != null && status == ListEntryStatus.current && infoPlace == entry.progress + 1) {
     final date = info.date;
     return SimklNextUp(
       date == null || !date.isAfter(now) ? SimklNextKind.watchNext : SimklNextKind.upcoming,
-      episode: info.episode,
+      episode: infoPlace,
+      season: info.season,
+      seasonEpisode: info.season == null ? null : info.episode,
       episodeTitle: info.title,
       date: date,
     );
@@ -71,22 +104,21 @@ SimklNextUp? simklNextUp({
     final next = entry.progress + 1;
     final done = status == ListEntryStatus.completed || (total > 0 && next > total);
     if (done) return sequel == null ? null : SimklNextUp(SimklNextKind.sequel, sequel: sequel);
-    final ep = regular.where((e) => e.number == next).firstOrNull;
+    final ep = next <= regular.length ? regular[next - 1] : null;
     if (ep == null) {
       // No episode list: an ended title with episodes left has them all aired.
       return ended ? SimklNextUp(SimklNextKind.watchNext, episode: next) : null;
     }
-    if (aired(ep)) return SimklNextUp(SimklNextKind.watchNext, episode: next, episodeTitle: _t(ep), date: ep.date);
-    return SimklNextUp(SimklNextKind.upcoming, episode: next, episodeTitle: _t(ep), date: ep.date);
+    return up(aired(ep) ? SimklNextKind.watchNext : SimklNextKind.upcoming, ep);
   }
 
   final coming = regular.where((e) => !aired(e) && e.date != null).firstOrNull;
   if (coming != null) {
-    return SimklNextUp(SimklNextKind.upcoming, episode: coming.number, episodeTitle: _t(coming), date: coming.date);
+    return up(SimklNextKind.upcoming, coming);
   }
   final last = regular.where(aired).lastOrNull;
   if (last != null && ended) {
-    return SimklNextUp(SimklNextKind.ended, episode: last.number, episodeTitle: _t(last), date: last.date);
+    return up(SimklNextKind.ended, last);
   }
   return null;
 }
@@ -132,7 +164,10 @@ class SimklNextEpisodeCard extends StatelessWidget {
     final line = sequel != null
         ? '${s.Smp_Rel_Sequel} · ${sequel.title}'
         : [
-            if (next.episode != null) s.Sk_Episode_Short(next.episode!),
+            if (next.code != null)
+              next.code!
+            else if (next.episode != null)
+              s.Sk_Episode_Short(next.episode!),
             if (next.episodeTitle != null) next.episodeTitle!,
           ].join(' · ');
     final date = next.date;
@@ -221,7 +256,7 @@ class SimklNextEpisodeCard extends StatelessWidget {
                           child: SizedBox.square(dimension: 22, child: CircularProgressIndicator(strokeWidth: 2.5)),
                         )
                       : IconButton.filled(
-                          tooltip: s.Skr_Mark_Watched(next.episode!),
+                          tooltip: next.code != null ? s.Skm_Mark_Episode_Watched(next.code!) : s.Skr_Mark_Watched(next.episode!),
                           onPressed: mark,
                           icon: const Icon(Icons.check_rounded),
                         )
@@ -282,7 +317,8 @@ class SimklMyStatusBar extends StatelessWidget {
               ),
             ],
           ),
-          if (e != null && status != null) ...[
+          // A movie has no progress: its status says whether it was watched.
+          if (e != null && status != null && e.category != 'movie') ...[
             const SizedBox(height: 10),
             Row(
               children: [

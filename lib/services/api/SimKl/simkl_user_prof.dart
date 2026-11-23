@@ -1,3 +1,4 @@
+import 'package:html_unescape/html_unescape.dart';
 import 'package:mywatchlist/services/api/SimKl/simkl_title_language.dart';
 
 /// The signed-in Simkl user (`GET /users/settings`). Every field is optional on Simkl's side.
@@ -42,7 +43,8 @@ class UserProfSimkl {
       joinedAt: DateTime.tryParse(text(user['joined_at'])),
       gender: text(user['gender']),
       avatar: text(user['avatar']),
-      bio: text(user['bio']),
+      // Simkl sends the bio HTML-escaped (`it&#039;s`).
+      bio: HtmlUnescape().convert(text(user['bio'])),
       location: text(user['loc']),
       age: text(user['age']),
       accountId: account['id'] is num ? (account['id'] as num).toInt() : 0,

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mywatchlist/widgets/Simkl/simkl_catalogue.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/pages/Simkl/simkl_explore_page.dart';
@@ -25,6 +26,8 @@ void main() {
   late FakeSimkl fake;
 
   setUp(() async {
+    // These pages were written for the anime catalogue (the app opens on TV shows).
+    SimklCatalogue.instance.reset(SimklKind.anime);
     SharedPreferences.setMockInitialValues({});
     HomeSectionCache.clear();
     // No poster on purpose: a test never loads a picture over the network.
@@ -138,7 +141,8 @@ void main() {
   testWidgets('list and profile ask to sign in when Simkl is not connected', (tester) async {
     await pump(tester, const SimklUserPage());
     expect(find.text('Sign in with Simkl'), findsOneWidget);
-    expect(find.text('Anime'), findsOneWidget, reason: 'no anime / manga switch');
+    // Signed out: no list, so no TV shows / Anime / Movies switch either.
+    expect(find.text('Anime'), findsNothing);
     expect(find.text('Manga'), findsNothing);
 
     await pump(tester, const SimklUserProfilePage(isSelf: true));

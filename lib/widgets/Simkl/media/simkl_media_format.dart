@@ -109,6 +109,12 @@ abstract final class SimklFormat {
     return d == null ? null : DateFormat.yMMMd(_locale).format(d);
   }
 
+  /// "2010-07-15" in the locale; null for nothing.
+  static String? date(String? iso) => isoDate(iso);
+
+  /// US dollars, short: "$160M".
+  static String money(int dollars) => NumberFormat.compactSimpleCurrency(locale: _locale, name: 'USD').format(dollars);
+
   static String? aired(SimklTitle t) {
     final from = isoDate(t.firstAired);
     final to = isoDate(t.lastAired);

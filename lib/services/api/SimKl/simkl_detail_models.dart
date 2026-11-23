@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:mywatchlist/services/api/SimKl/simkl_kind.dart';
 import 'package:mywatchlist/services/api/SimKl/simkl_models.dart' show SimklImages;
 import 'package:mywatchlist/services/api/SimKl/simkl_title_language.dart';
 
@@ -9,6 +10,19 @@ double? _double(Object? v) => v is num ? v.toDouble() : (v is String ? double.tr
 String? _text(Object? v) => v is String && v.trim().isNotEmpty ? v.trim() : null;
 List<Object?> _list(Object? v) => v is List ? v : const [];
 Map<String, Object?> _map(Object? v) => v is Map ? v.cast<String, Object?>() : const {};
+
+/// Text of an overview that may carry HTML line breaks (`<br>`, shows and movies).
+String? _plain(Object? v) {
+  final t = _text(v);
+  if (t == null) return null;
+  final out = t
+      .replaceAll(RegExp(r'<br\s*/?>', caseSensitive: false), '\n')
+      .replaceAll(RegExp(r'<[^>]+>'), '')
+      .replaceAll(RegExp(r'[ \t]+\n'), '\n')
+      .replaceAll(RegExp(r'\n{3,}'), '\n\n')
+      .trim();
+  return out.isEmpty ? null : out;
+}
 
 /// `"24%"` → 24.
 double? parsePercent(Object? v) {
@@ -94,6 +108,10 @@ class SimklLinkedTitle {
   final String? posterUrl;
   final String? animeType;
 
+  /// The catalogue of the title (`type` of the item); null when the item does not say (then it
+  /// is in the catalogue of the page that lists it).
+  final SimklKind? kind;
+
   /// Relations only: `sequel`, `prequel`, `side_story`, `summary`…
   final String? relationType;
 
@@ -110,6 +128,7 @@ class SimklLinkedTitle {
     this.year,
     this.posterUrl,
     this.animeType,
+    this.kind,
     this.relationType,
     this.usersPercent,
     this.usersCount,
@@ -130,6 +149,7 @@ class SimklLinkedTitle {
       year: _int(m['year']),
       posterUrl: SimklMediaImages.poster(m['poster']),
       animeType: _text(m['anime_type']),
+      kind: SimklKind.ofType(m['type'] ?? m['endpoint_type']),
       relationType: _text(m['relation_type']),
       usersPercent: parsePercent(m['users_percent']),
       usersCount: _int(m['users_count']),
@@ -140,9 +160,10 @@ class SimklLinkedTitle {
       _list(raw).map(SimklLinkedTitle.fromJson).whereType<SimklLinkedTitle>().toList();
 }
 
-/// The full record of `GET /anime/{id}` (Simkl API, Cloudflare-cached, not counted).
+/// The full record of `GET /{tv|anime|movies}/{id}` (Simkl API, Cloudflare-cached, not counted).
 @immutable
 class SimklTitle {
+  final SimklKind kind;
   final int simklId;
   final String? slug;
   final int? malId;
@@ -170,6 +191,15 @@ class SimklTitle {
   final List<String> studios;
   final List<String> altTitles;
 
+  /// Movies: release day (`released`), director, budget and box office in US dollars.
+  final String? released;
+  final String? director;
+  final int? budget;
+  final int? revenue;
+
+  /// Shows: `2008 - 2013`.
+  final String? yearStartEnd;
+
   /// Every external id the record carries (`anilist`, `kitsu`, `imdb`, `tmdb`, `tvdb`, `anidb`,
   /// `mal`...), by key, as text; Simkl's own ids (`simkl`, `simkl_id`, `slug`) are left out.
   final Map<String, String> externalIds;
@@ -183,6 +213,7 @@ class SimklTitle {
   final List<SimklLinkedTitle> similar;
 
   const SimklTitle({
+    this.kind = SimklKind.anime,
     required this.simklId,
     required this.title,
     this.slug,
@@ -209,6 +240,11 @@ class SimklTitle {
     this.seasonNameYear,
     this.studios = const [],
     this.altTitles = const [],
+    this.released,
+    this.director,
+    this.budget,
+    this.revenue,
+    this.yearStartEnd,
     this.externalIds = const {},
     this.titleRomaji,
     this.simklRating,
@@ -221,7 +257,13 @@ class SimklTitle {
   });
 
   /// Null for Simkl's `[]` (unknown id) or a record without id and title.
-  static SimklTitle? fromJson(Object? raw, {int? fallbackId, SimklTitleLanguage? language}) {
+  /// [kind] is the catalogue the record was asked from (the record's own `type` wins).
+  static SimklTitle? fromJson(
+    Object? raw, {
+    int? fallbackId,
+    SimklTitleLanguage? language,
+    SimklKind kind = SimklKind.anime,
+  }) {
     if (raw is! Map) return null;
     final m = raw.cast<String, Object?>();
     final ids = _map(m['ids']);
@@ -232,6 +274,7 @@ class SimklTitle {
     final altNames = _list(m['alt_titles']).map((a) => a is Map ? _text(a['name']) : null).whereType<String>().toList();
     final romaji = _text(m['title_romaji']);
     return SimklTitle(
+      kind: SimklKind.ofType(m['type']) ?? kind,
       simklId: id,
       slug: _text(ids['slug']),
       malId: _int(ids['mal']),
@@ -258,7 +301,7 @@ class SimklTitle {
       certification: _text(m['certification']),
       country: _text(m['country']),
       originalLanguage: _text(m['original_language']),
-      overview: _text(m['overview']),
+      overview: _plain(m['overview']),
       genres: _list(m['genres']).map(_text).whereType<String>().toList(),
       network: _text(m['network']),
       status: _text(m['status']),
@@ -269,6 +312,11 @@ class SimklTitle {
       seasonNameYear: _text(m['season_name_year']),
       studios: _list(m['studios']).map((s) => s is Map ? _text(s['name']) : _text(s)).whereType<String>().toList(),
       altTitles: altNames,
+      released: _text(m['released']),
+      director: _text(m['director']),
+      budget: _int(m['budget']),
+      revenue: _int(m['revenue']),
+      yearStartEnd: _text(m['year_start_end']),
       simklRating: SimklRating.fromJson(ratings['simkl']),
       malRating: SimklRating.fromJson(ratings['mal']),
       imdbRating: SimklRating.fromJson(ratings['imdb']),
@@ -283,13 +331,16 @@ class SimklTitle {
   }
 
   /// The public page of the title on simkl.com.
-  String get pageUrl => SimklImages.page(simklId, slug);
+  String get pageUrl => kind.pageUrl(simklId, slug);
 }
 
 /// One row of `GET /anime/episodes/{id}`.
 @immutable
 class SimklEpisode {
   final String title;
+
+  /// Shows: the season (0 = specials); null for anime (one absolute numbering).
+  final int? season;
   final int? number;
   final bool isSpecial;
   final bool aired;
@@ -300,6 +351,7 @@ class SimklEpisode {
 
   const SimklEpisode({
     required this.title,
+    this.season,
     this.number,
     this.isSpecial = false,
     this.aired = true,
@@ -315,10 +367,12 @@ class SimklEpisode {
     final number = _int(m['episode']);
     final title = _text(m['title']);
     if (title == null && number == null) return null;
+    final season = _int(m['season']);
     return SimklEpisode(
       title: title ?? '',
+      season: season,
       number: number,
-      isSpecial: m['type'] == 'special',
+      isSpecial: m['type'] == 'special' || season == 0,
       aired: m['aired'] != false,
       description: _text(m['description']),
       imageUrl: SimklMediaImages.episode(m['img']),
@@ -326,6 +380,9 @@ class SimklEpisode {
       runtime: _int(m['runtime']),
     );
   }
+
+  /// `S2E5` for a show's episode, `5` otherwise.
+  String get code => season != null && season! > 0 && number != null ? 'S${season}E$number' : '${number ?? ''}';
 
   static List<SimklEpisode> listFrom(Object? raw) => _list(raw).map(SimklEpisode.fromJson).whereType<SimklEpisode>().toList();
 }
@@ -524,8 +581,12 @@ class SimklTitlePage {
 
 /// The pages of a title on other sites, from its external ids: AniList, Kitsu, MyAnimeList,
 /// IMDb, TMDB, TVDB, AniDB, in that order; an id Simkl gives without a known page is left out.
-List<({String name, String url})> simklExternalLinks(Map<String, String> ids, {String? animeType}) {
-  final movie = animeType?.toLowerCase() == 'movie';
+List<({String name, String url})> simklExternalLinks(
+  Map<String, String> ids, {
+  String? animeType,
+  SimklKind kind = SimklKind.anime,
+}) {
+  final movie = kind == SimklKind.movie || animeType?.toLowerCase() == 'movie';
   String? id(String key) => ids[key];
   return [
     if (id('anilist') case final v?) (name: 'AniList', url: 'https://anilist.co/anime/$v'),
@@ -533,7 +594,9 @@ List<({String name, String url})> simklExternalLinks(Map<String, String> ids, {S
     if (id('mal') case final v?) (name: 'MyAnimeList', url: 'https://myanimelist.net/anime/$v'),
     if (id('imdb') case final v?) (name: 'IMDb', url: 'https://www.imdb.com/title/$v/'),
     if (id('tmdb') case final v?) (name: 'TMDB', url: 'https://www.themoviedb.org/${movie ? 'movie' : 'tv'}/$v'),
-    if (id('tvdb') case final v?) (name: 'TVDB', url: 'https://thetvdb.com/?tab=series&id=$v'),
+    if (id('tvdb') case final v?)
+      (name: 'TVDB', url: movie ? 'https://thetvdb.com/?tab=movie&id=$v' : 'https://thetvdb.com/?tab=series&id=$v'),
+    if (id('letterboxd') case final v?) (name: 'Letterboxd', url: 'https://letterboxd.com/film/$v/'),
     if (id('anidb') case final v?) (name: 'AniDB', url: 'https://anidb.net/anime/$v'),
   ];
 }
