@@ -38,5 +38,6 @@
   "Skm_Genre_War": "Guerre",
   "Skm_Genre_Western": "Western",
   "Skm_No_Planned_Movies": "Aucun film prévu pour l'instant",
-  "Skm_Mark_Episode_Watched": "Marquer {episode} comme vu"
+  "Skm_Mark_Episode_Watched": "Marquer {episode} comme vu",
+  "Skm_Movies_Watched": "Vus"
 }

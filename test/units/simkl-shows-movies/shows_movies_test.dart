@@ -9,6 +9,7 @@ import 'package:mywatchlist/services/api/SimKl/simkl_detail_models.dart';
 import 'package:mywatchlist/services/api/SimKl/simkl_kind.dart';
 import 'package:mywatchlist/services/api/SimKl/simkl_list_service.dart';
 import 'package:mywatchlist/services/api/SimKl/simkl_models.dart';
+import 'package:mywatchlist/services/api/SimKl/simkl_stats_service.dart';
 import 'package:mywatchlist/widgets/Simkl/media/simkl_media_progress.dart';
 import 'package:mywatchlist/widgets/Simkl/simkl_user_list_adapter.dart';
 import 'package:mywatchlist/widgets/user/list/list_entry_view.dart';
@@ -245,6 +246,25 @@ void main() {
       'ids': {'simkl': 1},
     }, kind: SimklKind.tv)!;
     expect(t.overview, 'Late 1980s.\n\nThe journey of two brothers.');
+  });
+
+  test('the profile reads the watch time of each catalogue from one stats answer', () {
+    final all = SimklWatchStats.allFrom({
+      'tv': {
+        'total_mins': 3000,
+        'watching': {'left_to_watch_mins': 600, 'left_to_watch_episodes': 12},
+      },
+      'anime': {'total_mins': 9000},
+      'movies': {
+        'total_mins': 480,
+        'plantowatch': {'left_to_watch_mins': 240},
+      },
+      'watched_last_week': {'tv_mins': 90, 'anime_mins': 30, 'movies_mins': 120},
+    });
+    expect(all[SimklKind.tv]!.totalMins, 3000);
+    expect((all[SimklKind.tv]!.leftMins, all[SimklKind.tv]!.leftEpisodes), (600, 12));
+    expect(all[SimklKind.movie]!.lastWeekMins, 120);
+    expect(all[SimklKind.anime]!.totalMins, 9000);
   });
 
   test('the next episode of a show is named by season', () {
