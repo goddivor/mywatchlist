@@ -10,7 +10,6 @@ import 'package:mywatchlist/services/api/SimKl/simkl_cdn.dart';
 import 'package:mywatchlist/services/api/SimKl/simkl_client.dart';
 import 'package:mywatchlist/services/api/SimKl/simkl_detail_models.dart';
 import 'package:mywatchlist/services/api/SimKl/simkl_discover_service.dart' hide SimklFormat;
-import 'package:mywatchlist/services/api/SimKl/simkl_kind.dart';
 import 'package:mywatchlist/services/api/SimKl/simkl_list_service.dart';
 import 'package:mywatchlist/widgets/Simkl/calendar/simkl_calendar.dart';
 import 'package:mywatchlist/widgets/Simkl/simkl_user_list_adapter.dart';
