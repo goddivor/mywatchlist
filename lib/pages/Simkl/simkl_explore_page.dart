@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:mywatchlist/generated/l10n.dart';
+import 'package:mywatchlist/pages/Simkl/simkl_search_all_page.dart';
 import 'package:mywatchlist/services/api/SimKl/simkl_discover_service.dart';
 import 'package:mywatchlist/services/api/SimKl/simkl_models.dart';
 import 'package:mywatchlist/widgets/MAL/home/homeappbar.dart';
@@ -20,11 +21,14 @@ import 'package:mywatchlist/widgets/user/list/list_entry_view.dart';
 /// the API. Movies have no premieres and no best list. Each list has its own options row
 /// (period, day, bucket, genre, sort, and the format of anime).
 class SimklExplorePage extends StatefulWidget {
-  const SimklExplorePage({super.key, this.service, this.kind});
+  const SimklExplorePage({super.key, this.service, this.kind, this.initialQuery = ''});
 
   /// A fixed catalogue: the Simkl app's search page of one catalogue (back button, no switch,
   /// the keyboard opens on the search field). Null = the Explore tab with the shared switch.
   final SimklKind? kind;
+
+  /// A search to run at opening (the "See all" of the search over every catalogue).
+  final String initialQuery;
 
   /// Test hook; defaults to the shared Simkl discover service.
   final SimklDiscoverService? service;
@@ -81,6 +85,12 @@ class _SimklExplorePageState extends State<SimklExplorePage> {
       });
     }
     _loadFeed();
+    final initial = widget.initialQuery.trim();
+    if (initial.isNotEmpty) {
+      _controller.text = initial;
+      _text = initial;
+      _search(initial);
+    }
     if (simklSignedIn) {
       simklListById().then((list) {
         if (mounted) setState(() => _list = list);
@@ -241,6 +251,14 @@ class _SimklExplorePageState extends State<SimklExplorePage> {
                 floating: true,
                 snap: true,
                 title: Text(s.Skm_Search_In(simklKindLabel(_kind))),
+                actions: [
+                  IconButton(
+                    tooltip: s.Skn_Search_Everywhere,
+                    icon: const Icon(Icons.travel_explore_rounded),
+                    onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(
+                        builder: (_) => SimklSearchAllPage(initialQuery: _text))),
+                  ),
+                ],
               )
             else ...[
               SliverAppBar(

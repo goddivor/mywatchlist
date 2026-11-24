@@ -1,0 +1,26 @@
+{
+  "@@locale": "en",
+  "Skn_Episode_Title": "{title} · {episode}",
+  "@Skn_Episode_Title": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      },
+      "episode": {
+        "type": "String"
+      }
+    }
+  },
+  "Skn_Movie_Title": "{title} is out",
+  "@Skn_Movie_Title": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "Skn_Body_Plan_Show": "A show from your Plan to watch list is airing. Take a look.",
+  "Skn_Body_Plan_Movie": "A movie from your Plan to watch list is out. Take a look.",
+  "Skn_Search_All": "Search shows, anime and movies",
+  "Skn_Search_Everywhere": "Search every catalogue"
+}

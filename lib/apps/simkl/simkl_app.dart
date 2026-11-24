@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mywatchlist/apps/simkl/simkl_top_bar.dart';
 import 'package:mywatchlist/generated/l10n.dart';
+import 'package:mywatchlist/pages/Simkl/simkl_search_all_page.dart';
 import 'package:mywatchlist/pages/Simkl/simkl_explore_page.dart';
 import 'package:mywatchlist/pages/Simkl/simkl_home_page.dart';
 import 'package:mywatchlist/pages/Simkl/simkl_user_page.dart';
@@ -144,7 +145,7 @@ class _SimklCalendarTabState extends State<SimklCalendarTab> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.transparent,
-      appBar: SimklTopBar(title: S.of(context).Skr_Calendar),
+      appBar: SimklTopBar(title: S.of(context).Skr_Calendar, onSearch: () => _searchAll(context)),
       body: Column(
         children: [
           SimklKindSwitch(value: _kind, onChanged: (k) => setState(() => _kind = k)),
@@ -163,8 +164,12 @@ class SimklProfileTab extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.transparent,
-      appBar: SimklTopBar(title: S.of(context).Skm_Profile),
+      appBar: SimklTopBar(title: S.of(context).Skm_Profile, onSearch: () => _searchAll(context)),
       body: const SimklUserProfilePage(isSelf: true),
     );
   }
 }
+
+/// The search over every Simkl catalogue (the calendar and the profile belong to none).
+void _searchAll(BuildContext context) => Navigator.of(context)
+    .push(MaterialPageRoute<void>(builder: (_) => const SimklSearchAllPage()));
