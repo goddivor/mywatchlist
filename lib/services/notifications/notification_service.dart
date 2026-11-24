@@ -15,6 +15,8 @@ import 'package:mywatchlist/services/api/Anilist/anilist_notifications_service.d
 import 'package:mywatchlist/services/api/Kitsu/kitsu_library.dart';
 import 'package:mywatchlist/services/api/MAL/mal_api.dart';
 import 'package:mywatchlist/services/api/SimKl/simkl_list_service.dart';
+import 'package:mywatchlist/services/api/SimKl/simkl_cdn.dart';
+import 'package:mywatchlist/services/api/SimKl/simkl_kind.dart';
 import 'package:mywatchlist/user/list_cache/list_status_cache.dart';
 import 'package:mywatchlist/user/preferences/preferences.dart';
 import 'package:mywatchlist/user/user_manager.dart';
@@ -28,6 +30,7 @@ import 'mal_hub_poller.dart';
 import 'notification_backend.dart';
 import 'notification_models.dart';
 import 'notification_planner.dart';
+import 'simkl_release_planner.dart';
 
 export 'notification_backend.dart' show NotificationPermissions;
 export 'notification_models.dart';
@@ -43,6 +46,11 @@ typedef CoverFetcher = Future<String?> Function(String url, int malId);
 typedef CoverPruner = Future<void> Function(Set<int> keep);
 
 typedef EpisodeSource = Future<List<AiringEpisode>> Function();
+
+/// The Simkl show episodes and movie releases to notify when [feed] is Simkl (empty
+/// otherwise, or when Simkl does not answer).
+typedef SimklReleaseLoader = Future<List<PlannedNotification>> Function(
+    AccountType feed, NotificationPreferences prefs, DateTime now);
 
 /// What the last scheduling run did, for the settings page.
 @immutable
@@ -106,6 +114,7 @@ class NotificationService {
     NotificationBackend? backend,
     CandidateLoader? loadCandidates,
     EpisodeSource? loadEpisodes,
+    SimklReleaseLoader? loadSimklReleases,
     CoverFetcher? fetchCover,
     CoverPruner? pruneCovers,
     NotificationTexts? texts,
@@ -124,6 +133,7 @@ class NotificationService {
   })  : _backend = backend ?? PluginNotificationBackend(),
         _loadCandidates = loadCandidates ?? _loadMalCandidates,
         _loadEpisodes = loadEpisodes ?? _loadScheduleEpisodes,
+        _loadSimklReleases = loadSimklReleases ?? _simklReleases,
         _fetchCover = fetchCover ?? _downloadCover,
         _pruneCovers = pruneCovers ?? _deleteCoversExcept,
         _texts = texts ?? const _SNotificationTexts(),
@@ -165,6 +175,7 @@ class NotificationService {
   final NotificationBackend _backend;
   final CandidateLoader _loadCandidates;
   final EpisodeSource _loadEpisodes;
+  final SimklReleaseLoader _loadSimklReleases;
   final CoverFetcher _fetchCover;
   final CoverPruner _pruneCovers;
   final NotificationTexts _texts;
@@ -463,26 +474,39 @@ class NotificationService {
         return;
       }
 
-      final planned = NotificationPlanner.plan(
-        candidates: candidates,
-        schedule: episodes,
-        prefs: prefs,
-        texts: _texts,
-        now: now,
-      );
+      // Simkl's shows and movies come from Simkl's own calendars, next to the anime.
+      var simkl = const <PlannedNotification>[];
+      try {
+        simkl = await _loadSimklReleases(feed, prefs, now);
+      } catch (e) {
+        debugPrint('Notifications: Simkl shows and movies unavailable ($e)');
+      }
+      final all = [
+        ...NotificationPlanner.plan(
+          candidates: candidates,
+          schedule: episodes,
+          prefs: prefs,
+          texts: _texts,
+          now: now,
+        ),
+        ...simkl,
+      ]..sort((a, b) => a.at.compareTo(b.at));
+      final planned = all.length > NotificationPlanner.maxNotifications
+          ? all.sublist(0, NotificationPlanner.maxNotifications)
+          : all;
       final covers = await _covers(planned);
       await _backend.cancelAll();
       var count = 0;
       for (final n in planned) {
         try {
-          await _backend.schedule(n, _lookOf(n, covers[n.malId], prefs.largeImage));
+          await _backend.schedule(n, _lookOf(n, covers[n.coverId], prefs.largeImage));
           count++;
         } catch (e) {
           debugPrint('Notifications: could not schedule ${n.id} ($e)');
         }
       }
       await _saveLastRun(now, feed);
-      unawaited(_prune({for (final n in planned) if (n.malId != null) n.malId!}));
+      unawaited(_prune({for (final n in planned) if (n.coverId != null) n.coverId!}));
       summary.value = NotificationSummary(
         scheduled: count,
         next: planned.isEmpty ? null : planned.first.at,
@@ -545,7 +569,7 @@ class NotificationService {
   Future<Map<int?, String?>> _covers(List<PlannedNotification> planned) async {
     final urls = <int, String>{};
     for (final n in planned) {
-      final id = n.malId;
+      final id = n.coverId;
       if (id != null && n.imageUrl != null && n.imageUrl!.isNotEmpty) urls[id] = n.imageUrl!;
     }
     final result = <int?, String?>{};
@@ -680,6 +704,41 @@ class NotificationService {
               broadcastTime: a.broadcast?.startTime,
             ),
     ];
+  }
+
+  /// Simkl's Watching and Plan to watch shows on Simkl's TV calendar, and its Plan to watch
+  /// movies on the release calendar, when the notifications follow Simkl.
+  static Future<List<PlannedNotification>> _simklReleases(
+      AccountType feed, NotificationPreferences prefs, DateTime now) async {
+    if (feed != AccountType.simkl) return const [];
+    Future<List<T>> orEmpty<T>(Future<List<T>> f) async {
+      try {
+        return await f;
+      } catch (_) {
+        return <T>[];
+      }
+    }
+    final (shows, showCalendar, movies, movieCalendar) = await (
+      orEmpty(SimklListService.of(SimklKind.tv).entries()),
+      orEmpty(SimklCdn.instance.calendar(kind: SimklKind.tv)),
+      orEmpty(SimklListService.of(SimklKind.movie).entries()),
+      orEmpty(SimklCdn.instance.calendar(kind: SimklKind.movie)),
+    ).wait;
+    return SimklReleasePlanner.plan(
+      shows: shows,
+      showCalendar: showCalendar,
+      movies: movies,
+      movieCalendar: movieCalendar,
+      prefs: prefs,
+      texts: SimklReleaseTexts(
+        episodeTitle: (title, code) => S.current.Skn_Episode_Title(title, code),
+        movieTitle: (title) => S.current.Skn_Movie_Title(title),
+        watchingBody: S.current.Notif_Body_Watching,
+        planShowBody: S.current.Skn_Body_Plan_Show,
+        planMovieBody: S.current.Skn_Body_Plan_Movie,
+      ),
+      now: now,
+    );
   }
 
   static Future<Directory> _coverDir() async =>

@@ -1,0 +1,9 @@
+{
+  "@@locale": "fr_FR",
+  "Skn_Episode_Title": "{title} · {episode}",
+  "Skn_Movie_Title": "{title} est sorti",
+  "Skn_Body_Plan_Show": "Une série de votre liste « À regarder » est en cours de diffusion. Jetez-y un œil.",
+  "Skn_Body_Plan_Movie": "Un film de votre liste « À regarder » est sorti. Jetez-y un œil.",
+  "Skn_Search_All": "Chercher des séries, des anime et des films",
+  "Skn_Search_Everywhere": "Chercher dans tous les catalogues"
+}

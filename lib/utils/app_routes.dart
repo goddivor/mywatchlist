@@ -42,6 +42,9 @@ import 'package:mywatchlist/widgets/Anilist/anilist_profile_view.dart';
 import 'package:mywatchlist/widgets/Kitsu/kitsu_profile_view.dart';
 import 'package:mywatchlist/user/accounts/account_bloc.dart';
 import 'package:mywatchlist/widgets/Simkl/calendar/simkl_calendar.dart';
+import 'package:mywatchlist/widgets/Simkl/simkl_media_widgets.dart' show openSimklTitle;
+import 'package:mywatchlist/services/api/SimKl/simkl_kind.dart';
+import 'package:mywatchlist/services/notifications/simkl_release_planner.dart' show parseSimklTitlePayload;
 import 'package:mywatchlist/widgets/Simkl/simkl_profile_view.dart';
 import 'package:mywatchlist/widgets/Simkl/simkl_states.dart' show simklSignedIn;
 import 'package:mywatchlist/widgets/user/profile/user_pop_sheet.dart';
@@ -259,6 +262,13 @@ abstract final class AppRoutes {
   /// empty payloads do nothing. Called by the home shell once its first frame is drawn.
   static Future<void> openFromNotification(
       BuildContext context, String? payload) async {
+    // A Simkl show or movie (`simkl:tv:<id>`, `simkl:movie:<id>`) opens its Simkl page.
+    final simkl = parseSimklTitlePayload(payload);
+    if (simkl != null) {
+      await openSimklTitle(context,
+          simklId: simkl.simklId, kind: simkl.movie ? SimklKind.movie : SimklKind.tv);
+      return;
+    }
     final route = NotificationRoute.parse(payload);
     if (route == null) return;
     switch (route.kind) {
