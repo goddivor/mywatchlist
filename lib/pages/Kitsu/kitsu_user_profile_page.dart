@@ -12,7 +12,10 @@ import 'package:mywatchlist/widgets/user/profile/profile_states.dart';
 class KitsuUserProfilePage extends StatelessWidget {
   final bool isSelf;
 
-  const KitsuUserProfilePage({super.key, required this.isSelf});
+  const KitsuUserProfilePage({super.key, required this.isSelf, this.barActions = const []});
+
+  /// The Kitsu app's bar buttons, in the profile's own bar (the banner reaches the top).
+  final List<Widget> barActions;
 
   @override
   Widget build(BuildContext context) {
@@ -33,7 +36,7 @@ class KitsuUserProfilePage extends StatelessWidget {
           );
         }
         // Rebuilt from scratch when the signed-in account changes.
-        return KitsuProfileView(key: ValueKey(user.username));
+        return KitsuProfileView(key: ValueKey(user.username), barActions: barActions);
       },
     );
   }

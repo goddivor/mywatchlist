@@ -48,8 +48,11 @@ class KitsuProfileView extends StatefulWidget {
   /// Whether a Kitsu account is signed in (the Follow button needs one); replaced by tests.
   final bool Function()? signedIn;
 
+  /// Buttons shown in the profile's own bar (the Kitsu app's bar buttons).
+  final List<Widget> barActions;
+
   const KitsuProfileView(
-      {super.key, this.userId, this.showBack = false, this.loader, this.signedIn});
+      {super.key, this.userId, this.showBack = false, this.loader, this.signedIn, this.barActions = const []});
 
   @override
   State<KitsuProfileView> createState() => _KitsuProfileViewState();
@@ -86,6 +89,7 @@ class _KitsuProfileViewState extends State<KitsuProfileView> {
             isSelf: widget.userId == null,
             showBack: widget.showBack,
             canFollow: widget.userId != null && signedIn(),
+            barActions: widget.barActions,
           );
         }
         final body = snapshot.hasError
@@ -135,9 +139,15 @@ class _Loaded extends StatefulWidget {
   final bool isSelf;
   final bool showBack;
   final bool canFollow;
+  final List<Widget> barActions;
 
-  const _Loaded(
-      {required this.profile, required this.isSelf, required this.showBack, required this.canFollow});
+  const _Loaded({
+    required this.profile,
+    required this.isSelf,
+    required this.showBack,
+    required this.canFollow,
+    this.barActions = const [],
+  });
 
   @override
   State<_Loaded> createState() => _LoadedState();
@@ -187,6 +197,7 @@ class _LoadedState extends State<_Loaded> {
                     icon: const Icon(Icons.open_in_new_rounded),
                     onPressed: () => launchWebView(profile.webUrl, context: context),
                   ),
+                  ...widget.barActions,
                 ],
                 bottom: TabBar(
                   isScrollable: true,
@@ -266,6 +277,23 @@ class _Header extends StatelessWidget {
                   ? ColoredBox(color: scheme.primaryContainer)
                   : AppImage(url: profile.coverUrl, placeholderColor: scheme.primaryContainer),
             ),
+            // The banner reaches the top of the screen: darker under the status bar.
+            if (profile.coverUrl != null)
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                height: statusBar + 40,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [Colors.black.withValues(alpha: 0.55), Colors.transparent],
+                    ),
+                  ),
+                ),
+              ),
             PositionedDirectional(
               start: 16,
               bottom: -_avatar / 2,

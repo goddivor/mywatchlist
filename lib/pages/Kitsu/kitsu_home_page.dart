@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mywatchlist/apps/kitsu/kitsu_top_bar.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mywatchlist/constants/constants.dart' show AccountType, getTileSizeValues;
 import 'package:mywatchlist/generated/l10n.dart';
@@ -33,7 +34,10 @@ import 'package:mywatchlist/widgets/user/list/list_entry_view.dart';
 ///
 /// Every title is drawn as a Kitsu tile with Kitsu's percentage and opens its Kitsu page.
 class KitsuHomePage extends StatefulWidget {
-  const KitsuHomePage({super.key});
+  const KitsuHomePage({super.key, this.embedded = false});
+
+  /// The Kitsu app's "Quick update" tab: its title with the Kitsu bar buttons.
+  final bool embedded;
 
   @override
   State<KitsuHomePage> createState() => _KitsuHomePageState();
@@ -114,7 +118,9 @@ class _KitsuHomePageState extends State<KitsuHomePage> {
                   titleSpacing: 0,
                   toolbarHeight: kToolbarHeight,
                   backgroundColor: Colors.transparent,
-                  title: const AppBarHome(transparent: true, showSettings: true),
+                  title: widget.embedded
+                      ? KitsuTitleRow(title: S.of(context).Kta_Quick_Update_Title)
+                      : const AppBarHome(transparent: true, showSettings: true),
                 ),
                 SliverToBoxAdapter(
                   child: ListenableBuilder(
