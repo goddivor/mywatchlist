@@ -15,6 +15,8 @@ import 'package:mywatchlist/services/api/MAL/web/profile_comments_api.dart' show
 import 'package:mywatchlist/services/auth/mal_web_session.dart';
 import 'package:mywatchlist/user/user_mal_v2.dart';
 import 'package:mywatchlist/widgets/forum/forum_common.dart' show ForumAvatarPictures;
+import 'package:mywatchlist/services/api/MAL/web/mal_time_zone.dart';
+import 'package:timezone/timezone.dart' as tz;
 
 /// One row of the MAL inbox or sent box (`mymessages.php`).
 @immutable
@@ -371,14 +373,26 @@ final RegExp _ago = RegExp(r'^(\d+)\s+(second|minute|hour|day)s?\s+ago$', caseSe
 
 /// MAL's date text as a time, when it can be read (absolute, `Today`/`Yesterday, h:mm a`,
 /// `N hours ago`); null otherwise.
-DateTime? parseMalMessageDate(String? raw, {DateTime? now}) {
+///
+/// MAL writes its absolute dates in the account's time zone ([zone], by default
+/// [MalTimeZone.instance]), not the phone's: they are read there and returned as the phone's
+/// local time. Without a known zone they are read as the phone's time.
+DateTime? parseMalMessageDate(String? raw, {DateTime? now, tz.Location? zone}) {
   final s = _clean(raw);
   if (s.isEmpty) return null;
   final at = now ?? DateTime.now();
+  final z = zone ?? MalTimeZone.instance.location;
+  // "Today" and the year of a short date are the account's, in its own zone.
+  final here = z == null ? at : tz.TZDateTime.from(at, z);
+  DateTime wall(int y, int m, int d, int h, int min) =>
+      z == null
+          ? DateTime(y, m, d, h, min)
+          // The phone's own clock (the timezone package's `local` is UTC unless set).
+          : DateTime.fromMillisecondsSinceEpoch(tz.TZDateTime(z, y, m, d, h, min).millisecondsSinceEpoch);
   for (final f in [_malDate, _malShortDate]) {
     try {
       final d = f.parseStrict(s);
-      return f == _malShortDate ? DateTime(at.year, d.month, d.day, d.hour, d.minute) : d;
+      return wall(f == _malShortDate ? here.year : d.year, d.month, d.day, d.hour, d.minute);
     } on FormatException {
       // next format
     }
@@ -387,8 +401,9 @@ DateTime? parseMalMessageDate(String? raw, {DateTime? now}) {
   if (rel != null) {
     try {
       final t = _malTime.parseStrict(rel.group(2)!.trim());
-      final day = rel.group(1)!.toLowerCase() == 'today' ? at : at.subtract(const Duration(days: 1));
-      return DateTime(day.year, day.month, day.day, t.hour, t.minute);
+      final today = DateTime(here.year, here.month, here.day);
+      final day = rel.group(1)!.toLowerCase() == 'today' ? today : DateTime(today.year, today.month, today.day - 1);
+      return wall(day.year, day.month, day.day, t.hour, t.minute);
     } on FormatException {
       return null;
     }
@@ -733,6 +748,8 @@ class MalMessagesApi {
 
   Future<MalMessagesPage> _box(String path, {required bool sent}) async {
     await _requireSession();
+    // The dates of the page are in the account's time zone.
+    await MalTimeZone.instance.ensure();
     final response = await client.get(path);
     final body = _ok(response, path);
     final page = await _parse(sent ? _parseSent : _parseInbox, body);
@@ -759,6 +776,7 @@ class MalMessagesApi {
   /// Reads [message] (MAL marks it read) with the earlier messages of its thread.
   Future<MalMessageThread> thread(MalMessage message) async {
     await _requireSession();
+    await MalTimeZone.instance.ensure();
     final thread = message.threadId;
     final path = '/mymessages.php?go=read&id=${message.id}'
         '${message.isSent ? '&f=1' : ''}${thread != null ? '&threadid=$thread' : ''}';
