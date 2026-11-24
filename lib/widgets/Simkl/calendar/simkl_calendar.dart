@@ -262,34 +262,44 @@ class _SimklCalendarPageState extends State<SimklCalendarPage> {
     } catch (_) {}
   }
 
-  /// A listed title whose episode has aired and is past the viewer's progress.
+  SimklListService get _list => widget.listService ?? SimklListService.of(widget.kind);
+
+  /// A listed title that came out and is not watched yet: an aired episode past the viewer's
+  /// progress (a show's is checked once its place in the watch order is known), a released
+  /// movie not completed.
   bool _canMark(SimklAiring a) {
     final e = a.entry;
-    final n = a.media.episode;
     final at = a.media.airDate;
-    // Anime only: a show numbers its episodes per season, a movie has none.
-    return widget.kind == SimklKind.anime &&
-        e != null &&
-        e.status != null &&
-        n != null &&
-        n > e.progress &&
-        at != null &&
-        !at.isAfter((widget.now ?? DateTime.now)());
+    if (e == null || e.status == null || at == null) return false;
+    if (at.isAfter((widget.now ?? DateTime.now)())) return false;
+    if (widget.kind == SimklKind.movie) return e.status != ListEntryStatus.completed;
+    final n = a.media.episode;
+    if (n == null) return false;
+    return widget.kind == SimklKind.tv || n > e.progress;
   }
 
-  /// Long press: asks, then marks the episode (and those before it) watched through the list
-  /// service. Only on the viewer's confirmation.
+  /// What the sheet offers: "Mark S2E5 watched", "Mark Ep. 5 watched", "Mark as watched".
+  String _markLabel(SimklAiring a) {
+    final m = a.media;
+    if (widget.kind == SimklKind.movie) return S.current.Skm_Mark_Movie_Watched;
+    if (widget.kind == SimklKind.tv && m.season != null) {
+      return S.current.Skm_Mark_Episode_Watched('S${m.season}E${m.episode}');
+    }
+    return S.current.Skr_Mark_Watched(m.episode!);
+  }
+
+  /// Long press: asks, then marks the episode (and those before it) or the movie watched
+  /// through the list service. Only on the viewer's confirmation.
   Future<void> _markWatched(SimklAiring a) async {
     final entry = a.entry;
-    final n = a.media.episode;
-    if (entry == null || n == null) return;
+    if (entry == null) return;
     final ok = await showModalBottomSheet<bool>(
       context: context,
       showDragHandle: true,
       builder: (context) => SafeArea(
         child: ListTile(
           leading: const Icon(Icons.check_rounded),
-          title: Text(S.current.Skr_Mark_Watched(n)),
+          title: Text(_markLabel(a)),
           subtitle: Text(a.media.title, maxLines: 1, overflow: TextOverflow.ellipsis),
           onTap: () => Navigator.of(context).pop(true),
         ),
@@ -298,12 +308,31 @@ class _SimklCalendarPageState extends State<SimklCalendarPage> {
     if (ok != true || !mounted) return;
     final messenger = ScaffoldMessenger.maybeOf(context);
     try {
-      final saved = await (widget.listService ?? SimklListService.instance).setProgress(entry, n);
+      final int target;
+      switch (widget.kind) {
+        case SimklKind.movie:
+          target = 1;
+        case SimklKind.tv:
+          final season = a.media.season ?? 1;
+          final order = await _list.watchOrderOf(entry, season, a.media.episode!);
+          // Already watched (or not on the show's list): nothing is taken off the history.
+          if (order == null || order <= entry.progress) {
+            messenger?.showSnackBar(SnackBar(content: Text(S.current.Skr_Watched)));
+            return;
+          }
+          target = order;
+        case SimklKind.anime:
+          target = a.media.episode!;
+      }
+      final saved = await _list.setProgress(entry, target);
       final next = _future.then((d) => (d.$1, {...d.$2, saved.id: saved}));
       if (mounted) setState(() {
         _future = next;
       });
-      messenger?.showSnackBar(SnackBar(content: Text(S.current.Sdp_Marked_Watched(n))));
+      messenger?.showSnackBar(SnackBar(
+          content: Text(widget.kind == SimklKind.anime
+              ? S.current.Sdp_Marked_Watched(target)
+              : S.current.Skr_Watched)));
     } catch (_) {
       messenger?.showSnackBar(SnackBar(content: Text(S.current.Sk_Edit_Failed)));
     }

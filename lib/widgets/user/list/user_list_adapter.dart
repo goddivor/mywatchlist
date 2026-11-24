@@ -6,6 +6,16 @@ import 'package:mywatchlist/widgets/user/list/list_entry_view.dart';
 
 export 'package:mywatchlist/widgets/user/list/list_entry_look.dart';
 
+/// Status tabs in display order; null = "All".
+const List<ListEntryStatus?> userListTabs = [
+  null,
+  ListEntryStatus.current,
+  ListEntryStatus.completed,
+  ListEntryStatus.onHold,
+  ListEntryStatus.dropped,
+  ListEntryStatus.planned,
+];
+
 /// One page of a user list.
 class ListPage {
   final List<ListEntryView> entries;
@@ -72,6 +82,9 @@ abstract class UserListAdapter extends ListEntryLook {
     required int limit,
     String? apiSort,
   });
+
+  /// The status tabs of [category] in display order, null = "All". Every status by default.
+  List<ListEntryStatus?> statusTabs(String category) => userListTabs;
 
   /// Entries per status as the tracker's profile counts them, or null when
   /// unknown (the tabs then show the loaded counts).
