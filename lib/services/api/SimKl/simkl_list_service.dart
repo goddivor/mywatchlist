@@ -591,6 +591,14 @@ class SimklListService {
     return _scored(entry.copyWith(progress: next, status: status, updatedAt: _clock().toUtc()));
   }
 
+  /// Shows: where episode [number] of [season] sits in the watch order (1 = the first one
+  /// watched), the number of watched episodes it takes; null when the show does not list it.
+  Future<int?> watchOrderOf(ListEntryView entry, int season, int number) async {
+    final episodes = regularEpisodes(await _episodesOf(entry.id));
+    final i = episodes.indexWhere((e) => (e.season ?? 1) == season && e.number == number);
+    return i < 0 ? null : i + 1;
+  }
+
   /// The episodes of a show, by default from the shared title service (`/tv/episodes/{id}`).
   Future<List<SimklEpisode>> _episodesOf(int id) =>
       (_episodes ?? (int id) => SimklDetailService.instance.episodes(id, kind: kind))(id);

@@ -75,6 +75,15 @@ class SimklUserListAdapter extends UserListAdapter {
             option,
       ];
 
+  /// A movie is planned, completed or dropped: its list has no "watching" or "on hold" tab.
+  @override
+  List<ListEntryStatus?> statusTabs(String category) => category == SimklKind.movie.category
+      ? [
+          for (final status in userListTabs)
+            if (status == null || simklMovieStatuses.contains(status)) status,
+        ]
+      : userListTabs;
+
   /// Nothing is sorted by the server.
   @override
   String? apiSort(String category, String sortKey, SortDirection direction) => null;

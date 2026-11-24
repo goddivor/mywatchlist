@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mywatchlist/constants/constants.dart' show DisplaySubType;
@@ -20,16 +21,6 @@ import 'package:mywatchlist/widgets/user/list/user_list_controller.dart';
 import 'package:mywatchlist/widgets/user/list/user_list_tab.dart';
 
 const double _timeLineHeight = 24;
-
-/// Status tabs in display order; null = "All".
-const List<ListEntryStatus?> userListTabs = [
-  null,
-  ListEntryStatus.current,
-  ListEntryStatus.completed,
-  ListEntryStatus.onHold,
-  ListEntryStatus.dropped,
-  ListEntryStatus.planned,
-];
 
 /// The user's anime / manga list of one tracker (DailyAL user page, list
 /// part): category switch, status tabs with counts, search in the list,
@@ -72,8 +63,8 @@ class UserListView extends StatefulWidget {
   State<UserListView> createState() => _UserListViewState();
 }
 
-class _UserListViewState extends State<UserListView> with SingleTickerProviderStateMixin {
-  late final TabController _tabs = TabController(length: userListTabs.length, vsync: this);
+class _UserListViewState extends State<UserListView> with TickerProviderStateMixin {
+  late TabController _tabs = TabController(length: _statuses.length, vsync: this);
   late final ListStatusCache _cache = widget.cache ?? ListStatusCache.instance;
   final Map<String, ListViewSettings> _settings = {};
   final Map<String, Map<ListEntryStatus?, UserListTabController>> _controllers = {};
@@ -95,6 +86,24 @@ class _UserListViewState extends State<UserListView> with SingleTickerProviderSt
   bool get _canSelect => _adapter is MalUserListAdapter && (_adapter as MalUserListAdapter).isSelf;
 
   UserListAdapter get _adapter => widget.adapter;
+
+  /// The status tabs of the shown category (a Simkl movie is never watched or on hold).
+  List<ListEntryStatus?> get _statuses => _adapter.statusTabs(_category);
+
+  /// Shows [category] on its tab [index], with a new tab controller when its tabs differ.
+  void _showCategory(String category, int Function(String category) index) {
+    final before = _statuses;
+    _category = category;
+    if (!listEquals(before, _statuses)) {
+      _tabs.removeListener(_onTabChanged);
+      _tabs.dispose();
+      _tabs = TabController(length: _statuses.length, vsync: this)..addListener(_onTabChanged);
+    }
+    _tabs.index = index(category);
+  }
+
+  /// Where [status] sits in the tabs, the "All" tab when it has none.
+  int _indexOf(ListEntryStatus? status) => status == null ? 0 : _statuses.indexOf(status).clamp(0, _statuses.length);
   /// Watched in episodes (anime, and Simkl's shows and movies), not read.
   bool get _isAnime => _category != 'manga';
 
@@ -129,8 +138,7 @@ class _UserListViewState extends State<UserListView> with SingleTickerProviderSt
       ListCategory.manga => 'manga',
       ListCategory.none => place.category,
     };
-    _category = widget.categories.contains(wanted) ? wanted : widget.categories.first;
-    _tabs.index = _initialTab(_category);
+    _showCategory(widget.categories.contains(wanted) ? wanted : widget.categories.first, _initialTab);
     setState(() => _ready = true);
     _loadCounts(_category);
   }
@@ -143,14 +151,14 @@ class _UserListViewState extends State<UserListView> with SingleTickerProviderSt
     if (value == null || value == 'all') return 0;
     final status = ListEntryStatus.fromMal(value) ??
         ListEntryStatus.values.where((s) => s.name == value).firstOrNull;
-    return status == null ? 0 : userListTabs.indexOf(status);
+    return _indexOf(status);
   }
 
   void _onTabChanged() {
     if (_tabs.indexIsChanging) return;
     // The picks belong to the tab they were made in.
     _selection.stop();
-    final status = userListTabs[_tabs.index];
+    final status = _statuses[_tabs.index];
     _controllerFor(_category, status).activate();
     _place = _place.copyWith(tabCategory: _category, tab: status?.name ?? 'all');
     widget.store.writePlace(_adapter.tracker, _place);
@@ -180,10 +188,7 @@ class _UserListViewState extends State<UserListView> with SingleTickerProviderSt
 
   void _changeCategory(String category) {
     if (category == _category) return;
-    setState(() {
-      _category = category;
-      _tabs.index = _initialTabAfterSwitch(category);
-    });
+    setState(() => _showCategory(category, _initialTabAfterSwitch));
     _place = _place.copyWith(category: category);
     widget.store.writePlace(_adapter.tracker, _place);
     _loadCounts(category);
@@ -194,13 +199,13 @@ class _UserListViewState extends State<UserListView> with SingleTickerProviderSt
     final saved = _place.tabs[category];
     if (saved == null || saved == 'all') return 0;
     final status = ListEntryStatus.values.where((s) => s.name == saved).firstOrNull;
-    return status == null ? 0 : userListTabs.indexOf(status);
+    return _indexOf(status);
   }
 
   void _applySettings(ListViewSettings value) {
     _settings[_category] = value;
     widget.store.writeView(_adapter.tracker, _category, value);
-    final visible = userListTabs[_tabs.index];
+    final visible = _statuses[_tabs.index];
     for (final entry in (_controllers[_category] ?? const {}).entries) {
       entry.value.updateSettings(value, visible: entry.key == visible);
     }
@@ -213,7 +218,7 @@ class _UserListViewState extends State<UserListView> with SingleTickerProviderSt
   }
 
   void _applyQuery() {
-    final visible = userListTabs[_tabs.index];
+    final visible = _statuses[_tabs.index];
     for (final entry in (_controllers[_category] ?? const {}).entries) {
       entry.value.updateQuery(_search.text, visible: entry.key == visible);
     }
@@ -241,7 +246,7 @@ class _UserListViewState extends State<UserListView> with SingleTickerProviderSt
   }
 
   Future<void> _openSheet(ListSortFilterTab tab) async {
-    final visible = _controllerFor(_category, userListTabs[_tabs.index]);
+    final visible = _controllerFor(_category, _statuses[_tabs.index]);
     final result = await showListSortFilterSheet(
       context,
       settings: _current,
@@ -447,7 +452,7 @@ class _UserListViewState extends State<UserListView> with SingleTickerProviderSt
               key: ValueKey('tabs-$_category'),
               controller: _tabs,
               children: [
-                for (final status in userListTabs) _tab(context, status),
+                for (final status in _statuses) _tab(context, status),
               ],
             ),
     );
@@ -484,7 +489,7 @@ class _UserListViewState extends State<UserListView> with SingleTickerProviderSt
   }
 
   /// The entries of the tab on screen.
-  List<ListEntryView> get _shownEntries => _controllerFor(_category, userListTabs[_tabs.index]).entries;
+  List<ListEntryView> get _shownEntries => _controllerFor(_category, _statuses[_tabs.index]).entries;
 
   List<ListEntryView> _picked() => [for (final e in _shownEntries) if (_selection.contains(e.id)) e];
 
@@ -557,7 +562,7 @@ class _UserListViewState extends State<UserListView> with SingleTickerProviderSt
             isScrollable: true,
             tabAlignment: TabAlignment.start,
             tabs: [
-              for (final status in userListTabs) Tab(child: _TabLabel(
+              for (final status in _statuses) Tab(child: _TabLabel(
                 key: ValueKey('label-$_category-${status?.name ?? 'all'}'),
                 controller: _controllerFor(_category, status),
                 label: status == null
@@ -574,6 +579,7 @@ class _UserListViewState extends State<UserListView> with SingleTickerProviderSt
             height: _timeLineHeight,
             child: _TimeLine(
               tabs: _tabs,
+              statuses: _statuses,
               controllerOf: (status) => _controllerFor(_category, status),
             ),
           ),
@@ -717,16 +723,17 @@ class _TabLabel extends StatelessWidget {
 /// "Time left: 41 d 3 h" under the toolbar: follows the visible tab and its controller.
 class _TimeLine extends StatelessWidget {
   final TabController tabs;
+  final List<ListEntryStatus?> statuses;
   final UserListTabController Function(ListEntryStatus? status) controllerOf;
 
-  const _TimeLine({required this.tabs, required this.controllerOf});
+  const _TimeLine({required this.tabs, required this.statuses, required this.controllerOf});
 
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
       listenable: tabs,
       builder: (context, _) {
-        final status = userListTabs[tabs.index];
+        final status = statuses[tabs.index];
         return ListenableBuilder(
           listenable: controllerOf(status),
           builder: (context, _) {
