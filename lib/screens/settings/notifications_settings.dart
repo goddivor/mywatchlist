@@ -123,14 +123,14 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage>
             PrefSwitchTile(
               icon: Icons.play_circle_outline,
               title: s.Notif_Watching_Title,
-              subtitle: s.Notif_Watching_Desc,
+              subtitle: _followsSimkl() ? s.Skn_Watching_Desc : s.Notif_Watching_Desc,
               read: (p) => p.notifications.watchingList,
               toEvent: (v) => NotificationPreferencesChanged((p) => p.copyWith(watchingList: v)),
             ),
             PrefSwitchTile(
               icon: Icons.bookmark_border,
               title: s.Notif_Plan_Title,
-              subtitle: s.Notif_Plan_Desc,
+              subtitle: _followsSimkl() ? s.Skn_Plan_Desc : s.Notif_Plan_Desc,
               read: (p) => p.notifications.planToWatchList,
               toEvent: (v) => NotificationPreferencesChanged((p) => p.copyWith(planToWatchList: v)),
             ),
@@ -331,7 +331,7 @@ class _MasterCard extends StatelessWidget {
                 ),
           ),
           subtitle: Text(
-            S.current.Notif_Master_Desc,
+            _followsSimkl() ? S.current.Skn_Master_Desc : S.current.Notif_Master_Desc,
             style: TextStyle(color: enabled ? colors.onPrimaryContainer : colors.onSurfaceVariant),
           ),
           value: enabled,
@@ -467,3 +467,10 @@ class _Notice extends StatelessWidget {
     );
   }
 }
+
+/// The reminders follow Simkl (its shows and movies are notified next to the anime): the
+/// texts then name them.
+bool _followsSimkl() =>
+    NotificationService.candidateTracker(
+        UserManager.instance.currentTracker, UserManager.instance.isAuthenticated) ==
+    AccountType.simkl;

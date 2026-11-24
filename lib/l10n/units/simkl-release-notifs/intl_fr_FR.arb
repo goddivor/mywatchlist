@@ -5,5 +5,8 @@
   "Skn_Body_Plan_Show": "Une série de votre liste « À regarder » est en cours de diffusion. Jetez-y un œil.",
   "Skn_Body_Plan_Movie": "Un film de votre liste « À regarder » est sorti. Jetez-y un œil.",
   "Skn_Search_All": "Chercher des séries, des anime et des films",
-  "Skn_Search_Everywhere": "Chercher dans tous les catalogues"
+  "Skn_Search_Everywhere": "Chercher dans tous les catalogues",
+  "Skn_Master_Desc": "Recevoir une notification à la sortie d'un épisode de vos séries ou de vos animes, ou d'un film",
+  "Skn_Watching_Desc": "Chaque nouvel épisode d'une série ou d'un anime que vous regardez",
+  "Skn_Plan_Desc": "Chaque nouvel épisode d'une série ou d'un anime que vous prévoyez de regarder, et chaque sortie de film"
 }
