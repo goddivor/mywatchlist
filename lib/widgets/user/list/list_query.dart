@@ -1,4 +1,5 @@
 import 'package:mywatchlist/generated/l10n.dart';
+import 'package:mywatchlist/screens/search/search_catalog.dart' show SearchCatalog;
 import 'package:mywatchlist/widgets/common/list_sort_filter.dart';
 import 'package:mywatchlist/widgets/common/select/select_option.dart';
 import 'package:mywatchlist/widgets/user/list/list_entry_view.dart';
@@ -174,6 +175,12 @@ String _scoreBucketLabel(String bucket) => switch (bucket) {
       _ => S.current.UserList_Not_Scored,
     };
 
+/// The name of genre [name] in the app language, or [name] when it is not a MAL genre.
+String genreLabelOf(String name, {required bool isAnime}) {
+  final id = SearchCatalog.genreId(name, manga: !isAnime);
+  return id == null ? name : SearchCatalog.genreLabel(id, manga: !isAnime);
+}
+
 /// Filter facets built from the loaded [entries] (only values that exist).
 List<ListFilterFacet> facetsFor(Iterable<ListEntryView> entries,
     {required bool isAnime, DateTime? now}) {
@@ -196,7 +203,11 @@ List<ListFilterFacet> facetsFor(Iterable<ListEntryView> entries,
     if (rating != null) ratings.add(rating);
   }
   final sortedMedia = media.toList()..sort((a, b) => mediaTypeLabel(a).compareTo(mediaTypeLabel(b)));
-  final sortedGenres = genres.toList()..sort();
+  // Genres in the app language when the name is a known MAL genre (any tracker's English name);
+  // other names stay as the tracker wrote them. Sorted by what the user reads.
+  final genreLabels = {for (final g in genres) g: genreLabelOf(g, isAnime: isAnime)};
+  final sortedGenres = genres.toList()
+    ..sort((a, b) => genreLabels[a]!.toLowerCase().compareTo(genreLabels[b]!.toLowerCase()));
   final sortedSeasons = seasons.toList()..sort(_compareSeasons);
   int byName(String a, String b) => a.toLowerCase().compareTo(b.toLowerCase());
   final sortedStudios = studios.toList()..sort(byName);
@@ -228,7 +239,7 @@ List<ListFilterFacet> facetsFor(Iterable<ListEntryView> entries,
       ListFilterFacet(
         key: ListFacetKeys.genre,
         label: S.current.UserList_Facet_Genres,
-        options: [for (final g in sortedGenres) SelectOption(g, g)],
+        options: [for (final g in sortedGenres) SelectOption(g, genreLabels[g]!)],
         allowExclude: true,
         matchAll: true,
       ),
