@@ -12,12 +12,16 @@ enum _Sort { recent, title }
 /// Saved anime, manga, characters, people, forum topics, users, clubs, news, featured
 /// articles and interest stacks.
 ///
-/// Filters: one chip per kind that has items (with its count), one per tracker when several
-/// trackers have items, text search, sort. A list of forum topics only shows as rows (they
+/// Each tracker app lists its own bookmarks ([tracker]). Filters: one chip per kind that has
+/// items (with its count), one per tracker when several trackers have items (all trackers
+/// shown), text search, sort. A list of forum topics only shows as rows (they
 /// have no picture), anything else as a grid of covers. Removing shows an Undo. Open it with
 /// `AppRoutes.openBookmarks`; other units save items through [Bookmarks].
 class BookmarksScreen extends StatefulWidget {
-  const BookmarksScreen({super.key});
+  /// Only this tracker's bookmarks (owner rule: each tracker is its own app); null shows all.
+  final AccountType? tracker;
+
+  const BookmarksScreen({super.key, this.tracker});
 
   @override
   State<BookmarksScreen> createState() => _BookmarksScreenState();
@@ -79,7 +83,7 @@ class _BookmarksScreenState extends State<BookmarksScreen> {
       ),
     );
     if (ok == true) {
-      await Bookmarks.listenable.clear();
+      await Bookmarks.listenable.clear(tracker: widget.tracker?.name);
       if (mounted) {
         setState(() {
           _kind = null;
@@ -95,7 +99,8 @@ class _BookmarksScreenState extends State<BookmarksScreen> {
     return ListenableBuilder(
       listenable: store,
       builder: (context, _) {
-        final all = store.all;
+        final only = widget.tracker?.name;
+        final all = only == null ? store.all : store.all.where((b) => b.tracker == only).toList();
         final kinds = BookmarkKind.values
             .where((k) => all.any((b) => b.kind == k))
             .toList();

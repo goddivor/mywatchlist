@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:mywatchlist/widgets/bookmarks/bookmark_button.dart';
+import 'package:mywatchlist/cache/bookmarks.dart';
 import 'package:flutter/services.dart';
 import 'package:mywatchlist/constants/constants.dart' show AccountType;
 import 'package:mywatchlist/generated/l10n.dart';
@@ -173,6 +175,15 @@ class _KitsuMediaPageState extends State<KitsuMediaPage> {
               expandedHeight: KitsuMediaHeader.extent(context) - MediaQuery.paddingOf(context).top,
               title: _CollapsedTitle(name),
               actions: [
+                if (d != null)
+                  BookmarkButton(
+                    tracker: AccountType.kitsu.name,
+                    kind: d.kind == KitsuMediaKind.manga ? BookmarkKind.manga : BookmarkKind.anime,
+                    id: d.id,
+                    title: name,
+                    imageUrl: d.poster?.url ?? widget.posterUrl,
+                    malId: d.malId,
+                  ),
                 if (_my != null) KitsuFavouriteButton(my: _my!),
                 IconButton(
                   tooltip: S.current.Kmp_Open_On_Kitsu,

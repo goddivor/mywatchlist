@@ -123,7 +123,7 @@ abstract final class AppRoutes {
 
   /// Opens the bookmarks screen (`lib/screens/bookmarks_screen.dart`).
   static Future<void> openBookmarks(BuildContext context) =>
-      push<void>(context, const BookmarksScreen());
+      push<void>(context, BookmarksScreen(tracker: _activeTracker(context)));
 
   /// Opens the weekly airing calendar (`lib/screens/calendar/calendar_screen.dart`); a Simkl
   /// account gets Simkl's own calendar (`SimklCalendarPage`).

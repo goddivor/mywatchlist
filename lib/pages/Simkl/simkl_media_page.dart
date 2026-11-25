@@ -1,6 +1,9 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:mywatchlist/widgets/bookmarks/bookmark_opener.dart' show simklBookmarkId;
+import 'package:mywatchlist/widgets/bookmarks/bookmark_button.dart';
+import 'package:mywatchlist/cache/bookmarks.dart';
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/screens/MAL/detail/sections/section_states.dart';
 import 'package:mywatchlist/services/api/SimKl/simkl_detail_models.dart';
@@ -228,6 +231,22 @@ class _SimklMediaPageState extends State<SimklMediaPage> {
               expandedHeight: hasFanart ? SimklMediaHero.extent(context, hasFanart: true) - top : null,
               title: _CollapsedTitle(name),
               actions: [
+                if (t != null)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 2),
+                    child: BookmarkButton(
+                      style: IconButton.styleFrom(
+                        backgroundColor: AppColors.of(context).imageScrim,
+                        foregroundColor: AppColors.of(context).onImageScrim,
+                      ),
+                      tracker: AccountType.simkl.name,
+                      kind: BookmarkKind.anime,
+                      id: simklBookmarkId(_kind, widget.simklId),
+                      title: name,
+                      imageUrl: t.posterUrl,
+                      malId: t.malId,
+                    ),
+                  ),
                 SimklHeroButton(
                   tooltip: S.current.Smp_Open_On_Simkl,
                   icon: Icons.open_in_browser,
