@@ -35,7 +35,7 @@ import 'package:mywatchlist/screens/user_profile/user_profile_screen.dart';
 import 'package:mywatchlist/services/auth/anilist_auth_v2.dart';
 import 'package:mywatchlist/services/auth/mal_auth_v2.dart';
 import 'package:mywatchlist/services/auth/simkl_auth_v2.dart';
-import 'package:mywatchlist/services/notifications/mal_hub_poller.dart' show MalHubPayload;
+import 'package:mywatchlist/services/notifications/mal_hub_poller.dart' show MalHubPayload, MalMessageLink;
 import 'package:mywatchlist/user/base_user.dart' show AuthStatus;
 import 'package:mywatchlist/user/user_anilist_v2.dart';
 import 'package:mywatchlist/user/user_kitsu_v2.dart';
@@ -50,6 +50,16 @@ import 'package:mywatchlist/services/notifications/simkl_release_planner.dart' s
 import 'package:mywatchlist/widgets/Simkl/simkl_profile_view.dart';
 import 'package:mywatchlist/widgets/Simkl/simkl_states.dart' show simklSignedIn;
 import 'package:mywatchlist/widgets/user/profile/user_pop_sheet.dart';
+import 'package:mywatchlist/pages/Kitsu/kitsu_explore_page.dart';
+import 'package:mywatchlist/pages/Simkl/simkl_search_all_page.dart';
+import 'package:mywatchlist/widgets/Anilist/anilist_chips.dart' show openAnilistSearch;
+import 'package:mywatchlist/screens/mal_web/notifications_screen.dart' show MalNotificationsScreen;
+import 'package:mywatchlist/services/api/Kitsu/kitsu_graphql.dart' show KitsuMediaKind;
+import 'package:mywatchlist/widgets/Kitsu/kitsu_open.dart' show openKitsuTitle;
+import 'package:mywatchlist/pages/Anilist/anilist_notifications_page.dart' show openAnilistNotifications;
+import 'package:mywatchlist/widgets/Anilist/social/anilist_links.dart' show openAnilistTitle;
+import 'package:mywatchlist/user/user_manager.dart';
+import 'package:mywatchlist/services/notifications/notification_payload.dart';
 
 export 'package:mywatchlist/pages/settings/settings_section.dart';
 
@@ -126,6 +136,20 @@ abstract final class AppRoutes {
             AccountType.kitsu => const KitsuCalendarPage(),
             _ => const CalendarScreen(),
           });
+
+  /// The active tracker's own search: AniList's, Simkl's, Kitsu's search page, or the MAL one.
+  static Future<void> openTrackerSearch(BuildContext context) async {
+    switch (_activeTracker(context)) {
+      case AccountType.anilist:
+        openAnilistSearch(context);
+      case AccountType.simkl:
+        await push<void>(context, const SimklSearchAllPage());
+      case AccountType.kitsu:
+        await push<void>(context, const KitsuExplorePage());
+      case _:
+        await openSearch(context);
+    }
+  }
 
   /// The active tracker; null without an [AccountBloc] (tests) or while loading.
   static AccountType? _activeTracker(BuildContext context) {
@@ -278,6 +302,11 @@ abstract final class AppRoutes {
           simklId: simkl.simklId, kind: simkl.movie ? SimklKind.movie : SimklKind.tv);
       return;
     }
+    final tagged = NotificationPayload.parse(payload);
+    if (tagged != null && !tagged.isLegacy) {
+      await openTrackerPayload(context, tagged);
+      return;
+    }
     final route = NotificationRoute.parse(payload);
     if (route == null) return;
     switch (route.kind) {
@@ -291,6 +320,67 @@ abstract final class AppRoutes {
         await openMalMessage(context, id: route.id!, sent: route.sent, threadId: route.threadId);
       case NotificationRouteKind.malMessages:
         await openMalMessages(context, sent: route.sent);
+    }
+  }
+
+  /// How long the home shell takes to show another tracker's app ([TrackerSwitchScreen]
+  /// stays 700 ms), plus a margin; a page pushed earlier would close with the old app.
+  static const Duration trackerSwitchWait = Duration(milliseconds: 1100);
+
+  /// Opens a tracker-tagged [payload] on its tracker. Owner rule: switching account is switching
+  /// app, so a notification of another connected tracker first makes it the active account (its
+  /// app shows), then opens that tracker's own page. A tracker that is not signed in stays
+  /// inactive and only its pages that need no account open.
+  static Future<void> openTrackerPayload(BuildContext context, NotificationPayload payload,
+      {bool Function(AccountType tracker)? signedIn, Duration? switchWait}) async {
+    final navigator = Navigator.of(context);
+    final tracker = payload.tracker;
+    final active = _activeTracker(context);
+    final connected = (signedIn ?? UserManager.instance.isAuthenticated)(tracker);
+    if (active != null && active != tracker && connected) {
+      context.read<AccountBloc>().add(ChangeAccountEvent(tracker));
+      await Future<void>.delayed(switchWait ?? trackerSwitchWait);
+    }
+    if (!navigator.mounted) return;
+    final ctx = navigator.context;
+    final id = payload.intId;
+    switch (payload.kind) {
+      case PayloadKind.anime || PayloadKind.manga:
+        if (id == null) return;
+        final manga = payload.kind == PayloadKind.manga;
+        switch (tracker) {
+          case AccountType.anilist:
+            await openAnilistTitle(ctx, category: manga ? 'manga' : 'anime', id: id);
+          case AccountType.kitsu:
+            await openKitsuTitle(ctx, kind: manga ? KitsuMediaKind.manga : KitsuMediaKind.anime, id: '$id');
+          case AccountType.simkl:
+            await openSimklTitle(ctx, simklId: id);
+          case AccountType.myanimelist || AccountType.none:
+            await openContent(ctx, id: id, category: manga ? 'manga' : 'anime');
+        }
+      case PayloadKind.calendar:
+        await openCalendar(ctx);
+      case PayloadKind.bookmarks:
+        await openBookmarks(ctx);
+      case PayloadKind.notifications:
+        if (tracker == AccountType.anilist) {
+          await openAnilistNotifications(ctx);
+        } else if (tracker == AccountType.myanimelist) {
+          await MalNotificationsScreen.open(ctx);
+        }
+      case PayloadKind.hub:
+        final link = MalMessageLink.parse(payload.extra);
+        if (link != null && link.id != null) {
+          await openMalMessage(ctx, id: link.id!, sent: link.sent, threadId: link.threadId);
+        } else if (link != null) {
+          await openMalMessages(ctx, sent: link.sent);
+        } else {
+          await MalNotificationsScreen.open(ctx);
+        }
+      case PayloadKind.message:
+        if (id != null) await openMalMessage(ctx, id: id, threadId: payload.intExtra);
+      case PayloadKind.messages:
+        await openMalMessages(ctx);
     }
   }
 
