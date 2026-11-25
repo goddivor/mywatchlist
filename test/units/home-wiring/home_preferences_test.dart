@@ -53,6 +53,8 @@ void main() {
           {'type': 0, 'enabled': false, 'itemCount': 8},
         ],
         'tileSize': 42,
+        // Saved after the Friends activity row was offered (#339): no row is added.
+        'friendsActivityAdded': true,
       });
       expect(back.sections, hasLength(1));
       expect(back.sections.single.type, SectionType.news);
