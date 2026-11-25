@@ -5,6 +5,7 @@ import 'package:mywatchlist/cache/bookmarks.dart';
 import 'package:mywatchlist/constants/constants.dart';
 import 'package:mywatchlist/enums.dart' show ForumConstants;
 import 'package:mywatchlist/generated/l10n.dart';
+import 'package:mywatchlist/screens/MAL/character_screen.dart';
 import 'package:mywatchlist/screens/MAL/contentdetailedscreen.dart';
 import 'package:mywatchlist/screens/forum/forum_posts_screen.dart';
 import 'package:mywatchlist/screens/search/general_search_screen.dart';
@@ -170,7 +171,10 @@ class _FeaturedScreenState extends State<FeaturedScreen> {
                   ),
                   SB.h5,
                   Text(
-                    '${article?.views ?? "0"} ${widget.category == "featured" ? S.current.Views : S.current.Comments}',
+                    widget.category == 'featured'
+                        ? '${article?.views ?? "0"} ${S.current.Views}'
+                        : S.current.Dp_News_Comments(
+                            int.tryParse((article?.views ?? '0').replaceAll(',', '')) ?? 0),
                     style: textTheme.bodySmall,
                   ),
                   SB.h15,
@@ -389,7 +393,7 @@ class _FeaturedScreenState extends State<FeaturedScreen> {
     // Dynamic tabs for related database entries (anime, manga, etc.)
     for (final entry in article.relatedDatabaseEntries.entries) {
       if (entry.value.isNotEmpty) {
-        tabs[entry.key] = _relatedEntriesTab(entry.key, entry.value);
+        tabs[_entriesLabel(entry.key)] = _relatedEntriesTab(entry.key, entry.value);
       }
     }
 
@@ -573,12 +577,20 @@ class _FeaturedScreenState extends State<FeaturedScreen> {
   // Related database entries tab (anime, manga, etc.)
   // ---------------------------------------------------------------------------
 
+  /// The tab name of a related database category (MAL's own names for people and characters).
+  static String _entriesLabel(String category) => switch (category) {
+        'person' => S.current.People_Caps,
+        'character' => S.current.Characters,
+        _ => category,
+      };
+
   Widget _relatedEntriesTab(String category, List<RelatedEntry> entries) {
     if (entries.isEmpty) {
       return showNoContent();
     }
-    final isTappable =
-        category == 'anime' || category == 'manga';
+    final isTitle = category == 'anime' || category == 'manga';
+    // People and characters open their own page, like the titles.
+    final isTappable = isTitle || category == 'person' || category == 'character';
     return ListView.builder(
       padding: const EdgeInsets.only(top: 15),
       itemCount: entries.length,
@@ -596,11 +608,13 @@ class _FeaturedScreenState extends State<FeaturedScreen> {
           onTap: isTappable && entry.id != null
               ? () => gotoPage(
                     context: context,
-                    newPage: ContentDetailedScreen(
-                      node: null,
-                      id: entry.id,
-                      category: category,
-                    ),
+                    newPage: isTitle
+                        ? ContentDetailedScreen(
+                            node: null,
+                            id: entry.id,
+                            category: category,
+                          )
+                        : CharacterScreen(id: entry.id!, category: category),
                   )
               : null,
         );
