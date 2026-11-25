@@ -10,6 +10,7 @@ import 'package:mywatchlist/utils/web_launcher.dart' show launchWebView;
 import 'package:mywatchlist/widgets/Simkl/simkl_catalogue.dart';
 import 'package:mywatchlist/widgets/common/tracker_youtube_player.dart';
 import 'package:mywatchlist/constants/constants.dart' show AccountType;
+import 'package:mywatchlist/widgets/common/tracker_add_status.dart';
 import 'package:mywatchlist/widgets/common/avatar_widget.dart';
 
 /// The settings of the Simkl app: the Simkl account and what Simkl itself keeps (title
@@ -107,6 +108,7 @@ class SimklSettingsPage extends StatelessWidget {
             trailing: const Icon(Icons.open_in_new_rounded),
             onTap: () => launchWebView(simklSettingsUrl, context: context),
           ),
+          TrackerAddStatusTile(tracker: AccountType.simkl, anime: true, title: s.Tas_Add_Titles),
           const TrackerYoutubeSwitch(tracker: AccountType.simkl),
           header(s.Skm_Settings_App),
           for (final section in appSections)
