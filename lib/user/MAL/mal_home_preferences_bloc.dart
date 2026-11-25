@@ -1,5 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mywatchlist/constants/constants.dart' show AccountType;
 import 'package:mywatchlist/user/MAL/mal_home_page_preferences.dart';
+import 'package:mywatchlist/user/accounts/account_bloc.dart';
 
 // Events
 abstract class HomePreferencesEvent {}
@@ -13,6 +17,12 @@ class UpdateHomePreferencesEvent extends HomePreferencesEvent {
 }
 
 class ResetHomePreferencesEvent extends HomePreferencesEvent {}
+
+/// The active account changed: the home shows that tracker's own layout (#348).
+class HomeTrackerChangedEvent extends HomePreferencesEvent {
+  final AccountType tracker;
+  HomeTrackerChangedEvent(this.tracker);
+}
 
 // State
 class HomePreferencesState {
@@ -40,11 +50,41 @@ class HomePreferencesState {
 }
 
 // BLoC
+/// The home layout of the active tracker. Owner rule (2026-10-29): each tracker is its own app,
+/// so each keeps its own layout ([MalHomePreferences.storageKey]); given an [accounts] bloc, the
+/// layout follows the selected account.
 class HomePreferencesBloc extends Bloc<HomePreferencesEvent, HomePreferencesState> {
-  HomePreferencesBloc() : super(HomePreferencesState(preferences: MalHomePreferences())) {
+  HomePreferencesBloc({AccountBloc? accounts, AccountType? tracker})
+      : _tracker = tracker ?? _selected(accounts?.state),
+        super(HomePreferencesState(preferences: MalHomePreferences())) {
     on<LoadHomePreferencesEvent>(_onLoadPreferences);
     on<UpdateHomePreferencesEvent>(_onUpdatePreferences);
     on<ResetHomePreferencesEvent>(_onResetPreferences);
+    on<HomeTrackerChangedEvent>(_onTrackerChanged);
+    _accounts = accounts?.stream.listen((state) {
+      final next = _selected(state);
+      if (next != null && next != _tracker) add(HomeTrackerChangedEvent(next));
+    });
+  }
+
+  AccountType? _tracker;
+  StreamSubscription<AccountState>? _accounts;
+
+  /// The tracker whose layout is shown; null before the accounts loaded (the shared layout).
+  AccountType? get tracker => _tracker;
+
+  static AccountType? _selected(AccountState? state) =>
+      state is AccountLoaded && state.selectedAccountType != AccountType.none ? state.selectedAccountType : null;
+
+  Future<void> _onTrackerChanged(HomeTrackerChangedEvent event, Emitter<HomePreferencesState> emit) async {
+    _tracker = event.tracker;
+    emit(state.copyWith(preferences: await MalHomePreferences.load(tracker: _tracker), isLoading: false));
+  }
+
+  @override
+  Future<void> close() async {
+    await _accounts?.cancel();
+    return super.close();
   }
 
   Future<void> _onLoadPreferences(
@@ -54,7 +94,7 @@ class HomePreferencesBloc extends Bloc<HomePreferencesEvent, HomePreferencesStat
     emit(state.copyWith(isLoading: true));
     
     try {
-      final preferences = await MalHomePreferences.load();
+      final preferences = await MalHomePreferences.load(tracker: _tracker);
       emit(state.copyWith(
         preferences: preferences,
         isLoading: false,
@@ -74,7 +114,7 @@ class HomePreferencesBloc extends Bloc<HomePreferencesEvent, HomePreferencesStat
     emit(state.copyWith(isLoading: true));
     
     try {
-      await event.preferences.save();
+      await event.preferences.save(tracker: _tracker);
       emit(state.copyWith(
         preferences: event.preferences,
         isLoading: false,
@@ -95,7 +135,7 @@ class HomePreferencesBloc extends Bloc<HomePreferencesEvent, HomePreferencesStat
     
     try {
       final preferences = MalHomePreferences()..reset();
-      await preferences.save();
+      await preferences.save(tracker: _tracker);
       emit(state.copyWith(
         preferences: preferences,
         isLoading: false,

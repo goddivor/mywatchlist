@@ -357,6 +357,8 @@ abstract final class BackupService {
     'user_list_view_v1:',
     'user_list_place_v1:',
     'seasonal_view_v1:',
+    // One home layout per tracker (#348).
+    'mal_home_preferences:',
     'tracker_link_',
   ];
 

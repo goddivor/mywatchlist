@@ -165,7 +165,7 @@ void main() async {
                 malApi: malApi,
               ),
             ),
-            BlocProvider(create: (context) => HomePreferencesBloc()..add(LoadHomePreferencesEvent())),
+            BlocProvider(create: (context) => HomePreferencesBloc(accounts: accountBloc)..add(LoadHomePreferencesEvent())),
           ],
           child: MyWatchListApp(),
         ),

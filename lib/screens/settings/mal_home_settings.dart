@@ -1,5 +1,9 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:mywatchlist/utils/app_routes.dart';
+import 'package:mywatchlist/widgets/Simkl/simkl_home_plan.dart' show simklHomePlan;
+import 'package:mywatchlist/widgets/Kitsu/kitsu_rows.dart' show kitsuSectionSupported;
+import 'package:mywatchlist/widgets/Anilist/anilist_home_sections.dart' show anilistShowsSection;
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mywatchlist/cache/cachemanager.dart';
@@ -202,7 +206,17 @@ class _HomeSettingsPageState extends State<HomeSettingsPage> {
     }, builder: (context, state) {
       return Scaffold(
         appBar: AppBar(
-          title: Text(S.current.Hw_Set_Title),
+          title: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(S.current.Hw_Set_Title),
+              // Each tracker keeps its own home layout (#348): say whose this is.
+              if (context.read<HomePreferencesBloc>().tracker case final tracker?)
+                Text(AppRoutes.trackerLabel(tracker),
+                    style: theme.textTheme.labelMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+            ],
+          ),
           elevation: 0,
           actions: [
             // Clear cache button
@@ -641,6 +655,7 @@ class _SectionEditDialogState extends State<_SectionEditDialog> {
                     value: _type,
                     items: [
                       for (final type in kSectionPickerOrder)
+                        if (type == _type || homeSectionAvailable(context.read<HomePreferencesBloc>().tracker, type))
                         DropdownMenuItem(
                           value: type,
                           child: Row(
@@ -757,4 +772,17 @@ class _SectionEditDialogState extends State<_SectionEditDialog> {
       ),
     );
   }
+}
+
+/// Whether [tracker]'s home can draw a section of [type] (#348): the settings only offer those.
+/// MyAnimeList (and an unknown tracker) draws them all.
+bool homeSectionAvailable(AccountType? tracker, SectionType type) {
+  final section = HomeSectionPreference(type: type);
+  return switch (tracker) {
+    AccountType.anilist => anilistShowsSection(section),
+    AccountType.kitsu => kitsuSectionSupported(section),
+    AccountType.simkl => type == SectionType.userList ||
+        simklHomePlan([HomeSectionPreference(type: SectionType.userList), section]).length > 1,
+    _ => true,
+  };
 }
