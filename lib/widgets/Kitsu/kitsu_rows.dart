@@ -86,6 +86,7 @@ KitsuMediaQuery? kitsuQueryForSection(HomeSectionPreference section) {
     case SectionType.features:
     case SectionType.userList:
     case SectionType.forum:
+    case SectionType.friendsActivity:
       return null;
   }
 }

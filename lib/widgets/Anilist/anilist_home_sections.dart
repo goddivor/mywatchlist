@@ -105,6 +105,8 @@ AnilistMediaQuery? anilistQueryFor(HomeSectionPreference section) {
     case SectionType.features:
     case SectionType.userList:
     case SectionType.forum:
+    // MyAnimeList friends; AniList has its own following feed.
+    case SectionType.friendsActivity:
       return null;
   }
 }

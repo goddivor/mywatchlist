@@ -37,6 +37,9 @@ enum SectionType {
   topManhwa,
   topManhua,
   topMangaFavorites,
+
+  /// The latest list updates of the user's MAL friends (MAL's list RSS feeds).
+  friendsActivity,
 }
 
 /// Bounds of the per-section item count (the slider of the home settings). MAL's ranking,
@@ -71,6 +74,7 @@ const List<SectionType> kSectionPickerOrder = [
   SectionType.topDoujin,
   SectionType.userList,
   SectionType.forum,
+  SectionType.friendsActivity,
   SectionType.news,
   SectionType.features,
 ];
@@ -268,6 +272,8 @@ class HomeSectionPreference {
         return s.Hr_Sec_Manhua;
       case SectionType.topMangaFavorites:
         return s.Hr_Sec_Manga_Favorites;
+      case SectionType.friendsActivity:
+        return s.Mn_Tab_Friends;
     }
   }
 
@@ -332,6 +338,8 @@ class HomeSectionPreference {
         return Icons.view_agenda_outlined;
       case SectionType.topMangaFavorites:
         return Icons.favorite_border;
+      case SectionType.friendsActivity:
+        return Icons.people_alt_outlined;
     }
   }
 }
@@ -350,6 +358,7 @@ class MalHomePreferences {
   static List<HomeSectionPreference> _getDefaultSections() {
     return [
       HomeSectionPreference(type: SectionType.news, itemCount: 10, cacheDurationHours: 8),
+      HomeSectionPreference(type: SectionType.friendsActivity, itemCount: 15),
       HomeSectionPreference(type: SectionType.seasonNow, itemCount: 15),
       HomeSectionPreference(type: SectionType.suggested, itemCount: 15),
       HomeSectionPreference(type: SectionType.upcoming, itemCount: 15),
@@ -364,20 +373,35 @@ class MalHomePreferences {
     return {
       'sections': sections.map((section) => section.toJson()).toList(),
       'tileSize': tileSize.index,
+      _friendsAddedKey: true,
     };
+  }
+
+  /// Set once the Friends activity row has been offered to a saved layout (#339): it is added
+  /// after the news once, and a user who removes it keeps it removed.
+  static const String _friendsAddedKey = 'friendsActivityAdded';
+
+  /// [sections] with the Friends activity row after the news (or first), when missing.
+  @visibleForTesting
+  static List<HomeSectionPreference> withFriendsRow(List<HomeSectionPreference> sections) {
+    if (sections.any((s) => s.type == SectionType.friendsActivity)) return sections;
+    final news = sections.indexWhere((s) => s.type == SectionType.news);
+    return [...sections]..insert(news + 1, HomeSectionPreference(type: SectionType.friendsActivity, itemCount: 15));
   }
 
   // Create from JSON when loading
   factory MalHomePreferences.fromJson(Map<String, dynamic> json) {
+    final saved = [
+      for (final section in json['sections'] as List)
+        if (section is Map<String, dynamic>)
+          if (HomeSectionPreference.tryFromJson(section) case final parsed?) parsed,
+    ];
     return MalHomePreferences(
-      sections: [
-        for (final section in json['sections'] as List)
-          if (section is Map<String, dynamic>)
-            if (HomeSectionPreference.tryFromJson(section) case final parsed?) parsed,
-      ],
-      tileSize: HomePageTileSize.values
-              .elementAtOrNull(json['tileSize'] as int? ?? -1) ??
-          HomePageTileSize.l,
+      sections: json[_friendsAddedKey] == true ? saved : withFriendsRow(saved),
+      tileSize: switch (json['tileSize']) {
+        final int i when i >= 0 && i < HomePageTileSize.values.length => HomePageTileSize.values[i],
+        _ => HomePageTileSize.l,
+      },
     );
   }
 

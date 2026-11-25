@@ -74,6 +74,7 @@ List<SimklHomeBlock> simklHomePlan(List<HomeSectionPreference> sections) {
       case SectionType.topManhwa:
       case SectionType.topManhua:
       case SectionType.forum:
+      case SectionType.friendsActivity:
         break;
     }
   }
