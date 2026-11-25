@@ -26,7 +26,7 @@ void main() {
 
   test('the AniList settings have no MyAnimeList-only page', () {
     const malOnly = {
-      SettingsSection.homePage,
+      // The home layout is per tracker since #348: not MyAnimeList-only any more.
       SettingsSection.animeManga,
       SettingsSection.dub,
       SettingsSection.dataSources,
