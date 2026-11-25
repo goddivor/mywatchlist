@@ -1,0 +1,10 @@
+{
+  "@@locale": "de_DE",
+  "Esl_Very_Low": "Sehr niedrig",
+  "Esl_Low": "Niedrig",
+  "Esl_Medium": "Mittel",
+  "Esl_High": "Hoch",
+  "Esl_Very_High": "Sehr hoch",
+  "Esl_Score": "Bewertung",
+  "Esl_Fine": "Ganz gut"
+}
