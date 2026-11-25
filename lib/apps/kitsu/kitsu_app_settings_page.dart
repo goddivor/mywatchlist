@@ -5,6 +5,8 @@ import 'package:mywatchlist/user/accounts/account_bloc.dart';
 import 'package:mywatchlist/user/user_kitsu_v2.dart';
 import 'package:mywatchlist/utils/app_routes.dart';
 import 'package:mywatchlist/utils/web_launcher.dart' show launchWebView;
+import 'package:mywatchlist/widgets/common/tracker_youtube_player.dart';
+import 'package:mywatchlist/constants/constants.dart' show AccountType;
 import 'package:mywatchlist/widgets/common/avatar_widget.dart';
 
 /// The settings of the Kitsu app: the Kitsu account and its settings on kitsu.app (profile,
@@ -56,6 +58,7 @@ class KitsuAppSettingsPage extends StatelessWidget {
             trailing: const Icon(Icons.open_in_new_rounded),
             onTap: () => launchWebView(kitsuSettingsUrl, context: context),
           ),
+          const TrackerYoutubeSwitch(tracker: AccountType.kitsu),
           header('MyWatchList'),
           for (final section in appSections)
             ListTile(

@@ -21,6 +21,8 @@ import 'package:mywatchlist/widgets/Simkl/simkl_edit_sheet.dart';
 import 'package:mywatchlist/widgets/common/app_colors.dart';
 import 'package:mywatchlist/widgets/user/list/list_entry_view.dart';
 import 'package:mywatchlist/widgets/user/list/user_list_adapter.dart';
+import 'package:mywatchlist/widgets/common/tracker_youtube_player.dart';
+import 'package:mywatchlist/constants/constants.dart' show AccountType;
 import 'package:share_plus/share_plus.dart';
 
 /// Native Simkl title page: only Simkl's own data (owner rule for Simkl accounts).
@@ -442,7 +444,12 @@ class _SimklMediaPageState extends State<SimklMediaPage> {
           itemCount: t.trailers.length,
           itemBuilder: (context, i) => SimklTrailerCard(
             trailer: t.trailers[i],
-            onTap: () => launchWebView(t.trailers[i].url, context: context, external: true),
+            onTap: () => playTrackerTrailer(
+              context,
+              url: t.trailers[i].url,
+              tracker: AccountType.simkl,
+              outside: () => launchWebView(t.trailers[i].url, context: context, external: true),
+            ),
           ),
         ),
       ));

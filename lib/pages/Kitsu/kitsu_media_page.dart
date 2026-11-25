@@ -21,6 +21,7 @@ import 'package:mywatchlist/widgets/Kitsu/media/kitsu_media_parts.dart';
 import 'package:mywatchlist/widgets/Kitsu/media/kitsu_my_library.dart';
 import 'package:mywatchlist/widgets/Kitsu/media/kitsu_unit_sheet.dart';
 import 'package:mywatchlist/widgets/Kitsu/media/kitsu_paged_screen.dart';
+import 'package:mywatchlist/widgets/common/tracker_youtube_player.dart';
 import 'package:share_plus/share_plus.dart';
 
 /// Native Kitsu title page: only Kitsu's own data (owner rule for Kitsu accounts). One
@@ -324,7 +325,13 @@ class _KitsuMediaPageState extends State<KitsuMediaPage> {
         title: S.current.Kmp_Trailer,
         child: KitsuTrailerCard(
           videoId: trailer,
-          onTap: () => launchWebView('https://www.youtube.com/watch?v=$trailer', context: context, external: true),
+          onTap: () => playTrackerTrailer(
+            context,
+            url: 'https://www.youtube.com/watch?v=$trailer',
+            tracker: AccountType.kitsu,
+            outside: () =>
+                launchWebView('https://www.youtube.com/watch?v=$trailer', context: context, external: true),
+          ),
         ),
       ));
     }

@@ -5,6 +5,8 @@ import 'package:mywatchlist/pages/Anilist/anilist_settings_page.dart';
 import 'package:mywatchlist/user/accounts/account_bloc.dart';
 import 'package:mywatchlist/user/user_anilist_v2.dart';
 import 'package:mywatchlist/utils/app_routes.dart';
+import 'package:mywatchlist/widgets/common/tracker_youtube_player.dart';
+import 'package:mywatchlist/constants/constants.dart' show AccountType;
 import 'package:mywatchlist/widgets/common/avatar_widget.dart';
 
 /// The settings of the AniList app: the AniList account and its own settings (titles, lists,
@@ -55,6 +57,7 @@ class AnilistAppSettingsPage extends StatelessWidget {
               MaterialPageRoute<void>(builder: (_) => const AnilistSettingsPage()),
             ),
           ),
+          const TrackerYoutubeSwitch(tracker: AccountType.anilist),
           header('MyWatchList'),
           for (final section in appSections)
             ListTile(
