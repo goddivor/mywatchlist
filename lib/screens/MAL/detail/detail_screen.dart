@@ -392,22 +392,35 @@ class _ContentDetailedScreenState extends State<ContentDetailedScreen>
         builder: (context, up, _) =>
             up ? const SizedBox.shrink() : Text(_title),
       ),
-      flexibleSpace: FlexibleSpaceBar(
-        collapseMode: CollapseMode.pin,
-        background: ShimmerConditionally(
-          showShimmer: _data.state == DetailLoadState.loading,
-          baseColor: theme.scaffoldBackgroundColor,
-          highlightColor: theme.scaffoldBackgroundColor.withValues(alpha: .3),
-          child: DetailHeader(
-            data: _data,
-            title: _title,
-            titleLang: _titleLang,
-            onTitleLangChanged: (lang) => setState(() => _titleLang = lang),
-            onMoreInfo: _data.hasContent
-                ? () => showMoreInfoModal(context, _data)
-                : null,
+      flexibleSpace: Stack(
+        fit: StackFit.expand,
+        children: [
+          FlexibleSpaceBar(
+            collapseMode: CollapseMode.pin,
+            background: ShimmerConditionally(
+              showShimmer: _data.state == DetailLoadState.loading,
+              baseColor: theme.scaffoldBackgroundColor,
+              highlightColor: theme.scaffoldBackgroundColor.withValues(alpha: .3),
+              child: DetailHeader(
+                data: _data,
+                title: _title,
+                titleLang: _titleLang,
+                onTitleLangChanged: (lang) => setState(() => _titleLang = lang),
+                onMoreInfo: _data.hasContent
+                    ? () => showMoreInfoModal(context, _data)
+                    : null,
+              ),
+            ),
           ),
-        ),
+          // The pinned header slides under the status bar and the toolbar: they get an
+          // opaque backdrop as soon as it does, so the cover never shows through the title.
+          const Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: DetailToolbarBackdrop(),
+          ),
+        ],
       ),
       bottom: _tabBar(),
       actions: buildDetailActions(context, _data),
@@ -457,6 +470,40 @@ class _ContentDetailedScreenState extends State<ContentDetailedScreen>
       controller: _scroll,
       index: _tabTypes.indexOf(section.type),
       child: KeyedSubtree(key: _sectionKeys[section.type], child: frame),
+    );
+  }
+}
+
+/// The backdrop of the status bar and the toolbar of the detail page: transparent while the
+/// header is expanded, opaque (the app bar's colour) once the header has slid
+/// [DetailToolbarBackdrop.fadeDistance] under it. Reads the scroll from the enclosing
+/// [FlexibleSpaceBarSettings].
+class DetailToolbarBackdrop extends StatelessWidget {
+  const DetailToolbarBackdrop({super.key});
+
+  /// Pixels of scroll over which the backdrop fades in.
+  static const double fadeDistance = 48;
+
+  /// Opacity of the backdrop when the bar is [current] tall, between [min] and [max].
+  static double opacityFor({required double current, required double max}) =>
+      ((max - current) / fadeDistance).clamp(0.0, 1.0);
+
+  @override
+  Widget build(BuildContext context) {
+    final settings = context.dependOnInheritedWidgetOfExactType<FlexibleSpaceBarSettings>();
+    if (settings == null) return const SizedBox.shrink();
+    final theme = Theme.of(context);
+    final opacity = opacityFor(current: settings.currentExtent, max: settings.maxExtent);
+    if (opacity == 0) return const SizedBox.shrink();
+    final height = MediaQuery.paddingOf(context).top + DetailHeader.toolbarHeight;
+    return IgnorePointer(
+      child: SizedBox(
+        height: height,
+        child: ColoredBox(
+          color: (theme.appBarTheme.backgroundColor ?? theme.colorScheme.surface)
+              .withValues(alpha: opacity),
+        ),
+      ),
     );
   }
 }
