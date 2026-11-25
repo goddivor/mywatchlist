@@ -5,6 +5,7 @@ import 'package:mywatchlist/pages/Anilist/anilist_user_profile_page.dart';
 import 'package:mywatchlist/pages/Kitsu/kitsu_user_profile_page.dart';
 import 'package:mywatchlist/pages/Simkl/simkl_user_profile_page.dart';
 import 'package:mywatchlist/pages/settings/settings_section.dart';
+import 'package:mywatchlist/widgets/Anilist/calendar/anilist_calendar_page.dart';
 import 'package:mywatchlist/pages/side_bar.dart';
 import 'package:mywatchlist/screens/MAL/contentdetailedscreen.dart';
 import 'package:mywatchlist/screens/bookmarks_screen.dart';
@@ -116,15 +117,21 @@ abstract final class AppRoutes {
   /// Opens the weekly airing calendar (`lib/screens/calendar/calendar_screen.dart`); a Simkl
   /// account gets Simkl's own calendar (`SimklCalendarPage`).
   static Future<void> openCalendar(BuildContext context) =>
-      push<void>(context, _isSimklActive(context) ? const SimklCalendarPage() : const CalendarScreen());
+      push<void>(
+          context,
+          switch (_activeTracker(context)) {
+            AccountType.simkl => const SimklCalendarPage(),
+            AccountType.anilist => const AnilistCalendarPage(),
+            _ => const CalendarScreen(),
+          });
 
-  /// True when the selected account is Simkl; false without an account bloc above [context].
-  static bool _isSimklActive(BuildContext context) {
+  /// The active tracker; null without an [AccountBloc] (tests) or while loading.
+  static AccountType? _activeTracker(BuildContext context) {
     try {
       final state = context.read<AccountBloc>().state;
-      return state is AccountLoaded && state.selectedAccountType == AccountType.simkl;
+      return state is AccountLoaded ? state.selectedAccountType : null;
     } catch (_) {
-      return false;
+      return null;
     }
   }
 

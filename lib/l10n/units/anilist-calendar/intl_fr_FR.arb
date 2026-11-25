@@ -1,0 +1,9 @@
+{
+  "@@locale": "fr_FR",
+  "Alc_Open_Calendar": "Calendrier des sorties",
+  "Alc_My_List": "Ma liste",
+  "Alc_All": "Tous les animés",
+  "Alc_Failed": "Impossible de charger le calendrier",
+  "Alc_Empty": "Aucun épisode ce jour-là",
+  "Alc_Empty_Mine": "Aucun épisode de votre liste ce jour-là"
+}
