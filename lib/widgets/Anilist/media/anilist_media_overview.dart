@@ -12,6 +12,8 @@ import 'package:mywatchlist/widgets/Anilist/search/anilist_labels.dart';
 import 'package:mywatchlist/widgets/Anilist/social/anilist_html.dart';
 import 'package:mywatchlist/widgets/Anilist/social/anilist_review_tile.dart';
 import 'package:mywatchlist/widgets/common/app_colors.dart';
+import 'package:mywatchlist/widgets/common/tracker_youtube_player.dart';
+import 'package:mywatchlist/constants/constants.dart' show AccountType;
 import 'package:mywatchlist/widgets/common/app_image.dart';
 
 /// The synopsis (AniList HTML, spoilers hidden), five lines until expanded.
@@ -467,7 +469,12 @@ class _Trailer extends StatelessWidget {
           clipBehavior: Clip.antiAlias,
           color: scheme.surfaceContainerHighest,
           child: InkWell(
-            onTap: () => openLink(context, trailer.url, confirm: false),
+            onTap: () => playTrackerTrailer(
+              context,
+              url: trailer.url,
+              tracker: AccountType.anilist,
+              outside: () async => openLink(context, trailer.url, confirm: false),
+            ),
             child: Stack(
               fit: StackFit.expand,
               children: [
