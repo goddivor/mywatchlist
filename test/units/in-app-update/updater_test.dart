@@ -1,7 +1,10 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/widgets.dart' show Locale;
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mywatchlist/generated/l10n.dart';
+import 'package:mywatchlist/screens/settings/storage_settings.dart' show formatBytes;
 import 'package:mywatchlist/services/updater/release_service.dart';
 import 'package:mywatchlist/services/updater/sha1.dart';
 import 'package:mywatchlist/services/updater/update_controller.dart';
@@ -245,7 +248,8 @@ void main() {
     });
   });
 
-  test('formatBytes', () {
+  test('formatBytes: the shared, language-aware one (l10n-quality)', () async {
+    await S.load(const Locale('en'));
     expect(formatBytes(512), '512 B');
     expect(formatBytes(1536), '1.5 KB');
     expect(formatBytes(45 * 1024 * 1024), '45.0 MB');
