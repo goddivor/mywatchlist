@@ -46,6 +46,7 @@ import 'package:mywatchlist/user/user_manager.dart';
 import 'package:mywatchlist/utils/app_routes.dart';
 import 'package:mywatchlist/utils/web_launcher.dart';
 import 'package:mywatchlist/widgets/common/background.dart';
+import 'package:mywatchlist/user/trackers/models/tracker_model.dart' show TrackerInfo;
 import 'package:mywatchlist/widgets/common/bottomnavbar.dart';
 
 /// Tabs of the bottom bar, in [BottomNavBar] order.
@@ -554,24 +555,93 @@ class _HomeBackground extends StatelessWidget {
   }
 }
 
-/// Shown while MyWatchList turns into the app of another tracker (account switch).
-class TrackerSwitchScreen extends StatelessWidget {
+/// Shown while MyWatchList turns into the app of another tracker (account switch, sign in):
+/// the tracker's round logo with the loading ring turning around it, then "Opening <tracker>".
+/// The logo scales in softly (skipped when the system reduces motion).
+class TrackerSwitchScreen extends StatefulWidget {
   const TrackerSwitchScreen({super.key, required this.tracker});
 
   final AccountType tracker;
 
+  /// Size of the ring; the logo sits inside it.
+  static const double ringSize = 104;
+  static const double logoSize = 76;
+
+  @override
+  State<TrackerSwitchScreen> createState() => _TrackerSwitchScreenState();
+}
+
+class _TrackerSwitchScreenState extends State<TrackerSwitchScreen> with SingleTickerProviderStateMixin {
+  late final AnimationController _enter = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 260),
+  );
+  late final Animation<double> _curve =
+      CurvedAnimation(parent: _enter, curve: const Cubic(0.23, 1, 0.32, 1));
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_enter.isDismissed) {
+      if (MediaQuery.disableAnimationsOf(context)) {
+        _enter.value = 1;
+      } else {
+        _enter.forward();
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _enter.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final info = TrackerInfo.of(widget.tracker);
+    final ring = info?.color ?? theme.colorScheme.primary;
     return Scaffold(
       body: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const SizedBox.square(dimension: 36, child: CircularProgressIndicator(strokeWidth: 3)),
-            const SizedBox(height: 20),
+            SizedBox.square(
+              dimension: TrackerSwitchScreen.ringSize,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  SizedBox.expand(
+                    child: CircularProgressIndicator(
+                      strokeWidth: 3,
+                      strokeCap: StrokeCap.round,
+                      color: ring,
+                      backgroundColor: ring.withValues(alpha: 0.15),
+                    ),
+                  ),
+                  if (info != null)
+                    FadeTransition(
+                      opacity: _curve,
+                      child: ScaleTransition(
+                        scale: Tween<double>(begin: 0.85, end: 1).animate(_curve),
+                        child: ClipOval(
+                          child: Image.asset(
+                            info.logoAsset,
+                            key: const ValueKey('tracker-switch-logo'),
+                            width: TrackerSwitchScreen.logoSize,
+                            height: TrackerSwitchScreen.logoSize,
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
             Text(
-              S.current.Skm_Opening(AppRoutes.trackerLabel(tracker)),
+              S.current.Skm_Opening(AppRoutes.trackerLabel(widget.tracker)),
               style: theme.textTheme.titleMedium,
             ),
           ],
