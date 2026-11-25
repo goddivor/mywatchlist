@@ -23,6 +23,7 @@ Future<void> _pump(WidgetTester tester, {required VoidCallback openSidebar, Loca
       supportedLocales: S.delegate.supportedLocales,
       home: HomeShell(
         openSidebar: openSidebar,
+        selectTab: (_) {},
         child: const Scaffold(body: AppBarHome(showSettings: true)),
       ),
     ),

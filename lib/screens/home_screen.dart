@@ -65,7 +65,10 @@ class HomeShell extends InheritedWidget {
   /// Opens the shell's sidebar (end drawer).
   final VoidCallback openSidebar;
 
-  const HomeShell({super.key, required this.openSidebar, required super.child});
+  /// Switches the shell to the tab at [HomeTab] index (e.g. a section's "view all").
+  final ValueChanged<int> selectTab;
+
+  const HomeShell({super.key, required this.openSidebar, required this.selectTab, required super.child});
 
   static HomeShell? maybeOf(BuildContext context) =>
       context.getInheritedWidgetOfExactType<HomeShell>();
@@ -203,10 +206,6 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final ValueNotifier<bool> _sidebarOpen = ValueNotifier<bool>(false);
-
-  /// Bumped when the shell changes tab itself (Back to home): [BottomNavBar] reads its
-  /// index only once, so it is rebuilt to show the new tab.
-  int _navBarGeneration = 0;
 
   late int _pageIndex;
 
@@ -371,10 +370,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _goHomeTab() {
     if (_pageIndex == HomeTab.home) return;
-    setState(() {
-      _pageIndex = HomeTab.home;
-      _navBarGeneration++;
-    });
+    setState(() => _pageIndex = HomeTab.home);
   }
 
   void _onTabSelected(int index) {
@@ -411,7 +407,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 _switching = null;
                 _shownTracker = tracker;
                 _pageIndex = HomeTab.home;
-                _navBarGeneration++;
               });
             });
           }
@@ -455,6 +450,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return HomeShell(
       openSidebar: () => _scaffoldKey.currentState?.openEndDrawer(),
+      selectTab: (index) {
+        if (index >= 0 && index < HomeTab.count) _onTabSelected(index);
+      },
       child: ShellBackScope(
         sidebarOpen: _sidebarOpen,
         closeSidebar: () => _scaffoldKey.currentState?.closeEndDrawer(),
@@ -467,7 +465,6 @@ class _HomeScreenState extends State<HomeScreen> {
           drawerEdgeDragWidth: sidebarEdgeDragWidth(
               MediaQuery.systemGestureInsetsOf(context), Directionality.of(context)),
           bottomNavigationBar: BottomNavBar(
-            key: ValueKey(_navBarGeneration),
             startIndex: _pageIndex,
             onChanged: _onTabSelected,
           ),

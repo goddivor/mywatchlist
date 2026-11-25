@@ -274,6 +274,19 @@ abstract final class AppRoutes {
     );
   }
 
+  /// Shows the user's list: the home shell's My List tab; outside the shell, the list as a page.
+  static void openUserList(BuildContext context, Widget page) {
+    final shell = HomeShell.maybeOf(context);
+    if (shell != null) {
+      shell.selectTab(HomeTab.userList);
+      return;
+    }
+    push<void>(
+      context,
+      Scaffold(backgroundColor: Theme.of(context).scaffoldBackgroundColor, body: page),
+    );
+  }
+
   /// Starts the sign-in flow of [tracker] again (session expired). OAuth trackers open
   /// their browser flow directly; Kitsu (username/password) opens the tracker manager.
   static Future<void> signInAgain(BuildContext context, AccountType tracker) async {
