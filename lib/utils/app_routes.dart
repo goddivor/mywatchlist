@@ -6,6 +6,7 @@ import 'package:mywatchlist/pages/Kitsu/kitsu_user_profile_page.dart';
 import 'package:mywatchlist/pages/Simkl/simkl_user_profile_page.dart';
 import 'package:mywatchlist/pages/settings/settings_section.dart';
 import 'package:mywatchlist/widgets/Anilist/calendar/anilist_calendar_page.dart';
+import 'package:mywatchlist/widgets/Kitsu/calendar/kitsu_calendar_page.dart';
 import 'package:mywatchlist/pages/side_bar.dart';
 import 'package:mywatchlist/screens/MAL/contentdetailedscreen.dart';
 import 'package:mywatchlist/screens/bookmarks_screen.dart';
@@ -122,6 +123,7 @@ abstract final class AppRoutes {
           switch (_activeTracker(context)) {
             AccountType.simkl => const SimklCalendarPage(),
             AccountType.anilist => const AnilistCalendarPage(),
+            AccountType.kitsu => const KitsuCalendarPage(),
             _ => const CalendarScreen(),
           });
 
