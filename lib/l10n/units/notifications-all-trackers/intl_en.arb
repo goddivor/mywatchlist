@@ -1,0 +1,6 @@
+{
+  "@@locale": "en",
+  "Nat_Sec_Trackers": "Episode reminders from",
+  "Nat_Tracker_Desc": "Watching and Plan to watch of your {tracker} list",
+  "@Nat_Tracker_Desc": { "placeholders": { "tracker": { "type": "String" } } }
+}

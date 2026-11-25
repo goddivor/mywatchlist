@@ -667,22 +667,55 @@ class NotificationService {
   static AccountType _userFeedTracker() =>
       candidateTracker(UserManager.instance.currentTracker, UserManager.instance.isAuthenticated);
 
-  /// The watching and plan-to-watch lists of the active tracker: AniList, Kitsu and Simkl
-  /// map their entries to MAL ids (the schedule is keyed by them), MyAnimeList (also the
-  /// fallback when no tracker is active) reads its own lists.
-  static Future<List<AiringCandidate>> _loadMalCandidates() async {
-    switch (_userFeedTracker()) {
-      case AccountType.anilist:
-        return AnilistListService.instance.airingCandidates();
-      case AccountType.kitsu:
-        return KitsuLibrary.instance.airingCandidates();
-      case AccountType.simkl:
-        return SimklListService.instance.airingCandidates();
-      case AccountType.myanimelist:
-      case AccountType.none:
-        break;
+  /// Trackers whose lists feed the reminders (#351): every connected one whose switch is on.
+  @visibleForTesting
+  static List<AccountType> feedingTrackers(
+          bool Function(AccountType tracker) isAuthenticated, NotificationPreferences prefs) =>
+      [
+        for (final t in const [AccountType.myanimelist, AccountType.anilist, AccountType.kitsu, AccountType.simkl])
+          if (isAuthenticated(t) && prefs.airingFrom(t.name)) t,
+      ];
+
+  /// One reminder per anime across the trackers: a title on several lists keeps its Watching
+  /// entry (it notifies new episodes), else the first one read.
+  @visibleForTesting
+  static List<AiringCandidate> mergeCandidates(Iterable<List<AiringCandidate>> lists) {
+    final byId = <int, AiringCandidate>{};
+    for (final list in lists) {
+      for (final c in list) {
+        final seen = byId[c.malId];
+        if (seen == null || (seen.status != 'watching' && c.status == 'watching')) byId[c.malId] = c;
+      }
     }
-    if (!UserManager.instance.isAuthenticated(AccountType.myanimelist)) throw const _NeedsMal();
+    return byId.values.toList();
+  }
+
+  /// The watching and plan-to-watch lists of every connected tracker whose reminders are on
+  /// (owner rule: notifications come from every connected tracker, each with its own switch).
+  /// AniList, Kitsu and Simkl map their entries to MAL ids (the schedule is keyed by them). A
+  /// tracker that fails is skipped; with none connected (or all off) the alarms are cleared.
+  static Future<List<AiringCandidate>> _loadMalCandidates() async {
+    final trackers = feedingTrackers(UserManager.instance.isAuthenticated, Preferences.notifications);
+    if (trackers.isEmpty) throw const _NeedsMal();
+    Future<List<AiringCandidate>> of(AccountType t) async {
+      try {
+        return await switch (t) {
+          AccountType.anilist => AnilistListService.instance.airingCandidates(),
+          AccountType.kitsu => KitsuLibrary.instance.airingCandidates(),
+          AccountType.simkl => SimklListService.instance.airingCandidates(),
+          _ => _malCandidates(),
+        };
+      } catch (e) {
+        debugPrint('Notifications: $t lists unavailable ($e)');
+        if (trackers.length == 1) rethrow;
+        return const <AiringCandidate>[];
+      }
+    }
+
+    return mergeCandidates(await Future.wait(trackers.map(of)));
+  }
+
+  static Future<List<AiringCandidate>> _malCandidates() async {
     const fields = ['status', 'num_episodes', 'broadcast', 'main_picture'];
     final api = MalApi();
     final lists = await Future.wait([
@@ -707,10 +740,13 @@ class NotificationService {
   }
 
   /// Simkl's Watching and Plan to watch shows on Simkl's TV calendar, and its Plan to watch
-  /// movies on the release calendar, when the notifications follow Simkl.
+  /// movies on the release calendar, when Simkl is connected and its reminders are on (#351:
+  /// whichever account is active).
   static Future<List<PlannedNotification>> _simklReleases(
       AccountType feed, NotificationPreferences prefs, DateTime now) async {
-    if (feed != AccountType.simkl) return const [];
+    if (!UserManager.instance.isAuthenticated(AccountType.simkl) || !prefs.airingFrom(AccountType.simkl.name)) {
+      return const [];
+    }
     Future<List<T>> orEmpty<T>(Future<List<T>> f) async {
       try {
         return await f;
