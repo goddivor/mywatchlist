@@ -108,6 +108,7 @@ void main() {
     await tester.pumpWidget(MaterialApp(
       home: HomeShell(
         openSidebar: () => opened++,
+        selectTab: (_) {},
         child: Builder(
           builder: (context) => TextButton(
             onPressed: () => AppRoutes.openSidebar(context),
@@ -118,5 +119,39 @@ void main() {
     ));
     await tester.tap(find.text('menu'));
     expect(opened, 1);
+  });
+
+  testWidgets('openUserList inside the shell switches to the My List tab (#145)', (tester) async {
+    final selected = <int>[];
+    await tester.pumpWidget(MaterialApp(
+      home: HomeShell(
+        openSidebar: () {},
+        selectTab: selected.add,
+        child: Builder(
+          builder: (context) => TextButton(
+            onPressed: () => AppRoutes.openUserList(context, const Text('list page')),
+            child: const Text('view all'),
+          ),
+        ),
+      ),
+    ));
+    await tester.tap(find.text('view all'));
+    await tester.pumpAndSettle();
+    expect(selected, [HomeTab.userList]);
+    expect(find.text('list page'), findsNothing, reason: 'no page pushed over the shell');
+  });
+
+  testWidgets('openUserList outside the shell pushes the list', (tester) async {
+    await tester.pumpWidget(MaterialApp(
+      home: Builder(
+        builder: (context) => TextButton(
+          onPressed: () => AppRoutes.openUserList(context, const Text('list page')),
+          child: const Text('view all'),
+        ),
+      ),
+    ));
+    await tester.tap(find.text('view all'));
+    await tester.pumpAndSettle();
+    expect(find.text('list page'), findsOneWidget);
   });
 }

@@ -310,13 +310,7 @@ class _HomeUserListSectionState extends State<HomeUserListSection> {
         children: [
           SectionHeader(
             title: widget.section.getDisplayTitle(),
-            onTap: () => AppRoutes.push<void>(
-              context,
-              Scaffold(
-                backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-                body: const MalUserPage(),
-              ),
-            ),
+            onTap: () => AppRoutes.openUserList(context, const MalUserPage()),
           ),
           ListenableBuilder(
             listenable: UserManager.instance,
