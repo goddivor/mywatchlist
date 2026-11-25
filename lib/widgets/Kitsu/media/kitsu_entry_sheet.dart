@@ -5,6 +5,8 @@ import 'package:mywatchlist/services/api/Kitsu/kitsu_graphql.dart' show KitsuMed
 import 'package:mywatchlist/widgets/Kitsu/media/kitsu_my_library.dart';
 import 'package:mywatchlist/widgets/Kitsu/media/kitsu_rating.dart';
 import 'package:mywatchlist/widgets/Kitsu/profile/kitsu_profile_rows.dart' show kitsuStatusLabel;
+import 'package:mywatchlist/widgets/common/tracker_add_status.dart';
+import 'package:mywatchlist/constants/constants.dart' show AccountType;
 import 'package:mywatchlist/widgets/user/list/list_entry_view.dart' show ListEntryStatus;
 
 /// What the Kitsu edit sheet saved.
@@ -97,6 +99,8 @@ class _KitsuEntrySheetState extends State<KitsuEntrySheet> {
   @override
   void initState() {
     super.initState();
+    // A title off the library starts on the status picked in the Kitsu settings.
+    _status = TrackerAddStatus.of(AccountType.kitsu, anime: _anime);
     _apply(widget.initial);
     if (widget.load) _read();
   }

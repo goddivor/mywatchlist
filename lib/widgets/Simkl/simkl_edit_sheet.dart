@@ -4,6 +4,8 @@ import 'package:mywatchlist/services/api/SimKl/simkl_client.dart';
 import 'package:mywatchlist/services/api/SimKl/simkl_kind.dart';
 import 'package:mywatchlist/services/api/SimKl/simkl_list_service.dart';
 import 'package:mywatchlist/widgets/user/list/list_entry_view.dart';
+import 'package:mywatchlist/widgets/common/tracker_add_status.dart';
+import 'package:mywatchlist/constants/constants.dart' show AccountType;
 import 'package:mywatchlist/widgets/user/list/user_list_adapter.dart';
 
 /// Opens the Simkl edit sheet of [entry] (status, episodes watched, score, remove) and reports
@@ -40,7 +42,7 @@ class SimklEditSheet extends StatefulWidget {
 
 class _SimklEditSheetState extends State<SimklEditSheet> {
   late final bool _movie = widget.entry.category == 'movie';
-  late ListEntryStatus _status = widget.entry.status ?? ListEntryStatus.planned;
+  late ListEntryStatus _status = widget.entry.status ?? _newStatus;
   late int _progress = widget.entry.progress;
   late double _score = widget.entry.score.toDouble();
   bool _busy = false;
@@ -48,6 +50,13 @@ class _SimklEditSheetState extends State<SimklEditSheet> {
 
   ListEntryView get _entry => widget.entry;
   bool get _isNew => _entry.status == null;
+
+  /// The status picked in the Simkl settings; a movie is only watched, planned or dropped.
+  ListEntryStatus get _newStatus {
+    final picked = TrackerAddStatus.of(AccountType.simkl, anime: true);
+    const movieStatuses = [ListEntryStatus.completed, ListEntryStatus.dropped, ListEntryStatus.planned];
+    return _movie && !movieStatuses.contains(picked) ? ListEntryStatus.planned : picked;
+  }
 
   bool get _changed =>
       _isNew ||

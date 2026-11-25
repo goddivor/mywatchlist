@@ -9,6 +9,8 @@ import 'package:mywatchlist/widgets/Anilist/list/anilist_status.dart';
 import 'package:mywatchlist/widgets/user/edit/edit_fields.dart';
 import 'package:mywatchlist/widgets/user/edit/edit_sections.dart';
 import 'package:mywatchlist/widgets/user/list/list_entry_view.dart';
+import 'package:mywatchlist/widgets/common/tracker_add_status.dart';
+import 'package:mywatchlist/widgets/Anilist/list/anilist_list_look.dart' show anilistStatusValueOfShared;
 import 'package:mywatchlist/widgets/user/sync/sync_labels.dart' show TrackerLogo;
 
 /// What the AniList editor did.
@@ -112,7 +114,9 @@ class AnilistEntryEditorState extends State<AnilistEntryEditor> {
   void initState() {
     super.initState();
     final d = widget.detail;
-    _status = d?.status ?? 'PLANNING';
+    // A title off the list starts on the status picked in the AniList settings.
+    _status = d?.status ??
+        anilistStatusValueOfShared(TrackerAddStatus.of(AccountType.anilist, anime: _isAnime));
     _scoreRaw = d?.scoreRaw ?? 0;
     _progress = TextEditingController(text: '${d?.progress ?? _entry.progress}');
     _volumes = TextEditingController(text: '${d?.progressVolumes ?? _entry.progressVolumes}');
