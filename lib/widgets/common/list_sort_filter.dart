@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:mywatchlist/constants/constants.dart' show DisplaySubType, DisplayType;
 import 'package:mywatchlist/generated/l10n.dart';
+import 'package:mywatchlist/widgets/common/select/searchable_select.dart' show foldForSearch;
 import 'package:mywatchlist/widgets/common/select/select_option.dart';
 
 /// Sort direction of a list.
@@ -40,12 +41,17 @@ class ListFilterFacet {
   /// (all of them, e.g. genres).
   final bool matchAll;
 
+  /// Long facets (genres, seasons, studios): the sheet shows only the picked values and a
+  /// "Choose" button opening a searchable list, instead of every value as a chip.
+  final bool picker;
+
   const ListFilterFacet({
     required this.key,
     required this.label,
     required this.options,
     this.allowExclude = false,
     this.matchAll = false,
+    this.picker = false,
   });
 }
 
@@ -87,6 +93,17 @@ class ListFilter {
     inc.removeWhere((_, s) => s.isEmpty);
     exc.removeWhere((_, s) => s.isEmpty);
     return ListFilter(included: inc, excluded: exc);
+  }
+
+  /// The filter without [value] in [facet] (neither included nor excluded).
+  ListFilter remove(String facet, String value) {
+    Map<String, Set<String>> without(Map<String, Set<String>> map) {
+      final copy = {for (final e in map.entries) e.key: {...e.value}};
+      copy[facet]?.remove(value);
+      return copy..removeWhere((_, s) => s.isEmpty);
+    }
+
+    return ListFilter(included: without(included), excluded: without(excluded));
   }
 
   /// The filter without [facet].
@@ -586,24 +603,173 @@ class _FilterTab extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 4),
-              Wrap(
-                spacing: 6,
-                runSpacing: 6,
-                children: [
-                  for (final option in facet.options)
-                    _FacetChip(
-                      label: option.label,
-                      included: inc.contains(option.value),
-                      excluded: exc.contains(option.value),
-                      onTap: () => onChanged(filter.toggle(facet.key, option.value,
-                          allowExclude: facet.allowExclude)),
-                    ),
-                ],
-              ),
+              if (facet.picker)
+                _PickerFacet(facet: facet, filter: filter, onChanged: onChanged)
+              else
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: [
+                    for (final option in facet.options)
+                      _FacetChip(
+                        label: option.label,
+                        included: inc.contains(option.value),
+                        excluded: exc.contains(option.value),
+                        onTap: () => onChanged(filter.toggle(facet.key, option.value,
+                            allowExclude: facet.allowExclude)),
+                      ),
+                  ],
+                ),
             ],
           ),
         );
       },
+    );
+  }
+}
+
+/// A [ListFilterFacet.picker] facet: its picked values (tap to cycle, × to drop) and a button
+/// opening [FacetPickerSheet].
+class _PickerFacet extends StatelessWidget {
+  final ListFilterFacet facet;
+  final ListFilter filter;
+  final ValueChanged<ListFilter> onChanged;
+
+  const _PickerFacet({required this.facet, required this.filter, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    final inc = filter.includedOf(facet.key);
+    final exc = filter.excludedOf(facet.key);
+    final picked = [for (final o in facet.options) if (inc.contains(o.value) || exc.contains(o.value)) o];
+    return Wrap(
+      spacing: 6,
+      runSpacing: 6,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        for (final option in picked)
+          _FacetChip(
+            label: option.label,
+            included: inc.contains(option.value),
+            excluded: exc.contains(option.value),
+            onTap: () => onChanged(filter.toggle(facet.key, option.value, allowExclude: facet.allowExclude)),
+            onDeleted: () => onChanged(filter.remove(facet.key, option.value)),
+          ),
+        ActionChip(
+          key: ValueKey('facet-pick-${facet.key}'),
+          avatar: Icon(picked.isEmpty ? Icons.add_rounded : Icons.edit_rounded, size: 18),
+          label: Text(picked.isEmpty ? S.current.Lfp_Choose : S.current.Srch_Genres_Edit),
+          onPressed: () async {
+            final result = await showModalBottomSheet<ListFilter>(
+              context: context,
+              useRootNavigator: true,
+              isScrollControlled: true,
+              showDragHandle: true,
+              useSafeArea: true,
+              builder: (_) => DraggableScrollableSheet(
+                expand: false,
+                initialChildSize: 0.8,
+                minChildSize: 0.4,
+                maxChildSize: 0.95,
+                builder: (context, controller) =>
+                    FacetPickerSheet(facet: facet, filter: filter, scrollController: controller),
+              ),
+            );
+            if (result != null) onChanged(result);
+          },
+        ),
+      ],
+    );
+  }
+}
+
+/// Every value of [facet], searchable: a tap cycles off → included → excluded (when the facet
+/// allows it) → off. Pops with the edited filter on Done; a swipe down drops the edits.
+class FacetPickerSheet extends StatefulWidget {
+  final ListFilterFacet facet;
+  final ListFilter filter;
+  final ScrollController? scrollController;
+
+  const FacetPickerSheet({super.key, required this.facet, required this.filter, this.scrollController});
+
+  @override
+  State<FacetPickerSheet> createState() => _FacetPickerSheetState();
+}
+
+class _FacetPickerSheetState extends State<FacetPickerSheet> {
+  late ListFilter _filter = widget.filter;
+  late final List<(SelectOption<String>, String)> _rows = [
+    for (final o in widget.facet.options) (o, foldForSearch(o.label)),
+  ];
+  late List<(SelectOption<String>, String)> _visible = _rows;
+
+  void _search(String text) {
+    final needle = foldForSearch(text.trim());
+    setState(() => _visible = needle.isEmpty ? _rows : [for (final r in _rows) if (r.$2.contains(needle)) r]);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final key = widget.facet.key;
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(24, 0, 24, 4),
+          child: Row(
+            children: [
+              Expanded(child: Text(widget.facet.label, style: theme.textTheme.titleLarge)),
+              FilledButton(
+                onPressed: () => Navigator.of(context).pop(_filter),
+                child: Text(S.current.Srch_Done),
+              ),
+            ],
+          ),
+        ),
+        if (_rows.length > 8)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: TextField(
+              onChanged: _search,
+              decoration: InputDecoration(
+                hintText: S.current.Kit_Search_Options,
+                prefixIcon: const Icon(Icons.search),
+                filled: true,
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(28), borderSide: BorderSide.none),
+              ),
+            ),
+          ),
+        Expanded(
+          child: ListView.builder(
+            controller: widget.scrollController,
+            padding: const EdgeInsets.only(top: 8, bottom: 24),
+            itemCount: _visible.length,
+            itemBuilder: (context, index) {
+              final option = _visible[index].$1;
+              final included = _filter.includedOf(key).contains(option.value);
+              final excluded = _filter.excludedOf(key).contains(option.value);
+              final (IconData icon, Color color) = included
+                  ? (Icons.check_circle_rounded, scheme.primary)
+                  : excluded
+                      ? (Icons.remove_circle_rounded, scheme.error)
+                      : (Icons.radio_button_unchecked_rounded, scheme.outline);
+              return ListTile(
+                dense: true,
+                leading: Icon(icon, color: color),
+                title: Text(option.label),
+                trailing: included
+                    ? Text(S.current.Srch_Included, style: TextStyle(color: scheme.primary))
+                    : excluded
+                        ? Text(S.current.Srch_Excluded, style: TextStyle(color: scheme.error))
+                        : null,
+                onTap: () => setState(() =>
+                    _filter = _filter.toggle(key, option.value, allowExclude: widget.facet.allowExclude)),
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 }
@@ -614,11 +780,15 @@ class _FacetChip extends StatelessWidget {
   final bool excluded;
   final VoidCallback onTap;
 
+  /// Shows a × that drops the value (picked values of a [ListFilterFacet.picker] facet).
+  final VoidCallback? onDeleted;
+
   const _FacetChip({
     required this.label,
     required this.included,
     required this.excluded,
     required this.onTap,
+    this.onDeleted,
   });
 
   @override
@@ -648,6 +818,8 @@ class _FacetChip extends StatelessWidget {
               ? S.current.UserList_Included
               : null,
       onSelected: (_) => onTap(),
+      onDeleted: onDeleted,
+      deleteIconColor: excluded ? scheme.onErrorContainer : scheme.onSecondaryContainer,
     );
   }
 }
