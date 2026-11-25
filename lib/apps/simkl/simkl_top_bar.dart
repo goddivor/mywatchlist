@@ -25,6 +25,8 @@ class SimklTopBar extends StatelessWidget implements PreferredSizeWidget {
     return AppBar(
       automaticallyImplyLeading: false,
       backgroundColor: Colors.transparent,
+      // Page titles start at the left edge, as in the AniList and Kitsu apps (owner request).
+      centerTitle: false,
       title: Text(title),
       bottom: bottom,
       actions: [
