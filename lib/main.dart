@@ -135,6 +135,8 @@ void main() async {
   accountBloc.stream.listen((state) {
     if (state is AccountLoaded) {
       AccountManagerSingleton().updateAccountType(state.selectedAccountType);
+      // Tracker settings are per tracker (#349): the active account's apply.
+      preferencesBloc.add(PreferencesTrackerChanged(state.selectedAccountType));
     }
   });
 

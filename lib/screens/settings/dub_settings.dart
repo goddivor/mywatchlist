@@ -101,6 +101,7 @@ class _DubSettingsPageState extends State<DubSettingsPage> {
     final enabled = context.select((PreferencesBloc b) => b.state.general.showDubStatus);
     final language = context.select((PreferencesBloc b) => b.state.general.dubLanguage);
     return PrefsPage(
+      trackerScoped: true,
       title: s.Dub_Settings,
       onReset: _reset,
       children: [

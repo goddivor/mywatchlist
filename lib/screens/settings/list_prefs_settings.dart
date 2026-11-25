@@ -54,6 +54,7 @@ class ListPreferenceSettingsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final s = S.current;
     return PrefsPage(
+      trackerScoped: true,
       title: s.List_preferences,
       onReset: _reset,
       children: [
