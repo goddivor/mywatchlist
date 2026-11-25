@@ -228,7 +228,7 @@ class _SimklMediaPageState extends State<SimklMediaPage> {
                       onPressed: () => Navigator.of(context).maybePop(),
                     )
                   : null,
-              expandedHeight: hasFanart ? SimklMediaHero.extent(context, hasFanart: true) - top : null,
+              expandedHeight: hasFanart ? SimklMediaHero.extentWithTitle(context) - top : null,
               title: _CollapsedTitle(name),
               actions: [
                 if (t != null)
@@ -255,21 +255,39 @@ class _SimklMediaPageState extends State<SimklMediaPage> {
                 _menu(context),
                 const SizedBox(width: 4),
               ],
+              // As on the Kitsu page: the poster and the title over the fanart, which fades
+              // into the page under them.
               flexibleSpace: hasFanart
                   ? FlexibleSpaceBar(
-                      collapseMode: CollapseMode.parallax,
-                      background: SimklMediaHero(fanartUrl: t!.fanartUrl),
+                      collapseMode: CollapseMode.pin,
+                      background: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          SimklMediaHero(fanartUrl: t!.fanartUrl),
+                          Positioned(
+                            left: 0,
+                            right: 0,
+                            bottom: 12,
+                            child: SimklTitleBlock(
+                              title: t,
+                              fallbackTitle: name,
+                              fallbackPoster: widget.posterUrl,
+                              overlap: true,
+                            ),
+                          ),
+                        ],
+                      ),
                     )
                   : null,
             ),
-            SliverToBoxAdapter(
-              child: SimklTitleBlock(
-                title: t,
-                fallbackTitle: name,
-                fallbackPoster: widget.posterUrl,
-                overlap: hasFanart,
+            if (!hasFanart)
+              SliverToBoxAdapter(
+                child: SimklTitleBlock(
+                  title: t,
+                  fallbackTitle: name,
+                  fallbackPoster: widget.posterUrl,
+                ),
               ),
-            ),
             ..._body(context),
             SliverToBoxAdapter(child: SizedBox(height: 32 + MediaQuery.paddingOf(context).bottom)),
           ],

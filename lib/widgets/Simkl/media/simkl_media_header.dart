@@ -23,6 +23,14 @@ class SimklMediaHero extends StatelessWidget {
     return hero < top + 40 ? top + 40 : hero;
   }
 
+  /// Expanded height when the poster and the title sit over the fanart, as on the Kitsu page
+  /// (owner request): a band of fanart under the toolbar, then the title block.
+  static double extentWithTitle(BuildContext context) =>
+      MediaQuery.paddingOf(context).top + kToolbarHeight + fanartBand + SimklTitleBlock.posterHeight + 16;
+
+  /// Fanart left visible between the toolbar and the top of the poster.
+  static const double fanartBand = 56;
+
   @override
   Widget build(BuildContext context) {
     final url = fanartUrl;
@@ -39,7 +47,7 @@ class SimklMediaHero extends StatelessWidget {
             gradient: LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
-              stops: const [0, 0.35, 0.7, 1],
+              stops: const [0, 0.3, 0.55, 0.88],
               colors: [
                 colors.imageScrim,
                 colors.imageScrim.withValues(alpha: 0),
@@ -293,18 +301,39 @@ class _PlainChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
+    final small = theme.textTheme.labelSmall?.copyWith(color: scheme.onSurfaceVariant);
+    final row = Row(mainAxisSize: MainAxisSize.min, children: [
+      Icon(icon, size: 16, color: scheme.primary),
+      const SizedBox(width: 4),
+      Text(value, style: theme.textTheme.titleSmall),
+    ]);
+    if (label == null) {
+      // As tall as its two-line neighbours (owner request): an invisible second line keeps the
+      // height, the value sits in the middle.
+      return _ChipShell(
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            Visibility.maintain(
+              visible: false,
+              child: Column(mainAxisSize: MainAxisSize.min, children: [
+                Text(' ', style: small),
+                Row(mainAxisSize: MainAxisSize.min, children: [
+                  const Icon(Icons.circle, size: 16),
+                  Text(' ', style: theme.textTheme.titleSmall),
+                ]),
+              ]),
+            ),
+            row,
+          ],
+        ),
+      );
+    }
     return _ChipShell(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (label != null) Text(label!, style: theme.textTheme.labelSmall?.copyWith(color: scheme.onSurfaceVariant)),
-          Row(mainAxisSize: MainAxisSize.min, children: [
-            Icon(icon, size: 16, color: scheme.primary),
-            const SizedBox(width: 4),
-            Text(value, style: theme.textTheme.titleSmall),
-          ]),
-        ],
+        children: [Text(label!, style: small), row],
       ),
     );
   }
