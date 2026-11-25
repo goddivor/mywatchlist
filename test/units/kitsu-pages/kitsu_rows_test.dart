@@ -14,6 +14,7 @@ void main() {
         case SectionType.features:
         case SectionType.userList:
         case SectionType.forum:
+        case SectionType.friendsActivity:
           expect(query, isNull, reason: type.name);
         default:
           expect(query, isNotNull, reason: type.name);
