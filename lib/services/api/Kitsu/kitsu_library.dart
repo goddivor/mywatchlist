@@ -51,6 +51,15 @@ class KitsuLibraryPage {
   const KitsuLibraryPage(this.page, this.entryIds, [this.extras = const {}]);
 }
 
+/// A title of the Kitsu calendar: a Watching or Plan to watch anime of the library and the
+/// date of its next episode (`nextRelease`, Kitsu's only schedule data).
+@immutable
+class KitsuCalendarItem {
+  final ListEntryView entry;
+  final DateTime nextRelease;
+  const KitsuCalendarItem(this.entry, this.nextRelease);
+}
+
 /// The signed-in user's Kitsu library (`/library-entries`), read and written through
 /// `sendAuthenticated`.
 class KitsuLibrary {
@@ -198,6 +207,50 @@ class KitsuLibrary {
       }
     }
     return out;
+  }
+
+  /// The Watching and Plan to watch anime of the library that have a next episode date,
+  /// soonest first. Kitsu has no schedule endpoint: `nextRelease` is the one date it gives.
+  Future<List<KitsuCalendarItem>> calendar() async {
+    final id = await userId();
+    final out = <KitsuCalendarItem>[];
+    for (final status in [ListEntryStatus.current, ListEntryStatus.planned]) {
+      var offset = 0;
+      for (var i = 0; i < 3; i++) {
+        final json = await http.getJson('/library-entries',
+            query: {
+              ..._params(id, true, status),
+              'fields[anime]': '${KitsuCatalog.fields(true)},nextRelease',
+              'page[limit]': '$maxPage',
+              'page[offset]': '$offset',
+            },
+            auth: true);
+        final page = parseCalendarPage(json, titleLang: Preferences.general.preferredTitle.name);
+        out.addAll(page.$1);
+        if (!page.$2) break;
+        offset += page.$3;
+      }
+    }
+    return out..sort((a, b) => a.nextRelease.compareTo(b.nextRelease));
+  }
+
+  /// The calendar items of a `/library-entries` answer, whether it has a next page, and how many
+  /// entries it held.
+  @visibleForTesting
+  static (List<KitsuCalendarItem>, bool, int) parseCalendarPage(Map<String, dynamic> json,
+      {required String titleLang}) {
+    final doc = KitsuDocument.from(json);
+    final items = <KitsuCalendarItem>[];
+    for (final r in doc.data) {
+      final mediaRes = doc.related(r, 'anime');
+      if (mediaRes == null) continue;
+      final next = DateTime.tryParse('${kitsuAttrs(mediaRes)['nextRelease'] ?? ''}');
+      if (next == null) continue;
+      final media = KitsuMedia.fromResource(mediaRes, doc, titleLang: titleLang, isAnime: true);
+      if (media.id == 0) continue;
+      items.add(KitsuCalendarItem(entryView(media, kitsuAttrs(r)), next.toUtc()));
+    }
+    return (items, doc.hasNext, doc.data.length);
   }
 
   /// Parses a `/library-entries` answer that included the media and their mappings.
