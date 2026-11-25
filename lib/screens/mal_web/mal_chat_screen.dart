@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:mywatchlist/services/notifications/mal_hub_poller.dart' show MalMessagesWatcher;
 import 'package:flutter/services.dart';
 import 'package:html/parser.dart' as html_parser;
 import 'package:mywatchlist/constants/constants.dart' show AccountType;
@@ -99,6 +100,10 @@ class _MalChatScreenState extends State<MalChatScreen> {
   @override
   void initState() {
     super.initState();
+    // Opened from a message (a notification): the conversation is read, its notification goes.
+    if (widget.messageId case final id?) {
+      unawaited(MalMessagesWatcher.instance.cancelThread(messageId: id, threadId: widget.messageThreadId));
+    }
     _conversation = widget.conversation ?? (widget.counterpart.isEmpty ? null : MalConversationsCache.conversation(widget.counterpart));
     final cached = _name.isEmpty ? null : MalConversationsCache.chat(_name);
     if (cached != null) {

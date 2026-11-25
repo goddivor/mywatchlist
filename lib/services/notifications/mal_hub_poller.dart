@@ -4,6 +4,7 @@ import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:http/http.dart' as http;
 import 'package:mywatchlist/constants/constants.dart' show AccountType;
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/services/api/MAL/web/mal_conversations.dart';
@@ -15,6 +16,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'mal_hub.dart';
 import 'mal_hub_texts.dart';
 import 'notification_backend.dart' show PluginNotificationBackend;
+import 'notification_gate.dart' show NotificationGate;
 
 /// Payloads of the hub's system notifications: `malhub:<item id>|<target url>`; a friend
 /// update has no item id, a group summary is `malhub:` alone (opens the screen).
@@ -95,7 +97,10 @@ class MalMessageLink {
 /// Which Android channel a system notification goes to.
 enum MalHubChannel {
   hub('mal_hub'),
-  friends('mal_friends_activity');
+  friends('mal_friends_activity'),
+
+  /// Private messages: high importance, chat style, one notification per conversation (#352).
+  messages('mal_messages');
 
   const MalHubChannel(this.id);
   final String id;
@@ -109,12 +114,18 @@ class HubSystemNotification {
     required this.title,
     required this.body,
     required this.payload,
+    this.sender,
+    this.avatarUrl,
   });
 
   final int id;
   final String title;
   final String body;
   final String payload;
+
+  /// The person who wrote it (private messages), shown in the chat style.
+  final String? sender;
+  final String? avatarUrl;
 }
 
 /// Stable 28-bit hash (FNV-1a), so a notification id survives app restarts.
@@ -170,9 +181,61 @@ class PluginMalHubNotifier implements MalHubNotifier {
     return await _android?.areNotificationsEnabled() ?? false;
   }
 
+  static const String groupMessages = 'com.teen.mywatchlist.MAL_MESSAGES';
+
+  /// The picture of [url] for a chat notification, null when it cannot be read quickly.
+  static Future<Uint8List?> _avatar(String? url) async {
+    if (url == null || url.isEmpty) return null;
+    try {
+      final response = await http.get(Uri.parse(url)).timeout(const Duration(seconds: 5));
+      return response.statusCode == 200 ? response.bodyBytes : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Private messages like a chat app: high importance (heads-up), the sender's name and
+  /// picture (MessagingStyle), one notification per conversation, which a newer message
+  /// replaces.
+  Future<void> _showMessages(List<HubSystemNotification> notifications) async {
+    final s = S.current;
+    for (final n in notifications) {
+      final avatar = await _avatar(n.avatarUrl);
+      final sender = Person(
+        name: n.sender ?? n.title,
+        key: n.sender,
+        icon: avatar == null ? null : ByteArrayAndroidIcon(avatar),
+      );
+      await _plugin.show(
+        id: n.id,
+        title: n.title,
+        body: n.body,
+        payload: n.payload,
+        notificationDetails: NotificationDetails(
+          android: AndroidNotificationDetails(
+            MalHubChannel.messages.id,
+            s.Pmn_Channel,
+            channelDescription: s.Pmn_Channel_Desc,
+            icon: PluginNotificationBackend.smallIcon,
+            importance: Importance.high,
+            priority: Priority.high,
+            groupKey: groupMessages,
+            category: AndroidNotificationCategory.message,
+            styleInformation: MessagingStyleInformation(
+              const Person(name: 'Me'),
+              conversationTitle: n.sender,
+              messages: [Message(n.body, DateTime.now(), sender)],
+            ),
+          ),
+        ),
+      );
+    }
+  }
+
   @override
   Future<void> show(MalHubChannel channel, List<HubSystemNotification> notifications) async {
     if (!isSupported || notifications.isEmpty) return;
+    if (channel == MalHubChannel.messages) return _showMessages(notifications);
     final s = S.current;
     final hub = channel == MalHubChannel.hub;
     final name = hub ? s.Mn_Channel_Hub : s.Mn_Channel_Friends;
@@ -540,24 +603,47 @@ class MalMessagesWatcher {
   MalMessagesWatcher({
     MalMessagesApi? api,
     MalHubNotifier? notifier,
-    bool Function()? mayNotify,
+    FutureOr<bool> Function()? mayNotify,
     bool Function()? canRead,
     Future<SharedPreferences> Function()? storage,
     this.maxPerRun = 5,
   })  : _api = api,
         _notifier = notifier,
-        _mayNotify = mayNotify ?? (() => Preferences.current.notifications.enabled),
+        _mayNotify = mayNotify ?? _gateOpen,
         _canRead = canRead ?? (() => UserManager.instance.isAuthenticated(AccountType.myanimelist)),
         _storage = storage ?? SharedPreferences.getInstance;
 
   static MalMessagesWatcher instance = MalMessagesWatcher();
+
+  /// Private messages follow their own switch and the app-wide "allow notifications" gate,
+  /// never the episode reminders' switch (#352).
+  static FutureOr<bool> _gateOpen() async {
+    try {
+      return (await NotificationGate.shared()).switchOn;
+    } catch (_) {
+      return true;
+    }
+  }
+
+  /// The notification of [m]'s conversation: one per thread, a newer message replaces it.
+  static int notificationIdOf(MalMessage m) => idFor(messageId: m.id, threadId: m.threadId);
+
+  static int idFor({required int messageId, int? threadId}) =>
+      0x60000000 | ((threadId ?? messageId) & 0x0FFFFFFF);
+
+  /// Removes the notification of a conversation: it was opened, so it is read.
+  Future<void> cancelThread({required int messageId, int? threadId}) async {
+    try {
+      await notifier.cancel(idFor(messageId: messageId, threadId: threadId));
+    } catch (_) {}
+  }
 
   static const String seenKey = 'mal_pm_seen_v1';
   static const String pushKey = 'mal_pm_push_v1';
 
   final MalMessagesApi? _api;
   final MalHubNotifier? _notifier;
-  final bool Function() _mayNotify;
+  final FutureOr<bool> Function() _mayNotify;
   final bool Function() _canRead;
   final Future<SharedPreferences> Function() _storage;
   final int maxPerRun;
@@ -613,18 +699,23 @@ class MalMessagesWatcher {
         for (final m in page.messages)
           if (!m.isRead && !seen.contains('${m.id}')) m,
       ];
-      if (fresh.isEmpty || !push.value || !_mayNotify() || !await notifier.allowed()) return 0;
+      if (fresh.isEmpty || !push.value || !await _mayNotify() || !await notifier.allowed()) return 0;
       final s = S.current;
+      // One per conversation: the newest message of each thread (the page is newest first).
+      final threads = <int>{};
       final notifications = [
-        for (final m in fresh.take(maxPerRun))
-          HubSystemNotification(
-            id: 0x60000000 | (m.id & 0x0FFFFFFF),
-            title: s.Mhw_Message_From(m.counterpart),
-            body: m.subject,
-            payload: MalHubPayload.message(m),
-          ),
-      ];
-      await notifier.show(MalHubChannel.hub, notifications);
+        for (final m in fresh)
+          if (threads.add(notificationIdOf(m)))
+            HubSystemNotification(
+              id: notificationIdOf(m),
+              title: s.Mhw_Message_From(m.counterpart),
+              body: m.preview.isNotEmpty ? '${m.subject}\n${m.preview}' : m.subject,
+              payload: MalHubPayload.message(m),
+              sender: m.counterpart,
+              avatarUrl: m.avatarUrl,
+            ),
+      ].take(maxPerRun).toList();
+      await notifier.show(MalHubChannel.messages, notifications);
       return notifications.length;
     } catch (e) {
       debugPrint('MAL messages check: $e');
@@ -672,12 +763,39 @@ class MalHubMessagesPoller extends MalHubPoller {
   @override
   Future<void> start() async {
     await watcher.load();
-    return super.start();
+    await super.start();
+    // The app starts in the foreground (no resume event): read the inbox often from now on.
+    if (WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed) {
+      _messagesTimer ??= Timer.periodic(messagesInterval, (_) => watcher.check());
+    }
   }
 
   @override
   Future<void> poll({bool force = false, bool forceHub = false}) async {
     await super.poll(force: force, forceHub: forceHub);
     await watcher.check();
+  }
+
+  /// How often the inbox is read while the app is in the foreground (#352: a message must
+  /// show within minutes, like a chat app; the hub itself stays at [interval]).
+  static const Duration messagesInterval = Duration(minutes: 3);
+
+  Timer? _messagesTimer;
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    switch (state) {
+      case AppLifecycleState.resumed:
+        _messagesTimer?.cancel();
+        _messagesTimer = Timer.periodic(messagesInterval, (_) => watcher.check());
+      case AppLifecycleState.paused:
+      case AppLifecycleState.hidden:
+      case AppLifecycleState.detached:
+        _messagesTimer?.cancel();
+        _messagesTimer = null;
+      case AppLifecycleState.inactive:
+        break;
+    }
   }
 }

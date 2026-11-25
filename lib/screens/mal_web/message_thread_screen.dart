@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:mywatchlist/services/notifications/mal_hub_poller.dart' show MalMessagesWatcher;
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/services/api/MAL/web/mal_messages_api.dart';
 import 'package:mywatchlist/screens/mal_web/mal_web_form_errors.dart';
@@ -55,6 +56,9 @@ class _MalMessageThreadScreenState extends State<MalMessageThreadScreen> {
   void initState() {
     super.initState();
     unawaited(_load());
+    // Opened, so read: its notification goes (#352).
+    unawaited(MalMessagesWatcher.instance
+        .cancelThread(messageId: widget.message.id, threadId: widget.message.threadId));
   }
 
   @override
