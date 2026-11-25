@@ -240,7 +240,7 @@ class _HomeScreenState extends State<HomeScreen> {
       } else if (widget.pageIndex == null) {
         // Startup pages that are not tabs open on top of the home tab.
         if (startup == StartupPage.calendar) AppRoutes.openCalendar(context);
-        if (startup == StartupPage.search) AppRoutes.openSearch(context);
+        if (startup == StartupPage.search) AppRoutes.openTrackerSearch(context);
       }
       _onUsersChanged();
       if (widget.checkForUpdates) unawaited(_checkForUpdate());
