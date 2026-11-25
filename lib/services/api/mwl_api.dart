@@ -930,7 +930,7 @@ class MwlApi {
     return data == null ? null : UserAboutHtml.fromJson(data);
   }
 
-  /// Upcoming episodes of a season from LiveChart.me.
+  /// Upcoming episodes of a season from LiveChart.me. Throws when the backend fails.
   ///
   /// [season] is `winter`, `spring`, `summer` or `fall`; [season] and
   /// [year] default to the current season; [type] is LiveChart's filter
@@ -942,8 +942,10 @@ class MwlApi {
     bool fromCache = true,
   }) async {
     final qs = _buildQuery({'season': season, 'year': year, 'type': type});
-    return _listOf(await _getData('schedules?$qs', fromCache: fromCache),
-        LiveChartEpisode.fromJson);
+    final data = await _getData('schedules?$qs', fromCache: fromCache);
+    // No list means the backend failed (down, non-200): say so instead of an empty week.
+    if (data is! List) throw StateError('LiveChart schedule unavailable');
+    return _listOf(data, LiveChartEpisode.fromJson);
   }
 
   /// MAL "all" search, grouped by category (every category key present).

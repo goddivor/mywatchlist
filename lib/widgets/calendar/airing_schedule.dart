@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:mwl_commons/mwl_commons.dart' show LiveChartEpisode;
-import 'package:mywatchlist/services/api/mwl_api.dart';
+import 'package:mywatchlist/widgets/calendar/schedule_source.dart';
 
 /// One upcoming episode of an airing anime, as listed by LiveChart.me.
 @immutable
@@ -73,7 +73,7 @@ class AiringSchedule extends ChangeNotifier {
   Object? _error;
 
   static Future<List<LiveChartEpisode>> _defaultFetch({required bool fromCache}) =>
-      MwlApi.i.getLiveChartSchedule(fromCache: fromCache);
+      AiringScheduleSource.instance.fetch(fromCache: fromCache);
 
   /// True once a schedule has been loaded at least once.
   bool get isLoaded => _loadedAt != null;
