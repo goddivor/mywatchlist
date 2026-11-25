@@ -19,8 +19,8 @@ class TitleLangSwitch extends StatelessWidget {
   Widget build(BuildContext context) {
     final s = S.current;
     final scheme = Theme.of(context).colorScheme;
-    // DailyAL's switch: three small buttons side by side, no frame; the chosen one is filled,
-    // rounded on its outer side.
+    // DailyAL's switch: three small buttons side by side, no frame; the chosen one is a raised
+    // dark button with the text in the main colour, rounded on its outer side.
     return Semantics(
       label: s.Dh_Title_Language,
       container: true,
@@ -52,7 +52,8 @@ class TitleLangSwitch extends StatelessWidget {
         width: segmentWidth,
         height: segmentHeight,
         child: Material(
-          color: selected ? scheme.primary : Colors.transparent,
+          // DailyAL's ElevatedButton colours: a dark surface with the text in the main colour.
+          color: selected ? scheme.surfaceContainerLow : Colors.transparent,
           elevation: selected ? 2 : 0,
           borderRadius: radius,
           child: InkWell(
@@ -66,7 +67,7 @@ class TitleLangSwitch extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w500,
-                  color: selected ? scheme.onPrimary : Colors.white,
+                  color: selected ? scheme.primary : Colors.white,
                 ),
               ),
             ),
