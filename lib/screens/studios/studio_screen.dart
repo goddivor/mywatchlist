@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:mywatchlist/constants/constants.dart' show gotoPage;
+import 'package:mywatchlist/constants/constants.dart' show DisplaySubType, gotoPage;
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/screens/search/general_search_screen.dart';
 import 'package:mywatchlist/screens/search/search_tiles.dart'
@@ -10,6 +10,9 @@ import 'package:mywatchlist/utils/web_launcher.dart';
 import 'package:mywatchlist/widgets/MAL/home/animegridcard.dart';
 import 'package:mywatchlist/widgets/common/app_image.dart';
 import 'package:mywatchlist/widgets/common/image_preview.dart';
+import 'package:mywatchlist/screens/studios/studio_filters.dart';
+import 'package:mywatchlist/user/list_cache/list_status_cache.dart';
+import 'package:mywatchlist/widgets/common/list_sort_filter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// The page of one studio (MyAnimeList's producer page): its logo in big over a blurred copy,
@@ -28,15 +31,13 @@ class StudioScreen extends StatefulWidget {
   State<StudioScreen> createState() => _StudioScreenState();
 }
 
-enum _Sort { score, members, newest, title }
-
 /// How the studio's anime are laid out.
 enum StudioAnimeDisplay { grid3, grid2, list }
 
 class _StudioScreenState extends State<StudioScreen> {
   late Future<StudioPage> _page = StudioPages.of(widget.id);
   StudioAnimeType? _type;
-  _Sort _sort = _Sort.score;
+  ListViewSettings _settings = StudioFilters.initial;
   bool _aboutOpen = false;
   StudioAnimeDisplay _display = StudioAnimeDisplay.grid3;
   bool _collapsed = false;
@@ -90,21 +91,29 @@ class _StudioScreenState extends State<StudioScreen> {
         newPage: GeneralSearchScreen.byStudio(id: widget.id, name: widget.name),
       );
 
-  List<StudioAnime> _visible(List<StudioAnime> all) {
-    final list = [
-      for (final a in all)
-        if (_type == null || a.type == _type) a
-    ];
-    int byScore(StudioAnime a, StudioAnime b) =>
-        (b.score ?? 0).compareTo(a.score ?? 0);
-    list.sort(switch (_sort) {
-      _Sort.score => byScore,
-      _Sort.members => (a, b) => b.members.compareTo(a.members),
-      _Sort.newest => (a, b) => b.startDate.compareTo(a.startDate),
-      _Sort.title => (a, b) =>
-          a.title.toLowerCase().compareTo(b.title.toLowerCase()),
-    });
-    return list;
+  /// The user's list status of an anime (null = not on the list), or null while the list is
+  /// unknown: the My list filter then stays hidden.
+  String? Function(int id)? get _statusOf => ListStatusCache.instance.isLoaded
+      ? (id) => ListStatusCache.instance.statusOf(id)
+      : null;
+
+  List<StudioAnime> _visible(List<StudioAnime> all) => StudioFilters.apply(
+        [for (final a in all) if (_type == null || a.type == _type) a],
+        _settings,
+        statusOf: _statusOf,
+      );
+
+  Future<void> _openSheet(List<StudioAnime> anime) async {
+    final picked = await showListSortFilterSheet(
+      context,
+      settings: _settings,
+      options: ListSortFilterOptions(
+        sorts: StudioFilters.sorts,
+        facets: StudioFilters.facets(anime, statusOf: _statusOf),
+        displayTypes: const [],
+      ),
+    );
+    if (picked != null && mounted) setState(() => _settings = picked);
   }
 
   @override
@@ -156,13 +165,18 @@ class _StudioScreenState extends State<StudioScreen> {
                   SliverPersistentHeader(
                     pinned: true,
                     delegate: _AnimeBar(
-                      count: page.anime.length,
+                      // The titles kept by the kind and the filters.
+                      count: _visible(page.anime).length,
                       types: {for (final a in page.anime) a.type},
                       selected: _type,
-                      sort: _sort,
+                      sortLabel: StudioFilters.sorts
+                          .firstWhere((o) => o.key == _settings.sortKey,
+                              orElse: () => StudioFilters.sorts.first)
+                          .label,
+                      filterCount: _settings.filter.activeCount,
                       display: _display,
                       onType: (t) => setState(() => _type = t),
-                      onSort: (s) => setState(() => _sort = s),
+                      onSortFilter: () => _openSheet(page.anime),
                       onDisplay: _setDisplay,
                     ),
                   ),
@@ -285,7 +299,7 @@ class _StudioScreenState extends State<StudioScreen> {
       sliver: SliverGrid.builder(
         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: columns,
-          childAspectRatio: width / (height + 36),
+          childAspectRatio: width / height,
           crossAxisSpacing: spacing,
           mainAxisSpacing: spacing,
         ),
@@ -297,9 +311,11 @@ class _StudioScreenState extends State<StudioScreen> {
             category: 'anime',
             width: width,
             height: height,
-            gridHeight: height + 36,
+            gridHeight: height,
             showMemberCount: true,
-            // Score and members on the cover, and the user's list status (edit button).
+            // The home rows' card: score and members top-left on the cover, the title over its
+            // bottom, the user's list status (edit button) bottom-end.
+            displaySubType: DisplaySubType.compact,
             showCardBar: true,
             showEdit: true,
             onTap: () => openMedia(context, node, 'anime'),
@@ -421,20 +437,22 @@ class _AnimeBar extends SliverPersistentHeaderDelegate {
     required this.count,
     required this.types,
     required this.selected,
-    required this.sort,
+    required this.sortLabel,
+    required this.filterCount,
     required this.display,
     required this.onType,
-    required this.onSort,
+    required this.onSortFilter,
     required this.onDisplay,
   });
 
   final int count;
   final Set<StudioAnimeType> types;
   final StudioAnimeType? selected;
-  final _Sort sort;
+  final String sortLabel;
+  final int filterCount;
   final StudioAnimeDisplay display;
   final ValueChanged<StudioAnimeType?> onType;
-  final ValueChanged<_Sort> onSort;
+  final VoidCallback onSortFilter;
   final ValueChanged<StudioAnimeDisplay> onDisplay;
 
   static const double _height = 104;
@@ -449,7 +467,8 @@ class _AnimeBar extends SliverPersistentHeaderDelegate {
   bool shouldRebuild(_AnimeBar old) =>
       old.count != count ||
       old.selected != selected ||
-      old.sort != sort ||
+      old.sortLabel != sortLabel ||
+      old.filterCount != filterCount ||
       old.display != display ||
       old.types != types;
 
@@ -471,13 +490,6 @@ class _AnimeBar extends SliverPersistentHeaderDelegate {
         StudioAnimeType.ova => S.current.Stp_Ova,
         StudioAnimeType.movie => S.current.Stp_Movie,
         StudioAnimeType.other => S.current.Stp_Other,
-      };
-
-  static String _sortLabel(_Sort s) => switch (s) {
-        _Sort.score => S.current.Stp_Sort_Score,
-        _Sort.members => S.current.Stp_Sort_Members,
-        _Sort.newest => S.current.Stp_Sort_Newest,
-        _Sort.title => S.current.Stp_Sort_Title,
       };
 
   @override
@@ -518,29 +530,16 @@ class _AnimeBar extends SliverPersistentHeaderDelegate {
                       ),
                   ],
                 ),
-                PopupMenuButton<_Sort>(
+                // My List's Sort / Filter sheet; the count of active filters on the icon.
+                TextButton.icon(
                   key: const ValueKey('studio-sort'),
-                  tooltip: s.Stp_Sort,
-                  initialValue: sort,
-                  onSelected: onSort,
-                  itemBuilder: (_) => [
-                    for (final option in _Sort.values)
-                      PopupMenuItem(
-                          value: option, child: Text(_sortLabel(option))),
-                  ],
-                  child: Padding(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.sort_rounded, size: 18),
-                        const SizedBox(width: 6),
-                        Text(_sortLabel(sort),
-                            style: theme.textTheme.labelLarge),
-                      ],
-                    ),
+                  onPressed: onSortFilter,
+                  icon: Badge(
+                    isLabelVisible: filterCount > 0,
+                    label: Text('$filterCount'),
+                    child: const Icon(Icons.tune_rounded, size: 18),
                   ),
+                  label: Text(sortLabel, style: theme.textTheme.labelLarge),
                 ),
               ],
             ),
