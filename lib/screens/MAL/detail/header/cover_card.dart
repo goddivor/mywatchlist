@@ -75,20 +75,22 @@ class _MoreInfoButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    // DailyAL's info button: the filled info icon in a 40 px rounded square, radius 12.
+    const radius = BorderRadius.all(Radius.circular(12));
     return Tooltip(
       message: S.current.Dh_More_Info,
       child: Material(
         color: scheme.surface.withValues(alpha: onPressed == null ? .5 : .9),
-        shape: const CircleBorder(),
+        elevation: 2,
+        borderRadius: radius,
         child: InkWell(
-          customBorder: const CircleBorder(),
+          borderRadius: radius,
           onTap: onPressed,
           child: SizedBox(
             width: 40,
             height: 40,
             child: Icon(
-              Icons.info_outline,
-              size: 22,
+              Icons.info,
               color: onPressed == null ? scheme.onSurface.withValues(alpha: .4) : scheme.onSurface,
             ),
           ),
