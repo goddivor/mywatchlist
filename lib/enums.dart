@@ -251,19 +251,6 @@ Map<RankingType, String> rankingMap = {
   RankingType.ONA: "ona",
 };
 
-Map<RankingType, String> desiredTopAnimeOrder = {
-  RankingType.UPCOMING: S.current.Top_Upcoming_Anime,
-  RankingType.BYPOPULARITY: S.current.Most_Popular_Anime,
-  RankingType.ALL: S.current.Top_Anime_by_Score,
-  RankingType.AIRING: S.current.Top_Airing_Anime,
-  RankingType.FAVOURITE: S.current.All_time_Favorites,
-  RankingType.MOVIE: S.current.Top_Anime_Movies,
-  RankingType.OVA: S.current.Top_OVA,
-  RankingType.SPECIAL: S.current.Top_Specials,
-  RankingType.TV: S.current.Top_TV_Shows,
-  RankingType.ONA: S.current.Top_ONA,
-};
-
 Map<RankingType, String> desiredTopAnimeOrderSS(S ss) {
   return {
     RankingType.UPCOMING: ss.Top_Upcoming_Anime,
@@ -278,19 +265,6 @@ Map<RankingType, String> desiredTopAnimeOrderSS(S ss) {
     RankingType.ONA: ss.Top_ONA,
   };
 }
-
-Map<MangaRanking, String> desiredMangaRankingMap = {
-  MangaRanking.manhwa: S.current.Top_Manhwa,
-  MangaRanking.all: S.current.Top_All_Manga,
-  MangaRanking.manga: S.current.Top_Manga,
-  MangaRanking.favorite: S.current.Top_Favorite_Manga,
-  MangaRanking.bypopularity: S.current.Top_Manga_Bypopularity,
-  MangaRanking.lightnovels: S.current.Top_Light_Novels,
-  MangaRanking.manhua: S.current.Top_Manhua,
-  MangaRanking.novels: S.current.Top_Novels,
-  MangaRanking.oneshots: S.current.Top_Oneshots,
-  MangaRanking.doujin: S.current.Top_Doujin,
-};
 
 Map<MangaRanking, String> desiredMangaRankingMapSS(S ss) => {
       MangaRanking.all: ss.Top_All_Manga,
