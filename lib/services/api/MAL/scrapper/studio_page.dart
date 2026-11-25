@@ -21,6 +21,9 @@ class StudioAnime {
   final int startDate;
   final StudioAnimeType type;
 
+  /// MyAnimeList genre ids (`data-genre`).
+  final List<int> genres;
+
   const StudioAnime({
     required this.id,
     required this.title,
@@ -29,6 +32,7 @@ class StudioAnime {
     this.members = 0,
     this.startDate = 0,
     this.type = StudioAnimeType.other,
+    this.genres = const [],
   });
 }
 
@@ -169,6 +173,10 @@ StudioPage? parseStudioPage((String, int) args) {
       members: int.tryParse(_clean(item.querySelector('.js-members')?.text)) ?? 0,
       startDate: int.tryParse(_clean(item.querySelector('.js-start_date')?.text)) ?? 0,
       type: _typeOf(item),
+      genres: [
+        for (final g in (item.attributes['data-genre'] ?? '').split(','))
+          if (int.tryParse(g.trim()) != null) int.parse(g.trim()),
+      ],
     ));
   }
 
