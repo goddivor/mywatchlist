@@ -46,6 +46,7 @@ class AnimeMangaSettingsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final s = S.current;
     return PrefsPage(
+      trackerScoped: true,
       title: s.Anime_Manga_settings,
       onReset: _reset,
       trailingSlivers: const [DetailTabsEditor()],

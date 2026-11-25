@@ -1,3 +1,4 @@
+import 'package:mywatchlist/constants/constants.dart' show AccountType;
 import 'package:mywatchlist/user/preferences/content_preferences.dart';
 import 'package:mywatchlist/user/preferences/general_preferences.dart';
 import 'package:mywatchlist/user/preferences/list_preferences.dart';
@@ -47,4 +48,10 @@ class PreferencesReset extends PreferencesEvent {
 /// Re-reads the storage (after a backup restore, for instance).
 class PreferencesReloaded extends PreferencesEvent {
   const PreferencesReloaded();
+}
+
+/// The active account changed: the tracker settings of [tracker] replace the state.
+class PreferencesTrackerChanged extends PreferencesEvent {
+  final AccountType tracker;
+  const PreferencesTrackerChanged(this.tracker);
 }
