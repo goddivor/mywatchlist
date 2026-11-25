@@ -1,0 +1,9 @@
+{
+  "@@locale": "en",
+  "Alc_Open_Calendar": "Airing calendar",
+  "Alc_My_List": "My list",
+  "Alc_All": "All anime",
+  "Alc_Failed": "Couldn't load the calendar",
+  "Alc_Empty": "Nothing airs this day",
+  "Alc_Empty_Mine": "Nothing on your list airs this day"
+}
