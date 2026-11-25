@@ -1149,13 +1149,15 @@ class HtmlParsers {
     final clubs = <Map<String, dynamic>>[];
 
     try {
-      // Only club links carry a `cid`; the site menu also links to clubs.php without one.
-      for (final link in document.querySelectorAll('li a[href*="cid="]')) {
+      // Only club links are `clubs.php?cid=`: the site menu links forum topics
+      // (`?topicid=`, which also contains `cid=`) and clubs.php without an id.
+      final seen = <int>{};
+      for (final link in document.querySelectorAll('li a[href*="clubs.php?cid="]')) {
         final href = link.attributes['href'] ?? '';
         final id = int.tryParse(
-            RegExp(r'cid=(\d+)').firstMatch(href)?.group(1) ?? '');
+            RegExp(r'[?&]cid=(\d+)').firstMatch(href)?.group(1) ?? '');
         final name = link.text.trim();
-        if (id == null || name.isEmpty) continue;
+        if (id == null || name.isEmpty || !seen.add(id)) continue;
         clubs.add({'id': id, 'name': name});
       }
     } catch (e) {

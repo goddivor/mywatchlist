@@ -42,7 +42,7 @@
   "Rg_Open": "Open",
   "Rg_Select": "Select",
   "Rg_Selected": "Selected",
-  "Rg_Titles": "{count} titles",
+  "Rg_Titles": "{count, plural, =1{1 title} other{{count} titles}}",
   "@Rg_Titles": { "placeholders": { "count": { "type": "int" } } },
   "Rg_Season": "Season",
   "Rg_Type": "Type",

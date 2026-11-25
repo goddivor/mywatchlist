@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:mywatchlist/widgets/common/spoiler_text.dart';
 import 'package:intl/intl.dart';
 import 'package:mywatchlist/cache/bookmarks.dart';
 import 'package:mywatchlist/cache/top_characters.dart';
@@ -582,7 +583,7 @@ class _CharacterScreenState extends State<CharacterScreen> {
               : TranslatorWidget(
                   content: profile.about,
                   reversed: true,
-                  builder: (context, text) => SelectableText(text, style: style),
+                  builder: (context, text) => SpoilerText(text, style: style),
                 ),
         ),
       ),

@@ -929,6 +929,7 @@ class _ContentEditWidgetState extends State<ContentEditWidget> {
     return Padding(
       padding: const EdgeInsets.fromLTRB(4, 4, 12, 12),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Flexible(
             child: TextButton.icon(
@@ -947,9 +948,8 @@ class _ContentEditWidgetState extends State<ContentEditWidget> {
               ),
             ),
           ),
-          const Spacer(),
+          const SizedBox(width: 8),
           Flexible(
-            flex: 2,
             child: FilledButton.tonalIcon(
               style: FilledButton.styleFrom(
                 backgroundColor: scheme.errorContainer,
