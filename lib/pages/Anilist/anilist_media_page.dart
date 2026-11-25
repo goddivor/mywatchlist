@@ -1,6 +1,9 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:mywatchlist/constants/constants.dart' show AccountType;
+import 'package:mywatchlist/widgets/bookmarks/bookmark_button.dart';
+import 'package:mywatchlist/cache/bookmarks.dart';
 import 'package:flutter/services.dart';
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/services/api/Anilist/anilist_actions.dart';
@@ -356,6 +359,16 @@ class AnilistMediaPageState extends State<AnilistMediaPage> with SingleTickerPro
                           maxLines: 1, overflow: TextOverflow.ellipsis, style: Theme.of(context).textTheme.titleLarge),
                     ),
                   ),
+                  if (d != null)
+                    BookmarkButton(
+                      style: buttonStyle,
+                      tracker: AccountType.anilist.name,
+                      kind: d.category == 'manga' ? BookmarkKind.manga : BookmarkKind.anime,
+                      id: d.id,
+                      title: d.title,
+                      imageUrl: d.coverUrl,
+                      malId: d.malId,
+                    ),
                   if (d != null)
                     IconButton(
                       style: buttonStyle,

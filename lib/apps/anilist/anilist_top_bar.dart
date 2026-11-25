@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mywatchlist/apps/anilist/anilist_app_settings_page.dart';
 import 'package:mywatchlist/apps/common/tracker_app_avatar.dart';
 import 'package:mywatchlist/generated/l10n.dart';
+import 'package:mywatchlist/utils/app_routes.dart';
 import 'package:mywatchlist/widgets/Anilist/calendar/anilist_calendar_page.dart';
 import 'package:mywatchlist/widgets/Anilist/anilist_chips.dart' show openAnilistSearch;
 import 'package:mywatchlist/widgets/Anilist/notifications/anilist_notification_bell.dart';
@@ -32,6 +33,11 @@ class AnilistBarActions extends StatelessWidget {
           onPressed: () => Navigator.of(context).push(
             MaterialPageRoute<void>(builder: (_) => const AnilistCalendarPage()),
           ),
+        ),
+        IconButton(
+          tooltip: s.Bookmarks,
+          icon: const Icon(Icons.bookmark_border),
+          onPressed: () => AppRoutes.openBookmarks(context),
         ),
         const AnilistNotificationBell(),
         IconButton(

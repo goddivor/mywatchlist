@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mywatchlist/apps/common/tracker_app_avatar.dart';
 import 'package:mywatchlist/apps/kitsu/kitsu_app_settings_page.dart';
 import 'package:mywatchlist/generated/l10n.dart';
+import 'package:mywatchlist/utils/app_routes.dart';
 import 'package:mywatchlist/widgets/Kitsu/calendar/kitsu_calendar_page.dart';
 
 /// The buttons of the Kitsu app bar: the Kitsu settings and the account avatar (a long press
@@ -19,6 +20,11 @@ class KitsuBarActions extends StatelessWidget {
             onPressed: () => Navigator.of(context).push(
               MaterialPageRoute<void>(builder: (_) => const KitsuCalendarPage()),
             ),
+          ),
+          IconButton(
+            tooltip: S.of(context).Bookmarks,
+            icon: const Icon(Icons.bookmark_border),
+            onPressed: () => AppRoutes.openBookmarks(context),
           ),
           IconButton(
             tooltip: S.of(context).Settings,
