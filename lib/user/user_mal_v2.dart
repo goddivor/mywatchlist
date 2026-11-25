@@ -1,7 +1,9 @@
+import 'dart:async';
 import 'package:mywatchlist/constants/constants.dart';
 import 'package:mywatchlist/services/auth/mal_authresp.dart';
 import 'package:mywatchlist/user/base_user.dart';
 import 'package:mywatchlist/user/accounts/account_manager.dart';
+import 'package:mywatchlist/services/api/MAL/web/mal_time_zone.dart';
 
 /// UserMal v2 - Inherits from BaseUser with auto-refresh and retry logic
 class UserMalV2 extends BaseUser<AuthResponse> {
@@ -69,5 +71,6 @@ class UserMalV2 extends BaseUser<AuthResponse> {
   void clear() {
     super.clear();
     AccountManager().clear();
+    unawaited(MalTimeZone.instance.clear());
   }
 }

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
@@ -11,6 +12,7 @@ import 'package:mywatchlist/services/api/MAL/mal_user_prof.dart';
 import 'package:mywatchlist/services/api/MAL/scrapper/user_anime_statistics.dart';
 import 'package:mywatchlist/services/api/MAL/scrapper/user_profile_page.dart';
 import 'package:mywatchlist/user/user_mal_v2.dart';
+import 'package:mywatchlist/services/api/MAL/web/mal_time_zone.dart';
 
 /// One favorite shown in the Favorites tab.
 class ProfileFavorite {
@@ -304,8 +306,12 @@ class UserProfileRepository {
   }
 
   @visibleForTesting
-  Future<MalUserProf> Function() malSelf =
-      () => MalUser().getUserInfo(fields: const ['anime_statistics', 'time_zone', 'is_supporter']);
+  Future<MalUserProf> Function() malSelf = () async {
+    final me = await MalUser().getUserInfo(fields: const ['anime_statistics', 'time_zone', 'is_supporter']);
+    // The account's zone reads MAL's message dates.
+    unawaited(MalTimeZone.instance.remember(me.timezone));
+    return me;
+  };
 
   /// The signed-in user's MAL name, when known without a request.
   static String? get ownUsername {
