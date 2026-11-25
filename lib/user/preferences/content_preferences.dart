@@ -37,7 +37,7 @@ class DetailTabPreference extends Equatable {
 final List<TabType> defaultAnimeTabOrder = List.unmodifiable(
     ContentPreferences.defaultAnimeTabs.map((tab) => tab.tabType));
 
-/// Default section order of the manga detail page (no Media, Staff nor score stats).
+/// Default section order of the manga detail page (no Media nor Staff).
 final List<TabType> defaultMangaTabOrder = List.unmodifiable(
     ContentPreferences.defaultMangaTabs.map((tab) => tab.tabType));
 
@@ -114,6 +114,8 @@ class ContentPreferences extends Equatable {
     DetailTabPreference(TabType.News),
     DetailTabPreference(TabType.Featured_Articles),
     DetailTabPreference(TabType.User_Updates),
+    DetailTabPreference(TabType.Stats),
+    DetailTabPreference(TabType.ScoreStats),
     DetailTabPreference(TabType.More_Info),
   ];
 
