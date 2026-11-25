@@ -77,7 +77,7 @@ void main() {
       await tester.pump();
       expect(find.text('Clubs'), findsOneWidget);
       expect(find.text('Pirates'), findsOneWidget);
-      expect(find.text('1,204 Members'), findsOneWidget);
+      expect(find.text('1,204 members'), findsOneWidget);
       expect(find.text('No id'), findsNothing);
 
       await tester.pumpWidget(_app(TitleClubsRow(key: const ValueKey('none'), id: 1, fetch: (_, __) async => [])));

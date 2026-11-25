@@ -44,9 +44,7 @@ class TitleClubs {
       final row = _row(link);
       final img = row?.querySelector('img');
       final imgUrl = img?.attributes['data-src'] ?? img?.attributes['src'];
-      final members = RegExp(r'(\d[\d,]*)\s+members?', caseSensitive: false)
-          .firstMatch(row?.text ?? '')
-          ?.group(1);
+      final members = _membersRe.firstMatch(row?.text ?? '')?.group(1);
       clubs.add(ClubHtml(
         id: id,
         name: name,
@@ -57,10 +55,22 @@ class TitleClubs {
     return clubs;
   }
 
+  static final RegExp _membersRe = RegExp(r'(\d[\d,]*)\s+members?', caseSensitive: false);
+
+  /// The club's own block: its `div.borderClass` (the current page), else its table row.
+  /// A row that holds the page's sidebar (`Popularity: #N Members: …`) or another club is
+  /// not the club's.
   static Element? _row(Element link) {
     for (Element? e = link.parent; e != null; e = e.parent) {
-      if (e.localName == 'tr') return e;
+      if (e.localName == 'div' && e.classes.contains('borderClass')) return e;
+      if (e.localName == 'tr') return _ownsOnly(e, link) ? e : null;
     }
     return null;
+  }
+
+  static bool _ownsOnly(Element row, Element link) {
+    final id = RegExp(r'cid=(\d+)').firstMatch(link.attributes['href'] ?? '')?.group(1);
+    return row.querySelectorAll('a[href*="clubs.php?cid="]').every(
+        (a) => RegExp(r'cid=(\d+)').firstMatch(a.attributes['href'] ?? '')?.group(1) == id);
   }
 }
