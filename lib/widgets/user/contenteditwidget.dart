@@ -703,7 +703,7 @@ class _ContentEditWidgetState extends State<ContentEditWidget> {
       children: [
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12),
-          child: FieldCaption(S.current.Score),
+          child: FieldCaption(S.current.Esl_Score),
         ),
         NumberBar(
           key: const ValueKey('edit-score-bar'),
@@ -928,41 +928,39 @@ class _ContentEditWidgetState extends State<ContentEditWidget> {
     final deleting = _busy.contains(EditField.delete);
     return Padding(
       padding: const EdgeInsets.fromLTRB(4, 4, 12, 12),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      // Both buttons on one line when their full labels fit, else the toggle above the
+      // delete button (French labels are long).
+      child: OverflowBar(
+        alignment: MainAxisAlignment.spaceBetween,
+        spacing: 8,
+        overflowSpacing: 4,
+        overflowAlignment: OverflowBarAlignment.end,
         children: [
-          Flexible(
-            child: TextButton.icon(
-              onPressed: _toggleAdvanced,
-              icon: AnimatedRotation(
-                turns: _advanced ? 0.5 : 0,
-                duration: const Duration(milliseconds: 200),
-                curve: editEaseOut,
-                child: const Icon(Icons.expand_less),
-              ),
-              label: Text(
-                _advanced
-                    ? S.current.Edit_Fewer_Options
-                    : S.current.Edit_More_Options,
-                overflow: TextOverflow.ellipsis,
-              ),
+          TextButton.icon(
+            onPressed: _toggleAdvanced,
+            icon: AnimatedRotation(
+              turns: _advanced ? 0.5 : 0,
+              duration: const Duration(milliseconds: 200),
+              curve: editEaseOut,
+              child: const Icon(Icons.expand_less),
+            ),
+            label: Text(
+              _advanced ? S.current.Edit_Fewer_Options : S.current.Edit_More_Options,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
-          const SizedBox(width: 8),
-          Flexible(
-            child: FilledButton.tonalIcon(
-              style: FilledButton.styleFrom(
-                backgroundColor: scheme.errorContainer,
-                foregroundColor: scheme.onErrorContainer,
-                visualDensity: VisualDensity.compact,
-              ),
-              onPressed: deleting ? null : _delete,
-              icon: deleting
-                  ? SmallSpinner(color: scheme.onErrorContainer)
-                  : const Icon(Icons.delete_outline, size: 18),
-              label: Text(S.current.Delete_from_List,
-                  overflow: TextOverflow.ellipsis),
+          FilledButton.tonalIcon(
+            style: FilledButton.styleFrom(
+              backgroundColor: scheme.errorContainer,
+              foregroundColor: scheme.onErrorContainer,
+              visualDensity: VisualDensity.compact,
             ),
+            onPressed: deleting ? null : _delete,
+            icon: deleting
+                ? SmallSpinner(color: scheme.onErrorContainer)
+                : const Icon(Icons.delete_outline, size: 18),
+            label: Text(S.current.Delete_from_List, maxLines: 1, overflow: TextOverflow.ellipsis),
           ),
         ],
       ),

@@ -29,7 +29,7 @@ String scoreLabel(int score) => switch (score) {
       3 => S.current.Very_Bad,
       4 => S.current.Bad,
       5 => S.current.Average,
-      6 => S.current.Fine,
+      6 => S.current.Esl_Fine,
       7 => S.current.Good,
       8 => S.current.Very_Good,
       9 => S.current.Great,
@@ -39,17 +39,17 @@ String scoreLabel(int score) => switch (score) {
 
 /// MAL rewatch / reread value 0-5.
 String repeatValueLabel(int value) => switch (value) {
-      1 => S.current.Very_Low,
-      2 => S.current.Low,
-      3 => S.current.Medium,
-      4 => S.current.High,
-      5 => S.current.Very_High,
+      1 => S.current.Esl_Very_Low,
+      2 => S.current.Esl_Low,
+      3 => S.current.Esl_Medium,
+      4 => S.current.Esl_High,
+      5 => S.current.Esl_Very_High,
       _ => S.current.Edit_Not_Set,
     };
 
 /// MAL priority 0-2.
 String priorityLabel(int value) => switch (value) {
-      1 => S.current.Medium,
-      2 => S.current.High,
-      _ => S.current.Low,
+      1 => S.current.Esl_Medium,
+      2 => S.current.Esl_High,
+      _ => S.current.Esl_Low,
     };

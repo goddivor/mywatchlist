@@ -1,0 +1,10 @@
+{
+  "@@locale": "ru_RU",
+  "Esl_Very_Low": "Очень низкий",
+  "Esl_Low": "Низкий",
+  "Esl_Medium": "Средний",
+  "Esl_High": "Высокий",
+  "Esl_Very_High": "Очень высокий",
+  "Esl_Score": "Оценка",
+  "Esl_Fine": "Неплохо"
+}
