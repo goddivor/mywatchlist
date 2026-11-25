@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:mywatchlist/generated/l10n.dart';
 
 import 'release_service.dart';
+import 'package:mywatchlist/screens/settings/storage_settings.dart' show formatBytes;
+
 import 'update_controller.dart';
 
 /// "Check for updates": looks at the newest GitHub release, then downloads, verifies and

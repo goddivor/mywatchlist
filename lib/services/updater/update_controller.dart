@@ -292,18 +292,6 @@ class UpdateController extends ChangeNotifier {
   }
 }
 
-/// "12.3 MB" style size, base 1024.
-String formatBytes(int bytes) {
-  const units = ['B', 'KB', 'MB', 'GB'];
-  var value = bytes.toDouble();
-  var unit = 0;
-  while (value >= 1024 && unit < units.length - 1) {
-    value /= 1024;
-    unit++;
-  }
-  return unit == 0 ? '$bytes B' : '${value.toStringAsFixed(1)} ${units[unit]}';
-}
-
 /// The silent update check made once the home shell is on screen (DailyAL parity): at most
 /// one GitHub request per [interval], never on F-Droid builds, never raising. A release is
 /// offered once; the dialog it opens re-reads it from [prefetched], so no second request.

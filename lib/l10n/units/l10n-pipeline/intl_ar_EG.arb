@@ -1,0 +1,8 @@
+{
+  "@@locale": "ar_EG",
+  "Language_Use_System": "استخدام لغة النظام",
+  "Language_Use_System_Desc": "اتباع لغة الجهاز. تُستخدم الإنجليزية إذا كان التطبيق لا يدعمها.",
+  "Language_Available": "اللغات المتاحة",
+  "Language_Intro_Desc": "اختر لغة واجهة التطبيق. يمكنك تغييرها لاحقًا من الإعدادات.",
+  "Language_Changed_To": "تم ضبط اللغة على {language}"
+}
