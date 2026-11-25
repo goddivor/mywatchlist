@@ -242,6 +242,7 @@ List<ListFilterFacet> facetsFor(Iterable<ListEntryView> entries,
         options: [for (final g in sortedGenres) SelectOption(g, genreLabels[g]!)],
         allowExclude: true,
         matchAll: true,
+        picker: true,
       ),
     if (sortedSeasons.isNotEmpty)
       ListFilterFacet(
@@ -249,6 +250,7 @@ List<ListFilterFacet> facetsFor(Iterable<ListEntryView> entries,
         label: S.current.Ltf_Facet_Season,
         options: [for (final k in sortedSeasons) SelectOption(k, _seasonLabel(k))],
         allowExclude: true,
+        picker: true,
       ),
     if (sortedStudios.isNotEmpty)
       ListFilterFacet(
@@ -256,6 +258,7 @@ List<ListFilterFacet> facetsFor(Iterable<ListEntryView> entries,
         label: S.current.Ltf_Facet_Studio,
         options: [for (final s in sortedStudios) SelectOption(s, s)],
         allowExclude: true,
+        picker: true,
       ),
     if (sortedAuthors.isNotEmpty)
       ListFilterFacet(
@@ -263,6 +266,7 @@ List<ListFilterFacet> facetsFor(Iterable<ListEntryView> entries,
         label: S.current.Ltf_Facet_Author,
         options: [for (final a in sortedAuthors) SelectOption(a, a)],
         allowExclude: true,
+        picker: true,
       ),
     if (sortedRatings.isNotEmpty)
       ListFilterFacet(

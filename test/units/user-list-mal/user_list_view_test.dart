@@ -74,6 +74,10 @@ void main() {
     await tester.pump(const Duration(milliseconds: 300));
     await tester.pumpAndSettle();
     expect(find.text('No entry matches'), findsOneWidget);
+    final screenCenter = tester.getCenter(find.byType(Scaffold).first).dx;
+    expect(tester.getCenter(find.text('No entry matches')).dx, moreOrLessEquals(screenCenter, epsilon: 1),
+        reason: 'the empty state sits in the middle of the screen (owner request)');
+    expect(tester.getCenter(find.text('Clear search and filters')).dx, moreOrLessEquals(screenCenter, epsilon: 1));
     await tester.tap(find.text('Clear search and filters'));
     await tester.pumpAndSettle();
     expect(find.text('Frieren'), findsOneWidget);

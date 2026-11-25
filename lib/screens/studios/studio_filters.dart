@@ -53,6 +53,7 @@ abstract final class StudioFilters {
           options: [for (final g in sortedGenres) SelectOption('$g', labels[g]!)],
           allowExclude: true,
           matchAll: true,
+          picker: true,
         ),
       if (sortedYears.length > 1)
         ListFilterFacet(
@@ -60,6 +61,7 @@ abstract final class StudioFilters {
           label: S.current.Srch_Year,
           options: [for (final y in sortedYears) SelectOption('$y', '$y')],
           allowExclude: true,
+          picker: true,
         ),
       if (statuses.length > 1)
         ListFilterFacet(
