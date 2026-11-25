@@ -22,6 +22,7 @@ class KitsuAppSettingsPage extends StatelessWidget {
   static const List<SettingsSection> appSections = [
     SettingsSection.theme,
     SettingsSection.language,
+    SettingsSection.homePage,
     SettingsSection.notifications,
     SettingsSection.listPreferences,
     SettingsSection.backup,

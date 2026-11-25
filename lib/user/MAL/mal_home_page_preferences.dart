@@ -405,39 +405,41 @@ class MalHomePreferences {
     );
   }
 
+  /// The key that stored the one layout every tracker shared before #348.
+  static const String legacyKey = 'mal_home_preferences';
+
+  /// Where [tracker]'s layout is saved (owner rule: each tracker is its own app, with its own
+  /// home layout). Null or none = the legacy shared key.
+  static String storageKey(AccountType? tracker) =>
+      tracker == null || tracker == AccountType.none ? legacyKey : '$legacyKey:${tracker.name}';
+
   // Save preferences to SharedPreferences
-  Future<void> save() async {
+  Future<void> save({AccountType? tracker}) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      // Convert to JSON string properly
-      final jsonString = jsonEncode(toJson());
-      await prefs.setString('mal_home_preferences', jsonString);
+      await prefs.setString(storageKey(tracker), jsonEncode(toJson()));
     } catch (e) {
       debugPrint('Error saving MAL home preferences: $e');
-      // Rethrow to handle in UI
       rethrow;
     }
   }
 
-// Load preferences from SharedPreferences
-  static Future<MalHomePreferences> load() async {
+  /// [tracker]'s layout. A tracker without its own yet starts from the shared layout saved
+  /// before #348 (each tracker gets its own copy the first time it saves), else the defaults.
+  static Future<MalHomePreferences> load({AccountType? tracker}) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final jsonString = prefs.getString('mal_home_preferences');
-
+      final jsonString = prefs.getString(storageKey(tracker)) ?? prefs.getString(legacyKey);
       if (jsonString != null) {
-        // Parse JSON string to Map
         final Map<String, dynamic> jsonMap = jsonDecode(jsonString);
         return MalHomePreferences.fromJson(jsonMap);
       }
     } catch (e) {
       debugPrint('Error loading MAL home preferences: $e');
-      // Don't rethrow, just return default
     }
-
-    // Return default preferences if there was an error or no saved preferences
     return MalHomePreferences();
   }
+
 
   // Reset to default preferences
   void reset() {
