@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mywatchlist/widgets/common/framed_avatar.dart';
 import 'package:mywatchlist/constants/constants.dart' show AccountType;
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/screens/mal_web/messages_screen.dart' show openComposeMalMessage;
@@ -134,17 +135,21 @@ class _FriendTile extends StatelessWidget {
     final theme = Theme.of(context);
     final lastSeen = friend.lastSeenAt != null ? _ago(s, friend.lastSeenAt!) : friend.lastOnline;
     return ListTile(
-      leading: ClipOval(
-        child: AppImage(
-          url: friend.imageUrl,
-          width: 44,
-          height: 44,
-          errorWidget: (_) => SizedBox(
+      leading: FramedAvatar(
+        username: friend.username,
+        size: 44,
+        child: ClipOval(
+          child: AppImage(
+            url: friend.imageUrl,
             width: 44,
             height: 44,
-            child: ColoredBox(
-              color: theme.colorScheme.surfaceContainerHighest,
-              child: const Icon(Icons.person),
+            errorWidget: (_) => SizedBox(
+              width: 44,
+              height: 44,
+              child: ColoredBox(
+                color: theme.colorScheme.surfaceContainerHighest,
+                child: const Icon(Icons.person),
+              ),
             ),
           ),
         ),

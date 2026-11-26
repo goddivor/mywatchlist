@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mywatchlist/widgets/common/framed_avatar.dart';
 import 'package:mywatchlist/constants/constants.dart';
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/screens/mal_web/notifications_screen.dart' show MalNotificationsScreen;
@@ -191,10 +192,20 @@ class _AccountAvatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    return BlocSelector<AccountBloc, AccountState, ({AccountType type, String? image})>(
+    return BlocSelector<AccountBloc, AccountState, ({AccountType type, String? image, String? malName})>(
       selector: (state) => state is AccountLoaded
-          ? (type: state.selectedAccountType, image: state.profileImageUrl)
-          : (type: AccountType.none, image: null),
+          ? (
+              type: state.selectedAccountType,
+              image: state.profileImageUrl,
+              // Frames are worn by MAL accounts only.
+              malName: state.selectedAccountType == AccountType.myanimelist
+                  ? state.availableAccounts
+                      .where((a) => a.typeAcc == AccountType.myanimelist)
+                      .map((a) => a.name)
+                      .firstOrNull
+                  : null,
+            )
+          : (type: AccountType.none, image: null, malName: null),
       builder: (context, account) {
         final ring = TrackerInfo.of(account.type)?.color ?? scheme.outline;
         void openSwitcher() => showAccountSwitcherSheet(context, onSwitched: onUiChange);
@@ -217,15 +228,29 @@ class _AccountAvatar extends StatelessWidget {
                 alignment: Alignment.center,
                 children: [
                   ExcludeSemantics(
-                    child: AvatarWidget(
-                      url: account.image,
-                      isNetworkImage: account.image != null,
-                      height: 36,
-                      width: 36,
-                      borderColor: ring,
-                      borderWidth: 2,
-                      onTap: () => AppRoutes.openSidebar(context),
-                      onLongPress: openSwitcher,
+                    child: FramedAvatar(
+                      username: account.malName,
+                      size: 36,
+                      child: AvatarWidget(
+                        url: account.image,
+                        isNetworkImage: account.image != null,
+                        height: 36,
+                        width: 36,
+                        borderColor: ring,
+                        borderWidth: 2,
+                        onTap: () => AppRoutes.openSidebar(context),
+                        onLongPress: openSwitcher,
+                      ),
+                      framedChild: AvatarWidget(
+                        url: account.image,
+                        isNetworkImage: account.image != null,
+                        height: 36,
+                        width: 36,
+                        borderWidth: 0,
+                        borderColor: Colors.transparent,
+                        onTap: () => AppRoutes.openSidebar(context),
+                        onLongPress: openSwitcher,
+                      ),
                     ),
                   ),
                   PositionedDirectional(

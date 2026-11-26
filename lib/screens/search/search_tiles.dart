@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mywatchlist/widgets/common/framed_avatar.dart';
 import 'package:mywatchlist/widgets/user/list/list_status_pill.dart';
 import 'package:mywatchlist/constants/constants.dart';
 import 'package:mywatchlist/generated/l10n.dart';
@@ -518,7 +519,11 @@ class UserTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return EntityTile(
-      leading: SearchThumb(url: user.imageUrl, width: 48, height: 48, radius: 24, icon: Icons.person_rounded),
+      leading: FramedAvatar(
+        username: user.username,
+        size: 48,
+        child: SearchThumb(url: user.imageUrl, width: 48, height: 48, radius: 24, icon: Icons.person_rounded),
+      ),
       leadingHeight: 48,
       title: user.username,
       subtitle: user.lastOnline,

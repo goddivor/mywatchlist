@@ -309,23 +309,57 @@ extension _SearchBody on _GeneralSearchScreenState {
   }
 }
 
-/// "User found as …": MyAnimeList knows a profile with the exact name that was typed.
-class _UserFoundCard extends StatelessWidget {
+/// "User found as …": MyAnimeList knows a profile with the exact name that was typed. Its
+/// avatar (from the public profile) shows with the frame the user wears.
+class _UserFoundCard extends StatefulWidget {
   final String name;
 
   const _UserFoundCard({required this.name});
 
   @override
+  State<_UserFoundCard> createState() => _UserFoundCardState();
+}
+
+class _UserFoundCardState extends State<_UserFoundCard> {
+  static const double _size = 40;
+  late Future<String?> _picture = MalUserPictures.instance.of(widget.name);
+
+  @override
+  void didUpdateWidget(_UserFoundCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.name != widget.name) _picture = MalUserPictures.instance.of(widget.name);
+  }
+
+  @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final icon = Icon(Icons.person_search_rounded, color: scheme.onSecondaryContainer);
     return Card(
       margin: const EdgeInsets.fromLTRB(12, 8, 12, 0),
       color: scheme.secondaryContainer,
       child: ListTile(
-        leading: Icon(Icons.person_search_rounded, color: scheme.onSecondaryContainer),
-        title: Text(S.current.Srch_User_Found(name), style: TextStyle(color: scheme.onSecondaryContainer)),
+        leading: FutureBuilder<String?>(
+          future: _picture,
+          builder: (context, snapshot) {
+            final url = snapshot.data;
+            if (url == null || url.isEmpty) return icon;
+            return FramedAvatar(
+              username: widget.name,
+              size: _size,
+              child: AppImage(
+                url: url,
+                width: _size,
+                height: _size,
+                borderRadius: BorderRadius.circular(_size),
+                placeholderColor: scheme.surfaceContainerHighest,
+                errorWidget: (_) => icon,
+              ),
+            );
+          },
+        ),
+        title: Text(S.current.Srch_User_Found(widget.name), style: TextStyle(color: scheme.onSecondaryContainer)),
         trailing: Icon(Icons.chevron_right_rounded, color: scheme.onSecondaryContainer),
-        onTap: () => openUserProfile(context, name),
+        onTap: () => openUserProfile(context, widget.name),
       ),
     );
   }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mywatchlist/widgets/common/framed_avatar.dart';
 import 'package:mywatchlist/constants/constants.dart' show AccountType;
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/screens/mal_web/notifications_screen.dart';
@@ -138,19 +139,23 @@ class FriendActivityCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(16),
                   child: Row(
                     children: [
-                      avatar == null || avatar.isEmpty
-                          ? CircleAvatar(
-                              radius: 14,
-                              backgroundColor: scheme.secondaryContainer,
-                              child: Icon(Icons.person_outline, size: 16, color: scheme.onSecondaryContainer),
-                            )
-                          : AppImage(
-                              url: avatar,
-                              width: 28,
-                              height: 28,
-                              borderRadius: BorderRadius.circular(14),
-                              placeholderColor: scheme.surfaceContainerHighest,
-                            ),
+                      FramedAvatar(
+                        username: activity.friend,
+                        size: 28,
+                        child: avatar == null || avatar.isEmpty
+                            ? CircleAvatar(
+                                radius: 14,
+                                backgroundColor: scheme.secondaryContainer,
+                                child: Icon(Icons.person_outline, size: 16, color: scheme.onSecondaryContainer),
+                              )
+                            : AppImage(
+                                url: avatar,
+                                width: 28,
+                                height: 28,
+                                borderRadius: BorderRadius.circular(14),
+                                placeholderColor: scheme.surfaceContainerHighest,
+                              ),
+                      ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(activity.friend,

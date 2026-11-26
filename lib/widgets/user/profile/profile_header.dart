@@ -6,6 +6,8 @@ import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/screens/user_profile/user_profile_data.dart';
 import 'package:mywatchlist/widgets/common/app_colors.dart';
 import 'package:mywatchlist/widgets/common/app_image.dart';
+import 'package:mywatchlist/widgets/common/framed_avatar.dart';
+import 'package:mywatchlist/widgets/user/profile/avatar_frame_sheet.dart';
 import 'package:mywatchlist/widgets/common/image_preview.dart';
 import 'package:mywatchlist/widgets/user/profile/profile_background.dart';
 
@@ -99,7 +101,7 @@ class _ProfileHeaderState extends State<ProfileHeader> {
     // the app bar's scroll extent, so scrolling never rebuilds the content.
     return _CollapsingBand(
       bottomInset: widget.bottomInset,
-      child: ProfileHeaderBand(data: widget.data, backgroundPath: bgPath),
+      child: ProfileHeaderBand(data: widget.data, backgroundPath: bgPath, isSelf: widget.isSelf),
     );
   }
 }
@@ -144,7 +146,10 @@ class ProfileHeaderBand extends StatelessWidget {
   /// The local profile background, null for none (the header then sits on the surface).
   final String? backgroundPath;
 
-  const ProfileHeaderBand({super.key, required this.data, this.backgroundPath});
+  /// The signed-in user's own profile: a long press on the avatar picks its frame.
+  final bool isSelf;
+
+  const ProfileHeaderBand({super.key, required this.data, this.backgroundPath, this.isSelf = false});
 
   @override
   Widget build(BuildContext context) {
@@ -186,7 +191,7 @@ class ProfileHeaderBand extends StatelessWidget {
             padding: const EdgeInsetsDirectional.fromSTEB(16, 8, 16, 16),
             child: Row(
               children: [
-                _Avatar(url: data.pictureUrl),
+                _Avatar(url: data.pictureUrl, username: data.username, isSelf: isSelf),
                 const SizedBox(width: 16),
                 Expanded(
                   child: Column(
@@ -271,10 +276,12 @@ class _SupporterBadge extends StatelessWidget {
 
 class _Avatar extends StatelessWidget {
   final String? url;
+  final String username;
+  final bool isSelf;
 
   static const double _size = 72;
 
-  const _Avatar({required this.url});
+  const _Avatar({required this.url, required this.username, required this.isSelf});
 
   @override
   Widget build(BuildContext context) {
@@ -290,7 +297,11 @@ class _Avatar extends StatelessWidget {
     );
     return GestureDetector(
       onTap: url == null ? null : () => zoomInImage(context, url),
-      child: ClipOval(
+      onLongPress: isSelf ? () => showAvatarFrameSheet(context, username: username) : null,
+      child: FramedAvatar(
+        username: username,
+        size: _size,
+        child: ClipOval(
         child: url == null
             ? placeholder
             : AppImage(
@@ -300,6 +311,7 @@ class _Avatar extends StatelessWidget {
                 placeholderColor: cs.secondaryContainer,
                 errorWidget: (_) => placeholder,
               ),
+        ),
       ),
     );
   }
