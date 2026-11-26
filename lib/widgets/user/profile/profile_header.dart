@@ -142,18 +142,38 @@ class _ProfileHeaderState extends State<ProfileHeader> {
             fit: StackFit.expand,
             children: [
               _Picture(path: bgPath, url: url),
-              DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    stops: const [0, 0.3, 0.6, 1],
-                    colors: [
-                      tokens.imageScrim.withValues(alpha: 0.55),
-                      tokens.imageScrim.withValues(alpha: 0.15),
-                      tokens.imageScrim.withValues(alpha: 0.45),
-                      tokens.imageScrim,
-                    ],
+              // Two plain two-colour gradients (top for the toolbar icons, bottom for the name):
+              // a four-stop gradient over the whole collapsing header crashed the emulator's
+              // renderer while scrolling.
+              Align(
+                alignment: Alignment.topCenter,
+                child: FractionallySizedBox(
+                  heightFactor: 0.35,
+                  widthFactor: 1,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [tokens.imageScrim.withValues(alpha: 0.55), tokens.imageScrim.withValues(alpha: 0)],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              Align(
+                alignment: Alignment.bottomCenter,
+                child: FractionallySizedBox(
+                  heightFactor: 0.55,
+                  widthFactor: 1,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [tokens.imageScrim.withValues(alpha: 0), tokens.imageScrim],
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -184,14 +204,22 @@ class _CollapsingBand extends StatelessWidget {
     final top = settings.minExtent - bottomInset;
     final band = settings.maxExtent - settings.minExtent;
     if (band <= 0) return const SizedBox.shrink();
+    // Fades out as it slides under the toolbar instead of being cut by a hard line (the line
+    // showed over a banner covering the whole header). Gone before it reaches the toolbar.
+    final shown = ((settings.currentExtent - settings.minExtent) / band).clamp(0.0, 1.0);
+    final opacity = ((shown - 0.35) / 0.65).clamp(0.0, 1.0);
     return Padding(
       padding: EdgeInsets.only(top: top, bottom: bottomInset),
-      child: ClipRect(
-        child: OverflowBox(
-          alignment: Alignment.bottomCenter,
-          minHeight: band,
-          maxHeight: band,
-          child: child,
+      child: IgnorePointer(
+        ignoring: opacity == 0,
+        child: Opacity(
+          opacity: opacity,
+          child: OverflowBox(
+            alignment: Alignment.bottomCenter,
+            minHeight: band,
+            maxHeight: band,
+            child: child,
+          ),
         ),
       ),
     );
@@ -402,7 +430,22 @@ class _Picture extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
     final path = this.path;
     if (path == null) {
-      return AppImage(url: url, fit: BoxFit.cover, placeholderColor: cs.surfaceContainerHighest);
+      final link = url;
+      if (link == null || link.isEmpty) return ColoredBox(color: cs.surfaceContainerHighest);
+      // Decoded once at the screen width. Sized from the layout (AppImage's default), the
+      // picture behind the collapsing header got a new decode size on every scrolled frame:
+      // one decode and one texture per frame, enough to crash the emulator's GPU.
+      final media = MediaQuery.of(context);
+      return Image(
+        image: AppImage.provider(
+          link,
+          logicalWidth: media.size.width,
+          devicePixelRatio: media.devicePixelRatio,
+        ),
+        fit: BoxFit.cover,
+        gaplessPlayback: true,
+        errorBuilder: (_, __, ___) => ColoredBox(color: cs.surfaceContainerHighest),
+      );
     }
     return Image(
       image: ResizeImage(FileImage(File(path)), width: 1080),
