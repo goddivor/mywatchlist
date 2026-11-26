@@ -115,16 +115,53 @@ class _ProfileHeaderState extends State<ProfileHeader> {
   @override
   Widget build(BuildContext context) {
     final bgPath = widget.isSelf ? _store.cached(widget.data.username) : null;
+    final url = bgPath == null ? _sharedUrl : null;
+    final hasPicture = bgPath != null || url != null;
     // The band is built here once per data or picture change; only [_CollapsingBand] reads
     // the app bar's scroll extent, so scrolling never rebuilds the content.
-    return _CollapsingBand(
+    final band = _CollapsingBand(
       bottomInset: widget.bottomInset,
       child: ProfileHeaderBand(
         data: widget.data,
         backgroundPath: bgPath,
-        backgroundUrl: bgPath == null ? _sharedUrl : null,
+        backgroundUrl: url,
         isSelf: widget.isSelf,
+        drawPicture: !hasPicture,
       ),
+    );
+    if (!hasPicture) return band;
+    // The banner covers the whole header, status bar and toolbar included (owner request), down
+    // to the tab strip; a scrim keeps the toolbar icons and the name readable.
+    final tokens = AppColors.of(context);
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        Padding(
+          padding: EdgeInsets.only(bottom: widget.bottomInset),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              _Picture(path: bgPath, url: url),
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    stops: const [0, 0.3, 0.6, 1],
+                    colors: [
+                      tokens.imageScrim.withValues(alpha: 0.55),
+                      tokens.imageScrim.withValues(alpha: 0.15),
+                      tokens.imageScrim.withValues(alpha: 0.45),
+                      tokens.imageScrim,
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        band,
+      ],
     );
   }
 }
@@ -175,12 +212,17 @@ class ProfileHeaderBand extends StatelessWidget {
   /// The signed-in user's own profile: a long press on the avatar picks its frame.
   final bool isSelf;
 
+  /// False when the picture is drawn behind the whole header instead ([ProfileHeader]): the
+  /// band then only lays out its text for a picture.
+  final bool drawPicture;
+
   const ProfileHeaderBand({
     super.key,
     required this.data,
     this.backgroundPath,
     this.backgroundUrl,
     this.isSelf = false,
+    this.drawPicture = true,
   });
 
   @override
@@ -202,7 +244,7 @@ class ProfileHeaderBand extends StatelessWidget {
     return Stack(
       fit: StackFit.expand,
       children: [
-        if (onPicture) ...[
+        if (onPicture && drawPicture) ...[
           _Picture(path: backgroundPath, url: backgroundUrl),
           // The text sits in the lower part: full scrim there (white text ≥ 4.5:1 on a white
           // picture), fading out towards the top so the picture still shows.

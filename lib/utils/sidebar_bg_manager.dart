@@ -94,6 +94,16 @@ class SidebarBackgroundManager {
     }
   }
 
+  /// Drops the sidebar picture without telling [onUserChange] (the banner was removed on
+  /// another phone: nothing to send back).
+  Future<void> removeLocalOnly() async {
+    final prefs = await SharedPreferences.getInstance();
+    final current = await _sidebarPath(prefs);
+    if (current == null) return;
+    await prefs.remove(keySidebarImagePath);
+    await _deleteIfUnused(prefs, current);
+  }
+
   /// Remove the current sidebar background image.
   Future<bool> removeBackgroundImage({BuildContext? context}) async {
     try {

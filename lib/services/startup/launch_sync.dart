@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:io';
-import 'dart:ui' show PlatformDispatcher;
 
 import 'package:flutter/foundation.dart';
 import 'package:mywatchlist/constants/constants.dart' show AccountType;
@@ -67,6 +66,7 @@ class LaunchSync {
       username: name,
       localPath: local,
       save: (bytes) async => sidebar.adoptBytes(bytes),
+      removeLocal: () async => sidebar.removeLocalOnly(),
     );
     debugPrint('LaunchSync: banner ${result.name}');
     return result;

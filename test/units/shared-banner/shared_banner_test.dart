@@ -54,7 +54,10 @@ class _Backend {
 
 void main() {
   late Directory dir;
-  setUp(() => dir = Directory.systemTemp.createTempSync('banner_test'));
+  setUp(() {
+    dir = Directory.systemTemp.createTempSync('banner_test');
+    SharedPreferences.setMockInitialValues({});
+  });
   tearDown(() => dir.deleteSync(recursive: true));
 
   File local(List<int> bytes) => File('${dir.path}/bg.jpg')..writeAsBytesSync(bytes);
@@ -77,11 +80,52 @@ void main() {
     expect(saved, 0);
   });
 
-  test('a changed local banner is uploaded again', () async {
-    final backend = _Backend()..hash = SharedBanners.hashOf([1, 2, 3]);
-    final file = local([4, 5, 6]);
+  test('a local banner changed after a sync is uploaded again', () async {
+    final backend = _Backend();
+    final file = local([1, 2, 3]);
+    await backend.banners.sync(username: 'g', localPath: file.path, save: (_) async {});
+    file.writeAsBytesSync([4, 5, 6]);
     expect(await backend.banners.sync(username: 'g', localPath: file.path, save: (_) async {}), BannerSync.uploaded);
     expect(backend.hash, SharedBanners.hashOf([4, 5, 6]));
+  });
+
+  test('two phones with different banners settle on the account one, no ping-pong', () async {
+    final backend = _Backend();
+    // Phone A: its banner goes online.
+    await backend.banners.sync(username: 'g', localPath: local([1, 2, 3]).path, save: (_) async {});
+    final online = backend.hash;
+
+    // Phone B (its own storage), with an older banner of its own: it takes the account's.
+    SharedPreferences.setMockInitialValues({});
+    final b = File('${dir.path}/b.jpg')..writeAsBytesSync([7, 7]);
+    final result = await backend.banners.sync(
+      username: 'g',
+      localPath: b.path,
+      save: (bytes) async => b.writeAsBytesSync(bytes),
+    );
+    expect(result, BannerSync.downloaded);
+    expect(backend.hash, online, reason: 'phone B did not overwrite the account banner');
+
+    // Next launch of B: the downloaded copy differs from the uploaded file but nothing changed.
+    backend.calls.clear();
+    expect(await backend.banners.sync(username: 'g', localPath: b.path, save: (_) async {}), BannerSync.upToDate);
+    expect(backend.calls, ['GET api.test/api/banner/mine']);
+  });
+
+  test('a banner removed on another phone is removed here', () async {
+    final backend = _Backend();
+    final file = local([1, 2, 3]);
+    await backend.banners.sync(username: 'g', localPath: file.path, save: (_) async {});
+    backend.hash = backend.url = null; // removed elsewhere
+    var removed = false;
+    final result = await backend.banners.sync(
+      username: 'g',
+      localPath: file.path,
+      save: (_) async {},
+      removeLocal: () async => removed = true,
+    );
+    expect(result, BannerSync.removedLocal);
+    expect(removed, isTrue);
   });
 
   test('another phone (no local banner) gets the online one', () async {

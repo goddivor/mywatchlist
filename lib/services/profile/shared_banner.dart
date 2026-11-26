@@ -7,11 +7,18 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:mywatchlist/services/frames/avatar_frames.dart' show kAvatarFramesApi;
 import 'package:mywatchlist/user/user_mal_v2.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// What [SharedBanners.sync] did.
 enum BannerSync {
   /// Nothing to do: the local banner is the one online, or there is none anywhere.
   upToDate,
+
+  /// Removed on another phone: removed here too.
+  removedLocal,
+
+  /// Removed on this phone while it could not reach the back-end: removed online too.
+  removedOnline,
 
   /// The local banner was not online (set before the update, or changed): it was uploaded.
   uploaded,
@@ -89,15 +96,34 @@ class SharedBanners {
 
   static String hashOf(List<int> bytes) => sha1.convert(bytes).toString();
 
-  /// Makes the local banner and the online one the same, in the background:
-  /// - local banner not online (e.g. set before this update) → uploaded;
-  /// - no local banner but one online (another phone, reinstall) → downloaded with [save];
-  /// - otherwise nothing.
-  /// [localPath] is the current local banner; [save] stores downloaded bytes as the local one.
+  static String _stateKey(String username) => 'shared_banner_state:${username.trim().toLowerCase()}';
+
+  /// The hashes of the local and the online banner at the last sync, null when never synced.
+  static Future<({String? local, String? online})?> lastSync(String username) async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(_stateKey(username));
+    if (raw == null) return null;
+    final map = jsonDecode(raw) as Map<String, dynamic>;
+    return (local: map['local'] as String?, online: map['online'] as String?);
+  }
+
+  static Future<void> _remember(String username, {String? local, String? online}) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_stateKey(username), jsonEncode({'local': local, 'online': online}));
+  }
+
+  /// Makes the local banner and the online one the same, in the background. What changed since
+  /// the last sync decides:
+  /// - only this phone's banner (picked, removed, or set before this update) → online follows;
+  /// - only the online one (changed or removed on another phone) → this phone follows;
+  /// - never synced (first launch after the update, new phone): the online banner wins when
+  ///   there is one, else the local one is uploaded.
+  /// [save] stores downloaded bytes as the local banner; [removeLocal] drops it.
   Future<BannerSync> sync({
     required String username,
     required String? localPath,
     required Future<void> Function(List<int> bytes) save,
+    Future<void> Function()? removeLocal,
   }) async {
     try {
       final mine = await _auth((client, token) => client.get(Uri.parse('$baseUrl/api/banner/mine'), headers: _headers(token)));
@@ -107,16 +133,41 @@ class SharedBanners {
       final onlineUrl = body['url'] as String?;
 
       final file = localPath == null ? null : File(localPath);
-      if (file != null && await file.exists()) {
-        final bytes = await file.readAsBytes();
-        if (hashOf(bytes) == onlineHash) return BannerSync.upToDate;
-        return await upload(username: username, bytes: bytes) ? BannerSync.uploaded : BannerSync.failed;
+      final bytes = file != null && await file.exists() ? await file.readAsBytes() : null;
+      final localHash = bytes == null ? null : hashOf(bytes);
+      final last = await lastSync(username);
+
+      if (localHash == null && onlineHash == null) {
+        await _remember(username);
+        return BannerSync.upToDate;
       }
-      if (onlineUrl == null) return BannerSync.upToDate;
-      final download = await _get(Uri.parse(onlineUrl));
-      if (download.statusCode != 200 || download.bodyBytes.isEmpty) return BannerSync.failed;
-      await save(download.bodyBytes);
-      return BannerSync.downloaded;
+      if (localHash != null && localHash == onlineHash) {
+        await _remember(username, local: localHash, online: onlineHash);
+        return BannerSync.upToDate;
+      }
+      final localChanged = last == null || last.local != localHash;
+      final onlineChanged = last == null || last.online != onlineHash;
+      if (!localChanged && !onlineChanged) return BannerSync.upToDate;
+
+      // The online banner wins when it changed (or on the first sync, when there is one).
+      final takeOnline = onlineChanged && (last != null || onlineHash != null);
+      if (takeOnline) {
+        if (onlineUrl == null) {
+          if (removeLocal != null && bytes != null) await removeLocal();
+          await _remember(username);
+          return bytes == null ? BannerSync.upToDate : BannerSync.removedLocal;
+        }
+        final download = await _get(Uri.parse(onlineUrl));
+        if (download.statusCode != 200 || download.bodyBytes.isEmpty) return BannerSync.failed;
+        await save(download.bodyBytes);
+        await _remember(username, local: hashOf(download.bodyBytes), online: onlineHash);
+        return BannerSync.downloaded;
+      }
+      if (bytes == null) {
+        // Removed on this phone (e.g. offline at the time): remove it online too.
+        return await remove(username: username) ? BannerSync.removedOnline : BannerSync.failed;
+      }
+      return await upload(username: username, bytes: bytes) ? BannerSync.uploaded : BannerSync.failed;
     } catch (e) {
       debugPrint('SharedBanners: sync failed ($e)');
       return BannerSync.failed;
@@ -150,6 +201,7 @@ class SharedBanners {
       if (recorded == null || recorded.statusCode != 200) return false;
       final url = (jsonDecode(utf8.decode(recorded.bodyBytes)) as Map)['url'] as String?;
       _cache[username.trim().toLowerCase()] = (url: url, until: _now().add(ttl));
+      await _remember(username, local: hash, online: hash);
       return true;
     } catch (e) {
       debugPrint('SharedBanners: upload failed ($e)');
@@ -163,6 +215,7 @@ class SharedBanners {
       final response = await _auth((client, token) => client.delete(Uri.parse('$baseUrl/api/banner'), headers: _headers(token)));
       if (response == null || response.statusCode != 200) return false;
       _cache[username.trim().toLowerCase()] = (url: null, until: _now().add(ttl));
+      await _remember(username);
       return true;
     } catch (e) {
       debugPrint('SharedBanners: remove failed ($e)');
