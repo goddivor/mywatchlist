@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:mywatchlist/services/profile/shared_banner.dart';
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/screens/user_profile/user_profile_data.dart';
 import 'package:mywatchlist/widgets/common/app_colors.dart';
@@ -73,9 +74,13 @@ class ProfileHeader extends StatefulWidget {
 class _ProfileHeaderState extends State<ProfileHeader> {
   final _store = ProfileBackgroundStore.instance;
 
+  /// The banner the user shares through MyWatchList (the sidebar picture), seen by everyone.
+  String? _sharedUrl;
+
   @override
   void initState() {
     super.initState();
+    _loadShared();
     if (widget.isSelf) {
       _store.addListener(_onBackgroundChanged);
       _store.load(widget.data.username).then((_) {
@@ -90,6 +95,19 @@ class _ProfileHeaderState extends State<ProfileHeader> {
     super.dispose();
   }
 
+  @override
+  void didUpdateWidget(ProfileHeader oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.data.username != widget.data.username) _loadShared();
+  }
+
+  void _loadShared() {
+    final name = widget.data.username;
+    SharedBanners.instance.urlOf(name).then((url) {
+      if (mounted && widget.data.username == name && url != _sharedUrl) setState(() => _sharedUrl = url);
+    });
+  }
+
   void _onBackgroundChanged() {
     if (mounted) setState(() {});
   }
@@ -101,7 +119,12 @@ class _ProfileHeaderState extends State<ProfileHeader> {
     // the app bar's scroll extent, so scrolling never rebuilds the content.
     return _CollapsingBand(
       bottomInset: widget.bottomInset,
-      child: ProfileHeaderBand(data: widget.data, backgroundPath: bgPath, isSelf: widget.isSelf),
+      child: ProfileHeaderBand(
+        data: widget.data,
+        backgroundPath: bgPath,
+        backgroundUrl: bgPath == null ? _sharedUrl : null,
+        isSelf: widget.isSelf,
+      ),
     );
   }
 }
@@ -146,10 +169,19 @@ class ProfileHeaderBand extends StatelessWidget {
   /// The local profile background, null for none (the header then sits on the surface).
   final String? backgroundPath;
 
+  /// The banner the user shares (used when there is no local [backgroundPath]).
+  final String? backgroundUrl;
+
   /// The signed-in user's own profile: a long press on the avatar picks its frame.
   final bool isSelf;
 
-  const ProfileHeaderBand({super.key, required this.data, this.backgroundPath, this.isSelf = false});
+  const ProfileHeaderBand({
+    super.key,
+    required this.data,
+    this.backgroundPath,
+    this.backgroundUrl,
+    this.isSelf = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -157,7 +189,7 @@ class ProfileHeaderBand extends StatelessWidget {
     final cs = theme.colorScheme;
     final tokens = AppColors.of(context);
     final s = S.of(context);
-    final onPicture = backgroundPath != null;
+    final onPicture = backgroundPath != null || backgroundUrl != null;
     final nameColor = onPicture ? tokens.onImageScrim : cs.onSurface;
     final detailColor = onPicture ? tokens.onImageScrim : cs.onSurfaceVariant;
     final joined = formatProfileDate(data.joined, withDay: false);
@@ -171,7 +203,7 @@ class ProfileHeaderBand extends StatelessWidget {
       fit: StackFit.expand,
       children: [
         if (onPicture) ...[
-          _Picture(path: backgroundPath!),
+          _Picture(path: backgroundPath, url: backgroundUrl),
           // The text sits in the lower part: full scrim there (white text ≥ 4.5:1 on a white
           // picture), fading out towards the top so the picture still shows.
           DecoratedBox(
@@ -318,13 +350,18 @@ class _Avatar extends StatelessWidget {
 }
 
 class _Picture extends StatelessWidget {
-  final String path;
+  final String? path;
+  final String? url;
 
-  const _Picture({required this.path});
+  const _Picture({this.path, this.url});
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final path = this.path;
+    if (path == null) {
+      return AppImage(url: url, fit: BoxFit.cover, placeholderColor: cs.surfaceContainerHighest);
+    }
     return Image(
       image: ResizeImage(FileImage(File(path)), width: 1080),
       fit: BoxFit.cover,

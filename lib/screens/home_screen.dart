@@ -4,6 +4,7 @@ import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart' show ValueListenable, debugPrint, kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mywatchlist/services/startup/launch_sync.dart';
 import 'package:mywatchlist/constants/constants.dart' show AccountType, Constants;
 import 'package:mywatchlist/apps/anilist/anilist_app.dart';
 import 'package:mywatchlist/apps/kitsu/kitsu_app.dart';
@@ -242,7 +243,10 @@ class _HomeScreenState extends State<HomeScreen> {
         if (startup == StartupPage.search) AppRoutes.openTrackerSearch(context);
       }
       _onUsersChanged();
-      if (widget.checkForUpdates) unawaited(_checkForUpdate());
+      if (widget.checkForUpdates) {
+        unawaited(_checkForUpdate());
+        unawaited(LaunchSync.run());
+      }
     });
   }
 
@@ -315,6 +319,8 @@ class _HomeScreenState extends State<HomeScreen> {
   /// MAL); forgets the tracker once it is signed in again.
   void _onUsersChanged() {
     if (!mounted) return;
+    // MAL signed in later than the launch (first sign-in, session back): sync its banner then.
+    if (widget.checkForUpdates) unawaited(LaunchSync.run());
     final expired = expiredTrackers();
     _reLoginPrompted.removeWhere((t) => !expired.contains(t));
     for (final tracker in expired) {

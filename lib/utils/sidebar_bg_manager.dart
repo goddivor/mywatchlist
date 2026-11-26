@@ -1,9 +1,11 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/user/theme/theme_bloc.dart';
 import 'package:mywatchlist/utils/file_helper.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Pictures picked from the gallery for the sidebar header and the home background.
@@ -41,6 +43,8 @@ class SidebarBackgroundManager {
     if (path == null) return null;
     await prefs.setString(keySidebarImagePath, path);
     await _deleteIfUnused(prefs, previous, except: path);
+    final notify = onUserChange;
+    if (notify != null) unawaited(notify(path));
     if (context != null && context.mounted) {
       _snack(context, S.current.Theme_Bg_Updated);
     }
@@ -69,6 +73,27 @@ class SidebarBackgroundManager {
     await _deleteIfUnused(prefs, path, keepHome: false);
   }
 
+  /// Called after the user picks or removes the sidebar picture (null: removed), so the shared
+  /// banner follows. Set by the app at startup; tests leave it null.
+  static Future<void> Function(String? path)? onUserChange;
+
+  /// Stores [bytes] (the banner shared from another phone) as the sidebar picture.
+  Future<String?> adoptBytes(List<int> bytes) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final previous = await _sidebarPath(prefs);
+      final dir = await getApplicationDocumentsDirectory();
+      final file = File('${dir.path}/sidebar_bg_shared_${DateTime.now().millisecondsSinceEpoch}.jpg');
+      await file.writeAsBytes(bytes, flush: true);
+      await prefs.setString(keySidebarImagePath, file.path);
+      await _deleteIfUnused(prefs, previous, except: file.path);
+      return file.path;
+    } catch (e) {
+      debugPrint('Error adopting the shared banner: $e');
+      return null;
+    }
+  }
+
   /// Remove the current sidebar background image.
   Future<bool> removeBackgroundImage({BuildContext? context}) async {
     try {
@@ -77,6 +102,8 @@ class SidebarBackgroundManager {
       if (current == null || current.isEmpty) return false;
       await prefs.remove(keySidebarImagePath);
       await _deleteIfUnused(prefs, current);
+      final notify = onUserChange;
+      if (notify != null) unawaited(notify(null));
       if (context != null && context.mounted) {
         _snack(context, S.current.Theme_Bg_Removed);
       }
