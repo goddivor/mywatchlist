@@ -266,6 +266,23 @@ class AvatarFrames extends ChangeNotifier {
     }
   }
 
+  /// A link to the frame store for the signed-in MAL account (valid one hour): its code tells
+  /// the store who is shopping. Null when signed out or unreachable.
+  Future<Uri?> storeLink() async {
+    try {
+      final response = await _sendAuthenticated(
+        (client, token) => client.post(Uri.parse('$baseUrl/api/store/session'), headers: {'Authorization': 'Bearer $token'}),
+      );
+      if (response == null || response.statusCode != 200) return null;
+      final body = jsonDecode(utf8.decode(response.bodyBytes));
+      final url = body is Map ? body['url'] : null;
+      return url is String ? Uri.tryParse(url) : null;
+    } catch (e) {
+      debugPrint('AvatarFrames: store link failed ($e)');
+      return null;
+    }
+  }
+
   @visibleForTesting
   void reset() {
     _flush?.cancel();

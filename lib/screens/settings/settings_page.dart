@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:mywatchlist/constants/constants.dart' show AccountType, showToast;
+import 'package:mywatchlist/services/frames/avatar_frames.dart';
+import 'package:mywatchlist/user/user_manager.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/services/api/jikan_source.dart';
 import 'package:mywatchlist/user/user_preference.dart';
@@ -92,6 +96,15 @@ class _SettingsPageState extends State<SettingsPage> {
                         onChanged: _setCrossTracker,
                       ),
                     ),
+                  // The frame store opens in the browser, before About (frames are worn by MAL
+                  // accounts).
+                  if (sections.first == SettingsSection.about)
+                    _SettingsTile(
+                      icon: Icons.storefront_rounded,
+                      title: S.current.Afr_Get_Frame,
+                      subtitle: S.current.Afr_Get_Frame_Desc,
+                      onTap: () => openFrameStore(),
+                    ),
                   for (final section in sections)
                     if (section == SettingsSection.dataSources)
                       // The line shows the live source and the mute date.
@@ -120,6 +133,17 @@ class _SettingsPageState extends State<SettingsPage> {
       ),
     );
   }
+}
+
+/// Opens the frame store in the system browser (not an in-app tab), signed in for the MAL account.
+Future<void> openFrameStore({AvatarFrames? frames}) async {
+  if (!UserManager.instance.isAuthenticated(AccountType.myanimelist)) {
+    showToast(S.current.Afr_Store_Sign_In);
+    return;
+  }
+  final link = await (frames ?? AvatarFrames.instance).storeLink();
+  final opened = link != null && await launchUrl(link, mode: LaunchMode.externalApplication);
+  if (!opened) showToast(S.current.Afr_Store_Error);
 }
 
 Widget _sectionTile(BuildContext context, SettingsSection section) => _SettingsTile(

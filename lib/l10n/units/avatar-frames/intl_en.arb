@@ -12,5 +12,9 @@
     }
   },
   "Afr_Error": "Could not reach the frames server.",
-  "Afr_Saved": "Frame updated"
+  "Afr_Saved": "Frame updated",
+  "Afr_Get_Frame": "Get a frame",
+  "Afr_Get_Frame_Desc": "Opens the frame store in your browser",
+  "Afr_Store_Sign_In": "Sign in with MyAnimeList to get a frame.",
+  "Afr_Store_Error": "Could not open the frame store."
 }
