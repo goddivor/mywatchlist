@@ -230,7 +230,6 @@ class _AccountAvatar extends StatelessWidget {
                   ExcludeSemantics(
                     child: FramedAvatar(
                       username: account.malName,
-                      fitInside: true,
                       size: 36,
                       child: AvatarWidget(
                         url: account.image,

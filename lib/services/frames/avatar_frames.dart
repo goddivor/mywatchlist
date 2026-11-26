@@ -10,7 +10,9 @@ import 'package:mywatchlist/user/user_mal_v2.dart';
 const String kAvatarFramesApi = 'https://mywatchlist-api.vercel.app';
 
 /// A frame drawn around an avatar. [scale] is the frame size over the avatar size; [dx] and [dy]
-/// shift the frame (in avatar sizes) so the avatar sits in its hole.
+/// shift the frame (in avatar sizes) so the avatar sits in its hole. [hole] is the diameter of
+/// the frame's hole over the frame size and [hx] / [hy] its centre (in frame sizes from the
+/// frame's centre): the picture grows to fill that hole (0: the picture keeps its size).
 @immutable
 class AvatarFrame {
   final String id;
@@ -18,6 +20,9 @@ class AvatarFrame {
   final double scale;
   final double dx;
   final double dy;
+  final double hole;
+  final double hx;
+  final double hy;
 
   const AvatarFrame({
     required this.id,
@@ -25,6 +30,9 @@ class AvatarFrame {
     this.scale = 1.3,
     this.dx = 0,
     this.dy = 0,
+    this.hole = 0,
+    this.hx = 0,
+    this.hy = 0,
   });
 
   static AvatarFrame? fromJson(Object? json) {
@@ -39,6 +47,9 @@ class AvatarFrame {
       scale: number(json['scale'], 1.3).clamp(1.0, 2.0),
       dx: number(json['dx'], 0).clamp(-0.5, 0.5),
       dy: number(json['dy'], 0).clamp(-0.5, 0.5),
+      hole: number(json['hole'], 0).clamp(0.0, 1.0),
+      hx: number(json['hx'], 0).clamp(-0.5, 0.5),
+      hy: number(json['hy'], 0).clamp(-0.5, 0.5),
     );
   }
 
@@ -49,10 +60,13 @@ class AvatarFrame {
       other.imageUrl == imageUrl &&
       other.scale == scale &&
       other.dx == dx &&
-      other.dy == dy;
+      other.dy == dy &&
+      other.hole == hole &&
+      other.hx == hx &&
+      other.hy == hy;
 
   @override
-  int get hashCode => Object.hash(id, imageUrl, scale, dx, dy);
+  int get hashCode => Object.hash(id, imageUrl, scale, dx, dy, hole, hx, hy);
 }
 
 /// A frame the signed-in account may wear, with the end of that right (null: no end).

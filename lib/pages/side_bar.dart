@@ -398,7 +398,6 @@ class _AppSidebarState extends State<AppSidebar> {
                 FramedAvatar(
                   // Frames are worn by MAL accounts only.
                   username: tracker == AccountType.myanimelist ? name : null,
-                  fitInside: true,
                   size: 56,
                   child: AvatarWidget(
                     url: avatarUrl,

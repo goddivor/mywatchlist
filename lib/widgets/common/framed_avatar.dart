@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:mywatchlist/services/frames/avatar_frames.dart';
 
 /// A MAL user's avatar ([child], [size] × [size]) with the frame that user wears, if any. The
-/// frame is painted around the avatar, outside its box: the layout keeps the avatar's size.
-/// With [fitInside], the frame keeps the avatar's size instead and the picture shrinks into it
-/// (small slots such as the app bar and the sidebar, where an overflowing frame is too big).
+/// frame is painted around the avatar, outside its box: the layout keeps the avatar's size. When
+/// the frame's hole is larger than the avatar, the picture grows to fill it (on a light
+/// background the gap would show).
 class FramedAvatar extends StatefulWidget {
   final String? username;
   final double size;
@@ -14,8 +14,6 @@ class FramedAvatar extends StatefulWidget {
   /// Shown instead of [child] while a frame is worn: the avatar without its own border, which
   /// the frame replaces (a border under the frame reads as a stray ring and shrinks the picture).
   final Widget? framedChild;
-
-  final bool fitInside;
 
   /// Where frames are read; tests give their own.
   final AvatarFrames? frames;
@@ -26,7 +24,6 @@ class FramedAvatar extends StatefulWidget {
     required this.size,
     required this.child,
     this.framedChild,
-    this.fitInside = false,
     this.frames,
   });
 
@@ -86,11 +83,13 @@ class _FramedAvatarState extends State<FramedAvatar> {
     final frame = _frame;
     if (frame == null) return widget.child;
     final size = widget.size;
-    // Frame box and avatar box, in this widget's coordinates.
-    final side = widget.fitInside ? size : size * frame.scale;
-    final avatar = widget.fitInside ? size / frame.scale : size;
-    final avatarLeft = widget.fitInside ? (size - avatar) / 2 - frame.dx * avatar : 0.0;
-    final avatarTop = widget.fitInside ? (size - avatar) / 2 - frame.dy * avatar : 0.0;
+    final side = size * frame.scale;
+    final frameLeft = (size - side) / 2 + frame.dx * size;
+    final frameTop = (size - side) / 2 + frame.dy * size;
+    // The picture fills the frame's hole (never smaller than the avatar slot).
+    final fill = frame.hole > 0 && side * frame.hole > size ? side * frame.hole : size;
+    final pictureLeft = fill == size ? 0.0 : frameLeft + side / 2 + frame.hx * side - fill / 2;
+    final pictureTop = fill == size ? 0.0 : frameTop + side / 2 + frame.hy * side - fill / 2;
     final picture = widget.framedChild ?? widget.child;
     return SizedBox(
       width: size,
@@ -99,17 +98,15 @@ class _FramedAvatarState extends State<FramedAvatar> {
         clipBehavior: Clip.none,
         children: [
           Positioned(
-            left: avatarLeft,
-            top: avatarTop,
-            width: avatar,
-            height: avatar,
-            child: widget.fitInside
-                ? FittedBox(child: SizedBox(width: size, height: size, child: picture))
-                : picture,
+            left: pictureLeft,
+            top: pictureTop,
+            width: fill,
+            height: fill,
+            child: fill == size ? picture : FittedBox(child: SizedBox(width: size, height: size, child: picture)),
           ),
           Positioned(
-            left: avatarLeft + (avatar - side) / 2 + frame.dx * avatar,
-            top: avatarTop + (avatar - side) / 2 + frame.dy * avatar,
+            left: frameLeft,
+            top: frameTop,
             width: side,
             height: side,
             child: IgnorePointer(
