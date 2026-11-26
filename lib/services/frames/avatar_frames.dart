@@ -17,6 +17,10 @@ const String kAvatarFramesApi = 'https://mywatchlist-api.vercel.app';
 class AvatarFrame {
   final String id;
   final String imageUrl;
+
+  /// A small still of the frame, for lists (the picker): the animated [imageUrl] weighs about a
+  /// megabyte per frame.
+  final String? previewUrl;
   final double scale;
   final double dx;
   final double dy;
@@ -27,6 +31,7 @@ class AvatarFrame {
   const AvatarFrame({
     required this.id,
     required this.imageUrl,
+    this.previewUrl,
     this.scale = 1.3,
     this.dx = 0,
     this.dy = 0,
@@ -44,6 +49,7 @@ class AvatarFrame {
     return AvatarFrame(
       id: id,
       imageUrl: url,
+      previewUrl: json['previewUrl'] is String && (json['previewUrl'] as String).isNotEmpty ? json['previewUrl'] as String : null,
       scale: number(json['scale'], 1.3).clamp(1.0, 2.0),
       dx: number(json['dx'], 0).clamp(-0.5, 0.5),
       dy: number(json['dy'], 0).clamp(-0.5, 0.5),
