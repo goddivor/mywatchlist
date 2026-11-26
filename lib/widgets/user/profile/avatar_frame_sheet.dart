@@ -74,32 +74,42 @@ class _AvatarFrameSheetState extends State<AvatarFrameSheet> {
       body = _Message(s.Afr_Empty);
     } else {
       final date = DateFormat.yMMMd(Localizations.localeOf(context).toLanguageTag());
-      body = Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _Choice(
-            selected: mine.equipped == null,
-            busy: _saving == '',
-            leading: Icon(Icons.block_rounded, color: theme.colorScheme.onSurfaceVariant),
-            title: s.Afr_None,
-            onTap: () => _wear(null),
-          ),
-          for (final owned in mine.available)
-            _Choice(
-              selected: mine.equipped == owned.frame.id,
-              busy: _saving == owned.frame.id,
-              leading: Image(
-                image: CachedNetworkImageProvider(owned.frame.imageUrl),
-                width: 48,
-                height: 48,
-                fit: BoxFit.contain,
-                errorBuilder: (_, __, ___) => const SizedBox(width: 48, height: 48),
-              ),
-              title: owned.name,
-              subtitle: owned.expiresAt == null ? null : s.Afr_Until(date.format(owned.expiresAt!.toLocal())),
-              onTap: () => _wear(owned.frame.id),
+      // A grid of stills: there can be dozens of frames, and the animated files weigh about a
+      // megabyte each.
+      body = GridView.builder(
+        shrinkWrap: true,
+        padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+        gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+          maxCrossAxisExtent: 112,
+          mainAxisSpacing: 8,
+          crossAxisSpacing: 8,
+          childAspectRatio: 0.78,
+        ),
+        itemCount: mine.available.length + 1,
+        itemBuilder: (context, i) {
+          if (i == 0) {
+            return _FrameTile(
+              selected: mine.equipped == null,
+              busy: _saving == '',
+              picture: Icon(Icons.block_rounded, size: 36, color: theme.colorScheme.onSurfaceVariant),
+              title: s.Afr_None,
+              onTap: () => _wear(null),
+            );
+          }
+          final owned = mine.available[i - 1];
+          return _FrameTile(
+            selected: mine.equipped == owned.frame.id,
+            busy: _saving == owned.frame.id,
+            picture: Image(
+              image: CachedNetworkImageProvider(owned.frame.previewUrl ?? owned.frame.imageUrl),
+              fit: BoxFit.contain,
+              errorBuilder: (_, __, ___) => const SizedBox.shrink(),
             ),
-        ],
+            title: owned.name,
+            subtitle: owned.expiresAt == null ? null : s.Afr_Until(date.format(owned.expiresAt!.toLocal())),
+            onTap: () => _wear(owned.frame.id),
+          );
+        },
       );
     }
     return SafeArea(
@@ -111,7 +121,7 @@ class _AvatarFrameSheetState extends State<AvatarFrameSheet> {
             padding: const EdgeInsets.fromLTRB(24, 0, 24, 8),
             child: Text(s.Afr_Title, style: theme.textTheme.titleLarge),
           ),
-          body,
+          Flexible(child: body),
           const SizedBox(height: 8),
         ],
       ),
@@ -119,18 +129,18 @@ class _AvatarFrameSheetState extends State<AvatarFrameSheet> {
   }
 }
 
-class _Choice extends StatelessWidget {
+class _FrameTile extends StatelessWidget {
   final bool selected;
   final bool busy;
-  final Widget leading;
+  final Widget picture;
   final String title;
   final String? subtitle;
   final VoidCallback onTap;
 
-  const _Choice({
+  const _FrameTile({
     required this.selected,
     required this.busy,
-    required this.leading,
+    required this.picture,
     required this.title,
     required this.onTap,
     this.subtitle,
@@ -138,19 +148,50 @@ class _Choice extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 24),
-      leading: SizedBox(width: 48, height: 48, child: Center(child: leading)),
-      title: Text(title),
-      subtitle: subtitle == null ? null : Text(subtitle!),
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    return Semantics(
+      button: true,
       selected: selected,
-      trailing: busy
-          ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2))
-          : selected
-              ? Icon(Icons.check_circle_rounded, color: scheme.primary)
-              : null,
-      onTap: onTap,
+      label: subtitle == null ? title : '$title, $subtitle',
+      child: InkWell(
+        borderRadius: BorderRadius.circular(14),
+        onTap: onTap,
+        child: Ink(
+          decoration: BoxDecoration(
+            color: selected ? scheme.primaryContainer : scheme.surfaceContainerHigh,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: selected ? scheme.primary : Colors.transparent, width: 2),
+          ),
+          child: ExcludeSemantics(
+            child: Padding(
+              padding: const EdgeInsets.all(6),
+              child: Column(
+                children: [
+                  Expanded(
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        Center(child: picture),
+                        if (busy) const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: theme.textTheme.labelSmall),
+                  if (subtitle != null)
+                    Text(
+                      subtitle!,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.labelSmall?.copyWith(color: scheme.onSurfaceVariant),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

@@ -93,6 +93,12 @@ void main() {
     expect(notified, 1);
   });
 
+  test('a frame carries its still preview for lists, the animated file otherwise', () {
+    expect(AvatarFrame.fromJson({..._flames, 'previewUrl': 'https://img.test/still.webp'})!.previewUrl,
+        'https://img.test/still.webp');
+    expect(AvatarFrame.fromJson(_flames)!.previewUrl, isNull);
+  });
+
   testWidgets('FramedAvatar draws the frame around the avatar without changing its size', (tester) async {
     final frames = AvatarFrames(client: MockClient((_) async => http.Response('{}', 200)));
     frames.put('goddivor', AvatarFrame.fromJson(_flames));

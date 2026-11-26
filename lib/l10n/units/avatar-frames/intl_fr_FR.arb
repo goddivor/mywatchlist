@@ -5,5 +5,9 @@
   "Afr_Empty": "Vous n’avez pas encore de cadre.",
   "Afr_Until": "Jusqu’au {date}",
   "Afr_Error": "Impossible de joindre le serveur des cadres.",
-  "Afr_Saved": "Cadre mis à jour"
+  "Afr_Saved": "Cadre mis à jour",
+  "Afr_Get_Frame": "Obtenir un cadre",
+  "Afr_Get_Frame_Desc": "Ouvre la boutique des cadres dans votre navigateur",
+  "Afr_Store_Sign_In": "Connectez-vous avec MyAnimeList pour obtenir un cadre.",
+  "Afr_Store_Error": "Impossible d’ouvrir la boutique des cadres."
 }
