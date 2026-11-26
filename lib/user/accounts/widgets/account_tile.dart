@@ -87,7 +87,7 @@ class AccountTile extends StatelessWidget {
           child: Row(
             children: [
               hasAccount
-                  ? AccountAvatar(info: info, imageUrl: imageUrl, size: 48)
+                  ? AccountAvatar(info: info, imageUrl: imageUrl, size: 48, username: username)
                   : TrackerLogo(info: info, size: 48),
               const SizedBox(width: 14),
               Expanded(

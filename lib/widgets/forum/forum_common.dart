@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_widget_from_html_core/flutter_widget_from_html_core.dart';
+import 'package:mywatchlist/widgets/common/framed_avatar.dart';
 import 'package:mywatchlist/constants/constants.dart' show AccountType;
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/utils/app_routes.dart';
@@ -132,7 +133,9 @@ class ForumAvatar extends StatelessWidget {
       );
     }
 
-    final circle = SizedBox(width: size, height: size, child: ClipOval(child: content));
+    final plain = SizedBox(width: size, height: size, child: ClipOval(child: content));
+    // The frame the user wears (none while a post is picked for sharing).
+    final circle = selected || name.isEmpty ? plain : FramedAvatar(username: name, size: size, child: plain);
     if (!tappable || !isLinkableUser(username)) return circle;
     return GestureDetector(
       behavior: HitTestBehavior.opaque,

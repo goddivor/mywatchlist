@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mywatchlist/widgets/common/framed_avatar.dart';
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/utils/web_launcher.dart';
 import 'package:mywatchlist/widgets/common/app_image.dart';
@@ -23,8 +24,12 @@ Future<void> reportUser(
         children: [
           Row(
             children: [
-              ClipOval(
-                child: AppImage(url: pictureUrl, width: 40, height: 40),
+              FramedAvatar(
+                username: username,
+                size: 40,
+                child: ClipOval(
+                  child: AppImage(url: pictureUrl, width: 40, height: 40),
+                ),
               ),
               const SizedBox(width: 12),
               Expanded(

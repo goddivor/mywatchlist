@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:mywatchlist/constants/constants.dart' show AccountType;
+import 'package:mywatchlist/widgets/common/framed_avatar.dart';
 import 'package:mywatchlist/user/trackers/models/tracker_model.dart';
 import 'package:mywatchlist/widgets/common/app_image.dart';
 
@@ -36,12 +38,16 @@ class AccountAvatar extends StatelessWidget {
   /// trackers are told apart at a glance.
   final bool showBadge;
 
+  /// The account's name: a MAL account's avatar shows the frame it wears.
+  final String? username;
+
   const AccountAvatar({
     super.key,
     required this.info,
     this.imageUrl,
     this.size = 48,
     this.showBadge = true,
+    this.username,
   });
 
   @override
@@ -57,14 +63,18 @@ class AccountAvatar extends StatelessWidget {
       child: Stack(
         clipBehavior: Clip.none,
         children: [
-          AppImage(
-            url: url,
-            width: size,
-            height: size,
-            borderRadius: BorderRadius.circular(size),
-            placeholderColor:
-                Theme.of(context).colorScheme.surfaceContainerHighest,
-            errorWidget: (_) => TrackerLogo(info: info, size: size),
+          FramedAvatar(
+            username: info.type == AccountType.myanimelist ? username : null,
+            size: size,
+            child: AppImage(
+              url: url,
+              width: size,
+              height: size,
+              borderRadius: BorderRadius.circular(size),
+              placeholderColor:
+                  Theme.of(context).colorScheme.surfaceContainerHighest,
+              errorWidget: (_) => TrackerLogo(info: info, size: size),
+            ),
           ),
           if (showBadge)
             Positioned(
