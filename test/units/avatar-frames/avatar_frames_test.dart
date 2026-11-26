@@ -124,6 +124,54 @@ void main() {
     expect(frameImage, findsNothing);
   });
 
+  testWidgets('a framed avatar swaps to its borderless version', (tester) async {
+    final frames = AvatarFrames(client: MockClient((_) async => http.Response('{}', 200)));
+    frames.put('goddivor', AvatarFrame.fromJson(_flames));
+    Widget app() => MaterialApp(
+          home: FramedAvatar(
+            username: 'goddivor',
+            size: 36,
+            frames: frames,
+            framedChild: const SizedBox(key: Key('borderless')),
+            child: const SizedBox(key: Key('bordered')),
+          ),
+        );
+
+    await tester.pumpWidget(app());
+    expect(find.byKey(const Key('borderless')), findsOneWidget);
+    expect(find.byKey(const Key('bordered')), findsNothing);
+
+    frames.put('goddivor', null);
+    await tester.pump();
+    expect(find.byKey(const Key('bordered')), findsOneWidget, reason: 'no frame: the usual border is back');
+  });
+
+  testWidgets('fitInside keeps the frame in the avatar box and shrinks the picture into it', (tester) async {
+    final frames = AvatarFrames(client: MockClient((_) async => http.Response('{}', 200)));
+    frames.put('goddivor', AvatarFrame.fromJson(_flames));
+
+    await tester.pumpWidget(MaterialApp(
+      home: Center(
+        child: FramedAvatar(
+          username: 'goddivor',
+          size: 56,
+          fitInside: true,
+          frames: frames,
+          child: const ColoredBox(color: Colors.blue, key: Key('avatar')),
+        ),
+      ),
+    ));
+
+    final box = tester.getRect(find.byType(FramedAvatar));
+    final frameImage = find.byWidgetPredicate((w) => w is Image && w.image is CachedNetworkImageProvider);
+    expect(tester.getRect(frameImage), box, reason: 'the frame is exactly the avatar slot');
+    final picture = tester.getRect(find.byKey(const Key('avatar')));
+    expect(picture.width, closeTo(56 / 1.4, 0.01));
+    // Same placement as the overflowing frame, scaled down: the picture sits in the frame's hole.
+    expect(picture.center.dx, closeTo(box.center.dx + 0.04 * 56 / 1.4, 0.01));
+    expect(picture.center.dy, closeTo(box.center.dy + 0.08 * 56 / 1.4, 0.01));
+  });
+
   testWidgets('a user without a frame shows the plain avatar', (tester) async {
     final frames = AvatarFrames(
       batchWindow: const Duration(milliseconds: 1),

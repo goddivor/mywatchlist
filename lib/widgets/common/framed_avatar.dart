@@ -4,15 +4,31 @@ import 'package:mywatchlist/services/frames/avatar_frames.dart';
 
 /// A MAL user's avatar ([child], [size] × [size]) with the frame that user wears, if any. The
 /// frame is painted around the avatar, outside its box: the layout keeps the avatar's size.
+/// With [fitInside], the frame keeps the avatar's size instead and the picture shrinks into it
+/// (small slots such as the app bar and the sidebar, where an overflowing frame is too big).
 class FramedAvatar extends StatefulWidget {
   final String? username;
   final double size;
   final Widget child;
 
+  /// Shown instead of [child] while a frame is worn: the avatar without its own border, which
+  /// the frame replaces (a border under the frame reads as a stray ring and shrinks the picture).
+  final Widget? framedChild;
+
+  final bool fitInside;
+
   /// Where frames are read; tests give their own.
   final AvatarFrames? frames;
 
-  const FramedAvatar({super.key, required this.username, required this.size, required this.child, this.frames});
+  const FramedAvatar({
+    super.key,
+    required this.username,
+    required this.size,
+    required this.child,
+    this.framedChild,
+    this.fitInside = false,
+    this.frames,
+  });
 
   @override
   State<FramedAvatar> createState() => _FramedAvatarState();
@@ -70,17 +86,30 @@ class _FramedAvatarState extends State<FramedAvatar> {
     final frame = _frame;
     if (frame == null) return widget.child;
     final size = widget.size;
-    final side = size * frame.scale;
+    // Frame box and avatar box, in this widget's coordinates.
+    final side = widget.fitInside ? size : size * frame.scale;
+    final avatar = widget.fitInside ? size / frame.scale : size;
+    final avatarLeft = widget.fitInside ? (size - avatar) / 2 - frame.dx * avatar : 0.0;
+    final avatarTop = widget.fitInside ? (size - avatar) / 2 - frame.dy * avatar : 0.0;
+    final picture = widget.framedChild ?? widget.child;
     return SizedBox(
       width: size,
       height: size,
       child: Stack(
         clipBehavior: Clip.none,
         children: [
-          Positioned.fill(child: widget.child),
           Positioned(
-            left: (size - side) / 2 + frame.dx * size,
-            top: (size - side) / 2 + frame.dy * size,
+            left: avatarLeft,
+            top: avatarTop,
+            width: avatar,
+            height: avatar,
+            child: widget.fitInside
+                ? FittedBox(child: SizedBox(width: size, height: size, child: picture))
+                : picture,
+          ),
+          Positioned(
+            left: avatarLeft + (avatar - side) / 2 + frame.dx * avatar,
+            top: avatarTop + (avatar - side) / 2 + frame.dy * avatar,
             width: side,
             height: side,
             child: IgnorePointer(

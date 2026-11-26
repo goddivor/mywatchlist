@@ -230,6 +230,7 @@ class _AccountAvatar extends StatelessWidget {
                   ExcludeSemantics(
                     child: FramedAvatar(
                       username: account.malName,
+                      fitInside: true,
                       size: 36,
                       child: AvatarWidget(
                         url: account.image,
@@ -238,6 +239,16 @@ class _AccountAvatar extends StatelessWidget {
                         width: 36,
                         borderColor: ring,
                         borderWidth: 2,
+                        onTap: () => AppRoutes.openSidebar(context),
+                        onLongPress: openSwitcher,
+                      ),
+                      framedChild: AvatarWidget(
+                        url: account.image,
+                        isNetworkImage: account.image != null,
+                        height: 36,
+                        width: 36,
+                        borderWidth: 0,
+                        borderColor: Colors.transparent,
                         onTap: () => AppRoutes.openSidebar(context),
                         onLongPress: openSwitcher,
                       ),
