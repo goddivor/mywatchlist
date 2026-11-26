@@ -1,0 +1,16 @@
+{
+  "@@locale": "en",
+  "Afr_Title": "Avatar frame",
+  "Afr_None": "No frame",
+  "Afr_Empty": "You have no frame yet.",
+  "Afr_Until": "Until {date}",
+  "@Afr_Until": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "Afr_Error": "Could not reach the frames server.",
+  "Afr_Saved": "Frame updated"
+}
