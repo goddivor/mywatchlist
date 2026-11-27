@@ -10,6 +10,7 @@ import 'package:mywatchlist/services/api/MAL/mal_anime.dart';
 import 'package:mywatchlist/services/api/MAL/mal_api.dart';
 import 'package:mywatchlist/user/list_cache/list_status_cache.dart';
 import 'package:mywatchlist/user/preferences/preferences.dart';
+import 'package:mywatchlist/widgets/calendar/airing_schedule.dart';
 import 'package:mywatchlist/widgets/MAL/home/animecardbar.dart';
 import 'package:mywatchlist/widgets/common/app_colors.dart';
 import 'package:mywatchlist/widgets/common/app_image.dart';
@@ -17,6 +18,7 @@ import 'package:mywatchlist/widgets/common/dub_icon.dart';
 import 'package:mywatchlist/widgets/common/image_preview.dart';
 import 'package:mywatchlist/widgets/common/score_reveal.dart';
 import 'package:mywatchlist/widgets/user/contenteditwidget.dart';
+import 'package:mywatchlist/widgets/user/list/cards/entry_parts.dart' show requestAiringSchedule;
 
 // ---------------------------------------------------------------------------
 // Number formats (one instance per locale: building a NumberFormat is slow and
@@ -86,6 +88,20 @@ CardListEntry? resolveCardEntry({
         ? (mine.numChaptersRead ?? 0)
         : mine.numEpisodesWatched,
   );
+}
+
+/// Episodes of [node] aired at [now]: the real schedule first (LiveChart's next episode − 1,
+/// from [schedule], by default the shared [AiringSchedule]), then [estimateAiredEpisodes]
+/// when the schedule is not loaded or does not list the anime.
+int? airedEpisodes(Anime node, DateTime now, {AiringSchedule? schedule}) {
+  if (node.status?.toLowerCase().replaceAll(' ', '_') != 'currently_airing') return null;
+  final next = (schedule ?? AiringSchedule.instance).nextEpisode(node.id, now: now);
+  if (next != null) {
+    final aired = math.max(0, next.episode - 1);
+    final total = node.numEpisodes ?? 0;
+    return total > 0 ? math.min(aired, total) : aired;
+  }
+  return estimateAiredEpisodes(node, now);
 }
 
 /// Episodes of [node] that should have aired at [now], from its start date and
@@ -450,9 +466,6 @@ class AnimeGridCard extends StatelessWidget {
     final watched = category == 'anime' && entry != null
         ? progressFraction(entry.progress, total)
         : null;
-    final aired = watched == null
-        ? null
-        : progressFraction(estimateAiredEpisodes(node, DateTime.now()), total);
     final nsv = parentNsv ??
         (entry == null ? null : NodeStatusValue.fromString(entry.status));
     return Stack(
@@ -480,16 +493,7 @@ class AnimeGridCard extends StatelessWidget {
             end: 2,
             height: 3,
             child: IgnorePointer(
-              child: CustomPaint(
-                painter: _ProgressPainter(
-                  watched: watched,
-                  aired: aired,
-                  track: AppColors.of(context).onImageScrim.withValues(alpha: 0.4),
-                  airedColor: AppColors.of(context).score.container,
-                  watchedColor: AppColors.of(context).completed.container,
-                  direction: Directionality.of(context),
-                ),
-              ),
+              child: _AiringProgress(node: node, watched: watched),
             ),
           ),
         PositionedDirectional(
@@ -976,6 +980,50 @@ class CardEditButton extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+/// The compact card's progress line: watched over aired. An airing anime asks the shared
+/// [AiringSchedule] to load and repaints when it does, so the aired part follows the real
+/// schedule instead of the weekly estimate.
+class _AiringProgress extends StatefulWidget {
+  final Anime node;
+  final double watched;
+
+  const _AiringProgress({required this.node, required this.watched});
+
+  @override
+  State<_AiringProgress> createState() => _AiringProgressState();
+}
+
+class _AiringProgressState extends State<_AiringProgress> {
+  bool get _airing =>
+      widget.node.status?.toLowerCase().replaceAll(' ', '_') == 'currently_airing';
+
+  @override
+  void initState() {
+    super.initState();
+    if (_airing) requestAiringSchedule();
+  }
+
+  Widget _paint(BuildContext context) {
+    final tokens = AppColors.of(context);
+    return CustomPaint(
+      painter: _ProgressPainter(
+        watched: widget.watched,
+        aired: progressFraction(airedEpisodes(widget.node, DateTime.now()), widget.node.numEpisodes),
+        track: tokens.onImageScrim.withValues(alpha: 0.4),
+        airedColor: tokens.score.container,
+        watchedColor: tokens.completed.container,
+        direction: Directionality.of(context),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_airing) return _paint(context);
+    return ListenableBuilder(listenable: AiringSchedule.instance, builder: (context, _) => _paint(context));
   }
 }
 

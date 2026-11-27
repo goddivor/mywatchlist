@@ -68,6 +68,7 @@ class AiringSchedule extends ChangeNotifier {
   /// Next episode per MAL id, the earliest first.
   final Map<int, List<AiringEpisode>> _byMalId = {};
   List<AiringEpisode> _all = const [];
+  List<LiveChartEpisode> _raw = const [];
   DateTime? _loadedAt;
   Future<void>? _loading;
   Object? _error;
@@ -86,6 +87,15 @@ class AiringSchedule extends ChangeNotifier {
 
   /// Every known upcoming episode, sorted by air time.
   List<AiringEpisode> get episodes => _all;
+
+  /// The LiveChart season as loaded (links and past episodes included), for the detail
+  /// page's next episode and related links: one request for the whole app. Throws when
+  /// nothing could be loaded, so a caller can ask again later.
+  Future<List<LiveChartEpisode>> season() async {
+    await ensureLoaded();
+    if (!isLoaded) throw _error ?? StateError('LiveChart schedule not loaded');
+    return _raw;
+  }
 
   bool _isStale(DateTime now) => _loadedAt == null || now.difference(_loadedAt!) > ttl;
 
@@ -111,6 +121,7 @@ class AiringSchedule extends ChangeNotifier {
   /// Installs [raw] (episodes without a MAL id are ignored).
   @visibleForTesting
   void replace(List<LiveChartEpisode> raw, {DateTime? now}) {
+    _raw = List.unmodifiable(raw);
     final parsed = raw
         .where((e) => e.malId != null && e.timestamp > 0)
         .map(AiringEpisode.fromLiveChart)
@@ -149,6 +160,7 @@ class AiringSchedule extends ChangeNotifier {
   void reset() {
     _byMalId.clear();
     _all = const [];
+    _raw = const [];
     _loadedAt = null;
     _error = null;
   }

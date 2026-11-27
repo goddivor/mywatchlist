@@ -50,7 +50,7 @@ void main() {
     await pumpInApp(tester, const SizedBox(width: 600, child: RandomPickerRow(isAnime: true)));
     expect(find.byType(FilledButton), findsNothing);
     expect(find.byType(ShadowButton), findsNWidgets(4));
-    for (final label in [S.current.Random, S.current.Watching, S.current.Plan_To_Watch, S.current.Dropped]) {
+    for (final label in [S.current.Random, S.current.Watching, S.current.Plan_To_Watch, S.current.On_Hold]) {
       expect(find.text(label), findsOneWidget);
     }
     final colours = tester
