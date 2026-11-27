@@ -1,3 +1,4 @@
+import 'package:mywatchlist/cache/dub_info.dart';
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/screens/search/search_catalog.dart' show SearchCatalog;
 import 'package:mywatchlist/widgets/common/list_sort_filter.dart';
@@ -36,6 +37,9 @@ abstract final class ListFacetKeys {
   static const studio = 'studio';
   static const author = 'author';
   static const rating = 'rating';
+
+  /// MyDubList status (`dubbed`, `partial`); offered only while the dub setting is on.
+  static const dub = 'dub';
 }
 
 /// The sort options every tracker can offer (computed on the device), for
@@ -298,6 +302,17 @@ List<ListFilterFacet> facetsFor(Iterable<ListEntryView> entries,
         options: [SelectOption('yes', S.current.UserList_Has_Unseen)],
         allowExclude: true,
       ),
+    // The titles whose card shows the dub icon (Settings, Dub).
+    if (isAnime && DubInfo.instance.enabled)
+      ListFilterFacet(
+        key: ListFacetKeys.dub,
+        label: S.current.UserList_Facet_Dub,
+        options: [
+          SelectOption(DubStatus.dubbed.name, S.current.Dub_Status_Full),
+          SelectOption(DubStatus.partial.name, S.current.Dub_Status_Partial),
+        ],
+        allowExclude: true,
+      ),
   ];
 }
 
@@ -314,6 +329,10 @@ Set<String> _valuesOf(ListEntryView e, String facet, DateTime now) => switch (fa
       ListFacetKeys.studio => e.studios.toSet(),
       ListFacetKeys.author => e.authors.toSet(),
       ListFacetKeys.rating => _ratingOf(e) == null ? const {} : {_ratingOf(e)!},
+      ListFacetKeys.dub => switch (DubInfo.instance.statusOf(e.malId)) {
+          DubStatus.none => const {},
+          final status => {status.name},
+        },
       _ => const {},
     };
 
@@ -338,6 +357,7 @@ List<ListEntryView> filterEntries(
   String query = '',
   DateTime? now,
 }) {
+  filter = activeListFilter(filter);
   if (filter.isEmpty && query.trim().isEmpty) return entries;
   final at = now ?? DateTime.now();
   return [
@@ -345,6 +365,12 @@ List<ListEntryView> filterEntries(
       if (matchesQuery(e, query) && _matchesFilter(e, filter, at)) e,
   ];
 }
+
+/// The part of [filter] that applies right now: without the dub facet while the dub setting
+/// is off, so a dub filter saved earlier never empties a list (or counts in its badge) once
+/// the sheet no longer shows it.
+ListFilter activeListFilter(ListFilter filter) =>
+    DubInfo.instance.enabled ? filter : filter.clearFacet(ListFacetKeys.dub);
 
 bool _matchesFilter(ListEntryView e, ListFilter filter, DateTime now) {
   for (final entry in filter.included.entries) {

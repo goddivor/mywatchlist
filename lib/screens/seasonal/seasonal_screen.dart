@@ -315,7 +315,7 @@ class _SeasonalScreenState extends State<SeasonalScreen> with SingleTickerProvid
 
   @override
   Widget build(BuildContext context) {
-    final filterCount = _settings.filter.activeCount;
+    final filterCount = activeListFilter(_settings.filter).activeCount;
     final top = MediaQuery.paddingOf(context).top;
     return Scaffold(
       body: RefreshIndicator(

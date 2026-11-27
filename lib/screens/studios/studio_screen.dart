@@ -14,6 +14,7 @@ import 'package:mywatchlist/screens/studios/studio_filters.dart';
 import 'package:mywatchlist/user/list_cache/list_status_cache.dart';
 import 'package:mywatchlist/widgets/common/list_sort_filter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:mywatchlist/widgets/user/list/list_query.dart';
 
 /// The page of one studio (MyAnimeList's producer page): its logo in big over a blurred copy,
 /// its facts, its description and its links, then every anime of the studio under a bar that
@@ -173,7 +174,7 @@ class _StudioScreenState extends State<StudioScreen> {
                           .firstWhere((o) => o.key == _settings.sortKey,
                               orElse: () => StudioFilters.sorts.first)
                           .label,
-                      filterCount: _settings.filter.activeCount,
+                      filterCount: activeListFilter(_settings.filter).activeCount,
                       display: _display,
                       onType: (t) => setState(() => _type = t),
                       onSortFilter: () => _openSheet(page.anime),

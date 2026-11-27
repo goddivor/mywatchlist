@@ -12,6 +12,7 @@ import 'package:mywatchlist/widgets/loading/shimmercolor.dart';
 import 'package:mywatchlist/widgets/user/list/cards/entry_cards.dart';
 import 'package:mywatchlist/widgets/user/list/cards/entry_parts.dart';
 import 'package:mywatchlist/widgets/user/list/list_entry_view.dart';
+import 'package:mywatchlist/widgets/user/list/list_query.dart';
 import 'package:mywatchlist/widgets/user/list/user_list_tab.dart'
     show listGridDelegate, listGridGaps, listGridPadding;
 
@@ -110,7 +111,7 @@ class _WeeklyScheduleScreenState extends State<WeeklyScheduleScreen>
 
   @override
   Widget build(BuildContext context) {
-    final filterCount = _settings.filter.activeCount;
+    final filterCount = activeListFilter(_settings.filter).activeCount;
     final days = _days;
     return Scaffold(
       appBar: AppBar(
@@ -162,7 +163,7 @@ class _WeeklyScheduleScreenState extends State<WeeklyScheduleScreen>
                       _DayList(
                         key: PageStorageKey('weekly-day-$i'),
                         entries: _visible[i],
-                        filtered: days[i].isNotEmpty && !_settings.filter.isEmpty,
+                        filtered: days[i].isNotEmpty && !activeListFilter(_settings.filter).isEmpty,
                         display: _settings.display,
                         actions: _actions,
                         onRefresh: () => _load(force: true),

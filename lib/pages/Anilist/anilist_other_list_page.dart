@@ -242,7 +242,7 @@ class _AnilistOtherListPageState extends State<AnilistOtherListPage> {
   Widget _header(BuildContext context) {
     final s = S.of(context);
     final settings = _settingsOf(_category);
-    final filterCount = settings.filter.activeCount;
+    final filterCount = activeListFilter(settings.filter).activeCount;
     return Column(
       children: [
         SizedBox(
@@ -351,7 +351,7 @@ class _AnilistOtherListPageState extends State<AnilistOtherListPage> {
     Widget fill(Widget child) => SliverFillRemaining(hasScrollBody: false, child: child);
     if (entries.isEmpty) {
       final error = c.error;
-      final filtered = !c.settings.filter.isEmpty;
+      final filtered = !activeListFilter(c.settings.filter).isEmpty;
       if (!c.isStarted || c.isLoading || (filtered && c.hasMore && error == null)) {
         return [fill(ProfileLoading(label: s.Prof_Loading))];
       }
