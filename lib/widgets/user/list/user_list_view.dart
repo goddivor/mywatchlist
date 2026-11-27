@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mywatchlist/constants/constants.dart' show DisplaySubType;
+import 'package:mywatchlist/cache/dub_info.dart';
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/user/list_cache/list_status_cache.dart';
 import 'package:mywatchlist/user/preferences/preferences.dart';
@@ -116,7 +117,39 @@ class _UserListViewState extends State<UserListView> with TickerProviderStateMix
   void initState() {
     super.initState();
     _tabs.addListener(_onTabChanged);
+    DubInfo.instance.addListener(_onDubChanged);
     _init();
+  }
+
+  /// The dub setting was turned off: the dub filter of every category is cleared for good
+  /// (the other filters stay), so turning the setting on again starts without it.
+  void _onDubChanged() {
+    if (!_ready || DubInfo.instance.enabled) return;
+    if (_dropDubFilters()) setState(() {});
+  }
+
+  /// Clears the dub facet of each saved category filter while the dub setting is off;
+  /// true when something changed.
+  bool _dropDubFilters() {
+    if (DubInfo.instance.enabled) return false;
+    var changed = false;
+    final visible = _statuses.isEmpty ? null : _statuses[_tabs.index];
+    for (final category in _settings.keys.toList()) {
+      final value = _settings[category]!;
+      final filter = value.filter;
+      if (!filter.included.containsKey(ListFacetKeys.dub) &&
+          !filter.excluded.containsKey(ListFacetKeys.dub)) {
+        continue;
+      }
+      final next = value.copyWith(filter: filter.clearFacet(ListFacetKeys.dub));
+      _settings[category] = next;
+      widget.store.writeView(_adapter.tracker, category, next);
+      for (final entry in (_controllers[category] ?? const {}).entries) {
+        entry.value.updateSettings(next, visible: category == _category && entry.key == visible);
+      }
+      changed = true;
+    }
+    return changed;
   }
 
   Future<void> _init() async {
@@ -132,6 +165,8 @@ class _UserListViewState extends State<UserListView> with TickerProviderStateMix
     for (var i = 0; i < widget.categories.length; i++) {
       _settings[widget.categories[i]] = results[i];
     }
+    // The dub setting may have been turned off while the list was closed.
+    _dropDubFilters();
     _place = place;
     final wanted = switch (prefs.defaultCategory) {
       ListCategory.anime => 'anime',
@@ -354,6 +389,7 @@ class _UserListViewState extends State<UserListView> with TickerProviderStateMix
 
   @override
   void dispose() {
+    DubInfo.instance.removeListener(_onDubChanged);
     _tabs.removeListener(_onTabChanged);
     _tabs.dispose();
     _searchDebounce?.cancel();
