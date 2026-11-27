@@ -1,3 +1,4 @@
+import 'package:mywatchlist/cache/dub_info.dart';
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/screens/search/search_catalog.dart' show SearchCatalog;
 import 'package:mywatchlist/widgets/common/list_sort_filter.dart';
@@ -36,6 +37,9 @@ abstract final class ListFacetKeys {
   static const studio = 'studio';
   static const author = 'author';
   static const rating = 'rating';
+
+  /// MyDubList status (`dubbed`, `partial`); offered only while the dub setting is on.
+  static const dub = 'dub';
 }
 
 /// The sort options every tracker can offer (computed on the device), for
@@ -298,6 +302,17 @@ List<ListFilterFacet> facetsFor(Iterable<ListEntryView> entries,
         options: [SelectOption('yes', S.current.UserList_Has_Unseen)],
         allowExclude: true,
       ),
+    // The titles whose card shows the dub icon (Settings, Dub).
+    if (isAnime && DubInfo.instance.enabled)
+      ListFilterFacet(
+        key: ListFacetKeys.dub,
+        label: S.current.UserList_Facet_Dub,
+        options: [
+          SelectOption(DubStatus.dubbed.name, S.current.Dub_Status_Full),
+          SelectOption(DubStatus.partial.name, S.current.Dub_Status_Partial),
+        ],
+        allowExclude: true,
+      ),
   ];
 }
 
@@ -314,6 +329,10 @@ Set<String> _valuesOf(ListEntryView e, String facet, DateTime now) => switch (fa
       ListFacetKeys.studio => e.studios.toSet(),
       ListFacetKeys.author => e.authors.toSet(),
       ListFacetKeys.rating => _ratingOf(e) == null ? const {} : {_ratingOf(e)!},
+      ListFacetKeys.dub => switch (DubInfo.instance.statusOf(e.malId)) {
+          DubStatus.none => const {},
+          final status => {status.name},
+        },
       _ => const {},
     };
 
@@ -346,9 +365,13 @@ List<ListEntryView> filterEntries(
   ];
 }
 
+/// Facets left out of the filter right now: the dub facet while the dub setting is off, so a
+/// dub filter saved earlier never empties a list whose sheet no longer shows it.
+bool _ignored(String facet) => facet == ListFacetKeys.dub && !DubInfo.instance.enabled;
+
 bool _matchesFilter(ListEntryView e, ListFilter filter, DateTime now) {
   for (final entry in filter.included.entries) {
-    if (entry.value.isEmpty) continue;
+    if (entry.value.isEmpty || _ignored(entry.key)) continue;
     final values = _valuesOf(e, entry.key, now);
     final ok = _matchAllFacets.contains(entry.key)
         ? values.containsAll(entry.value)
@@ -356,7 +379,7 @@ bool _matchesFilter(ListEntryView e, ListFilter filter, DateTime now) {
     if (!ok) return false;
   }
   for (final entry in filter.excluded.entries) {
-    if (entry.value.isEmpty) continue;
+    if (entry.value.isEmpty || _ignored(entry.key)) continue;
     final values = _valuesOf(e, entry.key, now);
     if (entry.value.any(values.contains)) return false;
   }
