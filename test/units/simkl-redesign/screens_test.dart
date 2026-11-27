@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:mywatchlist/widgets/Simkl/media/simkl_media_header.dart' show SimklTitleBlock;
 import 'package:mywatchlist/pages/Simkl/simkl_explore_page.dart';
 import 'package:mywatchlist/pages/Simkl/simkl_home_page.dart';
 import 'package:mywatchlist/pages/Simkl/simkl_media_page.dart';
@@ -56,7 +57,12 @@ void main() {
 
       expect(find.text('Kimetsu no Yaiba'), findsWidgets);
       expect(find.text('Demon Slayer: Kimetsu no Yaiba'), findsWidgets, reason: 'the other form of the title');
-      expect(find.text('2019 – 2024 · Fuji TV · 22h 55m · 55 eps · TV · TV-MA'), findsOneWidget);
+      // One detail per line beside the poster.
+      for (final detail in ['2019 – 2024', 'Fuji TV', '22h 55m', '55 eps', 'TV', 'TV-MA']) {
+        expect(find.descendant(of: find.byType(SimklTitleBlock), matching: find.text(detail)),
+            findsOneWidget,
+            reason: detail);
+      }
       expect(find.text('Simkl'), findsOneWidget);
       expect(find.text('8.7'), findsOneWidget);
       expect(find.text('MAL'), findsWidgets);
