@@ -15,6 +15,10 @@
 [![Simkl](https://img.shields.io/badge/Simkl-0B0F10?style=flat)](https://simkl.docs.apiary.io)
 [![Jikan](https://img.shields.io/badge/Jikan-2E51A2?style=flat)](https://jikan.moe)
 
+[![Discord](https://img.shields.io/discord/1575766269708337193?logo=discord&logoColor=fff&label=Discord&labelColor=333&color=5865F2&style=flat)](https://discord.gg/5fzwYWYdS5)
+[![Downloads](https://img.shields.io/github/downloads/goddivor/mywatchlist/total?logo=github&logoColor=fff&label=Downloads&labelColor=333&color=3FB950&style=flat)](https://github.com/goddivor/mywatchlist/releases)
+[![Stars](https://img.shields.io/github/stars/goddivor/mywatchlist?logo=github&logoColor=fff&label=Stars&labelColor=333&color=E3B341&style=flat)](https://github.com/goddivor/mywatchlist/stargazers)
+
 A **Flutter** client for **MyAnimeList**, **AniList**, **Kitsu**, and **Simkl** in one app, inspired by [DailyAL](https://github.com/JICA98/DailyAL).
 Browse anime, manga, movies, and series, keep your lists up to date, follow your friends, and talk with
 the community through forums, clubs, and private messages.
