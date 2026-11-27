@@ -259,7 +259,7 @@ class AnilistProfileService {
   static const String _stats = '''
     count meanScore
     statuses { status count }
-    scores(sort: MEAN_DESC) { score count }
+    scores { score count }
     formats { format count meanScore }
     genres(limit: 15, sort: COUNT_DESC) { genre count meanScore }
   ''';
@@ -269,7 +269,7 @@ class AnilistProfileService {
     avatar { large }
     options { profileColor }
     mediaListOptions { scoreFormat }
-    donatorBadge donatorTier moderatorRoles previousNames
+    donatorBadge donatorTier moderatorRoles previousNames { name }
     isFollowing isFollower isBlocked
     statistics {
       anime { $_stats minutesWatched episodesWatched }
@@ -652,8 +652,12 @@ class AnilistProfileService {
 
   static String? _text(Object? v) => v is String && v.trim().isNotEmpty ? v.trim() : null;
 
-  static List<String> _strings(Object? v) =>
-      v is List ? [for (final e in v) if (e is String && e.trim().isNotEmpty) e.trim()] : const [];
+  static List<String> _strings(Object? v) => v is List
+      ? [
+          for (final e in v)
+            if ((e is Map ? e['name'] : e) case final String s when s.trim().isNotEmpty) s.trim(),
+        ]
+      : const [];
 
   static AnilistCategoryStats _category(Object? raw, {required bool manga}) {
     if (raw is! Map) return const AnilistCategoryStats();

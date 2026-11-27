@@ -21,16 +21,30 @@ void main() {
   });
 
   test('the saved pages give the newest articles, once each, with a next page', () {
-    for (final name in ['featured', 'news']) {
+    for (final name in ['featured', 'news', 'featured_2026_11', 'news_2026_11']) {
       final result = _fixture(name);
       final ids = result.newsorfeatured.map((e) => e.id).toList();
       expect(ids.length, greaterThanOrEqualTo(10), reason: name);
       expect(ids.toSet().length, ids.length, reason: name);
       expect(result.newsorfeatured.first.title, isNotEmpty);
-      expect(result.newsorfeatured.first.url, contains('/$name/'));
+      expect(result.newsorfeatured.first.url, contains('/${name.split('_').first}/'));
       expect(result.newsorfeatured.first.imageUrl, startsWith('https://'));
       expect(result.paging.next, isNotEmpty, reason: name);
     }
+  });
+
+  test('the November 2026 pages: every row of the first list, the featured cards, page 2 next', () {
+    final news = _fixture('news_2026_11');
+    expect(news.newsorfeatured.length, 20);
+    expect(news.newsorfeatured.first.title, "'Tamon-kun Ima Docchi!?' Second Season in Production");
+    expect(news.newsorfeatured.first.tags, 'Adapts Manga, New Anime');
+    expect(news.newsorfeatured.first.text, startsWith('The F/ACE First Live'));
+    expect(news.paging.next, 'https://myanimelist.net/news?p=2');
+    final featured = _fixture('featured_2026_11');
+    expect(featured.newsorfeatured.length, greaterThanOrEqualTo(20));
+    expect(featured.newsorfeatured.first.id, 2422);
+    expect(featured.newsorfeatured.first.imageUrl, startsWith('https://cdn.myanimelist.net/'));
+    expect(featured.paging.next, 'https://myanimelist.net/featured?p=2');
   });
 
   for (final category in [SearchCategory.featured, SearchCategory.news]) {

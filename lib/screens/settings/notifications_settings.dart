@@ -123,19 +123,20 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage>
             PrefSwitchTile(
               icon: Icons.play_circle_outline,
               title: s.Notif_Watching_Title,
-              subtitle: s.Notif_Watching_Desc,
+              subtitle: _followsSimkl() ? s.Skn_Watching_Desc : s.Notif_Watching_Desc,
               read: (p) => p.notifications.watchingList,
               toEvent: (v) => NotificationPreferencesChanged((p) => p.copyWith(watchingList: v)),
             ),
             PrefSwitchTile(
               icon: Icons.bookmark_border,
               title: s.Notif_Plan_Title,
-              subtitle: s.Notif_Plan_Desc,
+              subtitle: _followsSimkl() ? s.Skn_Plan_Desc : s.Notif_Plan_Desc,
               read: (p) => p.notifications.planToWatchList,
               toEvent: (v) => NotificationPreferencesChanged((p) => p.copyWith(planToWatchList: v)),
             ),
           ],
         ),
+        if (supported) const _TrackersGroup(),
         if (supported) const _MalHubGroup(),
         if (supported) const _AnilistGroup(),
         PrefGroup(
@@ -182,6 +183,37 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage>
                 ?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
           ),
         ),
+      ],
+    );
+  }
+}
+
+/// One switch per connected tracker (#351): whose Watching and Plan to watch lists feed the
+/// episode reminders. Every connected tracker feeds them by default.
+class _TrackersGroup extends StatelessWidget {
+  const _TrackersGroup();
+
+  static const _trackers = [AccountType.myanimelist, AccountType.anilist, AccountType.kitsu, AccountType.simkl];
+
+  @override
+  Widget build(BuildContext context) {
+    // A string, so the group rebuilds only when the set of connected trackers changes.
+    final key = context.select<UserManager, String>(
+        (m) => [for (final t in _trackers) if (m.isAuthenticated(t)) t.name].join(','));
+    final connected = [for (final t in _trackers) if (key.split(',').contains(t.name)) t];
+    if (connected.isEmpty) return const SizedBox.shrink();
+    final s = S.current;
+    return PrefGroup(
+      title: s.Nat_Sec_Trackers,
+      children: [
+        for (final t in connected)
+          PrefSwitchTile(
+            icon: Icons.account_circle_outlined,
+            title: AppRoutes.trackerLabel(t),
+            subtitle: s.Nat_Tracker_Desc(AppRoutes.trackerLabel(t)),
+            read: (p) => p.notifications.airingFrom(t.name),
+            toEvent: (v) => NotificationPreferencesChanged((p) => p.withAiring(t.name, v)),
+          ),
       ],
     );
   }
@@ -331,7 +363,7 @@ class _MasterCard extends StatelessWidget {
                 ),
           ),
           subtitle: Text(
-            S.current.Notif_Master_Desc,
+            _followsSimkl() ? S.current.Skn_Master_Desc : S.current.Notif_Master_Desc,
             style: TextStyle(color: enabled ? colors.onPrimaryContainer : colors.onSurfaceVariant),
           ),
           value: enabled,
@@ -467,3 +499,10 @@ class _Notice extends StatelessWidget {
     );
   }
 }
+
+/// The reminders follow Simkl (its shows and movies are notified next to the anime): the
+/// texts then name them.
+bool _followsSimkl() =>
+    NotificationService.candidateTracker(
+        UserManager.instance.currentTracker, UserManager.instance.isAuthenticated) ==
+    AccountType.simkl;

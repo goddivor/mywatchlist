@@ -2,23 +2,33 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:mywatchlist/generated/l10n.dart';
+import 'package:mywatchlist/pages/Simkl/simkl_search_all_page.dart';
 import 'package:mywatchlist/services/api/SimKl/simkl_discover_service.dart';
 import 'package:mywatchlist/services/api/SimKl/simkl_models.dart';
 import 'package:mywatchlist/widgets/MAL/home/homeappbar.dart';
 import 'package:mywatchlist/widgets/Simkl/calendar/simkl_calendar.dart';
+import 'package:mywatchlist/widgets/Simkl/simkl_catalogue.dart';
 import 'package:mywatchlist/widgets/Simkl/simkl_feeds.dart';
 import 'package:mywatchlist/widgets/Simkl/simkl_media_widgets.dart';
 import 'package:mywatchlist/widgets/Simkl/simkl_states.dart';
 import 'package:mywatchlist/widgets/home/home_sections.dart';
 import 'package:mywatchlist/widgets/user/list/list_entry_view.dart';
 
-/// Explore tab for Simkl: a search bar over the Simkl anime catalogue, then one list at a time
-/// (a poster grid, or Simkl's calendar rows for the schedule): trending (today, week, month) and the airing schedule from Simkl's CDN, new
-/// premieres, coming soon, best anime and the genre browse from the API. Each list has its own
-/// options row (period, day, bucket, genre, sort, format). Simkl has no manga, so there is no
-/// anime / manga switch.
+/// Explore tab for Simkl: the TV shows / Anime / Movies switch (shared with the home tab), a
+/// search bar over that catalogue, then one list at a time (a poster grid, or Simkl's calendar
+/// rows for the schedule): trending (today, week, month) and the airing schedule (movies: the
+/// releases) from Simkl's CDN, new premieres, coming soon, best titles and the genre browse from
+/// the API. Movies have no premieres and no best list. Each list has its own options row
+/// (period, day, bucket, genre, sort, and the format of anime).
 class SimklExplorePage extends StatefulWidget {
-  const SimklExplorePage({super.key, this.service});
+  const SimklExplorePage({super.key, this.service, this.kind, this.initialQuery = ''});
+
+  /// A fixed catalogue: the Simkl app's search page of one catalogue (back button, no switch,
+  /// the keyboard opens on the search field). Null = the Explore tab with the shared switch.
+  final SimklKind? kind;
+
+  /// A search to run at opening (the "See all" of the search over every catalogue).
+  final String initialQuery;
 
   /// Test hook; defaults to the shared Simkl discover service.
   final SimklDiscoverService? service;
@@ -45,7 +55,9 @@ class _SimklExplorePageState extends State<SimklExplorePage> {
   /// The options last picked per feed, so switching feeds keeps them.
   final Map<SimklFeed, SimklFeedQuery> _perFeed = {};
   Timer? _debounce;
-  SimklFeedQuery _query = const SimklFeedQuery(SimklFeed.trending);
+  late SimklFeedQuery _query =
+      SimklFeedQuery(SimklFeed.trending, kind: widget.kind ?? SimklCatalogue.instance.value);
+  bool get _fixed => widget.kind != null;
   _Load _feedState = _Load.loading;
   bool _loadingMore = false;
   bool _moreFailed = false;
@@ -61,10 +73,24 @@ class _SimklExplorePageState extends State<SimklExplorePage> {
   SimklDiscoverService get _service => widget.service ?? SimklDiscoverService.instance;
   bool get _searching => _text.isNotEmpty;
 
+  SimklKind get _kind => _query.kind;
+
   @override
   void initState() {
     super.initState();
+    if (!_fixed) {
+      SimklCatalogue.instance.addListener(_onCatalogue);
+      SimklCatalogue.instance.ensureLoaded().then((_) {
+        if (mounted) _onCatalogue();
+      });
+    }
     _loadFeed();
+    final initial = widget.initialQuery.trim();
+    if (initial.isNotEmpty) {
+      _controller.text = initial;
+      _text = initial;
+      _search(initial);
+    }
     if (simklSignedIn) {
       simklListById().then((list) {
         if (mounted) setState(() => _list = list);
@@ -72,8 +98,24 @@ class _SimklExplorePageState extends State<SimklExplorePage> {
     }
   }
 
+  /// The catalogue changed (here or on the home tab): same list when it has one, else trending;
+  /// a running search is asked again in the new catalogue.
+  void _onCatalogue() {
+    final kind = SimklCatalogue.instance.value;
+    if (kind == _kind) return;
+    _perFeed.clear();
+    final feed = SimklFeed.of(kind).contains(_query.feed) ? _query.feed : SimklFeed.trending;
+    _query = SimklFeedQuery(feed, kind: kind);
+    if (_searching) {
+      _search(_text);
+    } else {
+      _loadFeed();
+    }
+  }
+
   @override
   void dispose() {
+    SimklCatalogue.instance.removeListener(_onCatalogue);
     _debounce?.cancel();
     _controller.dispose();
     super.dispose();
@@ -165,7 +207,7 @@ class _SimklExplorePageState extends State<SimklExplorePage> {
       _searchState = _Load.loading;
     });
     try {
-      final items = await _service.search(text);
+      final items = await _service.search(text, kind: _kind);
       if (!mounted || token != _token) return;
       setState(() {
         _results = items;
@@ -186,7 +228,7 @@ class _SimklExplorePageState extends State<SimklExplorePage> {
 
   void _pickFeed(SimklFeed feed) {
     if (feed == _query.feed) return;
-    _pick(_perFeed[feed] ?? SimklFeedQuery(feed));
+    _pick(_perFeed[feed] ?? SimklFeedQuery(feed, kind: _kind));
   }
 
   Future<void> _onRefresh() => _searching ? _search(_text) : _loadFeed(force: true);
@@ -199,27 +241,51 @@ class _SimklExplorePageState extends State<SimklExplorePage> {
     final pages = _loaded[_query];
     final items = _searching ? _results : (pages?.items ?? const <SimklMedia>[]);
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: _fixed ? null : Colors.transparent,
       body: RefreshIndicator(
         onRefresh: _onRefresh,
         child: CustomScrollView(
           slivers: [
-            SliverAppBar(
-              automaticallyImplyLeading: false,
-              // Empty list does not suppress the automatic endDrawer button; a placeholder does.
-              actions: const [SizedBox.shrink()],
-              floating: true,
-              snap: true,
-              titleSpacing: 0,
-              toolbarHeight: kToolbarHeight,
-              title: AppBarHome(title: s.Hw_Tab_Explore, transparent: true, showSettings: true),
-            ),
+            if (_fixed)
+              SliverAppBar(
+                floating: true,
+                snap: true,
+                title: Text(s.Skm_Search_In(simklKindLabel(_kind))),
+                actions: [
+                  IconButton(
+                    tooltip: s.Skn_Search_Everywhere,
+                    icon: const Icon(Icons.travel_explore_rounded),
+                    onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(
+                        builder: (_) => SimklSearchAllPage(initialQuery: _text))),
+                  ),
+                ],
+              )
+            else ...[
+              SliverAppBar(
+                automaticallyImplyLeading: false,
+                // Empty list does not suppress the automatic endDrawer button; a placeholder does.
+                actions: const [SizedBox.shrink()],
+                floating: true,
+                snap: true,
+                titleSpacing: 0,
+                toolbarHeight: kToolbarHeight,
+                title: AppBarHome(title: s.Hw_Tab_Explore, transparent: true, showSettings: true),
+              ),
+              SliverToBoxAdapter(
+                child: SimklKindSwitch(value: _kind, onChanged: SimklCatalogue.instance.pick),
+              ),
+            ],
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(15, 4, 15, 8),
                 child: SearchBar(
                   controller: _controller,
-                  hintText: s.Sk_Search_Hint,
+                  autoFocus: _fixed,
+                  hintText: switch (_kind) {
+                    SimklKind.tv => s.Skm_Search_Shows,
+                    SimklKind.anime => s.Sk_Search_Hint,
+                    SimklKind.movie => s.Skm_Search_Movies,
+                  },
                   leading: const Icon(Icons.search_rounded),
                   elevation: const WidgetStatePropertyAll(0),
                   backgroundColor: WidgetStatePropertyAll(scheme.surfaceContainerHigh),
@@ -241,9 +307,9 @@ class _SimklExplorePageState extends State<SimklExplorePage> {
             if (!_searching) ...[
               SliverToBoxAdapter(
                 child: _ChipRow(children: [
-                  for (final feed in SimklFeed.values)
+                  for (final feed in SimklFeed.of(_kind))
                     ChoiceChip(
-                      label: Text(feed.exploreTitle),
+                      label: Text(feed.exploreTitleOf(_kind)),
                       selected: feed == _query.feed,
                       onSelected: (_) => _pickFeed(feed),
                     ),
@@ -272,7 +338,7 @@ class _SimklExplorePageState extends State<SimklExplorePage> {
         SliverToBoxAdapter(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(15, 0, 15, 8),
-            child: SimklMineSwitch(mine: _mine, onChanged: (v) => setState(() => _mine = v)),
+            child: SimklMineSwitch(kind: _kind, mine: _mine, onChanged: (v) => setState(() => _mine = v)),
           ),
         ),
       if (rows.isEmpty)
@@ -409,6 +475,7 @@ class _OptionsRow extends StatelessWidget {
               _option(SimklFeedLabels.window(w), query.window == w, () => onPick(query.copyWith(window: w))),
           ],
         SimklFeed.airing => [
+            if (query.kind == SimklKind.anime)
             ActionChip(
               avatar: const Icon(Icons.calendar_month_outlined, size: 18),
               label: Text(S.current.Skr_Calendar),
@@ -427,7 +494,7 @@ class _OptionsRow extends StatelessWidget {
         SimklFeed.genres => [
             _MenuChip<String>(
               label: SimklFeedLabels.genre(query.genre),
-              values: simklGenres,
+              values: simklGenresOf(query.kind),
               selected: query.genre,
               labelOf: SimklFeedLabels.genre,
               onPick: (g) => onPick(query.copyWith(genre: g)),

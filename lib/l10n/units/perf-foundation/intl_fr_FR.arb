@@ -1,0 +1,7 @@
+{
+  "@@locale": "fr_FR",
+  "Image_Saved": "Image enregistrée",
+  "Image_Save_Failed": "Impossible d’enregistrer l’image",
+  "Image_Share_Failed": "Impossible de partager l’image",
+  "Image_Share_Text": "Image partagée depuis MyWatchList"
+}

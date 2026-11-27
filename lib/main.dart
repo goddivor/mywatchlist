@@ -47,6 +47,7 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:mywatchlist/widgets/common/tracker_add_status.dart';
 import 'package:workmanager/workmanager.dart';
 
 // The message poller lives with the hub poller; kept visible here for the settings screen.
@@ -94,6 +95,7 @@ void main() async {
 
   // Saved list statuses in memory before the first frame, so cards show their badges at once.
   await ListStatusCache.instance.ensureLoaded();
+  await TrackerAddStatus.loadAll();
 
   // Initialize UserManager (POO architecture with BaseUser inheritance)
   userManager = UserManager.instance;
@@ -133,6 +135,8 @@ void main() async {
   accountBloc.stream.listen((state) {
     if (state is AccountLoaded) {
       AccountManagerSingleton().updateAccountType(state.selectedAccountType);
+      // Tracker settings are per tracker (#349): the active account's apply.
+      preferencesBloc.add(PreferencesTrackerChanged(state.selectedAccountType));
     }
   });
 
@@ -163,7 +167,7 @@ void main() async {
                 malApi: malApi,
               ),
             ),
-            BlocProvider(create: (context) => HomePreferencesBloc()..add(LoadHomePreferencesEvent())),
+            BlocProvider(create: (context) => HomePreferencesBloc(accounts: accountBloc)..add(LoadHomePreferencesEvent())),
           ],
           child: MyWatchListApp(),
         ),

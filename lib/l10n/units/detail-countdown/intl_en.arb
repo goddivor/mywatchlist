@@ -1,0 +1,16 @@
+{
+  "@@locale": "en",
+  "Dc_Ep": "Ep",
+  "Dc_In": "in",
+  "Dc_Days": "{value}d",
+  "@Dc_Days": { "placeholders": { "value": { "type": "String" } } },
+  "Dc_Hours": "{value}h",
+  "@Dc_Hours": { "placeholders": { "value": { "type": "String" } } },
+  "Dc_Minutes": "{value}m",
+  "@Dc_Minutes": { "placeholders": { "value": { "type": "String" } } },
+  "Dc_Seconds": "{value}s",
+  "@Dc_Seconds": { "placeholders": { "value": { "type": "String" } } },
+  "Dc_Airing_Now": "Currently airing",
+  "Dc_Label": "Episode {episode} in {time}",
+  "@Dc_Label": { "placeholders": { "episode": { "type": "int" }, "time": { "type": "String" } } }
+}

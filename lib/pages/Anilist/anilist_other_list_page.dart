@@ -242,7 +242,7 @@ class _AnilistOtherListPageState extends State<AnilistOtherListPage> {
   Widget _header(BuildContext context) {
     final s = S.of(context);
     final settings = _settingsOf(_category);
-    final filterCount = settings.filter.activeCount;
+    final filterCount = activeListFilter(settings.filter).activeCount;
     return Column(
       children: [
         SizedBox(
@@ -253,8 +253,8 @@ class _AnilistOtherListPageState extends State<AnilistOtherListPage> {
               children: [
                 SegmentedButton<String>(
                   segments: [
-                    ButtonSegment(value: 'anime', label: Text(s.UserList_Anime)),
-                    ButtonSegment(value: 'manga', label: Text(s.UserList_Manga)),
+                    ButtonSegment(value: 'anime', label: Text(s.UserList_Anime, maxLines: 1, softWrap: false)),
+                    ButtonSegment(value: 'manga', label: Text(s.UserList_Manga, maxLines: 1, softWrap: false)),
                   ],
                   selected: {_category},
                   showSelectedIcon: false,
@@ -351,7 +351,7 @@ class _AnilistOtherListPageState extends State<AnilistOtherListPage> {
     Widget fill(Widget child) => SliverFillRemaining(hasScrollBody: false, child: child);
     if (entries.isEmpty) {
       final error = c.error;
-      final filtered = !c.settings.filter.isEmpty;
+      final filtered = !activeListFilter(c.settings.filter).isEmpty;
       if (!c.isStarted || c.isLoading || (filtered && c.hasMore && error == null)) {
         return [fill(ProfileLoading(label: s.Prof_Loading))];
       }

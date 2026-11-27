@@ -19,11 +19,12 @@ class AnimeStatistics {
 
   factory AnimeStatistics.fromJson(Map<String, dynamic> json) {
     return AnimeStatistics(
-      watching: json['watching'],
+      // Manga statistics say "reading" and "plan_to_read".
+      watching: json['watching'] ?? json['reading'],
       completed: json['completed'],
       onHold: json['on_hold'],
       dropped: json['dropped'],
-      planToWatch: json['plan_to_watch'],
+      planToWatch: json['plan_to_watch'] ?? json['plan_to_read'],
       total: json['total'],
       scores: json['scores'] != null
           ? (json['scores'] as List).map((e) => ScoreStatistics.fromJson(e)).toList()

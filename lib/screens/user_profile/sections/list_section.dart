@@ -188,7 +188,7 @@ class _ListSectionState extends State<ListSection> with AutomaticKeepAliveClient
   int? _count(ListEntryStatus? status) {
     final settings = _settingsOf(_category);
     final controller = _controllers['$_category:${status?.name ?? 'all'}'];
-    if (!settings.filter.isEmpty) {
+    if (!activeListFilter(settings.filter).isEmpty) {
       if (controller == null || !controller.isStarted || controller.hasMore) return null;
       return controller.entries.length;
     }
@@ -297,7 +297,7 @@ class _ListSectionState extends State<ListSection> with AutomaticKeepAliveClient
   Widget _header(BuildContext context, {required bool comparing}) {
     final s = S.of(context);
     final settings = _settingsOf(_category);
-    final filterCount = settings.filter.activeCount;
+    final filterCount = activeListFilter(settings.filter).activeCount;
     final loaded = _current.entries;
     final common = comparing ? loaded.where(_inMine).length : 0;
     return Column(
@@ -311,8 +311,8 @@ class _ListSectionState extends State<ListSection> with AutomaticKeepAliveClient
               children: [
                 SegmentedButton<String>(
                   segments: [
-                    ButtonSegment(value: 'anime', label: Text(s.UserList_Anime)),
-                    ButtonSegment(value: 'manga', label: Text(s.UserList_Manga)),
+                    ButtonSegment(value: 'anime', label: Text(s.UserList_Anime, maxLines: 1, softWrap: false)),
+                    ButtonSegment(value: 'manga', label: Text(s.UserList_Manga, maxLines: 1, softWrap: false)),
                   ],
                   selected: {_category},
                   showSelectedIcon: false,
@@ -403,7 +403,7 @@ class _ListSectionState extends State<ListSection> with AutomaticKeepAliveClient
     Widget fill(Widget child) => SliverFillRemaining(hasScrollBody: false, child: child);
     if (entries.isEmpty) {
       final error = c.error;
-      final filtered = !c.settings.filter.isEmpty;
+      final filtered = !activeListFilter(c.settings.filter).isEmpty;
       if (!c.isStarted || c.isLoading || (filtered && c.hasMore && error == null)) {
         return [fill(ProfileLoading(label: s.Prof_Loading))];
       }

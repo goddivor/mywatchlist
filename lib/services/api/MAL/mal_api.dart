@@ -285,7 +285,8 @@ class MalApi {
     final response = await _get(url);
 
     if (response.statusCode == 200) {
-      final fullResponse = json.decode(response.body) as Map<String, dynamic>;
+      // Up to 500 anime (calendar): decoded off the UI isolate when large.
+      final fullResponse = await _decode(response.body) as Map<String, dynamic>;
       return SearchResult.fromJson(fullResponse);
     } else {
       throw Exception('Failed to get seasonal anime');

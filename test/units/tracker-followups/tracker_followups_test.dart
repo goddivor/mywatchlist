@@ -100,9 +100,9 @@ void main() {
     });
   });
 
-  test('the Simkl list page has one category and no title workaround', () {
+  test('the Simkl list page has its three catalogues and no title workaround', () {
     final source = File('lib/pages/Simkl/simkl_user_page.dart').readAsStringSync();
-    expect(source, contains("categories: const ['anime']"));
+    expect(source, contains("categories = ['tv', 'anime', 'movie']"));
     expect(source, isNot(contains('keepSwitch')));
     expect(source, isNot(contains('defaultCategory')));
   });

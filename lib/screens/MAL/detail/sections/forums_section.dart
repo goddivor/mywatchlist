@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:mywatchlist/constants/constants.dart' show TabType, gotoPage;
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/screens/MAL/detail/detail_data.dart';
@@ -108,7 +109,7 @@ class _ClubCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
-    final members = club.members;
+    final members = int.tryParse((club.members ?? '').replaceAll(',', ''));
     return SizedBox(
       width: 220,
       child: Card(
@@ -145,8 +146,10 @@ class _ClubCard extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                           style: theme.textTheme.bodyMedium
                               ?.copyWith(fontWeight: FontWeight.w600)),
-                      if (members != null && members.isNotEmpty)
-                        Text('$members ${S.current.Members}',
+                      if (members != null)
+                        Text(
+                            S.current.Fc_Members_Count(members).replaceFirst('$members',
+                                NumberFormat.decimalPattern(Intl.getCurrentLocale()).format(members)),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: theme.textTheme.bodySmall

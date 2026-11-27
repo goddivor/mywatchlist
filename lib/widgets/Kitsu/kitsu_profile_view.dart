@@ -48,8 +48,16 @@ class KitsuProfileView extends StatefulWidget {
   /// Whether a Kitsu account is signed in (the Follow button needs one); replaced by tests.
   final bool Function()? signedIn;
 
+  /// Buttons shown in the profile's own bar (the Kitsu app's bar buttons).
+  final List<Widget> barActions;
+
   const KitsuProfileView(
-      {super.key, this.userId, this.showBack = false, this.loader, this.signedIn});
+      {super.key,
+      this.userId,
+      this.showBack = false,
+      this.loader,
+      this.signedIn,
+      this.barActions = const []});
 
   @override
   State<KitsuProfileView> createState() => _KitsuProfileViewState();
@@ -80,12 +88,14 @@ class _KitsuProfileViewState extends State<KitsuProfileView> {
       builder: (context, snapshot) {
         final data = snapshot.data;
         if (data != null) {
-          final signedIn = widget.signedIn ?? () => UserKitsuV2.instance.status == AuthStatus.AUTHENTICATED;
+          final signedIn =
+              widget.signedIn ?? () => UserKitsuV2.instance.status == AuthStatus.AUTHENTICATED;
           return _Loaded(
             profile: data,
             isSelf: widget.userId == null,
             showBack: widget.showBack,
             canFollow: widget.userId != null && signedIn(),
+            barActions: widget.barActions,
           );
         }
         final body = snapshot.hasError
@@ -135,9 +145,15 @@ class _Loaded extends StatefulWidget {
   final bool isSelf;
   final bool showBack;
   final bool canFollow;
+  final List<Widget> barActions;
 
-  const _Loaded(
-      {required this.profile, required this.isSelf, required this.showBack, required this.canFollow});
+  const _Loaded({
+    required this.profile,
+    required this.isSelf,
+    required this.showBack,
+    required this.canFollow,
+    this.barActions = const [],
+  });
 
   @override
   State<_Loaded> createState() => _LoadedState();
@@ -171,37 +187,52 @@ class _LoadedState extends State<_Loaded> {
                     libraryTab: widget.isSelf ? 0 : 7)),
             SliverOverlapAbsorber(
               handle: NestedScrollView.sliverOverlapAbsorberHandleFor(context),
-              sliver: SliverAppBar(
-                pinned: true,
-                automaticallyImplyLeading: widget.showBack,
-                title: Text(profile.name, maxLines: 1, overflow: TextOverflow.ellipsis),
-                actions: [
-                  IconButton(
-                    tooltip: s.Kitsu_User_Search_Tooltip,
-                    icon: const Icon(Icons.person_search_outlined),
-                    onPressed: () => Navigator.of(context).push(
-                        MaterialPageRoute<void>(builder: (_) => const KitsuUserSearchPage())),
-                  ),
-                  IconButton(
-                    tooltip: s.Kitsu_Open_Profile,
-                    icon: const Icon(Icons.open_in_new_rounded),
-                    onPressed: () => launchWebView(profile.webUrl, context: context),
-                  ),
-                ],
-                bottom: TabBar(
-                  isScrollable: true,
-                  tabAlignment: TabAlignment.start,
-                  tabs: [
-                    Tab(text: s.Kitsu_Tab_Stats),
-                    Tab(text: s.Kitsu_Tab_About),
-                    Tab(text: s.Kitsu_Tab_Favorites),
-                    Tab(text: s.Kitsu_Tab_Activity),
-                    Tab(text: s.Kitsu_Tab_Reactions),
-                    Tab(text: s.Kitsu_Tab_Posts),
-                    Tab(text: s.Kf_Tab_Groups),
-                    if (!widget.isSelf) Tab(text: s.Kitsu_Tab_List),
-                  ],
-                ),
+              // The bar keeps room for the status bar only as it reaches the top of the
+              // screen, so no empty band shows under the header while it sits lower.
+              sliver: SliverLayoutBuilder(
+                builder: (context, constraints) {
+                  final media = MediaQuery.of(context);
+                  final statusBar = media.padding.top;
+                  final fromTop =
+                      constraints.viewportMainAxisExtent - constraints.remainingPaintExtent;
+                  final top = (statusBar - fromTop).clamp(0.0, statusBar);
+                  return MediaQuery(
+                    data: media.copyWith(padding: media.padding.copyWith(top: top)),
+                    child: SliverAppBar(
+                      pinned: true,
+                      automaticallyImplyLeading: widget.showBack,
+                      title: Text(profile.name, maxLines: 1, overflow: TextOverflow.ellipsis),
+                      actions: [
+                        IconButton(
+                          tooltip: s.Kitsu_User_Search_Tooltip,
+                          icon: const Icon(Icons.person_search_outlined),
+                          onPressed: () => Navigator.of(context).push(
+                              MaterialPageRoute<void>(builder: (_) => const KitsuUserSearchPage())),
+                        ),
+                        IconButton(
+                          tooltip: s.Kitsu_Open_Profile,
+                          icon: const Icon(Icons.open_in_new_rounded),
+                          onPressed: () => launchWebView(profile.webUrl, context: context),
+                        ),
+                        ...widget.barActions,
+                      ],
+                      bottom: TabBar(
+                        isScrollable: true,
+                        tabAlignment: TabAlignment.start,
+                        tabs: [
+                          Tab(text: s.Kitsu_Tab_Stats),
+                          Tab(text: s.Kitsu_Tab_About),
+                          Tab(text: s.Kitsu_Tab_Favorites),
+                          Tab(text: s.Kitsu_Tab_Activity),
+                          Tab(text: s.Kitsu_Tab_Reactions),
+                          Tab(text: s.Kitsu_Tab_Posts),
+                          Tab(text: s.Kf_Tab_Groups),
+                          if (!widget.isSelf) Tab(text: s.Kitsu_Tab_List),
+                        ],
+                      ),
+                    ),
+                  );
+                },
               ),
             ),
           ],
@@ -212,8 +243,7 @@ class _LoadedState extends State<_Loaded> {
               KitsuFavouritesTab(profile: profile),
               KitsuActivityTab(slug: slug),
               KitsuReactionsTab(slug: slug),
-              KitsuPostsTab(
-                  slug: slug, pinned: () async => (await _loadSummary())?.pinnedPost),
+              KitsuPostsTab(slug: slug, pinned: () async => (await _loadSummary())?.pinnedPost),
               KitsuGroupsTab(userId: profile.id),
               if (!widget.isSelf) KitsuListTab(slug: slug),
             ],
@@ -266,6 +296,23 @@ class _Header extends StatelessWidget {
                   ? ColoredBox(color: scheme.primaryContainer)
                   : AppImage(url: profile.coverUrl, placeholderColor: scheme.primaryContainer),
             ),
+            // The banner reaches the top of the screen: darker under the status bar.
+            if (profile.coverUrl != null)
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                height: statusBar + 40,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [Colors.black.withValues(alpha: 0.55), Colors.transparent],
+                    ),
+                  ),
+                ),
+              ),
             PositionedDirectional(
               start: 16,
               bottom: -_avatar / 2,
@@ -304,7 +351,8 @@ class _Header extends StatelessWidget {
                     child: Text(profile.name,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700)),
+                        style:
+                            theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700)),
                   ),
                   if (canFollow) KitsuFollowButton(userId: profile.id),
                 ],
@@ -439,7 +487,8 @@ class _StatsTabState extends State<_StatsTab> with AutomaticKeepAliveClientMixin
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Text(
                 s.Kitsu_Stat_Percentile(stats.timePercentile!.round().toString()),
-                style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                style:
+                    theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
               ),
             ),
           ),
@@ -454,7 +503,8 @@ class _StatsTabState extends State<_StatsTab> with AutomaticKeepAliveClientMixin
                     (stats.statusCounts[status] ?? 0).toDouble(),
                 ],
                 labels: [
-                  for (final status in ListEntryStatus.values) kitsuStatusLabel(status, isAnime: _anime),
+                  for (final status in ListEntryStatus.values)
+                    kitsuStatusLabel(status, isAnime: _anime),
                 ],
                 colors: colors,
               ),
@@ -497,7 +547,8 @@ class _Figure extends StatelessWidget {
         children: [
           Text(value, style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
           Text(label,
-              style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+              style:
+                  theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
         ],
       ),
     );

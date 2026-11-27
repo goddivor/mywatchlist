@@ -3,6 +3,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mywatchlist/constants/constants.dart' show getTileSizeValues;
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/services/api/SimKl/simkl_client.dart' show SimklSessionExpired;
+import 'package:mywatchlist/services/api/SimKl/simkl_detail_models.dart' show SimklEpisode;
+import 'package:mywatchlist/services/api/SimKl/simkl_detail_service.dart';
 import 'package:mywatchlist/services/api/SimKl/simkl_discover_service.dart' hide SimklFormat;
 import 'package:mywatchlist/services/api/SimKl/simkl_list_service.dart';
 import 'package:mywatchlist/services/api/SimKl/simkl_models.dart';
@@ -13,6 +15,7 @@ import 'package:mywatchlist/widgets/MAL/home/homeappbar.dart';
 import 'package:mywatchlist/widgets/Simkl/calendar/simkl_calendar.dart';
 import 'package:mywatchlist/widgets/Simkl/media/simkl_media_format.dart';
 import 'package:mywatchlist/widgets/Simkl/media/simkl_media_sections.dart' show SimklBlockSkeleton;
+import 'package:mywatchlist/widgets/Simkl/simkl_catalogue.dart';
 import 'package:mywatchlist/widgets/Simkl/simkl_feeds.dart';
 import 'package:mywatchlist/widgets/Simkl/simkl_home_rows.dart';
 import 'package:mywatchlist/widgets/Simkl/simkl_home_plan.dart';
@@ -22,13 +25,21 @@ import 'package:mywatchlist/widgets/Simkl/simkl_states.dart';
 import 'package:mywatchlist/widgets/home/home_sections.dart';
 import 'package:mywatchlist/widgets/user/list/list_entry_view.dart';
 
-/// Home tab for Simkl, progress and schedule first like Simkl's own apps: the rows come from the
-/// shared home preferences (`simklHomePlan`): the user's "Continue watching" and "Up next", and
-/// the Simkl catalogue: trending as a fanart carousel and airing today by exact time (Simkl's
-/// free CDN files), new premieres and best anime from the API. Each catalogue header opens the
-/// whole list. Simkl has no manga, news or forum, so those MyAnimeList sections are skipped.
+/// Home tab for Simkl, progress and schedule first like Simkl's own apps. The TV shows / Anime /
+/// Movies switch (shared with Explore) picks the catalogue; the rows come from the shared home
+/// preferences (`simklHomePlan`): the user's "Continue watching" and "Up next" (movies: the
+/// movies planned), and the catalogue: trending as a fanart carousel and airing today by exact
+/// time (movies: today's releases) from Simkl's free CDN files, new premieres and best titles
+/// from the API (none for movies). Each catalogue header opens the whole list. Simkl has no
+/// manga, news or forum, so those MyAnimeList sections are skipped.
 class SimklHomePage extends StatefulWidget {
-  const SimklHomePage({super.key});
+  /// A fixed catalogue (the Simkl app's catalogue tabs): no switch; null = the shared one.
+  final SimklKind? kind;
+
+  /// Inside the Simkl app's catalogue tab, which has its own app bar.
+  final bool embedded;
+
+  const SimklHomePage({super.key, this.kind, this.embedded = false});
 
   @override
   State<SimklHomePage> createState() => _SimklHomePageState();
@@ -38,9 +49,23 @@ class _SimklHomePageState extends State<SimklHomePage> {
   /// Bumped by a pull to refresh: every section reloads when it changes.
   int _refresh = 0;
 
+  SimklKind get _kind => widget.kind ?? SimklCatalogue.instance.value;
+
+  void _onCatalogue() {
+    if (mounted) setState(() {});
+  }
+
+  @override
+  void dispose() {
+    SimklCatalogue.instance.removeListener(_onCatalogue);
+    super.dispose();
+  }
+
   @override
   void initState() {
     super.initState();
+    SimklCatalogue.instance.addListener(_onCatalogue);
+    SimklCatalogue.instance.ensureLoaded();
     // The profile's title language (once per run); the rows reload when it is not the default.
     if (simklSignedIn) {
       SimklTitlePreference.ensureLoaded().then((_) {
@@ -53,7 +78,7 @@ class _SimklHomePageState extends State<SimklHomePage> {
 
   Future<void> _onRefresh() async {
     HomeSectionCache.clear();
-    SimklListService.instance.invalidate();
+    SimklListService.forEach((s) => s.invalidate());
     SimklDiscoverService.instance.cdn.invalidate();
     setState(() => _refresh++);
     await Future<void>.delayed(const Duration(milliseconds: 600));
@@ -69,16 +94,23 @@ class _SimklHomePageState extends State<SimklHomePage> {
         onRefresh: _onRefresh,
         child: CustomScrollView(
           slivers: [
-            SliverAppBar(
-              automaticallyImplyLeading: false,
-              // Empty list does not suppress the automatic endDrawer button; a placeholder does.
-              actions: const [SizedBox.shrink()],
-              floating: true,
-              snap: true,
-              titleSpacing: 0,
-              toolbarHeight: kToolbarHeight,
-              title: const AppBarHome(transparent: true, showSettings: true),
-            ),
+            if (!widget.embedded)
+              SliverAppBar(
+                automaticallyImplyLeading: false,
+                // Empty list does not suppress the automatic endDrawer button; a placeholder does.
+                actions: const [SizedBox.shrink()],
+                floating: true,
+                snap: true,
+                titleSpacing: 0,
+                toolbarHeight: kToolbarHeight,
+                title: const AppBarHome(transparent: true, showSettings: true),
+              ),
+            if (widget.kind == null)
+              SliverToBoxAdapter(
+                child: SimklKindSwitch(value: _kind, onChanged: SimklCatalogue.instance.pick),
+              )
+            else
+              const SliverToBoxAdapter(child: SizedBox(height: 4)),
             BlocBuilder<HomePreferencesBloc, HomePreferencesState>(
               buildWhen: (a, b) => a.isLoading != b.isLoading || a.preferences != b.preferences,
               builder: (context, state) {
@@ -88,7 +120,11 @@ class _SimklHomePageState extends State<SimklHomePage> {
                     child: Center(child: CircularProgressIndicator()),
                   );
                 }
-                final plan = simklHomePlan(state.preferences.sections);
+                final kind = _kind;
+                final plan = [
+                  for (final b in simklHomePlan(state.preferences.sections))
+                    if (b.feed == null || SimklFeed.of(kind).contains(b.feed)) b,
+                ];
                 final cardWidth = getTileSizeValues(state.preferences.tileSize).containerHeight * (2 / 3);
                 if (plan.isEmpty) {
                   return SliverFillRemaining(
@@ -101,15 +137,15 @@ class _SimklHomePageState extends State<SimklHomePage> {
                   itemBuilder: (context, i) {
                     final block = plan[i];
                     return RepaintBoundary(
-                      key: ValueKey(block.key),
+                      key: ValueKey('${kind.name}:${block.key}'),
                       child: block.feed == null
                           ? ListenableBuilder(
                               listenable: UserSimklV2.instance,
                               builder: (context, _) => simklSignedIn
-                                  ? _ContinueWatching(block: block, cardWidth: cardWidth, refresh: _refresh)
+                                  ? _ContinueWatching(block: block, kind: kind, cardWidth: cardWidth, refresh: _refresh)
                                   : const SizedBox.shrink(),
                             )
-                          : _FeedSection(block: block, cardWidth: cardWidth, refresh: _refresh),
+                          : _FeedSection(block: block, kind: kind, cardWidth: cardWidth, refresh: _refresh),
                     );
                   },
                 );
@@ -128,30 +164,33 @@ class _SimklHomePageState extends State<SimklHomePage> {
 /// whole list (the airing one, Simkl's calendar).
 class _FeedSection extends StatelessWidget {
   final SimklHomeBlock block;
+  final SimklKind kind;
   final double cardWidth;
   final int refresh;
 
-  const _FeedSection({required this.block, required this.cardWidth, required this.refresh});
+  const _FeedSection({required this.block, required this.kind, required this.cardWidth, required this.refresh});
 
   @override
   Widget build(BuildContext context) {
     final feed = block.feed!;
     final nav = Navigator.of(context);
     final header = SimklRowHeader(
-      title: feed.title,
+      title: feed.titleOf(kind),
       onSimkl: feed == SimklFeed.trending || feed == SimklFeed.best,
       onTap: () => nav.push(MaterialPageRoute<void>(
-        builder: (_) => feed == SimklFeed.airing ? const SimklCalendarPage() : SimklFeedPage(feed: feed),
+        builder: (_) => feed == SimklFeed.airing && kind == SimklKind.anime
+            ? const SimklCalendarPage()
+            : SimklFeedPage(feed: feed, kind: kind),
       )),
     );
     final Widget body = switch (feed) {
       SimklFeed.airing => HomeAsync<_AiringData>(
-          cacheKey: '${feed.cacheKey}:home',
+          cacheKey: '${feed.cacheKeyOf(kind)}:home',
           maxAge: const Duration(minutes: 30),
           refresh: refresh,
           load: () async {
             final list = simklListById();
-            final items = await feed.load(SimklDiscoverService.instance);
+            final items = await feed.load(SimklDiscoverService.instance, kind);
             return _AiringData(items, await list);
           },
           loading: const SimklBlockSkeleton(height: 160),
@@ -169,10 +208,10 @@ class _FeedSection extends StatelessWidget {
           },
         ),
       _ => HomeAsync<List<SimklMedia>>(
-          cacheKey: feed.cacheKey,
+          cacheKey: feed.cacheKeyOf(kind),
           maxAge: const Duration(minutes: 30),
           refresh: refresh,
-          load: () => feed.load(SimklDiscoverService.instance),
+          load: () => feed.load(SimklDiscoverService.instance, kind),
           loading: feed == SimklFeed.trending
               ? SimklBlockSkeleton(height: SimklTrendingCarousel.heightFor(context))
               : SimklRowSkeleton(cardWidth: cardWidth),
@@ -205,12 +244,16 @@ class _AiringData {
 /// its countdown when it has not aired yet).
 class _ContinueWatching extends StatelessWidget {
   final SimklHomeBlock block;
+  final SimklKind kind;
   final double cardWidth;
   final int refresh;
 
-  const _ContinueWatching({required this.block, required this.cardWidth, required this.refresh});
+  const _ContinueWatching({required this.block, required this.kind, required this.cardWidth, required this.refresh});
 
-  String get _key => 'simkl_continue_watching_${block.limit}';
+  String get _key => 'simkl_continue_watching_${kind.name}_${block.limit}';
+
+  /// Movies have no next episode: the row lists the movies planned instead.
+  bool get _movies => kind == SimklKind.movie;
 
   @override
   Widget build(BuildContext context) {
@@ -218,11 +261,11 @@ class _ContinueWatching extends StatelessWidget {
       cacheKey: _key,
       maxAge: const Duration(minutes: 3),
       refresh: refresh,
-      load: () => _load(block.limit),
+      load: () => _load(kind, block.limit),
       loading: Padding(
         padding: const EdgeInsets.symmetric(vertical: 10),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          SimklRowHeader(title: S.of(context).Skr_Up_Next),
+          SimklRowHeader(title: _movies ? S.of(context).Smp_Plan_To_Watch : S.of(context).Skr_Up_Next),
           SimklRowSkeleton(cardWidth: cardWidth),
         ]),
       ),
@@ -240,11 +283,29 @@ class _ContinueWatching extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 10),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              SimklRowHeader(title: S.of(context).Skr_Up_Next),
+              SimklRowHeader(title: _movies ? S.of(context).Smp_Plan_To_Watch : S.of(context).Skr_Up_Next),
               if (rows.upNext.isEmpty)
-                HomeMessage(icon: Icons.play_circle_outline_rounded, text: S.of(context).Sk_Continue_Empty)
+                HomeMessage(
+                  icon: Icons.play_circle_outline_rounded,
+                  text: _movies ? S.of(context).Skm_No_Planned_Movies : S.of(context).Sk_Continue_Empty,
+                )
+              else if (_movies)
+                SimklPosterRow(
+                  items: [
+                    for (final e in rows.upNext)
+                      SimklMedia(simklId: e.id, kind: kind, title: e.title, posterUrl: e.imageUrl),
+                  ],
+                  cardWidth: cardWidth,
+                  onTap: (media) => openSimklMedia(context, media),
+                )
               else
-                _UpNextRow(entries: rows.upNext, airing: rows.airing, cardWidth: cardWidth),
+                _UpNextRow(
+                  kind: kind,
+                  entries: rows.upNext,
+                  airing: rows.airing,
+                  nextEpisodes: rows.nextEpisodes,
+                  cardWidth: cardWidth,
+                ),
             ]),
           ),
         ],
@@ -255,9 +316,16 @@ class _ContinueWatching extends StatelessWidget {
   /// Paused sessions (latest first) and the titles being watched (most recent first), with the
   /// next airing of each from Simkl's calendar. Sessions and calendar are optional: a failure
   /// leaves the rows without them.
-  static Future<_UserRows> _load(int limit) async {
-    final service = SimklListService.instance;
-    final all = await service.anime(force: false);
+  static Future<_UserRows> _load(SimklKind kind, int limit) async {
+    final service = SimklListService.of(kind);
+    final all = await service.entries();
+    if (kind == SimklKind.movie) {
+      final planned = [
+        for (final e in all)
+          if (e.status == ListEntryStatus.planned) e,
+      ];
+      return _UserRows(const [], planned.take(limit).toList(), const {});
+    }
     var sessions = const <SimklPlayback>[];
     try {
       sessions = await service.playback();
@@ -266,7 +334,7 @@ class _ContinueWatching extends StatelessWidget {
     } catch (_) {}
     var calendar = const <SimklMedia>[];
     try {
-      calendar = await SimklDiscoverService.instance.calendar();
+      calendar = await SimklDiscoverService.instance.calendar(kind: kind);
     } catch (_) {}
     final byId = {for (final e in all) e.id: e};
     final items = <_ContinueItem>[];
@@ -277,6 +345,7 @@ class _ContinueWatching extends StatelessWidget {
       items.add(_ContinueItem(
         SimklMedia(
           simklId: p.simklId,
+          kind: kind,
           malId: p.malId ?? known?.malId,
           title: p.title,
           posterUrl: p.posterUrl ?? known?.imageUrl,
@@ -301,7 +370,20 @@ class _ContinueWatching extends StatelessWidget {
       if (at == null || !at.isAfter(now) || !byId.containsKey(m.simklId)) continue;
       airing.putIfAbsent(m.simklId, () => m);
     }
-    return _UserRows(items.take(limit).toList(), watching.take(limit).toList(), airing);
+    final shown = watching.take(limit).toList();
+    // Shows count episodes per season: each one's episode list (public, cached by Simkl) names
+    // the next episode ("S2E9"); a list that fails leaves the plain number.
+    final codes = <int, SimklEpisode>{};
+    if (kind == SimklKind.tv) {
+      await Future.wait([
+        for (final e in shown)
+          SimklDetailService.instance.episodes(e.id, kind: kind).then((list) {
+            final regular = regularEpisodes(list);
+            if (e.progress < regular.length) codes[e.id] = regular[e.progress];
+          }, onError: (Object _) {}),
+      ]);
+    }
+    return _UserRows(items.take(limit).toList(), shown, airing, codes);
   }
 }
 
@@ -312,7 +394,10 @@ class _UserRows {
   /// Next airing (episode and UTC time) of the titles of the list, by Simkl id.
   final Map<int, SimklMedia> airing;
 
-  const _UserRows(this.sessions, this.upNext, this.airing);
+  /// Shows: the next episode of each title, by Simkl id.
+  final Map<int, SimklEpisode> nextEpisodes;
+
+  const _UserRows(this.sessions, this.upNext, this.airing, [this.nextEpisodes = const {}]);
 }
 
 class _SessionsRow extends StatelessWidget {
@@ -363,11 +448,20 @@ class _SessionsRow extends StatelessWidget {
 /// The next episode of each watched title: "Ep. N" and a tick that marks it watched, or the
 /// countdown to its air time. Marks are kept here so the row follows without a reload.
 class _UpNextRow extends StatefulWidget {
+  final SimklKind kind;
   final List<ListEntryView> entries;
   final Map<int, SimklMedia> airing;
   final double cardWidth;
 
-  const _UpNextRow({required this.entries, required this.airing, required this.cardWidth});
+  final Map<int, SimklEpisode> nextEpisodes;
+
+  const _UpNextRow({
+    required this.kind,
+    required this.entries,
+    required this.airing,
+    this.nextEpisodes = const {},
+    required this.cardWidth,
+  });
 
   @override
   State<_UpNextRow> createState() => _UpNextRowState();
@@ -380,7 +474,7 @@ class _UpNextRowState extends State<_UpNextRow> {
   Future<void> _mark(ListEntryView e) async {
     setState(() => _busy.add(e.id));
     try {
-      final saved = await SimklListService.instance.step(e, 1);
+      final saved = await SimklListService.of(widget.kind).step(e, 1);
       HomeSectionCache.clearPrefix('simkl_continue_watching_');
       if (mounted) setState(() => _saved[e.id] = saved);
     } catch (_) {
@@ -408,19 +502,40 @@ class _UpNextRowState extends State<_UpNextRow> {
           final next = e.progress + 1;
           final done = e.total > 0 && next > e.total;
           final air = widget.airing[e.id];
-          final upcoming = air != null && air.episode != null && air.episode! <= next && air.airDate!.isAfter(now);
-          final media = SimklMedia(simklId: e.id, malId: e.malId, title: e.title, posterUrl: e.imageUrl);
+          // Shows count episodes per season: Simkl's own "next to watch" names the episode, and
+          // only a calendar entry for that very episode makes it upcoming.
+          final fromList = widget.kind == SimklKind.tv && !_saved.containsKey(e.id)
+              ? SimklListService.of(widget.kind).nextToWatch(e.id)
+              : null;
+          final ep = widget.kind == SimklKind.tv && !_saved.containsKey(e.id) ? widget.nextEpisodes[e.id] : null;
+          final info = fromList?.season != null
+              ? fromList
+              : ep?.season != null && ep?.number != null
+                  ? SimklNextToWatch(season: ep!.season, episode: ep.number!, title: ep.title)
+                  : null;
+          final upcoming = (air != null &&
+                  air.episode != null &&
+                  air.airDate!.isAfter(now) &&
+                  (widget.kind == SimklKind.tv
+                      ? info != null && info.season == air.season && info.episode == air.episode
+                      : air.episode! <= next)) ||
+              // A show's next episode that has not aired yet cannot be marked.
+              (ep?.date?.isAfter(now) ?? false);
+          final episodeLabel = info?.season != null
+              ? 'S${info!.season}E${info.episode}'
+              : S.current.Sk_Episode_Short(next);
+          final media = SimklMedia(simklId: e.id, kind: widget.kind, malId: e.malId, title: e.title, posterUrl: e.imageUrl);
           return _UpNextCard(
             media: media,
             width: width,
             line: done
                 ? S.current.Smp_Completed
                 : upcoming
-                    ? '${S.current.Sk_Episode_Short(next)} · ${SimklFormat.countdown(air.airDate!, now) ?? ''}'
-                    : S.current.Sk_Episode_Short(next),
+                    ? '$episodeLabel · ${SimklFormat.countdown((air?.airDate ?? ep?.date)!, now) ?? ''}'
+                    : episodeLabel,
             busy: _busy.contains(e.id),
             onMark: done || upcoming ? null : () => _mark(e),
-            markLabel: S.current.Skr_Mark_Watched(next),
+            markLabel: info?.season != null ? S.current.Skm_Mark_Episode_Watched(episodeLabel) : S.current.Skr_Mark_Watched(next),
             onTap: () => openSimklMedia(context, media),
           );
         },

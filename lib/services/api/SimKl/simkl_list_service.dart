@@ -1,4 +1,7 @@
 import 'package:mywatchlist/services/api/SimKl/simkl_client.dart';
+import 'package:mywatchlist/services/api/SimKl/simkl_detail_models.dart' show SimklEpisode;
+import 'package:mywatchlist/services/api/SimKl/simkl_detail_service.dart';
+import 'package:mywatchlist/services/api/SimKl/simkl_kind.dart';
 import 'package:mywatchlist/services/api/SimKl/simkl_models.dart';
 import 'package:mywatchlist/services/notifications/notification_models.dart';
 import 'package:mywatchlist/user/user_simkl_v2.dart';
@@ -33,7 +36,9 @@ class SimklPlayback {
     final out = <SimklPlayback>[];
     for (final raw in data) {
       if (raw is! Map) continue;
-      final show = raw['show'] is Map ? raw['show'] as Map : (raw['anime'] is Map ? raw['anime'] as Map : null);
+      final show = raw['show'] is Map
+          ? raw['show'] as Map
+          : (raw['anime'] is Map ? raw['anime'] as Map : (raw['movie'] is Map ? raw['movie'] as Map : null));
       if (show == null) continue;
       final ids = show['ids'] is Map ? show['ids'] as Map : const {};
       final id = _int(ids['simkl'] ?? ids['simkl_id']);
@@ -66,15 +71,17 @@ class SimklPlayback {
 /// What Simkl says the viewer should watch next (`next_to_watch_info` of a `watching` item,
 /// asked with `next_watch_info=yes`): the episode, its title and when it aired or airs.
 class SimklNextToWatch {
+  /// Shows only: the season of [episode] (anime count episodes from 1 without seasons).
+  final int? season;
   final int episode;
   final String? title;
   final DateTime? date;
 
-  const SimklNextToWatch({required this.episode, this.title, this.date});
+  const SimklNextToWatch({this.season, required this.episode, this.title, this.date});
 
   /// Simkl id to next episode, for the items of a list answer that carry the field.
-  static Map<int, SimklNextToWatch> parseAll(Object? data) {
-    final list = data is Map ? data['anime'] : null;
+  static Map<int, SimklNextToWatch> parseAll(Object? data, [SimklKind kind = SimklKind.anime]) {
+    final list = data is Map ? data[kind.syncKey] : null;
     if (list is! List) return const {};
     final out = <int, SimklNextToWatch>{};
     for (final raw in list) {
@@ -82,12 +89,18 @@ class SimklNextToWatch {
       final show = raw['show'];
       final ids = show is Map && show['ids'] is Map ? show['ids'] as Map : const {};
       final id = SimklPlayback._int(ids['simkl'] ?? ids['simkl_id']);
-      final info = raw['next_to_watch_info'];
-      if (id == null || info is! Map) continue;
-      final episode = SimklPlayback._int(info['episode']);
+      final raw0 = raw['next_to_watch_info'];
+      final info = raw0 is Map ? raw0 : const {};
+      // Shows: `next_to_watch` names the episode inside its season ("S02E09").
+      final code = kind == SimklKind.tv && raw['next_to_watch'] is String
+          ? RegExp(r'S(\d+)E(\d+)', caseSensitive: false).firstMatch(raw['next_to_watch'] as String)
+          : null;
+      if (id == null || (raw0 is! Map && code == null)) continue;
+      final episode = code != null ? int.parse(code.group(2)!) : SimklPlayback._int(info['episode']);
       if (episode == null) continue;
       final title = info['title'];
       out[id] = SimklNextToWatch(
+        season: code != null ? int.parse(code.group(1)!) : null,
         episode: episode,
         title: title is String && title.trim().isNotEmpty ? title.trim() : null,
         date: DateTime.tryParse(info['date'] is String ? info['date'] as String : '')?.toUtc(),
@@ -115,8 +128,8 @@ class SimklCommunityRating {
   const SimklCommunityRating(this.rating, this.votes);
 
   /// `id` (Simkl id) to rating, from `[{"id":1,"simkl":{"rating":8.4,"votes":120}}]`.
-  static Map<int, SimklCommunityRating> parseAll(Object? data) {
-    final list = data is Map ? (data['anime'] ?? data['items'] ?? data['ratings']) : data;
+  static Map<int, SimklCommunityRating> parseAll(Object? data, [SimklKind kind = SimklKind.anime]) {
+    final list = data is Map ? (data[kind.api] ?? data[kind.syncKey] ?? data['items'] ?? data['ratings']) : data;
     if (list is! List) return const {};
     final out = <int, SimklCommunityRating>{};
     for (final raw in list) {
@@ -144,19 +157,48 @@ class SimklCommunityRating {
 /// comes from one `GET /ratings/anime` call, kept longer than the list.
 class SimklListService {
   SimklListService({
+    this.kind = SimklKind.anime,
     SimklClient? client,
     DateTime Function()? clock,
     String? Function()? owner,
     this.ttl = const Duration(minutes: 3),
     this.ratingsTtl = const Duration(hours: 12),
-  })  : _client = client ?? SimklClient.instance,
+    Future<List<SimklEpisode>> Function(int simklId)? episodes,
+  })  : _episodes = episodes,
+        _client = client ?? SimklClient.instance,
         _clock = clock ?? DateTime.now,
         _owner = owner ?? (() => UserSimklV2.instance.username);
 
-  /// Shared instance; tests build their own with a fake [SimklClient].
+  /// Shared instance of the anime list; tests build their own with a fake [SimklClient].
   static SimklListService instance = SimklListService();
 
+  static final Map<SimklKind, SimklListService> _others = {};
+
+  /// The shared list of [kind] ([instance] for anime).
+  static SimklListService of(SimklKind kind) =>
+      kind == SimklKind.anime ? instance : _others.putIfAbsent(kind, () => SimklListService(kind: kind));
+
+  /// Replaces the shared list of [kind] (tests).
+  static void setFor(SimklKind kind, SimklListService service) {
+    if (kind == SimklKind.anime) {
+      instance = service;
+    } else {
+      _others[kind] = service;
+    }
+  }
+
+  /// Calls [action] on the shared list of every kind (sign out, pull to refresh).
+  static void forEach(void Function(SimklListService service) action) {
+    for (final k in SimklKind.values) {
+      action(of(k));
+    }
+  }
+
+  /// The catalogue this list holds (shows, anime or movies).
+  final SimklKind kind;
+
   final SimklClient _client;
+  final Future<List<SimklEpisode>> Function(int simklId)? _episodes;
   final DateTime Function() _clock;
   final String? Function() _owner;
   final Duration ttl;
@@ -215,7 +257,11 @@ class SimklListService {
     _ratingsTried = null;
   }
 
-  /// The whole anime list. [force] checks Simkl even inside the [ttl].
+  /// The whole list. [force] checks Simkl even inside the [ttl].
+  Future<List<ListEntryView>> entries({bool force = false}) => anime(force: force);
+
+  /// The whole list of [kind] (named after the first catalogue it held). [force] checks Simkl
+  /// even inside the [ttl].
   Future<List<ListEntryView>> anime({bool force = false}) {
     final who = _owner();
     final items = _items;
@@ -230,28 +276,28 @@ class SimklListService {
     if (who != _cachedFor) reset();
     // Read first: a change made while the list downloads is then seen by the next check.
     final activities = await _activities();
-    final stamp = _animeStamp(activities, 'all');
-    final removed = _animeStamp(activities, 'removed_from_list');
+    final stamp = _kindStamp(activities, 'all');
+    final removed = _kindStamp(activities, 'removed_from_list');
     final kept = _items;
     List<ListEntryView> list;
     if (kept != null && _stamp != null && stamp != null && stamp == _stamp && !_dirty) {
       list = kept; // nothing changed
     } else if (kept != null && _stamp != null && stamp != null && removed == _removedStamp) {
       deltaPulls++;
-      final data = await _client.getAuth('/sync/all-items/anime', query: {'date_from': _stamp!, ..._nextQuery});
-      final changed = parseSimklAnimeList(data);
+      final data = await _client.getAuth('/sync/all-items/${kind.syncKey}', query: {'date_from': _stamp!, ..._nextQuery});
+      final changed = parseSimklList(data, kind);
       // A changed item is read again: the one it had no longer holds.
       _next = {
         for (final e in _next.entries)
           if (!changed.any((c) => c.id == e.key)) e.key: e.value,
-        ...SimklNextToWatch.parseAll(data),
+        ...SimklNextToWatch.parseAll(data, kind),
       };
       list = _merge(kept, changed);
     } else {
       fullPulls++;
-      final data = await _client.getAuth('/sync/all-items/anime', query: _nextQuery);
-      _next = SimklNextToWatch.parseAll(data);
-      list = parseSimklAnimeList(data);
+      final data = await _client.getAuth('/sync/all-items/${kind.syncKey}', query: _nextQuery);
+      _next = SimklNextToWatch.parseAll(data, kind);
+      list = parseSimklList(data, kind);
     }
     _stamp = stamp;
     _removedStamp = removed;
@@ -278,15 +324,15 @@ class SimklListService {
     }
   }
 
-  static const Map<String, String> _nextQuery = {'next_watch_info': 'yes'};
+  Map<String, String> get _nextQuery => kind.hasEpisodes ? const {'next_watch_info': 'yes'} : const {};
 
   /// Simkl's own "next to watch" of [simklId] from the last list pull; null when it has none (not
   /// watching, or nothing aired left to watch).
   SimklNextToWatch? nextToWatch(int simklId) => _next[simklId];
 
-  static String? _animeStamp(Map<String, dynamic>? activities, String key) {
-    final anime = activities?['anime'];
-    final v = anime is Map ? anime[key] : null;
+  String? _kindStamp(Map<String, dynamic>? activities, String key) {
+    final block = activities?[kind.activitiesKey];
+    final v = block is Map ? block[key] : null;
     return v is String && v.isNotEmpty ? v : null;
   }
 
@@ -312,11 +358,13 @@ class SimklListService {
     if (list.isNotEmpty && (stale || missing) && cooled) {
       _ratingsTried = now;
       try {
-        final data = await _client.getAuth('/ratings/anime', query: {
-          'user_watchlist': 'watching,plantowatch,completed,hold,notinteresting',
+        final data = await _client.getAuth('/ratings/${kind.api}', query: {
+          'user_watchlist': kind.hasEpisodes
+              ? 'watching,plantowatch,completed,hold,notinteresting'
+              : 'plantowatch,completed,notinteresting',
           'fields': 'simkl',
         });
-        _ratings = SimklCommunityRating.parseAll(data);
+        _ratings = SimklCommunityRating.parseAll(data, kind);
         _ratingAsked = {for (final e in list) e.id};
         _ratingsAt = now;
       } on SimklSessionExpired {
@@ -367,7 +415,7 @@ class SimklListService {
   /// The user's paused viewing sessions (`GET /sync/playback/anime`), latest first. Not kept:
   /// the caller decides when to ask.
   Future<List<SimklPlayback>> playback() async =>
-      SimklPlayback.parseAll(await _client.getAuth('/sync/playback/anime'));
+      SimklPlayback.parseAll(await _client.getAuth('/sync/playback/${kind.syncKey}'));
 
   /// Entries per status of the (kept) list.
   Future<Map<ListEntryStatus, int>> counts() async {
@@ -378,7 +426,9 @@ class SimklListService {
   /// Sets the status and/or the score (1-10, 0 = remove the score) of a title, creating the
   /// entry when it is not on the list. Returns the list entry as it is now.
   Future<ListEntryView> save(ListEntryView entry, {ListEntryStatus? status, int? score}) async {
-    final nextStatus = status ?? entry.status ?? ListEntryStatus.planned;
+    var nextStatus = status ?? entry.status ?? ListEntryStatus.planned;
+    // A movie is planned, completed or dropped.
+    if (!kind.hasEpisodes && !simklMovieStatuses.contains(nextStatus)) nextStatus = ListEntryStatus.completed;
     final item = <String, dynamic>{
       'ids': _ids(entry),
       'to': SimklStatus.api(nextStatus),
@@ -386,11 +436,11 @@ class SimklListService {
       if (score != null && score > 0) 'rating': score,
     };
     await _client.postAuth('/sync/add-to-list', {
-      'anime': [item],
+      kind.syncKey: [item],
     });
     if (score == 0 && entry.score > 0) {
       await _client.postAuth('/sync/ratings/remove', {
-        'shows': [
+        (kind == SimklKind.movie ? 'movies' : 'shows'): [
           {'ids': _ids(entry)},
         ],
       });
@@ -399,6 +449,7 @@ class SimklListService {
     return _scored(entry.copyWith(
       status: nextStatus,
       score: score ?? entry.score,
+      progress: !kind.hasEpisodes ? (nextStatus == ListEntryStatus.completed ? 1 : 0) : null,
       updatedAt: _clock().toUtc(),
     ));
   }
@@ -406,7 +457,7 @@ class SimklListService {
   /// Takes the title off the list.
   Future<void> remove(ListEntryView entry) async {
     await _client.postAuth('/sync/remove-from-list', {
-      'anime': [
+      kind.syncKey: [
         {'ids': _ids(entry)},
       ],
     });
@@ -427,6 +478,7 @@ class SimklListService {
     required int simklId,
     required String title,
     required int episode,
+    int? season,
     int? year,
     int? malId,
     Map<String, String> ids = const {},
@@ -438,18 +490,26 @@ class SimklListService {
     }
     _checkedInAt = now;
     try {
-      await _client.postAuth('/scrobble/checkin', {
-        'anime': {
-          'title': title,
-          if (year != null) 'year': year,
-          'ids': {
-            ...ids,
-            'simkl': simklId,
-            if (malId != null) 'mal': malId,
-          },
+      final item = {
+        'title': title,
+        if (year != null) 'year': year,
+        'ids': {
+          ...ids,
+          'simkl': simklId,
+          if (malId != null) 'mal': malId,
         },
+      };
+      await _client.postAuth('/scrobble/checkin', switch (kind) {
+        SimklKind.movie => {'movie': item},
+        SimklKind.tv => {
+            'show': item,
+            'episode': {'season': season ?? 1, 'number': episode},
+          },
         // AniDB numbering is single-season: season 1 and the absolute episode number.
-        'episode': {'season': 1, 'number': episode},
+        SimklKind.anime => {
+            'anime': item,
+            'episode': {'season': 1, 'number': episode},
+          },
       });
     } catch (_) {
       _checkedInAt = null; // nothing was recorded: the viewer may try again
@@ -465,29 +525,83 @@ class SimklListService {
   /// are added to or taken off the watch history. Reaching the known total completes a finished
   /// title; a planned entry starts watching, as Simkl does.
   Future<ListEntryView> setProgress(ListEntryView entry, int target) async {
-    final next = target.clamp(0, entry.total > 0 ? entry.total : 100000);
+    final total = kind.hasEpisodes ? entry.total : 1;
+    final next = target.clamp(0, total > 0 ? total : 100000);
     if (next == entry.progress) return entry;
     final adding = next > entry.progress;
     final from = adding ? entry.progress + 1 : next + 1;
     final to = adding ? next : entry.progress;
-    await _client.postAuth(adding ? '/sync/history' : '/sync/history/remove', {
-      'shows': [
-        {
-          'ids': _ids(entry),
-          'episodes': [
-            for (var n = from; n <= to; n++) {'number': n},
+    final Map<String, dynamic> body;
+    switch (kind) {
+      case SimklKind.movie:
+        body = {
+          'movies': [
+            {'ids': _ids(entry)},
           ],
-        },
-      ],
-    });
+        };
+      case SimklKind.tv:
+        // Shows count episodes per season: the n-th regular episode in Simkl's order is the
+        // n-th one watched (Simkl's own count skips the specials too).
+        final episodes = regularEpisodes(await _episodesOf(entry.id));
+        final picked = [
+          for (var n = from; n <= to && n <= episodes.length; n++) episodes[n - 1],
+        ];
+        final bySeason = <int, List<int>>{};
+        for (final e in picked) {
+          bySeason.putIfAbsent(e.season ?? 1, () => []).add(e.number!);
+        }
+        body = {
+          'shows': [
+            {
+              'ids': _ids(entry),
+              'seasons': [
+                for (final s in bySeason.entries)
+                  {
+                    'number': s.key,
+                    'episodes': [
+                      for (final n in s.value) {'number': n},
+                    ],
+                  },
+              ],
+            },
+          ],
+        };
+      case SimklKind.anime:
+        body = {
+          'shows': [
+            {
+              'ids': _ids(entry),
+              'episodes': [
+                for (var n = from; n <= to; n++) {'number': n},
+              ],
+            },
+          ],
+        };
+    }
+    await _client.postAuth(adding ? '/sync/history' : '/sync/history/remove', body);
     _wrote();
     var status = entry.status;
-    if (adding && status == ListEntryStatus.planned) status = ListEntryStatus.current;
-    if (adding && entry.total > 0 && next >= entry.total && entry.releaseState != ReleaseState.releasing) {
+    if (adding && status == ListEntryStatus.planned) {
+      status = kind.hasEpisodes ? ListEntryStatus.current : ListEntryStatus.completed;
+    }
+    if (adding && total > 0 && next >= total && entry.releaseState != ReleaseState.releasing) {
       status = ListEntryStatus.completed;
     }
+    if (!adding && !kind.hasEpisodes) status = ListEntryStatus.planned;
     return _scored(entry.copyWith(progress: next, status: status, updatedAt: _clock().toUtc()));
   }
+
+  /// Shows: where episode [number] of [season] sits in the watch order (1 = the first one
+  /// watched), the number of watched episodes it takes; null when the show does not list it.
+  Future<int?> watchOrderOf(ListEntryView entry, int season, int number) async {
+    final episodes = regularEpisodes(await _episodesOf(entry.id));
+    final i = episodes.indexWhere((e) => (e.season ?? 1) == season && e.number == number);
+    return i < 0 ? null : i + 1;
+  }
+
+  /// The episodes of a show, by default from the shared title service (`/tv/episodes/{id}`).
+  Future<List<SimklEpisode>> _episodesOf(int id) =>
+      (_episodes ?? (int id) => SimklDetailService.instance.episodes(id, kind: kind))(id);
 
   Map<String, dynamic> _ids(ListEntryView e) => {
         'simkl': e.id,
@@ -514,3 +628,20 @@ class SimklListService {
     ];
   }
 }
+
+/// The statuses a movie can have on Simkl.
+const Set<ListEntryStatus> simklMovieStatuses = {
+  ListEntryStatus.planned,
+  ListEntryStatus.completed,
+  ListEntryStatus.dropped,
+};
+
+/// The regular episodes in watch order: by season (shows), then number; no specials, no
+/// unnumbered rows. The n-th one is the n-th watched.
+List<SimklEpisode> regularEpisodes(List<SimklEpisode> episodes) => [
+      for (final e in episodes)
+        if (!e.isSpecial && e.number != null) e,
+    ]..sort((a, b) {
+        final s = (a.season ?? 0).compareTo(b.season ?? 0);
+        return s != 0 ? s : a.number!.compareTo(b.number!);
+      });

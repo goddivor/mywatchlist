@@ -1,0 +1,5 @@
+{
+  "@@locale": "en",
+  "Ppt_For_Tracker": "Settings of your {tracker} app",
+  "@Ppt_For_Tracker": { "placeholders": { "tracker": { "type": "String" } } }
+}

@@ -60,14 +60,19 @@ List<SimklAiring> simklAiringOn(
 }
 
 /// The signed-in user's list by Simkl id, or empty (signed out, dead session, network).
+///
+/// Without [service], every list of the account (shows, anime and movies: Simkl ids are unique
+/// across them); a list that fails is left out.
 Future<Map<int, ListEntryView>> simklListById({SimklListService? service}) async {
   if (!simklSignedIn && service == null) return const {};
-  try {
-    final list = await (service ?? SimklListService.instance).anime();
-    return {for (final e in list) e.id: e};
-  } catch (_) {
-    return const {};
-  }
+  final services = service != null ? [service] : [for (final k in SimklKind.values) SimklListService.of(k)];
+  final lists = await Future.wait([
+    for (final s in services) s.entries().catchError((Object _) => const <ListEntryView>[]),
+  ]);
+  return {
+    for (final list in lists)
+      for (final e in list) e.id: e,
+  };
 }
 
 /// A small tonal badge (Premiere, Finale).
@@ -149,7 +154,7 @@ class SimklAiringTile extends StatelessWidget {
                         Icon(Icons.circle, size: 9, color: status.colors(context).color),
                       if (m.episode != null)
                         Text(
-                          S.current.Sk_Episode_Short(m.episode!),
+                          m.season != null ? 'S${m.season}E${m.episode}' : S.current.Sk_Episode_Short(m.episode!),
                           style: theme.textTheme.labelMedium?.copyWith(color: scheme.onSurfaceVariant),
                         ),
                       if (airing.premiere) SimklBadge(S.current.Skr_Premiere),
@@ -176,14 +181,27 @@ class SimklMineSwitch extends StatelessWidget {
   final bool mine;
   final ValueChanged<bool> onChanged;
 
-  const SimklMineSwitch({super.key, required this.mine, required this.onChanged});
+  /// The catalogue listed: "All anime", "All shows" or "All movies".
+  final SimklKind kind;
+
+  const SimklMineSwitch({super.key, required this.mine, required this.onChanged, this.kind = SimklKind.anime});
 
   @override
   Widget build(BuildContext context) => SegmentedButton<bool>(
         showSelectedIcon: false,
         segments: [
-          ButtonSegment(value: true, label: Text(S.current.Skr_My_Shows)),
-          ButtonSegment(value: false, label: Text(S.current.Skr_All_Anime)),
+          ButtonSegment(
+            value: true,
+            label: Text(kind == SimklKind.movie ? S.current.Skm_My_Movies : S.current.Skr_My_Shows),
+          ),
+          ButtonSegment(
+            value: false,
+            label: Text(switch (kind) {
+              SimklKind.tv => S.current.Skm_All_Shows,
+              SimklKind.anime => S.current.Skr_All_Anime,
+              SimklKind.movie => S.current.Skm_All_Movies,
+            }),
+          ),
         ],
         selected: {mine},
         onSelectionChanged: (v) => onChanged(v.first),
@@ -199,7 +217,20 @@ class SimklCalendarPage extends StatefulWidget {
   final SimklListService? listService;
   final DateTime Function()? now;
 
-  const SimklCalendarPage({super.key, this.service, this.listService, this.now});
+  /// The calendar of shows, anime or movie releases.
+  final SimklKind kind;
+
+  /// False inside the Simkl app's calendar tab, which has its own app bar.
+  final bool showAppBar;
+
+  const SimklCalendarPage({
+    super.key,
+    this.service,
+    this.listService,
+    this.now,
+    this.kind = SimklKind.anime,
+    this.showAppBar = true,
+  });
 
   @override
   State<SimklCalendarPage> createState() => _SimklCalendarPageState();
@@ -218,7 +249,7 @@ class _SimklCalendarPageState extends State<SimklCalendarPage> {
 
   Future<(List<SimklMedia>, Map<int, ListEntryView>)> _load() async {
     final list = simklListById(service: widget.listService);
-    final calendar = await _service.calendar();
+    final calendar = await _service.calendar(kind: widget.kind);
     return (calendar, await list);
   }
 
@@ -231,32 +262,44 @@ class _SimklCalendarPageState extends State<SimklCalendarPage> {
     } catch (_) {}
   }
 
-  /// A listed title whose episode has aired and is past the viewer's progress.
+  SimklListService get _list => widget.listService ?? SimklListService.of(widget.kind);
+
+  /// A listed title that came out and is not watched yet: an aired episode past the viewer's
+  /// progress (a show's is checked once its place in the watch order is known), a released
+  /// movie not completed.
   bool _canMark(SimklAiring a) {
     final e = a.entry;
-    final n = a.media.episode;
     final at = a.media.airDate;
-    return e != null &&
-        e.status != null &&
-        n != null &&
-        n > e.progress &&
-        at != null &&
-        !at.isAfter((widget.now ?? DateTime.now)());
+    if (e == null || e.status == null || at == null) return false;
+    if (at.isAfter((widget.now ?? DateTime.now)())) return false;
+    if (widget.kind == SimklKind.movie) return e.status != ListEntryStatus.completed;
+    final n = a.media.episode;
+    if (n == null) return false;
+    return widget.kind == SimklKind.tv || n > e.progress;
   }
 
-  /// Long press: asks, then marks the episode (and those before it) watched through the list
-  /// service. Only on the viewer's confirmation.
+  /// What the sheet offers: "Mark S2E5 watched", "Mark Ep. 5 watched", "Mark as watched".
+  String _markLabel(SimklAiring a) {
+    final m = a.media;
+    if (widget.kind == SimklKind.movie) return S.current.Skm_Mark_Movie_Watched;
+    if (widget.kind == SimklKind.tv && m.season != null) {
+      return S.current.Skm_Mark_Episode_Watched('S${m.season}E${m.episode}');
+    }
+    return S.current.Skr_Mark_Watched(m.episode!);
+  }
+
+  /// Long press: asks, then marks the episode (and those before it) or the movie watched
+  /// through the list service. Only on the viewer's confirmation.
   Future<void> _markWatched(SimklAiring a) async {
     final entry = a.entry;
-    final n = a.media.episode;
-    if (entry == null || n == null) return;
+    if (entry == null) return;
     final ok = await showModalBottomSheet<bool>(
       context: context,
       showDragHandle: true,
       builder: (context) => SafeArea(
         child: ListTile(
           leading: const Icon(Icons.check_rounded),
-          title: Text(S.current.Skr_Mark_Watched(n)),
+          title: Text(_markLabel(a)),
           subtitle: Text(a.media.title, maxLines: 1, overflow: TextOverflow.ellipsis),
           onTap: () => Navigator.of(context).pop(true),
         ),
@@ -265,12 +308,31 @@ class _SimklCalendarPageState extends State<SimklCalendarPage> {
     if (ok != true || !mounted) return;
     final messenger = ScaffoldMessenger.maybeOf(context);
     try {
-      final saved = await (widget.listService ?? SimklListService.instance).setProgress(entry, n);
+      final int target;
+      switch (widget.kind) {
+        case SimklKind.movie:
+          target = 1;
+        case SimklKind.tv:
+          final season = a.media.season ?? 1;
+          final order = await _list.watchOrderOf(entry, season, a.media.episode!);
+          // Already watched (or not on the show's list): nothing is taken off the history.
+          if (order == null || order <= entry.progress) {
+            messenger?.showSnackBar(SnackBar(content: Text(S.current.Skr_Watched)));
+            return;
+          }
+          target = order;
+        case SimklKind.anime:
+          target = a.media.episode!;
+      }
+      final saved = await _list.setProgress(entry, target);
       final next = _future.then((d) => (d.$1, {...d.$2, saved.id: saved}));
       if (mounted) setState(() {
         _future = next;
       });
-      messenger?.showSnackBar(SnackBar(content: Text(S.current.Sdp_Marked_Watched(n))));
+      messenger?.showSnackBar(SnackBar(
+          content: Text(widget.kind == SimklKind.anime
+              ? S.current.Sdp_Marked_Watched(target)
+              : S.current.Skr_Watched)));
     } catch (_) {
       messenger?.showSnackBar(SnackBar(content: Text(S.current.Sk_Edit_Failed)));
     }
@@ -288,7 +350,10 @@ class _SimklCalendarPageState extends State<SimklCalendarPage> {
   Widget build(BuildContext context) {
     final days = [for (var i = -1; i < _days - 1; i++) DateTime(_today.year, _today.month, _today.day + i)];
     return Scaffold(
-      appBar: AppBar(title: Text(S.current.Skr_Calendar), actions: const [SizedBox.shrink()]),
+      backgroundColor: widget.showAppBar ? null : Colors.transparent,
+      appBar: widget.showAppBar
+          ? AppBar(title: Text(S.current.Skr_Calendar), actions: const [SizedBox.shrink()])
+          : null,
       body: RefreshIndicator(
         onRefresh: _refresh,
         child: CustomScrollView(
@@ -317,7 +382,7 @@ class _SimklCalendarPageState extends State<SimklCalendarPage> {
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(15, 4, 15, 8),
-                  child: SimklMineSwitch(mine: _mine, onChanged: (v) => setState(() => _mine = v)),
+                  child: SimklMineSwitch(kind: widget.kind, mine: _mine, onChanged: (v) => setState(() => _mine = v)),
                 ),
               ),
             FutureBuilder<(List<SimklMedia>, Map<int, ListEntryView>)>(

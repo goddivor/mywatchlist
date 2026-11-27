@@ -1,0 +1,11 @@
+{
+  "@@locale": "fr_FR",
+  "Dc_Ep": "Ép.",
+  "Dc_In": "dans",
+  "Dc_Days": "{value} j",
+  "Dc_Hours": "{value} h",
+  "Dc_Minutes": "{value} min",
+  "Dc_Seconds": "{value} s",
+  "Dc_Airing_Now": "En cours de diffusion",
+  "Dc_Label": "Épisode {episode} dans {time}"
+}

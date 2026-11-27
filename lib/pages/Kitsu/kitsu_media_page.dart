@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:mywatchlist/widgets/bookmarks/bookmark_button.dart';
+import 'package:mywatchlist/cache/bookmarks.dart';
 import 'package:flutter/services.dart';
 import 'package:mywatchlist/constants/constants.dart' show AccountType;
 import 'package:mywatchlist/generated/l10n.dart';
@@ -21,6 +23,7 @@ import 'package:mywatchlist/widgets/Kitsu/media/kitsu_media_parts.dart';
 import 'package:mywatchlist/widgets/Kitsu/media/kitsu_my_library.dart';
 import 'package:mywatchlist/widgets/Kitsu/media/kitsu_unit_sheet.dart';
 import 'package:mywatchlist/widgets/Kitsu/media/kitsu_paged_screen.dart';
+import 'package:mywatchlist/widgets/common/tracker_youtube_player.dart';
 import 'package:share_plus/share_plus.dart';
 
 /// Native Kitsu title page: only Kitsu's own data (owner rule for Kitsu accounts). One
@@ -172,6 +175,15 @@ class _KitsuMediaPageState extends State<KitsuMediaPage> {
               expandedHeight: KitsuMediaHeader.extent(context) - MediaQuery.paddingOf(context).top,
               title: _CollapsedTitle(name),
               actions: [
+                if (d != null)
+                  BookmarkButton(
+                    tracker: AccountType.kitsu.name,
+                    kind: d.kind == KitsuMediaKind.manga ? BookmarkKind.manga : BookmarkKind.anime,
+                    id: d.id,
+                    title: name,
+                    imageUrl: d.poster?.url ?? widget.posterUrl,
+                    malId: d.malId,
+                  ),
                 if (_my != null) KitsuFavouriteButton(my: _my!),
                 IconButton(
                   tooltip: S.current.Kmp_Open_On_Kitsu,
@@ -324,7 +336,13 @@ class _KitsuMediaPageState extends State<KitsuMediaPage> {
         title: S.current.Kmp_Trailer,
         child: KitsuTrailerCard(
           videoId: trailer,
-          onTap: () => launchWebView('https://www.youtube.com/watch?v=$trailer', context: context, external: true),
+          onTap: () => playTrackerTrailer(
+            context,
+            url: 'https://www.youtube.com/watch?v=$trailer',
+            tracker: AccountType.kitsu,
+            outside: () =>
+                launchWebView('https://www.youtube.com/watch?v=$trailer', context: context, external: true),
+          ),
         ),
       ));
     }

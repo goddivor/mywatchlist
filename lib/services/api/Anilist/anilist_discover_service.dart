@@ -670,7 +670,19 @@ class AnilistAiring {
   final AnilistMedia media;
   final int episode;
   final DateTime at;
-  const AnilistAiring({required this.media, required this.episode, required this.at});
+
+  /// The signed-in user's list status (`CURRENT`, `PLANNING`…); null when signed out or not
+  /// on the list. Only [AnilistDiscoverService.schedule] reads it.
+  final String? listStatus;
+
+  const AnilistAiring({required this.media, required this.episode, required this.at, this.listStatus});
+}
+
+/// One page of [AnilistDiscoverService.schedule].
+class AnilistSchedulePage {
+  final List<AnilistAiring> items;
+  final bool hasNext;
+  const AnilistSchedulePage(this.items, {required this.hasNext});
 }
 
 /// AniList's public reads: the lists behind the home and explore rows, search (titles,
@@ -975,6 +987,65 @@ class AnilistDiscoverService {
                     isUtc: true),
               ),
     ];
+  }
+
+  /// The calendar's page [page] of the episodes airing between [from] and [to], soonest first,
+  /// with the signed-in user's list status of each title (signed out: none).
+  Future<AnilistSchedulePage> schedule(DateTime from, DateTime to, {int page = 1, int perPage = 50}) async {
+    final adult = await adultAllowed();
+    final lang = _titleLang();
+    Future<AnilistSchedulePage> run({required bool auth}) async {
+      final data = await _gql.query('''
+        query (\$page: Int, \$perPage: Int, \$from: Int, \$to: Int) {
+          Page(page: \$page, perPage: \$perPage) {
+            pageInfo { hasNextPage }
+            airingSchedules(airingAt_greater: \$from, airingAt_lesser: \$to, sort: TIME) {
+              episode airingAt
+              media { ${AnilistMedia.fields} ${auth ? 'mediaListEntry { status }' : ''} }
+            }
+          }
+        }
+      ''', variables: {
+        'page': page,
+        'perPage': perPage,
+        'from': from.millisecondsSinceEpoch ~/ 1000 - 1,
+        'to': to.millisecondsSinceEpoch ~/ 1000,
+      }, auth: auth);
+      return parseSchedulePage(data, titleLang: lang, adult: adult);
+    }
+
+    if (!_signedIn()) return run(auth: false);
+    try {
+      return await run(auth: true);
+    } on AnilistSessionExpired {
+      return run(auth: false);
+    }
+  }
+
+  @visibleForTesting
+  static AnilistSchedulePage parseSchedulePage(Map<String, dynamic> data,
+      {String titleLang = 'ro', bool adult = false}) {
+    final page = data['Page'];
+    final rows = page is Map ? page['airingSchedules'] : null;
+    final info = page is Map ? page['pageInfo'] : null;
+    return AnilistSchedulePage(
+      [
+        if (rows is List)
+          for (final r in rows)
+            if (r is Map && r['media'] is Map<String, dynamic> && r['airingAt'] is num)
+              if (adult || (r['media'] as Map)['isAdult'] != true)
+                AnilistAiring(
+                  media: AnilistMedia.fromJson(r['media'] as Map<String, dynamic>, titleLang: titleLang),
+                  episode: (r['episode'] as num?)?.toInt() ?? 0,
+                  at: DateTime.fromMillisecondsSinceEpoch((r['airingAt'] as num).toInt() * 1000, isUtc: true),
+                  listStatus: switch ((r['media'] as Map)['mediaListEntry']) {
+                    {'status': final String status} => status,
+                    _ => null,
+                  },
+                ),
+      ],
+      hasNext: info is Map && info['hasNextPage'] == true,
+    );
   }
 
   /// Forum threads; [sort] is a `ThreadSort` value.

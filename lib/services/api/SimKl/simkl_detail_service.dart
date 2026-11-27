@@ -5,9 +5,10 @@ import 'package:mywatchlist/services/api/SimKl/scrapper/simkl_page_parser.dart';
 import 'package:mywatchlist/services/api/SimKl/scrapper/simkl_web_client.dart';
 import 'package:mywatchlist/services/api/SimKl/simkl_client.dart';
 import 'package:mywatchlist/services/api/SimKl/simkl_detail_models.dart';
+import 'package:mywatchlist/services/api/SimKl/simkl_kind.dart';
 import 'package:mywatchlist/services/api/SimKl/simkl_title_language.dart';
 
-/// Simkl has no title with this id (`GET /anime/{id}` answered `[]`).
+/// Simkl has no title with this id (`GET /{tv|anime|movies}/{id}` answered `[]`).
 class SimklTitleNotFound implements Exception {
   final int simklId;
   const SimklTitleNotFound(this.simklId);
@@ -22,7 +23,8 @@ typedef SimklParseRunner = Future<R> Function<Q, R>(R Function(Q input) parse, Q
 Future<R> _computeRunner<Q, R>(R Function(Q input) parse, Q input) => compute(parse, input);
 
 /// Everything the native Simkl title page reads, read-only:
-/// - the record (`GET /anime/{id}`) and the episodes (`GET /anime/episodes/{id}`) through
+/// - the record (`GET /{tv|anime|movies}/{id}`) and the episodes (`GET /{tv|anime}/episodes/{id}`,
+///   none for a movie) through
 ///   [SimklClient] (Cloudflare-cached by Simkl, not counted against the quota);
 /// - the title page and its `reviews/`, `comments/`, `memos/` sub-pages from simkl.com through
 ///   [SimklWebClient] (desktop User-Agent, one request per second), parsed off the UI isolate.
@@ -93,56 +95,66 @@ class SimklDetailService {
     _kept.removeWhere((k, _) => k.endsWith(':$simklId'));
   }
 
-  static String titleKey(int id) => 'title:$id';
-  static String episodesKey(int id) => 'episodes:$id';
-  static String pageKey(int id) => 'page:$id';
-  static String reviewsKey(int id) => 'reviews:$id';
-  static String commentsKey(int id) => 'comments:$id';
-  static String memosKey(int id) => 'memos:$id';
+  static String titleKey(int id, [SimklKind kind = SimklKind.anime]) => '${kind.name}:title:$id';
+  static String episodesKey(int id, [SimklKind kind = SimklKind.anime]) => '${kind.name}:episodes:$id';
+  static String pageKey(int id, [SimklKind kind = SimklKind.anime]) => '${kind.name}:page:$id';
+  static String reviewsKey(int id, [SimklKind kind = SimklKind.anime]) => '${kind.name}:reviews:$id';
+  static String commentsKey(int id, [SimklKind kind = SimklKind.anime]) => '${kind.name}:comments:$id';
+  static String memosKey(int id, [SimklKind kind = SimklKind.anime]) => '${kind.name}:memos:$id';
 
-  /// `https://simkl.com/anime/{id}/{slug}` (no trailing slash: that form redirects).
-  static String pageUrl(int id, String? slug) =>
-      '$simklSite/anime/$id${slug == null || slug.isEmpty ? '' : '/$slug'}';
+  /// `https://simkl.com/{tv|anime|movies}/{id}/{slug}` (no trailing slash: that form redirects).
+  static String pageUrl(int id, String? slug, [SimklKind kind = SimklKind.anime]) => kind.pageUrl(id, slug);
 
-  static String subPageUrl(int id, String? slug, String sub) => '${pageUrl(id, slug)}/$sub/';
+  static String subPageUrl(int id, String? slug, String sub, [SimklKind kind = SimklKind.anime]) =>
+      '${pageUrl(id, slug, kind)}/$sub/';
 
   /// The full record. Throws [SimklTitleNotFound] for an unknown id.
-  Future<SimklTitle> title(int id, {bool force = false}) => _cached(titleKey(id), () async {
-        final data = await _client.getPublic('/anime/$id');
-        final title = SimklTitle.fromJson(data, fallbackId: id, language: SimklTitlePreference.language);
+  Future<SimklTitle> title(int id, {SimklKind kind = SimklKind.anime, bool force = false}) =>
+      _cached(titleKey(id, kind), () async {
+        final data = await _client.getPublic('/${kind.api}/$id');
+        final title = SimklTitle.fromJson(
+          data,
+          fallbackId: id,
+          language: SimklTitlePreference.language,
+          kind: kind,
+        );
         if (title == null) throw SimklTitleNotFound(id);
         return title;
       }, force: force);
 
-  /// The episodes and specials, in Simkl's order.
-  Future<List<SimklEpisode>> episodes(int id, {bool force = false}) => _cached(episodesKey(id), () async {
-        final data = await _client.getPublic('/anime/episodes/$id');
-        return SimklEpisode.listFrom(data);
-      }, force: force);
+  /// The episodes and specials, in Simkl's order (a movie has none).
+  Future<List<SimklEpisode>> episodes(int id, {SimklKind kind = SimklKind.anime, bool force = false}) {
+    if (!kind.hasEpisodes) return Future.value(const <SimklEpisode>[]);
+    return _cached(episodesKey(id, kind), () async {
+      final data = await _client.getPublic('/${kind.api}/episodes/$id');
+      return SimklEpisode.listFrom(data);
+    }, force: force);
+  }
 
   /// Watchers, counters, first reviews, tags and links of the title page.
-  Future<SimklTitlePage> page(int id, String? slug, {bool force = false}) => _cached(pageKey(id), () async {
-        final html = await _web.page(pageUrl(id, slug));
+  Future<SimklTitlePage> page(int id, String? slug, {SimklKind kind = SimklKind.anime, bool force = false}) =>
+      _cached(pageKey(id, kind), () async {
+        final html = await _web.page(pageUrl(id, slug, kind));
         return _run(parseSimklTitlePage, html);
       }, force: force);
 
   /// Every review (null when the page no longer has the review markup).
-  Future<SimklReviews?> reviews(int id, String? slug, {bool force = false}) =>
-      _cached(reviewsKey(id), () async {
-        final html = await _web.page(subPageUrl(id, slug, 'reviews'));
+  Future<SimklReviews?> reviews(int id, String? slug, {SimklKind kind = SimklKind.anime, bool force = false}) =>
+      _cached(reviewsKey(id, kind), () async {
+        final html = await _web.page(subPageUrl(id, slug, 'reviews', kind));
         return _run(parseSimklReviews, html);
       }, force: force);
 
   /// Comments with their replies (null when the markup is not recognised).
-  Future<List<SimklComment>?> comments(int id, String? slug, {bool force = false}) =>
-      _cached(commentsKey(id), () async {
-        final html = await _web.page(subPageUrl(id, slug, 'comments'));
+  Future<List<SimklComment>?> comments(int id, String? slug, {SimklKind kind = SimklKind.anime, bool force = false}) =>
+      _cached(commentsKey(id, kind), () async {
+        final html = await _web.page(subPageUrl(id, slug, 'comments', kind));
         return _run(parseSimklComments, html);
       }, force: force);
 
   /// Members' memos (null when the markup is not recognised).
-  Future<List<SimklMemo>?> memos(int id, String? slug, {bool force = false}) => _cached(memosKey(id), () async {
-        final html = await _web.page(subPageUrl(id, slug, 'memos'));
+  Future<List<SimklMemo>?> memos(int id, String? slug, {SimklKind kind = SimklKind.anime, bool force = false}) => _cached(memosKey(id, kind), () async {
+        final html = await _web.page(subPageUrl(id, slug, 'memos', kind));
         return _run(parseSimklMemos, html);
       }, force: force);
 }

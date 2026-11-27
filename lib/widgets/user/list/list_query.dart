@@ -1,4 +1,6 @@
+import 'package:mywatchlist/cache/dub_info.dart';
 import 'package:mywatchlist/generated/l10n.dart';
+import 'package:mywatchlist/screens/search/search_catalog.dart' show SearchCatalog;
 import 'package:mywatchlist/widgets/common/list_sort_filter.dart';
 import 'package:mywatchlist/widgets/common/select/select_option.dart';
 import 'package:mywatchlist/widgets/user/list/list_entry_view.dart';
@@ -35,6 +37,9 @@ abstract final class ListFacetKeys {
   static const studio = 'studio';
   static const author = 'author';
   static const rating = 'rating';
+
+  /// MyDubList status (`dubbed`, `partial`); offered only while the dub setting is on.
+  static const dub = 'dub';
 }
 
 /// The sort options every tracker can offer (computed on the device), for
@@ -174,6 +179,12 @@ String _scoreBucketLabel(String bucket) => switch (bucket) {
       _ => S.current.UserList_Not_Scored,
     };
 
+/// The name of genre [name] in the app language, or [name] when it is not a MAL genre.
+String genreLabelOf(String name, {required bool isAnime}) {
+  final id = SearchCatalog.genreId(name, manga: !isAnime);
+  return id == null ? name : SearchCatalog.genreLabel(id, manga: !isAnime);
+}
+
 /// Filter facets built from the loaded [entries] (only values that exist).
 List<ListFilterFacet> facetsFor(Iterable<ListEntryView> entries,
     {required bool isAnime, DateTime? now}) {
@@ -196,7 +207,11 @@ List<ListFilterFacet> facetsFor(Iterable<ListEntryView> entries,
     if (rating != null) ratings.add(rating);
   }
   final sortedMedia = media.toList()..sort((a, b) => mediaTypeLabel(a).compareTo(mediaTypeLabel(b)));
-  final sortedGenres = genres.toList()..sort();
+  // Genres in the app language when the name is a known MAL genre (any tracker's English name);
+  // other names stay as the tracker wrote them. Sorted by what the user reads.
+  final genreLabels = {for (final g in genres) g: genreLabelOf(g, isAnime: isAnime)};
+  final sortedGenres = genres.toList()
+    ..sort((a, b) => genreLabels[a]!.toLowerCase().compareTo(genreLabels[b]!.toLowerCase()));
   final sortedSeasons = seasons.toList()..sort(_compareSeasons);
   int byName(String a, String b) => a.toLowerCase().compareTo(b.toLowerCase());
   final sortedStudios = studios.toList()..sort(byName);
@@ -228,9 +243,10 @@ List<ListFilterFacet> facetsFor(Iterable<ListEntryView> entries,
       ListFilterFacet(
         key: ListFacetKeys.genre,
         label: S.current.UserList_Facet_Genres,
-        options: [for (final g in sortedGenres) SelectOption(g, g)],
+        options: [for (final g in sortedGenres) SelectOption(g, genreLabels[g]!)],
         allowExclude: true,
         matchAll: true,
+        picker: true,
       ),
     if (sortedSeasons.isNotEmpty)
       ListFilterFacet(
@@ -238,6 +254,7 @@ List<ListFilterFacet> facetsFor(Iterable<ListEntryView> entries,
         label: S.current.Ltf_Facet_Season,
         options: [for (final k in sortedSeasons) SelectOption(k, _seasonLabel(k))],
         allowExclude: true,
+        picker: true,
       ),
     if (sortedStudios.isNotEmpty)
       ListFilterFacet(
@@ -245,6 +262,7 @@ List<ListFilterFacet> facetsFor(Iterable<ListEntryView> entries,
         label: S.current.Ltf_Facet_Studio,
         options: [for (final s in sortedStudios) SelectOption(s, s)],
         allowExclude: true,
+        picker: true,
       ),
     if (sortedAuthors.isNotEmpty)
       ListFilterFacet(
@@ -252,6 +270,7 @@ List<ListFilterFacet> facetsFor(Iterable<ListEntryView> entries,
         label: S.current.Ltf_Facet_Author,
         options: [for (final a in sortedAuthors) SelectOption(a, a)],
         allowExclude: true,
+        picker: true,
       ),
     if (sortedRatings.isNotEmpty)
       ListFilterFacet(
@@ -283,6 +302,17 @@ List<ListFilterFacet> facetsFor(Iterable<ListEntryView> entries,
         options: [SelectOption('yes', S.current.UserList_Has_Unseen)],
         allowExclude: true,
       ),
+    // The titles whose card shows the dub icon (Settings, Dub).
+    if (isAnime && DubInfo.instance.enabled)
+      ListFilterFacet(
+        key: ListFacetKeys.dub,
+        label: S.current.UserList_Facet_Dub,
+        options: [
+          SelectOption(DubStatus.dubbed.name, S.current.Dub_Status_Full),
+          SelectOption(DubStatus.partial.name, S.current.Dub_Status_Partial),
+        ],
+        allowExclude: true,
+      ),
   ];
 }
 
@@ -299,6 +329,10 @@ Set<String> _valuesOf(ListEntryView e, String facet, DateTime now) => switch (fa
       ListFacetKeys.studio => e.studios.toSet(),
       ListFacetKeys.author => e.authors.toSet(),
       ListFacetKeys.rating => _ratingOf(e) == null ? const {} : {_ratingOf(e)!},
+      ListFacetKeys.dub => switch (DubInfo.instance.statusOf(e.malId)) {
+          DubStatus.none => const {},
+          final status => {status.name},
+        },
       _ => const {},
     };
 
@@ -323,6 +357,7 @@ List<ListEntryView> filterEntries(
   String query = '',
   DateTime? now,
 }) {
+  filter = activeListFilter(filter);
   if (filter.isEmpty && query.trim().isEmpty) return entries;
   final at = now ?? DateTime.now();
   return [
@@ -330,6 +365,12 @@ List<ListEntryView> filterEntries(
       if (matchesQuery(e, query) && _matchesFilter(e, filter, at)) e,
   ];
 }
+
+/// The part of [filter] that applies right now: without the dub facet while the dub setting
+/// is off, so a dub filter saved earlier never empties a list (or counts in its badge) once
+/// the sheet no longer shows it.
+ListFilter activeListFilter(ListFilter filter) =>
+    DubInfo.instance.enabled ? filter : filter.clearFacet(ListFacetKeys.dub);
 
 bool _matchesFilter(ListEntryView e, ListFilter filter, DateTime now) {
   for (final entry in filter.included.entries) {

@@ -17,6 +17,9 @@ class BookmarkButton extends StatelessWidget {
   final int? malId;
   final bool showMessage;
 
+  /// The icon button's style (title pages over a picture use a scrim).
+  final ButtonStyle? style;
+
   const BookmarkButton({
     super.key,
     required this.tracker,
@@ -27,6 +30,7 @@ class BookmarkButton extends StatelessWidget {
     this.subtitle,
     this.malId,
     this.showMessage = true,
+    this.style,
   });
 
   Future<void> _toggle(BuildContext context) async {
@@ -60,6 +64,7 @@ class BookmarkButton extends StatelessWidget {
         final saved =
             Bookmarks.isBookmarked(tracker: tracker, kind: kind, id: id);
         return IconButton(
+          style: style,
           tooltip: saved ? S.current.Kit_Remove_Bookmark : S.current.Kit_Bookmark,
           icon: Icon(saved ? Icons.bookmark : Icons.bookmark_border),
           onPressed: () => _toggle(context),

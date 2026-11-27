@@ -370,7 +370,7 @@ class SimklEpisodeCard extends StatelessWidget {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     final heading = episode.number != null && !episode.isSpecial
-        ? S.current.Smp_Episode_Number(episode.number!)
+        ? (episode.season != null ? episode.code : S.current.Smp_Episode_Number(episode.number!))
         : S.current.Smp_Specials;
     final date = episode.date;
     return InkWell(

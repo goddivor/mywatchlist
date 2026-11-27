@@ -1,0 +1,10 @@
+{
+  "@@locale": "tr_TR",
+  "Esl_Very_Low": "Çok düşük",
+  "Esl_Low": "Düşük",
+  "Esl_Medium": "Orta",
+  "Esl_High": "Yüksek",
+  "Esl_Very_High": "Çok yüksek",
+  "Esl_Score": "Puan",
+  "Esl_Fine": "Fena değil"
+}

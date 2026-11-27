@@ -21,12 +21,16 @@ class PrefsPage extends StatelessWidget {
   final List<Widget> trailingSlivers;
   final void Function(PreferencesBloc bloc) onReset;
 
+  /// The page edits tracker settings (#349): a line under the title names the tracker.
+  final bool trackerScoped;
+
   const PrefsPage({
     super.key,
     required this.title,
     required this.children,
     this.trailingSlivers = const [],
     required this.onReset,
+    this.trackerScoped = false,
   });
 
   Future<void> _confirmReset(BuildContext context) async {
@@ -76,6 +80,27 @@ class PrefsPage extends StatelessWidget {
               ),
             ],
           ),
+          if (trackerScoped)
+            if (context.select((PreferencesBloc b) => b.tracker) case final tracker when tracker != AccountType.none)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+                  child: Row(
+                    children: [
+                      Icon(Icons.account_circle_outlined, size: 18, color: Theme.of(context).colorScheme.primary),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          S.current.Ppt_For_Tracker(AppRoutes.trackerLabel(tracker)),
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                              ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
           SliverList.list(children: children),
           ...trailingSlivers,
           SliverToBoxAdapter(

@@ -624,43 +624,50 @@ class EntryStepper extends StatelessWidget {
       valueListenable: actions.busy,
       builder: (context, busy, _) {
         final isBusy = busy.contains(entry.id);
+        // The pill wears the entry's status colour (neutral when the title is not listed).
+        final role = entry.status?.colors(context);
+        final foreground = role?.onColor ?? scheme.onSurfaceVariant;
         return DecoratedBox(
           decoration: BoxDecoration(
-            color: scheme.surfaceContainerHigh,
+            color: role?.color ?? scheme.surfaceContainerHigh,
             borderRadius: const BorderRadius.all(Radius.circular(20)),
           ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (canStep && !compact)
-                _StepButton(
-                  icon: Icons.remove_rounded,
-                  tooltip: S.current.UserList_Minus_One,
-                  onPressed: isBusy || entry.progress <= 0 ? null : () => onStep(entry, -1),
-                ),
-              if (actions.onEdit != null)
-                isBusy
-                    ? const SizedBox(
-                        width: 36,
-                        height: 32,
-                        child: Center(
-                            child: SizedBox(
-                                width: 14,
-                                height: 14,
-                                child: CircularProgressIndicator(strokeWidth: 2))),
-                      )
-                    : _StepButton(
-                        icon: Icons.edit_rounded,
-                        tooltip: S.current.UserList_Edit_Entry,
-                        onPressed: () => actions.onEdit!(entry),
-                      ),
-              if (canStep)
-                _StepButton(
-                  icon: Icons.add_rounded,
-                  tooltip: S.current.UserList_Plus_One,
-                  onPressed: isBusy || atEnd ? null : () => onStep(entry, 1),
-                ),
-            ],
+          child: IconTheme.merge(
+            data: IconThemeData(color: foreground),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (canStep && !compact)
+                  _StepButton(
+                    icon: Icons.remove_rounded,
+                    tooltip: S.current.UserList_Minus_One,
+                    onPressed: isBusy || entry.progress <= 0 ? null : () => onStep(entry, -1),
+                  ),
+                if (actions.onEdit != null)
+                  isBusy
+                      ? SizedBox(
+                          width: 36,
+                          height: 32,
+                          child: Center(
+                              child: SizedBox(
+                                  width: 14,
+                                  height: 14,
+                                  child: CircularProgressIndicator(
+                                      strokeWidth: 2, color: foreground))),
+                        )
+                      : _StepButton(
+                          icon: Icons.edit_rounded,
+                          tooltip: S.current.UserList_Edit_Entry,
+                          onPressed: () => actions.onEdit!(entry),
+                        ),
+                if (canStep)
+                  _StepButton(
+                    icon: Icons.add_rounded,
+                    tooltip: S.current.UserList_Plus_One,
+                    onPressed: isBusy || atEnd ? null : () => onStep(entry, 1),
+                  ),
+              ],
+            ),
           ),
         );
       },
@@ -677,8 +684,11 @@ class _StepButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final color = IconTheme.of(context).color;
     return IconButton(
       icon: Icon(icon, size: 18),
+      color: color,
+      disabledColor: color?.withValues(alpha: 0.38),
       tooltip: tooltip,
       onPressed: onPressed,
       visualDensity: VisualDensity.compact,

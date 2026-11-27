@@ -4,8 +4,8 @@ import 'package:mwl_commons/mwl_commons.dart' show LiveChartEpisode;
 import 'package:mwl_commons/src/model/html/anime_detailed_html.dart';
 import 'package:mywatchlist/constants/constants.dart';
 import 'package:mywatchlist/generated/l10n.dart';
-import 'package:mywatchlist/services/api/mwl_api.dart';
 import 'package:mywatchlist/user/preferences/preferences.dart';
+import 'package:mywatchlist/widgets/calendar/airing_schedule.dart';
 import 'package:mywatchlist/widgets/common/avatar_widget.dart';
 import 'package:mywatchlist/widgets/common/custombutton.dart';
 
@@ -63,9 +63,9 @@ class RelatedLinks {
   }
 }
 
-/// Related links of the airing schedule (LiveChart, through the backend),
-/// found by MyAnimeList id. The season is fetched once per session and shared
-/// by every detail page.
+/// Related links of the airing schedule (LiveChart, read from [AiringSchedule]:
+/// one request shared with the calendar and the cards), found by MyAnimeList
+/// id. The links map is built once per session and shared by every detail page.
 ///
 /// ```dart
 /// final links = await ScheduleLinks.forMalId(anime.id); // null when not airing
@@ -76,7 +76,7 @@ abstract final class ScheduleLinks {
   /// The schedule source; tests replace it.
   @visibleForTesting
   static Future<List<LiveChartEpisode>> Function() source =
-      () => MwlApi.i.getLiveChartSchedule();
+      () => AiringSchedule.instance.season();
 
   /// Links of [malId], or null when it is not on the schedule or the request
   /// failed (a failure is retried on the next call).

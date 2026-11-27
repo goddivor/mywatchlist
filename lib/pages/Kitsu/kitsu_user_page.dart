@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mywatchlist/apps/kitsu/kitsu_top_bar.dart';
 import 'package:mywatchlist/constants/constants.dart' show AccountType;
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/user/base_user.dart';
@@ -14,7 +15,10 @@ import 'package:mywatchlist/widgets/user/list/user_list_view.dart';
 /// The home shell also shows this page when Kitsu is not signed in; it then asks to sign in
 /// instead of loading anything.
 class KitsuUserPage extends StatefulWidget {
-  const KitsuUserPage({super.key});
+  const KitsuUserPage({super.key, this.embedded = false});
+
+  /// The Kitsu app's "Library" tab: the Anime / Manga switch with the Kitsu bar buttons.
+  final bool embedded;
 
   @override
   State<KitsuUserPage> createState() => _KitsuUserPageState();
@@ -25,7 +29,9 @@ class _KitsuUserPageState extends State<KitsuUserPage> {
 
   bool get _signedIn => UserKitsuV2.instance.status == AuthStatus.AUTHENTICATED;
 
-  Widget _title(BuildContext context, Widget categorySwitch) => AppBarHome(
+  Widget _title(BuildContext context, Widget categorySwitch) => widget.embedded
+      ? KitsuTitleRow(leading: categorySwitch)
+      : AppBarHome(
         titleWidget: categorySwitch,
         showAvatar: true,
         showSearch: true,

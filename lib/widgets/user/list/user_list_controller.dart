@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:mywatchlist/cache/dub_info.dart';
 import 'package:mywatchlist/user/list_cache/list_status_cache.dart';
 import 'package:mywatchlist/widgets/common/list_sort_filter.dart';
 import 'package:mywatchlist/widgets/user/list/list_entry_view.dart';
@@ -29,7 +30,9 @@ class UserListTabController extends ChangeNotifier {
   })  : _settings = settings,
         _query = query,
         _cache = cache ?? ListStatusCache.instance,
-        _clock = clock ?? DateTime.now;
+        _clock = clock ?? DateTime.now {
+    DubInfo.instance.addListener(_onDubChanged);
+  }
 
   final UserListAdapter adapter;
   final String category;
@@ -82,7 +85,7 @@ class UserListTabController extends ChangeNotifier {
 
   bool _pagedFor(ListViewSettings s, String q) =>
       adapter.apiSort(category, s.sortKey, s.direction) != null &&
-      s.filter.isEmpty &&
+      activeListFilter(s.filter).isEmpty &&
       q.trim().isEmpty;
 
   bool get isPaged => _pagedFor(_settings, _query);
@@ -285,6 +288,16 @@ class UserListTabController extends ChangeNotifier {
     }
   }
 
+  /// The dub setting or its data changed: a dub filter now matches other titles (or none).
+  void _onDubChanged() {
+    if (!_started || !_settings.filter.included.containsKey(ListFacetKeys.dub) &&
+        !_settings.filter.excluded.containsKey(ListFacetKeys.dub)) {
+      return;
+    }
+    _recompute();
+    _notify();
+  }
+
   void _notify() {
     if (!_disposed) notifyListeners();
   }
@@ -293,6 +306,7 @@ class UserListTabController extends ChangeNotifier {
   void dispose() {
     _disposed = true;
     _generation++;
+    DubInfo.instance.removeListener(_onDubChanged);
     super.dispose();
   }
 }

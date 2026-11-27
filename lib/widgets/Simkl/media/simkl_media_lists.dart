@@ -111,7 +111,7 @@ class SimklEpisodeRow extends StatelessWidget {
     final scheme = theme.colorScheme;
     final date = episode.date;
     final heading = episode.number != null && !episode.isSpecial
-        ? S.current.Smp_Episode_Number(episode.number!)
+        ? (episode.season != null ? episode.code : S.current.Smp_Episode_Number(episode.number!))
         : S.current.Smp_Specials;
     final meta = [
       if (date != null && (upcoming || !episode.aired))

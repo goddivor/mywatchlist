@@ -4,7 +4,11 @@ import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart' show ValueListenable, debugPrint, kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mywatchlist/services/startup/launch_sync.dart';
 import 'package:mywatchlist/constants/constants.dart' show AccountType, Constants;
+import 'package:mywatchlist/apps/anilist/anilist_app.dart';
+import 'package:mywatchlist/apps/kitsu/kitsu_app.dart';
+import 'package:mywatchlist/apps/simkl/simkl_app.dart';
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/pages/Anilist/anilist_explore_page.dart';
 import 'package:mywatchlist/pages/Anilist/anilist_forum_page.dart';
@@ -43,6 +47,7 @@ import 'package:mywatchlist/user/user_manager.dart';
 import 'package:mywatchlist/utils/app_routes.dart';
 import 'package:mywatchlist/utils/web_launcher.dart';
 import 'package:mywatchlist/widgets/common/background.dart';
+import 'package:mywatchlist/user/trackers/models/tracker_model.dart' show TrackerInfo;
 import 'package:mywatchlist/widgets/common/bottomnavbar.dart';
 
 /// Tabs of the bottom bar, in [BottomNavBar] order.
@@ -61,7 +66,10 @@ class HomeShell extends InheritedWidget {
   /// Opens the shell's sidebar (end drawer).
   final VoidCallback openSidebar;
 
-  const HomeShell({super.key, required this.openSidebar, required super.child});
+  /// Switches the shell to the tab at [HomeTab] index (e.g. a section's "view all").
+  final ValueChanged<int> selectTab;
+
+  const HomeShell({super.key, required this.openSidebar, required this.selectTab, required super.child});
 
   static HomeShell? maybeOf(BuildContext context) =>
       context.getInheritedWidgetOfExactType<HomeShell>();
@@ -200,15 +208,17 @@ class _HomeScreenState extends State<HomeScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final ValueNotifier<bool> _sidebarOpen = ValueNotifier<bool>(false);
 
-  /// Bumped when the shell changes tab itself (Back to home): [BottomNavBar] reads its
-  /// index only once, so it is rebuilt to show the new tab.
-  int _navBarGeneration = 0;
-
   late int _pageIndex;
 
   /// Tabs already built for [_pagesFor] (only used when pages are kept in memory).
   final Map<int, Widget> _pages = {};
   AccountType? _pagesFor;
+
+  /// The tracker whose app is on screen; another selected tracker first shows
+  /// [TrackerSwitchScreen] for [switchDelay], then its own app on its home.
+  AccountType? _shownTracker;
+  Timer? _switching;
+  static const Duration switchDelay = Duration(milliseconds: 700);
 
   /// Trackers whose "session expired" prompt was already shown.
   final Set<AccountType> _reLoginPrompted = {};
@@ -230,10 +240,13 @@ class _HomeScreenState extends State<HomeScreen> {
       } else if (widget.pageIndex == null) {
         // Startup pages that are not tabs open on top of the home tab.
         if (startup == StartupPage.calendar) AppRoutes.openCalendar(context);
-        if (startup == StartupPage.search) AppRoutes.openSearch(context);
+        if (startup == StartupPage.search) AppRoutes.openTrackerSearch(context);
       }
       _onUsersChanged();
-      if (widget.checkForUpdates) unawaited(_checkForUpdate());
+      if (widget.checkForUpdates) {
+        unawaited(_checkForUpdate());
+        unawaited(LaunchSync.run());
+      }
     });
   }
 
@@ -273,6 +286,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void dispose() {
     UserManager.instance.removeListener(_onUsersChanged);
     MalApi.sessionExpired.removeListener(_onUsersChanged);
+    _switching?.cancel();
     _sidebarOpen.dispose();
     super.dispose();
   }
@@ -305,6 +319,8 @@ class _HomeScreenState extends State<HomeScreen> {
   /// MAL); forgets the tracker once it is signed in again.
   void _onUsersChanged() {
     if (!mounted) return;
+    // MAL signed in later than the launch (first sign-in, session back): sync its banner then.
+    if (widget.checkForUpdates) unawaited(LaunchSync.run());
     final expired = expiredTrackers();
     _reLoginPrompted.removeWhere((t) => !expired.contains(t));
     for (final tracker in expired) {
@@ -360,10 +376,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _goHomeTab() {
     if (_pageIndex == HomeTab.home) return;
-    setState(() {
-      _pageIndex = HomeTab.home;
-      _navBarGeneration++;
-    });
+    setState(() => _pageIndex = HomeTab.home);
   }
 
   void _onTabSelected(int index) {
@@ -385,6 +398,30 @@ class _HomeScreenState extends State<HomeScreen> {
           return const AppStartupLoader();
         }
         _redirectingToLogin = false;
+        // Another account is another app: a short loading screen, then that tracker's app on
+        // its home (never the tab the previous one was on).
+        if (_shownTracker != null && _shownTracker != tracker) {
+          if (_switching == null) {
+            // Switched from a page on top (settings, accounts...): those pages belong to the
+            // previous app, so they close and the new app shows at once.
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) Navigator.of(context).popUntil((route) => route.isFirst);
+            });
+            _switching = Timer(switchDelay, () {
+              if (!mounted) return;
+              setState(() {
+                _switching = null;
+                _shownTracker = tracker;
+                _pageIndex = HomeTab.home;
+              });
+            });
+          }
+          return TrackerSwitchScreen(tracker: tracker);
+        }
+        _shownTracker = tracker;
+        if (tracker == AccountType.simkl) return const SimklApp();
+        if (tracker == AccountType.anilist) return const AnilistApp();
+        if (tracker == AccountType.kitsu) return const KitsuApp();
         return _buildShell(context, tracker);
       },
     );
@@ -419,6 +456,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return HomeShell(
       openSidebar: () => _scaffoldKey.currentState?.openEndDrawer(),
+      selectTab: (index) {
+        if (index >= 0 && index < HomeTab.count) _onTabSelected(index);
+      },
       child: ShellBackScope(
         sidebarOpen: _sidebarOpen,
         closeSidebar: () => _scaffoldKey.currentState?.closeEndDrawer(),
@@ -431,7 +471,6 @@ class _HomeScreenState extends State<HomeScreen> {
           drawerEdgeDragWidth: sidebarEdgeDragWidth(
               MediaQuery.systemGestureInsetsOf(context), Directionality.of(context)),
           bottomNavigationBar: BottomNavBar(
-            key: ValueKey(_navBarGeneration),
             startIndex: _pageIndex,
             onChanged: _onTabSelected,
           ),
@@ -515,6 +554,102 @@ class _HomeBackground extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+/// Shown while MyWatchList turns into the app of another tracker (account switch, sign in):
+/// the tracker's round logo with the loading ring turning around it, then "Opening <tracker>".
+/// The logo scales in softly (skipped when the system reduces motion).
+class TrackerSwitchScreen extends StatefulWidget {
+  const TrackerSwitchScreen({super.key, required this.tracker});
+
+  final AccountType tracker;
+
+  /// Size of the ring; the logo sits inside it.
+  static const double ringSize = 104;
+  static const double logoSize = 76;
+
+  @override
+  State<TrackerSwitchScreen> createState() => _TrackerSwitchScreenState();
+}
+
+class _TrackerSwitchScreenState extends State<TrackerSwitchScreen> with SingleTickerProviderStateMixin {
+  late final AnimationController _enter = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 260),
+  );
+  late final Animation<double> _curve =
+      CurvedAnimation(parent: _enter, curve: const Cubic(0.23, 1, 0.32, 1));
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_enter.isDismissed) {
+      if (MediaQuery.disableAnimationsOf(context)) {
+        _enter.value = 1;
+      } else {
+        _enter.forward();
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _enter.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final info = TrackerInfo.of(widget.tracker);
+    final ring = info?.color ?? theme.colorScheme.primary;
+    return Scaffold(
+      body: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox.square(
+              dimension: TrackerSwitchScreen.ringSize,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  SizedBox.expand(
+                    child: CircularProgressIndicator(
+                      strokeWidth: 3,
+                      strokeCap: StrokeCap.round,
+                      color: ring,
+                      backgroundColor: ring.withValues(alpha: 0.15),
+                    ),
+                  ),
+                  if (info != null)
+                    FadeTransition(
+                      opacity: _curve,
+                      child: ScaleTransition(
+                        scale: Tween<double>(begin: 0.85, end: 1).animate(_curve),
+                        child: ClipOval(
+                          child: Image.asset(
+                            info.logoAsset,
+                            key: const ValueKey('tracker-switch-logo'),
+                            width: TrackerSwitchScreen.logoSize,
+                            height: TrackerSwitchScreen.logoSize,
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              S.current.Skm_Opening(AppRoutes.trackerLabel(widget.tracker)),
+              style: theme.textTheme.titleMedium,
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

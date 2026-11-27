@@ -29,7 +29,8 @@ class PlannedNotification {
     this.episode,
     this.repeatsWeekly = false,
     this.imageUrl,
-  });
+    int? coverId,
+  }) : _coverId = coverId;
 
   /// Stable id: `malId * 8 + slot`, so a reschedule replaces the same entry.
   final int id;
@@ -52,6 +53,11 @@ class PlannedNotification {
 
   /// Cover shown as large icon / big picture.
   final String? imageUrl;
+
+  final int? _coverId;
+
+  /// The key of the kept cover file: the MAL id, or a Simkl show's or movie's own key.
+  int? get coverId => _coverId ?? malId;
 
   @override
   bool operator ==(Object other) =>

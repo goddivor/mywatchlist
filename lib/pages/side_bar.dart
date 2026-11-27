@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mywatchlist/widgets/common/framed_avatar.dart';
 import 'package:mywatchlist/constants/constants.dart' show AccountType;
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/screens/user_profile/user_profile_view.dart' show UserProfileTab;
@@ -394,12 +395,18 @@ class _AppSidebarState extends State<AppSidebar> {
             bottom: 18,
             child: Row(
               children: [
-                AvatarWidget(
-                  url: avatarUrl,
-                  height: 56,
-                  width: 56,
-                  borderColor: tokens.onImageScrim,
-                  borderWidth: 2,
+                FramedAvatar(
+                  // Frames are worn by MAL accounts only.
+                  username: tracker == AccountType.myanimelist ? name : null,
+                  size: 56,
+                  child: AvatarWidget(
+                    url: avatarUrl,
+                    height: 56,
+                    width: 56,
+                    borderColor: tokens.onImageScrim,
+                    borderWidth: 2,
+                  ),
+                  framedChild: AvatarWidget(url: avatarUrl, height: 56, width: 56, borderWidth: 0, borderColor: Colors.transparent),
                 ),
                 const SizedBox(width: 14),
                 Expanded(

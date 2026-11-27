@@ -2,10 +2,13 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:mywatchlist/services/profile/shared_banner.dart';
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/screens/user_profile/user_profile_data.dart';
 import 'package:mywatchlist/widgets/common/app_colors.dart';
 import 'package:mywatchlist/widgets/common/app_image.dart';
+import 'package:mywatchlist/widgets/common/framed_avatar.dart';
+import 'package:mywatchlist/widgets/user/profile/avatar_frame_sheet.dart';
 import 'package:mywatchlist/widgets/common/image_preview.dart';
 import 'package:mywatchlist/widgets/user/profile/profile_background.dart';
 
@@ -71,9 +74,13 @@ class ProfileHeader extends StatefulWidget {
 class _ProfileHeaderState extends State<ProfileHeader> {
   final _store = ProfileBackgroundStore.instance;
 
+  /// The banner the user shares through MyWatchList (the sidebar picture), seen by everyone.
+  String? _sharedUrl;
+
   @override
   void initState() {
     super.initState();
+    _loadShared();
     if (widget.isSelf) {
       _store.addListener(_onBackgroundChanged);
       _store.load(widget.data.username).then((_) {
@@ -88,6 +95,19 @@ class _ProfileHeaderState extends State<ProfileHeader> {
     super.dispose();
   }
 
+  @override
+  void didUpdateWidget(ProfileHeader oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.data.username != widget.data.username) _loadShared();
+  }
+
+  void _loadShared() {
+    final name = widget.data.username;
+    SharedBanners.instance.urlOf(name).then((url) {
+      if (mounted && widget.data.username == name && url != _sharedUrl) setState(() => _sharedUrl = url);
+    });
+  }
+
   void _onBackgroundChanged() {
     if (mounted) setState(() {});
   }
@@ -95,11 +115,73 @@ class _ProfileHeaderState extends State<ProfileHeader> {
   @override
   Widget build(BuildContext context) {
     final bgPath = widget.isSelf ? _store.cached(widget.data.username) : null;
+    final url = bgPath == null ? _sharedUrl : null;
+    final hasPicture = bgPath != null || url != null;
     // The band is built here once per data or picture change; only [_CollapsingBand] reads
     // the app bar's scroll extent, so scrolling never rebuilds the content.
-    return _CollapsingBand(
+    final band = _CollapsingBand(
       bottomInset: widget.bottomInset,
-      child: ProfileHeaderBand(data: widget.data, backgroundPath: bgPath),
+      child: ProfileHeaderBand(
+        data: widget.data,
+        backgroundPath: bgPath,
+        backgroundUrl: url,
+        isSelf: widget.isSelf,
+        drawPicture: !hasPicture,
+      ),
+    );
+    if (!hasPicture) return band;
+    // The banner covers the whole header, status bar and toolbar included (owner request), down
+    // to the tab strip; a scrim keeps the toolbar icons and the name readable.
+    final tokens = AppColors.of(context);
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        Padding(
+          padding: EdgeInsets.only(bottom: widget.bottomInset),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              _Picture(path: bgPath, url: url),
+              // Two plain two-colour gradients (top for the toolbar icons, bottom for the name):
+              // a four-stop gradient over the whole collapsing header crashed the emulator's
+              // renderer while scrolling.
+              Align(
+                alignment: Alignment.topCenter,
+                child: FractionallySizedBox(
+                  heightFactor: 0.35,
+                  widthFactor: 1,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [tokens.imageScrim.withValues(alpha: 0.55), tokens.imageScrim.withValues(alpha: 0)],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              Align(
+                alignment: Alignment.bottomCenter,
+                child: FractionallySizedBox(
+                  heightFactor: 0.55,
+                  widthFactor: 1,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [tokens.imageScrim.withValues(alpha: 0), tokens.imageScrim],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        band,
+      ],
     );
   }
 }
@@ -122,14 +204,22 @@ class _CollapsingBand extends StatelessWidget {
     final top = settings.minExtent - bottomInset;
     final band = settings.maxExtent - settings.minExtent;
     if (band <= 0) return const SizedBox.shrink();
+    // Fades out as it slides under the toolbar instead of being cut by a hard line (the line
+    // showed over a banner covering the whole header). Gone before it reaches the toolbar.
+    final shown = ((settings.currentExtent - settings.minExtent) / band).clamp(0.0, 1.0);
+    final opacity = ((shown - 0.35) / 0.65).clamp(0.0, 1.0);
     return Padding(
       padding: EdgeInsets.only(top: top, bottom: bottomInset),
-      child: ClipRect(
-        child: OverflowBox(
-          alignment: Alignment.bottomCenter,
-          minHeight: band,
-          maxHeight: band,
-          child: child,
+      child: IgnorePointer(
+        ignoring: opacity == 0,
+        child: Opacity(
+          opacity: opacity,
+          child: OverflowBox(
+            alignment: Alignment.bottomCenter,
+            minHeight: band,
+            maxHeight: band,
+            child: child,
+          ),
         ),
       ),
     );
@@ -144,7 +234,24 @@ class ProfileHeaderBand extends StatelessWidget {
   /// The local profile background, null for none (the header then sits on the surface).
   final String? backgroundPath;
 
-  const ProfileHeaderBand({super.key, required this.data, this.backgroundPath});
+  /// The banner the user shares (used when there is no local [backgroundPath]).
+  final String? backgroundUrl;
+
+  /// The signed-in user's own profile: a long press on the avatar picks its frame.
+  final bool isSelf;
+
+  /// False when the picture is drawn behind the whole header instead ([ProfileHeader]): the
+  /// band then only lays out its text for a picture.
+  final bool drawPicture;
+
+  const ProfileHeaderBand({
+    super.key,
+    required this.data,
+    this.backgroundPath,
+    this.backgroundUrl,
+    this.isSelf = false,
+    this.drawPicture = true,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -152,7 +259,7 @@ class ProfileHeaderBand extends StatelessWidget {
     final cs = theme.colorScheme;
     final tokens = AppColors.of(context);
     final s = S.of(context);
-    final onPicture = backgroundPath != null;
+    final onPicture = backgroundPath != null || backgroundUrl != null;
     final nameColor = onPicture ? tokens.onImageScrim : cs.onSurface;
     final detailColor = onPicture ? tokens.onImageScrim : cs.onSurfaceVariant;
     final joined = formatProfileDate(data.joined, withDay: false);
@@ -165,8 +272,8 @@ class ProfileHeaderBand extends StatelessWidget {
     return Stack(
       fit: StackFit.expand,
       children: [
-        if (onPicture) ...[
-          _Picture(path: backgroundPath!),
+        if (onPicture && drawPicture) ...[
+          _Picture(path: backgroundPath, url: backgroundUrl),
           // The text sits in the lower part: full scrim there (white text ≥ 4.5:1 on a white
           // picture), fading out towards the top so the picture still shows.
           DecoratedBox(
@@ -186,7 +293,7 @@ class ProfileHeaderBand extends StatelessWidget {
             padding: const EdgeInsetsDirectional.fromSTEB(16, 8, 16, 16),
             child: Row(
               children: [
-                _Avatar(url: data.pictureUrl),
+                _Avatar(url: data.pictureUrl, username: data.username, isSelf: isSelf),
                 const SizedBox(width: 16),
                 Expanded(
                   child: Column(
@@ -271,10 +378,12 @@ class _SupporterBadge extends StatelessWidget {
 
 class _Avatar extends StatelessWidget {
   final String? url;
+  final String username;
+  final bool isSelf;
 
   static const double _size = 72;
 
-  const _Avatar({required this.url});
+  const _Avatar({required this.url, required this.username, required this.isSelf});
 
   @override
   Widget build(BuildContext context) {
@@ -290,7 +399,11 @@ class _Avatar extends StatelessWidget {
     );
     return GestureDetector(
       onTap: url == null ? null : () => zoomInImage(context, url),
-      child: ClipOval(
+      onLongPress: isSelf ? () => showAvatarFrameSheet(context, username: username) : null,
+      child: FramedAvatar(
+        username: username,
+        size: _size,
+        child: ClipOval(
         child: url == null
             ? placeholder
             : AppImage(
@@ -300,19 +413,40 @@ class _Avatar extends StatelessWidget {
                 placeholderColor: cs.secondaryContainer,
                 errorWidget: (_) => placeholder,
               ),
+        ),
       ),
     );
   }
 }
 
 class _Picture extends StatelessWidget {
-  final String path;
+  final String? path;
+  final String? url;
 
-  const _Picture({required this.path});
+  const _Picture({this.path, this.url});
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final path = this.path;
+    if (path == null) {
+      final link = url;
+      if (link == null || link.isEmpty) return ColoredBox(color: cs.surfaceContainerHighest);
+      // Decoded once at the screen width. Sized from the layout (AppImage's default), the
+      // picture behind the collapsing header got a new decode size on every scrolled frame:
+      // one decode and one texture per frame, enough to crash the emulator's GPU.
+      final media = MediaQuery.of(context);
+      return Image(
+        image: AppImage.provider(
+          link,
+          logicalWidth: media.size.width,
+          devicePixelRatio: media.devicePixelRatio,
+        ),
+        fit: BoxFit.cover,
+        gaplessPlayback: true,
+        errorBuilder: (_, __, ___) => ColoredBox(color: cs.surfaceContainerHighest),
+      );
+    }
     return Image(
       image: ResizeImage(FileImage(File(path)), width: 1080),
       fit: BoxFit.cover,

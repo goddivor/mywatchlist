@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:mywatchlist/apps/anilist/anilist_top_bar.dart';
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/services/api/Anilist/anilist_social_service.dart';
 import 'package:mywatchlist/widgets/Anilist/anilist_thread_tile.dart';
@@ -27,9 +28,14 @@ class AnilistForumPage extends StatefulWidget {
     this.initialTab = 0,
     this.mediaId,
     this.standalone = false,
+    this.embedded = false,
   });
 
   final bool standalone;
+
+  /// The AniList app's "Forum" tab: the forum alone (the activity feed is on its home), under
+  /// the AniList app bar.
+  final bool embedded;
 
   final AnilistSocialService? service;
 
@@ -42,10 +48,12 @@ class AnilistForumPage extends StatefulWidget {
 }
 
 class _AnilistForumPageState extends State<AnilistForumPage> with SingleTickerProviderStateMixin {
+  bool get _single => widget.mediaId != null || widget.embedded;
+
   late final TabController _tabs = TabController(
-    length: widget.mediaId == null ? 2 : 1,
+    length: _single ? 1 : 2,
     vsync: this,
-    initialIndex: widget.mediaId == null ? widget.initialTab.clamp(0, 1) : 0,
+    initialIndex: _single ? 0 : widget.initialTab.clamp(0, 1),
   );
 
   AnilistSocialService get _service => widget.service ?? AnilistSocialService.instance;
@@ -73,13 +81,13 @@ class _AnilistForumPageState extends State<AnilistForumPage> with SingleTickerPr
   Widget build(BuildContext context) {
     final s = S.of(context);
     final scheme = Theme.of(context).colorScheme;
-    final single = widget.mediaId != null;
+    final single = _single;
     final standalone = widget.standalone;
     final menu = PopupMenuButton<_ForumAction>(
       icon: Icon(Icons.more_vert, color: scheme.onSurfaceVariant),
       onSelected: _menu,
       itemBuilder: (_) => [
-        if (!single)
+        if (widget.mediaId == null)
           PopupMenuItem(value: _ForumAction.reviews, child: Text(s.Als_Latest_Reviews)),
         if (_service.signedIn)
           PopupMenuItem(value: _ForumAction.newThread, child: Text(s.Als_New_Thread)),
@@ -101,7 +109,15 @@ class _AnilistForumPageState extends State<AnilistForumPage> with SingleTickerPr
           : null,
       body: Column(
         children: [
-          if (!standalone) ...[
+          if (widget.embedded)
+            AppBar(
+              automaticallyImplyLeading: false,
+              backgroundColor: Colors.transparent,
+              centerTitle: false,
+              title: Text(s.Hw_Tab_Forum),
+              actions: [menu, const AnilistBarActions(showSearch: false)],
+            )
+          else if (!standalone) ...[
             AppBarHome(
               title: s.Al_Forum_Title,
               showSearch: false,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mywatchlist/widgets/common/framed_avatar.dart';
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/screens/mal_web/notifications_screen.dart';
 import 'package:mywatchlist/services/api/MAL/web/mal_messages_api.dart';
@@ -38,12 +39,14 @@ IconData malNotificationIcon(MalNotificationKind kind) => switch (kind) {
       MalNotificationKind.unknown => Icons.notifications_none_rounded,
     };
 
-/// A round picture of [url], or a tonal circle with [icon] when there is none.
+/// A round picture of [url], or a tonal circle with [icon] when there is none; with the frame
+/// [username] wears, when the picture is a MAL user's.
 class _HubAvatar extends StatelessWidget {
-  const _HubAvatar({required this.url, required this.icon});
+  const _HubAvatar({required this.url, required this.icon, this.username});
 
   final String? url;
   final IconData icon;
+  final String? username;
   static const double size = 40;
 
   @override
@@ -58,13 +61,17 @@ class _HubAvatar extends StatelessWidget {
     );
     final link = url;
     if (link == null || link.isEmpty) return fallback;
-    return AppImage(
-      url: link,
-      width: size,
-      height: size,
-      borderRadius: BorderRadius.circular(size / 2),
-      placeholderColor: scheme.surfaceContainerHighest,
-      errorWidget: (_) => fallback,
+    return FramedAvatar(
+      username: username,
+      size: size,
+      child: AppImage(
+        url: link,
+        width: size,
+        height: size,
+        borderRadius: BorderRadius.circular(size / 2),
+        placeholderColor: scheme.surfaceContainerHighest,
+        errorWidget: (_) => fallback,
+      ),
     );
   }
 }
@@ -110,7 +117,7 @@ class MalNotificationTile extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _HubAvatar(url: item.actorImageUrl, icon: malNotificationIcon(item.kind)),
+              _HubAvatar(url: item.actorImageUrl, username: item.actorName, icon: malNotificationIcon(item.kind)),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -212,7 +219,7 @@ class FriendActivityTile extends StatelessWidget {
             InkResponse(
               onTap: onFriendTap,
               radius: 24,
-              child: _HubAvatar(url: activity.friendImageUrl, icon: Icons.person_outline),
+              child: _HubAvatar(url: activity.friendImageUrl, username: activity.friend, icon: Icons.person_outline),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -467,7 +474,7 @@ class FriendNewsTile extends StatelessWidget {
     final s = S.of(context);
     final date = activity.date;
     return _NewsRow(
-      picture: _HubAvatar(url: activity.friendImageUrl, icon: Icons.person_outline),
+      picture: _HubAvatar(url: activity.friendImageUrl, username: activity.friend, icon: Icons.person_outline),
       headline: friendNewsHeadline(activity, s),
       detail: friendProgressLabel(activity, s),
       time: date == null ? null : hubAgo(date.toLocal(), strings: s, now: now),

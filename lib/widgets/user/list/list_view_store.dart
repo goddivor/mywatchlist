@@ -34,7 +34,7 @@ class ListPlace {
     }
     final category = json['category'];
     return ListPlace(
-      category: category == 'manga' ? 'manga' : 'anime',
+      category: const {'manga', 'tv', 'movie'}.contains(category) ? category as String : 'anime',
       tabs: tabs,
     );
   }
@@ -57,7 +57,7 @@ class ListViewStore {
   /// Settings used before the user changes anything.
   static ListViewSettings defaults(String category) {
     final general = Preferences.general;
-    final sort = category == 'anime' ? general.userListAnimeSort : general.userListMangaSort;
+    final sort = category == 'manga' ? general.userListMangaSort : general.userListAnimeSort;
     final key = switch (sort) {
       'list_score' => ListSortKeys.score,
       'anime_title' || 'manga_title' || 'title' => ListSortKeys.title,

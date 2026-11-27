@@ -19,15 +19,27 @@ class NotificationPreferences extends Equatable {
   /// Big picture style with the cover (DAL `preferLargeImage`).
   final bool largeImage;
 
+  /// The trackers (`AccountType.name`) whose lists must not feed the episode reminders. Every
+  /// connected tracker feeds them by default (#351: one switch per tracker).
+  final Set<String> airingOff;
+
   const NotificationPreferences({
     this.subscribedAt,
     this.dailyReleases = true,
     this.watchingList = true,
     this.planToWatchList = true,
     this.largeImage = true,
+    this.airingOff = const {},
   });
 
   bool get enabled => subscribedAt != null;
+
+  /// Whether the lists of [tracker] (`AccountType.name`) feed the episode reminders.
+  bool airingFrom(String tracker) => !airingOff.contains(tracker);
+
+  /// The same preferences with [tracker]'s reminders on or off.
+  NotificationPreferences withAiring(String tracker, bool on) =>
+      copyWith(airingOff: on ? ({...airingOff}..remove(tracker)) : {...airingOff, tracker});
 
   /// [subscribedAt] cannot be cleared through a null argument: use [unsubscribed].
   NotificationPreferences copyWith({
@@ -36,8 +48,10 @@ class NotificationPreferences extends Equatable {
     bool? watchingList,
     bool? planToWatchList,
     bool? largeImage,
+    Set<String>? airingOff,
   }) =>
       NotificationPreferences(
+        airingOff: airingOff ?? this.airingOff,
         subscribedAt: subscribedAt ?? this.subscribedAt,
         dailyReleases: dailyReleases ?? this.dailyReleases,
         watchingList: watchingList ?? this.watchingList,
@@ -51,6 +65,7 @@ class NotificationPreferences extends Equatable {
         watchingList: watchingList,
         planToWatchList: planToWatchList,
         largeImage: largeImage,
+        airingOff: airingOff,
       );
 
   Map<String, dynamic> toJson() => {
@@ -59,6 +74,7 @@ class NotificationPreferences extends Equatable {
         'watchingList': watchingList,
         'planToWatchList': planToWatchList,
         'largeImage': largeImage,
+        'airingOff': airingOff.toList()..sort(),
       };
 
   factory NotificationPreferences.fromJson(Map<String, dynamic> json) {
@@ -70,9 +86,15 @@ class NotificationPreferences extends Equatable {
       watchingList: readBool(json, 'watchingList', d.watchingList),
       planToWatchList: readBool(json, 'planToWatchList', d.planToWatchList),
       largeImage: readBool(json, 'largeImage', d.largeImage),
+      airingOff: {
+        if (json['airingOff'] case final List list)
+          for (final v in list)
+            if (v is String) v,
+      },
     );
   }
 
   @override
-  List<Object?> get props => [subscribedAt, dailyReleases, watchingList, planToWatchList, largeImage];
+  List<Object?> get props =>
+      [subscribedAt, dailyReleases, watchingList, planToWatchList, largeImage, [...airingOff]..sort()];
 }

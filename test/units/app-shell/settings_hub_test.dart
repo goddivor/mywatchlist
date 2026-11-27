@@ -58,10 +58,21 @@ void main() {
     final about = find.text(SettingsSection.about.title);
     await tester.scrollUntilVisible(about, 200,
         scrollable: find.byType(Scrollable).first);
+    await tester.ensureVisible(about);
+    await tester.pumpAndSettle();
     await tester.tap(about);
     await tester.pumpAndSettle();
     expect(find.byType(AboutSettingsPage), findsOneWidget);
     expect(find.byType(ComingSoonPage), findsNothing);
+  });
+
+  testWidgets('the Info group offers the frame store before About', (tester) async {
+    await _pump(tester, const SettingsPage());
+    await tester.pumpAndSettle();
+    final store = find.text(S.current.Afr_Get_Frame);
+    await tester.scrollUntilVisible(store, 200, scrollable: find.byType(Scrollable).first);
+    expect(store, findsOneWidget);
+    expect(tester.getTopLeft(store).dy, lessThan(tester.getTopLeft(find.text(SettingsSection.about.title)).dy));
   });
 
   testWidgets('the hub is translated', (tester) async {

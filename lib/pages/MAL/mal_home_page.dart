@@ -13,6 +13,7 @@ import 'package:mywatchlist/utils/app_routes.dart';
 import 'package:mywatchlist/widgets/MAL/home/contentlistwidget.dart';
 import 'package:mywatchlist/widgets/MAL/home/homeappbar.dart';
 import 'package:mywatchlist/widgets/MAL/home/news_widget.dart';
+import 'package:mywatchlist/widgets/MAL/home/friends_activity_row.dart';
 import 'package:mywatchlist/widgets/MAL/home/section_header.dart';
 import 'package:mywatchlist/widgets/common/slivers.dart';
 import 'package:mywatchlist/widgets/home/home_chips.dart';
@@ -75,6 +76,7 @@ class _MalHomePageState extends State<MalHomePage> {
           requestsBloc.add(LoadFeaturesEvent(forceUpdate: forceUpdate, cacheDurationHours: cache));
         case SectionType.userList:
         case SectionType.forum:
+        case SectionType.friendsActivity:
           // Loaded by their own widgets (lib/widgets/home/home_sections.dart).
           break;
         case SectionType.seasonNow:
@@ -230,6 +232,8 @@ class _MalHomePageState extends State<MalHomePage> {
         );
       case SectionType.forum:
         return HomeForumSection(section: section, refresh: _refresh);
+      case SectionType.friendsActivity:
+        return HomeFriendsActivitySection(section: section, refresh: _refresh);
       case SectionType.seasonNow:
         return _buildSeasonSection(theme, section, title, tileSize);
       default:

@@ -7,6 +7,8 @@ import 'package:mywatchlist/widgets/Kitsu/media/kitsu_media_parts.dart' show kit
 import 'package:mywatchlist/widgets/Kitsu/media/kitsu_my_library.dart';
 import 'package:mywatchlist/widgets/Kitsu/media/kitsu_rating.dart';
 import 'package:mywatchlist/widgets/Kitsu/profile/kitsu_profile_rows.dart' show kitsuStatusLabel;
+import 'package:mywatchlist/widgets/common/tracker_add_status.dart';
+import 'package:mywatchlist/constants/constants.dart' show AccountType;
 import 'package:mywatchlist/widgets/user/list/list_entry_view.dart' show ListEntryStatus;
 
 /// The signed-in user's side of one title: their library entry and their favourite. The title
@@ -205,11 +207,18 @@ class KitsuLibraryBox extends StatelessWidget {
     if (result != null) my.apply(result);
   }
 
-  Widget _statusMenu(BuildContext context, {required Widget Function(VoidCallback? open) button}) {
+  Widget _statusMenu(BuildContext context,
+      {required Widget Function(VoidCallback? open) button, bool adding = false}) {
+    // Adding: the status picked in the Kitsu settings comes first, marked.
+    final preferred = adding ? TrackerAddStatus.of(AccountType.kitsu, anime: _anime) : null;
+    final order = preferred == null ? statuses : [preferred, ...statuses.where((st) => st != preferred)];
     return MenuAnchor(
       menuChildren: [
-        for (final st in statuses)
+        for (final st in order)
           MenuItemButton(
+            leadingIcon: preferred == null
+                ? null
+                : Icon(st == preferred ? Icons.check_rounded : null, size: 18),
             onPressed: () => _status(context, st),
             child: Text(kitsuStatusLabel(st, isAnime: _anime)),
           ),
@@ -237,6 +246,7 @@ class KitsuLibraryBox extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(kitsuPagePadding, 16, kitsuPagePadding, 0),
             child: _statusMenu(
               context,
+              adding: true,
               button: (open) => FilledButton.icon(
                 onPressed: open,
                 icon: const Icon(Icons.add_rounded),

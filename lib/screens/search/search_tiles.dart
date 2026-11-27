@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mywatchlist/widgets/common/framed_avatar.dart';
 import 'package:mywatchlist/widgets/user/list/list_status_pill.dart';
 import 'package:mywatchlist/constants/constants.dart';
 import 'package:mywatchlist/generated/l10n.dart';
@@ -448,8 +449,10 @@ class AllItemTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final by = splitArticleByLine(item.status ?? '');
     final byLine = [
-      if (item.status != null && item.status!.isNotEmpty) S.current.Srch_By(item.status!),
+      if (by.author.isNotEmpty) S.current.Srch_By(by.author),
+      if (by.comments != null) S.current.Dp_News_Comments(by.comments!),
       if (item.startDate != null && item.startDate!.isNotEmpty) item.startDate!,
     ].join('  ·  ');
     final isClub = category == SearchCategory.club;
@@ -516,7 +519,11 @@ class UserTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return EntityTile(
-      leading: SearchThumb(url: user.imageUrl, width: 48, height: 48, radius: 24, icon: Icons.person_rounded),
+      leading: FramedAvatar(
+        username: user.username,
+        size: 48,
+        child: SearchThumb(url: user.imageUrl, width: 48, height: 48, radius: 24, icon: Icons.person_rounded),
+      ),
       leadingHeight: 48,
       title: user.username,
       subtitle: user.lastOnline,
@@ -698,4 +705,13 @@ class StackTile extends StatelessWidget {
       trailing: Icon(Icons.chevron_right_rounded, color: theme.colorScheme.onSurfaceVariant),
     );
   }
+}
+
+/// Splits MyAnimeList's article by-line (`Nioxys 0 Comment`, `Syureria 27 Comments`) into the
+/// author and the comment count, which MAL does not pluralise.
+({String author, int? comments}) splitArticleByLine(String raw) {
+  final text = raw.replaceAll(RegExp(r'\s+'), ' ').trim();
+  final m = RegExp(r'^(.*?)\s*\b([\d,]+) Comments?$', caseSensitive: false).firstMatch(text);
+  if (m == null) return (author: text, comments: null);
+  return (author: m.group(1)!.trim(), comments: int.tryParse(m.group(2)!.replaceAll(',', '')));
 }

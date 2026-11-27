@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mywatchlist/apps/anilist/anilist_top_bar.dart';
 import 'package:mywatchlist/constants/constants.dart' show HomePageTileSize, getTileSizeValues;
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/screens/explore/explore_widgets.dart' show ExploreSectionHeader, kExplorePadding;
@@ -31,7 +32,10 @@ class _Row {
 /// characters and staff, and AniList's live genre list. Every row of a type comes in one
 /// request kept ten minutes, so switching Anime / Manga or coming back costs nothing.
 class AnilistExplorePage extends StatefulWidget {
-  const AnilistExplorePage({super.key, this.service, this.catalog});
+  const AnilistExplorePage({super.key, this.service, this.catalog, this.embedded = false});
+
+  /// The AniList app's "Browse" tab: the AniList app bar instead of the shared one.
+  final bool embedded;
 
   /// Replaced in tests.
   final AnilistFeedsService? service;
@@ -131,7 +135,16 @@ class _AnilistExplorePageState extends State<AnilistExplorePage> {
           snap: true,
           titleSpacing: 0,
           toolbarHeight: kToolbarHeight,
-          title: AppBarHome(title: s.Explore_Title, transparent: true, showSettings: true),
+          title: widget.embedded
+              ? Row(
+                  children: [
+                    const SizedBox(width: 16),
+                    Expanded(child: Text(s.Ala_Tab_Browse, style: Theme.of(context).textTheme.titleLarge)),
+                    // The search tile below is the search of this page.
+                    const AnilistBarActions(showSearch: false),
+                  ],
+                )
+              : AppBarHome(title: s.Explore_Title, transparent: true, showSettings: true),
         ),
         SliverToBoxAdapter(
           child: _SearchTile(onTap: () => openAnilistSearch(context, category: category)),

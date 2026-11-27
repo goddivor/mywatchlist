@@ -23,6 +23,14 @@ class SimklMediaHero extends StatelessWidget {
     return hero < top + 40 ? top + 40 : hero;
   }
 
+  /// Expanded height when the poster and the title sit over the fanart, as on the Kitsu page
+  /// (owner request): a band of fanart under the toolbar, then the title block.
+  static double extentWithTitle(BuildContext context) =>
+      MediaQuery.paddingOf(context).top + kToolbarHeight + fanartBand + SimklTitleBlock.posterHeight + 16;
+
+  /// Fanart left visible between the toolbar and the top of the poster.
+  static const double fanartBand = 56;
+
   @override
   Widget build(BuildContext context) {
     final url = fanartUrl;
@@ -39,7 +47,7 @@ class SimklMediaHero extends StatelessWidget {
             gradient: LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
-              stops: const [0, 0.35, 0.7, 1],
+              stops: const [0, 0.3, 0.55, 0.88],
               colors: [
                 colors.imageScrim,
                 colors.imageScrim.withValues(alpha: 0),
@@ -77,8 +85,9 @@ class SimklHeroButton extends StatelessWidget {
   }
 }
 
-/// Poster (overlapping the hero's bottom when there is one), the title, the other form of the
-/// title and Simkl's meta line: years · network · total time · episodes · format · age rating.
+/// Poster (under the hero when there is one), the title, the other form of the
+/// title and Simkl's details, one per line beside the poster: years, network, total time,
+/// episodes, format, age rating.
 class SimklTitleBlock extends StatelessWidget {
   static const double posterWidth = 108;
   static const double posterHeight = 162;
@@ -103,28 +112,26 @@ class SimklTitleBlock extends StatelessWidget {
     final t = title;
     final name = t?.title ?? fallbackTitle;
     final other = t?.enTitle != null && t!.enTitle != name ? t.enTitle : null;
-    final meta = t == null ? '' : metaLine(t);
-    final shift = overlap ? 48.0 : 0.0;
+    final meta = t == null ? const <(IconData, String)>[] : metaItems(t);
+    // The poster sits under the backdrop, whole: pulled up over it, its top went behind the
+    // pinned app bar (painted above the page) and the cover looked cut.
     return Padding(
-      padding: EdgeInsets.fromLTRB(simklPagePadding, overlap ? 0 : 8, simklPagePadding, 0),
+      padding: const EdgeInsets.fromLTRB(simklPagePadding, 12, simklPagePadding, 0),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Transform.translate(
-            offset: Offset(0, -shift),
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: theme.scaffoldBackgroundColor, width: 2),
-              ),
-              child: AppImage(
-                url: t?.posterUrl ?? fallbackPoster,
-                width: posterWidth,
-                height: posterHeight,
-                borderRadius: BorderRadius.circular(10),
-                placeholderColor: scheme.surfaceContainerHighest,
-                semanticLabel: name,
-              ),
+          DecoratedBox(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: theme.scaffoldBackgroundColor, width: 2),
+            ),
+            child: AppImage(
+              url: t?.posterUrl ?? fallbackPoster,
+              width: posterWidth,
+              height: posterHeight,
+              borderRadius: BorderRadius.circular(10),
+              placeholderColor: scheme.surfaceContainerHighest,
+              semanticLabel: name,
             ),
           ),
           const SizedBox(width: 14),
@@ -144,10 +151,25 @@ class SimklTitleBlock extends StatelessWidget {
                       style: theme.textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
                     ),
                   ],
-                  if (meta.isNotEmpty) ...[
-                    const SizedBox(height: 8),
-                    Text(meta, style: theme.textTheme.labelMedium?.copyWith(color: scheme.onSurfaceVariant)),
-                  ],
+                  if (meta.isNotEmpty) const SizedBox(height: 10),
+                  for (final (icon, text) in meta)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 6),
+                      child: Row(
+                        children: [
+                          Icon(icon, size: 16, color: scheme.primary),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              text,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.textTheme.bodyMedium?.copyWith(color: scheme.onSurface),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                 ],
               ),
             ),
@@ -158,7 +180,10 @@ class SimklTitleBlock extends StatelessWidget {
   }
 
   /// "2019 – 2024 · Fuji TV · 1d 22h · 55 eps · TV · TV-MA".
-  static String metaLine(SimklTitle t) {
+  static String metaLine(SimklTitle t) => metaItems(t).map((m) => m.$2).join(' · ');
+
+  /// The details of [t] with their icon, in the order of [metaLine].
+  static List<(IconData, String)> metaItems(SimklTitle t) {
     final first = int.tryParse((t.firstAired ?? '').split('-').first);
     final last = int.tryParse((t.lastAired ?? '').split('-').first);
     final start = first ?? t.year;
@@ -170,13 +195,14 @@ class SimklTitleBlock extends StatelessWidget {
     final eps = t.totalEpisodes;
     final runtime = t.runtime;
     return [
-      if (years != null) years,
-      if (t.network != null) t.network!,
-      if (eps != null && eps > 1 && runtime != null && runtime > 0) SimklFormat.minutes(eps * runtime),
-      if (eps != null && eps > 0) S.current.Smp_Episodes_Short(eps),
-      if (SimklFormat.type(t.animeType) case final type?) type,
-      if (t.certification != null) t.certification!,
-    ].join(' · ');
+      if (years != null) (Icons.calendar_today_rounded, years),
+      if (t.network != null) (Icons.live_tv_rounded, t.network!),
+      if (eps != null && eps > 1 && runtime != null && runtime > 0)
+        (Icons.schedule_rounded, SimklFormat.minutes(eps * runtime)),
+      if (eps != null && eps > 0) (Icons.video_library_outlined, S.current.Smp_Episodes_Short(eps)),
+      if (SimklFormat.type(t.animeType) case final type?) (Icons.category_outlined, type),
+      if (t.certification != null) (Icons.shield_outlined, t.certification!),
+    ];
   }
 }
 
@@ -221,9 +247,11 @@ class SimklRatingStrip extends StatelessWidget {
       if (t.simklRating case final r?) _RatingChip(source: 'Simkl', rating: r, star: colors.score.color),
       if (t.malRating case final r?) _RatingChip(source: 'MAL', rating: r),
       if (t.imdbRating case final r?) _RatingChip(source: S.current.Smp_Imdb, rating: r),
-      if (t.rank != null) _PlainChip(value: S.current.Smp_Rank(SimklFormat.count(t.rank!)), icon: Icons.leaderboard_outlined),
+      if (t.rank != null)
+        _PlainChip(value: S.current.Smp_Rank(SimklFormat.count(t.rank!)), icon: Icons.leaderboard_outlined),
       if (t.dropRate != null)
-        _PlainChip(label: S.current.Smp_Drop_Rate, value: SimklFormat.percent(t.dropRate!), icon: Icons.trending_down_rounded),
+        _PlainChip(
+            label: S.current.Smp_Drop_Rate, value: SimklFormat.percent(t.dropRate!), icon: Icons.trending_down_rounded),
     ];
     if (chips.isEmpty) return const SizedBox.shrink();
     return Padding(
@@ -293,19 +321,39 @@ class _PlainChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
+    final small = theme.textTheme.labelSmall?.copyWith(color: scheme.onSurfaceVariant);
+    final row = Row(mainAxisSize: MainAxisSize.min, children: [
+      Icon(icon, size: 16, color: scheme.primary),
+      const SizedBox(width: 4),
+      Text(value, style: theme.textTheme.titleSmall),
+    ]);
+    if (label == null) {
+      // As tall as its two-line neighbours (owner request): an invisible second line keeps the
+      // height, the value sits in the middle.
+      return _ChipShell(
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            Visibility.maintain(
+              visible: false,
+              child: Column(mainAxisSize: MainAxisSize.min, children: [
+                Text(' ', style: small),
+                Row(mainAxisSize: MainAxisSize.min, children: [
+                  const Icon(Icons.circle, size: 16),
+                  Text(' ', style: theme.textTheme.titleSmall),
+                ]),
+              ]),
+            ),
+            row,
+          ],
+        ),
+      );
+    }
     return _ChipShell(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (label != null)
-            Text(label!, style: theme.textTheme.labelSmall?.copyWith(color: scheme.onSurfaceVariant)),
-          Row(mainAxisSize: MainAxisSize.min, children: [
-            Icon(icon, size: 16, color: scheme.primary),
-            const SizedBox(width: 4),
-            Text(value, style: theme.textTheme.titleSmall),
-          ]),
-        ],
+        children: [Text(label!, style: small), row],
       ),
     );
   }

@@ -94,19 +94,10 @@ void main() {
   });
 
   group('header', () {
-    test('reserves the countdown row only for an airing anime with the pref on', () {
+    test('the header keeps one height: the countdown lives in the synopsis', () {
       final airing = _data(content: _content(status: 'currently_airing'));
       final done = _data(content: _content(status: 'finished_airing'));
-      expect(DetailHeader.reservesCountdown(airing, enabled: true), isTrue);
-      expect(DetailHeader.reservesCountdown(airing, enabled: false), isFalse);
-      expect(DetailHeader.reservesCountdown(done, enabled: true), isFalse);
-      expect(
-          DetailHeader.reservesCountdown(
-              _data(category: 'manga', content: _content(status: 'currently_airing')),
-              enabled: true),
-          isFalse);
-      expect(DetailHeader.extentFor(airing, topInset: 24, countdown: true),
-          greaterThan(DetailHeader.extentFor(done, topInset: 24, countdown: true)));
+      expect(DetailHeader.extentFor(airing), DetailHeader.extentFor(done));
     });
 
     test('season names are translated', () {

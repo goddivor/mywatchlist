@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:mywatchlist/widgets/common/spoiler_text.dart';
 import 'package:intl/intl.dart';
 import 'package:mywatchlist/cache/bookmarks.dart';
 import 'package:mywatchlist/cache/top_characters.dart';
@@ -10,10 +11,12 @@ import 'package:mywatchlist/constants/constants.dart';
 import 'package:mywatchlist/generated/l10n.dart';
 import 'package:mywatchlist/screens/MAL/contentdetailedscreen.dart';
 import 'package:mywatchlist/screens/MAL/detail/sections/section_states.dart';
+import 'package:mywatchlist/screens/MAL/voice_collage_screen.dart';
 import 'package:mywatchlist/services/api/Jikan/jikan_client.dart';
 import 'package:mywatchlist/services/api/Jikan/jikan_fallbacks.dart';
 import 'package:mywatchlist/services/api/MAL/scrapper/character_page.dart';
 import 'package:mywatchlist/services/api/MAL/mal_anime.dart';
+import 'package:mywatchlist/utils/app_routes.dart';
 import 'package:mywatchlist/utils/web_launcher.dart';
 import 'package:mywatchlist/widgets/bookmarks/bookmark_button.dart';
 import 'package:mywatchlist/widgets/common/app_bar_menu.dart';
@@ -44,7 +47,10 @@ class _Entry {
   final String? image;
   final String? subtitle;
 
-  const _Entry(this.id, this.title, this.image, this.subtitle);
+  /// The anime of a voice role (its title), when the source gives it.
+  final String? anime;
+
+  const _Entry(this.id, this.title, this.image, this.subtitle, [this.anime]);
 }
 
 class _Section {
@@ -63,6 +69,9 @@ class _Profile {
   final String? image;
   final List<_Section> sections;
 
+  /// A person's birthday (Jikan's `birthday`), when known.
+  final DateTime? birthday;
+
   /// Favorites of the voiced characters when the source gives them (MAL's
   /// person page does, Jikan does not).
   final Map<int, int> roleFavorites;
@@ -75,6 +84,7 @@ class _Profile {
     required this.image,
     required this.sections,
     this.roleFavorites = const {},
+    this.birthday,
   });
 
   _Section? section(_SectionId id) {
@@ -99,6 +109,7 @@ List<_Entry> _entries(
   required String key,
   required String titleKey,
   required String subtitleKey,
+  String? animeKey,
 }) {
   if (list is! List) return const [];
   final seen = <int>{};
@@ -110,11 +121,13 @@ List<_Entry> _entries(
     if (row == null || item == null || id is! int || !seen.add(id)) continue;
     final title = item[titleKey];
     final subtitle = row[subtitleKey];
+    final anime = animeKey == null ? null : _map(row[animeKey])?['title'];
     out.add(_Entry(
       id,
       title is String && title.isNotEmpty ? title : '?',
       _jpg(item['images']),
       subtitle is String && subtitle.isNotEmpty ? subtitle : null,
+      anime is String && anime.isNotEmpty ? anime : null,
     ));
   }
   return out;
@@ -166,7 +179,7 @@ _Profile _profileFromData(Map<String, dynamic> data, bool isCharacter) {
             _SectionId.voiceRoles,
             'character',
             _entries(data['voices'],
-                key: 'character', titleKey: 'name', subtitleKey: 'role'),
+                key: 'character', titleKey: 'name', subtitleKey: 'role', animeKey: 'anime'),
           ),
           _Section(
             _SectionId.animeStaff,
@@ -198,6 +211,7 @@ _Profile _profileFromData(Map<String, dynamic> data, bool isCharacter) {
     image: _jpg(data['images']),
     sections: sections,
     roleFavorites: roleFavorites,
+    birthday: data['birthday'] is String ? DateTime.tryParse(data['birthday'] as String) : null,
   );
 }
 
@@ -479,6 +493,12 @@ class _CharacterScreenState extends State<CharacterScreen> {
                       : profile.alternateName,
                   malId: widget.id,
                 ),
+              if (profile != null && !_isCharacter && _voices.isNotEmpty)
+                IconButton(
+                  tooltip: S.current.Vc_Open,
+                  icon: const Icon(Icons.auto_awesome_mosaic_rounded),
+                  onPressed: () => _openCollage(profile),
+                ),
               if (profile != null)
                 AppBarMenu(
                   onShare: () => _share(profile),
@@ -488,6 +508,24 @@ class _CharacterScreenState extends State<CharacterScreen> {
           ),
           ..._bodySlivers(profile),
           const SliverPadding(padding: EdgeInsets.only(bottom: 32)),
+        ],
+      ),
+    );
+  }
+
+  /// The voice actor and the characters they voiced as one collage (the roles in the order
+  /// the page sorts them), to look at, save or share.
+  void _openCollage(_Profile profile) {
+    AppRoutes.push<void>(
+      context,
+      VoiceCollageScreen(
+        personId: widget.id,
+        name: profile.name,
+        image: profile.image,
+        birthday: profile.birthday,
+        roles: [
+          for (final e in _voices)
+            VoiceRole(characterId: e.id, name: e.title, image: e.image, anime: e.anime, role: e.subtitle),
         ],
       ),
     );
@@ -545,7 +583,7 @@ class _CharacterScreenState extends State<CharacterScreen> {
               : TranslatorWidget(
                   content: profile.about,
                   reversed: true,
-                  builder: (context, text) => SelectableText(text, style: style),
+                  builder: (context, text) => SpoilerText(text, style: style),
                 ),
         ),
       ),

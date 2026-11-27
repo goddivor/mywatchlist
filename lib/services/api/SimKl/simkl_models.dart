@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:mywatchlist/services/api/SimKl/simkl_kind.dart';
 import 'package:mywatchlist/services/api/SimKl/simkl_title_language.dart';
 import 'package:mywatchlist/widgets/user/list/list_entry_view.dart';
 
@@ -73,6 +74,10 @@ String? _firstOfficial(Object? alt) {
 class SimklMedia {
   final int simklId;
 
+  /// The catalogue of the title (from the item's `url`, `endpoint_type` or `type`; the
+  /// catalogue that was asked otherwise).
+  final SimklKind kind;
+
   /// MyAnimeList id when the answer carries it (otherwise resolved on tap).
   final int? malId;
   final String? slug;
@@ -105,12 +110,14 @@ class SimklMedia {
   /// Calendar answers: this episode ends the title (`finale_type` of the calendar file).
   final bool finale;
 
-  /// Airing answers: the episode number and its air time.
+  /// Airing answers: the episode number (inside [season] for a show) and its air time.
+  final int? season;
   final int? episode;
   final DateTime? airDate;
 
   const SimklMedia({
     required this.simklId,
+    this.kind = SimklKind.anime,
     this.malId,
     this.slug,
     required this.title,
@@ -129,19 +136,28 @@ class SimklMedia {
     this.titleRomaji,
     this.titleNative,
     this.finale = false,
+    this.season,
     this.episode,
     this.airDate,
   });
+
+  /// The same item in [kind] (a list asked from that catalogue that does not say it).
+  SimklMedia ofKind(SimklKind kind) => kind == this.kind ? this : _copy(kind: kind);
 
   /// The same item titled for [lang] (the Simkl profile's title language).
   SimklMedia retitled(SimklTitleLanguage lang) {
     final next = SimklTitlePreference.pick(lang, title, romaji: titleRomaji, original: titleNative);
     if (next == title) return this;
+    return _copy(title: next);
+  }
+
+  SimklMedia _copy({SimklKind? kind, String? title}) {
     return SimklMedia(
       simklId: simklId,
+      kind: kind ?? this.kind,
       malId: malId,
       slug: slug,
-      title: next,
+      title: title ?? this.title,
       posterUrl: posterUrl,
       year: year,
       rating: rating,
@@ -157,13 +173,26 @@ class SimklMedia {
       titleRomaji: titleRomaji,
       titleNative: titleNative,
       finale: finale,
+      season: season,
       episode: episode,
       airDate: airDate,
     );
   }
 
-  /// Null when the item has no Simkl id or no title.
-  static SimklMedia? fromJson(Object? raw) {
+  /// The catalogue an item names: `url` (`/tv/1/x`, `/movies/2/y`), then `endpoint_type`, then
+  /// `type`.
+  static SimklKind? kindOf(Map<Object?, Object?> m) {
+    final url = m['url'];
+    if (url is String) {
+      final folder = RegExp(r'^/?(tv|anime|movies)/').firstMatch(url)?.group(1);
+      if (folder != null) return SimklKind.ofType(folder);
+    }
+    return SimklKind.ofType(m['endpoint_type']) ?? SimklKind.ofType(m['type']);
+  }
+
+  /// Null when the item has no Simkl id or no title. [kind] is the catalogue that was asked,
+  /// used when the item does not say.
+  static SimklMedia? fromJson(Object? raw, [SimklKind kind = SimklKind.anime]) {
     if (raw is! Map) return null;
     // Some answers wrap the title in `show`.
     final m = raw['show'] is Map ? {...raw, ...(raw['show'] as Map)} : raw;
@@ -188,6 +217,7 @@ class SimklMedia {
     final genres = m['genres'];
     return SimklMedia(
       simklId: id,
+      kind: kindOf(m) ?? kind,
       malId: _int(ids['mal']),
       slug: _text(ids['slug']),
       title: title,
@@ -206,57 +236,64 @@ class SimklMedia {
       titleRomaji: _text(m['title_romaji']),
       titleNative: _firstOfficial(m['alt_titles']),
       finale: _text(m['finale_type']) != null,
+      season: episode is Map ? _int(episode['season']) : _int(m['season']),
       episode: episode is Map ? _int(episode['episode']) : _int(episode),
       airDate: DateTime.tryParse(_text(m['date']) ?? '')?.toUtc(),
     );
   }
 
-  static List<SimklMedia> listFrom(Object? data) {
+  static List<SimklMedia> listFrom(Object? data, [SimklKind kind = SimklKind.anime]) {
     final list = data is List
         ? data
         : data is Map
-            ? (data['anime'] ?? data['results'] ?? data['items'])
+            ? (data[kind.syncKey] ?? data['anime'] ?? data['results'] ?? data['items'])
             : null;
     if (list is! List) return const [];
     final seen = <int>{};
     return [
       for (final raw in list)
-        if (fromJson(raw) case final item? when seen.add(item.simklId)) item,
+        if (fromJson(raw, kind) case final item? when seen.add(item.simklId)) item,
     ];
   }
 }
 
 /// Parses `GET /sync/all-items/anime` into list entries (top level so `compute` can run it).
-List<ListEntryView> parseSimklAnimeList(Object? data) {
-  final list = data is Map ? data['anime'] : null;
+List<ListEntryView> parseSimklAnimeList(Object? data) => parseSimklList(data, SimklKind.anime);
+
+/// The items of [kind] of a `/sync/all-items` answer (`shows`, `anime` or `movies`).
+List<ListEntryView> parseSimklList(Object? data, SimklKind kind) {
+  final list = data is Map ? data[kind.syncKey] : null;
   if (list is! List) return const [];
   final entries = <ListEntryView>[];
   for (final raw in list) {
-    final entry = simklEntryFromJson(raw);
+    final entry = simklEntryFromJson(raw, kind);
     if (entry != null) entries.add(entry);
   }
   return entries;
 }
 
-/// One `anime` item of the user's list; null when it has no Simkl id or title.
-ListEntryView? simklEntryFromJson(Object? raw) {
+/// One item of the user's list (`show` inside for shows and anime, `movie` for movies); null
+/// when it has no Simkl id or title. A movie counts as one episode, watched once completed.
+ListEntryView? simklEntryFromJson(Object? raw, [SimklKind kind = SimklKind.anime]) {
   if (raw is! Map) return null;
-  final show = raw['show'];
+  final show = raw[kind.itemKey] ?? raw['show'];
   if (show is! Map) return null;
   final ids = show['ids'] is Map ? show['ids'] as Map : const {};
   final id = _int(ids['simkl'] ?? ids['simkl_id']);
   final title = _text(show['title']);
   if (id == null || title == null) return null;
-  final total = _int(raw['total_episodes_count']) ?? 0;
+  final movie = kind == SimklKind.movie;
+  final status = SimklStatus.parse(raw['status']);
+  final total = movie ? 1 : _int(raw['total_episodes_count']) ?? 0;
   final notAired = _int(raw['not_aired_episodes_count']) ?? 0;
   final genres = show['genres'];
   final poster = SimklImages.poster(show['poster']);
-  final type = _text(raw['anime_type']) ?? _text(show['anime_type']);
+  final type = _text(raw['anime_type']) ?? _text(show['anime_type']) ?? (movie ? 'movie' : null);
   final year = _int(show['year']);
   return ListEntryView(
     id: id,
     malId: _int(ids['mal']),
-    category: 'anime',
+    category: kind.category,
     title: title,
     imageUrl: poster,
     largeImageUrl: poster,
@@ -270,9 +307,9 @@ ListEntryView? simklEntryFromJson(Object? raw) {
     total: total,
     genres: genres is List ? [for (final g in genres) if (g is String && g.isNotEmpty) g] : const [],
     releaseStart: year?.toString(),
-    status: SimklStatus.parse(raw['status']),
+    status: status,
     score: (_int(raw['user_rating']) ?? 0).clamp(0, 10),
-    progress: _int(raw['watched_episodes_count']) ?? 0,
+    progress: movie ? (status == ListEntryStatus.completed ? 1 : 0) : _int(raw['watched_episodes_count']) ?? 0,
     updatedAt: DateTime.tryParse(_text(raw['last_watched_at']) ?? _text(raw['user_rated_at']) ?? '')?.toUtc(),
   );
 }

@@ -41,7 +41,7 @@
   "Rg_Open": "Ouvrir",
   "Rg_Select": "Sélectionner",
   "Rg_Selected": "Sélectionné",
-  "Rg_Titles": "{count} titres",
+  "Rg_Titles": "{count, plural, one{{count} titre} other{{count} titres}}",
   "Rg_Season": "Saison",
   "Rg_Type": "Type",
   "Rg_Status": "Statut",

@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:mywatchlist/constants/constants.dart';
 import 'package:mywatchlist/services/api/SimKl/simkl_client.dart' show SimklClient, SimklHttpError;
+import 'package:mywatchlist/services/api/SimKl/simkl_kind.dart';
 import 'package:mywatchlist/services/api/SimKl/simkl_models.dart';
 import 'package:mywatchlist/services/api/SimKl/simkl_title_language.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -26,9 +27,10 @@ typedef SimklCdnGet = Future<http.Response> Function(Uri uri, Map<String, String
 /// Cloudflare (trending one hour, calendar five hours). Docs: https://api.simkl.org (Trending,
 /// Calendar).
 ///
-/// - Trending anime of the day, week or month (`/discover/trending/anime/{window}_100.json`).
-/// - The anime calendar: every episode airing in a rolling 33-day window, with the title's
-///   metadata (`/calendar/v2/anime.json`).
+/// - Trending shows, anime or movies of the day, week or month
+///   (`/discover/trending/{tv|anime|movies}/{window}_100.json`).
+/// - The calendars: every show or anime episode airing in a rolling 33-day window, or every movie
+///   release, with the title's metadata (`/calendar/v2/{tv|anime|movie_release}.json`).
 ///
 /// Answers are kept in memory (trending 30 min, calendar 1 h) and a request already running is
 /// shared, so the home rows and the Explore tab download each file once.
@@ -82,22 +84,26 @@ class SimklCdn {
         'app-version': _version ?? '0.0.0',
       });
 
-  /// The trending anime of [window], most watched first (100 titles).
-  Future<List<SimklMedia>> trending(SimklTrendingWindow window) =>
-      _cached('trending_${window.file}', trendingTtl, () async {
-        final body = await _fetch('/discover/trending/anime/${window.file}_100.json');
-        return _parse(parseSimklTrending, body);
+  /// The trending titles of [kind] in [window], most watched first (100 titles).
+  Future<List<SimklMedia>> trending(SimklTrendingWindow window, {SimklKind kind = SimklKind.anime}) =>
+      _cached('${kind.name}_trending_${window.file}', trendingTtl, () async {
+        final body = await _fetch('/discover/trending/${kind.api}/${window.file}_100.json');
+        return [for (final m in await _parse(parseSimklTrending, body)) m.ofKind(kind)];
       }).then(_titled);
 
   /// Every episode of the calendar file, by air time; each item carries its episode number and
   /// air date ([SimklMedia.episode], [SimklMedia.airDate], UTC).
-  Future<List<SimklMedia>> calendar() => _cached('calendar', calendarTtl, () async {
-        final body = await _fetch('/calendar/v2/anime.json');
-        return _parse(parseSimklCalendar, body);
+  /// [kind] movie: the releases (no episode).
+  Future<List<SimklMedia>> calendar({SimklKind kind = SimklKind.anime}) =>
+      _cached('${kind.name}_calendar', calendarTtl, () async {
+        final file = switch (kind) { SimklKind.tv => 'tv', SimklKind.anime => 'anime', SimklKind.movie => 'movie_release' };
+        final body = await _fetch('/calendar/v2/$file.json');
+        return [for (final m in await _parse(parseSimklCalendar, body)) m.ofKind(kind)];
       }).then(_titled);
 
-  /// The calendar episodes airing on the local day of [day].
-  Future<List<SimklMedia>> airingOn(DateTime day) async => episodesOn(await calendar(), day);
+  /// The calendar episodes (or movie releases) airing on the local day of [day].
+  Future<List<SimklMedia>> airingOn(DateTime day, {SimklKind kind = SimklKind.anime}) async =>
+      episodesOn(await calendar(kind: kind), day);
 
   /// The items titled for the Simkl profile's language (the kept answers stay as Simkl sent them).
   static List<SimklMedia> _titled(List<SimklMedia> items) {
@@ -169,6 +175,7 @@ SimklMedia? _media(Map<Object?, Object?> raw) {
   final overview = media.overview?.replaceAll(_tags, ' ').replaceAll(RegExp(r'\s+'), ' ').trim();
   return SimklMedia(
     simklId: media.simklId,
+    kind: media.kind,
     malId: media.malId,
     slug: media.slug,
     title: media.title,
@@ -187,6 +194,7 @@ SimklMedia? _media(Map<Object?, Object?> raw) {
     titleRomaji: media.titleRomaji,
     titleNative: media.titleNative,
     finale: media.finale,
+    season: media.season,
     episode: media.episode,
     airDate: media.airDate,
   );
@@ -223,13 +231,14 @@ List<SimklMedia> parseSimklCalendar(String body) {
     if (meta is! Map || date is! String || DateTime.tryParse(date) == null) continue;
     final episode = entry['episode'];
     final number = episode is Map ? episode['episode'] : null;
-    if (!seen.add('$id:$number:$date')) continue;
+    final season = episode is Map ? episode['season'] : null;
+    if (!seen.add('$id:$season:$number:$date')) continue;
     final media = _media({
       ...meta,
       'ids': {...?(meta['ids'] as Map?), 'simkl_id': id},
       'date': date,
       'finale_type': entry['finale_type'],
-      'episode': number,
+      'episode': {'season': season, 'episode': number},
     });
     if (media != null) items.add(media);
   }

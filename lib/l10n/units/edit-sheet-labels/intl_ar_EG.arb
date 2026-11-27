@@ -1,0 +1,10 @@
+{
+  "@@locale": "ar_EG",
+  "Esl_Very_Low": "منخفض جدا",
+  "Esl_Low": "منخفض",
+  "Esl_Medium": "متوسط",
+  "Esl_High": "عالي",
+  "Esl_Very_High": "عالي جدا",
+  "Esl_Score": "التقييم",
+  "Esl_Fine": "مقبول"
+}

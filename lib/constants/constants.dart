@@ -8,6 +8,8 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:intl/intl.dart';
 import 'package:mywatchlist/enums.dart' as enums show myAnimeStatusMap;
 import 'package:mywatchlist/generated/l10n.dart';
+import 'package:mywatchlist/screens/search/general_search_screen.dart' show GeneralSearchScreen;
+import 'package:mywatchlist/screens/search/search_filters.dart' show SearchCategory;
 import 'package:mywatchlist/services/api/MAL/mal_anime.dart';
 import 'package:mywatchlist/widgets/common/custombutton.dart';
 import 'package:mywatchlist/widgets/common/app_colors.dart';
@@ -698,17 +700,17 @@ String convertGenre(Genre g, [String category = "anime"]) {
   return g.name;
 }
 
+/// Opens the search on the anime (or manga) of genre [e], as DailyAL's genre buttons do. The
+/// MyAnimeList id is used when it is one; the name also matches other trackers' genres.
 void onGenrePress(Genre e, String category, BuildContext context) {
-  // Navigate to the genre page
-  // Navigator.push(
-  //   context,
-  //   MaterialPageRoute(
-  //     builder: (context) => GenrePage(
-  //       genre: e,
-  //       category: category,
-  //     ),
-  //   ),
-  // );
+  final manga = category == 'manga';
+  Navigator.of(context).push(MaterialPageRoute<void>(
+    builder: (_) => GeneralSearchScreen.byGenre(
+      ids: [if (e.id > 0) e.id],
+      names: [if (e.name.trim().isNotEmpty) e.name],
+      category: manga ? SearchCategory.manga : SearchCategory.anime,
+    ),
+  ));
 }
 
 bool nullOrEmpty(dynamic list) {
@@ -768,12 +770,7 @@ String displayTimeAgo(DateTime date, {bool numericDates = true}) {
     )}';
   } else if ((difference.inDays / 365).floor() >= 1) {
     return (numericDates)
-        ? Intl.message(
-            'an year ago',
-            name: 'year_ago',
-            desc: '',
-            args: [],
-          )
+        ? S.current.Mq_Year_Ago
         : Intl.message(
             'Last year',
             name: 'Last_year',
@@ -802,7 +799,7 @@ String displayTimeAgo(DateTime date, {bool numericDates = true}) {
             args: [],
           );
   } else if ((difference.inDays / 7).floor() >= 2) {
-    return '${(difference.inDays / 7).floor()}  ${Intl.message(
+    return '${(difference.inDays / 7).floor()} ${Intl.message(
       'weeks ago',
       name: 'weeks_ago',
       desc: '',
@@ -823,7 +820,7 @@ String displayTimeAgo(DateTime date, {bool numericDates = true}) {
             args: [],
           );
   } else if (difference.inDays >= 2) {
-    return '${difference.inDays}  ${Intl.message(
+    return '${difference.inDays} ${Intl.message(
       'days ago',
       name: 'days_ago',
       desc: '',
@@ -844,7 +841,7 @@ String displayTimeAgo(DateTime date, {bool numericDates = true}) {
             args: [],
           );
   } else if (difference.inHours >= 2) {
-    return '${difference.inHours}  ${Intl.message(
+    return '${difference.inHours} ${Intl.message(
       'hours ago',
       name: 'hours_ago',
       desc: '',
@@ -858,7 +855,7 @@ String displayTimeAgo(DateTime date, {bool numericDates = true}) {
       args: [],
     );
   } else if (difference.inMinutes >= 2) {
-    return '${difference.inMinutes}  ${Intl.message(
+    return '${difference.inMinutes} ${Intl.message(
       'minutes ago',
       name: 'minutes_ago',
       desc: '',
@@ -872,7 +869,7 @@ String displayTimeAgo(DateTime date, {bool numericDates = true}) {
       args: [],
     );
   } else if (difference.inSeconds >= 3) {
-    return '${difference.inSeconds}  ${Intl.message(
+    return '${difference.inSeconds} ${Intl.message(
       'seconds ago',
       name: 'seconds_ago',
       desc: '',

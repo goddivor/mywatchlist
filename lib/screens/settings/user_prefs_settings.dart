@@ -78,6 +78,7 @@ class UserPrefSettingsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final s = S.current;
     return PrefsPage(
+      trackerScoped: true,
       title: s.User_Preferences,
       onReset: _reset,
       children: [

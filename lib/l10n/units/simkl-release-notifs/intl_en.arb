@@ -1,0 +1,29 @@
+{
+  "@@locale": "en",
+  "Skn_Episode_Title": "{title} · {episode}",
+  "@Skn_Episode_Title": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      },
+      "episode": {
+        "type": "String"
+      }
+    }
+  },
+  "Skn_Movie_Title": "{title} is out",
+  "@Skn_Movie_Title": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "Skn_Body_Plan_Show": "A show from your Plan to watch list is airing. Take a look.",
+  "Skn_Body_Plan_Movie": "A movie from your Plan to watch list is out. Take a look.",
+  "Skn_Search_All": "Search shows, anime and movies",
+  "Skn_Search_Everywhere": "Search every catalogue",
+  "Skn_Master_Desc": "Get a notification when an episode of your shows or anime airs, or a movie comes out",
+  "Skn_Watching_Desc": "Each new episode of a show or anime you are watching",
+  "Skn_Plan_Desc": "Each new episode of a show or anime you plan to watch, and each movie release"
+}

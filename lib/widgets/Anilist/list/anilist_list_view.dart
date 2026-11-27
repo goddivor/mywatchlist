@@ -503,7 +503,8 @@ class _AnilistListViewState extends State<AnilistListView> with TickerProviderSt
           for (final c in _categories)
             ButtonSegment(
               value: c,
-              label: Text(c == 'anime' ? S.current.UserList_Anime : S.current.UserList_Manga),
+              label: Text(c == 'anime' ? S.current.UserList_Anime : S.current.UserList_Manga,
+                  maxLines: 1, softWrap: false),
             ),
         ],
         selected: {_category},

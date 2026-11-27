@@ -87,8 +87,7 @@ class _MoreInfoButton extends StatelessWidget {
             width: 40,
             height: 40,
             child: Icon(
-              Icons.info_outline,
-              size: 22,
+              Icons.info,
               color: onPressed == null ? scheme.onSurface.withValues(alpha: .4) : scheme.onSurface,
             ),
           ),

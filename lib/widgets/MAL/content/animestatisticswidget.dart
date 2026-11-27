@@ -13,7 +13,10 @@ import 'package:mywatchlist/widgets/common/app_colors.dart';
 /// the stats chart preference), share above, label and count below.
 class AnimeStatisticsWidget extends StatelessWidget {
   final Statistics stats;
-  const AnimeStatisticsWidget({required this.stats, super.key});
+
+  /// Manga labels: "Reading" and "Plan to read".
+  final bool manga;
+  const AnimeStatisticsWidget({required this.stats, this.manga = false, super.key});
 
   static const double _maxBarHeight = 150;
 
@@ -39,11 +42,15 @@ class AnimeStatisticsWidget extends StatelessWidget {
     final status = stats.status;
     final colors = themedStatusChartColors(AppColors.of(context), _chartPreference(context));
     final bars = <(String, double, Color)>[
-      (S.current.Res_Status_Watching, _toDouble(status.watching), colors[0]),
+      (manga ? S.current.Mst_Status_Reading : S.current.Res_Status_Watching, _toDouble(status.watching), colors[0]),
       (S.current.Res_Status_Completed, _toDouble(status.completed), colors[1]),
       (S.current.Res_Status_On_Hold, _toDouble(status.onHold), colors[2]),
       (S.current.Res_Status_Dropped, _toDouble(status.dropped), colors[3]),
-      (S.current.Res_Status_Plan_To_Watch, _toDouble(status.planToWatch), colors[4]),
+      (
+        manga ? S.current.Mst_Status_Plan_To_Read : S.current.Res_Status_Plan_To_Watch,
+        _toDouble(status.planToWatch),
+        colors[4],
+      ),
     ];
     final sum = bars.fold<double>(0, (a, b) => a + b.$2);
     if (sum == 0) {

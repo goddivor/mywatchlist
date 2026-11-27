@@ -323,14 +323,26 @@ class _VideosWidgetState extends State<VideosWidget> {
   }
 }
 
+/// Plays [url] in the built-in player when it is on ([embedded], MyAnimeList's
+/// `allowYoutubePlayer` by default), else opens it with [outside] (YouTube, after a confirmation
+/// by default). A video that cannot play here also goes to [outside].
 Future<void> showYouTubeVideo({
   required String url,
   required BuildContext context,
+  bool? embedded,
+  Future<void> Function()? outside,
 }) async {
   final videoId = YoutubePlayer.convertUrlToId(url);
+  Future<void> openOutside() async {
+    if (outside != null) {
+      await outside();
+    } else {
+      launchURLWithConfirmation(url, context: context);
+    }
+  }
 
-  // The embedded player is opt-in (allowYoutubePlayer); otherwise open YouTube.
-  if (videoId != null && Preferences.general.allowYoutubePlayer) {
+  // The embedded player is opt-in; otherwise open YouTube.
+  if (videoId != null && (embedded ?? Preferences.general.allowYoutubePlayer)) {
     YoutubePlayerController _controller = YoutubePlayerController(
       initialVideoId: videoId,
       flags: const YoutubePlayerFlags(
@@ -392,8 +404,8 @@ Future<void> showYouTubeVideo({
 
     _controller.removeListener(onPlayerChange);
     _controller.dispose();
-    if (failed && context.mounted) launchURLWithConfirmation(url, context: context);
+    if (failed && context.mounted) await openOutside();
   } else {
-    launchURLWithConfirmation(url, context: context);
+    await openOutside();
   }
 }
