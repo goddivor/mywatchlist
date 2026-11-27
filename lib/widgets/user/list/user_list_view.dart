@@ -249,7 +249,7 @@ class _UserListViewState extends State<UserListView> with TickerProviderStateMix
     final visible = _controllerFor(_category, _statuses[_tabs.index]);
     final result = await showListSortFilterSheet(
       context,
-      settings: _current,
+      settings: _current.copyWith(filter: activeListFilter(_current.filter)),
       initialTab: tab,
       options: ListSortFilterOptions(
         sorts: _adapter.sortOptions(_category),
@@ -600,7 +600,7 @@ class _UserListViewState extends State<UserListView> with TickerProviderStateMix
         .sortOptions(_category)
         .where((o) => o.key == settings.sortKey)
         .firstOrNull;
-    final filterCount = settings.filter.activeCount;
+    final filterCount = activeListFilter(settings.filter).activeCount;
     final asc = settings.direction == SortDirection.ascending;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -692,7 +692,7 @@ class _TabLabel extends StatelessWidget {
       listenable: controller,
       builder: (context, _) {
         final filtered =
-            !controller.settings.filter.isEmpty || controller.query.trim().isNotEmpty;
+            !activeListFilter(controller.settings.filter).isEmpty || controller.query.trim().isNotEmpty;
         final int? count = filtered
             ? (controller.hasMore || !controller.isStarted ? null : controller.entries.length)
             : (controller.totalCount ?? countFromProfile);

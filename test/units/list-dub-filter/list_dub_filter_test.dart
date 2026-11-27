@@ -80,4 +80,14 @@ void main() {
     final dubbed = ListFilter.none.toggle(ListFacetKeys.dub, DubStatus.dubbed.name);
     expect(filterEntries(_entries, dubbed), hasLength(3));
   });
+
+  test('a hidden dub filter does not count in the filter badge', () async {
+    final dubbed = ListFilter.none
+        .toggle(ListFacetKeys.dub, DubStatus.dubbed.name)
+        .toggle(ListFacetKeys.unseen, 'yes');
+    expect(activeListFilter(dubbed).activeCount, 1);
+    final bloc = await _dubOn();
+    expect(activeListFilter(dubbed).activeCount, 2);
+    await bloc.close();
+  });
 }

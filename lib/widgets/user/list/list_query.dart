@@ -357,6 +357,7 @@ List<ListEntryView> filterEntries(
   String query = '',
   DateTime? now,
 }) {
+  filter = activeListFilter(filter);
   if (filter.isEmpty && query.trim().isEmpty) return entries;
   final at = now ?? DateTime.now();
   return [
@@ -365,13 +366,15 @@ List<ListEntryView> filterEntries(
   ];
 }
 
-/// Facets left out of the filter right now: the dub facet while the dub setting is off, so a
-/// dub filter saved earlier never empties a list whose sheet no longer shows it.
-bool _ignored(String facet) => facet == ListFacetKeys.dub && !DubInfo.instance.enabled;
+/// The part of [filter] that applies right now: without the dub facet while the dub setting
+/// is off, so a dub filter saved earlier never empties a list (or counts in its badge) once
+/// the sheet no longer shows it.
+ListFilter activeListFilter(ListFilter filter) =>
+    DubInfo.instance.enabled ? filter : filter.clearFacet(ListFacetKeys.dub);
 
 bool _matchesFilter(ListEntryView e, ListFilter filter, DateTime now) {
   for (final entry in filter.included.entries) {
-    if (entry.value.isEmpty || _ignored(entry.key)) continue;
+    if (entry.value.isEmpty) continue;
     final values = _valuesOf(e, entry.key, now);
     final ok = _matchAllFacets.contains(entry.key)
         ? values.containsAll(entry.value)
@@ -379,7 +382,7 @@ bool _matchesFilter(ListEntryView e, ListFilter filter, DateTime now) {
     if (!ok) return false;
   }
   for (final entry in filter.excluded.entries) {
-    if (entry.value.isEmpty || _ignored(entry.key)) continue;
+    if (entry.value.isEmpty) continue;
     final values = _valuesOf(e, entry.key, now);
     if (entry.value.any(values.contains)) return false;
   }
