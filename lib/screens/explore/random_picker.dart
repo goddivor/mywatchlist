@@ -17,8 +17,8 @@ enum RandomSource {
   /// The signed-in user's "plan to watch" / "plan to read" list.
   planned,
 
-  /// The signed-in user's "dropped" list.
-  dropped,
+  /// The signed-in user's "on hold" list: titles paused, meant to be resumed.
+  onHold,
 }
 
 /// MAL status word of [source] for [isAnime] (null for [RandomSource.anywhere]).
@@ -26,13 +26,14 @@ String? randomListStatus(RandomSource source, {required bool isAnime}) => switch
       RandomSource.anywhere => null,
       RandomSource.inProgress => isAnime ? 'watching' : 'reading',
       RandomSource.planned => isAnime ? 'plan_to_watch' : 'plan_to_read',
-      RandomSource.dropped => 'dropped',
+      RandomSource.onHold => 'on_hold',
     };
 
 /// Row of "surprise me" buttons: any title, one from the list in progress, one from the plan
-/// list, one from the dropped list. DailyAL's `_randomButton`s: raised surface buttons with a
-/// coloured icon (green, amber, orange, here the `success`, `score` and `warning` tokens; red
-/// `dropped` for the dropped list), centred, scrolling when they do not fit.
+/// list, one from the on hold list. DailyAL's `_randomButton`s: raised surface buttons with a
+/// coloured icon (green and amber here the `success` and `score` tokens; the plan and on hold
+/// lists take their list status tokens, brown and orange, so two orange icons never sit side by
+/// side), centred, scrolling when they do not fit.
 class RandomPickerRow extends StatelessWidget {
   final bool isAnime;
 
@@ -71,11 +72,11 @@ class RandomPickerRow extends StatelessWidget {
                 tokens.score.color,
                 isAnime ? S.current.Watching : S.current.Reading),
             const SizedBox(width: 10),
-            button(RandomSource.planned, Icons.history_rounded, tokens.warning.color,
+            button(RandomSource.planned, Icons.history_rounded, tokens.planned.color,
                 isAnime ? S.current.Plan_To_Watch : S.current.Plan_To_Read),
             const SizedBox(width: 10),
-            button(RandomSource.dropped, Icons.block_rounded, tokens.dropped.color,
-                S.current.Dropped),
+            button(RandomSource.onHold, Icons.pause_circle_outline_rounded,
+                tokens.onHold.color, S.current.On_Hold),
           ],
         ),
       ),
@@ -93,7 +94,7 @@ Future<void> pickRandom(BuildContext context, String category, RandomSource sour
   final listName = switch (source) {
     RandomSource.inProgress => isAnime ? S.current.Watching : S.current.Reading,
     RandomSource.planned => isAnime ? S.current.Plan_To_Watch : S.current.Plan_To_Read,
-    RandomSource.dropped => S.current.Dropped,
+    RandomSource.onHold => S.current.On_Hold,
     RandomSource.anywhere => '',
   };
   final text = status == null
